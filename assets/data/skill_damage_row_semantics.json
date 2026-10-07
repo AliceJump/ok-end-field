@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "scope": "Reviewed rank-row membership only; not event timing or full native action execution",
+  "skills": {
+    "mi_fu_normal": {
+      "character_id": "mi_fu",
+      "evidence": "assets/data/character_skills/mi_fu.json: skills[mi_fu_normal].description, rank_stats",
+      "base_rows": ["普攻第一段倍率", "普攻第二段倍率", "普攻第三段倍率", "普攻第四段倍率"],
+      "base_scope": "full_normal_sequence_not_one_hit",
+      "components": [
+        {"key": "处决", "rows": ["处决攻击倍率"], "role": "replacement", "condition": "附近敌人失衡时发动处决，不与普通连段相加", "damage_class": "unverified"},
+        {"key": "下落", "rows": ["下落攻击倍率"], "role": "replacement", "condition": "空中使用普攻时发动下落攻击，不与普通连段相加", "damage_class": "unverified"}
+      ]
+    },
+    "mi_fu_link": {
+      "character_id": "mi_fu",
+      "evidence": "assets/data/character_skills/mi_fu.json: skills[mi_fu_link].description, rank_stats",
+      "base_rows": ["伤害倍率"], "base_scope": "listed_direct_multiplier_only", "components": []
+    },
+    "mi_fu_ultimate": {
+      "character_id": "mi_fu",
+      "evidence": "assets/data/character_skills/mi_fu.json: skills[mi_fu_ultimate].description, rank_stats",
+      "base_rows": ["伤害倍率"], "base_scope": "listed_direct_multiplier_only", "components": []
+    },
+    "pogranichnik_normal": {
+      "character_id": "pogranichnik",
+      "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_normal].description, rank_stats",
+      "base_rows": ["普攻第一段倍率", "普攻第二段倍率", "普攻第三段倍率", "普攻第四段倍率", "普攻第五段倍率"],
+      "base_scope": "full_normal_sequence_not_one_hit",
+      "components": [
+        {"key": "处决", "rows": ["处决攻击倍率"], "role": "replacement", "condition": "附近敌人失衡时发动处决，不与普通连段相加", "damage_class": "unverified"},
+        {"key": "下落", "rows": ["下落攻击倍率"], "role": "replacement", "condition": "空中使用普攻时发动下落攻击，不与普通连段相加", "damage_class": "unverified"}
+      ]
+    },
+    "pogranichnik_skill": {
+      "character_id": "pogranichnik",
+      "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_skill].description, rank_stats",
+      "base_rows": ["第一段伤害倍率", "第二段伤害倍率"],
+      "base_scope": "two_listed_slashes_without_physical_infliction_damage", "components": []
+    },
+    "ember_normal": {
+      "character_id": "ember",
+      "evidence": "assets/data/character_skills/ember.json: skills[ember_normal].description, rank_stats",
+      "base_rows": ["普攻第一段倍率", "普攻第二段倍率", "普攻第三段倍率", "普攻第四段倍率"],
+      "base_scope": "full_normal_sequence_not_one_hit",
+      "components": [
+        {"key": "处决", "rows": ["处决攻击倍率"], "role": "replacement", "condition": "附近敌人失衡时发动处决，不与普通连段相加", "damage_class": "unverified"},
+        {"key": "下落", "rows": ["下落攻击倍率"], "role": "replacement", "condition": "空中使用普攻时发动下落攻击，不与普通连段相加", "damage_class": "unverified"}
+      ]
+    },
+    "ember_skill": {
+      "character_id": "ember",
+      "evidence": "assets/data/character_skills/ember.json: skills[ember_skill].description, rank_stats",
+      "base_rows": ["伤害倍率"], "base_scope": "listed_direct_multiplier_without_knockdown_damage", "components": []
+    },
+    "ember_link": {
+      "character_id": "ember",
+      "evidence": "assets/data/character_skills/ember.json: skills[ember_link].description, rank_stats",
+      "base_rows": ["伤害倍率"], "base_scope": "listed_direct_multiplier_without_knockdown_damage", "components": []
+    },
+    "ember_ultimate": {
+      "character_id": "ember",
+      "evidence": "assets/data/character_skills/ember.json: skills[ember_ultimate].description, rank_stats",
+      "base_rows": ["伤害倍率"], "base_scope": "listed_direct_multiplier_only", "components": []
+    },
+    "camille_normal": {
+      "character_id": "camille",
+      "evidence": "assets/data/character_skills/camille.json: skills[camille_normal].description, rank_stats",
+      "base_rows": ["普攻第一段倍率", "普攻第二段倍率", "普攻第三段倍率", "普攻第四段倍率", "普攻第五段倍率"],
+      "base_scope": "full_normal_sequence_not_one_hit",
+      "components": [
+        {"key": "处决", "rows": ["处决攻击倍率"], "role": "replacement", "condition": "附近敌人失衡时发动处决，不与普通连段相加", "damage_class": "unverified"},
+        {"key": "下落", "rows": ["下落攻击倍率"], "role": "replacement", "condition": "空中使用普攻时发动下落攻击，不与普通连段相加", "damage_class": "unverified"}
+      ]
+    },
+    "camille_ultimate": {
+      "character_id": "camille",
+      "evidence": "assets/data/character_skills/camille.json: skills[camille_ultimate].description, rank_stats",
+      "base_rows": ["伤害倍率"], "base_scope": "listed_direct_multiplier_without_pursuit", "components": []
+    },
+    "mi_fu_skill": {
+      "character_id": "mi_fu",
+      "evidence": "assets/data/character_skills/mi_fu.json: skills[mi_fu_skill].description, rank_stats, enhancements",
+      "base_rows": ["断云伤害倍率"],
+      "base_scope": "initial_action",
+      "components": [
+        {"key": "追形", "rows": ["追形伤害倍率"], "role": "replacement", "condition": "战技替换为追形", "damage_class": "skill"},
+        {"key": "开天", "rows": ["开天伤害倍率"], "role": "replacement", "condition": "追形猛击实际消耗至少3层破防后，战技替换为开天", "damage_class": "physical_infliction"}
+      ]
+    },
+    "camille_skill": {
+      "character_id": "camille",
+      "evidence": "assets/data/character_skills/camille.json: skills[camille_skill].description, rank_stats, enhancements",
+      "base_rows": ["伤害倍率"],
+      "base_scope": "initial_action",
+      "components": [
+        {"key": "血翼爆裂", "rows": ["爆裂伤害倍率"], "role": "conditional_followup", "condition": "连携技命中血翼盘桓目标后延迟爆裂", "damage_class": "unverified"}
+      ]
+    },
+    "camille_link": {
+      "character_id": "camille",
+      "evidence": "assets/data/character_skills/camille.json: skills[camille_link].rank_stats and skills[camille_ultimate].description",
+      "base_rows": ["伤害倍率"],
+      "base_scope": "normal_link",
+      "components": [
+        {"key": "追猎", "rows": ["追猎伤害倍率"], "role": "replacement", "condition": "终结技后下一战技替换为追猎，视为连携技", "damage_class": "combo"}
+      ]
+    },
+    "pogranichnik_link": {
+      "character_id": "pogranichnik",
+      "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_link].description, rank_stats",
+      "base_rows": ["第一段伤害倍率"],
+      "base_scope": "minimum_legal_trigger_one_consumed_shred",
+      "components": [
+        {"key": "第二段", "rows": ["第二段伤害倍率"], "role": "conditional_followup", "condition": "本次事件消耗的最高破防层数至少2层", "damage_class": "combo"},
+        {"key": "普通第三段", "rows": ["第三段伤害倍率"], "role": "conditional_followup", "condition": "本次事件消耗的最高破防层数为3层", "damage_class": "combo"},
+        {"key": "强化第三段", "rows": ["强化第三段 / 伤害倍率"], "role": "replacement", "condition": "本次事件消耗的最高破防层数为4层，替换普通第三段", "damage_class": "combo"}
+      ]
+    },
+    "pogranichnik_ultimate": {
+      "character_id": "pogranichnik",
+      "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_ultimate].description, rank_stats",
+      "base_rows": ["进军伤害倍率"],
+      "base_scope": "initial_action",
+      "components": [
+        {"key": "袭扰", "rows": ["袭扰伤害倍率"], "role": "conditional_followup_per_event", "condition": "敌人受到物理异常或骏卫连携伤害后消费非末点铁誓；次数由实际事件决定", "damage_class": "unverified"},
+        {"key": "决胜", "rows": ["决胜伤害倍率"], "role": "conditional_followup", "condition": "消费最后一点铁誓触发决胜", "damage_class": "unverified"}
+      ]
+    }
+  }
+}

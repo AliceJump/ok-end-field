@@ -4,16 +4,35 @@ from __future__ import annotations
 
 import copy
 import gzip
+import hashlib
 import json
 from pathlib import Path
 
 import compute_damage_baseline as damage
 
 from src.data.character_progression import SNAPSHOT, load_character_progression
+from src.data.damage_resolution import FixedDamagePanel
 from src.data.native_damage_scalars import reaction_scalars
 
 ROOT = Path(__file__).resolve().parents[2]
 ATTRIBUTES = {39: "力量", 40: "敏捷", 41: "智识", 42: "意志"}
+SKILL_TAGS = {"普通攻击": "normal", "战技": "skill", "连携技": "combo", "终结技": "ultimate"}
+
+
+def source_hashes(key):
+    paths = [
+        ROOT / "assets/data/character_skills" / f"{key}.json",
+        ROOT / "assets/data/character_builds" / f"{key}.json",
+        ROOT / "assets/data/weapons.json", ROOT / "assets/data/equipments.json",
+        SNAPSHOT / "characters.json", SNAPSHOT / "tables.json.gz", SNAPSHOT / "index.json",
+        ROOT / "assets/data/reaction_attributes/20261004/index.json",
+        ROOT / "assets/data/reaction_attributes/20261004/scalars.json.gz",
+        ROOT / "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz",
+        Path(__file__).resolve(), ROOT / "scripts/skill-data/compute_damage_baseline.py",
+        ROOT / "src/data/character_progression.py", ROOT / "src/data/native_damage_scalars.py",
+        ROOT / "assets/data/skill_damage_row_semantics.json",
+    ]
+    return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
 
 
 def compute(key: str, tables: dict) -> dict:
@@ -103,6 +122,53 @@ def compute(key: str, tables: dict) -> dict:
         "constant_passive_sources": sorted(set(constant_sources)),
         "conditional_talent_state": "untriggered",
         "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。",
+    }
+    inputs = {skill["skill_id"]: skill for skill in char["skills"]}
+    semantics = damage._load(ROOT / "assets/data/skill_damage_row_semantics.json")
+    if semantics["schema_version"] != 1:
+        raise ValueError("Unsupported damage row semantics")
+    panel = FixedDamagePanel(**result["panel"]["damage_basis"])
+    for quote in result["skills"]:
+        skill = inputs[quote["skill_id"]]
+        multiplier, _, _ = damage._skill_multiplier(skill)
+        reviewed = semantics["skills"].get(quote["skill_id"])
+        if reviewed:
+            if reviewed["character_id"] != key:
+                raise ValueError("Damage row semantics character mismatch")
+            selected = []
+            for label in reviewed["base_rows"]:
+                matches = [row for row in skill["rank_stats"]["rows"] if row["label"] == label]
+                if len(matches) != 1:
+                    raise ValueError(f"Ambiguous/missing reviewed damage row: {quote['skill_id']}/{label}")
+                selected.extend(matches)
+            multiplier, _, _ = damage._skill_multiplier({"rank_stats": {"rows": selected}})
+            quote["row_semantics"] = copy.deepcopy(reviewed)
+            for component in quote["row_semantics"]["components"]:
+                component["rank_values"] = {}
+                for label in component["rows"]:
+                    matches = [row for row in skill["rank_stats"]["rows"] if row["label"] == label]
+                    if len(matches) != 1:
+                        raise ValueError(f"Ambiguous/missing component damage row: {quote['skill_id']}/{label}")
+                    component["rank_values"][label] = matches[0]["values"][0]
+            tag, element = SKILL_TAGS[skill["skill_type"]], skill["element"]
+            non_crit = panel.attack() * multiplier / 100 * (1 + panel.bonus_for(element, (tag,)))
+            non_crit *= 1 + panel.amplification[element]
+            quote.update(multiplier_pct=round(multiplier, 1), non_crit=round(non_crit, 1),
+                         crit_expect=round(non_crit * (1 + panel.crit_rate * panel.crit_damage), 1))
+        quote["quote_basis"] = {
+            "skill_rank": rank,
+            "element": skill["element"],
+            "damage_tags": [SKILL_TAGS[skill["skill_type"]]],
+            "multiplier": multiplier / 100,
+            "crit_policy": "baseline_expectation",
+            "scope": "reviewed_base_rows" if reviewed else "rank_row_sum_without_conditional_rows",
+        }
+    result["data_flow"] = {
+        "schema_version": 1,
+        "sources": source_hashes(key),
+        "fixed_passive_sources": result["profile"]["constant_passive_sources"],
+        "runtime_modifiers": "not_applied",
+        "enemy_basis": "standard_dummy_def0_res0_no_stagger",
     }
     return result
 

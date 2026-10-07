@@ -73,7 +73,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 2.91,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "akekuri_skill",
@@ -85,7 +95,17 @@
         "amplification_pct": 0,
         "non_crit": 15793.0,
         "crit_expect": 16187.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "akekuri_link",
@@ -97,7 +117,17 @@
         "amplification_pct": 0,
         "non_crit": 8883.6,
         "crit_expect": 9105.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 1.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "akekuri_ultimate",
@@ -109,7 +139,17 @@
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 0.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -151,6 +191,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/akekuri.json": "bf7929febb0888ef4f94fb6f13b4f8786d6de3eeac0de5058acd629ef40e7d0f",
+        "assets/data/character_builds/akekuri.json": "d7e79283be797b797b966f76858c6b3b8f232bf62fe81db4e5501df65a12d789",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0019_karin_potential_2"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -227,7 +292,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.1,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "alesh_skill",
@@ -239,7 +314,17 @@
         "amplification_pct": 0,
         "non_crit": 26245.9,
         "crit_expect": 26902.1,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "alesh_link",
@@ -251,7 +336,17 @@
         "amplification_pct": 0,
         "non_crit": 45492.9,
         "crit_expect": 46630.2,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 7.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "alesh_ultimate",
@@ -263,7 +358,17 @@
         "amplification_pct": 0,
         "non_crit": 68825.5,
         "crit_expect": 70546.1,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 9.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -305,6 +410,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/alesh.json": "74ae294093c0681b9fc3856e329756bb5bd1da54f93d4656494887ca827fc288",
+        "assets/data/character_builds/alesh.json": "78aed4829fb01e02edeb926335275c380ba654e8c80f392df38d11956df6f759",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0024_deepfin_potential_2"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -381,7 +511,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.07,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "antal_skill",
@@ -393,7 +533,17 @@
         "amplification_pct": 0,
         "non_crit": 6880.4,
         "crit_expect": 7052.4,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 2.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "antal_link",
@@ -405,7 +555,17 @@
         "amplification_pct": 0,
         "non_crit": 11696.7,
         "crit_expect": 11989.1,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.4,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "antal_ultimate",
@@ -417,7 +577,17 @@
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 0.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -458,6 +628,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/antal.json": "faf5925495ae0855c16e76fcd897c74ba18e074f18ffc694a236ccb64b18f959",
+        "assets/data/character_builds/antal.json": "22640554229da88d2569ad3aa08eef031441cb18d57d9e67ee00a2b0cffdf9b9",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0023_antal_potential_4"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -534,7 +729,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.51,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "arcane_skill",
@@ -546,7 +751,17 @@
         "amplification_pct": 0,
         "non_crit": 60154.5,
         "crit_expect": 61658.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 5.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "arcane_link",
@@ -558,7 +773,17 @@
         "amplification_pct": 0,
         "non_crit": 84216.2,
         "crit_expect": 86321.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 7.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "arcane_ultimate",
@@ -570,7 +795,17 @@
         "amplification_pct": 0,
         "non_crit": 238211.7,
         "crit_expect": 244167.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 19.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -610,6 +845,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/arcane.json": "026d75e3099f44b4306a77b8e838a32dc76936d5fc0bf72043b9c15439a7a21a",
+        "assets/data/character_builds/arcane.json": "6c77090c55391430816c10cbb5e3631f48a2cab04e9f3b6fabdec7c293ebc821",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -686,7 +944,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 2.98,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "arclight_skill",
@@ -698,7 +966,17 @@
         "amplification_pct": 0,
         "non_crit": 20414.5,
         "crit_expect": 20924.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 6.07,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "arclight_link",
@@ -710,7 +988,17 @@
         "amplification_pct": 0,
         "non_crit": 16511.3,
         "crit_expect": 16924.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "arclight_ultimate",
@@ -722,7 +1010,17 @@
         "amplification_pct": 0,
         "non_crit": 37881.0,
         "crit_expect": 38828.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 9.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -766,6 +1064,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/arclight.json": "b5902457165588e191926c30f159d4bff282226c2b94c1e12caedc0aeaa0db69",
+        "assets/data/character_builds/arclight.json": "bfef7e0ed6b859501b990c5c9a7c396a7be819117c7dffa5728e226f87e5c08a",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0007_ikut_potential_2"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -842,7 +1165,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "ardelia_skill",
@@ -854,7 +1187,17 @@
         "amplification_pct": 0,
         "non_crit": 11075.1,
         "crit_expect": 11351.9,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "ardelia_link",
@@ -866,7 +1209,17 @@
         "amplification_pct": 0,
         "non_crit": 12113.4,
         "crit_expect": 12416.2,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "ardelia_ultimate",
@@ -878,7 +1231,17 @@
         "amplification_pct": 0,
         "non_crit": 5710.6,
         "crit_expect": 5853.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 1.65,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -917,6 +1280,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/ardelia.json": "fd46afc45005d01eed8a205d7636c44eca2a57e9df3570a6c54147a8359456a1",
+        "assets/data/character_builds/ardelia.json": "c5117bb800199150bf23141cd63b81eab0a9a5773cf8aba49be005b6f92dbcc2",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -993,7 +1379,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.12,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "avywenna_skill",
@@ -1005,7 +1401,17 @@
         "amplification_pct": 0,
         "non_crit": 95834.7,
         "crit_expect": 98230.6,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 7.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "avywenna_link",
@@ -1017,7 +1423,17 @@
         "amplification_pct": 0,
         "non_crit": 29495.1,
         "crit_expect": 30232.5,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "avywenna_ultimate",
@@ -1029,7 +1445,17 @@
         "amplification_pct": 0,
         "non_crit": 73737.9,
         "crit_expect": 75581.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 9.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -1073,6 +1499,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/avywenna.json": "21d30452b9eb8b6f6ec8d11245c72dd30ce8ecc64c0ea32009eeefaeec920f6b",
+        "assets/data/character_builds/avywenna.json": "4cbf81c461fbbff8c2c064d10281554f40e8de26f8fabf35b3dd1a38dc1c3bb9",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0012_avywen_potential_3"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -1149,31 +1600,143 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "row_semantics": {
+          "character_id": "camille",
+          "evidence": "assets/data/character_skills/camille.json: skills[camille_normal].description, rank_stats",
+          "base_rows": [
+            "普攻第一段倍率",
+            "普攻第二段倍率",
+            "普攻第三段倍率",
+            "普攻第四段倍率",
+            "普攻第五段倍率"
+          ],
+          "base_scope": "full_normal_sequence_not_one_hit",
+          "components": [
+            {
+              "key": "处决",
+              "rows": [
+                "处决攻击倍率"
+              ],
+              "role": "replacement",
+              "condition": "附近敌人失衡时发动处决，不与普通连段相加",
+              "damage_class": "unverified",
+              "rank_values": {
+                "处决攻击倍率": "900%"
+              }
+            },
+            {
+              "key": "下落",
+              "rows": [
+                "下落攻击倍率"
+              ],
+              "role": "replacement",
+              "condition": "空中使用普攻时发动下落攻击，不与普通连段相加",
+              "damage_class": "unverified",
+              "rank_values": {
+                "下落攻击倍率": "180%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.59,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "camille_skill",
         "name": "驱火焚影",
         "type": "战技",
-        "multiplier_pct": 300.0,
+        "multiplier_pct": 200.0,
         "stagger": 10.0,
         "bonus_pct": 43.3,
         "amplification_pct": 0,
-        "non_crit": 15510.8,
-        "crit_expect": 15898.6,
-        "conditional_rows": []
+        "non_crit": 10340.5,
+        "crit_expect": 10599.1,
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "camille",
+          "evidence": "assets/data/character_skills/camille.json: skills[camille_skill].description, rank_stats, enhancements",
+          "base_rows": [
+            "伤害倍率"
+          ],
+          "base_scope": "initial_action",
+          "components": [
+            {
+              "key": "血翼爆裂",
+              "rows": [
+                "爆裂伤害倍率"
+              ],
+              "role": "conditional_followup",
+              "condition": "连携技命中血翼盘桓目标后延迟爆裂",
+              "damage_class": "unverified",
+              "rank_values": {
+                "爆裂伤害倍率": "100%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 2.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "camille_link",
         "name": "锥心之棘",
         "type": "连携技",
-        "multiplier_pct": 800.0,
+        "multiplier_pct": 300.0,
         "stagger": 30.0,
         "bonus_pct": 97.1,
         "amplification_pct": 0,
-        "non_crit": 56891.0,
-        "crit_expect": 58313.3,
-        "conditional_rows": []
+        "non_crit": 21334.1,
+        "crit_expect": 21867.5,
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "camille",
+          "evidence": "assets/data/character_skills/camille.json: skills[camille_link].rank_stats and skills[camille_ultimate].description",
+          "base_rows": [
+            "伤害倍率"
+          ],
+          "base_scope": "normal_link",
+          "components": [
+            {
+              "key": "追猎",
+              "rows": [
+                "追猎伤害倍率"
+              ],
+              "role": "replacement",
+              "condition": "终结技后下一战技替换为追猎，视为连携技",
+              "damage_class": "combo",
+              "rank_values": {
+                "追猎伤害倍率": "500%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "camille_ultimate",
@@ -1185,7 +1748,26 @@
         "amplification_pct": 0,
         "non_crit": 31021.6,
         "crit_expect": 31797.2,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "camille",
+          "evidence": "assets/data/character_skills/camille.json: skills[camille_ultimate].description, rank_stats",
+          "base_rows": [
+            "伤害倍率"
+          ],
+          "base_scope": "listed_direct_multiplier_without_pursuit",
+          "components": []
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 6.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       }
     ],
     "build": {
@@ -1225,6 +1807,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/camille.json": "c09c7cf1f077c2e58866261eb18776f0dcb238cc37ab40b73f428310490be3b4",
+        "assets/data/character_builds/camille.json": "3f0184e824fd3071d2b207e6463a2762eb8eb2369715af2a73af7fdecac6043a",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -1301,7 +1906,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.48,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "catcher_skill",
@@ -1313,7 +1928,17 @@
         "amplification_pct": 0,
         "non_crit": 10252.3,
         "crit_expect": 10508.6,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "catcher_link",
@@ -1325,7 +1950,17 @@
         "amplification_pct": 0,
         "non_crit": 7176.6,
         "crit_expect": 7356.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 2.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "catcher_ultimate",
@@ -1337,7 +1972,17 @@
         "amplification_pct": 0,
         "non_crit": 22298.8,
         "crit_expect": 22856.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 8.7,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -1379,6 +2024,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/catcher.json": "93058a768e940965cacf9ae165125fe2af60db4e8dd1b916a362372a7c13dc3b",
+        "assets/data/character_builds/catcher.json": "8940a81d5c76d27ecd2cfe2ffb21dae7877db6cb8f4b075ba252f5da8460fc8e",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0020_meurs_potential_2"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -1455,7 +2125,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.17,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "chen_qianyu_skill",
@@ -1467,7 +2147,17 @@
         "amplification_pct": 0,
         "non_crit": 13667.8,
         "crit_expect": 15342.1,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "chen_qianyu_link",
@@ -1479,7 +2169,17 @@
         "amplification_pct": 0,
         "non_crit": 9711.3,
         "crit_expect": 10901.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 2.7,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "chen_qianyu_ultimate",
@@ -1491,7 +2191,17 @@
         "amplification_pct": 0,
         "non_crit": 109823.5,
         "crit_expect": 123276.9,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 11.04,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -1531,6 +2241,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/chen_qianyu.json": "2c7fdb1f0bf30d9d82c33cdb248d7e55745a2e2dbbbb512eb450923ffd6d4ec3",
+        "assets/data/character_builds/chen_qianyu.json": "b91f5d89a8bf7ede0ff05811533606c690176a41d576e657bf4944a90d5c68e5",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0005_chen_potential_2"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -1607,7 +2342,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.87,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "da_pan_skill",
@@ -1619,7 +2364,17 @@
         "amplification_pct": 0,
         "non_crit": 36874.0,
         "crit_expect": 37795.9,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "da_pan_link",
@@ -1631,7 +2386,17 @@
         "amplification_pct": 0,
         "non_crit": 79893.8,
         "crit_expect": 81891.1,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 6.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "da_pan_ultimate",
@@ -1643,7 +2408,17 @@
         "amplification_pct": 0,
         "non_crit": 55311.1,
         "crit_expect": 56693.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 4.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -1684,6 +2459,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/da_pan.json": "5d4ce57e4bfe18c5f9e3ff3c39aa92bd0d075034039b54b18ca47b000196dbc4",
+        "assets/data/character_builds/da_pan.json": "82a235928cb8cc9648f22aa4d30f185e6d7ca466bd25a112d417a8db45a204ee",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0018_dapan_potential_3"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -1760,7 +2560,54 @@
         "conditional_rows": [
           "处决攻击倍率: 720%",
           "下落攻击倍率: 144%"
-        ]
+        ],
+        "row_semantics": {
+          "character_id": "ember",
+          "evidence": "assets/data/character_skills/ember.json: skills[ember_normal].description, rank_stats",
+          "base_rows": [
+            "普攻第一段倍率",
+            "普攻第二段倍率",
+            "普攻第三段倍率",
+            "普攻第四段倍率"
+          ],
+          "base_scope": "full_normal_sequence_not_one_hit",
+          "components": [
+            {
+              "key": "处决",
+              "rows": [
+                "处决攻击倍率"
+              ],
+              "role": "replacement",
+              "condition": "附近敌人失衡时发动处决，不与普通连段相加",
+              "damage_class": "unverified",
+              "rank_values": {
+                "处决攻击倍率": "720%"
+              }
+            },
+            {
+              "key": "下落",
+              "rows": [
+                "下落攻击倍率"
+              ],
+              "role": "replacement",
+              "condition": "空中使用普攻时发动下落攻击，不与普通连段相加",
+              "damage_class": "unverified",
+              "rank_values": {
+                "下落攻击倍率": "144%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 9,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.31,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "ember_skill",
@@ -1774,7 +2621,26 @@
         "crit_expect": 10721.6,
         "conditional_rows": [
           "受击后额外造成 / 失衡值: 10（需要施放过程中受到伤害）"
-        ]
+        ],
+        "row_semantics": {
+          "character_id": "ember",
+          "evidence": "assets/data/character_skills/ember.json: skills[ember_skill].description, rank_stats",
+          "base_rows": [
+            "伤害倍率"
+          ],
+          "base_scope": "listed_direct_multiplier_without_knockdown_damage",
+          "components": []
+        },
+        "quote_basis": {
+          "skill_rank": 9,
+          "element": "灼热",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.12,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "ember_link",
@@ -1786,7 +2652,26 @@
         "amplification_pct": 0,
         "non_crit": 6168.8,
         "crit_expect": 6323.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "ember",
+          "evidence": "assets/data/character_skills/ember.json: skills[ember_link].description, rank_stats",
+          "base_rows": [
+            "伤害倍率"
+          ],
+          "base_scope": "listed_direct_multiplier_without_knockdown_damage",
+          "components": []
+        },
+        "quote_basis": {
+          "skill_rank": 9,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 1.84,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "ember_ultimate",
@@ -1798,7 +2683,26 @@
         "amplification_pct": 0,
         "non_crit": 17433.4,
         "crit_expect": 17869.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "ember",
+          "evidence": "assets/data/character_skills/ember.json: skills[ember_ultimate].description, rank_stats",
+          "base_rows": [
+            "伤害倍率"
+          ],
+          "base_scope": "listed_direct_multiplier_only",
+          "components": []
+        },
+        "quote_basis": {
+          "skill_rank": 9,
+          "element": "灼热",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 5.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       }
     ],
     "build": {
@@ -1838,6 +2742,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/ember.json": "56600fcffdd87c2f828e0c7ece743388dd1be9df73a501f09794a97ba725676e",
+        "assets/data/character_builds/ember.json": "d27d9cece659dbb11dc1ee311e75bc87956b2586eb387a48f6b299669ebbc3f1",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -1914,7 +2841,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.48,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "endministrator_skill",
@@ -1926,7 +2863,17 @@
         "amplification_pct": 0,
         "non_crit": 30492.2,
         "crit_expect": 31254.5,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "endministrator_link",
@@ -1938,7 +2885,17 @@
         "amplification_pct": 0,
         "non_crit": 43560.2,
         "crit_expect": 44649.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 5.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "endministrator_ultimate",
@@ -1950,7 +2907,17 @@
         "amplification_pct": 0,
         "non_crit": 164787.5,
         "crit_expect": 168907.2,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 14.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -1990,6 +2957,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/endministrator.json": "f7c13233eb41fd8d64178fd701d7a9f435ffb9f5cb834ec5a7e6cd5c8c307453",
+        "assets/data/character_builds/endministrator.json": "3670ba79eff5d5acf60d6deb34aea333875527e97cca59fd9d3c9e4dc4f19bf8",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -2066,7 +3056,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 2.93,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "estella_skill",
@@ -2078,7 +3078,17 @@
         "amplification_pct": 0,
         "non_crit": 19100.0,
         "crit_expect": 19577.5,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "estella_link",
@@ -2090,7 +3100,17 @@
         "amplification_pct": 0,
         "non_crit": 41051.2,
         "crit_expect": 42077.4,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 10.05,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "estella_ultimate",
@@ -2102,7 +3122,17 @@
         "amplification_pct": 0,
         "non_crit": 44931.6,
         "crit_expect": 46054.9,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 11.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -2146,6 +3176,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/estella.json": "add97ab60569f3564c9201faa0daf6bd794a995019b05a0a3627d97d0ac134a2",
+        "assets/data/character_builds/estella.json": "a88eafc8f39432335c9d113f668fe73f5e68e1481ea8ef756e7375615831292d",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0021_whiten_potential_4"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -2222,7 +3277,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.21,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "fluorite_skill",
@@ -2234,7 +3299,17 @@
         "amplification_pct": 0,
         "non_crit": 16140.4,
         "crit_expect": 17334.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "fluorite_link",
@@ -2246,7 +3321,17 @@
         "amplification_pct": 0,
         "non_crit": 29016.6,
         "crit_expect": 31163.9,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "fluorite_ultimate",
@@ -2258,7 +3343,17 @@
         "amplification_pct": 0,
         "non_crit": 38429.6,
         "crit_expect": 41273.4,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 10.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -2300,6 +3395,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/fluorite.json": "dc631a908168e68c7246bcba59283f296655f7f716f560677deb45886e6fd235",
+        "assets/data/character_builds/fluorite.json": "1c1c4f101ea9978ff265648342c9ab282a590e12c5cb0cb4c94a17aab07cb1e1",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0022_bounda_potential_1"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -2376,7 +3496,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.52,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "gilberta_skill",
@@ -2388,7 +3518,17 @@
         "amplification_pct": 0,
         "non_crit": 20381.3,
         "crit_expect": 20890.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.49,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "gilberta_link",
@@ -2400,7 +3540,17 @@
         "amplification_pct": 0,
         "non_crit": 18395.7,
         "crit_expect": 18855.6,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.15,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "gilberta_ultimate",
@@ -2412,7 +3562,17 @@
         "amplification_pct": 0,
         "non_crit": 43799.3,
         "crit_expect": 44894.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 7.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -2452,6 +3612,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/gilberta.json": "ee839004cf98b52c1fc8c328ce8a95eede2f5def60c542b5c23ba3bed34adb0e",
+        "assets/data/character_builds/gilberta.json": "29eff2005721c37e766cc9d9f05296240dad0259656c1d9e766306815d8540e9",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -2528,7 +3711,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.53,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "laevatain_skill",
@@ -2544,7 +3737,17 @@
           "终结技期间 / 第一段倍率: 330%",
           "终结技期间 / 第二段倍率: 370%",
           "终结技期间 / 追加攻击倍率: 900%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 9.24,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "laevatain_link",
@@ -2556,7 +3759,17 @@
         "amplification_pct": 0,
         "non_crit": 52544.2,
         "crit_expect": 53857.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 5.4,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "laevatain_ultimate",
@@ -2568,7 +3781,17 @@
         "amplification_pct": 0,
         "non_crit": 101585.4,
         "crit_expect": 104125.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 10.44,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -2608,6 +3831,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/laevatain.json": "b4eb1f4b1f68555e720e269123bc8876b420ef063020a70e572cbad67824e323",
+        "assets/data/character_builds/laevatain.json": "4d6ebec0347b5049531c9b8da14071fa9ee65aa42ecd6a056dcadc3550b1bc13",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -2684,7 +3930,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 5.48,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "last_rite_skill",
@@ -2696,7 +3952,17 @@
         "amplification_pct": 0,
         "non_crit": 45830.8,
         "crit_expect": 46976.5,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "last_rite_link",
@@ -2710,7 +3976,17 @@
         "crit_expect": 51823.8,
         "conditional_rows": [
           "消耗每层附着 / 额外伤害倍率: 240%（按消耗层数，A 层不计）"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "last_rite_ultimate",
@@ -2722,7 +3998,17 @@
         "amplification_pct": 0,
         "non_crit": 229153.9,
         "crit_expect": 234882.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 16.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -2762,6 +4048,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/last_rite.json": "7dbc1e04c0af672aa2a622b04625a26da29958d5af7196c981a81e508e6e40d0",
+        "assets/data/character_builds/last_rite.json": "ce6f73ab9031364a962b06955b44b0dc1e229b50a1e3f18e3ff284a53d49b754",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -2838,7 +4147,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.51,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "lifeng_skill",
@@ -2850,7 +4169,17 @@
         "amplification_pct": 0,
         "non_crit": 41965.0,
         "crit_expect": 43014.1,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.4,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "lifeng_link",
@@ -2862,7 +4191,17 @@
         "amplification_pct": 0,
         "non_crit": 45780.0,
         "crit_expect": 46924.5,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 4.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "lifeng_ultimate",
@@ -2874,7 +4213,17 @@
         "amplification_pct": 0,
         "non_crit": 133524.9,
         "crit_expect": 136863.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 14.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -2915,6 +4264,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/lifeng.json": "8a2087bd4e253bb5e6477ecc49908501ad4354777d4a79d0c641e59f19ea2f87",
+        "assets/data/character_builds/lifeng.json": "0260c30b588583b9a583534479f59352ede7f3cd10b485df753ebfc51cf79c31",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0015_lifeng_talent_1_2"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -2991,7 +4365,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.43,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "liino_skill",
@@ -3003,7 +4387,17 @@
         "amplification_pct": 0,
         "non_crit": 16909.9,
         "crit_expect": 17332.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.6,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "liino_link",
@@ -3015,7 +4409,17 @@
         "amplification_pct": 0,
         "non_crit": 16909.9,
         "crit_expect": 17332.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.6,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "liino_ultimate",
@@ -3027,7 +4431,17 @@
         "amplification_pct": 0,
         "non_crit": 47911.5,
         "crit_expect": 49109.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 10.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -3066,6 +4480,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/liino.json": "89c9d948b23a934fbf0573cdb20a85d454a42823fbc6b4b0db5ef17b48bb785f",
+        "assets/data/character_builds/liino.json": "59f80b781b77b2219d65f9e4263dfbf3147085960e1542a7c12819f9f4b75965",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -3142,19 +4579,110 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "row_semantics": {
+          "character_id": "mi_fu",
+          "evidence": "assets/data/character_skills/mi_fu.json: skills[mi_fu_normal].description, rank_stats",
+          "base_rows": [
+            "普攻第一段倍率",
+            "普攻第二段倍率",
+            "普攻第三段倍率",
+            "普攻第四段倍率"
+          ],
+          "base_scope": "full_normal_sequence_not_one_hit",
+          "components": [
+            {
+              "key": "处决",
+              "rows": [
+                "处决攻击倍率"
+              ],
+              "role": "replacement",
+              "condition": "附近敌人失衡时发动处决，不与普通连段相加",
+              "damage_class": "unverified",
+              "rank_values": {
+                "处决攻击倍率": "900%"
+              }
+            },
+            {
+              "key": "下落",
+              "rows": [
+                "下落攻击倍率"
+              ],
+              "role": "replacement",
+              "condition": "空中使用普攻时发动下落攻击，不与普通连段相加",
+              "damage_class": "unverified",
+              "rank_values": {
+                "下落攻击倍率": "180%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.7,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "mi_fu_skill",
         "name": "清波三艺",
         "type": "战技",
-        "multiplier_pct": 950.0,
+        "multiplier_pct": 150.0,
         "stagger": 15.0,
         "bonus_pct": 119.6,
         "amplification_pct": 0,
-        "non_crit": 125135.7,
-        "crit_expect": 128264.1,
-        "conditional_rows": []
+        "non_crit": 19758.3,
+        "crit_expect": 20252.2,
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "mi_fu",
+          "evidence": "assets/data/character_skills/mi_fu.json: skills[mi_fu_skill].description, rank_stats, enhancements",
+          "base_rows": [
+            "断云伤害倍率"
+          ],
+          "base_scope": "initial_action",
+          "components": [
+            {
+              "key": "追形",
+              "rows": [
+                "追形伤害倍率"
+              ],
+              "role": "replacement",
+              "condition": "战技替换为追形",
+              "damage_class": "skill",
+              "rank_values": {
+                "追形伤害倍率": "200%"
+              }
+            },
+            {
+              "key": "开天",
+              "rows": [
+                "开天伤害倍率"
+              ],
+              "role": "replacement",
+              "condition": "追形猛击实际消耗至少3层破防后，战技替换为开天",
+              "damage_class": "physical_infliction",
+              "rank_values": {
+                "开天伤害倍率": "600%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 1.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "mi_fu_link",
@@ -3166,7 +4694,26 @@
         "amplification_pct": 0,
         "non_crit": 32930.5,
         "crit_expect": 33753.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "mi_fu",
+          "evidence": "assets/data/character_skills/mi_fu.json: skills[mi_fu_link].description, rank_stats",
+          "base_rows": [
+            "伤害倍率"
+          ],
+          "base_scope": "listed_direct_multiplier_only",
+          "components": []
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 2.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "mi_fu_ultimate",
@@ -3178,7 +4725,26 @@
         "amplification_pct": 0,
         "non_crit": 92205.3,
         "crit_expect": 94510.4,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "mi_fu",
+          "evidence": "assets/data/character_skills/mi_fu.json: skills[mi_fu_ultimate].description, rank_stats",
+          "base_rows": [
+            "伤害倍率"
+          ],
+          "base_scope": "listed_direct_multiplier_only",
+          "components": []
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 7.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       }
     ],
     "build": {
@@ -3218,6 +4784,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/mi_fu.json": "227484d2185c3159a54ca817d1108133cc2191563062176e34d5eb2bc63483ed",
+        "assets/data/character_builds/mi_fu.json": "411f9a6f43d137806061cb060bccd8158b462db9bbb845d025696866f95b6830",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -3294,7 +4883,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.36,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "perlica_skill",
@@ -3306,7 +4905,17 @@
         "amplification_pct": 0,
         "non_crit": 22349.2,
         "crit_expect": 24472.4,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "perlica_link",
@@ -3318,7 +4927,17 @@
         "amplification_pct": 0,
         "non_crit": 10057.2,
         "crit_expect": 11012.6,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 1.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "perlica_ultimate",
@@ -3330,7 +4949,17 @@
         "amplification_pct": 0,
         "non_crit": 55873.1,
         "crit_expect": 61181.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 10.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -3373,6 +5002,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/perlica.json": "7e60d56bcb42b1a645fa50ec16d7d897635fb5560853256ed9613042d3ac39cc",
+        "assets/data/character_builds/perlica.json": "a18d180e4a20233c63a8726a198b06e725f8c00e4c2abfd61dfcd7a2a1805906",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -3449,7 +5101,55 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "row_semantics": {
+          "character_id": "pogranichnik",
+          "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_normal].description, rank_stats",
+          "base_rows": [
+            "普攻第一段倍率",
+            "普攻第二段倍率",
+            "普攻第三段倍率",
+            "普攻第四段倍率",
+            "普攻第五段倍率"
+          ],
+          "base_scope": "full_normal_sequence_not_one_hit",
+          "components": [
+            {
+              "key": "处决",
+              "rows": [
+                "处决攻击倍率"
+              ],
+              "role": "replacement",
+              "condition": "附近敌人失衡时发动处决，不与普通连段相加",
+              "damage_class": "unverified",
+              "rank_values": {
+                "处决攻击倍率": "900%"
+              }
+            },
+            {
+              "key": "下落",
+              "rows": [
+                "下落攻击倍率"
+              ],
+              "role": "replacement",
+              "condition": "空中使用普攻时发动下落攻击，不与普通连段相加",
+              "damage_class": "unverified",
+              "rank_values": {
+                "下落攻击倍率": "180%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.72,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "pogranichnik_skill",
@@ -3461,31 +5161,151 @@
         "amplification_pct": 0,
         "non_crit": 33390.8,
         "crit_expect": 34225.6,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "pogranichnik",
+          "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_skill].description, rank_stats",
+          "base_rows": [
+            "第一段伤害倍率",
+            "第二段伤害倍率"
+          ],
+          "base_scope": "two_listed_slashes_without_physical_infliction_damage",
+          "components": []
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.3,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "pogranichnik_link",
         "name": "盈月邀击",
         "type": "连携技",
-        "multiplier_pct": 663.0,
+        "multiplier_pct": 95.0,
         "stagger": 19.0,
         "bonus_pct": 74.7,
         "amplification_pct": 0,
-        "non_crit": 51483.9,
-        "crit_expect": 52771.0,
-        "conditional_rows": []
+        "non_crit": 7377.0,
+        "crit_expect": 7561.5,
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "pogranichnik",
+          "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_link].description, rank_stats",
+          "base_rows": [
+            "第一段伤害倍率"
+          ],
+          "base_scope": "minimum_legal_trigger_one_consumed_shred",
+          "components": [
+            {
+              "key": "第二段",
+              "rows": [
+                "第二段伤害倍率"
+              ],
+              "role": "conditional_followup",
+              "condition": "本次事件消耗的最高破防层数至少2层",
+              "damage_class": "combo",
+              "rank_values": {
+                "第二段伤害倍率": "122%"
+              }
+            },
+            {
+              "key": "普通第三段",
+              "rows": [
+                "第三段伤害倍率"
+              ],
+              "role": "conditional_followup",
+              "condition": "本次事件消耗的最高破防层数为3层",
+              "damage_class": "combo",
+              "rank_values": {
+                "第三段伤害倍率": "149%"
+              }
+            },
+            {
+              "key": "强化第三段",
+              "rows": [
+                "强化第三段 / 伤害倍率"
+              ],
+              "role": "replacement",
+              "condition": "本次事件消耗的最高破防层数为4层，替换普通第三段",
+              "damage_class": "combo",
+              "rank_values": {
+                "强化第三段 / 伤害倍率": "297%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 0.95,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       },
       {
         "skill_id": "pogranichnik_ultimate",
         "name": "盾卫旗队，上前",
         "type": "终结技",
-        "multiplier_pct": 850.0,
+        "multiplier_pct": 300.0,
         "stagger": 25.0,
         "bonus_pct": 74.7,
         "amplification_pct": 0,
-        "non_crit": 66005.1,
-        "crit_expect": 67655.2,
-        "conditional_rows": []
+        "non_crit": 23295.9,
+        "crit_expect": 23878.3,
+        "conditional_rows": [],
+        "row_semantics": {
+          "character_id": "pogranichnik",
+          "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_ultimate].description, rank_stats",
+          "base_rows": [
+            "进军伤害倍率"
+          ],
+          "base_scope": "initial_action",
+          "components": [
+            {
+              "key": "袭扰",
+              "rows": [
+                "袭扰伤害倍率"
+              ],
+              "role": "conditional_followup_per_event",
+              "condition": "敌人受到物理异常或骏卫连携伤害后消费非末点铁誓；次数由实际事件决定",
+              "damage_class": "unverified",
+              "rank_values": {
+                "袭扰伤害倍率": "100%"
+              }
+            },
+            {
+              "key": "决胜",
+              "rows": [
+                "决胜伤害倍率"
+              ],
+              "role": "conditional_followup",
+              "condition": "消费最后一点铁誓触发决胜",
+              "damage_class": "unverified",
+              "rank_values": {
+                "决胜伤害倍率": "450%"
+              }
+            }
+          ]
+        },
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 3.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "reviewed_base_rows"
+        }
       }
     ],
     "build": {
@@ -3525,6 +5345,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/pogranichnik.json": "a0bc18758a1d9cf39a1616dbd163d6a4d878f5d19c2fc4e5b14fff304200925c",
+        "assets/data/character_builds/pogranichnik.json": "f3174fa49a4bbf284a28a5a807293d3fc5657755782c1c8965dff1f71d67fd5e",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -3601,7 +5444,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.54,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "purrchena_skill",
@@ -3613,7 +5466,17 @@
         "amplification_pct": 0,
         "non_crit": 10633.0,
         "crit_expect": 10898.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "purrchena_link",
@@ -3625,7 +5488,17 @@
         "amplification_pct": 0,
         "non_crit": 11962.1,
         "crit_expect": 12261.1,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 4.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "purrchena_ultimate",
@@ -3637,7 +5510,17 @@
         "amplification_pct": 0,
         "non_crit": 27911.5,
         "crit_expect": 28609.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 10.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -3679,6 +5562,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/purrchena.json": "e70a0fe9854c68f78a133a0160d28d88961ce94fa69573bc7a142e45763cac50",
+        "assets/data/character_builds/purrchena.json": "14e849625d85d5556594fcbe088c7bf6511e6bc461893c45fe8fa9a39a50d350",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0038_purrche_potential_2"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -3755,7 +5663,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.13,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "rossi_skill",
@@ -3767,7 +5685,17 @@
         "amplification_pct": 0,
         "non_crit": 28682.6,
         "crit_expect": 36785.4,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "rossi_link",
@@ -3781,7 +5709,17 @@
         "crit_expect": 34486.3,
         "conditional_rows": [
           "消耗每层附着 / 额外伤害倍率: 180%（按消耗层数，A 层不计）"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 4.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "rossi_ultimate",
@@ -3793,7 +5731,17 @@
         "amplification_pct": 0,
         "non_crit": 151539.6,
         "crit_expect": 194349.6,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 16.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -3833,6 +5781,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/rossi.json": "73f551edc9fcaeb96fcb5a1ca5e52f0e0df48637a326f2a83aab36aaa63fe93d",
+        "assets/data/character_builds/rossi.json": "cd3c14997a45af990bf33c1a21f1481e357c77b53abe35600cb87c2889a5bbf1",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -3909,7 +5880,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "物理",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.81,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "snowshine_skill",
@@ -3921,7 +5902,17 @@
         "amplification_pct": 0,
         "non_crit": 11183.8,
         "crit_expect": 11463.4,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "snowshine_link",
@@ -3933,7 +5924,17 @@
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 0.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "snowshine_ultimate",
@@ -3945,7 +5946,17 @@
         "amplification_pct": 0,
         "non_crit": 12799.3,
         "crit_expect": 13119.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 5.15,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -3987,6 +5998,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/snowshine.json": "06c39c6036a8c313a7329714a34a46a0a5fa5a59ddfe8f309cabd4571ea2c623",
+        "assets/data/character_builds/snowshine.json": "dbc648357fc5d30cb835e5d773470ff7d7eae07d25a04302dea205c2c0744862",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0014_aurora_potential_4"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -4063,7 +6099,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.81,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "tangtang_skill",
@@ -4075,7 +6121,17 @@
         "amplification_pct": 0,
         "non_crit": 59501.0,
         "crit_expect": 60988.5,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "tangtang_link",
@@ -4087,7 +6143,17 @@
         "amplification_pct": 0,
         "non_crit": 22745.8,
         "crit_expect": 23314.4,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 2.4,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "tangtang_ultimate",
@@ -4099,7 +6165,17 @@
         "amplification_pct": 0,
         "non_crit": 134579.2,
         "crit_expect": 137943.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 14.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -4139,6 +6215,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/tangtang.json": "c235dca8cd460a38c6d1312edb20797de3b58a4bbe41fcd4a01cfbb8752131d4",
+        "assets/data/character_builds/tangtang.json": "d0ef38440530f66bac7a791712728ec29be6702798bff8e25f09a7590be0c685",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -4215,7 +6314,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.08,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "typhoeus_skill",
@@ -4227,7 +6336,17 @@
         "amplification_pct": 0,
         "non_crit": 21738.6,
         "crit_expect": 22282.1,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 3.45,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "typhoeus_link",
@@ -4239,7 +6358,17 @@
         "amplification_pct": 0,
         "non_crit": 18903.2,
         "crit_expect": 19375.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "typhoeus_ultimate",
@@ -4251,7 +6380,17 @@
         "amplification_pct": 0,
         "non_crit": 36231.1,
         "crit_expect": 37136.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "自然",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 5.75,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -4294,6 +6433,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/typhoeus.json": "81848c96bdfdae502c634563f12964db5b575de6c74f9091676c430351df234e",
+        "assets/data/character_builds/typhoeus.json": "794ee18ea6389673177929414adf326b54a88136daa8996fb04143e73648f500",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -4370,7 +6532,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 4.24,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "wulfgard_skill",
@@ -4382,7 +6554,17 @@
         "amplification_pct": 0,
         "non_crit": 57083.2,
         "crit_expect": 58510.2,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 10.8,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "wulfgard_link",
@@ -4394,7 +6576,17 @@
         "amplification_pct": 0,
         "non_crit": 7135.4,
         "crit_expect": 7313.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 1.35,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "wulfgard_ultimate",
@@ -4406,7 +6598,17 @@
         "amplification_pct": 0,
         "non_crit": 3805.5,
         "crit_expect": 3900.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "灼热",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 0.72,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -4453,6 +6655,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/wulfgard.json": "fe649ebc0ab40bcbb16d3425eda37da648cbc123a081ae0887be855d6271a659",
+        "assets/data/character_builds/wulfgard.json": "2dd18459ddc7f1668f9fc7f57ea8eddce7830ce9d272cc5eb70d85a4342f0967",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0006_wolfgd_potential_1"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -4529,7 +6756,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.15,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "xaihi_skill",
@@ -4541,7 +6778,17 @@
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 0.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "xaihi_link",
@@ -4553,7 +6800,17 @@
         "amplification_pct": 0,
         "non_crit": 15598.8,
         "crit_expect": 15988.7,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 4.5,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "xaihi_ultimate",
@@ -4565,7 +6822,17 @@
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 0.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -4607,6 +6874,31 @@
       ],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/xaihi.json": "f0f3198724e7b356a9aae4b717c7f24aacbdcf0ba2434927c8ca30c29eb4e2a9",
+        "assets/data/character_builds/xaihi.json": "9967cc02a8fd2f0f6dda930a75fe40639b40772928aa1f4cbc2bd0fef74fba57",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [
+        "chr_0011_seraph_potential_4"
+      ],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -4683,7 +6975,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.98,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "yvonne_skill",
@@ -4697,7 +6999,17 @@
         "crit_expect": 30549.8,
         "conditional_rows": [
           "消耗每层附着 / 额外伤害倍率: 200%（按消耗层数，A 层不计）"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 4.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "yvonne_link",
@@ -4709,7 +7021,17 @@
         "amplification_pct": 0,
         "non_crit": 11910.2,
         "crit_expect": 15274.9,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 2.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "yvonne_ultimate",
@@ -4721,7 +7043,17 @@
         "amplification_pct": 0,
         "non_crit": 54787.1,
         "crit_expect": 70264.5,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "寒冷",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 9.2,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -4761,6 +7093,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/yvonne.json": "a8772875fd6edc5a1750c5038778d17e5e3c629a34f20111fc0a36ae9ed5ecf9",
+        "assets/data/character_builds/yvonne.json": "66f1d3be0ef65963b8546f5796dc2dea9a8403ca395384626fec05af11b5c6df",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   },
   {
@@ -4837,7 +7192,17 @@
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "normal"
+          ],
+          "multiplier": 3.71,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "zhuang_fangyi_skill",
@@ -4853,7 +7218,17 @@
           "消耗每级导电 / 额外伤害倍率: 9%（按消耗层数，A 层不计）",
           "终结技期间 / 雷击伤害倍率: 81%",
           "终结技期间 / 消耗每级导电 / 额外伤害倍率: 18%（按消耗层数，A 层不计）"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "skill"
+          ],
+          "multiplier": 0.45,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "zhuang_fangyi_link",
@@ -4867,7 +7242,17 @@
         "crit_expect": 50277.4,
         "conditional_rows": [
           "终结技期间 / 伤害倍率: 540%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "combo"
+          ],
+          "multiplier": 3.6,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       },
       {
         "skill_id": "zhuang_fangyi_ultimate",
@@ -4883,7 +7268,17 @@
           "终结技期间 / 普攻第一段倍率: 150%",
           "终结技期间 / 普攻第二段倍率: 210%",
           "终结技期间 / 普攻第三段倍率: 300%"
-        ]
+        ],
+        "quote_basis": {
+          "skill_rank": 12,
+          "element": "电磁",
+          "damage_tags": [
+            "ultimate"
+          ],
+          "multiplier": 0.0,
+          "crit_policy": "baseline_expectation",
+          "scope": "rank_row_sum_without_conditional_rows"
+        }
       }
     ],
     "build": {
@@ -4923,6 +7318,29 @@
       "constant_passive_sources": [],
       "conditional_talent_state": "untriggered",
       "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "data_flow": {
+      "schema_version": 1,
+      "sources": {
+        "assets/data/character_skills/zhuang_fangyi.json": "a787c68655fdb57cf69dad2a3703209b5ed24050e10c531d8a9334f1fc54ed48",
+        "assets/data/character_builds/zhuang_fangyi.json": "f5c34b1518f52657af5342b9345e4c8560a98f2b0ef51631b26001af41e43e40",
+        "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+        "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+        "assets/data/character_progression/20261003/characters.json": "1498d9642838f34765a7be7065d84687f063b239a41d53a2e4c5baf4692caf1b",
+        "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+        "assets/data/character_progression/20261003/index.json": "2de374415a32b30f8ba2d4eee9f47008d1df43a1b3d664749fb39694e1aa9b89",
+        "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+        "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+        "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
+        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+        "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+      },
+      "fixed_passive_sources": [],
+      "runtime_modifiers": "not_applied",
+      "enemy_basis": "standard_dummy_def0_res0_no_stagger"
     }
   }
 ]
