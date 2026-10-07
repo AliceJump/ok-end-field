@@ -46,3 +46,19 @@ Buff.MarkFinish在0x3737787调用OnFinish，随后0x373779a调用_RemoveAllChild
 新增8项回归包含父回调读取仍存在的子实例、递归孙实例、栈溢出只清理对应层、提前到期、显式移除永久子实例、BB捕获、跨持有者、fork隔离、结束回调新建子实例和无父根/Unique拒绝。另以未修改的buff_chr_0007_ikut_atk_buff_talent创建节点和buff_common_vfx_char_atk_up记录验证编译绑定；测试提供父duration，原记录的属性modifier缺口仍保留，未声称整个技能可计价。
 
 完整程序树仍2/111。一般child/action-bound诊断影响程序23→22，另有2个程序明确报告子实例独立性缺口，不能据此宣称净覆盖增加。全仓1257项通过，之后新增显式移除回归并完成8项专项验证；事件按需输入3项及Ruff I/F通过。
+
+## Unique子实例与继承的进一步核验
+
+Unique（枚举7）的跳转表目标为0x373b304，先查询未结束实例并清零rbx；已有实例时跳转0x4e23843，将空创建结果写入输出并返回0。CreateBuffAction在0x373f95d检查创建结果有效性，无效时跳过后续SetBuffParent。因此Unique重加保留首次实例、BB、自然期限和父根，不重新执行开始回调，也不挂到第二个父对象。这与“返回旧实例后重新挂接”的行为不同；不能据SetBuffParent单独推断重加转移父根。
+
+在原Buff父对象范围内进一步支持Unique子实例。两父对象的结束先后均有回归：第二个父先结束不移除旧子实例，第一个父先结束则结束子实例，第二个父不能延长或重新赋值。真实buff_chr_0035_liino_potential的子创建订阅及Unique叶子编译已验证，已有stacking priority缺口仍保留。父子专项共11项，加原生命周期和共享堆叠共26项通过；全仓1261项通过（65.068秒）。完整程序仍2/111，一般寿命诊断22个程序，子实例独立性诊断2→1；没有新增完整程序。
+
+| Unique核验窗口 | 长度 | SHA256 |
+| --- | --- | --- |
+| Unique分支0x373b304 | 123 | 506c7e427ce1eaba631d58d5481bc1b036aac7ae5f554deb928cfee7d7ab71d9 |
+| 已存在实例返回分支0x4e23843 | 22 | cb4c6344d8783493d37c3271ed122918797eafd49790b113e5e0aa5e49ad87f7 |
+| CreateBuff创建结果检查0x373f95d | 60 | 9e81142bfd879216a7ba65069f63b4ecbb64871a81a5b5de6e05c78196cf22c5 |
+
+跨技能继承仍不执行：OnEnd外置分支读取actionEnvironment.context的结束信息，要求结束原因7且目标技能ID在继承列表。该匹配分支中finishWithNextSkillIfNotInherited=false直接保留实例；为true时调用_TryAttachCreatedBuffsToNextSkill，转交失败才回到普通清理。方法通过创建动作owner的AbilitySystem.activeSkillMap查找真实目标Skill，逐个有效实例调用Skill.AttachBuff，后者仅加入该Skill的m_buffsDuringSkill（偏移144）。因此下一步必须绑定结束原因/目标技能、真实技能对象与其释放链；同一角色开始任意下一动作不等于已证实这条原生链。不能只将旧节点截止改成下一动作handoff。
+
+继承补充窗口：OnEnd分支0x4e23dac/220字节SHA256 `5819478582714efd2371eaf56fe3e6128f4557e24f6d69c59d1932dd8cf035bd`；Skill.AttachBuff 0x467b710/600字节 `2ff7706b929919ddefac71197f228cadb3110bdaa033ec6894c1d82e5490f5cf`。后者为读取窗口，实际入口在0x467b76c返回，窗口包含后续邻接代码，不把600字节当完整方法长度。

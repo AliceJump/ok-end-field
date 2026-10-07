@@ -125,8 +125,6 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     if change.child_of_buff and (parent is None or parent.uid != action_id
                                 or parent.uid not in world.native_buff_instances and not parent.finishing):
         raise UnresolvedMechanic(f"Child buff lacks its executing Buff root: {change.key}")
-    if parent is not None and definition.stacking == 7:
-        raise UnresolvedMechanic(f"Parent-bound Unique buff needs reattachment semantics: {change.key}")
     if change.action_finish_after is not None and (
         not math.isfinite(change.action_finish_after) or change.action_finish_after < 0
     ):
@@ -152,6 +150,8 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     for _ in range(delta):
         existing = _stacking_group(world, owner, change.key, definition)
         if definition.stacking == 7 and existing:
+            # Native Unique returns no created instance on reapplication, so
+            # CreateBuff does not call SetBuffParent again for the old instance.
             continue
         if definition.stacking == 2 and maximum > 0 and len(existing) >= maximum:
             _finish(world, existing[0])

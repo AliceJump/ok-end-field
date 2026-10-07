@@ -616,7 +616,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                         definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
                                                              attributes=attributes, panel=panel, path=buff_path)
                     bound_instance = action_bound and definition is not None
-                    parent_instance = child_bound and definition is not None and stacking["stackingType"] in {0, 2}
+                    parent_instance = child_bound and definition is not None
                     if child_bound and not parent_instance:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Parent-bound buff lacks independent executable instance",)))
                     period = native_number(data["triggerInterval"], parameters)

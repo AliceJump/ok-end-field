@@ -143,13 +143,58 @@ class TestParentBoundBuffLifetime(unittest.TestCase):
         self.assertEqual(self.world.time, 0)
         self.assertEqual(len(self.world.native_buff_instances), 2)
 
-    def test_absent_root_and_unique_child_are_explicitly_unresolved(self):
+    def test_absent_root_is_explicitly_unresolved(self):
         self.assertIsNone(self.world.simulate(self.callback(changes=(self.child(),))))
         self.assertFalse(self.world.native_buff_instances)
-        self.add_parent(self.definition(callbacks=((0, self.callback(changes=(self.child(stacking=7),))),)))
-        self.assertTrue(any("Unique" in reason for reason in self.world.unresolved))
-        self.assertEqual(len(self.world.native_buff_instances), 1)
         self.assertIsNone(self.world._native_buff_context)
+
+    def test_unique_reapplication_does_not_attach_old_instance_to_new_parent(self):
+        child = self.child(duration=9, stacking=7, callbacks=((0, self.callback(amount=4)),
+                                                           (2, self.callback(amount=6))))
+        first = self.add_parent(self.definition(duration=5, callbacks=((0, self.callback(changes=(child,))),)))
+        actual_child = next(v for v in self.world.native_buff_instances.values() if v.key == "child")
+        self.world.advance(1)
+        second = self.add_parent(self.definition(duration=1, callbacks=((0, self.callback(changes=(child,))),)), "second")
+        self.assertEqual(actual_child.parent_scope, first.uid)
+        self.assertEqual(actual_child.expires, 9)
+        self.assertEqual(self.world.characters["2"].energy, 4)  # No repeated OnStart payout.
+        self.world.advance(2)
+        self.assertNotIn(second.uid, self.world.native_buff_instances)
+        self.assertIn(actual_child.uid, self.world.native_buff_instances)
+        self.world.advance(5)
+        self.assertFalse(self.world.native_buff_instances)
+        self.assertEqual(self.world.characters["2"].energy, 10)
+        self.world.advance(20)
+        self.assertEqual(self.world.characters["2"].energy, 10)
+        self.assertFalse(self.world.unresolved)
+
+    def test_unique_reapplication_keeps_captured_values_when_first_parent_ends_before_next(self):
+        payout = self.callback(amount=combat_input("bb.gain"))
+        child = self.child(duration=None, stacking=7, callbacks=((2, payout),))
+        child = replace(child, definition=replace(child.definition,
+                        inherited=(("bb.gain", combat_input("bb.gain")),)))
+        self.add_parent(self.definition(duration=1, callbacks=((0, self.callback(changes=(child,))),)))
+        self.world.advance(.5)
+        self.fixture.add(self.definition(duration=4, callbacks=((0, self.callback(changes=(child,))),)),
+                         action_id="next", amount=50)
+        self.world.advance(1)
+        self.assertEqual(self.world.characters["2"].energy, 7)
+        self.assertEqual(len(self.world.native_buff_instances), 1)  # Only second parent survives.
+        self.world.advance(4.5)
+        self.assertFalse(self.world.native_buff_instances)
+        self.assertEqual(self.world.characters["2"].energy, 7)
+
+    def test_unique_child_in_validated_liino_subscription_compiles_with_priority_gap_retained(self):
+        store = SkillTimingStore()
+        profile = store.profiles("佩丽卡", "battle")[0]
+        parent_id = "buff_chr_0035_liino_potential"
+        definition = compile_buff_definition(store, get_character("perlica"), profile, "1", parent_id,
+            native_record(store, parent_id)["data"], {"assignBlackboard": False}, attributes={}, panel=None, path=())
+        changes = [v for _, program in definition.subscriptions for event in walk_combat_events(program.events)
+                   for v in event.native_buffs if v.count.evaluate({}) > 0]
+        self.assertEqual([v.child_of_buff for v in changes], [True])
+        self.assertEqual([v.definition.stacking for v in changes], [7])
+        self.assertTrue(any("priority" in reason for v in changes for reason in v.definition.unresolved))
 
     def test_validated_ikut_child_node_binds_only_with_buff_root(self):
         store = SkillTimingStore()
