@@ -13,6 +13,7 @@ import time
 from dataclasses import dataclass, field
 
 from src.data.combat_expressions import CombatExpression, MissingCombatInput
+from src.data.combat_input_requirements import event_input_keys, required_input_keys
 from src.data.combat_model import ATTACH_ELEMENTS, PHYSICAL_RULES, EnemyCombatState
 from src.data.combat_value_snapshots import EffectValue, ResourceValue, effect_value, resource_value
 from src.data.damage_modifiers import DamageModifierSpec
@@ -243,6 +244,10 @@ class CombatEvent(ImmutableCombatValue):
         object.__setattr__(self, "effects", tuple(effect_value(effect) for effect in self.effects))
         object.__setattr__(self, "resources", tuple(resource_value(change) for change in self.resources))
         super().__post_init__()
+        keys = event_input_keys(self)
+        if self.hit_multiplier_input:
+            keys.add(self.hit_multiplier_input)
+        object.__setattr__(self, "input_keys", frozenset(keys))
 
 
 @dataclass(frozen=True)
@@ -1016,25 +1021,37 @@ class CombatWorldState:
         if not self.characters[actor].alive or not self.satisfies(actor, enemy, event.requires, event.any_requires):
             return
         self._executing_action = action_id
-        inputs = self.damage_inputs(actor, enemy)
+        needed = required_input_keys(self, event, program)
+        inputs = {f"source.{key}": value for key, value in self.characters[actor].attributes.items()}
+        inputs["source.is_main"] = float(actor == self.main_control)
+        for key, effect in (("enemy.has_crystal", EffectType.STATUS_ORIGINIUM_CRYSTAL),
+                            ("enemy.slowed", EffectType.STATUS_SLOW), ("enemy.staggered", EffectType.STATUS_STAGGER)):
+            if needed is None or key in needed:
+                inputs[key] = float(self.count(actor, enemy, effect) > 0)
         sources = self.native_targets(NativeTarget("source"), action_id, program)
         for key in tuple(inputs):
             if key.startswith("source."):
                 del inputs[key]
         if len(sources) == 1 and sources[0] in self.characters:
-            inputs.update({key: value for key, value in self.damage_inputs(sources[0], enemy).items()
-                           if key.startswith("source.")})
+            inputs.update({f"source.{key}": value for key, value in self.characters[sources[0]].attributes.items()})
+            inputs["source.is_main"] = float(sources[0] == self.main_control)
         inputs.update(self._action_inputs.get(action_id, {}))
         inputs.update({"bb." + k: v for k, v in self.characters[actor].blackboard.items()})
         inputs.update(event.inputs)
         for group, targets in self._action_targets.get(action_id, {}).items():
             inputs[f"target.{group}.count"] = float(len(targets))
         for subject in EffectType:
+            if needed is not None and f"count.{subject.value}" not in needed:
+                continue
             inputs[f"count.{subject.value}"] = self.count(actor, enemy, subject)
         for buff_id in program.native_buff_ids:
             for owner, prefix in ((actor, "self"), (enemy, "enemy")):
-                inputs[f"native.{prefix}.{buff_id}"] = self.native_buff_count(owner, buff_id)
+                key = f"native.{prefix}.{buff_id}"
+                if needed is None or key in needed:
+                    inputs[key] = self.native_buff_count(owner, buff_id)
         for query in program.native_buff_queries:
+            if needed is not None and query.key not in needed:
+                continue
             try:
                 owners = self.native_targets(query.target, action_id, program)
                 if query.tag_mode is not None:
@@ -1056,6 +1073,8 @@ class CombatWorldState:
                 # expression should reject the branch for its missing input.
                 inputs.pop(query.key, None)
         for query in program.native_attribute_queries:
+            if needed is not None and query.key not in needed:
+                continue
             # Resolve at callback time; Source and Owner may differ for a buff.
             # An unused branch may legitimately have no attribute recipient.
             inputs.pop(query.key, None)
@@ -1070,7 +1089,9 @@ class CombatWorldState:
             except UnresolvedMechanic:
                 pass
         for timer_id in program.native_timer_ids:
-            inputs[f"timer.{timer_id}.ready"] = float(self.native_timers.get((actor, timer_id), 0) <= self.time)
+            key = f"timer.{timer_id}.ready"
+            if needed is None or key in needed:
+                inputs[key] = float(self.native_timers.get((actor, timer_id), 0) <= self.time)
         inputs["consumed.STACK_SHRED"] = self._action_consumed.get(action_id, {}).get((actor, EffectType.STACK_SHRED), 0)
         try:
             if event.condition is not None and not event.condition.evaluate(inputs):
