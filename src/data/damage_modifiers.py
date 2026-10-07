@@ -7,6 +7,8 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
+from src.data.immutable_combat_value import ImmutableCombatValue
+
 
 class DamageBucket(str, Enum):
     ATTACK = "attack"
@@ -19,14 +21,14 @@ class DamageBucket(str, Enum):
 
 
 @dataclass(frozen=True)
-class MagnitudeTerm:
+class MagnitudeTerm(ImmutableCombatValue):
     input: str
     coefficient: float
     cap: float | None = None
 
 
 @dataclass(frozen=True)
-class ModifierMagnitude:
+class ModifierMagnitude(ImmutableCombatValue):
     base: float = 0.0
     terms: tuple[MagnitudeTerm, ...] = ()
     by_count: tuple[tuple[int, float], ...] = ()
@@ -49,7 +51,7 @@ class ModifierMagnitude:
 
 
 @dataclass(frozen=True)
-class DamageModifierSpec:
+class DamageModifierSpec(ImmutableCombatValue):
     key: str
     bucket: DamageBucket
     elements: tuple[str, ...]

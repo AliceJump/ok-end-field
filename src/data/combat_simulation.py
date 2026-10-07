@@ -14,10 +14,12 @@ from dataclasses import dataclass, field
 
 from src.data.combat_expressions import CombatExpression, MissingCombatInput
 from src.data.combat_model import ATTACH_ELEMENTS, PHYSICAL_RULES, EnemyCombatState
+from src.data.combat_value_snapshots import EffectValue, ResourceValue, effect_value, resource_value
 from src.data.damage_modifiers import DamageModifierSpec
 from src.data.damage_resolution import DamageHit, FixedDamagePanel, TimedDamageState
 from src.data.effect_semantics import EFFECT_SEMANTICS, EffectKind, EffectOwner, RefreshPolicy
 from src.data.effects import EffectType
+from src.data.immutable_combat_value import ImmutableCombatValue
 from src.data.skill_types import CombatResourceType, ResourceChangeKind, SkillEffect, SkillResourceChange
 
 
@@ -30,7 +32,7 @@ class CombatSearchLimit(RuntimeError):
 
 
 @dataclass(frozen=True)
-class EffectInstance:
+class EffectInstance(ImmutableCombatValue):
     effect: EffectType
     owner: str
     source: str
@@ -50,14 +52,14 @@ class CharacterCombatState:
 
 
 @dataclass(frozen=True)
-class EffectRequirement:
+class EffectRequirement(ImmutableCombatValue):
     effect: EffectType
     minimum: int = 1
     maximum: int | None = None
 
 
 @dataclass(frozen=True)
-class NativeBuffChange:
+class NativeBuffChange(ImmutableCombatValue):
     key: str
     count: CombatExpression
     duration: CombatExpression | None = None
@@ -71,13 +73,13 @@ class NativeBuffChange:
 
 
 @dataclass(frozen=True)
-class NativeTarget:
+class NativeTarget(ImmutableCombatValue):
     kind: str
     key: str = ""
 
 
 @dataclass(frozen=True)
-class NativeSpellInfliction:
+class NativeSpellInfliction(ImmutableCombatValue):
     infliction_type: int
     source: NativeTarget
     target: NativeTarget
@@ -87,7 +89,7 @@ class NativeSpellInfliction:
 
 
 @dataclass(frozen=True)
-class NativeResourceChange:
+class NativeResourceChange(ImmutableCombatValue):
     resource: CombatResourceType
     amount: CombatExpression
     coefficient: CombatExpression
@@ -101,13 +103,13 @@ class NativeResourceChange:
 
 
 @dataclass(frozen=True)
-class NativeTargetBinding:
+class NativeTargetBinding(ImmutableCombatValue):
     key: str
     selectors: tuple[NativeTarget, ...]
 
 
 @dataclass(frozen=True)
-class NativeBuffQuery:
+class NativeBuffQuery(ImmutableCombatValue):
     key: str
     target: NativeTarget
     buff_ids: tuple[str, ...]
@@ -117,14 +119,14 @@ class NativeBuffQuery:
 
 
 @dataclass(frozen=True)
-class NativeAttributeQuery:
+class NativeAttributeQuery(ImmutableCombatValue):
     key: str
     target: NativeTarget
     attribute: str
 
 
 @dataclass(frozen=True)
-class NativeBuffProgram:
+class NativeBuffProgram(ImmutableCombatValue):
     parameters: tuple[tuple[str, float], ...]
     inherited: tuple[tuple[str, CombatExpression], ...]
     duration: CombatExpression | None
@@ -142,14 +144,14 @@ class NativeBuffProgram:
 
 
 @dataclass(frozen=True)
-class NativeBuffControl:
+class NativeBuffControl(ImmutableCombatValue):
     instance: str
     kind: str
     expected_at: float | None = None
 
 
 @dataclass(frozen=True)
-class NativeSkillChange:
+class NativeSkillChange(ImmutableCombatValue):
     slot: int
     target_skill: str
     source: NativeTarget
@@ -160,7 +162,7 @@ class NativeSkillChange:
 
 
 @dataclass(frozen=True)
-class NativeSkillOverride:
+class NativeSkillOverride(ImmutableCombatValue):
     uid: str
     scope: str
     target_skill: str
@@ -171,14 +173,14 @@ class NativeSkillOverride:
 
 
 @dataclass(frozen=True)
-class NativeSkillControl:
+class NativeSkillControl(ImmutableCombatValue):
     actor: str
     slot: int
     uid: str
 
 
 @dataclass(frozen=True)
-class NativeIteration:
+class NativeIteration(ImmutableCombatValue):
     target: NativeTarget
     events: tuple[CombatEvent, ...]
 
@@ -201,13 +203,13 @@ def walk_combat_events(events):
 
 
 @dataclass(frozen=True)
-class CombatEvent:
+class CombatEvent(ImmutableCombatValue):
     """One authored event, timed relative to the action's actual start."""
 
     at: float
     name: str
-    effects: tuple[SkillEffect, ...] = ()
-    resources: tuple[SkillResourceChange, ...] = ()
+    effects: tuple[EffectValue | SkillEffect, ...] = ()
+    resources: tuple[ResourceValue | SkillResourceChange, ...] = ()
     modifiers: tuple[DamageModifierSpec, ...] = ()
     hit: DamageHit | None = None
     inputs: tuple[tuple[str, float], ...] = ()
@@ -237,16 +239,21 @@ class CombatEvent:
     native_spell_bursts: tuple[int, ...] = ()
     hit_source: NativeTarget | None = None
 
+    def __post_init__(self):
+        object.__setattr__(self, "effects", tuple(effect_value(effect) for effect in self.effects))
+        object.__setattr__(self, "resources", tuple(resource_value(change) for change in self.resources))
+        super().__post_init__()
+
 
 @dataclass(frozen=True)
-class NativeListener:
+class NativeListener(ImmutableCombatValue):
     buff_id: str
     trigger: str
     events: tuple[CombatEvent, ...]
 
 
 @dataclass(frozen=True)
-class ActionProgram:
+class ActionProgram(ImmutableCombatValue):
     key: str
     actor: str
     kind: str
@@ -274,7 +281,7 @@ class ActionProgram:
 
 
 @dataclass(frozen=True)
-class CombatSnapshot:
+class CombatSnapshot(ImmutableCombatValue):
     time: float
     sp: float
     energy: tuple[tuple[str, float], ...]
@@ -284,7 +291,7 @@ class CombatSnapshot:
 
 
 @dataclass(frozen=True)
-class ActionOutcome:
+class ActionOutcome(ImmutableCombatValue):
     program: str
     before: CombatSnapshot
     after: CombatSnapshot
@@ -1374,7 +1381,7 @@ class CombatWorldState:
 
 
 @dataclass(frozen=True)
-class MechanismPlan:
+class MechanismPlan(ImmutableCombatValue):
     actions: tuple[str, ...]
     damage: float
     seconds: float

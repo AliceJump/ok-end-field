@@ -5,13 +5,14 @@ from dataclasses import dataclass
 from src.data.combat_expressions import CombatExpression, MissingCombatInput, combat_input
 from src.data.combat_simulation import UnresolvedMechanic
 from src.data.damage_resolution import DamageResult
+from src.data.immutable_combat_value import ImmutableCombatValue
 from src.data.native_gameplay import native_asset, native_enums
 
 ELEMENTS = {0: "物理", 2: "灼热", 3: "电磁", 4: "寒冷", 6: "自然"}
 
 
 @dataclass(frozen=True)
-class NativeDefenderDamageScale:
+class NativeDefenderDamageScale(ImmutableCombatValue):
     element: str | None
     addition: CombatExpression
 
