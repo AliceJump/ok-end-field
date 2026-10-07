@@ -16,6 +16,8 @@ from src.data.character_skills import get_character
 from src.data.combat_input_requirements import modifier_input_keys
 from src.data.damage_quote_data import read_fixed_quote, verify_sources
 from src.data.damage_release_rules import KINDS, release_rules
+from src.data.native_attribute_modifiers import reviewed_attack_binding
+from src.data.skill_timing import SkillTimingStore
 
 
 def rule_record(spec, origin):
@@ -68,6 +70,7 @@ def audit(rows=None):
               "missing_characters": sorted(expected_keys - set(keys)), "characters": []}
     verified = total = rules_total = 0
     reviewed_rows = json.loads((ROOT / "assets/data/skill_damage_row_semantics.json").read_text(encoding="utf-8"))["skills"]
+    store = SkillTimingStore()
     for row in rows:
         key, profile = row["key"], row["profile"]
         character = get_character(key, skill_rank=profile["skill_rank"], potential=profile["potential"])
@@ -85,6 +88,7 @@ def audit(rows=None):
         entry = {"key": key, "character": character.name, "profile": profile,
                  "source_gaps": source_gaps, "skills": [], "passives": []}
         releases = release_rules(character, row)
+        native_attack = reviewed_attack_binding(character, store)
         entry["dynamic_attribute_flow"] = {
             "basis": row.get("attribute_basis"),
             "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
@@ -185,17 +189,20 @@ def audit(rows=None):
             entry["passives"].append({"effect_id": passive.effect_id, "name": passive.name,
                                       "rank": passive.level, "source": passive.source,
                                       "placement": "fixed_panel" if passive.effect_id in fixed else
+                                      "native_buff_attribute_rule" if native_attack and native_attack["passive_id"] == passive.effect_id else
                                       "runtime_rules" if bound else "skill_rule_parameters" if adjustments else
                                       "not_classified_as_damage_by_this_audit",
                                       "native_modifier_count": len(passive.modifiers), "damage_rules": bound,
                                       "skill_rule_references": adjustments,
                                       "runtime_rule_parameter_references": dependencies,
+                                      "native_buff_attribute_rules": [native_attack] if native_attack and native_attack["passive_id"] == passive.effect_id else [],
                                       "complete_semantic_review": False})
         report["characters"].append(entry)
     report["summary"] = {"characters": len(rows), "skills": total, "replay_verified_quotes": verified,
                          "skill_damage_rules": rules_total,
                          "selected_passive_damage_rules": sum(len(passive["damage_rules"]) for row in report["characters"] for passive in row["passives"]),
                          "model_release_bonus_bindings": sum(len(skill["model_release_bonus_rules"]) for row in report["characters"] for skill in row["skills"]),
+                         "native_buff_attribute_damage_bindings": sum(len(passive["native_buff_attribute_rules"]) for row in report["characters"] for passive in row["passives"]),
                          "skills_with_reviewed_row_membership": sum(bool(skill["row_semantics"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_with_structural_data_gaps": sum(bool(skill["data_gaps"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_pending_semantic_review": sum(bool(skill["pending_semantic_checks"]) for row in report["characters"] for skill in row["skills"]),

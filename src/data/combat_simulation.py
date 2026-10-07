@@ -148,6 +148,7 @@ class NativeBuffProgram(ImmutableCombatValue):
     tags: tuple[int, ...] = ()
     stacking_key: str | None = None
     damage_scales: tuple = ()
+    attack_additions: tuple[CombatExpression, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -396,18 +397,26 @@ class CombatWorldState:
         return values
 
     def effective_attributes(self, actor):
+        from src.data.native_attribute_modifiers import attack_addition
+
         character = self.characters[actor]
-        if not self.damage_state.attribute_changes:
+        try:
+            native_attack = attack_addition(self, actor)
+        except MissingCombatInput:
+            native_attack = None
+        if not self.damage_state.attribute_changes and native_attack == 0:
             return character.attributes
         values = self.damage_state.effective_attributes(actor, character.attributes, now=self.time)
         deltas, unknown = self.damage_state.final_attribute_deltas(actor, now=self.time)
-        if unknown:
+        if unknown or native_attack is None:
             values.pop("ATK", None)
-        elif any(deltas.values()) and character.panel is not None:
+        elif (any(deltas.values()) or native_attack) and character.panel is not None:
             try:
-                values["ATK"] = character.panel.with_attribute_deltas(deltas).attack()
+                values["ATK"] = character.panel.with_attribute_deltas(deltas).attack(native_attack)
             except ValueError:
                 values.pop("ATK", None)
+        elif native_attack:
+            values.pop("ATK", None)
         return values
 
     def emit(self, event, actor, enemy="target", inputs=None):
@@ -1567,7 +1576,7 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                               for uid, passive in state.native_passives.items()),
                         tuple((v.uid, v.owner, v.key, v.source, v.expires, v.period, v.remaining,
                                v.action_scope, v.action_finish_at, v.parent_scope, v.inherit_skill_ids,
-                               v.finish_with_next_skill, repr(v.definition),
+                               v.finish_with_next_skill, v.attack_addition, repr(v.definition),
                                tuple(sorted(state._action_inputs[v.uid].items()))) for v in state.native_buff_instances.values()),
                         tuple(sorted(state.native_timers.items())),
                         tuple(sorted((a, tuple(sorted(s.attributes.items()))) for a, s in state.characters.items())),

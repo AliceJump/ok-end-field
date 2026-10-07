@@ -62,6 +62,8 @@ def compile_damage_processors(data, buff_id):
 
 
 def resolve_native_hit(world, panel, hit, inputs):
+    from src.data.native_attribute_modifiers import attack_addition
+
     addition = 0.0
     unknown = []
     for instance in world.native_buff_instances.values():
@@ -77,4 +79,9 @@ def resolve_native_hit(world, panel, hit, inputs):
                 unknown.append(f"Native damage modifier input: {instance.key}/{error}")
     if unknown:
         return DamageResult(None, None, {}, tuple(sorted(set(unknown))))
-    return world.damage_state.resolve_hit(panel, hit, now=world.time, inputs=inputs, native_damage_taken=addition)
+    try:
+        native_attack = attack_addition(world, hit.actor)
+    except MissingCombatInput as error:
+        return DamageResult(None, None, {}, (str(error),))
+    return world.damage_state.resolve_hit(panel, hit, now=world.time, inputs=inputs,
+                                         native_damage_taken=addition, native_attack_percent=native_attack)

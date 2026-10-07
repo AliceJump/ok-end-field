@@ -1,5 +1,7 @@
 # 机制排轴流程推进（2026-10-07）
 
+> 2026-10-08续作：秋栗三潜已从原生终结创建块进入buff实例攻击加成，并沿用节点截止和UID清理；来源、取值、受益者及未知边界见damage-attribute-release-audit.md。未接master，未补识别，完整程序覆盖仍2/111。
+
 > 最新用户要求：先不接入master，先完善数据流，并按角色/每个技能核查完整性。优先动态四维属性与明确释放产生的加成，不好确认的条件暂不确认。最新入口见[角色与技能数据流核查](damage-data-flow-progress.md)及[属性与释放加成核验](damage-attribute-release-audit.md)，覆盖下方旧机制接管推进顺序。automation-2已按本轮范围恢复，并按用户要求从2026-10-07当前时点起算，每五小时仅在本会话续作。
 
 最新顺序见[实际阻塞诊断与计划](mechanism-blocker-plan.md)；原mechanism-agent-tasks.md保留历史任务记录。技力确认时机继续后置。仅推送机制分支，不新开PR。

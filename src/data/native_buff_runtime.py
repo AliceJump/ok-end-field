@@ -6,6 +6,7 @@ import heapq
 import math
 from dataclasses import dataclass, replace
 
+from src.data.combat_expressions import MissingCombatInput
 from src.data.combat_simulation import CombatEvent, NativeBuffControl, NativeBuffProgram, UnresolvedMechanic
 from src.data.native_event_context import event_targets
 
@@ -28,6 +29,7 @@ class NativeBuffInstance:
     finishing: bool = False
     inherit_skill_ids: tuple[str, ...] = ()
     finish_with_next_skill: bool = False
+    attack_addition: float | None = 0.0
 
 
 def _instances(world, owner, key):
@@ -202,6 +204,10 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         uid = f"buff:{world._sequence}:{owner}:{change.key}"
         expires = world.time + duration if duration is not None else None
         instance = NativeBuffInstance(uid, change.key, owner, program.actor, definition, program, expires, period, int(limit))
+        try:
+            instance.attack_addition = sum(expression.evaluate(values) for expression in definition.attack_additions)
+        except MissingCombatInput:
+            instance.attack_addition = None
         if parent is not None:
             instance.parent_scope = parent.uid
         if change.action_finish_after is not None:

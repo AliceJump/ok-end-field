@@ -163,6 +163,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -175,6 +176,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -187,6 +189,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -199,6 +202,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -206,11 +210,30 @@
           "name": "全力协作",
           "rank": 3,
           "source": "CharacterPotentialTable/chr_0019_karin/potentialUnlockBundle/2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "native_buff_attribute_rule",
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [
+            {
+              "passive_id": "chr_0019_karin_potential_3",
+              "buff_id": "buff_chr_0019_karin_potential_3",
+              "bucket": "attack",
+              "recipient": "actual_buff_owner_from_living_team_selector",
+              "producer": "chr_0019_karin_ultimate_skill",
+              "input": "inherited_bb.atk",
+              "selected_parameter": 0.10000000149011612,
+              "evaluation": "instance_creation_snapshot",
+              "lifetime": "native_buff_uid; authored_action_end_or_explicit_finish",
+              "verified_scope": "original_P3_producer_block_and_buff; full_ultimate_not_complete",
+              "sources": {
+                "passive": "CharacterPotentialTable/chr_0019_karin/potentialUnlockBundle/2",
+                "producer_sha256": "f977103403fb597c5925827195a3547b08b90b7a613fc4dee2ba60ae376ba379",
+                "buff_sha256": "6c2f613243cd0e5beb6242c60c20ba84b232197b6645a26aeafb78b45d4a3f35"
+              }
+            }
+          ],
           "complete_semantic_review": false
         },
         {
@@ -223,6 +246,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -235,6 +259,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -441,6 +466,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -453,6 +479,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -465,6 +492,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -477,6 +505,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -489,6 +518,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -501,6 +531,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -513,6 +544,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -988,6 +1020,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1000,6 +1033,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1023,6 +1057,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1035,6 +1070,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1047,6 +1083,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1059,6 +1096,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1071,6 +1109,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -1514,6 +1553,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1526,6 +1566,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -1790,6 +1831,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1802,6 +1844,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1814,6 +1857,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1826,6 +1870,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1840,6 +1885,7 @@
           "runtime_rule_parameter_references": [
             "chr_0007_ikut_talent_1_2:damage_bonus"
           ],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1852,6 +1898,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -1864,6 +1911,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -2123,6 +2171,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -2135,6 +2184,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -2391,6 +2441,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -2436,6 +2487,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -2448,6 +2500,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -2460,6 +2513,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -2472,6 +2526,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -2484,6 +2539,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -2496,6 +2552,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -2857,6 +2914,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -2869,6 +2927,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -3051,6 +3110,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3063,6 +3123,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3075,6 +3136,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3087,6 +3149,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3099,6 +3162,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3111,6 +3175,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3123,6 +3188,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -3305,6 +3371,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3317,6 +3384,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3329,6 +3397,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3341,6 +3410,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3353,6 +3423,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3365,6 +3436,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3377,6 +3449,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -3559,6 +3632,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3571,6 +3645,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3583,6 +3658,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3595,6 +3671,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3607,6 +3684,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3619,6 +3697,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3631,6 +3710,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -3873,6 +3953,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -3885,6 +3966,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -4148,6 +4230,7 @@
           "runtime_rule_parameter_references": [
             "chr_9000_endmin_potential_2:attack"
           ],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4196,6 +4279,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4208,6 +4292,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4254,6 +4339,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4266,6 +4352,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -4573,6 +4660,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4585,6 +4673,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4603,6 +4692,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4615,6 +4705,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4627,6 +4718,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4639,6 +4731,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4651,6 +4744,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -4915,6 +5009,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4960,6 +5055,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4972,6 +5068,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4984,6 +5081,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -4996,6 +5094,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -5008,6 +5107,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -5020,6 +5120,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -5329,6 +5430,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -5341,6 +5443,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -5601,6 +5704,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -5613,6 +5717,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -5863,6 +5968,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -5875,6 +5981,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -6125,6 +6232,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -6137,6 +6245,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -6470,6 +6579,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -6482,6 +6592,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -6841,6 +6952,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -6853,6 +6965,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -7129,6 +7242,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7141,6 +7255,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7153,6 +7268,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7165,6 +7281,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7177,6 +7294,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7189,6 +7307,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7201,6 +7320,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -7594,6 +7714,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7606,6 +7727,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -7826,6 +7948,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7838,6 +7961,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7850,6 +7974,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7862,6 +7987,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7874,6 +8000,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7886,6 +8013,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -7904,6 +8032,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -8226,6 +8355,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -8238,6 +8368,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -8420,6 +8551,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -8432,6 +8564,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -8444,6 +8577,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -8456,6 +8590,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -8468,6 +8603,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -8480,6 +8616,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -8492,6 +8629,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -8796,6 +8934,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -8808,6 +8947,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -9068,6 +9208,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9080,6 +9221,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -9378,6 +9520,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9390,6 +9533,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9402,6 +9546,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9414,6 +9559,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9426,6 +9572,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9438,6 +9585,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9450,6 +9598,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -9886,6 +10035,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9898,6 +10048,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9916,6 +10067,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9928,6 +10080,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9940,6 +10093,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9952,6 +10106,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -9975,6 +10130,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -10307,6 +10463,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -10319,6 +10476,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -10633,6 +10791,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
         {
@@ -10645,6 +10804,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
@@ -10675,6 +10835,7 @@
     "skill_damage_rules": 33,
     "selected_passive_damage_rules": 13,
     "model_release_bonus_bindings": 13,
+    "native_buff_attribute_damage_bindings": 1,
     "skills_with_reviewed_row_membership": 16,
     "skills_with_structural_data_gaps": 0,
     "skills_pending_semantic_review": 128,

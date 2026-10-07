@@ -8,6 +8,7 @@ from src.data.native_tags import expand_tags
 
 def compile_buff_definition(store, character, profile, actor, buff_id, data, reference, *, attributes, panel, path):
     from src.data.native_action_program import compile_native_action
+    from src.data.native_attribute_modifiers import compile_attack_additions
     from src.data.native_damage_processors import compile_damage_processors
 
     if buff_id in path or len(path) >= 8:
@@ -61,9 +62,10 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
         unresolved.append(f"Native buff timeline/ignite scheduling not yet bound: {buff_id}")
     damage_scales, diagnostics = compile_damage_processors(data, buff_id)
     unresolved.extend(diagnostics)
+    attack_additions, attributes_bound = compile_attack_additions(buff_id, data)
     for key in ("attributeModifier", "healModifier", "globalModifier", "poiseModifier", "shieldConfigs"):
         value = data[key]["attributeModifiers"] if key == "attributeModifier" else data[key]
-        if value:
+        if value and not (key == "attributeModifier" and attributes_bound):
             unresolved.append(f"Native buff modifier needs binding: {buff_id}/{key}")
     return NativeBuffProgram(tuple(("bb." + k, float(v)) for k, v in parameters.items()), tuple(inherited),
                              None if data["lifeType"] == 1 else number(data["duration"]), number(data["triggerInterval"]),
@@ -73,4 +75,4 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
                              if data["stackingSettings"]["useMaxStackCntKey"] else
                              CombatExpression("literal", (float(data["stackingSettings"]["maxStackCnt"]),)),
                              tuple(callbacks), tuple(subscriptions), tuple(unresolved), expand_tags(data["applyTags"]),
-                             stacking_key, damage_scales)
+                             stacking_key, damage_scales, attack_additions)
