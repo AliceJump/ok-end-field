@@ -164,15 +164,11 @@ def _parse_recommended_loadout(table: list[list[str]]) -> dict[str, str | None] 
                 operator_id = ids[0]
         for index, label in enumerate(cells):
             slot_key = _RECOMMENDED_SLOT_KEYS.get(label)
-            if slot_key is None:
+            if slot_key is None or index + 1 >= len(cells):
                 continue
-            for value in cells[index + 1 :]:
-                if value in _RECOMMENDED_SLOT_KEYS:
-                    break
-                ids = _entry_ids(value)
-                if ids:
-                    slots[slot_key] = ids[0]
-                    break
+            ids = _entry_ids(cells[index + 1])
+            if ids:
+                slots[slot_key] = ids[0]
 
     if operator_id is None:
         return None
