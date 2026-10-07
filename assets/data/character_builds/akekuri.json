@@ -19,16 +19,17 @@
   },
   "equipment": {
     "set_main": "拓荒装备组",
-    "set_off": "碾骨装备组",
+    "set_off": null,
     "pieces": [
       "拓荒护服",
-      "拓荒纤维手套",
-      "拓荒供氧栓",
-      "碾骨小雕像"
+      "拓荒纤维手套·壹型",
+      "拓荒增量供氧栓·壹型",
+      "纾难印章"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "新浪全干员装备适配一图流（毕业列）",
-    "evidence_level": 2
+    "source": "EndSync 社区汇总 + endfield.games + zmdlogs",
+    "evidence_level": 2,
+    "note": "EndSync 拓荒2/2（最常用四件1/2）；精选四件与endfield.games替代方案、2026-06-13实战记录一致；3拓荒+充能散件"
   }
 }

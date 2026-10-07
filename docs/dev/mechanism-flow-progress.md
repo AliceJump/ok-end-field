@@ -39,3 +39,9 @@ CombatExpression提供实际输入引用集合，CombatEvent在编译时记录�
 新增回归逐项验证忽略前后实际伤害、SP、终结能量一致，另验证参与数值比较的距离保存仍阻塞。全仓1236项通过。重测仍为2/111个完整程序树，未复现任务清单预估的9/111；该数字不代表世界状态和实战计价覆盖。
 
 按影响程序去重的剩余阻塞前十：ComboCacheAction 84、CurveEvaluateFloat 70、主控目标过滤60、子buff/动作绑定寿命59、InterruptAction 44、位置目标过滤43、SaveTargetDistanceAction 39、TemporaryUnlockAction 39、LaunchProjectile 28、CheckDistanceCondition 27。原始审计结果在本地忽略文件tmp/mechanism_coverage_scenario.json。下一步按校验快照核对控制流，不依据类型名放行。
+
+## 控制流核对与配装复查（任务6、7）
+
+六类控制流逐类读取校验快照并各自提交回归，证据和执行缺口见[native-control-flow-audit.md](native-control-flow-audit.md)。均保留未解析：角色调度边界不能替代目标控制、输入缓存、帧跳转、锁定恢复、曲线数值或距离分支。严格模拟拒绝这些动作，原世界snapshot不改变；本阶段没有增加完整程序覆盖。
+
+五个EndSync页面已抓取并与中文来源交叉核对，见[配装复查](small-sample-build-recheck.md)。秋栗新增精确四件定稿，有推荐与独立实战同四件证据；其他四人仍有来源/流派分歧，保留现有配置。重新生成配装、普通基准、固定面板，结构化验证两份32人基准仅秋栗一行改变，其他31人逐项一致。包含六类控制流回归的全仓1242项通过（61.399秒），Ruff I/F与差异检查通过。
