@@ -39,6 +39,8 @@ ENEMY_HP_SAMPLE_STEP_1080 = 3
 ENEMY_HP_MIN_HEIGHT_1080 = 4
 ENEMY_HP_MIN_WIDTH_HEIGHT_RATIO = 2.0
 ENEMY_HP_DIRECT_WIDTH_HEIGHT_RATIO = 10.0
+ENEMY_HP_MAX_DISCOVERY_ROWS = 64
+ENEMY_HP_MAX_GEOMETRY_ROWS = 16
 
 # Short pink runs are accepted only when a nearby horizontal UI edge confirms
 # that the pixels belong to an HP/stagger-bar structure instead of combat VFX.
@@ -220,65 +222,75 @@ def _find_enemy_hp_run(
         return None
 
     candidates = points[:, 0, :]
-    candidate_points = []
-    # Keep the existing sampled-row cap, but inspect every contiguous horizontal
-    # segment on each row. A false pink VFX run must not hide a real HP bar that
-    # starts farther to the right on the same sampled row.
-    for sampled_y in np.unique(candidates[:, 1])[:16]:
+    discovery_rows = 0
+    geometry_rows = 0
+    # Thin one-row VFX can satisfy the cheap horizontal discovery gate. Let
+    # those rows fail the vertical-height check without consuming the tighter
+    # geometry-row budget, while keeping the raw discovery scan explicitly
+    # bounded so lowering the discovery width cannot make work unbounded.
+    for sampled_y in np.unique(candidates[:, 1]):
+        if discovery_rows >= ENEMY_HP_MAX_DISCOVERY_ROWS or geometry_rows >= ENEMY_HP_MAX_GEOMETRY_ROWS:
+            break
+        discovery_rows += 1
+        row_has_geometry = False
         row_xs = np.sort(candidates[candidates[:, 1] == sampled_y, 0])
         segment_starts = row_xs[np.r_[True, np.diff(row_xs) > 1]]
-        candidate_points.extend((int(x), int(sampled_y)) for x in segment_starts)
 
-    for x, sampled_y in candidate_points:
-        y = sampled_y * sample_step
-        radius = min_height + sample_step
-        top = max(0, y - radius)
-        bottom = min(roi.shape[0], y + radius + 1)
-        column = roi[top:bottom, x]
-        matching = np.all(
-            (column >= ENEMY_HP_BGR_LOWER) & (column <= ENEMY_HP_BGR_UPPER),
-            axis=1,
-        ).tolist()
+        for x_value in segment_starts:
+            x = int(x_value)
+            y = int(sampled_y) * sample_step
+            radius = min_height + sample_step
+            top = max(0, y - radius)
+            bottom = min(roi.shape[0], y + radius + 1)
+            column = roi[top:bottom, x]
+            matching = np.all(
+                (column >= ENEMY_HP_BGR_LOWER) & (column <= ENEMY_HP_BGR_UPPER),
+                axis=1,
+            ).tolist()
 
-        # The vertical evidence must belong to the very same horizontal
-        # candidate row. Do not combine a one-pixel horizontal candidate with a
-        # separate nearby vertical pink segment and call the union an exact hit.
-        run_start, run_end, run_height = _true_run_containing(matching, y - top)
-        if run_height < min_height:
-            continue
+            # The vertical evidence must belong to the very same horizontal
+            # candidate row. Do not combine a one-pixel horizontal candidate with a
+            # separate nearby vertical pink segment and call the union an exact hit.
+            run_start, run_end, run_height = _true_run_containing(matching, y - top)
+            if run_height < min_height:
+                continue
+            row_has_geometry = True
 
-        sampled_row = mask[sampled_y] != 0
-        left = x
-        while left > 0 and sampled_row[left - 1]:
-            left -= 1
-        right = x
-        while right + 1 < sampled_row.shape[0] and sampled_row[right + 1]:
-            right += 1
+            sampled_row = mask[int(sampled_y)] != 0
+            left = x
+            while left > 0 and sampled_row[left - 1]:
+                left -= 1
+            right = x
+            while right + 1 < sampled_row.shape[0] and sampled_row[right + 1]:
+                right += 1
 
-        hit_top = int(top + run_start)
-        hit_width = int(right - left + 1)
-        hit_height = int(run_end - run_start + 1)
-        min_width, direct_width = _enemy_hp_width_thresholds(hit_height)
-        if hit_width < min_width:
-            continue
-
-        if hit_width < direct_width:
-            context_source = roi if context_roi is None else context_roi
-            context_x, context_y = context_offset if context_roi is not None else (0, 0)
-            if not _has_enemy_hp_context(
-                context_source,
-                int(left) + int(context_x),
-                hit_top + int(context_y),
-                hit_width,
-                hit_height,
-                screen_width,
-                screen_height,
-            ):
-                # Widths in the middle band need the supporting HP/stagger-bar
-                # structure. Keep looking for another candidate if it is absent.
+            hit_top = int(top + run_start)
+            hit_width = int(right - left + 1)
+            hit_height = int(run_end - run_start + 1)
+            min_width, direct_width = _enemy_hp_width_thresholds(hit_height)
+            if hit_width < min_width:
                 continue
 
-        return int(left), hit_top, hit_width, hit_height
+            if hit_width < direct_width:
+                context_source = roi if context_roi is None else context_roi
+                context_x, context_y = context_offset if context_roi is not None else (0, 0)
+                if not _has_enemy_hp_context(
+                    context_source,
+                    int(left) + int(context_x),
+                    hit_top + int(context_y),
+                    hit_width,
+                    hit_height,
+                    screen_width,
+                    screen_height,
+                ):
+                    # Widths in the middle band need the supporting HP/stagger-bar
+                    # structure. Keep looking for another candidate if it is absent.
+                    continue
+
+            return int(left), hit_top, hit_width, hit_height
+
+        if row_has_geometry:
+            geometry_rows += 1
     return None
 
 
