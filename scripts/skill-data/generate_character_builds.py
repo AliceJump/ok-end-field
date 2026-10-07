@@ -360,6 +360,9 @@ def main() -> int:
             set_main = top_set
         elif name in equip_rec_loadouts:
             official_pieces = list(equip_rec_loadouts[name])
+            missing = [p for p in official_pieces if p not in equipments]
+            if missing:
+                raise SystemExit(f"{name} 官方四槽配装含未知装备: {missing}")
             parts = [equipments[p].get("part") for p in official_pieces]
             if parts != ["护甲", "护手", "配件", "配件"]:
                 raise SystemExit(f"{name} 官方四槽配装部位异常: {parts}")
