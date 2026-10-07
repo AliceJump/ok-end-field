@@ -11,7 +11,9 @@ from pathlib import Path
 import compute_damage_baseline as damage
 
 from src.data.character_progression import SNAPSHOT, load_character_progression
+from src.data.character_skills import get_character
 from src.data.damage_resolution import FixedDamagePanel
+from src.data.damage_state_rules import fixed_weapon_bonuses
 from src.data.native_damage_scalars import reaction_scalars
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +34,7 @@ def source_hashes(key):
         ROOT / "src/data/character_progression.py", ROOT / "src/data/native_damage_scalars.py",
         ROOT / "assets/data/skill_damage_row_semantics.json",
         ROOT / "src/data/damage_attributes.py",
+        ROOT / "src/data/damage_state_rules.py",
     ]
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
 
@@ -129,6 +132,11 @@ def compute(key: str, tables: dict) -> dict:
         "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。",
     }
     inputs = {skill["skill_id"]: skill for skill in char["skills"]}
+    fixed_bonuses = fixed_weapon_bonuses(get_character(key, skill_rank=rank, potential=profile.potential),
+                                       {"key": key, "build": {"weapon": build["weapon"]["name"]}})
+    result["panel"]["damage_basis"]["damage_bonus"].update(fixed_bonuses)
+    if fixed_bonuses:
+        result["trace"].append(f"  [固定武器元素/类型过滤] {build['weapon']['name']}: {fixed_bonuses}")
     semantics = damage._load(ROOT / "assets/data/skill_damage_row_semantics.json")
     if semantics["schema_version"] != 1:
         raise ValueError("Unsupported damage row semantics")
@@ -155,10 +163,12 @@ def compute(key: str, tables: dict) -> dict:
                     if len(matches) != 1:
                         raise ValueError(f"Ambiguous/missing component damage row: {quote['skill_id']}/{label}")
                     component["rank_values"][label] = matches[0]["values"][0]
+        if reviewed or fixed_bonuses:
             tag, element = SKILL_TAGS[skill["skill_type"]], skill["element"]
             non_crit = panel.attack() * multiplier / 100 * (1 + panel.bonus_for(element, (tag,)))
             non_crit *= 1 + panel.amplification[element]
             quote.update(multiplier_pct=round(multiplier, 1), non_crit=round(non_crit, 1),
+                         bonus_pct=round(panel.bonus_for(element, (tag,)) * 100, 1),
                          crit_expect=round(non_crit * (1 + panel.crit_rate * panel.crit_damage), 1))
         quote["quote_basis"] = {
             "skill_rank": rank,

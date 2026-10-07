@@ -393,6 +393,7 @@ class CombatWorldState:
             "enemy.has_crystal": float(self.count(actor, enemy, EffectType.STATUS_ORIGINIUM_CRYSTAL) > 0),
             "enemy.slowed": float(self.count(actor, enemy, EffectType.STATUS_SLOW) > 0),
             "enemy.staggered": float(self.count(actor, enemy, EffectType.STATUS_STAGGER) > 0),
+            "enemy.shredded": float(self.count(actor, enemy, EffectType.STACK_SHRED) > 0),
         })
         return values
 
@@ -1092,7 +1093,8 @@ class CombatWorldState:
         inputs = {f"source.{key}": value for key, value in self.effective_attributes(actor).items()}
         inputs["source.is_main"] = float(actor == self.main_control)
         for key, effect in (("enemy.has_crystal", EffectType.STATUS_ORIGINIUM_CRYSTAL),
-                            ("enemy.slowed", EffectType.STATUS_SLOW), ("enemy.staggered", EffectType.STATUS_STAGGER)):
+                            ("enemy.slowed", EffectType.STATUS_SLOW), ("enemy.staggered", EffectType.STATUS_STAGGER),
+                            ("enemy.shredded", EffectType.STACK_SHRED)):
             if needed is None or key in needed:
                 inputs[key] = float(self.count(actor, enemy, effect) > 0)
         sources = self.native_targets(NativeTarget("source"), action_id, program)
@@ -1317,6 +1319,10 @@ class CombatWorldState:
                     hit = replace(hit, multiplier=multiplier)
                 from src.data.native_damage_processors import resolve_native_hit
 
+                # Gear predicates refer to this hit's actual target after any
+                # explicit consumers, not the action's original target snapshot.
+                inputs["enemy.staggered"] = float(self.count(hit_actor, enemy, EffectType.STATUS_STAGGER) > 0)
+                inputs["enemy.shredded"] = float(self.count(hit_actor, enemy, EffectType.STACK_SHRED) > 0)
                 result = resolve_native_hit(self, panel, hit, inputs)
                 if result.expected is None:
                     self.unresolved.update(result.unknown)

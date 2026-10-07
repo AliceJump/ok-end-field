@@ -263,6 +263,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -548,6 +550,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -1113,6 +1117,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -1570,6 +1576,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -1915,6 +1923,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -2188,6 +2198,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -2556,6 +2568,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -2931,6 +2945,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -3192,6 +3208,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -3453,6 +3471,47 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [
+        {
+          "origin": "reviewed_fixed_weapon_target_predicate",
+          "key": "weapon:72:夜幕·青云:enemy.staggered",
+          "bucket": "damage_bonus",
+          "elements": [
+            "all"
+          ],
+          "damage_tags": [],
+          "recipient": "self",
+          "trigger": "battle_start",
+          "duration": null,
+          "duration_input": null,
+          "permanent": true,
+          "lifetime_scope": "timed",
+          "evaluation": "hit",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "condition_inputs": [
+            "enemy.staggered"
+          ],
+          "magnitude": {
+            "base": 0.98,
+            "terms": [],
+            "by_count": [],
+            "count_input": null
+          },
+          "sources": [
+            "weapons/扶摇/weapon_skills/0/ranks/Rank 9/夜幕·青云"
+          ],
+          "required_inputs": [
+            "enemy.staggered"
+          ],
+          "unresolved": null,
+          "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"
+        }
+      ],
+      "fixed_weapon_bonus_filters": {
+        "物理:skill": 0.42,
+        "物理:ultimate": 0.42
+      },
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -3714,6 +3773,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -3970,6 +4031,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -4356,6 +4419,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -4748,6 +4813,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -5124,6 +5191,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -5447,6 +5516,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -5721,6 +5792,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -5985,6 +6058,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -6249,6 +6324,44 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [
+        {
+          "origin": "reviewed_fixed_weapon_target_predicate",
+          "key": "weapon:103:效益·山川在我:enemy.shredded",
+          "bucket": "damage_bonus",
+          "elements": [
+            "all"
+          ],
+          "damage_tags": [],
+          "recipient": "self",
+          "trigger": "battle_start",
+          "duration": null,
+          "duration_input": null,
+          "permanent": true,
+          "lifetime_scope": "timed",
+          "evaluation": "hit",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "condition_inputs": [
+            "enemy.shredded"
+          ],
+          "magnitude": {
+            "base": 0.56,
+            "terms": [],
+            "by_count": [],
+            "count_input": null
+          },
+          "sources": [
+            "weapons/负山/weapon_skills/0/ranks/Rank 9/效益·山川在我"
+          ],
+          "required_inputs": [
+            "enemy.shredded"
+          ],
+          "unresolved": null,
+          "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"
+        }
+      ],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -6596,6 +6709,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -6969,6 +7084,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -7324,6 +7441,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -7731,6 +7850,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -8036,6 +8157,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -8372,6 +8495,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -8633,6 +8758,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -8951,6 +9078,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -9225,6 +9354,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -9602,6 +9733,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -10134,6 +10267,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -10480,6 +10615,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -10808,6 +10945,8 @@
           "complete_semantic_review": false
         }
       ],
+      "target_state_bonus_rules": [],
+      "fixed_weapon_bonus_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -10836,6 +10975,7 @@
     "selected_passive_damage_rules": 13,
     "model_release_bonus_bindings": 13,
     "native_buff_attribute_damage_bindings": 1,
+    "target_state_bonus_bindings": 2,
     "skills_with_reviewed_row_membership": 16,
     "skills_with_structural_data_gaps": 0,
     "skills_pending_semantic_review": 128,

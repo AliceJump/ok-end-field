@@ -11,6 +11,7 @@ from src.data.combat_simulation import CombatWorldState, EffectRequirement, Unre
 from src.data.damage_attributes import DamageAttributeBasis
 from src.data.damage_release_rules import release_rules
 from src.data.damage_resolution import FixedDamagePanel
+from src.data.damage_state_rules import state_bonus_rules
 from src.data.native_action_program import _nodes, compile_native_action
 from src.data.native_character_events import bind_character_events
 from src.data.native_gameplay import native_asset, native_record
@@ -106,7 +107,7 @@ def build_combat_catalog(team, store, *, baseline=BASELINE):
         state.attributes["energy_gain"] = row["panel"].get("ult_charge", 0) / 100
         state.attributes["arts_strength"] = row["panel"]["源石技艺强度"]
         state.attributes["level"] = profile["character_level"]
-        world.register_damage_passives(actor, character.progression.damage_modifiers)
+        world.register_damage_passives(actor, (*character.progression.damage_modifiers, *state_bonus_rules(character, row)))
         for kind, modifiers in release_rules(character, row).items():
             world.register_release_modifiers(actor, kind, modifiers)
         for kind, skill_type in (("battle", SkillType.SKILL), ("link", SkillType.LINK_SKILL), ("ult", SkillType.ULTIMATE)):

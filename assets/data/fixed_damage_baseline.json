@@ -218,12 +218,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0019_karin_potential_2"
@@ -451,12 +452,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0024_deepfin_potential_2"
@@ -683,12 +685,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0023_antal_potential_4"
@@ -914,12 +917,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -1147,12 +1151,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0007_ikut_potential_2"
@@ -1377,12 +1382,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -1610,12 +1616,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0012_avywen_potential_3"
@@ -1932,12 +1939,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -2163,12 +2171,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0020_meurs_potential_2"
@@ -2244,7 +2253,9 @@
           "normal": 0.0,
           "skill": 0.0,
           "combo": 0.0,
-          "ultimate": 1.9069999999999998
+          "ultimate": 1.9069999999999998,
+          "物理:skill": 0.42,
+          "物理:ultimate": 0.42
         }
       },
       "physical_infliction_damage_scalar": 1.22704081632653,
@@ -2282,10 +2293,10 @@
         "type": "战技",
         "multiplier_pct": 380.0,
         "stagger": 10.0,
-        "bonus_pct": 8.0,
+        "bonus_pct": 50.0,
         "amplification_pct": 0,
-        "non_crit": 13667.8,
-        "crit_expect": 15342.1,
+        "non_crit": 18983.1,
+        "crit_expect": 21308.5,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -2326,10 +2337,10 @@
         "type": "终结技",
         "multiplier_pct": 1104.0,
         "stagger": 35.0,
-        "bonus_pct": 198.7,
+        "bonus_pct": 240.7,
         "amplification_pct": 0,
-        "non_crit": 109823.5,
-        "crit_expect": 123276.9,
+        "non_crit": 125265.8,
+        "crit_expect": 140610.8,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -2367,7 +2378,8 @@
       "  汇总词条: {'flat_敏捷': 294.0, 'pct_elem_物理': 8.0, 'pct_crit_rate': 19.5, 'flat_防御力': 140, 'flat_力量': 184, 'flat_源石技艺强度': 26, 'pct_ult_dmg': 190.7, 'pct_stagger_eff': 20.0}",
       "  主能力: 敏捷（官方标签）总值 525",
       "  副能力: 力量（官方标注）总值 290",
-      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×525 + 0.002×290) = 3330.4"
+      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×525 + 0.002×290) = 3330.4",
+      "  [固定武器元素/类型过滤] 扶摇: {'物理:skill': 0.42, '物理:ultimate': 0.42}"
     ],
     "profile": {
       "character_level": 90,
@@ -2394,12 +2406,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0005_chen_potential_2"
@@ -2626,12 +2639,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0018_dapan_potential_3"
@@ -2720,7 +2734,7 @@
         "type": "普通攻击",
         "multiplier_pct": 431.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 14449.6,
         "crit_expect": 14810.9,
@@ -2782,7 +2796,7 @@
         "type": "战技",
         "multiplier_pct": 312.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 10460.1,
         "crit_expect": 10721.6,
@@ -2815,7 +2829,7 @@
         "type": "连携技",
         "multiplier_pct": 184.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 6168.8,
         "crit_expect": 6323.0,
@@ -2846,7 +2860,7 @@
         "type": "终结技",
         "multiplier_pct": 520.0,
         "stagger": 25.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 17433.4,
         "crit_expect": 17869.3,
@@ -2923,12 +2937,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -3152,12 +3167,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -3385,12 +3401,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0021_whiten_potential_4"
@@ -3618,12 +3635,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0022_bounda_potential_1"
@@ -3849,12 +3867,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -4082,12 +4101,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -4313,12 +4333,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -4546,12 +4567,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0015_lifeng_talent_1_2"
@@ -4776,12 +4798,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -5094,12 +5117,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -5326,12 +5350,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -5683,12 +5708,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -5914,12 +5940,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0038_purrche_potential_2"
@@ -6147,12 +6174,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -6378,12 +6406,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0014_aurora_potential_4"
@@ -6609,12 +6638,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -6841,12 +6871,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -7077,12 +7108,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0006_wolfgd_potential_1"
@@ -7310,12 +7342,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [
         "chr_0011_seraph_potential_4"
@@ -7543,12 +7576,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -7782,12 +7816,13 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "2e78f2d4d5884a536f5d84f30a665d083948e22ef6432dd6520c95965deb6b78",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",

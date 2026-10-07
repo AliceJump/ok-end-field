@@ -39,7 +39,8 @@ class FixedDamagePanel:
         value = self.damage_bonus.get("all", 0) + self.damage_bonus.get(element, 0)
         if any(tag in {"normal", "skill", "combo", "ultimate"} for tag in tags):
             value += self.damage_bonus.get("all_skill", 0)
-        return value + sum(self.damage_bonus.get(tag, 0) for tag in set(tags))
+        return value + sum(self.damage_bonus.get(tag, 0) + self.damage_bonus.get(f"{element}:{tag}", 0)
+                           for tag in set(tags))
 
     def attack(self, additional_percent=0.0):
         return (
@@ -301,6 +302,11 @@ class TimedDamageState:
                 continue
             current_inputs = {**modifier.inputs, **(inputs or {})}
             if spec.evaluation == "hit":
+                # A hit-time predicate needs a current observation; registration
+                # or application-time target values cannot establish it.
+                for key in spec.condition_inputs:
+                    if key not in (inputs or {}):
+                        current_inputs.pop(key, None)
                 # An unavailable current source attribute cannot fall back to
                 # its old application-time value. Application snapshots keep
                 # their already-resolved value, as authored.

@@ -16,6 +16,7 @@ from src.data.character_skills import get_character
 from src.data.combat_input_requirements import modifier_input_keys
 from src.data.damage_quote_data import read_fixed_quote, verify_sources
 from src.data.damage_release_rules import KINDS, release_rules
+from src.data.damage_state_rules import fixed_weapon_bonuses, state_bonus_rules
 from src.data.native_attribute_modifiers import reviewed_attack_binding
 from src.data.skill_timing import SkillTimingStore
 
@@ -89,6 +90,11 @@ def audit(rows=None):
                  "source_gaps": source_gaps, "skills": [], "passives": []}
         releases = release_rules(character, row)
         native_attack = reviewed_attack_binding(character, store)
+        entry["target_state_bonus_rules"] = [
+            {**rule_record(spec, "reviewed_fixed_weapon_target_predicate"),
+             "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"}
+            for spec in state_bonus_rules(character, row)]
+        entry["fixed_weapon_bonus_filters"] = fixed_weapon_bonuses(character, row)
         entry["dynamic_attribute_flow"] = {
             "basis": row.get("attribute_basis"),
             "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
@@ -203,6 +209,7 @@ def audit(rows=None):
                          "selected_passive_damage_rules": sum(len(passive["damage_rules"]) for row in report["characters"] for passive in row["passives"]),
                          "model_release_bonus_bindings": sum(len(skill["model_release_bonus_rules"]) for row in report["characters"] for skill in row["skills"]),
                          "native_buff_attribute_damage_bindings": sum(len(passive["native_buff_attribute_rules"]) for row in report["characters"] for passive in row["passives"]),
+                         "target_state_bonus_bindings": sum(len(row["target_state_bonus_rules"]) for row in report["characters"]),
                          "skills_with_reviewed_row_membership": sum(bool(skill["row_semantics"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_with_structural_data_gaps": sum(bool(skill["data_gaps"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_pending_semantic_review": sum(bool(skill["pending_semantic_checks"]) for row in report["characters"] for skill in row["skills"]),
