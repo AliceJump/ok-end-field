@@ -138,6 +138,19 @@ def _parse_stat_clause(sentence: str) -> dict | None:
     return None
 
 
+SPELL_ELEMENTS = ("灼热", "寒冷", "电磁", "自然")
+
+
+def _parse_stat_clauses(sentence: str) -> list[dict]:
+    """「法术伤害+X%」同时作用于四种法术元素，不含物理。"""
+    s = re.sub(r"^使自身", "", sentence.replace("装备者", "").strip())
+    m = re.fullmatch(r"法术伤害\+(\d+(?:\.\d+)?)%", s)
+    if m:
+        return [{"kind": "pct", "stat": f"elem_{el}", "value": float(m.group(1))} for el in SPELL_ELEMENTS]
+    mod = _parse_stat_clause(sentence)
+    return [mod] if mod else []
+
+
 _SET_PREFIX = re.compile(r"^\d件套组效果：")
 
 
@@ -148,8 +161,7 @@ def _collect_stats(text: str, mods: dict, trace: list[str], source: str) -> None
         if not _is_unconditional(sentence):
             continue
         for chunk in re.split(r"[，,]", sentence):
-            mod = _parse_stat_clause(chunk)
-            if mod:
+            for mod in _parse_stat_clauses(chunk):
                 mods.append(mod)
                 trace.append(f"    [{source}] {chunk} -> {mod}")
 
@@ -180,8 +192,7 @@ def _weapon_rank9_mods(weapon: dict, mods: dict, trace: list[str]) -> None:
             for sentence in _sentences(str(text)):
                 if not _is_unconditional(sentence):
                     continue
-                mod = _parse_stat_clause(sentence)
-                if mod:
+                for mod in _parse_stat_clauses(sentence):
                     mods.append(mod)
                     trace.append(f"    [武器技能 {top}] {sentence} -> {mod}")
 
