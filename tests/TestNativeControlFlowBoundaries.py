@@ -49,3 +49,6 @@ class TestNativeControlFlowBoundaries(unittest.TestCase):
 
     def test_native_curve_remains_unresolved(self):
         self.assert_native_boundary('chr_0019_karin_normal_skill', 'CurveEvaluateFloat+Data', {'key': 'cam_angle', 'useCustomCurve': True})
+
+    def test_native_distance_remains_unresolved(self):
+        self.assert_native_boundary('chr_0019_karin_normal_skill', 'CheckDistanceCondition+Data', {'distance': 4.0, 'lessThan': True})

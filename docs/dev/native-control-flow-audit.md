@@ -31,3 +31,9 @@ mappingDataList指定cmdType=3、skillId=chr_0019_karin_normal_skill、cacheTime
 样本把input_angle映射为cam_angle，但useCustomCurve=true，curveTemplate=Linear不等于实际自定义曲线就是线性；快照另有curve_profile原始字节。其他样本还读取owner_mainchar_distance和enemy_turn_distance。摄像机专用数据流可能可忽略，但必须证明全部消费者只属于表现，不能按输出键名或单个样本全局放行。缺口：解析曲线点/插值/边界行为并追踪所有BB消费者；在数值或条件分支中继续严格阻塞。校验记录chr_0019_karin_normal_skill，全快照检索188次。
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
+
+## CheckDistanceCondition+Data：保留未解析（c）
+
+条件包含source/target选择器、distance=4、lessThan=true、containsHittableObj=false和includeTargetRadius=false。单敌在命中范围内不能推出所有source/target距离都满足4米；源码保留条件分支及取反，未知检查必须阻断后续序列。管理员还将SaveTargetDistance结果送入CompareFloat，不能替换成恒真。缺口：带来源的距离/半径观测或明确场景输入、比较边界、条件分支与命中裁定。校验记录chr_0019_karin_normal_skill，全快照检索152次。
+
+回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
