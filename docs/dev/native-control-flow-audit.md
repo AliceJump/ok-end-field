@@ -13,3 +13,9 @@
 跳转直接指定destFrame=4，conditionAction也是独立动作序列。SkillTiming只保存角色时间边界，未保存程序计数器、跳转条件和重复执行次数；扁平执行可能重复或遗漏后续事件，固定handoff不能替代跳转语义。缺口：条件评估、帧级跳转与终止规则、事件重入及次数限制。校验记录chr_0024_deepfin_combo_skill，全快照检索67次。
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
+
+## ComboCacheAction+Data：保留未解析（c）
+
+mappingDataList指定cmdType=3、skillId=chr_0019_karin_normal_skill、cacheTime约0.3秒、cacheEndByAction=true。这些字段描述特定输入映射及动作绑定缓存，而非单个动画时长。现有can_start/SkillTiming未建模输入排队、缓存终止和映射动作的选择，不能证明缓存忽略后下一招合法性相同。缺口：命令枚举、缓存窗口/取消及消费后技能选择。校验记录chr_0019_karin_combo_skill，全快照检索262次。
+
+回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。

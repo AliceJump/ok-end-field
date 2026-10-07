@@ -40,3 +40,6 @@ class TestNativeControlFlowBoundaries(unittest.TestCase):
 
     def test_native_jump_remains_unresolved(self):
         self.assert_native_boundary('chr_0024_deepfin_combo_skill', 'JumpToAction+Data', {'destFrame': 4})
+
+    def test_native_combo_cache_remains_unresolved(self):
+        self.assert_native_boundary('chr_0019_karin_combo_skill', 'ComboCacheAction+Data', {})
