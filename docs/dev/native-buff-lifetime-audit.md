@@ -132,3 +132,22 @@ Ability._AddPassiveBuff检查SkillData.passiveSkillType=0，再读取SkillData.b
 以上是校验读取窗口，不把窗口长度当实际方法长度；native inputs与已有索引哈希一致。实际Disable生产者、普通主动Skill的附带buff、完整Enable副作用、Skill.m_buffsDuringSkill与真实CastEnd/继承仍未闭环。
 
 新增10项名单专项覆盖Enable幂等、自然到期、同名和Unique隔离、当前BB重挂、先被动后子孙的结束顺序、开始时自移除、预测隔离及未知重启/重复生产者；合计31项专项通过，全仓1284项通过（73.343秒），Ruff I/F、解析与敏感路径检查及git diff --check通过。tmp/mechanism_coverage_ability_passive.json完整程序仍2/111；fork均值0.425ms，四个战技2.528/1.603/3.033/1.182ms，深度2搜索12.889ms且no_complete_plan，不能据此认定完整预算达标。未做现场验证。
+
+## 明确CastEnd输入下的Skill挂接与继承
+
+Skill.CastEnd在0x30f5b14将m_buffsDuringSkill复制到临时名单，然后执行Ability的时间线End（内联段将结束信息写入context，0x30f5c83调用SequenceAction.End）；0x30f6876仅结束这份临时名单。最后0x30f6e22/0x30f6e44按旧名单成员从当前名单中移除。不能在时间线End后清空整份名单：自继承或回调中新挂接的实例必须留到后续技能结束。
+
+新增明确Skill对象身份登记、独立UID挂接名单，以及接受已确认scope/原因/目标ID的finish_skill_cast。原因7且目标ID匹配时，finishWithNextSkillIfNotInherited=false保留而不转交；为true时只有本角色已绑定的activeSkillMap对象可以接收，失败则普通结束。转交保留UID、BB、自然寿命与源角色，不重新Enable目标。只清理结束前的旧名单，不清理Ability子根；已处理或被同Skill新cast替代的旧scope不能重复清理。预测副本包含这些关系。
+
+编译器在可独立执行的非周期根创建节点上保留原始继承列表/转交开关与动作截止，同时继续报告Native cross-skill CastEnd context not yet bound和原寿命缺口。真实弭弗comboprocess节点已验证数据→实例→明确结束输入→目标名单链。伊冯camera buff有0.033秒正周期、voice buff使用尚未执行的堆叠类型4，因此这些例子仍不可绑定，不能借继承API开放周期顺序或堆叠缺口。
+
+普通cast的已执行源对象可以登记，但目录中的目标程序并不自动证明activeSkillMap对象已存在。识别端和原生控制流尚未提供可靠CastEnd原因/目标/时点及目标对象登记；handoff、任意下一动作和观测阈值都没有替代这项输入。因此严格排轴仍拒绝缺生产者的程序，完整覆盖不增加。Skill.Disable的挂接清理、Enable全部副作用也未完成。本轮还定位到_DetachSkillInternal的0x5fb330d/0x5fb3317直接调用Skill.Disable/Remove，后续应追上层调用和实际生产者。
+
+| 新增核验窗口 | RVA | 长度 | SHA256 |
+| --- | --- | --- | --- |
+| Skill._FinishBuffs | 0x30f52b0 | 800 | a140b8c4d385ae4662f0725fd8bde5d219317584fff1ad62ef3376321d426f00 |
+| _TryAttachCreatedBuffsToNextSkill | 0x5fe12b0 | 550 | d245a9411401073657f962bc930d9e52e15594797451b0aa69c0a3cb689595f4 |
+| CreateBuffAction.OnEnd | 0x373da10 | 1000 | c3fe45592188249b107548473895eca965052763c93b7a8425ca6df0c6cbe09e |
+| AbilitySystem._DetachSkillInternal | 0x5fb3240 | 4500 | 79987ed504f279d8ad655a7197d3bd8cdd89a077e595be16bae8e8bbd2d8935a |
+
+Skill.CastEnd沿用前文9000字节窗口的校验哈希；这些均为读取范围，不宣称窗口是完整方法长度。新增12项Skill专项与已有名单/动作绑定/Ability专项合计40项通过（4.687秒）；覆盖转交失败、同Skill自继承、旧UID/旧CastEnd、Unique、自然寿命和隔离。全仓最终结果记录在mechanism-flow-progress.md；tmp/mechanism_coverage_skill_attached.json仍2/111，未做现场验证。

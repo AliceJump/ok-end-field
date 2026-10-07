@@ -75,6 +75,8 @@ class NativeBuffChange(ImmutableCombatValue):
     child_of_buff: bool = False
     child_of_ability: bool = False
     passive_of_ability: bool = False
+    inherit_skill_ids: tuple[str, ...] = ()
+    finish_with_next_skill: bool = False
 
 
 @dataclass(frozen=True)
@@ -354,6 +356,10 @@ class CombatWorldState:
         self._native_buff_context: object | None = None
         self.native_abilities: dict[tuple[str, str], object] = {}
         self._native_action_abilities: dict[str, tuple[str, str]] = {}
+        self.native_skill_buffs: dict[tuple[str, str], list[str]] = {}
+        self.native_active_skills: set[tuple[str, str]] = set()
+        self._native_skill_casts: dict[tuple[str, str], str] = {}
+        self._native_confirmed_cast_ends: set[str] = set()
         self.native_skill_overrides: dict[tuple[str, int], NativeSkillOverride] = {}
         self.native_skill_slots: dict[tuple[str, int], str] = {}
         self.native_programs: dict[tuple[str, str], ActionProgram] = {}
@@ -1513,10 +1519,15 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         tuple((v.uid, v.enabled, v.passive_scope, tuple(v.passive_buffs))
                               for v in state.native_abilities.values()),
                         tuple(sorted(state._native_action_abilities.items())),
+                        tuple((key, tuple(value)) for key, value in sorted(state.native_skill_buffs.items())),
+                        tuple(sorted(state.native_active_skills)),
+                        tuple(sorted(state._native_skill_casts.items())),
+                        tuple(sorted(state._native_confirmed_cast_ends)),
                         tuple((uid, repr(passive), tuple(sorted(state._action_inputs[uid].items())))
                               for uid, passive in state.native_passives.items()),
                         tuple((v.uid, v.owner, v.key, v.source, v.expires, v.period, v.remaining,
-                               v.action_scope, v.action_finish_at, v.parent_scope, repr(v.definition),
+                               v.action_scope, v.action_finish_at, v.parent_scope, v.inherit_skill_ids,
+                               v.finish_with_next_skill, repr(v.definition),
                                tuple(sorted(state._action_inputs[v.uid].items()))) for v in state.native_buff_instances.values()),
                         tuple(sorted(state.native_timers.items())),
                         tuple(sorted((a, tuple(sorted(s.attributes.items()))) for a, s in state.characters.items())),

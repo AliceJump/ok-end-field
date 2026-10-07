@@ -43,6 +43,10 @@ def enable_ability(world, actor, skill):
 
 
 def bind_ability_scope(world, scope, program):
+    from src.data.native_skill_runtime import bind_skill_object
+
+    bind_skill_object(world, program.actor, program.key)
+    world._native_skill_casts[program.actor, program.key] = scope
     world._native_action_abilities[scope] = (program.actor, program.key)
     enable_ability(world, program.actor, program.key)
 

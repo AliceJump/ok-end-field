@@ -27,6 +27,8 @@
 
 最新续作已接入选中被动Skill的Enable期SkillData.buffs独立名单、当前BB重新挂载及_FinishPassiveBuff按UID清理，真实余烬名单诊断在此范围内关闭。全仓1284项通过，完整程序仍2/111。下一批继续定位战斗里的Skill.Disable生产者，补Skill.m_buffsDuringSkill和真实CastEnd原因/目标技能的继承释放链；普通主动Skill的附带buff、完整Enable副作用也仍未覆盖。以下属性/反应/伤害处理器缺口也继续保留；ComboCache、Curve、Interrupt、Jump、目标、投射物/场地实体、搜索完整预算及现场验证均未完成。仅阶段性提交，不删除本会话续作automation-2，不新开PR或推送master。
 
+继续新增Skill挂接名单及明确CastEnd输入下的跨技能转交。编译器保留非周期可执行实例的原始继承参数；真实弭弗comboprocess回归通过。Skill.CastEnd只清理时间线结束前复制的旧名单，不能清空新自继承实例。真实结束原因/目标/时点和目标activeSkillMap对象的生产者仍未接入，严格排轴保持诊断，覆盖仍2/111。已定位_DetachSkillInternal→Skill.Disable/Remove，下一步追上层；普通Skill.Disable名单清理仍待接入。CurveEvaluateFloat资源也已开始核验：必须区分UnityEngine.Keyframe的28字节布局与Beyond.FKeyframe的32字节布局，不能套用研究包已有FAnimationCurve合同；未验证求值算法前继续未知。
+
 1. 补属性57/58的实际默认值/生产者来源，不能把未知数据填0。
 2. 冰冻的 child buff 寿命、碎冰触发及物理伤害增量；先定位实际子buff，再执行完整归属/销毁链。
 3. 腐蚀的 AttributeModifier、RefreshBuffAttrModifierValue、独立 tick 与减抗上限；燃烧攻击快照、子buff和持续触发。

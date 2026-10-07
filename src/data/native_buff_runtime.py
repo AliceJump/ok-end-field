@@ -26,6 +26,8 @@ class NativeBuffInstance:
     action_finish_at: float | None = None
     parent_scope: str | None = None
     finishing: bool = False
+    inherit_skill_ids: tuple[str, ...] = ()
+    finish_with_next_skill: bool = False
 
 
 def _instances(world, owner, key):
@@ -99,10 +101,21 @@ def _finish(world, instance):
             instance.finishing = False
 
 
-def finish_action_buffs(world, action_id):
+def finish_action_buffs(world, action_id, *, reason=None, next_skill=None):
     for instance in tuple(world.native_buff_instances.values()):
         if instance.action_scope == action_id:
-            _finish(world, instance)
+            _end_action_buff(world, instance, reason=reason, next_skill=next_skill)
+
+
+def _end_action_buff(world, instance, *, reason=None, next_skill=None):
+    if reason == 7 and next_skill in instance.inherit_skill_ids:
+        from src.data.native_skill_runtime import attach_skill_buffs
+
+        if not instance.finish_with_next_skill or attach_skill_buffs(world, instance.source, next_skill, (instance.uid,)):
+            instance.action_scope = None
+            instance.action_finish_at = None
+            return
+    _finish(world, instance)
 
 
 def finish_parent_buffs(world, parent_uid):
@@ -157,6 +170,8 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         not math.isfinite(change.action_finish_after) or change.action_finish_after < 0
     ):
         raise UnresolvedMechanic(f"Invalid native buff action deadline: {change.key}")
+    if change.inherit_skill_ids and (change.action_finish_after is None or parent is not None or passive_root is not None):
+        raise UnresolvedMechanic(f"Skill inheritance lacks an independent action-bound instance: {change.key}")
     values = dict(definition.parameters)
     values.update({key: expression.evaluate(inputs) for key, expression in definition.inherited})
     duration = definition.duration.evaluate(values) if definition.duration is not None else None
@@ -192,6 +207,8 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         if change.action_finish_after is not None:
             instance.action_scope = action_id
             instance.action_finish_at = world.time + change.action_finish_after
+            instance.inherit_skill_ids = change.inherit_skill_ids
+            instance.finish_with_next_skill = change.finish_with_next_skill
         world.native_buff_instances[uid] = instance
         world._action_inputs[uid] = dict(values)
         world._action_inputs[uid]["cast.non_returned_sp"] = world._action_inputs.get(action_id, {}).get("cast.non_returned_sp", 0)
