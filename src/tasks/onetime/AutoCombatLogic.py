@@ -502,8 +502,6 @@ class AutoCombatLogic:
                 deadline=deadline,
             )
 
-        self._resolve_initial_wait(start_sleep)
-
         # 初始化普通战斗配置属性（排轴与普通模式共用）
         self.normal_skill_sequence = task.get_battle_config("技能释放", ["1", "2", "3"])
         self.normal_start_trigger = task.get_battle_config("启动技能点数", 2)
@@ -515,6 +513,8 @@ class AutoCombatLogic:
         # 「战技+终结技+连携+普攻填充」的可重复循环轴并接管执行；
         # 关闭时仅生成伤害降序的战技槽位列表（普通模式循环释放）。
         _damage_rotation_enabled = _skill_allowlist_enabled and task.get_battle_config(KEY_DAMAGE_ROTATION, True)
+        if _damage_rotation_enabled:
+            self._resolve_initial_wait(start_sleep)
         self.auto_rotation_enabled = _damage_rotation_enabled
         self.auto_rotation_active = False
         self.auto_rotation_sequence = []
