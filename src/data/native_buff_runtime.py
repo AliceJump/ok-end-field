@@ -24,6 +24,8 @@ class NativeBuffInstance:
     next_trigger: float | None = None
     action_scope: str | None = None
     action_finish_at: float | None = None
+    parent_scope: str | None = None
+    finishing: bool = False
 
 
 def _instances(world, owner, key):
@@ -58,11 +60,16 @@ def _schedule(world, instance, at, kind):
 def _execute(world, instance, program, payload=None, target=None):
     for key, value in program.parameters:
         world._action_inputs[instance.uid].setdefault(key, value)
-    with event_targets(world, instance.uid, target):
-        for event in program.events:
-            world._sequence += 1
-            world._execute_event(instance.uid, world._sequence, program,
-                                 replace(event, inputs=(*event.inputs, *(payload or {}).items())))
+    previous = world._native_buff_context
+    world._native_buff_context = instance
+    try:
+        with event_targets(world, instance.uid, target):
+            for event in program.events:
+                world._sequence += 1
+                world._execute_event(instance.uid, world._sequence, program,
+                                     replace(event, inputs=(*event.inputs, *(payload or {}).items())))
+    finally:
+        world._native_buff_context = previous
 
 
 def _callbacks(world, instance, event_type):
@@ -76,9 +83,20 @@ def _finish(world, instance):
         return
     # Mark as finished before callbacks so recursive removal is idempotent.
     del world.native_buff_instances[instance.uid]
+    instance.finishing = True
     world.end_native_scope(instance.uid)
     _sync(world, instance.owner, instance.key)
-    _callbacks(world, instance, 2)
+    try:
+        # MarkFinish runs OnFinish before removing the parent's children. The
+        # callback still has its root, including for children created on finish.
+        _callbacks(world, instance, 2)
+    finally:
+        try:
+            for child in tuple(world.native_buff_instances.values()):
+                if child.parent_scope == instance.uid:
+                    _finish(world, child)
+        finally:
+            instance.finishing = False
 
 
 def finish_action_buffs(world, action_id):
@@ -103,6 +121,12 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     definition = change.definition
     if definition is None:
         raise UnresolvedMechanic(f"Buff addition lacks instance definition: {change.key}")
+    parent = world._native_buff_context if change.child_of_buff else None
+    if change.child_of_buff and (parent is None or parent.uid != action_id
+                                or parent.uid not in world.native_buff_instances and not parent.finishing):
+        raise UnresolvedMechanic(f"Child buff lacks its executing Buff root: {change.key}")
+    if parent is not None and definition.stacking == 7:
+        raise UnresolvedMechanic(f"Parent-bound Unique buff needs reattachment semantics: {change.key}")
     if change.action_finish_after is not None and (
         not math.isfinite(change.action_finish_after) or change.action_finish_after < 0
     ):
@@ -111,6 +135,8 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     values.update({key: expression.evaluate(inputs) for key, expression in definition.inherited})
     duration = definition.duration.evaluate(values) if definition.duration is not None else None
     period = definition.period.evaluate(values)
+    if parent is not None and (not math.isfinite(period) or period > 0):
+        raise UnresolvedMechanic(f"Parent-bound periodic buff needs tick/end ordering: {change.key}")
     limit = definition.trigger_limit.evaluate(values)
     # Unique and Unlimited do not read maxStackCnt; stale keys may be absent.
     maximum = definition.maximum.evaluate(values) if definition.stacking == 2 else 0
@@ -133,6 +159,8 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         uid = f"buff:{world._sequence}:{owner}:{change.key}"
         expires = world.time + duration if duration is not None else None
         instance = NativeBuffInstance(uid, change.key, owner, program.actor, definition, program, expires, period, int(limit))
+        if parent is not None:
+            instance.parent_scope = parent.uid
         if change.action_finish_after is not None:
             instance.action_scope = action_id
             instance.action_finish_at = world.time + change.action_finish_after

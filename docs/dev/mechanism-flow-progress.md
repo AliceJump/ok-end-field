@@ -57,3 +57,11 @@ CombatExpression提供实际输入引用集合，CombatEvent在编译时记录�
 在校验客户端版本、metadata字段与OnEnd含外置继承分支之后，接入根时间线中非周期、无父子关系、空技能继承列表的动作绑定buff。按创建节点的正长窗口截止清理，保持原生buff自己的duration计时；切同一角色下一动作才提前取消，队友动作不取消。未绑定的父子/跨技能继承、周期同刻顺序和无明确窗口的回调仍保留缺口。完整证据及范围见[native-buff-lifetime-audit.md](native-buff-lifetime-audit.md)。
 
 原寿命缺口影响程序数59→23，但完整程序树仍2/111；不要将减少36个局部阻塞写成新增36个可计价程序。全仓1247项通过（61.972秒）；新增边界的5项专项也通过，包含正周期与零长/无窗口拒绝绑定。Ruff I/F、Python/JSON解析及差异检查通过。重新fetch后仍包含最新master e7fcb4b2，无需再次rebase。下一批仍需父对象释放链、跨技能继承，以及ComboCache等控制流执行。
+
+## Buff父对象清理与再次同步master
+
+最新master新增下载统计和去除固定战斗启动等待（#478），已无冲突rebase到5755d347。重放前6279d971另保存本地/远程backup/effect-semantics-pre-parent-buff-20261007，原cf769c81备份保留。继续仅推送机制分支，不新开PR。
+
+原生MarkFinish顺序核验后，接入Buff回调中非周期、非Unique且没有动作结束/技能继承的子实例。关系绑定到实际父UID，先执行父结束回调，再递归清理子孙实例；同名不同层独立、跨持有者不丢失关系，提前到期和旧队列不重复结算。结束回调新建的子buff同次清理，已结束的旧父根拒绝继续挂接。证据和边界见[native-buff-lifetime-audit.md](native-buff-lifetime-audit.md)。
+
+全仓1257项通过（64.761秒，包含最新master新增测试）；新增显式移除案例后8项父子专项通过，事件输入3项及Ruff I/F通过。一般寿命诊断影响程序23→22，另新增2项明确的子实例独立性诊断，完整程序覆盖仍2/111。下一步继续跨技能继承与Unique挂接原生行为核验，随后推进ComboCache/Curve等控制流；技力确认时机仍后置。

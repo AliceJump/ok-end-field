@@ -581,7 +581,9 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             action_bound = (body.get("autoFinishByAction") and not body.get("asChildBuff")
                             and not body.get("inheritSkillIdList") and not buff_path
                             and event_sequence is None and end > at)
-            if body.get("asChildBuff") or body.get("autoFinishByAction") and not action_bound:
+            child_bound = (body.get("asChildBuff") and bool(buff_path)
+                           and not body.get("autoFinishByAction") and not body.get("inheritSkillIdList"))
+            if body.get("asChildBuff") and not child_bound or body.get("autoFinishByAction") and not action_bound:
                 emit(CombatEvent(at, "unresolved_native", unresolved=("Native child/action-bound buff lifetime not yet bound",)))
             for reference in body["buffs"]:
                 buff_id = reference["buffId"]
@@ -600,6 +602,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 if eid is not None:
                     if action_bound:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Canonical buff lacks action-bound instance identity",)))
+                    if child_bound:
+                        emit(CombatEvent(at, "unresolved_native", unresolved=("Canonical buff lacks parent-bound instance identity",)))
                     emit(CombatEvent(at, "buff_created", effects=(SkillEffect(eid, count=int(count), duration=duration, target="self"),)))
                 else:
                     buff_ids.add(buff_id)
@@ -612,17 +616,24 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                         definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
                                                              attributes=attributes, panel=panel, path=buff_path)
                     bound_instance = action_bound and definition is not None
+                    parent_instance = child_bound and definition is not None and stacking["stackingType"] in {0, 2}
+                    if child_bound and not parent_instance:
+                        emit(CombatEvent(at, "unresolved_native", unresolved=("Parent-bound buff lacks independent executable instance",)))
                     period = native_number(data["triggerInterval"], parameters)
                     if bound_instance and (period is None or not math.isfinite(period) or period > 0):
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Action-bound periodic buff needs tick/end ordering",)))
                         bound_instance = False
+                    if parent_instance and (period is None or not math.isfinite(period) or period > 0):
+                        emit(CombatEvent(at, "unresolved_native", unresolved=("Parent-bound periodic buff needs tick/end ordering",)))
+                        parent_instance = False
                     target = "enemy" if body["targetSettings"]["targetSource"] in {0, 2, 6} else "self"
                     change = NativeBuffChange(buff_id, number(body["count"]),
                                               CombatExpression("literal", (duration,)) if duration is not None else None,
                                               permanent=data["lifeType"] == 1, maximum=maximum, target=target,
                                               selector=resource_target(body["targetSettings"]), definition=definition,
                                               tags=expand_tags(data["applyTags"]),
-                                              action_finish_after=end - at if bound_instance else None)
+                                              action_finish_after=end - at if bound_instance else None,
+                                              child_of_buff=bool(parent_instance))
                     if action_bound and definition is None:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Action-bound buff lacks executable instance definition",)))
                     emit(CombatEvent(at, "native_buff_created", native_buffs=(change,)))
