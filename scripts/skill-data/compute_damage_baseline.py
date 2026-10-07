@@ -561,18 +561,26 @@ def compute_character(
     # Fixed gear/attribute components are reusable by per-hit combat resolution.
     # Temporary attack bonuses apply to the white attack, without multiplying flat attack again.
     panel["damage_basis"] = {
-        "attack_white": atk_base, "attack_percent": atk_pct, "attack_flat": atk_fixed,
+        "attack_white": atk_base,
+        "attack_percent": atk_pct,
+        "attack_flat": atk_fixed,
         "attribute_factor": 1 + 0.005 * primary_total + 0.002 * secondary_total,
-        "crit_rate": crit_rate, "crit_damage": crit_dmg,
+        "crit_rate": crit_rate,
+        "crit_damage": crit_dmg,
         "amplification": {el: merged.get(f"pct_amp_{el}", 0) / 100 for el in ELEMENTS},
         "damage_bonus": {
             "all": merged.get("pct_all_damage", 0) / 100,
             "all_skill": merged.get("pct_all_skill_dmg", 0) / 100,
             **{el: merged.get(f"pct_elem_{el}", 0) / 100 for el in ELEMENTS},
-            **{tag: merged.get(f"pct_{bucket}", 0) / 100 for tag, bucket in (
-                ("normal", "normal_attack_dmg"), ("skill", "skill_dmg"),
-                ("combo", "combo_dmg"), ("ultimate", "ult_dmg"),
-            )},
+            **{
+                tag: merged.get(f"pct_{bucket}", 0) / 100
+                for tag, bucket in (
+                    ("normal", "normal_attack_dmg"),
+                    ("skill", "skill_dmg"),
+                    ("combo", "combo_dmg"),
+                    ("ultimate", "ult_dmg"),
+                )
+            },
         },
     }
 
