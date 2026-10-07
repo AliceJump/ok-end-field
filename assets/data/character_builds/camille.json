@@ -23,13 +23,13 @@
     "pieces": [
       "拓荒护服",
       "拓荒纤维手套·壹型",
-      "拓荒增量供氧栓·壹型",
-      null
+      "拓荒通信器",
+      "纾难印章"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
-    "evidence_level": 1,
-    "note": "官方仅推荐 3 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+    "source": "EndSync 社区汇总",
+    "evidence_level": 2,
+    "note": "拓荒 6/8，同四件 3/8"
   }
 }

@@ -196,6 +196,7 @@ class TestSnapshotChecks(unittest.TestCase):
                 mock.patch.object(builds, "CHAR_SKILLS_DIR", data / "character_skills"),
                 mock.patch.object(builds, "BUILD_DIR", data / "character_builds"),
                 mock.patch.object(builds, "SNAP_ROOT", snapshots),
+                mock.patch.object(builds, "CURATED_BUILDS", {}),
                 mock.patch.object(sys, "argv", ["generate_character_builds.py"]),
             ):
                 self.assertEqual(builds.main(), 0)
@@ -269,6 +270,59 @@ class TestSnapshotChecks(unittest.TestCase):
             self.assertIsNone(equip["set_off"])
             self.assertEqual(equip["pieces"], ["壤流轻甲", "壤流护手", "壤流短棍", None])
             self.assertIn("自由散件", equip["note"])
+
+    def test_curated_build_keeps_duplicate_accessory_and_validates_slots(self):
+        equipments = {
+            "壤流轻甲": {"item_id": "1429", "set": "壤流装备组", "part": "护甲"},
+            "壤流护手": {"item_id": "1214", "set": "壤流装备组", "part": "护手"},
+            "壤流短棍": {"item_id": "1428", "set": "壤流装备组", "part": "配件"},
+        }
+        cases = (
+            (["壤流轻甲", "壤流护手", "壤流短棍", "壤流短棍"], None),
+            (["壤流轻甲", "壤流短棍", "壤流护手", "壤流短棍"], "部位"),
+            (["壤流轻甲", "壤流护手", "壤流短棍", "未知配件"], "未知装备"),
+        )
+        for pieces, error in cases:
+            with self.subTest(pieces=pieces), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                data = root / "assets" / "data"
+                snapshots = root / "tools" / "wiki_catalog" / "operator_details"
+                _complete(snapshots, "20260102")
+                _write(data / "weapons.json", {})
+                _write(data / "characters.json", {})
+                _write(data / "equipments.json", equipments)
+                _write(data / "matrices.json", {})
+                _write(data / "character_skills" / "test.json", {"name": "测试", "element": "电磁"})
+                _write(snapshots / "20260102" / "catalog.json", {"data": {"catalog": []}})
+                _write(
+                    snapshots / "20260102" / "details" / "100_测试.json",
+                    {"data": {"item": {"itemId": "100", "document": {"documentMap": {}}}}},
+                )
+                with (
+                    mock.patch.object(builds, "ROOT", root),
+                    mock.patch.object(builds, "DATA_DIR", data),
+                    mock.patch.object(builds, "CHAR_SKILLS_DIR", data / "character_skills"),
+                    mock.patch.object(builds, "BUILD_DIR", data / "character_builds"),
+                    mock.patch.object(builds, "SNAP_ROOT", snapshots),
+                    mock.patch.object(builds, "CURATED_BUILDS", {"测试": (pieces, "社区汇总", "壤流 8/8")}),
+                    mock.patch.object(sys, "argv", ["generate_character_builds.py"]),
+                ):
+                    if error:
+                        with self.assertRaisesRegex(SystemExit, error):
+                            builds.main()
+                        continue
+                    self.assertEqual(builds.main(), 0)
+                equip = json.loads((data / "character_builds" / "test.json").read_text(encoding="utf-8"))["equipment"]
+                self.assertEqual(equip["pieces"], pieces)
+                self.assertEqual(equip["set_main"], "壤流装备组")
+                self.assertEqual(equip["evidence_level"], 2)
+                self.assertEqual(equip["note"], "壤流 8/8")
+
+    def test_spell_damage_clause_applies_to_four_spell_elements(self):
+        mods = baseline._parse_stat_clauses("装备者法术伤害+16%")
+        self.assertEqual({m["stat"] for m in mods}, {"elem_灼热", "elem_寒冷", "elem_电磁", "elem_自然"})
+        self.assertTrue(all(m["value"] == 16.0 for m in mods))
+        self.assertEqual(baseline._parse_stat_clauses("物理伤害+10%"), [baseline._parse_stat_clause("物理伤害+10%")])
 
     def test_baseline_defaults_to_newest_snapshot_for_secondary_stats(self):
         with tempfile.TemporaryDirectory() as tmp:
