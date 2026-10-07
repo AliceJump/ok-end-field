@@ -90,6 +90,14 @@ class TestEnemyHealthProbe(unittest.TestCase):
         rejected[29:32, 80:170] = BAR_BGR
         self.assertFalse(_has_enemy_hp_run(rejected, 1920, 1080))
 
+    def test_thin_discovery_rows_do_not_starve_later_valid_hp_bar(self):
+        roi = np.zeros((140, 400, 3), dtype=np.uint8)
+        for y in range(0, 60, 3):
+            roi[y, 20:28] = HP_BGR
+        roi[75:80, 100:150] = HP_BGR
+
+        self.assertTrue(_has_enemy_hp_run(roi, 1920, 1080))
+
     def test_short_hp_colored_vfx_without_context_is_rejected(self):
         roi = np.zeros((100, 400, 3), dtype=np.uint8)
         roi[20:25, 100:130] = HP_BGR
@@ -193,7 +201,7 @@ class TestEnemyHealthProbe(unittest.TestCase):
         self.assertTrue(any("normal_slice_0:hit:present" in box.name for box in scan_boxes))
 
         self.assertEqual(hit_color, "green")
-        self.assertTrue(hit_debug)
+        self.assertTrue(scan_debug)
         self.assertEqual(len(hit_boxes), 1)
         hit = hit_boxes[0]
         self.assertEqual((hit.x, hit.y, hit.width, hit.height), (800, 250, 120, 5))
