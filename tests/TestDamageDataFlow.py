@@ -130,6 +130,23 @@ class TestDamageDataFlow(unittest.TestCase):
         self.assertTrue(any(branch["trigger_effect_groups"] for branch in battle["branches"]))
         self.assertTrue(all(not passive["complete_semantic_review"] for row in report["characters"] for passive in row["passives"]))
 
+    def test_passive_ownership_is_separate_from_parameter_dependencies(self):
+        report = auditor.audit(self.rows)
+        self.assertEqual(report["summary"]["selected_passive_damage_rules"], 13)
+        endmin = next(row for row in report["characters"] if row["key"] == "endministrator")
+        passives = {row["effect_id"]: row for row in endmin["passives"]}
+        talent = passives["chr_9000_endmin_talent_1_2"]
+        potential = passives["chr_9000_endmin_potential_2"]
+        self.assertEqual([rule["recipient"] for rule in talent["damage_rules"]], ["self"])
+        self.assertEqual([rule["recipient"] for rule in potential["damage_rules"]], ["other_allies"])
+        self.assertEqual(talent["runtime_rule_parameter_references"],
+                         ["chr_9000_endmin_potential_2:attack"])
+        self.assertEqual(potential["placement"], "runtime_rules")
+        xaihi = next(row for row in report["characters"] if row["key"] == "xaihi")
+        adjustment = next(row for row in xaihi["passives"] if row["effect_id"] == "chr_0011_seraph_potential_5")
+        self.assertEqual(adjustment["placement"], "skill_rule_parameters")
+        self.assertEqual(len(adjustment["skill_rule_references"]), 2)
+
     def test_first_team_base_quotes_exclude_replacement_and_conditional_damage(self):
         cases = (("mi_fu", "战技", 1.5), ("camille", "战技", 2.0), ("camille", "连携技", 3.0),
                  ("pogranichnik", "连携技", .95), ("pogranichnik", "终结技", 3.0))

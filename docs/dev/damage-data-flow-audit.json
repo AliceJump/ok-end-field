@@ -158,6 +158,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -169,6 +170,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -180,6 +182,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -191,6 +194,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -202,6 +206,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -213,6 +218,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -224,6 +230,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -408,6 +415,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -419,6 +427,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -430,6 +439,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -441,6 +451,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -452,6 +463,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -463,6 +475,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -474,6 +487,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -860,6 +874,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -871,6 +886,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -878,10 +894,22 @@
           "name": "术法天分",
           "rank": 1,
           "source": "CharacterPotentialTable/chr_0023_antal/potentialUnlockBundle/0",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "skill_rule_parameters",
           "native_modifier_count": 1,
           "damage_rules": [],
-          "skill_rule_references": [],
+          "skill_rule_references": [
+            {
+              "skill_id": "antal_ultimate",
+              "origin": "base",
+              "key": "antal_ultimate:BUFF_ELECTROMAGNETIC_UP"
+            },
+            {
+              "skill_id": "antal_ultimate",
+              "origin": "base",
+              "key": "antal_ultimate:BUFF_BURN_UP"
+            }
+          ],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -893,6 +921,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -904,6 +933,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -915,6 +945,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -926,6 +957,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -1347,6 +1379,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -1358,6 +1391,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -1554,10 +1588,53 @@
           "name": "荒野游人",
           "rank": 2,
           "source": "CharGrowthTable/chr_0007_ikut/talentNodeMap/chr_0007_ikut_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 4,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0007_ikut_talent_1_2",
+              "key": "chr_0007_ikut_talent_1_2:damage_bonus",
+              "bucket": "damage_bonus",
+              "elements": [
+                "电磁"
+              ],
+              "damage_tags": [],
+              "recipient": "team",
+              "trigger": "third_battle_extra_effect",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.0,
+                "terms": [
+                  {
+                    "input": "source.智识",
+                    "coefficient": 0.0010399999355804185,
+                    "cap": null
+                  }
+                ],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0007_ikut/talentNodeMap/chr_0007_ikut_passive_skill_0_2/parameters/pulse_up",
+                "CharGrowthTable/chr_0007_ikut/talentNodeMap/chr_0007_ikut_passive_skill_0_2/parameters/duration",
+                "CharacterPotentialTable/chr_0007_ikut/potentialUnlockBundle/2/parameters/pulse_up"
+              ],
+              "required_inputs": [
+                "source.智识"
+              ],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -1569,6 +1646,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -1580,6 +1658,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -1591,6 +1670,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -1602,6 +1682,9 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [
+            "chr_0007_ikut_talent_1_2:damage_bonus"
+          ],
           "complete_semantic_review": false
         },
         {
@@ -1613,6 +1696,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -1624,6 +1708,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -1861,6 +1946,7 @@
           "native_modifier_count": 6,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -1872,6 +1958,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -2036,6 +2123,7 @@
           "native_modifier_count": 4,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2043,10 +2131,44 @@
           "name": "委婉手段",
           "rank": 2,
           "source": "CharGrowthTable/chr_0012_avywen/talentNodeMap/chr_0012_avywen_passive_skill_1_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 2,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0012_avywen_talent_2_2",
+              "key": "chr_0012_avywen_talent_2_2:vulnerability",
+              "bucket": "vulnerability",
+              "elements": [
+                "电磁"
+              ],
+              "damage_tags": [],
+              "recipient": "enemy",
+              "trigger": "ultimate_hit",
+              "duration": 10.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.10000000149011612,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0012_avywen/talentNodeMap/chr_0012_avywen_passive_skill_1_2/parameters/pulse_vul_rate",
+                "CharGrowthTable/chr_0012_avywen/talentNodeMap/chr_0012_avywen_passive_skill_1_2/parameters/pulse_vul_duration"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2058,6 +2180,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2069,6 +2192,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2080,6 +2204,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2091,6 +2216,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2102,6 +2228,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -2441,6 +2568,7 @@
           "native_modifier_count": 8,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2452,6 +2580,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -2612,6 +2741,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2623,6 +2753,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2634,6 +2765,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2645,6 +2777,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2656,6 +2789,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2667,6 +2801,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2678,6 +2813,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -2838,6 +2974,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2849,6 +2986,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2860,6 +2998,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2871,6 +3010,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2882,6 +3022,7 @@
           "native_modifier_count": 4,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2893,6 +3034,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -2904,6 +3046,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -3064,6 +3207,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3075,6 +3219,7 @@
           "native_modifier_count": 4,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3086,6 +3231,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3097,6 +3243,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3108,6 +3255,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3119,6 +3267,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3130,6 +3279,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -3350,6 +3500,7 @@
           "native_modifier_count": 4,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3361,6 +3512,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -3563,10 +3715,46 @@
           "name": "本质瓦解",
           "rank": 2,
           "source": "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_9000_endmin_talent_1_2",
+              "key": "chr_9000_endmin_talent_1_2:attack",
+              "bucket": "attack",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "originium_crystal_consumed",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.30000001192092896,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/atk_up",
+                "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/duration"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [
+            "chr_9000_endmin_potential_2:attack"
+          ],
           "complete_semantic_review": false
         },
         {
@@ -3574,10 +3762,47 @@
           "name": "现实静滞",
           "rank": 2,
           "source": "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_1_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_9000_endmin_talent_2_2",
+              "key": "chr_9000_endmin_talent_2_2:damage_taken",
+              "bucket": "damage_taken",
+              "elements": [
+                "物理"
+              ],
+              "damage_tags": [],
+              "recipient": "enemy",
+              "trigger": "crystal_attached",
+              "duration": null,
+              "duration_input": null,
+              "permanent": true,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [
+                "enemy.has_crystal"
+              ],
+              "magnitude": {
+                "base": 0.20000000298023224,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_1_2/parameters/dmg"
+              ],
+              "required_inputs": [
+                "enemy.has_crystal"
+              ],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3589,6 +3814,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3596,10 +3822,45 @@
           "name": "权能映射",
           "rank": 2,
           "source": "CharacterPotentialTable/chr_9000_endmin/potentialUnlockBundle/1",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_9000_endmin_potential_2",
+              "key": "chr_9000_endmin_potential_2:attack",
+              "bucket": "attack",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [],
+              "recipient": "other_allies",
+              "trigger": "originium_crystal_consumed",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.15000000596046448,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/atk_up",
+                "CharacterPotentialTable/chr_9000_endmin/potentialUnlockBundle/1/parameters/ratio",
+                "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/duration"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3611,6 +3872,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -3826,6 +4088,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3837,6 +4100,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3844,10 +4108,17 @@
           "name": "习惯性延误",
           "rank": 1,
           "source": "CharacterPotentialTable/chr_0021_whiten/potentialUnlockBundle/0",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "skill_rule_parameters",
           "native_modifier_count": 2,
           "damage_rules": [],
-          "skill_rule_references": [],
+          "skill_rule_references": [
+            {
+              "skill_id": "estella_link",
+              "origin": "冻结状态额外伤害+物理脆弱",
+              "key": "estella_link:VULN_PHYSICAL"
+            }
+          ],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3859,6 +4130,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3870,6 +4142,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3881,6 +4154,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -3892,6 +4166,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -4094,10 +4369,47 @@
           "name": "落井下石爱好者",
           "rank": 2,
           "source": "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0022_bounda_talent_1_2",
+              "key": "chr_0022_bounda_talent_1_2:damage_bonus",
+              "bucket": "damage_bonus",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "battle_start",
+              "duration": null,
+              "duration_input": null,
+              "permanent": true,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [
+                "enemy.slowed"
+              ],
+              "magnitude": {
+                "base": 0.20000000298023224,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_0_2/parameters/dmg_up"
+              ],
+              "required_inputs": [
+                "enemy.slowed"
+              ],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4105,10 +4417,44 @@
           "name": "捉摸不定",
           "rank": 2,
           "source": "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_1_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0022_bounda_talent_2_2",
+              "key": "chr_0022_bounda_talent_2_2:attack",
+              "bucket": "attack",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "spell_damage_immunity_succeeded",
+              "duration": 10.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.20000000298023224,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_1_2/parameters/atk_up",
+                "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_1_2/parameters/duration"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4120,6 +4466,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4131,6 +4478,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4142,6 +4490,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4153,6 +4502,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4164,6 +4514,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -4451,6 +4802,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4462,6 +4814,7 @@
           "native_modifier_count": 4,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -4666,6 +5019,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4677,6 +5031,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -4895,10 +5250,17 @@
           "name": "低温症",
           "rank": 2,
           "source": "CharGrowthTable/chr_0026_lastrite/talentNodeMap/chr_0026_lastrite_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "skill_rule_parameters",
           "native_modifier_count": 1,
           "damage_rules": [],
-          "skill_rule_references": [],
+          "skill_rule_references": [
+            {
+              "skill_id": "last_rite_skill",
+              "origin": "寒冷脆弱",
+              "key": "last_rite_skill:VULN_COLD"
+            }
+          ],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -4910,6 +5272,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -5138,6 +5501,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -5149,6 +5513,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -5457,6 +5822,7 @@
           "native_modifier_count": 8,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -5468,6 +5834,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -5805,6 +6172,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -5816,6 +6184,7 @@
           "native_modifier_count": 4,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -5960,10 +6329,47 @@
           "name": "歼灭协议",
           "rank": 2,
           "source": "CharGrowthTable/chr_0004_pelica/talentNodeMap/chr_0004_pelica_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0004_pelica_talent_1_2",
+              "key": "chr_0004_pelica_talent_1_2:damage_bonus",
+              "bucket": "damage_bonus",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "battle_start",
+              "duration": null,
+              "duration_input": null,
+              "permanent": true,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [
+                "enemy.staggered"
+              ],
+              "magnitude": {
+                "base": 0.30000001192092896,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0004_pelica/talentNodeMap/chr_0004_pelica_passive_skill_0_2/parameters/dmg"
+              ],
+              "required_inputs": [
+                "enemy.staggered"
+              ],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -5975,6 +6381,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -5986,6 +6393,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -5997,6 +6405,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6008,6 +6417,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6019,6 +6429,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6030,6 +6441,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -6364,10 +6776,44 @@
           "name": "活着的旗帜",
           "rank": 2,
           "source": "CharGrowthTable/chr_0029_pograni/talentNodeMap/chr_0029_pograni_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0029_pograni_talent_1_2",
+              "key": "chr_0029_pograni_talent_1_2:attack",
+              "bucket": "attack",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "own_skill_recovery_threshold_80",
+              "duration": 20.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 3,
+              "stack_policy": "independent",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.07999999821186066,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0029_pograni/talentNodeMap/chr_0029_pograni_passive_skill_0_2/parameters/atk_up",
+                "CharGrowthTable/chr_0029_pograni/talentNodeMap/chr_0029_pograni_passive_skill_0_2/parameters/duration"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6379,6 +6825,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -6577,6 +7024,7 @@
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6588,6 +7036,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6599,6 +7048,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6610,6 +7060,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6621,6 +7072,7 @@
           "native_modifier_count": 5,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6632,6 +7084,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6639,10 +7092,17 @@
           "name": "薪火般炽热",
           "rank": 5,
           "source": "CharacterPotentialTable/chr_0038_purrche/potentialUnlockBundle/4",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "skill_rule_parameters",
           "native_modifier_count": 2,
           "damage_rules": [],
-          "skill_rule_references": [],
+          "skill_rule_references": [
+            {
+              "skill_id": "purrchena_ultimate",
+              "origin": "base",
+              "key": "purrchena_ultimate:VULN_ALL"
+            }
+          ],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -6905,10 +7365,45 @@
           "name": "斫痕",
           "rank": 2,
           "source": "CharGrowthTable/chr_0028_wulfa/talentNodeMap/chr_0028_wulfa_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 4,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0028_wulfa_talent_1_2",
+              "key": "chr_0028_wulfa_talent_1_2:damage_taken",
+              "bucket": "damage_taken",
+              "elements": [
+                "物理",
+                "灼热"
+              ],
+              "damage_tags": [],
+              "recipient": "enemy",
+              "trigger": "claw_mark_applied",
+              "duration": 25.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.11999999731779099,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0028_wulfa/talentNodeMap/chr_0028_wulfa_passive_skill_0_2/parameters/damage_up",
+                "CharGrowthTable/chr_0028_wulfa/talentNodeMap/chr_0028_wulfa_passive_skill_0_2/parameters/duration_bleed"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -6920,6 +7415,7 @@
           "native_modifier_count": 5,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -7080,6 +7576,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7091,6 +7588,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7102,6 +7600,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7113,6 +7612,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7124,6 +7624,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7135,6 +7636,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7146,6 +7648,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -7391,6 +7894,7 @@
           "native_modifier_count": 5,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7402,6 +7906,7 @@
           "native_modifier_count": 4,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -7640,6 +8145,7 @@
           "native_modifier_count": 6,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7651,6 +8157,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -7853,10 +8360,44 @@
           "name": "灼热獠牙",
           "rank": 2,
           "source": "CharGrowthTable/chr_0006_wolfgd/talentNodeMap/chr_0006_wolfgd_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0006_wolfgd_talent_1_2",
+              "key": "chr_0006_wolfgd_talent_1_2:damage_bonus",
+              "bucket": "damage_bonus",
+              "elements": [
+                "灼热"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "burning_applied",
+              "duration": 10.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.30000001192092896,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0006_wolfgd/talentNodeMap/chr_0006_wolfgd_passive_skill_0_2/parameters/add",
+                "CharGrowthTable/chr_0006_wolfgd/talentNodeMap/chr_0006_wolfgd_passive_skill_0_2/parameters/duration"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7868,6 +8409,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7879,6 +8421,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7890,6 +8433,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7901,6 +8445,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7912,6 +8457,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -7923,6 +8469,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -8213,10 +8760,44 @@
           "name": "启动进程",
           "rank": 2,
           "source": "CharGrowthTable/chr_0011_seraph/talentNodeMap/chr_0011_seraph_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 3,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0011_seraph_talent_1_2",
+              "key": "chr_0011_seraph_talent_1_2:damage_taken",
+              "bucket": "damage_taken",
+              "elements": [
+                "寒冷"
+              ],
+              "damage_tags": [],
+              "recipient": "enemy",
+              "trigger": "combo_hit_cold_attached_or_frozen",
+              "duration": 5.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.10000000149011612,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0011_seraph/talentNodeMap/chr_0011_seraph_passive_skill_0_2/parameters/cryst_up",
+                "CharGrowthTable/chr_0011_seraph/talentNodeMap/chr_0011_seraph_passive_skill_0_2/parameters/duration"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -8228,6 +8809,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -8235,10 +8817,17 @@
           "name": "敏捷实践",
           "rank": 1,
           "source": "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/0",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "skill_rule_parameters",
           "native_modifier_count": 1,
           "damage_rules": [],
-          "skill_rule_references": [],
+          "skill_rule_references": [
+            {
+              "skill_id": "xaihi_skill",
+              "origin": "满血转法术增幅",
+              "key": "xaihi_skill:BUFF_SPELL_UP"
+            }
+          ],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -8250,6 +8839,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -8261,6 +8851,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -8272,6 +8863,7 @@
           "native_modifier_count": 2,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -8279,10 +8871,22 @@
           "name": "可控递归",
           "rank": 5,
           "source": "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "skill_rule_parameters",
           "native_modifier_count": 3,
           "damage_rules": [],
-          "skill_rule_references": [],
+          "skill_rule_references": [
+            {
+              "skill_id": "xaihi_ultimate",
+              "origin": "base",
+              "key": "xaihi_ultimate:BUFF_COLD_UP"
+            },
+            {
+              "skill_id": "xaihi_ultimate",
+              "origin": "base",
+              "key": "xaihi_ultimate:BUFF_NATURAL_UP"
+            }
+          ],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -8593,6 +9197,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -8604,6 +9209,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -8850,10 +9456,53 @@
           "name": "天地造化",
           "rank": 2,
           "source": "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0030_zhuangfy_talent_1_2",
+              "key": "chr_0030_zhuangfy_talent_1_2:amplification",
+              "bucket": "amplification",
+              "elements": [
+                "电磁"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "battle_cast",
+              "duration": 5.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "hit",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.18000000715255737,
+                "terms": [
+                  {
+                    "input": "source.battle_lightning_hits",
+                    "coefficient": 0.019999999552965164,
+                    "cap": null
+                  }
+                ],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2/parameters/base_rate",
+                "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2/parameters/enhance_rate",
+                "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2/parameters/duration"
+              ],
+              "required_inputs": [
+                "source.battle_lightning_hits"
+              ],
+              "unresolved": null,
+              "producer_status": "not_verified_by_this_audit"
+            }
+          ],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         },
         {
@@ -8865,6 +9514,7 @@
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
+          "runtime_rule_parameter_references": [],
           "complete_semantic_review": false
         }
       ],
@@ -8876,6 +9526,7 @@
     "skills": 128,
     "replay_verified_quotes": 128,
     "skill_damage_rules": 33,
+    "selected_passive_damage_rules": 13,
     "skills_with_reviewed_row_membership": 16,
     "skills_with_structural_data_gaps": 0,
     "skills_pending_semantic_review": 128,

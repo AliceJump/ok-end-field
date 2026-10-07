@@ -158,13 +158,20 @@ def audit(rows=None):
                 "full_skill_execution": "not_assessed; see mechanism coverage audit",
             })
         for passive in (*character.progression.talents, *character.progression.active_potentials):
+            # Ownership comes from the selected passive's bindings. Parameter
+            # provenance may point to another passive (e.g. Endmin P2 reads T1).
+            owned_keys = {binding["key"] for binding in passive.damage_modifier_bindings}
+            parameter_prefix = passive.source + "/parameters/"
             bound = [rule_record(spec, passive.effect_id) for spec in character.progression.damage_modifiers
-                     if any(passive.effect_id in source for source in spec.sources)]
+                     if spec.key in owned_keys]
+            dependencies = [spec.key for spec in character.progression.damage_modifiers
+                            if spec.key not in owned_keys and
+                            any(source.startswith(parameter_prefix) for source in spec.sources)]
             adjustments = []
             for unit in entry["skills"]:
                 candidates = [*unit["damage_rules"], *(rule for branch in unit["branches"] for rule in branch["damage_rules"])]
                 adjustments.extend({"skill_id": unit["skill_id"], "origin": rule["origin"], "key": rule["key"]}
-                                   for rule in candidates if any(passive.effect_id in source for source in rule["sources"]))
+                                   for rule in candidates if any(source.startswith(parameter_prefix) for source in rule["sources"]))
             entry["passives"].append({"effect_id": passive.effect_id, "name": passive.name,
                                       "rank": passive.level, "source": passive.source,
                                       "placement": "fixed_panel" if passive.effect_id in fixed else
@@ -172,10 +179,12 @@ def audit(rows=None):
                                       "not_classified_as_damage_by_this_audit",
                                       "native_modifier_count": len(passive.modifiers), "damage_rules": bound,
                                       "skill_rule_references": adjustments,
+                                      "runtime_rule_parameter_references": dependencies,
                                       "complete_semantic_review": False})
         report["characters"].append(entry)
     report["summary"] = {"characters": len(rows), "skills": total, "replay_verified_quotes": verified,
                          "skill_damage_rules": rules_total,
+                         "selected_passive_damage_rules": sum(len(passive["damage_rules"]) for row in report["characters"] for passive in row["passives"]),
                          "skills_with_reviewed_row_membership": sum(bool(skill["row_semantics"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_with_structural_data_gaps": sum(bool(skill["data_gaps"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_pending_semantic_review": sum(bool(skill["pending_semantic_checks"]) for row in report["characters"] for skill in row["skills"]),
