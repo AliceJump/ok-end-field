@@ -68,10 +68,28 @@ class TestParseEquip(unittest.TestCase):
         self.assertIsNotNone(parsed)
         self.assertIsNone(parsed["armor_id"])
 
-    def test_generator_uses_first_complete_card_without_deduplicating_accessories(self):
+    def test_generator_skips_invalid_first_card_and_keeps_duplicate_accessories(self):
         equipments = {
+            "错误来源": {
+                "item_id": "9000",
+                "part": "配件",
+                "recommended_loadouts": [
+                    {
+                        "operator_id": "2116",
+                        "armor_id": "9001",
+                        "gloves_id": "9002",
+                        "accessory_1_id": "9003",
+                        "accessory_2_id": "9004",
+                    }
+                ],
+            },
+            "错误护甲": {"item_id": "9001", "part": "护手"},
+            "错误护手": {"item_id": "9002", "part": "护甲"},
+            "错误配件一": {"item_id": "9003", "part": "配件"},
+            "错误配件二": {"item_id": "9004", "part": "配件"},
             "险关手甲": {
                 "item_id": "2335",
+                "part": "护手",
                 "recommended_loadouts": [
                     {
                         "operator_id": "2116",
@@ -82,28 +100,18 @@ class TestParseEquip(unittest.TestCase):
                     }
                 ],
             },
-            "险关通信器": {
-                "item_id": "2336",
-                "recommended_loadouts": [
-                    {
-                        "operator_id": "2116",
-                        "armor_id": "9991",
-                        "gloves_id": "9992",
-                        "accessory_1_id": "9993",
-                        "accessory_2_id": "9994",
-                    }
-                ],
-            },
+            "险关装甲": {"item_id": "2334", "part": "护甲"},
+            "险关通信器": {"item_id": "2336", "part": "配件"},
         }
         id_to_name = {
             "2116": "提弗洛斯",
+            "9001": "错误护甲",
+            "9002": "错误护手",
+            "9003": "错误配件一",
+            "9004": "错误配件二",
             "2334": "险关装甲",
             "2335": "险关手甲",
             "2336": "险关通信器",
-            "9991": "后续护甲",
-            "9992": "后续护手",
-            "9993": "后续配件一",
-            "9994": "后续配件二",
         }
         self.assertEqual(
             builds.collect_official_loadouts(equipments, id_to_name),
