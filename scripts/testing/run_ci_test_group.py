@@ -98,6 +98,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         "Combat runtime decisions",
         (
             "TestAutoCombat.py",
+            "TestCombatStartupWait.py",
             "TestCombatDecisionTrace.py",
             "TestExpectedSkillBarProbe.py",
             "TestRecommendSkillDetector.py",
