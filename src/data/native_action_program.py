@@ -148,12 +148,19 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         if source == 3:
             selector = value["selectorData"]
             finder = selector["finderData"]
-            if finder is None or selector["validatorData"] or selector["postProcessorData"]:
+            if finder is None or selector["postProcessorData"]:
                 raise UnresolvedMechanic(f"Native target filters require binding: {profile.skill_id}")
-            choices = {"Selector+CharacterTeamFinder+Data": "squad", "Selector+MainTargetFinder+Data": "main_target",
+            name = finder["$type"].rsplit(".", 1)[-1]
+            validators = selector["validatorData"]
+            if validators:
+                if (name == "Selector+CharacterTeamFinder+Data" and len(validators) == 1
+                        and validators[0]["$type"].endswith(".Selector+MainCharacterValidator+Data")
+                        and not validators[0]["$value"]):
+                    return NativeTarget("squad_main")
+                raise UnresolvedMechanic(f"Native target filters require binding: {profile.skill_id}")
+            choices = {"Selector+CharacterTeamFinder+Data": "living_squad", "Selector+MainTargetFinder+Data": "main_target",
                        "Selector+SourceFinder+Data": "source", "Selector+AllEnemyFinder+Data": "enemy",
                        "Selector+HitBoxFinder+Data": "enemy"}
-            name = finder["$type"].rsplit(".", 1)[-1]
             if name not in choices:
                 raise UnresolvedMechanic(f"Native finder requires binding: {profile.skill_id}/{name}")
             return NativeTarget(choices[name])
@@ -346,16 +353,12 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             events.append(replace(event, condition=guard))
 
         if name == "FindTargetAction+FindTargetActionData":
-            selector = body["selectorData"]
-            finder = selector["finderData"]
-            if finder is None or finder["$type"].rsplit(".", 1)[-1] not in {
-                "Selector+HitBoxFinder+Data", "Selector+AllEnemyFinder+Data", "Selector+MainTargetFinder+Data",
-                "Selector+CharacterTeamFinder+Data", "Selector+SourceFinder+Data",
-            } or selector["validatorData"] or selector["postProcessorData"]:
-                raise UnresolvedMechanic(f"Native target filtering: {profile.skill_id}/{body['targetGroupKey']}")
+            try:
+                choice = resource_target({"targetSource": 3, "selectorData": body["selectorData"]})
+            except UnresolvedMechanic as error:
+                raise UnresolvedMechanic(f"Native target filtering: {profile.skill_id}/{body['targetGroupKey']}") from error
             # The declared scenario has one live stationary enemy inside these
             # hit boxes. Entity/team/buff-filtered selectors need separate counts.
-            choice = resource_target({"targetSource": 3, "selectorData": selector})
             emit(CombatEvent(at, "native_target", target_bindings=(NativeTargetBinding(body["targetGroupKey"], (choice,)),)))
         elif name == "ConvertToTargetContext+Data":
             if body["operationType"] != 0 or body["excludeTarget"] != 0:

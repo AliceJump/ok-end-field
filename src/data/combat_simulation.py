@@ -823,6 +823,9 @@ class CombatWorldState:
             return (self.main_control,) if self.main_control else ()
         if selector.kind == "squad":
             return tuple(self.characters)
+        if selector.kind in {"living_squad", "squad_main"}:
+            return tuple(actor for actor, state in self.characters.items()
+                         if state.alive and (selector.kind == "living_squad" or actor == self.main_control))
         if selector.kind == "action_target":
             return self._action_targets.get(action_id, {}).get("current", (program.enemy,))
         if selector.kind in {"main_target", "enemy"}:
