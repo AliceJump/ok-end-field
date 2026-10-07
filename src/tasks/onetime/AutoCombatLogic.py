@@ -21,7 +21,7 @@ from src.data.skill_rotation import (
     rotate_auto_rotation_for_current,
 )
 from src.image.recommend_skill_detector import get_recommend_skill_detector
-from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
+from src.tasks.onetime.ImmediateTimedCombatLogic import ImmediateTimedCombatLogic as TimedCombatLogic
 
 
 class _TaskProbe:
@@ -117,11 +117,11 @@ class AutoCombatLogic:
         return False
 
     def _resolve_initial_wait(self, start_sleep: float | None) -> float:
-        """Resolve the configured pre-action delay for this combat.
+        """Resolve the legacy startup-delay input for call compatibility.
 
-        Timing mode only replaces combat strategy. The initial wait remains a
-        battle setting. When protocol-only mode is enabled, ordinary battles
-        skip the delay while protocol space keeps the configured value.
+        Battle readiness is now state-driven by ``in_combat(required_yellow=1)``.
+        The returned value is retained only for callers/tests that still pass the
+        historical argument; runtime combat paths no longer block on it.
         """
         task = self.task
         value = start_sleep if start_sleep is not None else task.get_battle_config(KEY_BATTLE_INITIAL_WAIT, 3)
@@ -136,10 +136,7 @@ class AutoCombatLogic:
             return wait_seconds
 
         if self._try_detect_protocol_space():
-            task.log_info(f"协议空间初始等待启用：按配置等待 {wait_seconds:g}s")
             return wait_seconds
-
-        task.log_info("仅协议空间启用初始等待：当前未判定为协议空间，跳过初始等待")
         return 0.0
 
     def _align_auto_rotation_to_current(self, task, sequence: list[str]) -> list[str]:
@@ -469,7 +466,7 @@ class AutoCombatLogic:
     def run(self, start_sleep: float | None = None, no_battle: bool = False, deadline: float | None = None):
         self._last_exit_check_time = 0
         self._exit_check_interval = 0.5
-        self._last_team_detect_time = 0
+        self._last_team_detect_time = -self._TEAM_DETECT_INTERVAL
         self._team_detect_attempts = 0
         task = self.task
         task._battle_team = None
@@ -488,7 +485,6 @@ class AutoCombatLogic:
         # 已确认进入战斗，记录进入时刻（用于“秒退”判定）
         combat_enter_time = task.active_time()
         self.protocol_space_detected = False
-        effective_start_sleep = self._resolve_initial_wait(start_sleep)
 
         # 非战斗 → 战斗 转换时复位推荐技能检测器，每场战斗仅一次：
         # 上一场结束时可能残留 active 标签（战斗外不调用 detect，不会自复位），
@@ -501,7 +497,7 @@ class AutoCombatLogic:
 
         if task.get_battle_config(KEY_TIMING_ROTATION, False):
             return TimedCombatLogic(task).run(
-                start_sleep=effective_start_sleep,
+                start_sleep=start_sleep,
                 no_battle=no_battle,
                 deadline=deadline,
             )
@@ -517,6 +513,8 @@ class AutoCombatLogic:
         # 「战技+终结技+连携+普攻填充」的可重复循环轴并接管执行；
         # 关闭时仅生成伤害降序的战技槽位列表（普通模式循环释放）。
         _damage_rotation_enabled = _skill_allowlist_enabled and task.get_battle_config(KEY_DAMAGE_ROTATION, True)
+        if _damage_rotation_enabled:
+            self._resolve_initial_wait(start_sleep)
         self.auto_rotation_enabled = _damage_rotation_enabled
         self.auto_rotation_active = False
         self.auto_rotation_sequence = []
@@ -575,39 +573,8 @@ class AutoCombatLogic:
             self._normal_attack_hold_enabled = True
             self._sync_normal_attack_hold()
 
-            # 初始等待期间持续尝试识别队伍，识别出就不再识别
-            _target_sleep = effective_start_sleep
-            _sleep_end = task.active_time() + _target_sleep
-            while task.active_time() < _sleep_end:
-                # 已识别出队伍则跳出等待
-                if getattr(task, "_battle_team", None):
-                    break
-                # 等待窗口内顺带检测协议空间特征（进入动画期间可能延迟出现，
-                # 多轮尝试提高命中率；命中一次即不再检测）
-                if _damage_rotation_enabled:
-                    self._try_detect_protocol_space()
-                # 尝试识别
-                if _skill_allowlist_enabled:
-                    try:
-                        team, stable = task.detect_team_stable(deadline=_sleep_end)
-                        if stable and team and any(m != "?" for m in team):
-                            skill_sequence = self._build_team_skill_sequence(task, team, _damage_rotation_enabled)
-                            task._battle_team, self.normal_skill_sequence = team, skill_sequence
-                            task.log_info(f"初始等待期间识别到队伍: {team}")
-                            task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")
-                            break
-                    except Exception as exc:
-                        task._battle_team = None
-                        self.auto_rotation_active = False
-                        task.log_info(f"队伍识别或自动技能列表生成失败: {exc}")
-                retry_delay = min(0.2, _sleep_end - task.active_time())
-                if retry_delay > 0:
-                    task.sleep(retry_delay)
-
-            # 剩余等待时间
-            remaining = _sleep_end - task.active_time()
-            if remaining > 0:
-                task.sleep(remaining)
+            # 战斗已由 required_yellow=1 的血条门控确认，不再做固定开场等待。
+            # 队伍与协议空间识别由下方主循环立即尝试并按间隔重试。
 
         try:
             while True:

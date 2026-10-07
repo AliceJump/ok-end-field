@@ -516,7 +516,7 @@ class TestInitialBattleWait(unittest.TestCase):
         self.assertFalse(logic.protocol_space_detected)
 
     @patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic")
-    def test_timing_mode_receives_resolved_configured_wait(self, timed_logic):
+    def test_timing_mode_ignores_configured_initial_wait(self, timed_logic):
         from tests.TestConditionalRotation import _FakeTask
 
         task = _FakeTask(
@@ -530,13 +530,13 @@ class TestInitialBattleWait(unittest.TestCase):
 
         self.assertTrue(AutoCombatLogic(task).run())
         timed_logic.return_value.run.assert_called_once_with(
-            start_sleep=3.5,
+            start_sleep=None,
             no_battle=False,
             deadline=None,
         )
 
     @patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic")
-    def test_timing_mode_protocol_only_wait_skips_non_protocol_combat(self, timed_logic):
+    def test_timing_mode_ignores_protocol_only_initial_wait(self, timed_logic):
         from tests.TestConditionalRotation import _FakeTask
 
         task = _FakeTask(
@@ -552,7 +552,7 @@ class TestInitialBattleWait(unittest.TestCase):
 
         self.assertTrue(AutoCombatLogic(task).run())
         timed_logic.return_value.run.assert_called_once_with(
-            start_sleep=0.0,
+            start_sleep=None,
             no_battle=False,
             deadline=None,
         )
