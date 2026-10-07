@@ -67,8 +67,28 @@ class TestEnemyHealthProbe(unittest.TestCase):
 
     def test_long_hp_run_skips_secondary_context_at_1080p(self):
         roi = np.zeros((100, 400, 3), dtype=np.uint8)
-        roi[20:25, 100:140] = HP_BGR
+        roi[20:25, 100:150] = HP_BGR
         self.assertTrue(_has_enemy_hp_run(roi, 1920, 1080))
+
+    def test_direct_threshold_tracks_candidate_height(self):
+        needs_context = np.zeros((100, 400, 3), dtype=np.uint8)
+        needs_context[21:26, 100:149] = HP_BGR
+        self.assertFalse(_has_enemy_hp_run(needs_context, 1920, 1080))
+
+        direct = np.zeros((100, 400, 3), dtype=np.uint8)
+        direct[21:26, 100:150] = HP_BGR
+        self.assertTrue(_has_enemy_hp_run(direct, 1920, 1080))
+
+    def test_reject_threshold_tracks_candidate_height(self):
+        accepted = np.zeros((100, 400, 3), dtype=np.uint8)
+        accepted[21:25, 100:108] = HP_BGR
+        accepted[29:32, 80:170] = BAR_BGR
+        self.assertTrue(_has_enemy_hp_run(accepted, 1920, 1080))
+
+        rejected = np.zeros((100, 400, 3), dtype=np.uint8)
+        rejected[21:25, 100:107] = HP_BGR
+        rejected[29:32, 80:170] = BAR_BGR
+        self.assertFalse(_has_enemy_hp_run(rejected, 1920, 1080))
 
     def test_short_hp_colored_vfx_without_context_is_rejected(self):
         roi = np.zeros((100, 400, 3), dtype=np.uint8)
