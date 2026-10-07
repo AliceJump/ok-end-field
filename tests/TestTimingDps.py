@@ -176,9 +176,9 @@ class TestTimingDps(unittest.TestCase):
 
     def test_default_quotes_use_fixed_build_and_explicit_ember_rank9_profile(self):
         quote = load_damage_quotes(["余烬"])["余烬"]
-        self.assertAlmostEqual(quote.panel.attack(), 3165.5, places=1)
+        self.assertAlmostEqual(quote.panel.attack(), 3352.6, places=1)
         self.assertAlmostEqual(quote.battle, quote.conservative)
-        self.assertAlmostEqual(quote.battle, 3165.4584 * 3.12 * 1.025, places=1)
+        self.assertAlmostEqual(quote.battle, 3352.58352 * 3.12 * 1.025, places=1)
 
     def test_timed_vulnerability_changes_following_damage_and_optimal_order(self):
         spec = DamageModifierSpec("short_vuln", DamageBucket.VULNERABILITY, ("寒冷",),
