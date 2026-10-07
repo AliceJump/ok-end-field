@@ -23,6 +23,8 @@
 
 ## 下次从这里继续
 
+最新续作顺序覆盖下方原生节点研究断点：先读[实际阻塞诊断与计划](mechanism-blocker-plan.md)，从代表队诊断/生产者消费者依赖推进，接着闭合真实动作和连续观测，再验证收益/预算并推广全角色。f6ccd531下只读复测32个单角色开场没有完整可用战技，四人队先被3条连携条件目录诊断、再被战技缺口挡住；仅7次失败探测的约13ms不能当完整搜索预算验收。真实CastEnd/Disable、控制流等缺口保留，按队伍依赖优先级补，不再把单个接口或解码当作接管里程碑。
+
 2026-10-07最新入口：先读mechanism-flow-progress.md和native-buff-lifetime-audit.md的最新续作段。已支持动作窗口清理、Buff父子含Unique首次父根、持久Ability子挂接及显式确认停用后的子孙/旧时间线/订阅清理。槽映射替换/恢复不会直接停用旧Ability；不能把本次cast或handoff当作根结束。完整程序覆盖仍2/111。
 
 最新续作已接入选中被动Skill的Enable期SkillData.buffs独立名单、当前BB重新挂载及_FinishPassiveBuff按UID清理，真实余烬名单诊断在此范围内关闭。全仓1284项通过，完整程序仍2/111。下一批继续定位战斗里的Skill.Disable生产者，补Skill.m_buffsDuringSkill和真实CastEnd原因/目标技能的继承释放链；普通主动Skill的附带buff、完整Enable副作用也仍未覆盖。以下属性/反应/伤害处理器缺口也继续保留；ComboCache、Curve、Interrupt、Jump、目标、投射物/场地实体、搜索完整预算及现场验证均未完成。仅阶段性提交，不删除本会话续作automation-2，不新开PR或推送master。
