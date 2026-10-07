@@ -71,6 +71,7 @@ class NativeBuffChange(ImmutableCombatValue):
     selector: NativeTarget | None = None
     definition: NativeBuffProgram | None = None
     tags: tuple[int, ...] = ()
+    action_finish_after: float | None = None
 
 
 @dataclass(frozen=True)
@@ -880,10 +881,14 @@ class CombatWorldState:
         selected = self.selected_native_skill(program.actor, program.native_slot)
         return selected == program.key if selected is not None else not program.native_requires_override
 
-    def end_native_scope(self, action_id):
+    def end_native_scope(self, action_id, *, interrupted=False):
         for (actor, slot), override in tuple(self.native_skill_overrides.items()):
             if override.scope == action_id and override.ends_with_scope:
                 self._revert_native_skill(actor, slot, override.uid)
+        if interrupted:
+            from src.data.native_buff_runtime import finish_action_buffs
+
+            finish_action_buffs(self, action_id)
 
     def _native_cooldown_progress(self, actor, key):
         if key is None:
@@ -1339,7 +1344,7 @@ class CombatWorldState:
         self.actor_ready[program.actor] = self.time + (program.duration if program.actor_lock is None else program.actor_lock)
         previous = self.active_actions.get(program.actor)
         if previous:
-            self.end_native_scope(previous[0])
+            self.end_native_scope(previous[0], interrupted=True)
             self._queue[:] = [row for row in self._queue if row[2] != previous[0] or row[4].persists_after_interrupt]
             heapq.heapify(self._queue)
         self.active_actions[program.actor] = (action_id, program, self.time)
@@ -1461,7 +1466,8 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                     continue
                 path = (*outcomes, outcome)
                 tail = after.fork()
-                if any(v.expires is None and v.period > 0 and v.remaining != 0 for v in tail.native_buff_instances.values()):
+                if any(v.expires is None and v.action_finish_at is None and v.period > 0 and v.remaining != 0
+                       for v in tail.native_buff_instances.values()):
                     tail.advance(initial + horizon)
                 elif tail._queue:
                     tail.advance(min(initial + horizon, max(row[0] for row in tail._queue)))
@@ -1486,7 +1492,8 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         tuple(sorted(state.native_skill_slots.items())), tuple(sorted(state.native_skill_overrides.items())),
                         tuple((uid, repr(passive), tuple(sorted(state._action_inputs[uid].items())))
                               for uid, passive in state.native_passives.items()),
-                        tuple((v.owner, v.key, v.source, v.expires, v.period, v.remaining, repr(v.definition),
+                        tuple((v.owner, v.key, v.source, v.expires, v.period, v.remaining,
+                               v.action_scope, v.action_finish_at, repr(v.definition),
                                tuple(sorted(state._action_inputs[v.uid].items()))) for v in state.native_buff_instances.values()),
                         tuple(sorted(state.native_timers.items())),
                         tuple(sorted((a, tuple(sorted(s.attributes.items()))) for a, s in state.characters.items())),

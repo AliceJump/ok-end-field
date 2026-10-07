@@ -22,6 +22,8 @@ class NativeBuffInstance:
     period: float
     remaining: int
     next_trigger: float | None = None
+    action_scope: str | None = None
+    action_finish_at: float | None = None
 
 
 def _instances(world, owner, key):
@@ -79,6 +81,12 @@ def _finish(world, instance):
     _callbacks(world, instance, 2)
 
 
+def finish_action_buffs(world, action_id):
+    for instance in tuple(world.native_buff_instances.values()):
+        if instance.action_scope == action_id:
+            _finish(world, instance)
+
+
 def _trigger(world, instance):
     if instance.remaining == 0:
         return
@@ -95,6 +103,10 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     definition = change.definition
     if definition is None:
         raise UnresolvedMechanic(f"Buff addition lacks instance definition: {change.key}")
+    if change.action_finish_after is not None and (
+        not math.isfinite(change.action_finish_after) or change.action_finish_after < 0
+    ):
+        raise UnresolvedMechanic(f"Invalid native buff action deadline: {change.key}")
     values = dict(definition.parameters)
     values.update({key: expression.evaluate(inputs) for key, expression in definition.inherited})
     duration = definition.duration.evaluate(values) if definition.duration is not None else None
@@ -121,6 +133,9 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         uid = f"buff:{world._sequence}:{owner}:{change.key}"
         expires = world.time + duration if duration is not None else None
         instance = NativeBuffInstance(uid, change.key, owner, program.actor, definition, program, expires, period, int(limit))
+        if change.action_finish_after is not None:
+            instance.action_scope = action_id
+            instance.action_finish_at = world.time + change.action_finish_after
         world.native_buff_instances[uid] = instance
         world._action_inputs[uid] = dict(values)
         world._action_inputs[uid]["cast.non_returned_sp"] = world._action_inputs.get(action_id, {}).get("cast.non_returned_sp", 0)
@@ -139,13 +154,18 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
                 _schedule(world, instance, world.time + period, "trigger")
         if expires is not None:
             _schedule(world, instance, expires, "finish")
+        if instance.action_finish_at is not None:
+            _schedule(world, instance, instance.action_finish_at, "action_finish")
 
 
 def control_buff(world, control):
     instance = world.native_buff_instances.get(control.instance)
     if instance is None:
         return
-    if control.kind == "finish":
+    if control.kind == "action_finish":
+        if instance.action_finish_at == control.expected_at:
+            _finish(world, instance)
+    elif control.kind == "finish":
         if instance.expires == control.expected_at:
             # Native OnTick updates its trigger timer before lifetime expiry.
             # A trigger exactly at the deadline precedes OnBuffFinish once.
