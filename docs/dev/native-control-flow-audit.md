@@ -19,3 +19,9 @@
 mappingDataList指定cmdType=3、skillId=chr_0019_karin_normal_skill、cacheTime约0.3秒、cacheEndByAction=true。这些字段描述特定输入映射及动作绑定缓存，而非单个动画时长。现有can_start/SkillTiming未建模输入排队、缓存终止和映射动作的选择，不能证明缓存忽略后下一招合法性相同。缺口：命令枚举、缓存窗口/取消及消费后技能选择。校验记录chr_0019_karin_combo_skill，全快照检索262次。
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
+
+## TemporaryUnlockAction+Data：保留未解析（c）
+
+节点含blockManualLock=false、compareTarget=false、disableLockAimPriority=30和targetSettings。锁定优先级及目标选择仍未绑定到模拟世界；当前场景不能证明所有动作绑定的smart/main/guard目标相同。SkillTiming未记录锁定恢复事件。缺口：选择器语义、锁定/恢复时机，以及目标变化对后续事件的影响。校验记录chr_0019_karin_combo_skill，全快照检索41次。
+
+回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
