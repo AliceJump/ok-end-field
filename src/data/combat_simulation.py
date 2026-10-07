@@ -747,9 +747,12 @@ class CombatWorldState:
                     "event.target_is_enemy": float(enemy_target),
                     "event.target_object_type": 16.0 if enemy_target else 8.0,
                     "event.source_is_owner": float(source_actor == program.actor),
+                    "event.buff_context": 1.0,
                     f"event.buff_id.{buff_id}": 1.0,
                     **{f"event.buff_tag.{tag}": 1.0 for tag in self.native_buff_tags.get(buff_id, ())},
                 }
+                if buff_id in self.native_buff_tags:
+                    values["event.buff_data_available"] = 1.0
                 from dataclasses import replace
 
                 for event in program.events:

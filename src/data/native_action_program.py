@@ -250,7 +250,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 tests = {0: "lt", 1: "le", 2: "gt", 3: "ge", 4: "eq"}
                 count = buff_count({"checkType": 0, "buffIdList": [bid]}, value["checkTarget"])
                 test = CombatExpression(tests[value["compareType"]], (count, number(value["value"])))
-            elif name == "CheckBuffIdInContext+Data":
+            elif name in {"CheckBuffIdInContext+Data", "CheckBuffIdInContextAdvanced+Data"}:
+                advanced = name == "CheckBuffIdInContextAdvanced+Data"
+                # Advanced ID entries are StringBlackboardRefs, and its output
+                # key writes the matching ID. Only the proven tag-only, no-write
+                # arm is bound here; neither is interchangeable with plain IDs.
+                if advanced and (value["checkType"] != 1 or value["blackboardKey"]):
+                    raise UnresolvedMechanic("Native advanced event buff identity/output needs binding")
                 if value["blackboardKey"]:
                     raise UnresolvedMechanic("Dynamic native event buff identity")
                 if value["checkType"] == 1:
@@ -265,6 +271,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                                         tuple(combat_input(k) for k in keys))
                 if value["checkType"] == 1 and mode.startswith("Except"):
                     test = CombatExpression("not", (test,))
+                if advanced:
+                    # Native first requires a Buff event context, then loads
+                    # that ID's BuffData. Metadata absence in this world is
+                    # unknown, not an empty tag list that could match Except.
+                    event_defaults["event.buff_context"] = 0.0
+                    test = CombatExpression("all", (combat_input("event.buff_context"),
+                                                   combat_input("event.buff_data_available"), test))
             elif name == "CheckObjectTypeMatch+Data":
                 target = value["target"]
                 if target["targetSource"] != 2 or target["targetGroupKey"] != "trigger":
