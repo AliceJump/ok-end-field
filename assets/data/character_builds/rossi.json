@@ -18,18 +18,18 @@
     "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
   },
   "equipment": {
-    "set_main": null,
+    "set_main": "M.I.警用装备组",
     "set_off": null,
     "pieces": [
       "M.I.警用护甲·壹型",
-      "M.I.警用手套·壹型",
-      "拓荒增量供氧栓",
-      null
+      "纾难护手",
+      "M.I.警用瞄具·壹型",
+      "M.I.警用瞄具·壹型"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
-    "evidence_level": 1,
-    "note": "官方仅推荐 3 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+    "source": "EndSync 社区汇总",
+    "evidence_level": 2,
+    "note": "M.I.警用 7/7，同四件 5/7"
   }
 }

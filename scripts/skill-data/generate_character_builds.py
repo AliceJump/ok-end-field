@@ -84,6 +84,55 @@ COMMUNITY_SETS = {
     "卡契尔": ("生命辅助", "潮涌"),
 }
 
+# 2026-10-07 定稿四件（部位顺序：护甲/护手/配件/配件，同名配件可装两件）。
+# 优先级高于官方装备页反查：反查只能得到不重复的推荐件，无法表达双配件，且新套装常未回填推荐干员。
+# 社区统计取自 EndSync 汇总页 https://endsync.vercel.app/zh/wiki/<slug>/ ，
+# 「A/B」= 该套装出现在 B 套配装中的 A 套，「同四件 C」= 完全相同四件组合出现次数。
+ENDSYNC = "EndSync 社区汇总"
+CURATED_BUILDS = {
+    "安塔尔": (["落潮轻甲", "长息护手", "长息蓄电核", "长息蓄电核"], ENDSYNC, "长息 5/6，同四件 3/6"),
+    "诀": (["动火用辅助骨骼", "动火用护手", "动火用隔温板", "生物辅助护板"], ENDSYNC, "动火用 12/22，同四件 7/22；与官方一致"),
+    "弧光": (["拓荒护甲", "拓荒纤维手套·壹型", "拓荒通信器", "拓荒供氧栓"], ENDSYNC, "拓荒 7/8，同四件 2/8"),
+    "艾尔黛拉": (["碾骨披巾·壹型", "长息护手·壹型", "长息辅助臂", "长息辅助臂"], ENDSYNC, "长息 3/5，同四件 2/5"),
+    "艾维文娜": (["碾骨披巾·壹型", "碾骨腕带·壹型", "碾骨小雕像", "碾骨小雕像"], ENDSYNC, "碾骨 3/3，同四件 2/3"),
+    "卡缪": (["拓荒护服", "拓荒纤维手套·壹型", "拓荒通信器", "纾难印章"], ENDSYNC, "拓荒 6/8，同四件 3/8"),
+    "陈千语": (["点剑重装甲", "点剑战术手甲", "点剑短刃", "点剑短刃"], ENDSYNC, "点剑 4/7，同四件 3/7"),
+    "萤石": (["50式应龙重甲·壹型", "50式应龙护手", "纾难印章", "50式应龙雷达·贰型"], ENDSYNC, "50式应龙 2/3，同四件 2/3"),
+    "洁尔佩塔": (["长息装甲", "长息护手·壹型", "长息辅助臂", "长息辅助臂"], ENDSYNC, "长息 14/16，同四件 8/16"),
+    "莱万汀": (["落潮轻甲", "动火用手甲", "动火用测温镜", "动火用测温镜"], ENDSYNC, "动火用 3/3，同四件 2/3"),
+    "梨诺": (["长息轻护甲", "长息手套", "长息辅助臂", "生物辅助护板"], ENDSYNC, "长息 5/9，同四件 4/9；与官方一致"),
+    "弭弗": (["旧锋装甲", "旧锋手甲", "旧锋刺刃", "旧锋刺刃"], ENDSYNC, "旧锋 11/11，同四件 4/11"),
+    "佩丽卡": (["脉冲式干扰服", "长息护手·壹型", "脉冲式校准器", "脉冲式校准器"], ENDSYNC, "脉冲式 15/26，同四件 10/26"),
+    "骏卫": (["拓荒护服", "拓荒纤维手套·壹型", "拓荒供氧栓", "动火用电力匣"], ENDSYNC, "拓荒 5/9，同四件 3/9"),
+    "噗切娜": (["长息轻护甲", "长息手套", "长息加固板", "长息加固板"], ENDSYNC, "长息 5/5，同四件 4/5"),
+    "洛茜": (["M.I.警用护甲·壹型", "纾难护手", "M.I.警用瞄具·壹型", "M.I.警用瞄具·壹型"], ENDSYNC, "M.I.警用 7/7，同四件 5/7"),
+    "汤汤": (["清波重甲", "清波手甲", "清波水罐", "清波定位仪"], ENDSYNC, "清波 3/5，同四件 2/5"),
+    "狼卫": (["清波重甲", "清波护手", "清波竹刃", "纾难印章"], ENDSYNC, "清波 4/5，同四件 3/5"),
+    "赛希": (["长息轻护甲·壹型", "涉渊护手", "长息加固板", "长息加固板"], ENDSYNC, "长息 8/15，同四件 2/15"),
+    "伊冯": (["M.I.警用罩衣", "M.I.警用手环", "M.I.警用工具组", "M.I.警用工具组"], ENDSYNC, "M.I.警用 8/8，同四件 3/8"),
+    "庄方宜": (["壤流轻甲", "壤流护手", "壤流短棍", "生物辅助护板"], ENDSYNC, "壤流 8/8，同四件 5/8"),
+    "提弗洛斯": (["险关装甲", "险关手甲", "险关通信器", "险关通信器"], ENDSYNC, "险关 9/9，同四件 4/9"),
+    # 社区样本不足（单套或仅精选），由两个以上独立来源的共同核心件确定。
+    "卡契尔": (["长息装甲", "长息护手·壹型", "长息辅助臂", "长息辅助臂"], ENDSYNC + " + GameKee",
+             "EndSync 长息 1/1；GameKee 同为长息护手·壹型 + 长息辅助臂×2"),
+    "埃特拉": (["点剑轻装甲", "长息护手·壹型", "长息辅助臂", "长息辅助臂"], ENDSYNC + " + TapTap",
+             "EndSync 长息 1/1；TapTap 一图流为 3 长息 + 1 散件"),
+    "别礼": (["碾骨披巾", "潮涌手甲", "悬河供氧栓", "悬河供氧栓"], ENDSYNC + " + GameKee",
+           "EndSync 潮涌 1/1；GameKee 各档均为潮涌手甲 + 悬河供氧栓×2"),
+    "昼雪": (["碾骨披巾·壹型", "长息护手·壹型", "长息辅助臂", "长息辅助臂"], ENDSYNC + " + mrfzzmd",
+           "EndSync 精选；mrfzzmd 同为长息护手 + 长息辅助臂×2"),
+    "阿列什": (["拓荒护甲", "拓荒纤维手套·壹型", "拓荒通信器·壹型", "纾难印章"], "官方装备页推荐 + " + ENDSYNC,
+             "保留官方拓荒护甲、拓荒通信器·壹型；护手与纾难印章取 EndSync 精选（3件 拓荒）"),
+    "大潘": (["50式应龙重甲", "点剑战术手套", "50式应龙雷达", "50式应龙雷达"], "官方装备页推荐 + 111cn/ldcapple",
+           "官方三件补成应龙雷达×2，与两份社区攻略一致"),
+    "余烬": (["生物辅助重甲", "生物辅助臂甲", "生物辅助接驳器·壹型", "生物辅助接驳器·壹型"], "官方装备页推荐 + ldcapple",
+           "官方三件补成接驳器·壹型×2，与 ldcapple 一致；EndSync 仅精选"),
+    "管理员": (["点剑重装甲", "点剑战术手甲", "点剑火石", "点剑火石"], "官方装备页推荐",
+             "EndSync 仅 1 套；官方三件补成点剑火石×2"),
+    "黎风": (["M.I.警用护甲", "轻超域护手", "轻超域稳定盘", "轻超域稳定盘·壹型"], "官方装备页推荐",
+           "EndSync 2 套分歧（长息/点剑）；按用户确认保留官方轻超域并补稳定盘·壹型"),
+}
+
 # ldcapple 精确四件套（部位顺序：护甲/护手/配件/配件）——证据等级 2
 EXACT_PIECES = {
     "余烬": ["生物辅助胸甲·壹型", "生物辅助手甲·壹型", "生物辅助接驳器·壹型", "生物辅助接驳器·壹型"],
@@ -264,7 +313,22 @@ def main() -> int:
         set_source = ""
         official_pieces: list[str | None] = []
         equip_note = ""
-        if name in equip_rec_pieces:
+        if name in CURATED_BUILDS:
+            official_pieces, set_source, equip_note = CURATED_BUILDS[name]
+            official_pieces = list(official_pieces)
+            missing = [p for p in official_pieces if p not in equipments]
+            if missing:
+                raise SystemExit(f"{name} 定稿配装含未知装备: {missing}")
+            parts = [equipments[p].get("part") for p in official_pieces]
+            if parts != ["护甲", "护手", "配件", "配件"]:
+                raise SystemExit(f"{name} 定稿配装部位必须为 护甲/护手/配件/配件: {parts}")
+            set_counts = Counter(equipments[p].get("set") for p in official_pieces if equipments[p].get("set"))
+            top_set, top_n = set_counts.most_common(1)[0] if set_counts else (None, 0)
+            if top_n < 3:
+                raise SystemExit(f"{name} 定稿配装没有 3 件同套装: {dict(set_counts)}")
+            set_main = top_set
+            set_level = 1 if set_source.startswith("官方") else 2
+        elif name in equip_rec_pieces:
             official_pieces = select_official_pieces(equip_rec_pieces[name], equipments)
             set_counts = Counter(equipments[p].get("set") for p in official_pieces if p)
             top_set, top_n = set_counts.most_common(1)[0] if set_counts else (None, 0)
