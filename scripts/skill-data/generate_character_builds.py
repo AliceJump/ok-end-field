@@ -2,7 +2,7 @@
 
 证据链（evidence_level 越小越权威）：
 1 = 官方游戏内推荐（森空岛 WIKI 干员页「武器推荐」/ 武器页「推荐装备干员」互证
-    / 装备页「推荐干员」反查）
+    / 装备页「推荐装备干员」完整四槽卡；旧导出回退 recommended_operator_ids 反查）
 2 = 高质量社区攻略（新浪全干员装备适配一图流 / ldcapple 精确四件套，见 references）
 3 = 启发式默认（按元素/定位套用同源社区模板，标记 heuristic）
 
@@ -86,7 +86,7 @@ COMMUNITY_SETS = {
 
 # 2026-10-07 定稿四件（部位顺序：护甲/护手/配件/配件，同名配件可装两件）。
 # 值结构：(四件配装, 来源, 说明, evidence_level)。
-# 优先级高于官方装备页反查：反查只能得到不重复的推荐件，无法表达双配件，且新套装常未回填推荐干员。
+# 固定基准优先于自动抓取的官方推荐与旧反查；官方完整四槽卡仍保留在 equipments.json 供审计/回退。
 # 社区统计取自 EndSync 汇总页 https://endsync.vercel.app/zh/wiki/<slug>/ ，
 # 「A/B」= 该套装出现在 B 套配装中的 A 套，「同四件 C」= 完全相同四件组合出现次数。
 ENDSYNC = "EndSync 社区汇总"
@@ -213,6 +213,8 @@ ELEMENT_DEFAULT_SETS = {
     "自然": ("拓荒", "潮涌"),
 }
 
+_OFFICIAL_LOADOUT_KEYS = ("armor_id", "gloves_id", "accessory_1_id", "accessory_2_id")
+
 
 def _load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
@@ -283,6 +285,26 @@ def select_official_pieces(names: list[str], equipments: dict) -> list[str | Non
     return pieces
 
 
+def collect_official_loadouts(equipments: dict, id_to_name: dict[str, str]) -> dict[str, list[str]]:
+    """从任意装备页的完整推荐卡一次取得干员四槽配装；同一干员后续重复卡片直接跳过。"""
+    result: dict[str, list[str]] = {}
+    for equipment in equipments.values():
+        for loadout in equipment.get("recommended_loadouts") or []:
+            operator_id = str(loadout.get("operator_id") or "")
+            if not operator_id:
+                continue
+            op_name = _normalize_name(id_to_name.get(operator_id, operator_id))
+            if op_name in result:
+                continue
+            piece_ids = [str(loadout.get(key) or "") for key in _OFFICIAL_LOADOUT_KEYS]
+            if not all(piece_ids):
+                continue
+            pieces = [id_to_name.get(piece_id) for piece_id in piece_ids]
+            if all(pieces):
+                result[op_name] = [str(piece) for piece in pieces]
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", help="operator_details 快照目录名（默认 latest.json 指向的完整快照）")
@@ -340,7 +362,10 @@ def main() -> int:
         for oid in w.get("recommended_operator_ids") or []:
             weapon_rec_ops.setdefault(_normalize_name(id_to_name.get(oid, oid)), []).append(wname)
 
-    # 装备页 → 推荐干员（装备侧官方链，反向反查干员的官方推荐装备件）
+    # 装备页 → 官方完整四槽卡；同一干员第一张完整卡命中后不再从其他装备页重复构建。
+    equip_rec_loadouts = collect_official_loadouts(equipments, id_to_name)
+
+    # 兼容旧 equipments.json：只有 recommended_operator_ids 时继续使用反向拼件作为回退。
     equip_rec_pieces: dict[str, list[str]] = {}
     for ename, e in equipments.items():
         for oid in e.get("recommended_operator_ids") or []:
@@ -369,7 +394,7 @@ def main() -> int:
             evidence_note = "未找到官方武器推荐"
             evidence_level = 3
 
-        # 套组/装备件：官方装备页推荐链 → 社区攻略 → 元素模板
+        # 套组/装备件：固定定稿 → 官方完整四槽卡 → 旧反查 → 社区攻略 → 元素模板
         set_main = set_off = None
         set_level = 3
         set_source = ""
@@ -394,6 +419,21 @@ def main() -> int:
             if top_n < 3:
                 raise SystemExit(f"{name} 定稿配装没有 3 件同套装: {dict(set_counts)}")
             set_main = top_set
+        elif name in equip_rec_loadouts:
+            official_pieces = list(equip_rec_loadouts[name])
+            missing = [p for p in official_pieces if p not in equipments]
+            if missing:
+                raise SystemExit(f"{name} 官方四槽配装含未知装备: {missing}")
+            parts = [equipments[p].get("part") for p in official_pieces]
+            if parts != ["护甲", "护手", "配件", "配件"]:
+                raise SystemExit(f"{name} 官方四槽配装部位异常: {parts}")
+            set_counts = Counter(equipments[p].get("set") for p in official_pieces if equipments[p].get("set"))
+            top_set, top_n = set_counts.most_common(1)[0] if set_counts else (None, 0)
+            if top_set and top_n >= 3:
+                set_main = top_set
+            set_level = 1
+            set_source = "官方 wiki 装备页「推荐装备干员」完整四槽卡"
+            equip_note = "按官方卡片槽位原样读取（护甲/护手/配件Ⅰ/配件Ⅱ），保留同名双配件"
         elif name in equip_rec_pieces:
             official_pieces = select_official_pieces(equip_rec_pieces[name], equipments)
             set_counts = Counter(equipments[p].get("set") for p in official_pieces if p)
@@ -401,10 +441,10 @@ def main() -> int:
             if top_set and top_n >= 3:
                 set_main = top_set
             set_level = 1
-            set_source = "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）"
+            set_source = "官方 wiki 装备页推荐（旧 recommended_operator_ids 反查回退）"
             count = sum(piece is not None for piece in official_pieces)
             if count < 4:
-                equip_note = f"官方仅推荐 {count} 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+                equip_note = f"旧导出仅反查到 {count} 件不同装备，无法表达重复配件；请重建 equipments.json"
             if not count:
                 official_pieces = []
         if not official_pieces:
