@@ -6,34 +6,34 @@
 
 佩丽卡战技chr_0004_pelica_normal_skill中，节点同时有attacker/defender选择器、immobilizedTime=1、overrideSuperArmorLimit=-1，defender绑定tar目标组。它不是单独改变角色自己的硬直窗口。快照中的目标控制字段可能影响敌方动作及后续命中；现有SkillTiming的duration/handoff/actionable仅给角色调度边界，未绑定该目标组或控制有效性，不能据此宣称时序已覆盖。
 
-缺口：解释目标选择器、受控对象的中断/免疫以及控制持续时间；确认对后续事件和命中条件的影响。全快照检索199次是节点出现次数，并非199个程序。回归直接取校验快照中的节点，核对字段并证明严格模拟保留unresolved、拒绝动作且不改变资源/状态。
+缺口：解释目标选择器、受控对象的中断/免疫以及控制持续时间；确认对后续事件和命中条件的影响。本轮根技能及补充记录检索199次是节点出现次数，并非199个程序。回归直接取校验快照中的节点，核对字段并证明严格模拟保留unresolved、拒绝动作且不改变资源/状态。
 
 ## JumpToAction+Data：保留未解析（c）
 
-跳转直接指定destFrame=4，conditionAction也是独立动作序列。SkillTiming只保存角色时间边界，未保存程序计数器、跳转条件和重复执行次数；扁平执行可能重复或遗漏后续事件，固定handoff不能替代跳转语义。缺口：条件评估、帧级跳转与终止规则、事件重入及次数限制。校验记录chr_0024_deepfin_combo_skill，全快照检索67次。
+跳转直接指定destFrame=4，conditionAction也是独立动作序列。SkillTiming只保存角色时间边界，未保存程序计数器、跳转条件和重复执行次数；扁平执行可能重复或遗漏后续事件，固定handoff不能替代跳转语义。缺口：条件评估、帧级跳转与终止规则、事件重入及次数限制。校验记录chr_0024_deepfin_combo_skill，本轮根技能及补充记录检索67次。
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
 
 ## ComboCacheAction+Data：保留未解析（c）
 
-mappingDataList指定cmdType=3、skillId=chr_0019_karin_normal_skill、cacheTime约0.3秒、cacheEndByAction=true。这些字段描述特定输入映射及动作绑定缓存，而非单个动画时长。现有can_start/SkillTiming未建模输入排队、缓存终止和映射动作的选择，不能证明缓存忽略后下一招合法性相同。缺口：命令枚举、缓存窗口/取消及消费后技能选择。校验记录chr_0019_karin_combo_skill，全快照检索262次。
+mappingDataList指定cmdType=3、skillId=chr_0019_karin_normal_skill、cacheTime约0.3秒、cacheEndByAction=true。这些字段描述特定输入映射及动作绑定缓存，而非单个动画时长。现有can_start/SkillTiming未建模输入排队、缓存终止和映射动作的选择，不能证明缓存忽略后下一招合法性相同。缺口：命令枚举、缓存窗口/取消及消费后技能选择。校验记录chr_0019_karin_combo_skill，本轮根技能及补充记录检索262次。
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
 
 ## TemporaryUnlockAction+Data：保留未解析（c）
 
-节点含blockManualLock=false、compareTarget=false、disableLockAimPriority=30和targetSettings。锁定优先级及目标选择仍未绑定到模拟世界；当前场景不能证明所有动作绑定的smart/main/guard目标相同。SkillTiming未记录锁定恢复事件。缺口：选择器语义、锁定/恢复时机，以及目标变化对后续事件的影响。校验记录chr_0019_karin_combo_skill，全快照检索41次。
+节点含blockManualLock=false、compareTarget=false、disableLockAimPriority=30和targetSettings。锁定优先级及目标选择仍未绑定到模拟世界；当前场景不能证明所有动作绑定的smart/main/guard目标相同。SkillTiming未记录锁定恢复事件。缺口：选择器语义、锁定/恢复时机，以及目标变化对后续事件的影响。校验记录chr_0019_karin_combo_skill，本轮根技能及补充记录检索41次。
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
 
 ## CurveEvaluateFloat+Data：保留未解析（c）
 
-样本把input_angle映射为cam_angle，但useCustomCurve=true，curveTemplate=Linear不等于实际自定义曲线就是线性；快照另有curve_profile原始字节。其他样本还读取owner_mainchar_distance和enemy_turn_distance。摄像机专用数据流可能可忽略，但必须证明全部消费者只属于表现，不能按输出键名或单个样本全局放行。缺口：解析曲线点/插值/边界行为并追踪所有BB消费者；在数值或条件分支中继续严格阻塞。校验记录chr_0019_karin_normal_skill，全快照检索188次。
+样本把input_angle映射为cam_angle，但useCustomCurve=true，curveTemplate=Linear不等于实际自定义曲线就是线性；快照另有curve_profile原始字节。其他样本还读取owner_mainchar_distance和enemy_turn_distance。摄像机专用数据流可能可忽略，但必须证明全部消费者只属于表现，不能按输出键名或单个样本全局放行。缺口：解析曲线点/插值/边界行为并追踪所有BB消费者；在数值或条件分支中继续严格阻塞。校验记录chr_0019_karin_normal_skill，本轮根技能及补充记录检索188次。
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
 
 ## CheckDistanceCondition+Data：保留未解析（c）
 
-条件包含source/target选择器、distance=4、lessThan=true、containsHittableObj=false和includeTargetRadius=false。单敌在命中范围内不能推出所有source/target距离都满足4米；源码保留条件分支及取反，未知检查必须阻断后续序列。管理员还将SaveTargetDistance结果送入CompareFloat，不能替换成恒真。缺口：带来源的距离/半径观测或明确场景输入、比较边界、条件分支与命中裁定。校验记录chr_0019_karin_normal_skill，全快照检索152次。
+条件包含source/target选择器、distance=4、lessThan=true、containsHittableObj=false和includeTargetRadius=false。单敌在命中范围内不能推出所有source/target距离都满足4米；源码保留条件分支及取反，未知检查必须阻断后续序列。管理员还将SaveTargetDistance结果送入CompareFloat，不能替换成恒真。缺口：带来源的距离/半径观测或明确场景输入、比较边界、条件分支与命中裁定。校验记录chr_0019_karin_normal_skill，本轮根技能及补充记录检索152次。
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
