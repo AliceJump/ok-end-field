@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
+from src.data.damage_attributes import ATTRIBUTES, DamageAttributeBasis, FinalAttributeDelta
 from src.data.damage_modifiers import DamageBucket, DamageModifierSpec
 from src.data.immutable_combat_value import ImmutableCombatValue
 
@@ -21,6 +22,17 @@ class FixedDamagePanel:
     crit_damage: float
     amplification: dict[str, float] = field(default_factory=dict)
     damage_bonus: dict[str, float] = field(default_factory=dict)
+    attribute_basis: DamageAttributeBasis | None = None
+
+    def with_attribute_deltas(self, deltas):
+        if (not set(deltas) <= set(ATTRIBUTES) or any(type(value) not in (int, float)
+                or not math.isfinite(value) for value in deltas.values())):
+            raise ValueError("Invalid final attack attribute delta")
+        if not any(value != 0 for value in deltas.values()):
+            return self
+        if self.attribute_basis is None:
+            raise ValueError("Missing dynamic attack attribute basis")
+        return replace(self, attribute_factor=self.attribute_factor + self.attribute_basis.factor_delta(deltas))
 
     def bonus_for(self, element, tags=()):
         """Fixed bonuses follow each native hit's element and decoration flags."""
@@ -81,8 +93,52 @@ class TimedDamageState:
         self.team = team
         self.modifiers: list[ActiveDamageModifier] = []
         self.fields: dict[str, DamageField] = {}
+        self.attribute_changes: list[FinalAttributeDelta] = []
+
+    def apply_final_attribute_delta(self, *, actor, key, source, attribute, amount, now, duration=None, permanent=False):
+        """Refresh one confirmed final delta; independent layers need distinct keys."""
+        if (actor not in self.team or attribute not in ATTRIBUTES or not key or not source
+                or not math.isfinite(now) or (amount is not None and
+                    (type(amount) not in (int, float) or not math.isfinite(amount)))
+                or (duration is None and not permanent) or (duration is not None and
+                    (not math.isfinite(duration) or duration < 0)) or (permanent and duration is not None)):
+            raise ValueError("Invalid confirmed final attribute change")
+        self.expire(now)
+        self.remove_final_attribute_delta(actor=actor, key=key, source=source)
+        self.attribute_changes.append(FinalAttributeDelta(actor, key, source, attribute, amount,
+                                      None if permanent else now + duration))
+
+    def remove_final_attribute_delta(self, *, actor, key, source):
+        self.attribute_changes[:] = [change for change in self.attribute_changes
+                                    if (change.actor, change.key, change.source) != (actor, key, source)]
+
+    def final_attribute_deltas(self, actor, *, now):
+        if not self.attribute_changes:
+            return {}, set()
+        self.expire(now)
+        deltas, unknown = {}, set()
+        for change in self.attribute_changes:
+            if change.actor != actor:
+                continue
+            if change.amount is None:
+                unknown.add(change.attribute)
+            else:
+                deltas[change.attribute] = deltas.get(change.attribute, 0) + change.amount
+        return deltas, unknown
+
+    def effective_attributes(self, actor, fixed, *, now):
+        deltas, unknown = self.final_attribute_deltas(actor, now=now)
+        result = dict(fixed)
+        for attribute, delta in deltas.items():
+            if attribute in result:
+                result[attribute] += delta
+        for attribute in unknown:
+            result.pop(attribute, None)
+        return result
 
     def expire(self, now: float):
+        self.attribute_changes[:] = [change for change in self.attribute_changes
+                                    if change.expires_at is None or now < change.expires_at]
         for field_id, instance in tuple(self.fields.items()):
             if now >= instance.expires_at:
                 self.remove_field(field_id)
@@ -122,6 +178,9 @@ class TimedDamageState:
             ("field", key, instance.source_actor, round(instance.expires_at - now, 5))
             for key, instance in self.fields.items()
         )
+        entries.extend(("attribute", change.actor, change.key, change.source, change.attribute, change.amount,
+                        None if change.expires_at is None else round(change.expires_at - now, 5))
+                       for change in self.attribute_changes)
         return tuple(sorted(entries, key=repr))
 
     def apply(
@@ -214,6 +273,13 @@ class TimedDamageState:
         self.expire(now)
         buckets = {bucket.value: 0.0 for bucket in DamageBucket}
         unknown = []
+        deltas, missing_attributes = self.final_attribute_deltas(hit.actor, now=now)
+        if missing_attributes:
+            return DamageResult(None, None, buckets, tuple(f"Unknown final attribute: {key}" for key in sorted(missing_attributes)))
+        try:
+            panel = panel.with_attribute_deltas(deltas)
+        except ValueError as error:
+            return DamageResult(None, None, buckets, (str(error),))
         if not math.isfinite(native_damage_taken):
             return DamageResult(None, None, buckets, ("Non-finite native defender damage scale",))
         buckets[DamageBucket.DAMAGE_TAKEN.value] += native_damage_taken
@@ -230,6 +296,13 @@ class TimedDamageState:
             if spec.damage_tags and not set(spec.damage_tags).intersection(hit.damage_tags or (hit.damage_tag,)):
                 continue
             current_inputs = {**modifier.inputs, **(inputs or {})}
+            if spec.evaluation == "hit":
+                # An unavailable current source attribute cannot fall back to
+                # its old application-time value. Application snapshots keep
+                # their already-resolved value, as authored.
+                _, missing_source_attributes = self.final_attribute_deltas(modifier.source_actor, now=now)
+                for attribute in missing_source_attributes:
+                    current_inputs.pop("source." + attribute, None)
             if any(current_inputs.get(key) == 0 for key in spec.condition_inputs):
                 continue
             if any(key not in current_inputs for key in spec.condition_inputs):

@@ -667,6 +667,13 @@ def compute_character(
         "element": element,
         "primary_stat": primary,
         "secondary_stat": secondary,
+        "attribute_basis": {
+            "schema_version": 1, "domain": "final_panel", "primary": primary, "secondary": secondary,
+            "totals": {stat: primary_total if stat == primary else secondary_total if stat == secondary
+                       else base.get(stat, 0) + merged.get(f"flat_{stat}", 0)
+                       for stat in ("力量", "敏捷", "智识", "意志")},
+            "unverified_attack_dependencies": [],
+        },
         "panel": panel,
         "cycle_expect": cycle_expect,
         "cycle_expect_link4": cycle_expect_link4,

@@ -88,10 +88,11 @@ class TestDamageResolution(unittest.TestCase):
     def test_source_attribute_scaling_cap_and_potential_apply_to_entire_amplification(self):
         spec = skill_modifier(self.characters, "xaihi", "终结技", "BUFF_COLD_UP")
         self.assertIsNone(spec.magnitude.evaluate({}))
-        self.assertAlmostEqual(spec.magnitude.evaluate({"source.智识": 1000}), (0.19 + 0.24) * 1.1, places=6)
-        self.assertAlmostEqual(spec.magnitude.evaluate({"source.智识": 2000}), (0.19 + 0.30) * 1.1, places=6)
-        self.apply(spec, inputs={"source.智识": 1000})
-        self.assertAlmostEqual(self.hit(inputs={"source.智识": 2000}).non_crit, 560 * (1 + 0.43 * 1.1), places=4)
+        wisdom = "source.native.final_nonconverted.41"
+        self.assertAlmostEqual(spec.magnitude.evaluate({wisdom: 1000}), (0.19 + 0.24) * 1.1, places=6)
+        self.assertAlmostEqual(spec.magnitude.evaluate({wisdom: 2000}), (0.19 + 0.30) * 1.1, places=6)
+        self.apply(spec, inputs={wisdom: 1000})
+        self.assertAlmostEqual(self.hit(inputs={wisdom: 2000}).non_crit, 560 * (1 + 0.43 * 1.1), places=4)
 
     def test_tangtang_uses_consumed_whirlpools_and_requested_rank(self):
         spec = skill_modifier(self.characters, "tangtang", "战技", "VULN_ALL", "消耗涡流形成额外水龙卷")

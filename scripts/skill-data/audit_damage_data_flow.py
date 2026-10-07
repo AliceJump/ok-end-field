@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 from src.data.character_skills import get_character
 from src.data.combat_input_requirements import modifier_input_keys
 from src.data.damage_quote_data import read_fixed_quote, verify_sources
+from src.data.damage_release_rules import KINDS, release_rules
 
 
 def rule_record(spec, origin):
@@ -83,6 +84,12 @@ def audit(rows=None):
             source_gaps.append("Fixed panel contains an unselected passive")
         entry = {"key": key, "character": character.name, "profile": profile,
                  "source_gaps": source_gaps, "skills": [], "passives": []}
+        releases = release_rules(character, row)
+        entry["dynamic_attribute_flow"] = {
+            "basis": row.get("attribute_basis"),
+            "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+            "native_attribute_change_producers": "not_verified",
+        }
         quotes = {}
         for quote in row["skills"]:
             quotes.setdefault(quote["skill_id"], []).append(quote)
@@ -154,6 +161,9 @@ def audit(rows=None):
                 "row_semantics": matches[0].get("row_semantics") if len(matches) == 1 else None,
                 "conditional_rows_not_in_quote": matches[0].get("conditional_rows", []) if len(matches) == 1 else None,
                 "damage_rules": rules, "branches": branches, "data_gaps": gaps,
+                "model_release_bonus_rules": [{**rule_record(spec, "reviewed_release"),
+                    "producer_status": "successful_model_release; native_frame_not_verified"}
+                    for spec in releases.get(KINDS.get(skill.skill_type.value), ())],
                 "pending_semantic_checks": pending,
                 "full_skill_execution": "not_assessed; see mechanism coverage audit",
             })
@@ -185,6 +195,7 @@ def audit(rows=None):
     report["summary"] = {"characters": len(rows), "skills": total, "replay_verified_quotes": verified,
                          "skill_damage_rules": rules_total,
                          "selected_passive_damage_rules": sum(len(passive["damage_rules"]) for row in report["characters"] for passive in row["passives"]),
+                         "model_release_bonus_bindings": sum(len(skill["model_release_bonus_rules"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_with_reviewed_row_membership": sum(bool(skill["row_semantics"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_with_structural_data_gaps": sum(bool(skill["data_gaps"]) for row in report["characters"] for skill in row["skills"]),
                          "skills_pending_semantic_review": sum(bool(skill["pending_semantic_checks"]) for row in report["characters"] for skill in row["skills"]),

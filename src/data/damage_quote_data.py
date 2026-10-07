@@ -11,6 +11,7 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.data.damage_attributes import DamageAttributeBasis
 from src.data.damage_resolution import DamageHit, FixedDamagePanel, TimedDamageState
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -40,6 +41,7 @@ def verify_sources(row, root=ROOT):
         "scripts/skill-data/compute_damage_baseline.py",
         "src/data/character_progression.py", "src/data/native_damage_scalars.py",
         "assets/data/skill_damage_row_semantics.json",
+        "src/data/damage_attributes.py",
     }
     if set(sources) != expected:
         raise ValueError("Incomplete fixed quote source ledger")
@@ -91,6 +93,10 @@ def read_fixed_quote(row, skill):
     for key in ("amplification", "damage_bonus"):
         values[key] = {name: _number(value) for name, value in row["panel"]["damage_basis"][key].items()}
     panel = FixedDamagePanel(**values)
+    attributes = DamageAttributeBasis.from_dict(row["attribute_basis"])
+    if not math.isclose(attributes.factor(), panel.attribute_factor, rel_tol=0, abs_tol=1e-12):
+        raise ValueError("Fixed attack attribute factor differs from its unrounded basis")
+    panel = FixedDamagePanel(**values, attribute_basis=attributes)
     multiplier = _number(basis["multiplier"])
     non_crit, expected = _number(skill["non_crit"]), _number(skill["crit_expect"])
     if multiplier < 0 or non_crit < 0 or expected < 0:

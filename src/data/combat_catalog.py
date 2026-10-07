@@ -8,6 +8,8 @@ from pathlib import Path
 
 from src.data.character_skills import get_character
 from src.data.combat_simulation import CombatWorldState, EffectRequirement, UnresolvedMechanic
+from src.data.damage_attributes import DamageAttributeBasis
+from src.data.damage_release_rules import release_rules
 from src.data.damage_resolution import FixedDamagePanel
 from src.data.native_action_program import _nodes, compile_native_action
 from src.data.native_character_events import bind_character_events
@@ -95,11 +97,18 @@ def build_combat_catalog(team, store, *, baseline=BASELINE):
         character = get_character(row["key"], skill_rank=profile["skill_rank"], potential=profile["potential"])
         state = world.characters[actor]
         state.panel = FixedDamagePanel(**row["panel"]["damage_basis"])
+        if "attribute_basis" in row:
+            basis = DamageAttributeBasis.from_dict(row["attribute_basis"])
+            state.panel = replace(state.panel, attribute_basis=basis)
         state.attributes = {key: value for key, value in row["panel"].items() if isinstance(value, (float, int))}
+        if state.panel.attribute_basis is not None:
+            state.attributes.update(state.panel.attribute_basis.totals)
         state.attributes["energy_gain"] = row["panel"].get("ult_charge", 0) / 100
         state.attributes["arts_strength"] = row["panel"]["源石技艺强度"]
         state.attributes["level"] = profile["character_level"]
         world.register_damage_passives(actor, character.progression.damage_modifiers)
+        for kind, modifiers in release_rules(character, row).items():
+            world.register_release_modifiers(actor, kind, modifiers)
         for kind, skill_type in (("battle", SkillType.SKILL), ("link", SkillType.LINK_SKILL), ("ult", SkillType.ULTIMATE)):
             skill = next((s for s in character.skills if s.skill_type == skill_type), None)
             if skill is None:

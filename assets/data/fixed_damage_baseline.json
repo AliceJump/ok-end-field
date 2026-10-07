@@ -5,6 +5,19 @@
     "element": "灼热",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "智识",
+      "totals": {
+        "力量": 110.0,
+        "敏捷": 367.0,
+        "智识": 409.0,
+        "意志": 264.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 4935.3,
@@ -205,11 +218,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0019_karin_potential_2"
@@ -224,6 +238,19 @@
     "element": "寒冷",
     "primary_stat": "力量",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "智识",
+      "totals": {
+        "力量": 511.0,
+        "敏捷": 150.0,
+        "智识": 381.0,
+        "意志": 89.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 3543.4,
@@ -424,11 +451,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0024_deepfin_potential_2"
@@ -443,6 +471,19 @@
     "element": "电磁",
     "primary_stat": "智识",
     "secondary_stat": "力量",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "智识",
+      "secondary": "力量",
+      "totals": {
+        "力量": 400.64,
+        "敏捷": 86.0,
+        "智识": 514.0,
+        "意志": 82.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 7144.5,
       "ATK": 3440.2,
@@ -642,11 +683,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0023_antal_potential_4"
@@ -661,6 +703,19 @@
     "element": "自然",
     "primary_stat": "智识",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "智识",
+      "secondary": "意志",
+      "totals": {
+        "力量": 91.0,
+        "敏捷": 93.0,
+        "智识": 812.16,
+        "意志": 362.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 6843.5,
@@ -859,11 +914,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -876,6 +932,19 @@
     "element": "电磁",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "智识",
+      "totals": {
+        "力量": 261.0,
+        "敏捷": 302.0,
+        "智识": 297.0,
+        "意志": 153.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 2517.3,
@@ -1078,11 +1147,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0007_ikut_potential_2"
@@ -1097,6 +1167,19 @@
     "element": "自然",
     "primary_stat": "智识",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "智识",
+      "secondary": "意志",
+      "totals": {
+        "力量": 112.0,
+        "敏捷": 168.0,
+        "智识": 499.0,
+        "意志": 368.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 6495.0,
       "ATK": 3461.0,
@@ -1294,11 +1377,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -1311,6 +1395,19 @@
     "element": "电磁",
     "primary_stat": "意志",
     "secondary_stat": "敏捷",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "敏捷",
+      "totals": {
+        "力量": 162.0,
+        "敏捷": 319.0,
+        "智识": 110.0,
+        "意志": 418.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 4661.8,
@@ -1513,11 +1610,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0012_avywen_potential_3"
@@ -1532,6 +1630,19 @@
     "element": "灼热",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "智识",
+      "totals": {
+        "力量": 143.0,
+        "敏捷": 533.0,
+        "智识": 381.0,
+        "意志": 92.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 3608.0,
@@ -1821,11 +1932,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -1838,6 +1950,19 @@
     "element": "物理",
     "primary_stat": "力量",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "意志",
+      "totals": {
+        "力量": 236.0,
+        "敏捷": 96.0,
+        "智识": 299.0,
+        "意志": 522.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 11561.1,
       "ATK": 2563.1,
@@ -2038,11 +2163,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0020_meurs_potential_2"
@@ -2057,6 +2183,19 @@
     "element": "物理",
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "力量",
+      "totals": {
+        "力量": 290.0,
+        "敏捷": 525.0,
+        "智识": 85.0,
+        "意志": 93.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 3330.4,
@@ -2255,11 +2394,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0005_chen_potential_2"
@@ -2274,6 +2414,19 @@
     "element": "物理",
     "primary_stat": "力量",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "意志",
+      "totals": {
+        "力量": 529.0,
+        "敏捷": 96.0,
+        "智识": 94.0,
+        "意志": 286.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 5214.8,
@@ -2473,11 +2626,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0018_dapan_potential_3"
@@ -2492,6 +2646,19 @@
     "element": "灼热",
     "primary_stat": "力量",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "意志",
+      "totals": {
+        "力量": 622.0,
+        "敏捷": 87.0,
+        "智识": 77.0,
+        "意志": 332.88000000000005
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 8012.8,
       "ATK": 3352.6,
@@ -2756,11 +2923,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -2773,6 +2941,19 @@
     "element": "物理",
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "力量",
+      "totals": {
+        "力量": 307.0,
+        "敏捷": 635.0,
+        "智识": 96.0,
+        "意志": 107.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 5451.8,
@@ -2971,11 +3152,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -2988,6 +3170,19 @@
     "element": "寒冷",
     "primary_stat": "意志",
     "secondary_stat": "力量",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "力量",
+      "totals": {
+        "力量": 227.0,
+        "敏捷": 97.0,
+        "智识": 248.0,
+        "意志": 433.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 6495.0,
       "ATK": 4084.7,
@@ -3190,11 +3385,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0021_whiten_potential_4"
@@ -3209,6 +3405,19 @@
     "element": "自然",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "智识",
+      "totals": {
+        "力量": 165.0,
+        "敏捷": 476.0,
+        "智识": 417.0,
+        "意志": 91.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 3843.0,
@@ -3409,11 +3618,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0022_bounda_potential_1"
@@ -3428,6 +3638,19 @@
     "element": "自然",
     "primary_stat": "意志",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "智识",
+      "totals": {
+        "力量": 89.0,
+        "敏捷": 92.0,
+        "智识": 340.0,
+        "意志": 637.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 6495.0,
       "ATK": 4033.1,
@@ -3626,11 +3849,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -3643,6 +3867,19 @@
     "element": "灼热",
     "primary_stat": "智识",
     "secondary_stat": "力量",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "智识",
+      "secondary": "力量",
+      "totals": {
+        "力量": 251.0,
+        "敏捷": 99.0,
+        "智识": 696.0,
+        "意志": 89.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 5733.9,
@@ -3845,11 +4082,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -3862,6 +4100,19 @@
     "element": "寒冷",
     "primary_stat": "力量",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "意志",
+      "totals": {
+        "力量": 612.0,
+        "敏捷": 104.0,
+        "智识": 93.0,
+        "意志": 331.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 5493.7,
@@ -4062,11 +4313,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -4079,6 +4331,22 @@
     "element": "物理",
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "力量",
+      "totals": {
+        "力量": 307.0,
+        "敏捷": 627.0,
+        "智识": 115.0,
+        "意志": 117.0
+      },
+      "unverified_attack_dependencies": [
+        "智识",
+        "意志"
+      ]
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 5506.6,
@@ -4278,11 +4546,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0015_lifeng_talent_1_2"
@@ -4297,6 +4566,19 @@
     "element": "电磁",
     "primary_stat": "意志",
     "secondary_stat": "敏捷",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "敏捷",
+      "totals": {
+        "力量": 89.0,
+        "敏捷": 176.0,
+        "智识": 145.0,
+        "意志": 890.838
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 6495.0,
       "ATK": 4697.2,
@@ -4494,11 +4776,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -4511,6 +4794,19 @@
     "element": "物理",
     "primary_stat": "力量",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "意志",
+      "totals": {
+        "力量": 668.0,
+        "敏捷": 92.0,
+        "智识": 90.0,
+        "意志": 303.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 5998.3,
@@ -4798,11 +5094,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -4815,6 +5112,19 @@
     "element": "电磁",
     "primary_stat": "智识",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "智识",
+      "secondary": "意志",
+      "totals": {
+        "力量": 91.0,
+        "敏捷": 93.0,
+        "智识": 680.0,
+        "意志": 243.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 3899.0,
@@ -5016,11 +5326,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -5033,6 +5344,19 @@
     "element": "物理",
     "primary_stat": "意志",
     "secondary_stat": "敏捷",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "敏捷",
+      "totals": {
+        "力量": 101.0,
+        "敏捷": 240.0,
+        "智识": 321.0,
+        "意志": 483.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 4444.9,
@@ -5359,11 +5683,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -5376,6 +5701,19 @@
     "element": "物理",
     "primary_stat": "力量",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "意志",
+      "totals": {
+        "力量": 352.0,
+        "敏捷": 148.0,
+        "智识": 89.0,
+        "意志": 466.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 8313.6,
       "ATK": 2658.2,
@@ -5576,11 +5914,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0038_purrche_potential_2"
@@ -5595,6 +5934,19 @@
     "element": "物理",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "智识",
+      "totals": {
+        "力量": 97.0,
+        "敏捷": 698.0,
+        "智识": 247.0,
+        "意志": 89.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 5975.5,
@@ -5795,11 +6147,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -5812,6 +6165,19 @@
     "element": "寒冷",
     "primary_stat": "力量",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "意志",
+      "totals": {
+        "力量": 214.0,
+        "敏捷": 179.0,
+        "智识": 231.0,
+        "意志": 534.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 11561.1,
       "ATK": 2485.3,
@@ -6012,11 +6378,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0014_aurora_potential_4"
@@ -6031,6 +6398,19 @@
     "element": "寒冷",
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "力量",
+      "totals": {
+        "力量": 280.0,
+        "敏捷": 633.0,
+        "智识": 126.0,
+        "意志": 129.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 5425.0,
@@ -6229,11 +6609,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -6246,6 +6627,19 @@
     "element": "自然",
     "primary_stat": "敏捷",
     "secondary_stat": "意志",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "敏捷",
+      "secondary": "意志",
+      "totals": {
+        "力量": 97.0,
+        "敏捷": 666.0,
+        "智识": 99.0,
+        "意志": 301.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 3955.5,
@@ -6447,11 +6841,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -6464,6 +6859,19 @@
     "element": "灼热",
     "primary_stat": "力量",
     "secondary_stat": "敏捷",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "力量",
+      "secondary": "敏捷",
+      "totals": {
+        "力量": 352.0,
+        "敏捷": 250.0,
+        "智识": 231.0,
+        "意志": 166.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 2555.8,
@@ -6669,11 +7077,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0006_wolfgd_potential_1"
@@ -6688,6 +7097,19 @@
     "element": "寒冷",
     "primary_stat": "意志",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "智识",
+      "totals": {
+        "力量": 89.0,
+        "敏捷": 91.0,
+        "智识": 366.0,
+        "意志": 547.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 11561.1,
       "ATK": 3466.4,
@@ -6878,7 +7300,7 @@
     "data_flow": {
       "schema_version": 1,
       "sources": {
-        "assets/data/character_skills/xaihi.json": "f0f3198724e7b356a9aae4b717c7f24aacbdcf0ba2434927c8ca30c29eb4e2a9",
+        "assets/data/character_skills/xaihi.json": "67662f09251e439c6b43bcb465557c2904c207583e1874816d13649c17e54f31",
         "assets/data/character_builds/xaihi.json": "9967cc02a8fd2f0f6dda930a75fe40639b40772928aa1f4cbc2bd0fef74fba57",
         "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
         "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
@@ -6888,11 +7310,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [
         "chr_0011_seraph_potential_4"
@@ -6907,6 +7330,19 @@
     "element": "寒冷",
     "primary_stat": "智识",
     "secondary_stat": "敏捷",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "智识",
+      "secondary": "敏捷",
+      "totals": {
+        "力量": 82.0,
+        "敏捷": 312.0,
+        "智识": 671.0,
+        "意志": 105.0
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 4112.7,
@@ -7107,11 +7543,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",
@@ -7124,6 +7561,19 @@
     "element": "电磁",
     "primary_stat": "意志",
     "secondary_stat": "智识",
+    "attribute_basis": {
+      "schema_version": 1,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "智识",
+      "totals": {
+        "力量": 99.0,
+        "敏捷": 99.0,
+        "智识": 307.0,
+        "意志": 861.651
+      },
+      "unverified_attack_dependencies": []
+    },
     "panel": {
       "HP": 5495.0,
       "ATK": 7377.0,
@@ -7332,11 +7782,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "483144e1c360fd1a406fa4800f48ec89ea6800535388d8010233b29f20c2278b",
-        "scripts/skill-data/compute_damage_baseline.py": "e1a258d27a4944e96bab1b5a4bddb604c8f50e524eb11f48e3f675a17ffe10d6",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "20bc617f2236a290cb5748ebf825f966a717c8fb4778b29a5dd2e0cf90ca0b68",
+        "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
-        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33"
+        "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d"
       },
       "fixed_passive_sources": [],
       "runtime_modifiers": "not_applied",

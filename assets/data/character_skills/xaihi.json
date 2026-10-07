@@ -517,7 +517,7 @@
                             },
                             "terms": [
                                 {
-                                    "input": "source.智识",
+                                    "input": "source.native.final_nonconverted.41",
                                     "coefficient": {
                                         "row": "每点智识提升的 / 增幅效果"
                                     },
@@ -559,7 +559,7 @@
                             },
                             "terms": [
                                 {
-                                    "input": "source.智识",
+                                    "input": "source.native.final_nonconverted.41",
                                     "coefficient": {
                                         "row": "每点智识提升的 / 增幅效果"
                                     },

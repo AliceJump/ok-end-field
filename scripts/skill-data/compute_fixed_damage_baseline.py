@@ -31,6 +31,7 @@ def source_hashes(key):
         Path(__file__).resolve(), ROOT / "scripts/skill-data/compute_damage_baseline.py",
         ROOT / "src/data/character_progression.py", ROOT / "src/data/native_damage_scalars.py",
         ROOT / "assets/data/skill_damage_row_semantics.json",
+        ROOT / "src/data/damage_attributes.py",
     ]
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
 
@@ -108,6 +109,10 @@ def compute(key: str, tables: dict) -> dict:
             constant_sources.append(talent.effect_id)
             result = damage.compute_character(*args, full_overrides={}, additional_mods=mods)
     result["panel"].update(reaction_scalars(progression.native_id, level))
+    if key == "lifeng":
+        # The fixed talent was folded into attack_percent. Its native converted
+        # attribute/snapshot refresh is not yet established for dynamic changes.
+        result["attribute_basis"]["unverified_attack_dependencies"] = ["智识", "意志"]
     for field in ("cycle_expect", "cycle_expect_link4"):
         result.pop(field, None)
     result["trace"] = [

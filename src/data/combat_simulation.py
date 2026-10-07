@@ -349,6 +349,7 @@ class CombatWorldState:
         # A state transition still occurs when its damage policy is unresolved.
         self.reaction_inputs: dict[str, float] = {}
         self.passive_modifiers: dict[str, tuple[DamageModifierSpec, ...]] = {}
+        self.release_modifiers: dict[tuple[str, str], tuple[DamageModifierSpec, ...]] = {}
         self.main_control = actors[0] if actors else None
         self.default_energy_per_sp: dict[str, float] = {}
         self.native_buffs: dict[tuple[str, str], tuple[int, float | None]] = {}
@@ -374,14 +375,39 @@ class CombatWorldState:
         self.passive_modifiers[actor] = tuple(modifiers)
         self.emit("battle_start", actor)
 
+    def register_release_modifiers(self, actor, kind, modifiers):
+        from src.data.damage_release_rules import CAST_EVENTS
+
+        if actor not in self.characters or kind not in CAST_EVENTS:
+            raise ValueError("Invalid release modifier registration")
+        specs = tuple(modifiers)
+        if any(spec.trigger != CAST_EVENTS[kind] for spec in specs):
+            raise ValueError("Release modifier trigger does not match action type")
+        self.release_modifiers[actor, kind] = specs
+
     def damage_inputs(self, actor, enemy="target"):
-        values = {f"source.{k}": v for k, v in self.characters[actor].attributes.items()}
+        values = {f"source.{k}": v for k, v in self.effective_attributes(actor).items()}
         values.update({
             "source.is_main": float(actor == self.main_control),
             "enemy.has_crystal": float(self.count(actor, enemy, EffectType.STATUS_ORIGINIUM_CRYSTAL) > 0),
             "enemy.slowed": float(self.count(actor, enemy, EffectType.STATUS_SLOW) > 0),
             "enemy.staggered": float(self.count(actor, enemy, EffectType.STATUS_STAGGER) > 0),
         })
+        return values
+
+    def effective_attributes(self, actor):
+        character = self.characters[actor]
+        if not self.damage_state.attribute_changes:
+            return character.attributes
+        values = self.damage_state.effective_attributes(actor, character.attributes, now=self.time)
+        deltas, unknown = self.damage_state.final_attribute_deltas(actor, now=self.time)
+        if unknown:
+            values.pop("ATK", None)
+        elif any(deltas.values()) and character.panel is not None:
+            try:
+                values["ATK"] = character.panel.with_attribute_deltas(deltas).attack()
+            except ValueError:
+                values.pop("ATK", None)
         return values
 
     def emit(self, event, actor, enemy="target", inputs=None):
@@ -1054,7 +1080,7 @@ class CombatWorldState:
             return
         self._executing_action = action_id
         needed = required_input_keys(self, event, program)
-        inputs = {f"source.{key}": value for key, value in self.characters[actor].attributes.items()}
+        inputs = {f"source.{key}": value for key, value in self.effective_attributes(actor).items()}
         inputs["source.is_main"] = float(actor == self.main_control)
         for key, effect in (("enemy.has_crystal", EffectType.STATUS_ORIGINIUM_CRYSTAL),
                             ("enemy.slowed", EffectType.STATUS_SLOW), ("enemy.staggered", EffectType.STATUS_STAGGER)):
@@ -1065,7 +1091,7 @@ class CombatWorldState:
             if key.startswith("source."):
                 del inputs[key]
         if len(sources) == 1 and sources[0] in self.characters:
-            inputs.update({f"source.{key}": value for key, value in self.characters[sources[0]].attributes.items()})
+            inputs.update({f"source.{key}": value for key, value in self.effective_attributes(sources[0]).items()})
             inputs["source.is_main"] = float(sources[0] == self.main_control)
         inputs.update(self._action_inputs.get(action_id, {}))
         inputs.update({"bb." + k: v for k, v in self.characters[actor].blackboard.items()})
@@ -1115,7 +1141,7 @@ class CombatWorldState:
                 if len(owners) != 1 or owners[0] not in self.characters:
                     continue
                 value = (float(owners[0] == self.main_control) if query.attribute == "is_main"
-                         else self.characters[owners[0]].attributes.get(query.attribute))
+                         else self.effective_attributes(owners[0]).get(query.attribute))
                 if isinstance(value, (int, float)) and math.isfinite(value):
                     inputs[query.key] = float(value)
             except UnresolvedMechanic:
@@ -1380,6 +1406,14 @@ class CombatWorldState:
         from src.data.native_ability_runtime import bind_ability_scope
 
         bind_ability_scope(self, action_id, program)
+        from src.data.damage_release_rules import CAST_EVENTS
+
+        release_event = CAST_EVENTS.get(program.kind)
+        for spec in self.release_modifiers.get((program.actor, program.kind), ()):
+            self.damage_state.apply(spec, source_actor=program.actor, enemy=program.enemy,
+                                    now=self.time, event=release_event,
+                                    inputs=self.damage_inputs(program.actor, program.enemy),
+                                    main_control=self.main_control)
         if program.kind == "battle":
             self.emit("battle_cast", program.actor, program.enemy)
         for event in program.events:

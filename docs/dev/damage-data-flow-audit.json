@@ -44,6 +44,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -70,6 +71,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -115,6 +117,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -142,6 +145,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -234,6 +238,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "智识",
+          "totals": {
+            "力量": 110.0,
+            "敏捷": 367.0,
+            "智识": 409.0,
+            "意志": 264.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -277,6 +298,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -322,6 +344,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -372,6 +395,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -399,6 +423,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -491,6 +516,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "智识",
+          "totals": {
+            "力量": 511.0,
+            "敏捷": 150.0,
+            "智识": 381.0,
+            "意志": 89.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -534,6 +576,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -625,6 +668,7 @@
           ],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
@@ -763,6 +807,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -857,6 +902,74 @@
           ],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "antal_ultimate:BUFF_ELECTROMAGNETIC_UP",
+              "bucket": "amplification",
+              "elements": [
+                "电磁"
+              ],
+              "damage_tags": [],
+              "recipient": "team",
+              "trigger": "ultimate_cast",
+              "duration": 12.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.2200000047683716,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "character_skills/antal_ultimate/rank_stats/电磁增幅效果/专精3",
+                "character_skills/antal_ultimate/rank_stats/持续时间（秒）/专精3",
+                "CharacterPotentialTable/chr_0023_antal/potentialUnlockBundle/0/parameters/rate"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            },
+            {
+              "origin": "reviewed_release",
+              "key": "antal_ultimate:BUFF_BURN_UP",
+              "bucket": "amplification",
+              "elements": [
+                "灼热"
+              ],
+              "damage_tags": [],
+              "recipient": "team",
+              "trigger": "ultimate_cast",
+              "duration": 12.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.2200000047683716,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "character_skills/antal_ultimate/rank_stats/灼热增幅效果/专精3",
+                "character_skills/antal_ultimate/rank_stats/持续时间（秒）/专精3",
+                "CharacterPotentialTable/chr_0023_antal/potentialUnlockBundle/0/parameters/rate"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
@@ -961,6 +1074,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "智识",
+          "secondary": "力量",
+          "totals": {
+            "力量": 400.64,
+            "敏捷": 86.0,
+            "智识": 514.0,
+            "意志": 82.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -1002,6 +1132,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -1102,6 +1233,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -1317,6 +1449,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -1362,6 +1495,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -1395,6 +1529,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "智识",
+          "secondary": "意志",
+          "totals": {
+            "力量": 91.0,
+            "敏捷": 93.0,
+            "智识": 812.16,
+            "意志": 362.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -1438,6 +1589,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -1483,6 +1635,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -1529,6 +1682,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -1575,6 +1729,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -1712,6 +1867,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "智识",
+          "totals": {
+            "力量": 261.0,
+            "敏捷": 302.0,
+            "智识": 297.0,
+            "意志": 153.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -1753,6 +1925,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -1866,6 +2039,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -1903,6 +2077,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -1930,6 +2105,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -1962,6 +2138,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "智识",
+          "secondary": "意志",
+          "totals": {
+            "力量": 112.0,
+            "敏捷": 168.0,
+            "智识": 499.0,
+            "意志": 368.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -2005,6 +2198,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -2054,6 +2248,42 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "weapon:105:压制·太空物理学:battle",
+              "bucket": "damage_bonus",
+              "elements": [
+                "寒冷",
+                "灼热",
+                "电磁",
+                "自然"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "battle_cast",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.336,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -2081,6 +2311,42 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "weapon:105:压制·太空物理学:link",
+              "bucket": "damage_bonus",
+              "elements": [
+                "寒冷",
+                "灼热",
+                "电磁",
+                "自然"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "combo_cast",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.336,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -2107,6 +2373,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -2232,6 +2499,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "意志",
+          "secondary": "敏捷",
+          "totals": {
+            "力量": 162.0,
+            "敏捷": 319.0,
+            "智识": 110.0,
+            "意志": 418.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -2310,6 +2594,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -2431,6 +2716,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -2507,6 +2793,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -2551,6 +2838,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -2584,6 +2872,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "智识",
+          "totals": {
+            "力量": 143.0,
+            "敏捷": 533.0,
+            "智识": 381.0,
+            "意志": 92.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -2627,6 +2932,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -2662,6 +2968,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -2698,6 +3005,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -2725,6 +3033,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -2817,6 +3126,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "意志",
+          "totals": {
+            "力量": 236.0,
+            "敏捷": 96.0,
+            "智识": 299.0,
+            "意志": 522.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -2860,6 +3186,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -2886,6 +3213,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -2931,6 +3259,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -2958,6 +3287,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -3050,6 +3380,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "力量",
+          "totals": {
+            "力量": 290.0,
+            "敏捷": 525.0,
+            "智识": 85.0,
+            "意志": 93.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -3093,6 +3440,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -3119,6 +3467,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -3164,6 +3513,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -3191,6 +3541,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -3283,6 +3634,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "意志",
+          "totals": {
+            "力量": 529.0,
+            "敏捷": 96.0,
+            "智识": 94.0,
+            "意志": 286.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -3360,6 +3728,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -3405,6 +3774,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -3449,6 +3819,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -3484,6 +3855,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -3516,6 +3888,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "意志",
+          "totals": {
+            "力量": 622.0,
+            "敏捷": 87.0,
+            "智识": 77.0,
+            "意志": 332.88000000000005
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -3557,6 +3946,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -3602,6 +3992,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -3656,6 +4047,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -3702,6 +4094,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -3876,6 +4269,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "力量",
+          "totals": {
+            "力量": 307.0,
+            "敏捷": 635.0,
+            "智识": 96.0,
+            "意志": 107.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -3919,6 +4329,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -3945,6 +4356,42 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "weapon:105:压制·太空物理学:battle",
+              "bucket": "damage_bonus",
+              "elements": [
+                "寒冷",
+                "灼热",
+                "电磁",
+                "自然"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "battle_cast",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.336,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -4024,6 +4471,42 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "weapon:105:压制·太空物理学:link",
+              "bucket": "damage_bonus",
+              "elements": [
+                "寒冷",
+                "灼热",
+                "电磁",
+                "自然"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "combo_cast",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.336,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -4071,6 +4554,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -4170,6 +4654,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "意志",
+          "secondary": "力量",
+          "totals": {
+            "力量": 227.0,
+            "敏捷": 97.0,
+            "智识": 248.0,
+            "意志": 433.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -4213,6 +4714,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -4239,6 +4741,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -4288,6 +4791,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -4356,6 +4860,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -4518,6 +5023,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "智识",
+          "totals": {
+            "力量": 165.0,
+            "敏捷": 476.0,
+            "智识": 417.0,
+            "意志": 91.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -4559,6 +5081,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -4585,6 +5108,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -4630,6 +5154,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -4784,6 +5309,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -4818,6 +5344,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "意志",
+          "secondary": "智识",
+          "totals": {
+            "力量": 89.0,
+            "敏捷": 92.0,
+            "智识": 340.0,
+            "意志": 637.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -4859,6 +5402,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -4916,6 +5460,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -4966,6 +5511,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -5002,6 +5548,41 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "weapon:70:夜幕·嘶鸣烈火:ult",
+              "bucket": "damage_bonus",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [
+                "normal"
+              ],
+              "recipient": "self",
+              "trigger": "ultimate_cast",
+              "duration": 20.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 2.1,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "weapons/熔铸火焰/weapon_skills/0/ranks/Rank 9/夜幕·嘶鸣烈火"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -5035,6 +5616,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "智识",
+          "secondary": "力量",
+          "totals": {
+            "力量": 251.0,
+            "敏捷": 99.0,
+            "智识": 696.0,
+            "意志": 89.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -5076,6 +5674,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -5162,6 +5761,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -5211,6 +5811,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -5238,6 +5839,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -5276,6 +5878,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "意志",
+          "totals": {
+            "力量": 612.0,
+            "敏捷": 104.0,
+            "智识": 93.0,
+            "意志": 331.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -5319,6 +5938,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -5387,6 +6007,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -5438,6 +6059,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -5484,6 +6106,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -5517,6 +6140,26 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "力量",
+          "totals": {
+            "力量": 307.0,
+            "敏捷": 627.0,
+            "智识": 115.0,
+            "意志": 117.0
+          },
+          "unverified_attack_dependencies": [
+            "智识",
+            "意志"
+          ]
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -5558,6 +6201,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -5617,6 +6261,7 @@
           ],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
@@ -5663,6 +6308,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -5805,6 +6451,7 @@
           ],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
@@ -5838,6 +6485,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "意志",
+          "secondary": "敏捷",
+          "totals": {
+            "力量": 89.0,
+            "敏捷": 176.0,
+            "智识": 145.0,
+            "意志": 890.838
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -5915,6 +6579,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -6033,6 +6698,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -6120,6 +6786,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -6156,6 +6823,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -6188,6 +6856,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "意志",
+          "totals": {
+            "力量": 668.0,
+            "敏捷": 92.0,
+            "智识": 90.0,
+            "意志": 303.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -6229,6 +6914,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -6255,6 +6941,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -6290,6 +6977,42 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "weapon:128:夜幕·耻辱:link",
+              "bucket": "damage_bonus",
+              "elements": [
+                "寒冷",
+                "灼热",
+                "电磁",
+                "自然"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "combo_cast",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.336,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "weapons/遗忘/weapon_skills/0/ranks/Rank 9/夜幕·耻辱"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -6317,6 +7040,42 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "weapon:128:夜幕·耻辱:ult",
+              "bucket": "damage_bonus",
+              "elements": [
+                "寒冷",
+                "灼热",
+                "电磁",
+                "自然"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "ultimate_cast",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.672,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "weapons/遗忘/weapon_skills/0/ranks/Rank 9/夜幕·耻辱"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -6445,6 +7204,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "智识",
+          "secondary": "意志",
+          "totals": {
+            "力量": 91.0,
+            "敏捷": 93.0,
+            "智识": 680.0,
+            "意志": 243.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -6523,6 +7299,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -6577,6 +7354,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -6686,6 +7464,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -6763,6 +7542,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -6829,6 +7609,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "意志",
+          "secondary": "敏捷",
+          "totals": {
+            "力量": 101.0,
+            "敏捷": 240.0,
+            "智识": 321.0,
+            "意志": 483.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -6872,6 +7669,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -6907,6 +7705,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -6943,6 +7742,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -7007,6 +7807,7 @@
           ],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
@@ -7106,6 +7907,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "意志",
+          "totals": {
+            "力量": 352.0,
+            "敏捷": 148.0,
+            "智识": 89.0,
+            "意志": 466.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -7147,6 +7965,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -7192,6 +8011,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -7325,6 +8145,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -7353,6 +8174,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -7419,6 +8241,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "智识",
+          "totals": {
+            "力量": 97.0,
+            "敏捷": 698.0,
+            "智识": 247.0,
+            "意志": 89.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -7462,6 +8301,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -7497,6 +8337,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -7533,6 +8374,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -7560,6 +8402,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -7652,6 +8495,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "意志",
+          "totals": {
+            "力量": 214.0,
+            "敏捷": 179.0,
+            "智识": 231.0,
+            "意志": 534.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -7693,6 +8553,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -7790,6 +8651,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -7841,6 +8703,44 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "set:清波:release_damage",
+              "bucket": "damage_bonus",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [
+                "normal",
+                "skill",
+                "combo",
+                "ultimate"
+              ],
+              "recipient": "self",
+              "trigger": "combo_cast",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 2,
+              "stack_policy": "independent",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.2,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "equipments/清波重甲/set_effect"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -7877,6 +8777,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -7910,6 +8811,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "力量",
+          "totals": {
+            "力量": 280.0,
+            "敏捷": 633.0,
+            "智识": 126.0,
+            "意志": 129.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -7951,6 +8869,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -8020,6 +8939,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -8101,6 +9021,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -8129,6 +9050,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -8161,6 +9083,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "敏捷",
+          "secondary": "意志",
+          "totals": {
+            "力量": 97.0,
+            "敏捷": 666.0,
+            "智识": 99.0,
+            "意志": 301.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -8204,6 +9143,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -8275,6 +9215,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -8321,6 +9262,44 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "set:清波:release_damage",
+              "bucket": "damage_bonus",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [
+                "normal",
+                "skill",
+                "combo",
+                "ultimate"
+              ],
+              "recipient": "self",
+              "trigger": "combo_cast",
+              "duration": 15.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 2,
+              "stack_policy": "independent",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.2,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "equipments/清波重甲/set_effect"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -8348,6 +9327,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -8473,6 +9453,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "力量",
+          "secondary": "敏捷",
+          "totals": {
+            "力量": 352.0,
+            "敏捷": 250.0,
+            "智识": 231.0,
+            "意志": 166.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -8516,6 +9513,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -8596,6 +9594,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -8633,6 +9632,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -8680,7 +9680,7 @@
                 "base": 0.2640000057220459,
                 "terms": [
                   {
-                    "input": "source.智识",
+                    "input": "source.native.final_nonconverted.41",
                     "coefficient": 0.00033000000715255735,
                     "cap": 0.39600000858306883
                   }
@@ -8696,7 +9696,7 @@
                 "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4/parameters/atk_up"
               ],
               "required_inputs": [
-                "source.智识"
+                "source.native.final_nonconverted.41"
               ],
               "unresolved": null,
               "producer_status": "not_verified_by_this_audit"
@@ -8723,7 +9723,7 @@
                 "base": 0.2640000057220459,
                 "terms": [
                   {
-                    "input": "source.智识",
+                    "input": "source.native.final_nonconverted.41",
                     "coefficient": 0.00033000000715255735,
                     "cap": 0.39600000858306883
                   }
@@ -8739,7 +9739,7 @@
                 "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4/parameters/atk_up"
               ],
               "required_inputs": [
-                "source.智识"
+                "source.native.final_nonconverted.41"
               ],
               "unresolved": null,
               "producer_status": "not_verified_by_this_audit"
@@ -8747,6 +9747,94 @@
           ],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "xaihi_ultimate:BUFF_COLD_UP",
+              "bucket": "amplification",
+              "elements": [
+                "寒冷"
+              ],
+              "damage_tags": [],
+              "recipient": "team",
+              "trigger": "ultimate_cast",
+              "duration": 12.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.2640000057220459,
+                "terms": [
+                  {
+                    "input": "source.native.final_nonconverted.41",
+                    "coefficient": 0.00033000000715255735,
+                    "cap": 0.39600000858306883
+                  }
+                ],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "character_skills/xaihi_ultimate/rank_stats/基础寒冷增幅效果/专精3",
+                "character_skills/xaihi_ultimate/rank_stats/每点智识提升的 / 增幅效果/专精3",
+                "character_skills/xaihi_ultimate/rank_stats/智识提升增幅上限/专精3",
+                "character_skills/xaihi_ultimate/rank_stats/持续时间（秒）/专精3",
+                "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4/parameters/atk_up"
+              ],
+              "required_inputs": [
+                "source.native.final_nonconverted.41"
+              ],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            },
+            {
+              "origin": "reviewed_release",
+              "key": "xaihi_ultimate:BUFF_NATURAL_UP",
+              "bucket": "amplification",
+              "elements": [
+                "自然"
+              ],
+              "damage_tags": [],
+              "recipient": "team",
+              "trigger": "ultimate_cast",
+              "duration": 12.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 0.2640000057220459,
+                "terms": [
+                  {
+                    "input": "source.native.final_nonconverted.41",
+                    "coefficient": 0.00033000000715255735,
+                    "cap": 0.39600000858306883
+                  }
+                ],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "character_skills/xaihi_ultimate/rank_stats/基础自然增幅效果/专精3",
+                "character_skills/xaihi_ultimate/rank_stats/每点智识提升的 / 增幅效果/专精3",
+                "character_skills/xaihi_ultimate/rank_stats/智识提升增幅上限/专精3",
+                "character_skills/xaihi_ultimate/rank_stats/持续时间（秒）/专精3",
+                "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4/parameters/atk_up"
+              ],
+              "required_inputs": [
+                "source.native.final_nonconverted.41"
+              ],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
@@ -8890,6 +9978,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "意志",
+          "secondary": "智识",
+          "totals": {
+            "力量": 89.0,
+            "敏捷": 91.0,
+            "智识": 366.0,
+            "意志": 547.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -8931,6 +10036,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -8982,6 +10088,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -9028,6 +10135,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -9179,6 +10287,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
@@ -9213,6 +10322,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "智识",
+          "secondary": "敏捷",
+          "totals": {
+            "力量": 82.0,
+            "敏捷": 312.0,
+            "智识": 671.0,
+            "意志": 105.0
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     },
     {
@@ -9254,6 +10380,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -9347,6 +10474,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -9413,6 +10541,7 @@
             }
           ],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
@@ -9444,6 +10573,7 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
+          "model_release_bonus_rules": [],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -9518,6 +10648,23 @@
           "complete_semantic_review": false
         }
       ],
+      "dynamic_attribute_flow": {
+        "basis": {
+          "schema_version": 1,
+          "domain": "final_panel",
+          "primary": "意志",
+          "secondary": "智识",
+          "totals": {
+            "力量": 99.0,
+            "敏捷": 99.0,
+            "智识": 307.0,
+            "意志": 861.651
+          },
+          "unverified_attack_dependencies": []
+        },
+        "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
+        "native_attribute_change_producers": "not_verified"
+      },
       "extra_quote_ids": []
     }
   ],
@@ -9527,6 +10674,7 @@
     "replay_verified_quotes": 128,
     "skill_damage_rules": 33,
     "selected_passive_damage_rules": 13,
+    "model_release_bonus_bindings": 13,
     "skills_with_reviewed_row_membership": 16,
     "skills_with_structural_data_gaps": 0,
     "skills_pending_semantic_review": 128,
