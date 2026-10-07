@@ -69,3 +69,5 @@ CombatExpression提供实际输入引用集合，CombatEvent在编译时记录�
 Unique原生分支返回空创建结果，已有实例不会重挂父根。随后已支持首次创建的Unique子实例，保留原BB/期限，第二个父对象不延长也不能提前清理第一个父的实例。新增两种父结束顺序及真实梨诺Unique订阅编译回归，原优先级缺口保留；父子11项及生命周期/共享堆叠合计26项通过，全仓1261项通过（65.068秒），Ruff I/F通过。完整程序覆盖仍2/111；子实例独立性诊断2→1，一般寿命诊断仍22个程序。
 
 跨技能继承进一步查明：结束信息原因7及目标技能ID匹配后，转交依赖owner.activeSkillMap中的真实Skill；AttachBuff加入Skill.m_buffsDuringSkill，后续清理需要该技能的释放链，不能用任意下一动作或handoff替代。该链仍未接入，证据与下一步边界已保存到native-buff-lifetime-audit.md。
+
+继续核验后明确区分：Skill.CastEnd清理Skill.m_buffsDuringSkill，Ability.Disable清理Ability.m_childrenBuff；Ability.CastEnd仅结束时间线，不调用Disable。卡缪终结技、骏卫天赋有根Ability子创建，黎风另有子关系与动作自动结束并存。下一步先补持久Skill/Ability对象身份与启用/停用、槽替换/恢复生命周期，再接继承和根子关系；不将根父对象简化成本次cast或handoff。新增原生调用窗口及下一步所需模型已写入寿命审计，该证据步骤不增加可执行覆盖。

@@ -62,3 +62,24 @@ Unique（枚举7）的跳转表目标为0x373b304，先查询未结束实例并�
 跨技能继承仍不执行：OnEnd外置分支读取actionEnvironment.context的结束信息，要求结束原因7且目标技能ID在继承列表。该匹配分支中finishWithNextSkillIfNotInherited=false直接保留实例；为true时调用_TryAttachCreatedBuffsToNextSkill，转交失败才回到普通清理。方法通过创建动作owner的AbilitySystem.activeSkillMap查找真实目标Skill，逐个有效实例调用Skill.AttachBuff，后者仅加入该Skill的m_buffsDuringSkill（偏移144）。因此下一步必须绑定结束原因/目标技能、真实技能对象与其释放链；同一角色开始任意下一动作不等于已证实这条原生链。不能只将旧节点截止改成下一动作handoff。
 
 继承补充窗口：OnEnd分支0x4e23dac/220字节SHA256 `5819478582714efd2371eaf56fe3e6128f4557e24f6d69c59d1932dd8cf035bd`；Skill.AttachBuff 0x467b710/600字节 `2ff7706b929919ddefac71197f228cadb3110bdaa033ec6894c1d82e5490f5cf`。后者为读取窗口，实际入口在0x467b76c返回，窗口包含后续邻接代码，不把600字节当完整方法长度。
+
+## 技能、Ability与动作节点的结束边界
+
+进一步核验释放调用链，不能把“Skill父根”简单实现为本次cast UID。Skill.AttachBuff挂在Skill.m_buffsDuringSkill，Skill.CastEnd于0x30f6876调用_FinishBuffs；_FinishBuffs于0x30f541c调用Buff.MarkFinish。Skill.Disable也先清理这份列表，再调用Ability.Disable。
+
+另一路SetBuffParent支持Ability，把子实例加入Ability.m_childrenBuff（偏移64）。Ability.Disable依次UnRegisterActions、_FinishPassiveBuff、_RemoveAllChildrenBuff。Ability.CastEnd只将结束信息写入context、调用TimelineActionProcessor.CastEnd并清空结束信息；这个入口没有调用Disable或清理m_childrenBuff。所以“继承挂到Skill”与“asChildBuff挂到Ability”有不同的释放事件，不能共用handoff、节点_endFrame或一个推测的角色结束时刻。
+
+真实原始创建例子：卡缪chr_0033_camille_ultimate_skill的buff_chr_0033_camille_ult_hit是asChildBuff=true、autoFinishByAction=false；骏卫chr_0029_pograni_talent1也有同类创建。黎风chr_0032_lizhiyan_ultimate_skill2同时有子关系和动作自动结束。当前根Skill/Ability路径都继续诊断，未将这些实例错误绑定到本次调度动作；同时存在两种寿命时也不能忽略任意一种。
+
+下一步需要持久的原生Skill/Ability对象身份、启用/停用状态和槽替换/恢复对应的对象生命周期，并在cast结束携带实际结束原因与目标技能。再将继承列表绑定到Skill实例，Ability子列表绑定到其自身实例，分别处理CastEnd与Disable。SkillData.durationFrame或profile.duration仅提供自然时间轴长度；例如佩丽卡战技原始durationFrame=155（5.1667秒），handoff是单独推导的交接点，两者都不能单独证明Ability已Disable。先补该对象模型与释放事件证据，再开放现有22个程序中的相关寿命诊断。
+
+| 释放链核验窗口 | ID / RVA | 长度 | SHA256 |
+| --- | --- | --- | --- |
+| Ability.CastEnd | 55819 / 0x30f55b0 | 300 | 98a1a9b956c735ea0ae3fcbd23bd7c147352ee6689390f7ae0f25e35ff0fe52b |
+| Ability.Disable | 55811 / 0x3557ed0 | 110 | 87d162b2a8af21223fd3abb3c6c61f6d0bf59af27587fae9b2e92917e9ba68d7 |
+| Ability._RemoveAllChildrenBuff | 55827 / 0x3557e50 | 9000 | f1140005c6b18ec7f505c1cf986bef2fb52ecff44d681451a0650f06f9ef58af |
+| Skill._FinishBuffs | 55902 / 0x30f52b0 | 9000 | 511a96442fa46a1b2e50ec0cfb618e248cac2235c8909a80a01bfb2dfe8543a2 |
+| Skill.CastEnd | 55917 / 0x30f5a60 | 9000 | d5328d7734954f93276445c2df9d21311689574dab51314d52e5906d005899b2 |
+| Skill.Disable | 55892 / 0x3557f40 | 9000 | f4399c97fbf741b203955563ee30e766557223a4306bdd0f5bc7ee3437e8d69a |
+
+以上仍是核验窗口和可定位调用的证据，不宣称整个Skill状态机或被停用的全部后续处理已解释完。该步只补释放边界证据，不改变执行覆盖或技力返还时机。
