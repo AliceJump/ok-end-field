@@ -269,7 +269,8 @@ class TestSnapshotChecks(unittest.TestCase):
             self.assertEqual(equip["set_main"], "壤流装备组")
             self.assertIsNone(equip["set_off"])
             self.assertEqual(equip["pieces"], ["壤流轻甲", "壤流护手", "壤流短棍", None])
-            self.assertIn("自由散件", equip["note"])
+            self.assertIn("旧导出仅反查到 3 件不同装备", equip["note"])
+            self.assertIn("无法表达重复配件", equip["note"])
 
     def test_curated_build_keeps_duplicate_accessory_and_validates_slots(self):
         equipments = {
