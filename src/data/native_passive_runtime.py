@@ -15,10 +15,14 @@ def activate_passive(world, passive):
     world._action_inputs[uid] = dict(passive.program.parameters)
     world._action_inputs[uid]["cast.non_returned_sp"] = 0.0
     world._action_targets[uid] = {"current": (actor,), "source": (actor,), "owner": (actor,)}
-    if passive.program.key.startswith("chr_"):
-        from src.data.native_ability_runtime import bind_ability_scope
+    if passive.ability_skill is not None:
+        from src.data.native_ability_runtime import bind_passive_ability
 
-        bind_ability_scope(world, uid, passive.program)
+        if not bind_passive_ability(world, uid, passive):
+            del world.native_passives[uid]
+            world._action_inputs.pop(uid, None)
+            world._action_targets.pop(uid, None)
+            return False
     for event in passive.program.events:
         world._sequence += 1
         heapq.heappush(world._queue, (world.time + event.at, world._sequence, uid, passive.program, event))

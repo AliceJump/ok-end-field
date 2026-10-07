@@ -74,6 +74,7 @@ class NativeBuffChange(ImmutableCombatValue):
     action_finish_after: float | None = None
     child_of_buff: bool = False
     child_of_ability: bool = False
+    passive_of_ability: bool = False
 
 
 @dataclass(frozen=True)
@@ -1509,7 +1510,8 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         state.damage_state.phase_signature(state.time),
                         state.main_control, state.returned_sp, tuple(sorted(state.native_buffs.items())),
                         tuple(sorted(state.native_skill_slots.items())), tuple(sorted(state.native_skill_overrides.items())),
-                        tuple((v.uid, v.enabled) for v in state.native_abilities.values()),
+                        tuple((v.uid, v.enabled, v.passive_scope, tuple(v.passive_buffs))
+                              for v in state.native_abilities.values()),
                         tuple(sorted(state._native_action_abilities.items())),
                         tuple((uid, repr(passive), tuple(sorted(state._action_inputs[uid].items())))
                               for uid, passive in state.native_passives.items()),

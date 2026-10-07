@@ -110,3 +110,25 @@ Skill.Enable先检查初始化和已启用状态（0x353b566/0x353b56f），已�
 对已挂载SkillData.buffs的被动根执行停用时，另明确加入Native Ability passive buff cleanup not yet bound诊断；真实余烬被动回归验证此边界，不把尚未归入独立名单的buff当作已销毁。新增13项Ability专项通过（2.979秒），最终全仓1274项通过（72.065秒）；Ruff I/F、Python/JSON与敏感路径检查、git diff --check通过。
 
 审计输出tmp/mechanism_coverage_ability_child.json仍为2/111完整程序树，一般寿命诊断仍影响22个程序；同一程序另有未绑定寿命节点，所以局部Ability挂接不会自动减少该计数。5次实测fork均值0.423ms，四个合法战技2.50/1.70/3.05/1.14ms；深度2搜索12.69ms且no_complete_plan，未完成完整144展开/25ms预算验收，未进行游戏现场验证。
+
+## Enable附带buff的独立名单（2026-10-07继续）
+
+Ability._AddPassiveBuff检查SkillData.passiveSkillType=0，再读取SkillData.buffs（偏移208）。创建时使用当前Ability.blackboard（偏移112）和自身角色；只将有效创建返回值加入m_passiveBuffs（偏移24），不调用SetBuffParent。_FinishPassiveBuff逐个有效实例MarkFinish后清空名单。Disable顺序仍为注销动作、清理这份名单、清理m_childrenBuff；两类关系不能合并。
+
+另完整追踪AddBuff→_AddBuffInternal→AddBuffFinal→BuffContainer.CreateBuff返回链。_AddBuffInternal调用owner的AddBuffFinal虚槽83，后者调用BuffContainer虚槽4的CreateBuff；结果原样返回。CreateBuff在0x373cb7b测试StackBuff返回值，空值经0x373d286包装后返回；没有改用旧Unique实例。因此第二个Ability重加Unique时不会取得第一份名单的所有权。
+
+选中AddPassiveSkill生产者的SkillData.buffs现从一次性时间线事件移入Enable名单，显式Disable按实际UID结束并清空，再Enable按当前Ability BB重新创建。过期UID忽略，不按名称误删后来实例；开始回调立即结束的实例不加入名单。现有32人目录中14个选中原生被动Skill有11个附带buff，未发现同actor/skill的重复定义；初始裸时间线均为空。一般API仍对重复生产者和非空时间线的重启保留未知，不能默认为同一种行为。真实余烬被动的名单清理已验证，上一段的未绑定名单诊断在这一限定路径内关闭。
+
+| 核验窗口 | RVA | 长度 | SHA256 |
+| --- | --- | --- | --- |
+| Ability._AddPassiveBuff | 0x30fbef0 | 1600 | 7ac9d236ea36c8de904c15d3e4aa61900929fa903e185424b396b49ee5733375 |
+| Ability._FinishPassiveBuff | 0x3557af0 | 650 | 072d831f9a9ff6bc8124ea0365f6fde980911b87b9d781177ffdca69ae32fbd8 |
+| Ability.Enable | 0x30fbde0 | 300 | 541286a0628613830ee17d9dfaa72366b356c3c489865cc4e3ee7abcf80d3780 |
+| AbilitySystem.AddBuff | 0x37424d0 | 4000 | d9bbf22fbecc091f35fee0b8a6dbc907719e09125c7944d8f5364a4cb5c30620 |
+| AbilitySystem._AddBuffInternal | 0x373aad0 | 6000 | b1eb4c1c3297e25abb8a8377776e4f91ddff43c752a8eaed5e54d412e8f87a7a |
+| AbilitySystem.AddBuffFinal | 0x3739fd0 | 5000 | b312752a5b0c2b82b63851825f880ba2209a211bf1a3a02b77c184a456172c22 |
+| BuffContainer.CreateBuff | 0x373ba40 | 9000 | 705aad865b3c58abb0f8dc6b6218e2333fcdacbd5c23c94396d148b272135f63 |
+
+以上是校验读取窗口，不把窗口长度当实际方法长度；native inputs与已有索引哈希一致。实际Disable生产者、普通主动Skill的附带buff、完整Enable副作用、Skill.m_buffsDuringSkill与真实CastEnd/继承仍未闭环。
+
+新增10项名单专项覆盖Enable幂等、自然到期、同名和Unique隔离、当前BB重挂、先被动后子孙的结束顺序、开始时自移除、预测隔离及未知重启/重复生产者；合计31项专项通过，全仓1284项通过（73.343秒），Ruff I/F、解析与敏感路径检查及git diff --check通过。tmp/mechanism_coverage_ability_passive.json完整程序仍2/111；fork均值0.425ms，四个战技2.528/1.603/3.033/1.182ms，深度2搜索12.889ms且no_complete_plan，不能据此认定完整预算达标。未做现场验证。

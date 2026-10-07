@@ -111,6 +111,13 @@ def finish_parent_buffs(world, parent_uid):
             _finish(world, instance)
 
 
+def finish_buff_instances(world, instance_ids):
+    for uid in instance_ids:
+        instance = world.native_buff_instances.get(uid)
+        if instance is not None:
+            _finish(world, instance)
+
+
 def _trigger(world, instance):
     if instance.remaining == 0:
         return
@@ -137,6 +144,15 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         if change.child_of_buff or world._native_buff_context is not None:
             raise UnresolvedMechanic(f"Conflicting child buff root: {change.key}")
         parent = executing_ability(world, action_id)
+    passive_root = None
+    if change.passive_of_ability:
+        from src.data.native_ability_runtime import executing_ability
+
+        if parent is not None or world._native_buff_context is not None:
+            raise UnresolvedMechanic(f"Conflicting Ability passive buff root: {change.key}")
+        passive_root = executing_ability(world, action_id)
+        if owner != passive_root.actor or program.actor != passive_root.actor or delta != 1:
+            raise UnresolvedMechanic(f"Invalid Ability passive buff recipient/count: {change.key}")
     if change.action_finish_after is not None and (
         not math.isfinite(change.action_finish_after) or change.action_finish_after < 0
     ):
@@ -187,6 +203,10 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         _callbacks(world, instance, 5)
         if uid not in world.native_buff_instances:
             continue
+        if passive_root is not None:
+            # _AddPassiveBuff stores only valid AddBuff results after creation.
+            # Unique reapplication creates no wrapper and never joins this list.
+            passive_root.passive_buffs.append(uid)
         if period > 0 and limit != 0:
             if not definition.wait_first:
                 _trigger(world, instance)

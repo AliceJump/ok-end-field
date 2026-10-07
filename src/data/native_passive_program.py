@@ -16,6 +16,8 @@ class NativePassiveProgram(ImmutableCombatValue):
     source: str
     program: ActionProgram
     subscriptions: tuple[tuple[str, ActionProgram], ...] = ()
+    ability_skill: str | None = None
+    ability_buffs: tuple[NativeBuffChange, ...] = ()
 
 
 def _reference(key, values):
@@ -28,12 +30,13 @@ def _reference(key, values):
     return {"buffId": key, "assignBlackboard": bool(items), "assignItems": items}
 
 
-def _buff(store, character, profile, actor, reference, *, attributes, panel):
+def _buff(store, character, profile, actor, reference, *, attributes, panel, passive_of_ability=False):
     key = reference["buffId"]
     data = native_record(store, key)["data"]
     definition = compile_buff_definition(store, character, profile, actor, key, data, reference,
                                          attributes=attributes, panel=panel, path=())
-    return NativeBuffChange(key, CombatExpression("literal", (1.0,)), selector=NativeTarget("owner"), definition=definition)
+    return NativeBuffChange(key, CombatExpression("literal", (1.0,)), selector=NativeTarget("owner"), definition=definition,
+                            passive_of_ability=passive_of_ability)
 
 
 def compile_passive_producers(store, character, actor, profile, *, attributes, panel):
@@ -95,12 +98,12 @@ def compile_passive_producers(store, character, actor, profile, *, attributes, p
                         raise UnresolvedMechanic(f"Native toggle passive needs binding: {key}")
                     # Skill.Create selects ToggleBuffPassiveSkill only for type
                     # 1. A type-0 record may retain inactive toggleBuffs defaults.
-                    buffs = tuple(_buff(store, character, timing, actor, reference, attributes=attributes, panel=panel)
+                    buffs = tuple(_buff(store, character, timing, actor, reference, attributes=attributes, panel=panel,
+                                        passive_of_ability=True)
                                   for reference in data["buffs"])
-                    if buffs:
-                        events = (CombatEvent(0, "native_passive_skill_buffs", native_buffs=buffs), *events)
                     programs.append(NativePassiveProgram(identity, passive.source,
-                                                         replace(program, events=events), tuple(subscriptions)))
+                                                         replace(program, events=events), tuple(subscriptions),
+                                                         ability_skill=key, ability_buffs=buffs))
             except (KeyError, ValueError) as error:
                 diagnostics.append(f"{character.name}/{passive.effect_id}: {error}")
     return tuple(programs), tuple(diagnostics)

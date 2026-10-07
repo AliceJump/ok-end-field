@@ -79,3 +79,9 @@ Unique原生分支返回空创建结果，已有实例不会重挂父根。随�
 一般寿命诊断仍22个程序，完整程序仍2/111；不要将新对象身份报告成完整Skill状态机完成。战斗中的Disable生产者、Enable期附带buff重挂/停用名单、Skill.AttachBuff与真实CastEnd原因和目标ID、正周期同刻顺序仍要继续绑定。详细原生证据、执行边界与预算复测见[native-buff-lifetime-audit.md](native-buff-lifetime-audit.md)。当前master仍5755d347，fetch确认没有落后，无需rebase；技力返还时机继续后置。
 
 新增13项Ability专项通过，最终全仓1274项通过（72.065秒），Ruff I/F及Python/JSON、敏感路径、差异检查通过。余烬真实被动的未绑定停用名单明确保留诊断。本轮没有进行现场战斗验证；全部约定剩余项仍未完成，保留本会话5小时续作任务。
+
+## Enable附带buff名单与重新启用
+
+进一步核验_AddPassiveBuff及AddBuff的完整返回链后，将选中原生被动SkillData.buffs挂在独立的Ability名单，按实际UID在显式Disable时先结束，再清理Ability子实例。重新Enable读取当前Ability BB，Unique已有实例不转交名单；过期、自移除和预测副本均保持独立。真实余烬停用名单的上一阶段诊断已在此限定范围内关闭。一般主动Skill、实际Disable生产者、真实CastEnd及跨技能继承仍未完成，继续向这些缺口推进。
+
+新增10项专项，合计31项专项通过，全仓1284项通过（73.343秒）；完整程序覆盖仍2/111。预算复测搜索因未解析机制返回no_complete_plan，不能当成完整144展开/25ms验收。证据窗口及限制见native-buff-lifetime-audit.md最新段；技力时机继续后置，未现场验证，保留automation-2。

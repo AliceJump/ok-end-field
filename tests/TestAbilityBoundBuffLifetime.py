@@ -145,7 +145,7 @@ class TestAbilityBoundBuffLifetime(unittest.TestCase):
 
     def test_attached_passive_skill_has_persistent_ability_scope(self):
         program = replace(self.producer(key="chr_test_talent"), native_slot=None)
-        passive = NativePassiveProgram("talent", "talent", program)
+        passive = NativePassiveProgram("talent", "talent", program, ability_skill=program.key)
         self.assertTrue(activate_passive(self.world, passive))
         self.assertFalse(activate_passive(self.world, passive))
         child = next(iter(self.world.native_buff_instances.values()))
@@ -168,7 +168,8 @@ class TestAbilityBoundBuffLifetime(unittest.TestCase):
     def test_disabled_passive_subscription_does_not_execute_until_reenabled(self):
         callback = self.fixture.callback(amount=4)
         program = replace(callback, key="chr_test_subscription")
-        passive = NativePassiveProgram("talent", "talent", replace(program, events=()), (("test", callback),))
+        passive = NativePassiveProgram("talent", "talent", replace(program, events=()), (("test", callback),),
+                                       ability_skill=program.key)
         activate_passive(self.world, passive)
         dispatch_passive_event(self.world, "test", "1", {})
         self.assertEqual(self.world.characters["1"].energy, 4)
@@ -190,13 +191,17 @@ class TestAbilityBoundBuffLifetime(unittest.TestCase):
         self.assertFalse(changes[0].child_of_buff)
         self.assertTrue(any(e.unresolved for e in walk_combat_events(program.events)))
 
-    def test_real_attached_passive_buff_cleanup_remains_explicitly_unresolved(self):
+    def test_real_attached_passive_buff_cleanup_uses_its_enable_list(self):
         catalog = build_combat_catalog(("余烬",), SkillTimingStore())
         passive = next(p for p in catalog.world.native_passives.values()
-                       if any(e.name == "native_passive_skill_buffs" for e in p.program.events))
+                       if p.ability_buffs)
+        root = catalog.world.native_abilities[passive.program.actor, passive.program.key]
+        self.assertEqual(len(root.passive_buffs), 1)
+        uid = root.passive_buffs[0]
         self.assertTrue(disable_ability(catalog.world, passive.program.actor, passive.program.key))
-        self.assertIn(f"Native Ability passive buff cleanup not yet bound: {passive.program.key}",
-                      catalog.world.unresolved)
+        self.assertNotIn(uid, catalog.world.native_buff_instances)
+        self.assertFalse(root.passive_buffs)
+        self.assertFalse(any("Ability passive buff cleanup not yet bound" in reason for reason in catalog.world.unresolved))
 
 
 if __name__ == "__main__":
