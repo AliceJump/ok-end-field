@@ -29,6 +29,8 @@
 
 继续新增Skill挂接名单及明确CastEnd输入下的跨技能转交。编译器保留非周期可执行实例的原始继承参数；真实弭弗comboprocess回归通过。Skill.CastEnd只清理时间线结束前复制的旧名单，不能清空新自继承实例。真实结束原因/目标/时点和目标activeSkillMap对象的生产者仍未接入，严格排轴保持诊断，覆盖仍2/111。已定位_DetachSkillInternal→Skill.Disable/Remove，下一步追上层；普通Skill.Disable名单清理仍待接入。CurveEvaluateFloat资源也已开始核验：必须区分UnityEngine.Keyframe的28字节布局与Beyond.FKeyframe的32字节布局，不能套用研究包已有FAnimationCurve合同；未验证求值算法前继续未知。
 
+最新已推送effd1c3b，Enable名单894ddb42在其祖先。之后完成Curve结构解码/回编码，225/225节点、53份payload逐字节往返通过；读数据的脚本是scripts/skill-data/audit_native_curve_data.py。详见native-control-flow-audit.md的Curve续作段。下一步仍需Unity Evaluate运行时算法（包含无穷切线/加权/边界），旧输出GetFloat和float差值阈值、全部消费者；仅有结构数据不增加执行覆盖。所有未闭环事项及automation-2保留，不因用户询问进度或阶段保存而视为完成。
+
 1. 补属性57/58的实际默认值/生产者来源，不能把未知数据填0。
 2. 冰冻的 child buff 寿命、碎冰触发及物理伤害增量；先定位实际子buff，再执行完整归属/销毁链。
 3. 腐蚀的 AttributeModifier、RefreshBuffAttrModifierValue、独立 tick 与减抗上限；燃烧攻击快照、子buff和持续触发。

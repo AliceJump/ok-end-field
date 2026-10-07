@@ -14,6 +14,25 @@
 
 回归读取校验快照中的实际节点，严格模拟拒绝计价且原世界snapshot保持不变。出现次数仅为审计样本节点数，不能当作影响程序数。
 
+## Curve结构核验续作：可解码不等于可求值
+
+本段补充前述CurveEvaluateFloat缺口，不改变其未解析分类。MemoryPack.AnimationCurveFormatter.DeserializeKeyFrame逐个读取28字节，按UnityEngine.Keyframe字段保存time/value/inTangent/outTangent/weightedMode/inWeight/outWeight；它没有Beyond.FKeyframe的tangentMode字段，不能套用研究包中32字节的FAnimationCurve合同。Deserialize读member=3、先preWrapMode再postWrapMode、带符号key count及连续关键帧；-1数组、空数组与FF空曲线独立。Lazy icall字符串分别确认set_preWrapMode、set_postWrapMode、SetKeys，与字段保存顺序一致。
+
+新增native_curve_data数据解析器和audit_native_curve_data.py只读审计。时序与补充快照仍由各自哈希校验加载；解析后的曲线再编码必须逐字节一致。225/225个Curve节点全部通过，53份不同payload；811个关键帧中weightedMode=0有809个、=1有2个，两个wrap字段共450次均为8，无穷切线出现96次。管理员样本的五个点time为0/4/6/8/50，包含无穷切线；同节点的curveTemplate=Linear不能覆盖useCustomCurve=true时的实际曲线。顺序、模式、正负零和无穷切线均原样保留，不猜测排序/插值或将异常数值补零。
+
+ExecuteInternal从实际Ability BB读取inputValue，再调用Data.GetCurve和Unity.AnimationCurve.Evaluate；结果与输出键旧float值比较，只有差值超过原生阈值才AssignDynamic。GetCurve的useCustomCurve分支直接返回customCurve，与模板查找独立。因此仅补Hermite数学式仍不足：需核验Unity运行时的加权/无穷切线/边界求值、输入float口径、旧输出读取/更新阈值，以及全部BB消费者。当前解析器无Evaluate方法，不接入数值表达式，编译器继续报告CurveEvaluateFloat未解析，严格模拟仍拒绝未知程序。
+
+| 核验读取窗口 | RVA | 长度 | SHA256 |
+| --- | --- | --- | --- |
+| AnimationCurveFormatter.DeserializeKeyFrame | 0x34306a0 | 1500 | a1c39cc54f4f4cf571ae9c1550d67c2c45854711805db5b5dfd09f094355c648 |
+| AnimationCurveFormatter.Deserialize | 0x34301d0 | 1600 | 461ea7c502dd2d6c0981596a6bdd1aa9001d21d964cc199f47ec774bfa98f1f6 |
+| CurveEvaluateFloat.ExecuteInternal | 0x3ae5fb0 | 1700 | f540ac5fe3126bcdee755f6e4523f438f963a766ceaeed1f12fe68976383ec7d |
+| CurveEvaluateFloat.Data.GetCurve | 0x3ae7660 | 500 | 5974c214ebb5cc8857ad75689d4fb67616798a201ef046d0f842bff11fce0391 |
+| GetCurve自定义返回分支 | 0x3ae7abb | 20 | 9f3304d9a53e446d63003abfdafefeafdcc0816f5163fb680e805d30ff440ae2 |
+| Unity.AnimationCurve.Evaluate managed入口 | 0x2f87100 | 180 | 930f436e6c0a48dab50482b352da3fb80adabb496685db4b44f8ef0d6a0abe5e |
+
+这些是固定版本的读取窗口，非完整方法长度；Evaluate入口继续跳到Unity icall，不能把该180字节当求值算法。新增9项解析/审计专项通过（1.465秒），覆盖真实管理员曲线、null/空、截断及错布局拒绝、模式与无穷切线、精确往返和结构审计不冒充执行。完整程序树仍2/111，数据报告在忽略文件tmp/native_curve_data_audit.json；全仓结果见流程进度。
+
 ## ComboCacheAction+Data：保留未解析（c）
 
 mappingDataList指定cmdType=3、skillId=chr_0019_karin_normal_skill、cacheTime约0.3秒、cacheEndByAction=true。这些字段描述特定输入映射及动作绑定缓存，而非单个动画时长。现有can_start/SkillTiming未建模输入排队、缓存终止和映射动作的选择，不能证明缓存忽略后下一招合法性相同。缺口：命令枚举、缓存窗口/取消及消费后技能选择。校验记录chr_0019_karin_combo_skill，本轮根技能及补充记录检索262次。
