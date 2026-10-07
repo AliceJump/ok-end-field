@@ -20,6 +20,13 @@ _ELLIPSE_AXES_1080 = (349.0, 245.0)
 _ELLIPSE_ANNULUS_SCALE = (0.98, 1.02)
 _ELLIPSE_RADIAL_SAMPLES = 9
 
+_GRADIENT_HALF_ARC_DEG = 3.5
+_GRADIENT_INNER_SCALES = (0.92, 0.94, 0.96)
+_GRADIENT_OUTER_SCALES = (1.03, 1.05, 1.07, 1.09, 1.11)
+_GRADIENT_MIN_SAMPLE_RED = 3.0
+_GRADIENT_MIN_SUPPORT_SAMPLES = 3
+_GRADIENT_MIN_EVIDENCE = 6.0
+
 
 @dataclass(frozen=True)
 class EnemyDirectionMarker:
@@ -98,14 +105,66 @@ def _ellipse_sample(width: int, height: int) -> _EllipseSample:
     return _EllipseSample(ys=ys, xs=xs, semi_axis_x=semi_axis_x, semi_axis_y=semi_axis_y)
 
 
-def _red_profile(frame: np.ndarray, sample: _EllipseSample) -> np.ndarray:
-    pixels = frame[sample.ys, sample.xs]
+def _weighted_red_chroma(pixels: np.ndarray) -> np.ndarray:
     blue = pixels[..., 0].astype(np.int16)
     green = pixels[..., 1].astype(np.int16)
     red = pixels[..., 2].astype(np.int16)
     chroma = np.maximum(red - np.maximum(green, blue), 0).astype(np.float32)
-    weighted = chroma * (red.astype(np.float32) / 255.0)
+    return chroma * (red.astype(np.float32) / 255.0)
+
+
+def _red_profile(frame: np.ndarray, sample: _EllipseSample) -> np.ndarray:
+    pixels = frame[sample.ys, sample.xs]
+    weighted = _weighted_red_chroma(pixels)
     return np.max(weighted, axis=0)
+
+
+def _sample_radial_red(
+    frame: np.ndarray,
+    sample: _EllipseSample,
+    center_parameter_deg: float,
+    scales: tuple[float, ...],
+) -> np.ndarray:
+    """Sample a narrow angular strip at fixed ellipse-radius scales."""
+    height, width = frame.shape[:2]
+    cx = width / 2.0
+    cy = height / 2.0
+    half_bins = max(1, int(round(_GRADIENT_HALF_ARC_DEG / _DIRECTION_BIN_DEG)))
+    offsets = np.arange(-half_bins, half_bins + 1, dtype=np.float32) * _DIRECTION_BIN_DEG
+    parameters = np.deg2rad((center_parameter_deg + offsets) % 360.0)
+    radial = np.asarray(scales, dtype=np.float32)[:, None]
+    xs = np.rint(cx + radial * sample.semi_axis_x * np.cos(parameters)[None, :]).astype(np.int32)
+    ys = np.rint(cy + radial * sample.semi_axis_y * np.sin(parameters)[None, :]).astype(np.int32)
+    np.clip(xs, 0, max(0, width - 1), out=xs)
+    np.clip(ys, 0, max(0, height - 1), out=ys)
+    weighted = _weighted_red_chroma(frame[ys, xs])
+    return np.mean(weighted, axis=1)
+
+
+def _outward_gradient_evidence(
+    frame: np.ndarray,
+    sample: _EllipseSample,
+    center_parameter_deg: float,
+) -> float:
+    """Return one-sided outward red-tail evidence for a ring candidate.
+
+    Real enemy markers have a sharp bright arc at the fitted ellipse and a
+    translucent red tail that continues away from screen center. Scene effects
+    that merely cross the thin annulus tend to have similar red energy on the
+    inner side, so subtracting the inner radial baseline makes them weak.
+    """
+    inner = _sample_radial_red(frame, sample, center_parameter_deg, _GRADIENT_INNER_SCALES)
+    outer = _sample_radial_red(frame, sample, center_parameter_deg, _GRADIENT_OUTER_SCALES)
+    baseline = float(np.mean(inner))
+    adjusted = np.maximum(outer - baseline, 0.0)
+    support = int(np.count_nonzero(adjusted >= _GRADIENT_MIN_SAMPLE_RED))
+    if support < _GRADIENT_MIN_SUPPORT_SAMPLES:
+        return 0.0
+
+    near_evidence = float(np.mean(adjusted[:3]))
+    if near_evidence < _GRADIENT_MIN_EVIDENCE:
+        return 0.0
+    return near_evidence
 
 
 def _circular_smooth(profile: np.ndarray) -> np.ndarray:
@@ -196,10 +255,40 @@ def _marker_candidates(profile: np.ndarray, sample: _EllipseSample) -> tuple[Ene
     return tuple(markers)
 
 
-def probe_enemy_direction_fast(frame: np.ndarray | None) -> EnemyDirectionObservation | None:
-    """Return the strongest red off-screen marker from a thin fitted ellipse annulus.
+def _gradient_verified_markers(
+    frame: np.ndarray,
+    sample: _EllipseSample,
+    markers: tuple[EnemyDirectionMarker, ...],
+) -> tuple[tuple[EnemyDirectionMarker, ...], EnemyDirectionMarker | None]:
+    """Prefer candidates whose red arc continues into the expected outward tail.
 
-    The hot path samples only nine radial points for each of 720 ellipse angles.
+    The thin annulus remains the fast first-stage detector. Only its candidates
+    pay for this small second-stage radial probe. If every tail is obscured, keep
+    the original ring-only candidates as a recall-preserving fallback.
+    """
+    evidence = tuple(
+        (marker, _outward_gradient_evidence(frame, sample, marker.parameter_angle_deg))
+        for marker in markers
+    )
+    verified = tuple((marker, score) for marker, score in evidence if score > 0.0)
+    if not verified:
+        return markers, None
+
+    filtered = tuple(marker for marker, _score in verified)
+    best = max(verified, key=lambda item: (item[1], item[0].score))[0]
+    return filtered, best
+
+
+def probe_enemy_direction_fast(frame: np.ndarray | None) -> EnemyDirectionObservation | None:
+    """Return the strongest red off-screen marker from a fitted ellipse region.
+
+    The hot path first samples only nine radial points for each of 720 ellipse
+    angles. Ring candidates then receive a tiny outward radial probe that looks
+    for the marker's one-sided translucent red tail. When at least one candidate
+    has that signature, ring-only effect candidates are discarded and the
+    strongest outward-gradient candidate defines the direction. If all tails are
+    obscured, the original annulus result remains as a recall-preserving fallback.
+
     Marker arcs are modeled as a fixed eight-degree primitive. A run that reaches
     the fixed merged-marker threshold is interpreted as two overlapping
     primitives, so clipped short runs cannot change the split behavior.
@@ -214,5 +303,6 @@ def probe_enemy_direction_fast(frame: np.ndarray | None) -> EnemyDirectionObserv
     if not markers:
         return None
 
-    best = max(markers, key=lambda marker: marker.score)
+    markers, gradient_best = _gradient_verified_markers(frame, sample, markers)
+    best = gradient_best or max(markers, key=lambda marker: marker.score)
     return EnemyDirectionObservation(angle_deg=best.angle_deg, score=best.score, markers=markers)
