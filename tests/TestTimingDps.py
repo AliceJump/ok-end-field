@@ -170,15 +170,15 @@ class TestTimingDps(unittest.TestCase):
         legacy = Path(__file__).resolve().parents[1] / "assets/data/damage_baseline.json"
         quote = load_damage_quotes(["提弗洛斯", "洁尔佩塔"], legacy)["提弗洛斯"]
         self.assertGreater(quote.battle, quote.conservative)
-        self.assertLess(quote.battle, 54196.0)
-        self.assertAlmostEqual(quote.battle, (17639.3 + 54196.0) / 2, places=1)
-        self.assertAlmostEqual(quote.conservative, 17639.3, places=1)
+        self.assertLess(quote.battle, 64296.7)
+        self.assertAlmostEqual(quote.battle, (20926.7 + 64296.7) / 2, places=1)
+        self.assertAlmostEqual(quote.conservative, 20926.7, places=1)
 
     def test_default_quotes_use_fixed_build_and_explicit_ember_rank9_profile(self):
         quote = load_damage_quotes(["余烬"])["余烬"]
-        self.assertAlmostEqual(quote.panel.attack(), 3165.5, places=1)
+        self.assertAlmostEqual(quote.panel.attack(), 3352.6, places=1)
         self.assertAlmostEqual(quote.battle, quote.conservative)
-        self.assertAlmostEqual(quote.battle, 3165.4584 * 3.12 * 1.025, places=1)
+        self.assertAlmostEqual(quote.battle, 3352.58352 * 3.12 * 1.025, places=1)
 
     def test_timed_vulnerability_changes_following_damage_and_optimal_order(self):
         spec = DamageModifierSpec("short_vuln", DamageBucket.VULNERABILITY, ("寒冷",),

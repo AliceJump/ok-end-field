@@ -211,9 +211,9 @@ class TestDependencyAwareOrdering(unittest.TestCase):
             ["提弗洛斯", "洁尔佩塔", "?", "?"],
         )
         value = entries["提弗洛斯"]["value"]
-        self.assertGreater(value, 103074.8)
-        self.assertLess(value, 129661.5)
-        self.assertAlmostEqual(value, (103074.8 + 129661.5) / 2, places=1)
+        self.assertGreater(value, 100448.3)
+        self.assertLess(value, 131990.1)
+        self.assertAlmostEqual(value, (100448.3 + 131990.1) / 2, places=1)
 
     def test_real_data_feeder_precedes_typhoeus(self):
         from src.data.character_capabilities import load_character_capabilities

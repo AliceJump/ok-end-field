@@ -18,18 +18,18 @@
     "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
   },
   "equipment": {
-    "set_main": null,
+    "set_main": "拓荒装备组",
     "set_off": null,
     "pieces": [
       "拓荒护甲",
-      "长息护手",
+      "拓荒纤维手套·壹型",
       "拓荒通信器·壹型",
-      null
+      "纾难印章"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "source": "官方装备页推荐 + EndSync 社区汇总",
     "evidence_level": 1,
-    "note": "官方仅推荐 3 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+    "note": "保留官方拓荒护甲、拓荒通信器·壹型；护手与纾难印章取 EndSync 精选（3件 拓荒）"
   }
 }

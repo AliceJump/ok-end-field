@@ -24,12 +24,12 @@
       "壤流轻甲",
       "壤流护手",
       "壤流短棍",
-      null
+      "生物辅助护板"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
-    "evidence_level": 1,
-    "note": "官方仅推荐 3 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+    "source": "EndSync 社区汇总",
+    "evidence_level": 2,
+    "note": "壤流 8/8，同四件 5/8"
   }
 }

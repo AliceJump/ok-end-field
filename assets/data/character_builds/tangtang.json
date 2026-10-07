@@ -18,18 +18,18 @@
     "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
   },
   "equipment": {
-    "set_main": "碾骨装备组",
+    "set_main": "清波装备组",
     "set_off": null,
     "pieces": [
-      "碾骨重护甲·贰型",
-      "碾骨腕带·壹型",
-      "碾骨面具·贰型",
-      null
+      "清波重甲",
+      "清波手甲",
+      "清波水罐",
+      "清波定位仪"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
-    "evidence_level": 1,
-    "note": "官方仅推荐 3 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+    "source": "EndSync 社区汇总",
+    "evidence_level": 2,
+    "note": "清波 3/5，同四件 2/5"
   }
 }
