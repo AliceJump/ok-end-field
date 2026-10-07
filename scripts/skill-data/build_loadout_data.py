@@ -3,7 +3,7 @@
 输入：tools/wiki_catalog/item_details/<stamp>/（capture_skland_item_details.py 产物）
 输出（assets/data/，写 LF）：
 - weapons.json     满级攻击表 / 武器技能 Rank1-9 / 推荐干员 / 推荐基质
-- equipments.json  部位 / 套组 / LV70 属性 / 精锻3 满级值 / 套组效果 / 推荐干员
+- equipments.json  部位 / 套组 / LV70 属性 / 精锻3 满级值 / 套组效果 / 推荐干员 / 官方四槽配装
 - matrices.json    基质属性与效果（结构随官方页面，保留原始表格）
 
 用法：
@@ -141,6 +141,44 @@ def _entry_ids(cell_text: str) -> list[str]:
     return re.findall(r"\[entry:(\d+)\b", cell_text)
 
 
+_RECOMMENDED_SLOT_KEYS = {
+    "护甲": "armor_id",
+    "护手": "gloves_id",
+    "配件Ⅰ": "accessory_1_id",
+    "配件Ⅱ": "accessory_2_id",
+}
+
+
+def _parse_recommended_loadout(table: list[list[str]]) -> dict[str, str | None] | None:
+    """解析装备页「推荐装备干员」卡片，保留四个槽位及重复配件。"""
+    if not table or not table[0] or _cell_text(table[0][0]).strip() != "推荐干员":
+        return None
+
+    operator_id: str | None = None
+    slots: dict[str, str | None] = {key: None for key in _RECOMMENDED_SLOT_KEYS.values()}
+    for row in table[1:]:
+        cells = [_cell_text(cell).strip() for cell in row]
+        if operator_id is None and cells:
+            ids = _entry_ids(cells[0])
+            if ids:
+                operator_id = ids[0]
+        for index, label in enumerate(cells):
+            slot_key = _RECOMMENDED_SLOT_KEYS.get(label)
+            if slot_key is None:
+                continue
+            for value in cells[index + 1 :]:
+                if value in _RECOMMENDED_SLOT_KEYS:
+                    break
+                ids = _entry_ids(value)
+                if ids:
+                    slots[slot_key] = ids[0]
+                    break
+
+    if operator_id is None:
+        return None
+    return {"operator_id": operator_id, **slots}
+
+
 def _tag_groups(doc_tag_tree: list) -> dict[str, tuple[str, str]]:
     """filterTagTree → {tagId: (组名, 名)}。"""
     tags: dict[str, tuple[str, str]] = {}
@@ -247,6 +285,7 @@ def parse_equip(item: dict, item_id: str, equip_tags: dict[str, tuple[str, str]]
     refinement_max: dict[str, str] = {}
     set_effect_text = ""
     rec_operators: list[str] = []
+    rec_loadouts: list[dict[str, str | None]] = []
     set_effect_parts: list[str] = []
 
     dm = doc.get("documentMap") or {}
@@ -287,9 +326,14 @@ def parse_equip(item: dict, item_id: str, equip_tags: dict[str, tuple[str, str]]
                         if values:
                             refinement_max[row[0].strip()] = values[-1]
             elif header and header[:1] == ["推荐干员"]:
-                for row in table[1:]:
-                    for cell in row:
-                        rec_operators.extend(_entry_ids(_cell_text(cell)))
+                loadout = _parse_recommended_loadout(table)
+                if loadout is not None:
+                    rec_operators.append(str(loadout["operator_id"]))
+                    rec_loadouts.append(loadout)
+                else:
+                    for row in table[1:]:
+                        for cell in row:
+                            rec_operators.extend(_entry_ids(_cell_text(cell)))
 
     set_effect_text = "\n".join(set_effect_parts).strip()
 
@@ -305,6 +349,7 @@ def parse_equip(item: dict, item_id: str, equip_tags: dict[str, tuple[str, str]]
         "refinement_max": refinement_max,
         "set_effect": set_effect_text,
         "recommended_operator_ids": rec_operators,
+        "recommended_loadouts": rec_loadouts,
     }
 
 
@@ -459,6 +504,9 @@ def main() -> int:
         elif kind == "equip":
             parsed = parse_equip(item, item_id, equip_tags)
             parsed["recommended_operator_ids"] = _only_operators(parsed["recommended_operator_ids"])
+            parsed["recommended_loadouts"] = [
+                loadout for loadout in parsed["recommended_loadouts"] if loadout["operator_id"] in operator_ids
+            ]
             equipments[name] = parsed
         elif kind == "matrix":
             matrices[name] = parse_matrix(item, item_id, matrix_tags)
