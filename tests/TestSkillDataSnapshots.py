@@ -278,12 +278,13 @@ class TestSnapshotChecks(unittest.TestCase):
             "壤流短棍": {"item_id": "1428", "set": "壤流装备组", "part": "配件"},
         }
         cases = (
-            (["壤流轻甲", "壤流护手", "壤流短棍", "壤流短棍"], None),
-            (["壤流轻甲", "壤流短棍", "壤流护手", "壤流短棍"], "部位"),
-            (["壤流轻甲", "壤流护手", "壤流短棍", "未知配件"], "未知装备"),
+            (["壤流轻甲", "壤流护手", "壤流短棍", "壤流短棍"], None, None, 2),
+            (["壤流轻甲", "壤流护手", "壤流短棍", "壤流短棍"], None, 1, 1),
+            (["壤流轻甲", "壤流短棍", "壤流护手", "壤流短棍"], "部位", None, None),
+            (["壤流轻甲", "壤流护手", "壤流短棍", "未知配件"], "未知装备", None, None),
         )
-        for pieces, error in cases:
-            with self.subTest(pieces=pieces), tempfile.TemporaryDirectory() as tmp:
+        for pieces, error, explicit_level, expected_level in cases:
+            with self.subTest(pieces=pieces, explicit_level=explicit_level), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 data = root / "assets" / "data"
                 snapshots = root / "tools" / "wiki_catalog" / "operator_details"
@@ -298,13 +299,16 @@ class TestSnapshotChecks(unittest.TestCase):
                     snapshots / "20260102" / "details" / "100_测试.json",
                     {"data": {"item": {"itemId": "100", "document": {"documentMap": {}}}}},
                 )
+                curated = (pieces, "社区汇总", "壤流 8/8")
+                if explicit_level is not None:
+                    curated += (explicit_level,)
                 with (
                     mock.patch.object(builds, "ROOT", root),
                     mock.patch.object(builds, "DATA_DIR", data),
                     mock.patch.object(builds, "CHAR_SKILLS_DIR", data / "character_skills"),
                     mock.patch.object(builds, "BUILD_DIR", data / "character_builds"),
                     mock.patch.object(builds, "SNAP_ROOT", snapshots),
-                    mock.patch.object(builds, "CURATED_BUILDS", {"测试": (pieces, "社区汇总", "壤流 8/8")}),
+                    mock.patch.object(builds, "CURATED_BUILDS", {"测试": curated}),
                     mock.patch.object(sys, "argv", ["generate_character_builds.py"]),
                 ):
                     if error:
@@ -315,7 +319,7 @@ class TestSnapshotChecks(unittest.TestCase):
                 equip = json.loads((data / "character_builds" / "test.json").read_text(encoding="utf-8"))["equipment"]
                 self.assertEqual(equip["pieces"], pieces)
                 self.assertEqual(equip["set_main"], "壤流装备组")
-                self.assertEqual(equip["evidence_level"], 2)
+                self.assertEqual(equip["evidence_level"], expected_level)
                 self.assertEqual(equip["note"], "壤流 8/8")
 
     def test_spell_damage_clause_applies_to_four_spell_elements(self):
