@@ -105,6 +105,12 @@ def finish_action_buffs(world, action_id):
             _finish(world, instance)
 
 
+def finish_parent_buffs(world, parent_uid):
+    for instance in tuple(world.native_buff_instances.values()):
+        if instance.parent_scope == parent_uid:
+            _finish(world, instance)
+
+
 def _trigger(world, instance):
     if instance.remaining == 0:
         return
@@ -125,6 +131,12 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     if change.child_of_buff and (parent is None or parent.uid != action_id
                                 or parent.uid not in world.native_buff_instances and not parent.finishing):
         raise UnresolvedMechanic(f"Child buff lacks its executing Buff root: {change.key}")
+    if change.child_of_ability:
+        from src.data.native_ability_runtime import executing_ability
+
+        if change.child_of_buff or world._native_buff_context is not None:
+            raise UnresolvedMechanic(f"Conflicting child buff root: {change.key}")
+        parent = executing_ability(world, action_id)
     if change.action_finish_after is not None and (
         not math.isfinite(change.action_finish_after) or change.action_finish_after < 0
     ):

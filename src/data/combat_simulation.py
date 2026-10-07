@@ -73,6 +73,7 @@ class NativeBuffChange(ImmutableCombatValue):
     tags: tuple[int, ...] = ()
     action_finish_after: float | None = None
     child_of_buff: bool = False
+    child_of_ability: bool = False
 
 
 @dataclass(frozen=True)
@@ -350,6 +351,8 @@ class CombatWorldState:
         self.native_buffs: dict[tuple[str, str], tuple[int, float | None]] = {}
         self.native_buff_instances: dict[str, object] = {}
         self._native_buff_context: object | None = None
+        self.native_abilities: dict[tuple[str, str], object] = {}
+        self._native_action_abilities: dict[str, tuple[str, str]] = {}
         self.native_skill_overrides: dict[tuple[str, int], NativeSkillOverride] = {}
         self.native_skill_slots: dict[tuple[str, int], str] = {}
         self.native_programs: dict[tuple[str, str], ActionProgram] = {}
@@ -876,6 +879,9 @@ class CombatWorldState:
         self.native_programs[program.actor, program.key] = program
         if default and program.native_slot is not None:
             self.native_skill_slots.setdefault((program.actor, program.native_slot), program.key)
+            from src.data.native_ability_runtime import enable_ability
+
+            enable_ability(self, program.actor, self.native_skill_slots[program.actor, program.native_slot])
 
     def selects_program(self, program):
         if program.native_slot is None:
@@ -945,6 +951,11 @@ class CombatWorldState:
         if progress is not None:
             self._set_native_cooldown_progress(actor, change.target_skill, progress)
         self.native_skill_slots[identity] = change.target_skill
+        from src.data.native_ability_runtime import enable_ability
+
+        # ChangeSkillMapping enables the target without disabling the old root;
+        # Handle.Revert only restores mapping/cooldown, not Ability lifetime.
+        enable_ability(self, actor, change.target_skill)
         self._sequence += 1
         uid = f"skill:{self._sequence}"
         expires = self.time + duration if duration is not None and duration > 0 else None
@@ -1315,6 +1326,9 @@ class CombatWorldState:
             return False
         if not self.selects_program(program):
             return False
+        ability = self.native_abilities.get((program.actor, program.key))
+        if ability is not None and not ability.enabled:
+            return False
         cooldown_key = program.cooldown_key or program.key
         if self.time < self.ready_at(program):
             return False
@@ -1350,6 +1364,9 @@ class CombatWorldState:
             self._queue[:] = [row for row in self._queue if row[2] != previous[0] or row[4].persists_after_interrupt]
             heapq.heapify(self._queue)
         self.active_actions[program.actor] = (action_id, program, self.time)
+        from src.data.native_ability_runtime import bind_ability_scope
+
+        bind_ability_scope(self, action_id, program)
         if program.kind == "battle":
             self.emit("battle_cast", program.actor, program.enemy)
         for event in program.events:
@@ -1492,6 +1509,8 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         state.damage_state.phase_signature(state.time),
                         state.main_control, state.returned_sp, tuple(sorted(state.native_buffs.items())),
                         tuple(sorted(state.native_skill_slots.items())), tuple(sorted(state.native_skill_overrides.items())),
+                        tuple((v.uid, v.enabled) for v in state.native_abilities.values()),
+                        tuple(sorted(state._native_action_abilities.items())),
                         tuple((uid, repr(passive), tuple(sorted(state._action_inputs[uid].items())))
                               for uid, passive in state.native_passives.items()),
                         tuple((v.uid, v.owner, v.key, v.source, v.expires, v.period, v.remaining,

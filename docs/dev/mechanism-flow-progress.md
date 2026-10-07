@@ -71,3 +71,11 @@ Unique原生分支返回空创建结果，已有实例不会重挂父根。随�
 跨技能继承进一步查明：结束信息原因7及目标技能ID匹配后，转交依赖owner.activeSkillMap中的真实Skill；AttachBuff加入Skill.m_buffsDuringSkill，后续清理需要该技能的释放链，不能用任意下一动作或handoff替代。该链仍未接入，证据与下一步边界已保存到native-buff-lifetime-audit.md。
 
 继续核验后明确区分：Skill.CastEnd清理Skill.m_buffsDuringSkill，Ability.Disable清理Ability.m_childrenBuff；Ability.CastEnd仅结束时间线，不调用Disable。卡缪终结技、骏卫天赋有根Ability子创建，黎风另有子关系与动作自动结束并存。下一步先补持久Skill/Ability对象身份与启用/停用、槽替换/恢复生命周期，再接继承和根子关系；不将根父对象简化成本次cast或handoff。新增原生调用窗口及下一步所需模型已写入寿命审计，该证据步骤不增加可执行覆盖。
+
+## 持久Ability子实例挂接（2026-10-07续作）
+
+按metadata纠正槽映射方法名并核对Enable链：ChangeSkillMapping启用目标Skill，但不直接Disable旧Skill；Handle.Revert也不直接停用替换Skill。新增持久Ability身份，cast scope和被动技能scope引用真实模型根。支持根时间线中非周期、无动作自动结束/继承列表的asChildBuff，多次cast及槽替换/恢复不提前结束；显式确认Disable后清理其子孙、取消该根旧时间线、关闭被动订阅。Unique不重挂，角色/实例/BB及预测副本独立。原始卡缪终结技节点编译已覆盖，其他机制缺口保留。
+
+一般寿命诊断仍22个程序，完整程序仍2/111；不要将新对象身份报告成完整Skill状态机完成。战斗中的Disable生产者、Enable期附带buff重挂/停用名单、Skill.AttachBuff与真实CastEnd原因和目标ID、正周期同刻顺序仍要继续绑定。详细原生证据、执行边界与预算复测见[native-buff-lifetime-audit.md](native-buff-lifetime-audit.md)。当前master仍5755d347，fetch确认没有落后，无需rebase；技力返还时机继续后置。
+
+新增13项Ability专项通过，最终全仓1274项通过（72.065秒），Ruff I/F及Python/JSON、敏感路径、差异检查通过。余烬真实被动的未绑定停用名单明确保留诊断。本轮没有进行现场战斗验证；全部约定剩余项仍未完成，保留本会话5小时续作任务。

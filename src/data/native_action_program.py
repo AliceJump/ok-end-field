@@ -583,7 +583,9 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                             and event_sequence is None and end > at)
             child_bound = (body.get("asChildBuff") and bool(buff_path)
                            and not body.get("autoFinishByAction") and not body.get("inheritSkillIdList"))
-            if body.get("asChildBuff") and not child_bound or body.get("autoFinishByAction") and not action_bound:
+            ability_bound = (body.get("asChildBuff") and not buff_path and event_sequence is None
+                             and not body.get("autoFinishByAction") and not body.get("inheritSkillIdList"))
+            if body.get("asChildBuff") and not (child_bound or ability_bound) or body.get("autoFinishByAction") and not action_bound:
                 emit(CombatEvent(at, "unresolved_native", unresolved=("Native child/action-bound buff lifetime not yet bound",)))
             for reference in body["buffs"]:
                 buff_id = reference["buffId"]
@@ -602,7 +604,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 if eid is not None:
                     if action_bound:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Canonical buff lacks action-bound instance identity",)))
-                    if child_bound:
+                    if child_bound or ability_bound:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Canonical buff lacks parent-bound instance identity",)))
                     emit(CombatEvent(at, "buff_created", effects=(SkillEffect(eid, count=int(count), duration=duration, target="self"),)))
                 else:
@@ -616,8 +618,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                         definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
                                                              attributes=attributes, panel=panel, path=buff_path)
                     bound_instance = action_bound and definition is not None
-                    parent_instance = child_bound and definition is not None
-                    if child_bound and not parent_instance:
+                    parent_instance = (child_bound or ability_bound) and definition is not None
+                    if (child_bound or ability_bound) and not parent_instance:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Parent-bound buff lacks independent executable instance",)))
                     period = native_number(data["triggerInterval"], parameters)
                     if bound_instance and (period is None or not math.isfinite(period) or period > 0):
@@ -633,7 +635,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                                               selector=resource_target(body["targetSettings"]), definition=definition,
                                               tags=expand_tags(data["applyTags"]),
                                               action_finish_after=end - at if bound_instance else None,
-                                              child_of_buff=bool(parent_instance))
+                                              child_of_buff=bool(parent_instance and child_bound),
+                                              child_of_ability=bool(parent_instance and ability_bound))
                     if action_bound and definition is None:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Action-bound buff lacks executable instance definition",)))
                     emit(CombatEvent(at, "native_buff_created", native_buffs=(change,)))

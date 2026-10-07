@@ -83,3 +83,30 @@ Unique（枚举7）的跳转表目标为0x373b304，先查询未结束实例并�
 | Skill.Disable | 55892 / 0x3557f40 | 9000 | f4399c97fbf741b203955563ee30e766557223a4306bdd0f5bc7ee3437e8d69a |
 
 以上仍是核验窗口和可定位调用的证据，不宣称整个Skill状态机或被停用的全部后续处理已解释完。该步只补释放边界证据，不改变执行覆盖或技力返还时机。
+
+## 持久Ability根与槽映射核验（2026-10-07续作）
+
+重新按metadata解析方法名：此前执行审计中的AbilitySystem.ChangeSkill窗口实际是其嵌套ComboController.ChangeSkillMapping；ClearChangeSkill窗口实际是ComboController._RevertChangeSkillHandleWithSlot。窗口地址/哈希没有改变。ChangeSkillMapping先恢复旧handle，再更新槽ID，从activeSkillMap取目标Skill，调用ChangeSkillType及Skill.Enable；普通战技分支的Enable位于0x5fba655，连携0x5fba4aa，终结技0x5fba2ff。该路径没有停用旧Skill。Handle.Revert更新槽ID、需要时迁移冷却、移除映射modifier，也没有直接Disable替换Skill。不能把“槽位不再选中”当作Ability结束。
+
+Skill.Enable先检查初始化和已启用状态（0x353b566/0x353b56f），已启用时直接返回；第一次启用在0x353b6a5调用Ability.Enable。结合此前CastEnd/Disable证据，新增以actor+技能ID识别的持久Ability根，动作scope引用该根，多次cast不分配新父对象。默认注册及槽替换启用目标，恢复槽位不清理任何Ability子实例。自然buff到期也不结束根。
+
+根时间线的asChildBuff现在可绑定此Ability UID，但仅开放非周期、没有autoFinishByAction和技能继承列表、具有独立可执行buff实例的节点。Buff回调继续使用自己的Buff根；任意独立event_sequence不会推测Ability来源。Unique重加保持首次父根和BB；同技能由不同角色持有也不共享根。显式disable_ability清理该Ability子实例及其Buff子孙，多次停用不重复结算；预测副本含根状态、动作引用及父子关系。
+
+停用链另确认Ability.UnRegisterActions→AbilitySystem.UnRegisterAction→ActionContainer.UnRegisterAction。Ability.canExecuteAction与isActionValid均读取isEnabled（偏移120）。据此显式停用还取消该根已有待执行时间线，关闭对应被动订阅；再次启用不会复活旧队列。清理只影响该根，队友事件和其他父对象保持独立。
+
+| 本次核验窗口 | RVA | 长度 | SHA256 |
+| --- | --- | --- | --- |
+| ComboController.ChangeSkillMapping | 0x5fba178 | 8500 | 5949fee9ebfc74a1305a4c7bab0a3f6279f45a0c8a475409a206d6c9521bbe4b |
+| ChangeSkillHandle.Revert | 0x5fc0d58 | 4200 | 4f356c2e79b795e68d76b3e0ac674658292227226ee52b161f027a692fb62aec |
+| Skill.Enable | 0x353b540 | 9000 | b3c0944e1fb7e158c2b5226c3d45bcc0a5dfbc186515acabbd363e1d511681d6 |
+| Ability.Enable | 0x30fbde0 | 9000 | 7d39f10cffbbd3b62219385d90d6283da9ae877d6d0f53ee30fb62e21ea95be9 |
+| Ability.UnRegisterActions | 0x3557d70 | 400 | ca5bc7e2abf5fae4425801e13b1ac5e3e04a40a9363467f1404a0b63934b0453 |
+| AbilitySystem.UnRegisterAction | 0x3557e00 | 80 | 11b833621c1f04e80d176b953cfaab45b3e1e939288e96f6f6345ead6841d442 |
+| Ability.canExecuteAction | 0x30ff1b0 | 250 | 2158b891c0ba0a3ac56c8f441d06c3d4bdf38655101694f244311f2c8d88229a |
+| Ability.isActionValid | 0x3105010 | 100 | f532ea6b3b960e6773fb6351bf3d7994ba616182cb995cba26c5ad20917ea2f1 |
+
+本批只执行父根身份、挂接及确认停用后的子实例/事件清理。实际战斗何时调用Skill/Ability.Disable的生产者、完整Enable期SkillData.buffs挂载/重新挂载、_FinishPassiveBuff独立名单和Skill.m_buffsDuringSkill仍未串成完整状态机；不得将此API当作完整原生Enable/Disable实现。Cross-skill继承仍保持诊断，黎风子关系与动作结束并存、正周期同刻顺序也仍未开放。真实卡缪根节点编译回归保留其其他机制缺口。
+
+对已挂载SkillData.buffs的被动根执行停用时，另明确加入Native Ability passive buff cleanup not yet bound诊断；真实余烬被动回归验证此边界，不把尚未归入独立名单的buff当作已销毁。新增13项Ability专项通过（2.979秒），最终全仓1274项通过（72.065秒）；Ruff I/F、Python/JSON与敏感路径检查、git diff --check通过。
+
+审计输出tmp/mechanism_coverage_ability_child.json仍为2/111完整程序树，一般寿命诊断仍影响22个程序；同一程序另有未绑定寿命节点，所以局部Ability挂接不会自动减少该计数。5次实测fork均值0.423ms，四个合法战技2.50/1.70/3.05/1.14ms；深度2搜索12.69ms且no_complete_plan，未完成完整144展开/25ms预算验收，未进行游戏现场验证。
