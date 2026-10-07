@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 
@@ -21,6 +21,7 @@ class TestSkillSpPrediction(unittest.TestCase):
     @staticmethod
     def _logic(scheduler_now=100.0, wall_now=11.5):
         logic = TimedCombatLogic.__new__(TimedCombatLogic)
+        logic.combat_runtime = None
         logic.task = _Task()
         logic._clock = lambda: scheduler_now
         logic._sp_wall_clock = lambda: wall_now
@@ -37,6 +38,14 @@ class TestSkillSpPrediction(unittest.TestCase):
         logic = self._logic(scheduler_now=100.0, wall_now=11.5)
 
         self.assertEqual(logic._project_probe_expected(), 172.0)
+
+    def test_only_visual_observations_update_mechanism_resources(self):
+        logic = self._logic()
+        logic.combat_runtime = Mock()
+        logic._note_assumed_sp_spend(160, 25)
+        logic.combat_runtime.observe_sp.assert_not_called()
+        logic._cache_visual_sp(140, now=101, wall_now=12)
+        logic.combat_runtime.observe_sp.assert_called_once_with(140, 101)
 
     def test_assumed_spend_updates_prediction_not_visual_anchor(self):
         logic = self._logic(scheduler_now=100.0, wall_now=11.5)

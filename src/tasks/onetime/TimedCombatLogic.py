@@ -240,6 +240,8 @@ class TimedCombatLogic:
         self.expected_sp = value
         self.last_observed_sp = value
         self.last_visual_sp_wall_time = wall_now
+        if self.combat_runtime is not None:
+            self.combat_runtime.observe_sp(value, now)
         return value
 
     def _project_probe_expected(self, wall_now=None):
@@ -279,6 +281,18 @@ class TimedCombatLogic:
         # No new visual truth: retain prediction and the previous visual anchor.
         self.next_sp_probe_at = now + self._SP_UNKNOWN_PROBE_INTERVAL
         return -1.0
+
+    def _stage_combat_action(self, token, kind, profiles, now, *, energy_ready=False):
+        runtime = self.combat_runtime
+        if runtime is None:
+            return True
+        runtime.cancel()
+        keys = {profile.skill_id for profile in profiles}
+        candidates = [p for p in runtime.catalog.available(token, kind) if p.key in keys]
+        if not candidates:
+            return not runtime.catalog.candidates(token, kind)
+        # Gender variants share one button; state requirements select replacements.
+        return runtime.stage(candidates[0], now, energy_ready=energy_ready)
 
     def _note_assumed_sp_spend(self, before_sp, expected_cost):
         """Apply unverified low-cost spending to prediction only."""
