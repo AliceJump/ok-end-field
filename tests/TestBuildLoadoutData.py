@@ -59,6 +59,15 @@ class TestParseEquip(unittest.TestCase):
             ],
         )
 
+    def test_recommended_loadout_does_not_scan_past_empty_slot_value(self):
+        table = [
+            ["推荐干员", "推荐用途", "装备推荐", "", "", ""],
+            ["[entry:2116]", "套组", "护甲", "", "", "[entry:9999]"],
+        ]
+        parsed = mod._parse_recommended_loadout(table)
+        self.assertIsNotNone(parsed)
+        self.assertIsNone(parsed["armor_id"])
+
     def test_generator_uses_first_complete_card_without_deduplicating_accessories(self):
         equipments = {
             "险关手甲": {
