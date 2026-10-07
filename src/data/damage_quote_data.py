@@ -43,6 +43,7 @@ def verify_sources(row, root=ROOT):
         "assets/data/skill_damage_row_semantics.json",
         "src/data/damage_attributes.py",
         "src/data/damage_state_rules.py",
+        "src/data/fixed_skill_modifiers.py",
     }
     if set(sources) != expected:
         raise ValueError("Incomplete fixed quote source ledger")
@@ -90,9 +91,11 @@ def read_fixed_quote(row, skill):
             or basis["damage_tags"] != [SKILL_TAGS[skill["type"]]]):
         raise ValueError("Unsupported per-skill quote basis")
     values = {key: _number(value) for key, value in row["panel"]["damage_basis"].items()
-              if key not in {"amplification", "damage_bonus"}}
-    for key in ("amplification", "damage_bonus"):
-        values[key] = {name: _number(value) for name, value in row["panel"]["damage_basis"][key].items()}
+              if key not in {"amplification", "damage_bonus", "crit_rate_bonus"}}
+    for key in ("amplification", "damage_bonus", "crit_rate_bonus"):
+        raw = row["panel"]["damage_basis"]
+        terms = raw.get(key, {}) if key == "crit_rate_bonus" else raw[key]
+        values[key] = {name: _number(value) for name, value in terms.items()}
     panel = FixedDamagePanel(**values)
     attributes = DamageAttributeBasis.from_dict(row["attribute_basis"])
     if not math.isclose(attributes.factor(), panel.attribute_factor, rel_tol=0, abs_tol=1e-12):

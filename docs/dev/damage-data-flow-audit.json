@@ -163,6 +163,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -176,6 +177,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -189,6 +191,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -202,6 +205,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -215,6 +219,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [
             {
               "passive_id": "chr_0019_karin_potential_3",
@@ -246,6 +251,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -259,12 +265,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -468,6 +476,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -481,6 +490,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -494,6 +504,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -507,6 +518,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -520,6 +532,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -533,6 +546,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -546,12 +560,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -1024,6 +1040,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1037,6 +1054,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1061,6 +1079,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1074,6 +1093,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1087,6 +1107,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1100,6 +1121,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1113,12 +1135,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -1559,6 +1583,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1572,12 +1597,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -1839,6 +1866,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1852,6 +1880,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1865,6 +1894,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1878,6 +1908,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1893,6 +1924,7 @@
           "runtime_rule_parameter_references": [
             "chr_0007_ikut_talent_1_2:damage_bonus"
           ],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1906,6 +1938,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -1919,12 +1952,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -2181,6 +2216,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -2194,12 +2230,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -2453,6 +2491,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -2499,6 +2538,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -2512,6 +2552,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -2525,6 +2566,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -2538,6 +2580,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -2551,6 +2594,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -2564,12 +2608,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -2928,6 +2974,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -2941,12 +2988,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -3126,6 +3175,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3139,6 +3189,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3152,6 +3203,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3165,6 +3217,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3178,6 +3231,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3191,6 +3245,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3204,12 +3259,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -3389,6 +3446,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3402,6 +3460,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3415,6 +3474,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3428,6 +3488,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3441,6 +3502,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3454,6 +3516,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3467,6 +3530,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
@@ -3512,6 +3576,7 @@
         "物理:skill": 0.42,
         "物理:ultimate": 0.42
       },
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -3691,6 +3756,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3704,6 +3770,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3717,6 +3784,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3730,6 +3798,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3743,6 +3812,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3756,6 +3826,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -3769,12 +3840,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -4014,6 +4087,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4027,12 +4101,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -4293,6 +4369,7 @@
           "runtime_rule_parameter_references": [
             "chr_9000_endmin_potential_2:attack"
           ],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4342,6 +4419,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4355,6 +4433,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4402,6 +4481,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4415,12 +4495,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -4725,6 +4807,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4738,6 +4821,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4757,6 +4841,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4770,6 +4855,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4783,6 +4869,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4796,6 +4883,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -4809,12 +4897,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -5076,6 +5166,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -5122,6 +5213,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -5135,6 +5227,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -5148,6 +5241,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -5161,6 +5255,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -5174,6 +5269,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -5187,12 +5283,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -5499,6 +5597,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -5512,12 +5611,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -5775,6 +5876,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -5788,12 +5890,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -6041,6 +6145,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -6054,12 +6159,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -6307,6 +6414,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -6320,6 +6428,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
@@ -6362,6 +6471,7 @@
         }
       ],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -6692,6 +6802,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -6705,12 +6816,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -7067,6 +7180,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -7080,12 +7194,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -7114,7 +7230,9 @@
         "potential": 5,
         "potential_basis": "user_four_five_star_p5",
         "all_attribute_nodes": true,
-        "constant_passive_sources": [],
+        "constant_passive_sources": [
+          "chr_0004_pelica_potential_5"
+        ],
         "conditional_talent_state": "untriggered",
         "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
       },
@@ -7359,6 +7477,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -7372,6 +7491,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -7385,6 +7505,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -7398,6 +7519,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -7411,6 +7533,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -7424,6 +7547,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -7432,17 +7556,23 @@
           "name": "再入控制",
           "rank": 5,
           "source": "CharacterPotentialTable/chr_0004_pelica/potentialUnlockBundle/4",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "fixed_panel",
           "native_modifier_count": 1,
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {
+            "ultimate": 0.30000001192092896
+          },
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {
+        "ultimate": 0.30000001192092896
+      },
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -7833,6 +7963,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -7846,12 +7977,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -8069,6 +8202,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8082,6 +8216,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8095,6 +8230,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8108,6 +8244,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8121,6 +8258,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8134,6 +8272,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8153,12 +8292,14 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -8478,6 +8619,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8491,12 +8633,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -8676,6 +8820,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8689,6 +8834,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8702,6 +8848,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8715,6 +8862,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8728,6 +8876,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8741,6 +8890,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -8754,12 +8904,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -9061,6 +9213,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -9074,12 +9227,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -9337,6 +9492,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -9350,12 +9506,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -9651,6 +9809,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -9664,6 +9823,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -9677,6 +9837,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -9690,6 +9851,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -9703,6 +9865,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -9716,6 +9879,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -9729,12 +9893,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -10168,6 +10334,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -10181,6 +10348,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -10200,6 +10368,7 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -10213,6 +10382,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -10226,6 +10396,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -10239,6 +10410,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -10263,12 +10435,14 @@
             }
           ],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -10598,6 +10772,7 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -10611,12 +10786,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,
@@ -10928,6 +11105,7 @@
           ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         },
@@ -10941,12 +11119,14 @@
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
+          "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "complete_semantic_review": false
         }
       ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
+      "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
           "schema_version": 1,

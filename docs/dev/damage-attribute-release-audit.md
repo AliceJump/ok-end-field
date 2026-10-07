@@ -80,3 +80,11 @@ TimedDamageState.apply_final_attribute_delta接收生产者已确认的最终属
 条件部分由两条独立常驻规则按命中时目标predicate求值，不创造计时buff：扶摇查当前STATUS_STAGGER，负山查当前STACK_SHRED>0，不看已消费层数事件。CombatWorld在明确消费者之后，以实际命中目标重新读取，避免动作原目标或起手快照污染；消费清空、到期和换目标立即改变结果。独立报价没有本次目标输入时返回未知，不借用注册时的假人状态。只有装备者获益，伤害增幅进入damage_bonus加法项，不当作敌人脆弱。
 
 数据台账单列target_state_bonus_bindings=2及陈千语fixed_weapon_bonus_filters；17份源摘要加入规则合同，其他126技能报价、全部profile、32人攻击/四维数值不变。负山触发后的全能力+22.4%仍未执行，不能将常驻目标条件闭环当作该武器动态四维完成。7项专项及相关59项通过，全仓结果见角色数据流进度。原生完整程序覆盖仍2/111。
+
+## 2026-10-08：佩丽卡P5固定终结暴击
+
+原生CharacterPotentialTable/chr_0004_pelica/potentialUnlockBundle/4的chr_0004_pelica_potential_5，描述为终结技暴击率+30%，参数crit=0.30000001192092896。modifier无activeCondition，modifyType=3，指定chr_0004_pelica_ultimate_skill的skillBbModifier（bbKey=crit、modifyType=1）。真实终结伤害节点读取同一crit：InstantModifyAttribute/modifyTargetSide=0，attributeType=9、formulaItem=5、modifyAttributeType=0。测试反查这些原始字段，不能以描述 alone 扩大到其他技能或普通全局暴击率。
+
+固定面板新增crit_rate_bonus.ultimate，选中P5才写入，P4没有。每次伤害由真实标签读一次，重复标签不重复添加；与动态暴击率相加后统一截断至0～1，can_crit=false不乘期望。显示暴击19%不变，终结有效49%，非暴击55873.1不变，期望61181.0→69562.0。其余127报价、32人攻击/四维、等级及潜能档案数值不变，P5登记为固定来源。新增固定合同进入18份源摘要。
+
+这是固定计算数据流核验；原生编译器仍拒绝DamageAction的damageProcessors，未据此解除整个终结程序诊断。未来实现InstantModifyAttribute时必须辨识已纳入固定面板的同一来源并去重。没有虚构原生暴击命中结果、回调或释放时点，也未接入master。4项专项与55项相关回归、全仓1371项通过（89.239秒），产物逐字节重生成一致，Ruff I/F、解析、敏感标记和diff检查通过。

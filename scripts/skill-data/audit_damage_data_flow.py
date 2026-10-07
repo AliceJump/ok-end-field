@@ -17,6 +17,7 @@ from src.data.combat_input_requirements import modifier_input_keys
 from src.data.damage_quote_data import read_fixed_quote, verify_sources
 from src.data.damage_release_rules import KINDS, release_rules
 from src.data.damage_state_rules import fixed_weapon_bonuses, state_bonus_rules
+from src.data.fixed_skill_modifiers import fixed_skill_crit
 from src.data.native_attribute_modifiers import reviewed_attack_binding
 from src.data.skill_timing import SkillTimingStore
 
@@ -95,6 +96,8 @@ def audit(rows=None):
              "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"}
             for spec in state_bonus_rules(character, row)]
         entry["fixed_weapon_bonus_filters"] = fixed_weapon_bonuses(character, row)
+        fixed_crit, crit_passives = fixed_skill_crit(character)
+        entry["fixed_skill_crit_filters"] = fixed_crit
         entry["dynamic_attribute_flow"] = {
             "basis": row.get("attribute_basis"),
             "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
@@ -201,6 +204,7 @@ def audit(rows=None):
                                       "native_modifier_count": len(passive.modifiers), "damage_rules": bound,
                                       "skill_rule_references": adjustments,
                                       "runtime_rule_parameter_references": dependencies,
+                                      "fixed_skill_crit_filters": fixed_crit if passive in crit_passives else {},
                                       "native_buff_attribute_rules": [native_attack] if native_attack and native_attack["passive_id"] == passive.effect_id else [],
                                       "complete_semantic_review": False})
         report["characters"].append(entry)

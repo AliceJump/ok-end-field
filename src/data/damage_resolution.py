@@ -23,6 +23,7 @@ class FixedDamagePanel:
     amplification: dict[str, float] = field(default_factory=dict)
     damage_bonus: dict[str, float] = field(default_factory=dict)
     attribute_basis: DamageAttributeBasis | None = None
+    crit_rate_bonus: dict[str, float] = field(default_factory=dict)
 
     def with_attribute_deltas(self, deltas):
         if (not set(deltas) <= set(ATTRIBUTES) or any(type(value) not in (int, float)
@@ -46,6 +47,9 @@ class FixedDamagePanel:
         return (
             self.attack_white * (1 + self.attack_percent + additional_percent) + self.attack_flat
         ) * self.attribute_factor
+
+    def crit_rate_for(self, tags=()):
+        return self.crit_rate + sum(self.crit_rate_bonus.get(tag, 0) for tag in set(tags))
 
 
 @dataclass(frozen=True)
@@ -337,7 +341,8 @@ class TimedDamageState:
         if unknown:
             return DamageResult(None, None, buckets, tuple(sorted(set(unknown))))
         attack = panel.attack(buckets[DamageBucket.ATTACK.value])
-        crit_rate = min(1.0, max(0.0, panel.crit_rate + buckets[DamageBucket.CRIT_RATE.value]))
+        crit_rate = min(1.0, max(0.0, panel.crit_rate_for(hit.damage_tags or (hit.damage_tag,))
+                               + buckets[DamageBucket.CRIT_RATE.value]))
         crit_damage = max(0.0, panel.crit_damage + buckets[DamageBucket.CRIT_DAMAGE.value])
         # NormalCalcZone keeps separate attacker/defender additive arrays, then
         # multiplies both and clamps the combined zone to zero.
@@ -376,5 +381,5 @@ class TimedDamageState:
         if result.expected is None or (panel is None and result.buckets[DamageBucket.ATTACK.value] != 0):
             return None
         baseline = normalized.attack() * (1 + damage_bonus) * (1 + normalized.amplification.get(element, 0))
-        baseline *= 1 + min(1, max(0, normalized.crit_rate)) * normalized.crit_damage
+        baseline *= 1 + min(1, max(0, normalized.crit_rate_for((hit.damage_tag,)))) * normalized.crit_damage
         return value * result.expected / baseline if baseline > 0 else None
