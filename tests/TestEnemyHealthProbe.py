@@ -201,7 +201,7 @@ class TestEnemyHealthProbe(unittest.TestCase):
         self.assertTrue(any("normal_slice_0:hit:present" in box.name for box in scan_boxes))
 
         self.assertEqual(hit_color, "green")
-        self.assertTrue(scan_debug)
+        self.assertTrue(hit_debug)
         self.assertEqual(len(hit_boxes), 1)
         hit = hit_boxes[0]
         self.assertEqual((hit.x, hit.y, hit.width, hit.height), (800, 250, 120, 5))
