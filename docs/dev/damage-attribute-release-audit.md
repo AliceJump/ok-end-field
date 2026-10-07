@@ -88,3 +88,13 @@ TimedDamageState.apply_final_attribute_delta接收生产者已确认的最终属
 固定面板新增crit_rate_bonus.ultimate，选中P5才写入，P4没有。每次伤害由真实标签读一次，重复标签不重复添加；与动态暴击率相加后统一截断至0～1，can_crit=false不乘期望。显示暴击19%不变，终结有效49%，非暴击55873.1不变，期望61181.0→69562.0。其余127报价、32人攻击/四维、等级及潜能档案数值不变，P5登记为固定来源。新增固定合同进入18份源摘要。
 
 这是固定计算数据流核验；原生编译器仍拒绝DamageAction的damageProcessors，未据此解除整个终结程序诊断。未来实现InstantModifyAttribute时必须辨识已纳入固定面板的同一来源并去重。没有虚构原生暴击命中结果、回调或释放时点，也未接入master。4项专项与55项相关回归、全仓1371项通过（89.239秒），产物逐字节重生成一致，Ruff I/F、解析、敏感标记和diff检查通过。
+
+## 2026-10-08：当前目标天赋与伊冯冰点
+
+chr_0017_yvonne_talent_2_2选中最高阶参数inflict_up=0.20000000298023224、status_up=0.4000000059604645；attachSkill指向chr_0017_yvonne_talent_0并覆盖两参数，该Skill.buffs继续继承至buff_chr_0017_yvonne_talent_0。原生buff的三组Attacker条件：寒冷HasAny且冻结ExceptAny→inflict_up；冻结HasAny且寒冷ExceptAny→status_up；寒冷/冻结HasAll→status_up。两个tag身份分别为1cdba15d（Skill/Character/Common/SpellInflict/CrystInflict）和55af885b（Skill/Character/Common/SpellStatus/Frozen）。三个处理器均为InstantModifyAttribute、modifyTargetSide=0、attributeType=10、formulaItem=5、modifyAttributeType=0。
+
+canonical拆为寒冷且不冻结、冻结两条互斥hit-time CRIT_DAMAGE规则，参数仍直接引用选中被动。只有自身受益，全部伤害元素按描述可匹配；仅改变暴击项。冻结单独存在和与寒冷同时存在都只加40%，没有两条相加60%，也不创造额外暴击命中/治疗事件。原生buff仍报告尚未执行的攻击方条件处理器，完整Ability和原生处理器解释留在原缺口；未来不能同一来源重复加入。
+
+萤石chr_0022_bounda_talent_1_2和佩丽卡chr_0004_pelica_talent_1_2显式evaluation=hit；缺当前target输入不借注册时标准假人状态。CombatWorld统一读取源石结晶/缓速/失衡/破防/寒冷/冻结predicate，每次真实模型命中先完成显式消费，再从实际受击目标重读。换目标、冻结到期返回寒冷20%、消费清空、队友不受益、旧event输入被覆盖与预测隔离均验收；不代表这些状态的全部原生生产者或画面识别已完成。
+
+本地导入输入先重生成到tmp，8份快照逐字节等同现有版本后才更新canonical规则与正式快照。补充原始对象摘要/回编码验证和原进度输入不变；选中被动规则15条仅比前版多冰点两个分支。32面板、128报价及profile数值完全不变。6项新增专项、68项相关回归及全仓1377项通过（96.806秒），原生完整覆盖仍2/111。

@@ -187,6 +187,11 @@ def audit(rows=None):
             parameter_prefix = passive.source + "/parameters/"
             bound = [rule_record(spec, passive.effect_id) for spec in character.progression.damage_modifiers
                      if spec.key in owned_keys]
+            if passive.effect_id in {"chr_0022_bounda_talent_1_2", "chr_0004_pelica_talent_1_2",
+                                     "chr_0017_yvonne_talent_2_2"}:
+                for rule in bound:
+                    rule["producer_status"] = "current_model_hit_target; no_proc_or_timed_trigger"
+                    rule["native_condition_processor"] = "not_executed; canonical reviewed predicate only"
             dependencies = [spec.key for spec in character.progression.damage_modifiers
                             if spec.key not in owned_keys and
                             any(source.startswith(parameter_prefix) for source in spec.sources)]

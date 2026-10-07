@@ -201,7 +201,8 @@
       "permanent": true,
       "condition_inputs": [
         "enemy.slowed"
-      ]
+      ],
+      "evaluation": "hit"
     }
   ],
   "chr_0004_pelica_talent_1_2": [
@@ -222,7 +223,8 @@
       "permanent": true,
       "condition_inputs": [
         "enemy.staggered"
-      ]
+      ],
+      "evaluation": "hit"
     }
   ],
   "chr_0028_wulfa_talent_1_2": [
@@ -298,6 +300,49 @@
         "passive": "chr_0030_zhuangfy_talent_1_2",
         "parameter": "duration"
       },
+      "evaluation": "hit"
+    }
+  ],
+  "chr_0017_yvonne_talent_2_2": [
+    {
+      "key": "chr_0017_yvonne_talent_2_2:crit_damage:cold",
+      "bucket": "crit_damage",
+      "elements": [
+        "all"
+      ],
+      "recipient": "self",
+      "trigger": "battle_start",
+      "strength": {
+        "base": {
+          "passive": "chr_0017_yvonne_talent_2_2",
+          "parameter": "inflict_up"
+        }
+      },
+      "permanent": true,
+      "condition_inputs": [
+        "enemy.cold_attached",
+        "enemy.not_frozen"
+      ],
+      "evaluation": "hit"
+    },
+    {
+      "key": "chr_0017_yvonne_talent_2_2:crit_damage:frozen",
+      "bucket": "crit_damage",
+      "elements": [
+        "all"
+      ],
+      "recipient": "self",
+      "trigger": "battle_start",
+      "strength": {
+        "base": {
+          "passive": "chr_0017_yvonne_talent_2_2",
+          "parameter": "status_up"
+        }
+      },
+      "permanent": true,
+      "condition_inputs": [
+        "enemy.frozen"
+      ],
       "evaluation": "hit"
     }
   ]

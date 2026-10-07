@@ -132,7 +132,7 @@ class TestDamageDataFlow(unittest.TestCase):
 
     def test_passive_ownership_is_separate_from_parameter_dependencies(self):
         report = auditor.audit(self.rows)
-        self.assertEqual(report["summary"]["selected_passive_damage_rules"], 13)
+        self.assertEqual(report["summary"]["selected_passive_damage_rules"], 15)
         endmin = next(row for row in report["characters"] if row["key"] == "endministrator")
         passives = {row["effect_id"]: row for row in endmin["passives"]}
         talent = passives["chr_9000_endmin_talent_1_2"]

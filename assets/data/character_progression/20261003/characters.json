@@ -7728,6 +7728,7 @@
             "elements": [
               "all"
             ],
+            "evaluation": "hit",
             "key": "chr_0022_bounda_talent_1_2:damage_bonus",
             "permanent": true,
             "recipient": "self",
@@ -11669,6 +11670,7 @@
             "elements": [
               "all"
             ],
+            "evaluation": "hit",
             "key": "chr_0004_pelica_talent_1_2:damage_bonus",
             "permanent": true,
             "recipient": "self",
@@ -16877,7 +16879,49 @@
         "source": "CharGrowthTable/chr_0017_yvonne/talentNodeMap/chr_0017_yvonne_passive_skill_1_1"
       },
       {
-        "damage_modifier_bindings": [],
+        "damage_modifier_bindings": [
+          {
+            "bucket": "crit_damage",
+            "condition_inputs": [
+              "enemy.cold_attached",
+              "enemy.not_frozen"
+            ],
+            "elements": [
+              "all"
+            ],
+            "evaluation": "hit",
+            "key": "chr_0017_yvonne_talent_2_2:crit_damage:cold",
+            "permanent": true,
+            "recipient": "self",
+            "strength": {
+              "base": {
+                "parameter": "inflict_up",
+                "passive": "chr_0017_yvonne_talent_2_2"
+              }
+            },
+            "trigger": "battle_start"
+          },
+          {
+            "bucket": "crit_damage",
+            "condition_inputs": [
+              "enemy.frozen"
+            ],
+            "elements": [
+              "all"
+            ],
+            "evaluation": "hit",
+            "key": "chr_0017_yvonne_talent_2_2:crit_damage:frozen",
+            "permanent": true,
+            "recipient": "self",
+            "strength": {
+              "base": {
+                "parameter": "status_up",
+                "passive": "chr_0017_yvonne_talent_2_2"
+              }
+            },
+            "trigger": "battle_start"
+          }
+        ],
         "description": "对处于寒冷附着状态的敌人造成的暴击伤害+20%；对处于冻结状态的敌人效果加倍。",
         "description_template": "对处于<#ba.crystinflict>寒冷附着</>状态的敌人造成的暴击伤害<@ba.vup>+{inflict_up:0%}</>；对处于<#ba.frozen>冻结</>状态的敌人效果加倍。",
         "effect_id": "chr_0017_yvonne_talent_2_2",

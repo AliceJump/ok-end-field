@@ -5142,7 +5142,7 @@
               "duration_input": null,
               "permanent": true,
               "lifetime_scope": "timed",
-              "evaluation": "application",
+              "evaluation": "hit",
               "max_stacks": 1,
               "stack_policy": "replace",
               "condition_inputs": [
@@ -5161,7 +5161,8 @@
                 "enemy.slowed"
               ],
               "unresolved": null,
-              "producer_status": "not_verified_by_this_audit"
+              "producer_status": "current_model_hit_target; no_proc_or_timed_trigger",
+              "native_condition_processor": "not_executed; canonical reviewed predicate only"
             }
           ],
           "skill_rule_references": [],
@@ -7453,7 +7454,7 @@
               "duration_input": null,
               "permanent": true,
               "lifetime_scope": "timed",
-              "evaluation": "application",
+              "evaluation": "hit",
               "max_stacks": 1,
               "stack_policy": "replace",
               "condition_inputs": [
@@ -7472,7 +7473,8 @@
                 "enemy.staggered"
               ],
               "unresolved": null,
-              "producer_status": "not_verified_by_this_audit"
+              "producer_status": "current_model_hit_target; no_proc_or_timed_trigger",
+              "native_condition_processor": "not_executed; canonical reviewed predicate only"
             }
           ],
           "skill_rule_references": [],
@@ -10781,9 +10783,84 @@
           "name": "冰点",
           "rank": 2,
           "source": "CharGrowthTable/chr_0017_yvonne/talentNodeMap/chr_0017_yvonne_passive_skill_1_2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "runtime_rules",
           "native_modifier_count": 1,
-          "damage_rules": [],
+          "damage_rules": [
+            {
+              "origin": "chr_0017_yvonne_talent_2_2",
+              "key": "chr_0017_yvonne_talent_2_2:crit_damage:cold",
+              "bucket": "crit_damage",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "battle_start",
+              "duration": null,
+              "duration_input": null,
+              "permanent": true,
+              "lifetime_scope": "timed",
+              "evaluation": "hit",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [
+                "enemy.cold_attached",
+                "enemy.not_frozen"
+              ],
+              "magnitude": {
+                "base": 0.20000000298023224,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0017_yvonne/talentNodeMap/chr_0017_yvonne_passive_skill_1_2/parameters/inflict_up"
+              ],
+              "required_inputs": [
+                "enemy.cold_attached",
+                "enemy.not_frozen"
+              ],
+              "unresolved": null,
+              "producer_status": "current_model_hit_target; no_proc_or_timed_trigger",
+              "native_condition_processor": "not_executed; canonical reviewed predicate only"
+            },
+            {
+              "origin": "chr_0017_yvonne_talent_2_2",
+              "key": "chr_0017_yvonne_talent_2_2:crit_damage:frozen",
+              "bucket": "crit_damage",
+              "elements": [
+                "all"
+              ],
+              "damage_tags": [],
+              "recipient": "self",
+              "trigger": "battle_start",
+              "duration": null,
+              "duration_input": null,
+              "permanent": true,
+              "lifetime_scope": "timed",
+              "evaluation": "hit",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [
+                "enemy.frozen"
+              ],
+              "magnitude": {
+                "base": 0.4000000059604645,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "CharGrowthTable/chr_0017_yvonne/talentNodeMap/chr_0017_yvonne_passive_skill_1_2/parameters/status_up"
+              ],
+              "required_inputs": [
+                "enemy.frozen"
+              ],
+              "unresolved": null,
+              "producer_status": "current_model_hit_target; no_proc_or_timed_trigger",
+              "native_condition_processor": "not_executed; canonical reviewed predicate only"
+            }
+          ],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
@@ -11152,7 +11229,7 @@
     "skills": 128,
     "replay_verified_quotes": 128,
     "skill_damage_rules": 33,
-    "selected_passive_damage_rules": 13,
+    "selected_passive_damage_rules": 15,
     "model_release_bonus_bindings": 13,
     "native_buff_attribute_damage_bindings": 1,
     "target_state_bonus_bindings": 2,
