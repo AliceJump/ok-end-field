@@ -43,3 +43,6 @@ class TestNativeControlFlowBoundaries(unittest.TestCase):
 
     def test_native_combo_cache_remains_unresolved(self):
         self.assert_native_boundary('chr_0019_karin_combo_skill', 'ComboCacheAction+Data', {})
+
+    def test_native_temporary_unlock_remains_unresolved(self):
+        self.assert_native_boundary('chr_0019_karin_combo_skill', 'TemporaryUnlockAction+Data', {'blockManualLock': False, 'disableLockAimPriority': 30.0})
