@@ -46,3 +46,6 @@ class TestNativeControlFlowBoundaries(unittest.TestCase):
 
     def test_native_temporary_unlock_remains_unresolved(self):
         self.assert_native_boundary('chr_0019_karin_combo_skill', 'TemporaryUnlockAction+Data', {'blockManualLock': False, 'disableLockAimPriority': 30.0})
+
+    def test_native_curve_remains_unresolved(self):
+        self.assert_native_boundary('chr_0019_karin_normal_skill', 'CurveEvaluateFloat+Data', {'key': 'cam_angle', 'useCustomCurve': True})
