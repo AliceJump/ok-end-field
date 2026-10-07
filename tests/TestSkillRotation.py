@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import patch
 
 import pyautogui
@@ -113,7 +114,7 @@ def _caps_map(**members) -> dict:
 class TestDependencyAwareOrdering(unittest.TestCase):
     """资源喂养约束：满口径依赖附着的角色排在其喂养者之后。"""
 
-    _ENTRIES = [
+    _ENTRIES: ClassVar = [
         {
             "character": "提弗洛斯",
             "cycle_expect": 129661.5,
@@ -157,7 +158,7 @@ class TestDependencyAwareOrdering(unittest.TestCase):
 
     def test_any_of_multiple_feeders(self):
         # 任一喂养者先手即满足约束（不要求全部先手）
-        entries = self._ENTRIES + [{"character": "噗切娜", "cycle_expect": 20000.0}]
+        entries = [*self._ENTRIES, {"character": "噗切娜", "cycle_expect": 20000.0}]
         caps = dict(self._CAPS)
         caps["噗切娜"] = _caps_map(噗切娜=(("自然",), False))["噗切娜"]
         path2 = Path(self._tmp.name) / "two_feeders.json"

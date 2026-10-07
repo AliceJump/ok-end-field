@@ -14,7 +14,7 @@ hard-coded to 300 SP.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 from src.data.character_mechanics import CharacterMechanic
 from src.data.hidden_state_expectation import (
@@ -24,7 +24,7 @@ from src.data.hidden_state_expectation import (
 )
 
 
-class CombatPhase(str, Enum):
+class CombatPhase(StrEnum):
     NORMAL = "normal"
     PREP = "prep"
     CHARGE = "charge"

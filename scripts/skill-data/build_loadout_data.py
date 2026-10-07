@@ -217,7 +217,7 @@ def parse_weapon(item: dict, item_id: str) -> dict:
     rec_operators: list[str] = []
     rec_matrices: list[str] = []
 
-    for chapter, table in tables:
+    for _chapter, table in tables:
         header = [c.strip() for c in table[0]]
         if header and header[0] == "武器等级" and base_attack is None:
             levels = header[1:]
@@ -360,7 +360,7 @@ def parse_matrix(item: dict, item_id: str, matrix_tags: dict[str, tuple[str, str
         if group:
             tags.setdefault(group, []).append(name)
 
-    raw_tables = [[[c for c in row] for row in table] for _, table in tables]
+    raw_tables = [[list(row) for row in table] for _, table in tables]
     return {
         "item_id": item_id,
         "rarity": _rarity_from_tags(item.get("tagIds") or []),

@@ -1,17 +1,27 @@
 # -*- coding: utf-8 -*-
 # ruff: noqa: UP009
 import asyncio
+import contextlib
 import hashlib
 import hmac
 import json
+import math
 import queue
 import random
+import re
 import threading
 import time
 from typing import Any
 from urllib import error, parse, request
 
 import websockets
+
+from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
+from src.tasks.account.account_scope_store import (
+    get_account_map_content,
+    load_overrides,
+    resolve_account_id,
+)
 
 ENDFIELD_MAP_WS_URL = "wss://ws.skland.com/ws/v1/game/endfield/map"
 ENDFIELD_MAP_API_HOST = "https://zonai.skland.com"
@@ -26,8 +36,6 @@ ENDFIELD_MAP_REFERER = "https://game.skland.com/map/endfield"
 # 但官方 SDK 注册流程自铸的全新设备ID可以从 Python 直接使用、与账号无关且可长期复用；
 # 自铸流程见 src/core/map_device_id.py：临时浏览器配置匿名访问官方地图页（无需登录）
 # 完成注册，并持久化到 configs/map_device_id.json。
-from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
-
 _shumei_did_failed_at = 0.0
 _SHUMEI_DID_RETRY_INTERVAL = 30.0
 
@@ -88,8 +96,52 @@ class WsPositionMixin:
         self._map_ws_device_id = ""
         self._map_ws_user_id = ""
         self._map_ws_auth_source = ""
+        self._map_ws_account = None
+        self._map_ws_last_error_at = 0.0
+        self._map_ws_auth_retry_after = 0.0
         self._map_ws_last_consume_at = 0.0
         self._map_ws_consumer_idle_timeout = 10.0
+        self._map_ws_last_position_log_at = 0.0
+        self._map_ws_last_position_log_map = None
+        self._map_ws_last_position_log_xz = None
+
+    def _should_log_map_position(self, map_id: str, x: float, z: float) -> bool:
+        """判断是否应输出一条地图 WS 位置日志。
+
+        位置流本身可能非常频繁；同一地图、近距离且未到心跳间隔时只更新状态，
+        不打印。地图切换、单次跳变超过 50m、debug 模式 5 秒心跳、正常模式
+        30 秒心跳会放行日志。
+        """
+        now = time.time()
+        map_changed = map_id != self._map_ws_last_position_log_map
+        last_xz = self._map_ws_last_position_log_xz
+        jumped = last_xz is not None and math.hypot(float(x) - last_xz[0], float(z) - last_xz[1]) >= 50.0
+        heartbeat = 5.0 if getattr(self, "debug", False) else 30.0
+        due = now - self._map_ws_last_position_log_at >= heartbeat
+        if self._map_ws_last_position_log_at > 0 and not (map_changed or jumped or due):
+            return False
+        self._map_ws_last_position_log_at = now
+        self._map_ws_last_position_log_map = map_id
+        self._map_ws_last_position_log_xz = (float(x), float(z))
+        return True
+
+    def _log_map_ws_debug(self, direction: str, payload: Any) -> None:
+        """仅在 debug 模式打印官方地图 WS 消息；发送鉴权 token 时隐藏内容。"""
+        if not getattr(self, "debug", False):
+            return
+        log_debug = getattr(self, "log_debug", None)
+        if not callable(log_debug):
+            return
+        try:
+            if isinstance(payload, dict) and int(payload.get("type") or 0) == 1:
+                log_debug(f"[地图WS][debug] {direction}: type=1 (token 已隐藏)")
+                return
+            if isinstance(payload, dict):
+                log_debug(f"[地图WS][debug] {direction}: type={payload.get('type')} data={payload.get('data')}")
+                return
+            log_debug(f"[地图WS][debug] {direction}: {payload}")
+        except Exception:
+            log_debug(f"[地图WS][debug] {direction}: 无法格式化消息")
 
     def _is_ws_position_server_enabled(self) -> bool:
         thread = self._ws_server_thread
@@ -346,7 +398,9 @@ class WsPositionMixin:
         return {"roleId": str(role_id), "serverId": str(server_id)}
 
     async def _map_ws_send(self, ws, msg_type: int, data: dict[str, Any] | None = None, msg_id: str | None = None):
-        await ws.send(json.dumps({"type": msg_type, "data": data or {}, "msgId": msg_id or _make_msg_id()}))
+        payload = {"type": msg_type, "data": data or {}, "msgId": msg_id or _make_msg_id()}
+        self._log_map_ws_debug("发送", payload)
+        await ws.send(json.dumps(payload))
 
     def _map_ws_should_stop_for_game_window(self) -> bool:
         is_alive = getattr(self, "_is_game_window_alive", None)
@@ -375,8 +429,15 @@ class WsPositionMixin:
         return True
 
     def _map_ws_should_stop_for_idle_consumer(self) -> bool:
+        """判断无消费者时是否应自动关闭地图 WS。
+
+        ``timeout <= 0`` 表示常驻模式，永不因空闲停止，供小地图定位 TriggerTask
+        持续生产数据使用。
+        """
         last_consume_at = float(getattr(self, "_map_ws_last_consume_at", 0.0) or 0.0)
-        timeout = float(getattr(self, "_map_ws_consumer_idle_timeout", 30.0) or 30.0)
+        timeout = float(getattr(self, "_map_ws_consumer_idle_timeout", 0.0) or 0.0)
+        if timeout <= 0:
+            return False
         if last_consume_at <= 0 or time.time() - last_consume_at < timeout:
             return False
 
@@ -399,6 +460,7 @@ class WsPositionMixin:
                     return
 
                 account = await asyncio.to_thread(self._resolve_map_account_from_cred)
+                self._map_ws_account = account
                 if callable(log_info):
                     log_info(f"[地图WS] 已解析角色: serverId={account['serverId']} roleId={account['roleId']}")
 
@@ -445,9 +507,12 @@ class WsPositionMixin:
                         if isinstance(msg, (bytes, bytearray)):
                             msg = msg.decode("utf-8", errors="ignore")
                         if not isinstance(msg, str) or not msg.strip().startswith("{"):
+                            if getattr(self, "debug", False) and callable(getattr(self, "log_debug", None)):
+                                self.log_debug(f"[地图WS][debug] 收到非 JSON 消息: {msg!r}")
                             continue
 
                         payload = json.loads(msg)
+                        self._log_map_ws_debug("收到", payload)
                         msg_type = payload.get("type")
                         if msg_type == 2:
                             auth_ok = True
@@ -463,37 +528,47 @@ class WsPositionMixin:
                         if msg_type == 1012:
                             self._push_ws_payload(payload)
                             pos, map_id, px, py, pz = self._extract_position_payload(payload)
-                            if pos is not None and map_id is not None and callable(log_info):
+                            if (
+                                pos is not None
+                                and map_id is not None
+                                and callable(log_info)
+                                and self._should_log_map_position(map_id, px, pz)
+                            ):
                                 log_info(f"[地图WS] 收到位置: mapId={map_id} pos=({px:.3f},{py:.3f},{pz:.3f})")
             except Exception as e:
                 if self._map_ws_stop_event.is_set():
                     break
+                self._map_ws_last_error_at = time.time()
                 if callable(log_error):
                     log_error(f"[地图WS] 客户端异常，30秒后重试: {e}")
-                try:
+                with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(self._map_ws_stop_event.wait(), timeout=30.0)
-                except TimeoutError:
-                    pass
 
     def _start_map_ws_client(self, raw_cred: str | None):
+        auth_source = str(raw_cred or "")
+        if not auth_source:
+            return False
+        if time.time() < float(getattr(self, "_map_ws_auth_retry_after", 0.0) or 0.0):
+            return False
         try:
-            auth_bundle = self._resolve_auth_bundle(raw_cred)
+            auth_bundle = self._resolve_auth_bundle(auth_source)
         except MapAuthError as e:
             # 仅捕获可预期的认证失败：不抛出阻断导航，记录一次后由后续
             # 触发周期重试（map_device_id 内部有 30 秒冷却，不会频繁铸造）
+            self._map_ws_auth_retry_after = time.time() + 30.0
             if not getattr(self, "_map_ws_auth_failed_logged", False):
                 self._map_ws_auth_failed_logged = True
                 log_error = getattr(self, "log_error", None)
                 if callable(log_error):
                     log_error(f"[地图WS] 认证失败，稍后将自动重试: {e}")
             return False
+        self._map_ws_auth_retry_after = 0.0
         self._map_ws_auth_failed_logged = False
         cred = str(auth_bundle.get("cred") or "")
         sign_token = str(auth_bundle.get("sign_token") or "")
         sign_time = auth_bundle.get("sign_time") if isinstance(auth_bundle.get("sign_time"), dict) else {}
         device_id = str(auth_bundle.get("d_id") or "")
         user_id = str(auth_bundle.get("user_id") or "")
-        auth_source = str(raw_cred or "")
         if not cred:
             return False
         if (
@@ -531,14 +606,10 @@ class WsPositionMixin:
                 if callable(log_error):
                     log_error(f"[地图WS] 客户端启动异常: {e}")
             finally:
-                try:
+                with contextlib.suppress(Exception):
                     loop.stop()
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     loop.close()
-                except Exception:
-                    pass
                 if callable(log_info):
                     log_info("[地图WS] 客户端已关闭")
                 self._map_ws_enabled = False
@@ -583,7 +654,7 @@ class WsPositionMixin:
     def _push_ws_payload(self, payload: dict[str, Any]):
         try:
             # 缓存有效的位置数据
-            pos, map_id, px, py, pz = self._extract_position_payload(payload)
+            pos, map_id, _px, _py, _pz = self._extract_position_payload(payload)
             if pos is not None and map_id is not None:
                 with self._ws_position_lock:
                     self._ws_last_position_payload = payload
@@ -591,15 +662,11 @@ class WsPositionMixin:
             self._ws_payload_queue.put_nowait(payload)
         except queue.Full:
             # 队列已满，弹出旧数据后重试
-            try:
+            with contextlib.suppress(queue.Empty):
                 self._ws_payload_queue.get_nowait()
-            except queue.Empty:
-                pass
-            try:
-                self._ws_payload_queue.put_nowait(payload)
-            except queue.Full:
+            with contextlib.suppress(queue.Full):
                 # 仍然满，放弃此消息
-                pass
+                self._ws_payload_queue.put_nowait(payload)
 
     async def _ws_handler(self, ws):
         log_info = getattr(self, "log_info", None)
@@ -621,7 +688,12 @@ class WsPositionMixin:
                     self._push_ws_payload(payload)
                     # 仅在有效位置数据时记录（避免过多日志）
                     pos, map_id, px, py, pz = self._extract_position_payload(payload)
-                    if pos is not None and map_id is not None and callable(log_info):
+                    if (
+                        pos is not None
+                        and map_id is not None
+                        and callable(log_info)
+                        and self._should_log_map_position(map_id, px, pz)
+                    ):
                         log_info(f"[WS] 收到位置: mapId={map_id} pos=({px:.3f},{py:.3f},{pz:.3f})")
                 except Exception as e:
                     if callable(log_error):
@@ -667,14 +739,10 @@ class WsPositionMixin:
                 if callable(log_error):
                     log_error(f"[WS] 服务器异常: {e}")
             finally:
-                try:
+                with contextlib.suppress(Exception):
                     loop.stop()
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     loop.close()
-                except Exception:
-                    pass
                 if callable(log_info):
                     log_info("[WS] 服务器已关闭")
 
@@ -751,9 +819,137 @@ class WsPositionMixin:
             self._map_ws_loop = None
             self._map_ws_stop_event = None
             self._map_ws_enabled = False
+            self._map_ws_account = None
             self._map_ws_sign_token = ""
             self._map_ws_sign_time = {}
             self._map_ws_device_id = ""
             self._map_ws_user_id = ""
             self._map_ws_auth_source = ""
             self._map_ws_last_consume_at = 0.0
+            self._map_ws_auth_retry_after = 0.0
+
+    # ---------- 任务级位置源管理（ItemNavigatorTask 等共用） ----------
+
+    @staticmethod
+    def _get_map_account_options() -> list[str]:
+        """账号配置页下拉选项：已有地图同步 content 的账号名列表。"""
+        data = load_overrides()
+        registry = data.get("account_registry") or {}
+        account_list_text = str(data.get("account_list_text") or "")
+        names: list[str] = [""]
+
+        for raw in account_list_text.splitlines():
+            name = raw.strip().split(",", 1)[0].strip()
+            if name and name not in names:
+                names.append(name)
+
+        for meta in registry.values():
+            if isinstance(meta, dict):
+                name = str(meta.get("username") or "").strip()
+                if name and name not in names:
+                    names.append(name)
+
+        return names
+
+    def _is_game_window_alive(self) -> bool:
+        """游戏窗口是否存在且可见。"""
+        try:
+            import win32gui
+        except ImportError:
+            return False
+        hwnd_window = getattr(getattr(self, "executor", None), "device_manager", None)
+        hwnd_window = getattr(hwnd_window, "hwnd_window", None)
+        hwnd = getattr(hwnd_window, "hwnd", None)
+        if not hwnd:
+            return False
+        try:
+            return bool(win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd))
+        except Exception:
+            return False
+
+    def _get_account_map_content(self) -> str:
+        """按配置优先级解析地图同步 content（与 ItemNavigatorTask 一致）。"""
+        direct_content = str(self.config.get("content") or "").strip()
+        if direct_content:
+            return direct_content
+
+        selected_account = str(self.config.get("地图账号") or "").strip()
+        if selected_account:
+            account_id = resolve_account_id(selected_account, create_if_missing=False) or selected_account
+            return get_account_map_content(account_id, account_name=selected_account)
+
+        account_id = str(getattr(self, "current_account_id", "") or "").strip()
+        account_name = str(getattr(self, "current_user", "") or "").strip()
+
+        executor = getattr(self, "executor", None)
+        current_task = getattr(executor, "current_task", None) if executor is not None else None
+        if current_task is not None and current_task is not self:
+            account_id = account_id or str(getattr(current_task, "current_account_id", "") or "").strip()
+            account_name = account_name or str(getattr(current_task, "current_user", "") or "").strip()
+
+        return get_account_map_content(account_id or account_name, account_name=account_name)
+
+    def _ensure_ws_position_source(self, map_cred: str) -> None:
+        """按凭证有无切换位置源：有凭证用官方地图 WS 客户端，否则起本地 WS 服务。"""
+        if map_cred:
+            if self._is_ws_position_server_enabled():
+                self._stop_ws_position_server()
+            if not self._is_map_ws_client_enabled() or self._map_ws_auth_source != map_cred:
+                self._start_map_ws_client(map_cred)
+        else:
+            if self._is_map_ws_client_enabled():
+                self._stop_map_ws_client()
+            if not self._is_ws_position_server_enabled():
+                self._start_ws_position_server(host="127.0.0.1", port=3001)
+
+    def _stop_position_sources(self) -> None:
+        """停止全部位置数据源（任务退出/窗口丢失清理时调用）。"""
+        if self._is_map_ws_client_enabled():
+            self._stop_map_ws_client()
+        if self._is_ws_position_server_enabled():
+            self._stop_ws_position_server()
+
+    # ---------- 按键按下检测（物品导航标记等任务共用） ----------
+
+    @staticmethod
+    def _key_vk(key: str) -> int | None:
+        """按键名 → Windows 虚拟键码（VK）；支持字母/数字/f1~f24/常用功能键。"""
+        key = (key or "").strip().lower()
+        if not key:
+            return None
+        m = re.match(r"^f([1-9]|1[0-9]|2[0-4])$", key)
+        if m:
+            return 0x70 + int(m.group(1)) - 1  # VK_F1 = 0x70
+        named = {
+            "space": 0x20,
+            "enter": 0x0D,
+            "esc": 0x1B,
+            "tab": 0x09,
+            "backspace": 0x08,
+            "delete": 0x2E,
+            "insert": 0x2D,
+            "lshift": 0xA0,
+            "rshift": 0xA1,
+            "lctrl": 0xA2,
+            "rctrl": 0xA3,
+            "lalt": 0xA4,
+            "ralt": 0xA5,
+        }
+        if key in named:
+            return named[key]
+        if len(key) == 1 and key.isalnum():
+            return ord(key.upper())
+        return None
+
+    def _is_key_pressed(self, key: str) -> bool:
+        """检测按键是否按下（GetAsyncKeyState 高位置位）。"""
+        vk = self._key_vk(key)
+        if vk is None:
+            return False
+        try:
+            import ctypes
+
+            state = ctypes.windll.user32.GetAsyncKeyState(vk)
+            return bool(state & 0x8000)
+        except Exception:
+            return False

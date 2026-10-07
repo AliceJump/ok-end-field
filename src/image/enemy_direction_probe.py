@@ -139,8 +139,8 @@ def _circular_runs(mask: np.ndarray) -> list[tuple[int, int]]:
 
 
 def _window_score(profile: np.ndarray, center_parameter_deg: float) -> float:
-    half_bins = max(1, int(round((_MARKER_ARC_WIDTH_DEG / _DIRECTION_BIN_DEG) / 2.0)))
-    center_bin = int(round((center_parameter_deg % 360.0) / _DIRECTION_BIN_DEG)) % _DIRECTION_BINS
+    half_bins = max(1, round((_MARKER_ARC_WIDTH_DEG / _DIRECTION_BIN_DEG) / 2.0))
+    center_bin = round((center_parameter_deg % 360.0) / _DIRECTION_BIN_DEG) % _DIRECTION_BINS
     offsets = np.arange(-half_bins, half_bins + 1, dtype=np.int32)
     indices = (center_bin + offsets) % _DIRECTION_BINS
     return float(np.mean(profile[indices]))

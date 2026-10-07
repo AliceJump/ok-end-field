@@ -31,10 +31,10 @@ def _marker_frame_many(angles_deg, width: int = 1920, height: int = 1080, *, ell
     frame = np.full((height, width, 3), 60, dtype=np.uint8)
     semi_axis_x, semi_axis_y = _ellipse_axes(width, height)
     axes = (
-        int(round(semi_axis_x * ellipse_scale)),
-        int(round(semi_axis_y * ellipse_scale)),
+        round(semi_axis_x * ellipse_scale),
+        round(semi_axis_y * ellipse_scale),
     )
-    thickness = max(8, int(round(16 * height / 1080.0)))
+    thickness = max(8, round(16 * height / 1080.0))
     for angle_deg in angles_deg:
         parameter = _direction_to_parameter_deg(angle_deg, semi_axis_x, semi_axis_y)
         cv2.ellipse(

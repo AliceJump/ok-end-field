@@ -51,7 +51,7 @@ class SearchMixin(BaseEfTask):
         time_out: float = -1,
         reset_position: bool = False,
     ):
-        """WASD 轻微移动搜索，每次方向尝试移动后检测，可选未命中归正回原位。
+        """WASD 轻微移动搜索，每次移动后立即检测，未命中才继续移动。
 
         Args:
             check_func: 无参回调，返回真值表示命中（可直接返回检测结果）。
@@ -83,19 +83,14 @@ class SearchMixin(BaseEfTask):
                 self.move_keys(key, duration=duration)
                 count += 1
 
-                if start is not None and self.active_time() - start >= time_out:
-                    restore(key)
-                    return None
-
+                # 每个移动动作完成后必须先用最新画面识别一次，不能因动作耗时到点而跳过。
                 result = check_func()
-
-                # check_func 自身耗时可能跨越 timeout
-                if start is not None and self.active_time() - start >= time_out:
-                    restore(key)
-                    return None
-
                 if result:
                     return result
+
+                if start is not None and self.active_time() - start >= time_out:
+                    restore(key)
+                    return None
 
                 restore(key)
 

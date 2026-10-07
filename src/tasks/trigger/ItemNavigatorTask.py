@@ -13,13 +13,11 @@ from ok import Logger, TriggerTask
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.core.config_migration import _NO_MIGRATION
 from src.core.paths import config_folder
-from src.data import item_map_query
+from src.data import item_map_query, map_mark_query, user_map_mark_store
 from src.icons import Icons
-from src.tasks.account.account_scope_store import get_account_map_content, load_overrides, resolve_account_id
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
-from src.tasks.mixin.ws_position_mixin import WsPositionMixin
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 logger = Logger.get_logger(__name__)
 # 特殊物品Y坐标修正
@@ -43,34 +41,16 @@ HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
 # 因此浮层文字与箭头朝向始终一致；若日后确认坐标系不同，只需调整此表顺序。
 COMPASS_LABELS = ("北", "东北", "东", "东南", "南", "西南", "西", "西北")
 HEIGHT_SAME_THRESHOLD = 0.05
-
-MAP_SOURCE_KEY = "地图数据来源"
-MAP_SOURCE_AUTO = "自动当前账号"
-MAP_SOURCE_ACCOUNT = "账号配置"
-MAP_SOURCE_MANUAL = "手动 content"
+OFFICIAL_MARKS_CACHE_TTL = 30.0
 
 
-def _legacy_map_source(config, new_key):
-    if config.get(new_key) in {MAP_SOURCE_AUTO, MAP_SOURCE_ACCOUNT, MAP_SOURCE_MANUAL}:
-        return _NO_MIGRATION
-    if str(config.get("content") or "").strip():
-        return MAP_SOURCE_MANUAL
-    if str(config.get("地图账号") or "").strip():
-        return MAP_SOURCE_ACCOUNT
-    if "content" in config or "地图账号" in config:
-        return MAP_SOURCE_AUTO
-    return _NO_MIGRATION
-
-
-class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerTask):
+class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, TriggerTask):
     """实时从本地 WebSocket 拿玩家位置，指向已选物品的最近点，并支持按键标记已获取。
 
     设计原则：
     - `default_config` 只放面向用户的配置（见初始化），不把内部服务端口等放在 default_config
     - 轮询使用固定内部 WS 端点（可在部署时改代码），物品选择从任务配置读取
     """
-
-    config_value_migrations = {MAP_SOURCE_KEY: _legacy_map_source}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,11 +62,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         # 只把面向用户的选项放在 default_config
         self.default_config.update(
             {
-                MAP_SOURCE_KEY: MAP_SOURCE_AUTO,
-                # 可选：直接填写 hg/check 的 data.content。
-                "content": "",
-                # 可选：从账号配置页读取对应账号的地图同步 content。
-                "地图账号": "",
                 # 由用户在 UI 中配置要导航的物品名列表（可空）
                 "选择物品": [],
                 # 标记按键（UI 映射），例如 'f'，当玩家按下且目标在阈值内时标记为已获取
@@ -102,14 +77,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             }
         )
 
-        self.config_type[MAP_SOURCE_KEY] = {
-            "type": "drop_down",
-            "options": [MAP_SOURCE_AUTO, MAP_SOURCE_ACCOUNT, MAP_SOURCE_MANUAL],
-            "sub_configs": {
-                MAP_SOURCE_ACCOUNT: ["地图账号"],
-                MAP_SOURCE_MANUAL: ["content"],
-            },
-        }
         self.config_type["浮层信息"] = {
             # 关闭浮层信息时，隐藏文字/背景透明度与字号选项
             "sub_configs": {True: ["浮层文字透明度", "浮层背景透明度", "浮层字号"]},
@@ -122,10 +89,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             "options_available": item_map_query.get_supported_item_names(),
             "allow_duplication": False,
         }
-        self.config_type["地图账号"] = {
-            "type": "drop_down",
-            "options": self._get_map_account_options(),
-        }
         self.config_type["油猴脚本帮助"] = {
             "type": "button",
             "text": "浏览器油猴脚本帮助",
@@ -134,15 +97,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         }
         self.config_description.update(
             {
-                MAP_SOURCE_KEY: (
-                    "选择地图同步凭据来源。自动当前账号会读取当前任务账号上下文；"
-                    "账号配置会读取指定账号；手动 content 直接使用填写值。"
-                ),
-                "content": (
-                    "直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
-                    "仅在「地图数据来源 = 手动 content」时使用。"
-                ),
-                "地图账号": ("从账号配置页读取该账号保存的地图同步 content。\n仅在「地图数据来源 = 账号配置」时使用。"),
                 "选择物品": ("选择要参与导航的物品列表。\n只会在当前地图里匹配这些物品。"),
                 "标记按键": ("接近目标后用于标记“已获取”的键位。\n默认按键为 f。"),
                 "标记按住时长": ("按住标记按键并持续达到这个时长后，\n才会把当前目标标记为已获取。"),
@@ -158,7 +112,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         )
         self.default_config_group.update(
             {
-                "网页地图同步": [MAP_SOURCE_KEY, "油猴脚本帮助"],
+                "网页地图同步": ["油猴脚本帮助"],
                 "浮层显示": ["浮层信息", "浮层文字透明度", "浮层背景透明度", "浮层字号"],
             }
         )
@@ -167,18 +121,22 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         self.needs_frame = False  # 纯 WS 驱动，不识别画面
 
         # internal constants (not user-facing)
-        self._init_ws_position_mixin()
+        self._init_runtime_state_mixin()
         cfg_folder = Path(config_folder())
         self._marked_store = cfg_folder / "marked_points.json"
         self._marked_lock = threading.Lock()
         self._marked: dict[str, set] = {}  # mapId -> set of point hashes
         # WS 服务启动状态追踪（仅记录首次启动日志）
-        self._ws_server_start_logged = False
         self._navigator_window_missing_logged = False
+        # 官方地图工业设施点位缓存：mapId -> {名称: [坐标]}
+        self._official_marks_cache: dict[str, dict[str, list]] = {}
+        self._official_marks_empty: set[str] = set()
+        self._official_marks_fetched_at: dict[str, float] = {}
 
         # 箭头渲染可调参数（便于快速微调视觉）
         self._arrow_center_rel = (162 / 1920, 166 / 1080)  # 相对于窗口的箭头中心位置（比例），默认在左上角稍微偏右下
         self._arrow_max_len_ratio = 0.08
+        self._arrow_min_len_px = 20.0
         self._arrow_scale = 1.144
         self._nearby_marker_max_distance = 75.524
         # 附近小箭头：箭尖固定在目标位置，尾巴长度表示高差（同高最短，高差越大越长）
@@ -211,6 +169,10 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         # dirty-save 控制：标记后延迟合并写盘
         self._dirty = False
         self._last_save_time = 0.0
+        # 标记按键状态：记录本次按住期间是否已标记（防止按住期间反复标记）
+        self._mark_key_held_in_cycle = False
+        # 按键按下计时：用于判断按住持续时间（None 表示当前未按下）
+        self._mark_key_hold_start = None
         # 锁定待标记的目标（在接近阈值内）
         # 格式: {'map_id': str, 'hash': str, 'start_time': float | None}
         self._mark_lock_target = None
@@ -257,7 +219,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 f"└─ {self.tr('4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值')}", indent=1
             ),
             inst_line(
-                f"└─ {self.tr('5. 使用「手动 content」时把该值填入本任务 content；使用「账号配置」时把它保存到账号配置页并选择对应地图账号')}",
+                f"└─ {self.tr('5. 把该值填入全局「导航配置」的「真值content」；或填入账号配置页后用「真值地图账号」选择')}",
                 indent=1,
             ),
         ]
@@ -265,10 +227,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             [
                 inst_line("📍 " + self.tr("物品导航配置说明"), "#FF5555", bold=True),
                 inst_line(
-                    "⚙️ "
-                    + self.tr(
-                        "地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"
-                    ),
+                    "⚙️ " + self.tr("位置来源：由「小地图定位」和全局「导航配置」统一提供"),
                     "#FF5555",
                     bold=True,
                 ),
@@ -277,9 +236,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 inst_line(
                     f"└─ {self.tr('选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标')}", indent=1
                 ),
-                inst_line(
-                    f"└─ {self.tr('地图账号：仅在「地图数据来源 = 账号配置」时使用，选项来自账号配置页')}", indent=1
-                ),
+                inst_line(f"└─ {self.tr('定位服务：首次读取坐标时会自动启用「小地图定位」触发任务')}", indent=1),
                 inst_line(f"└─ {self.tr('标记按键：接近目标后用于标记已获取的键位，仅支持单个字符')}", indent=1),
                 inst_line(f"└─ {self.tr('标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）')}", indent=1),
                 inst_gap(),
@@ -332,26 +289,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             ]
         )
 
-    @staticmethod
-    def _get_map_account_options() -> list[str]:
-        data = load_overrides()
-        registry = data.get("account_registry") or {}
-        account_list_text = str(data.get("account_list_text") or "")
-        names: list[str] = [""]
-
-        for raw in account_list_text.splitlines():
-            name = raw.strip().split(",", 1)[0].strip()
-            if name and name not in names:
-                names.append(name)
-
-        for meta in registry.values():
-            if isinstance(meta, dict):
-                name = str(meta.get("username") or "").strip()
-                if name and name not in names:
-                    names.append(name)
-
-        return names
-
     def _is_game_window_alive(self) -> bool:
         hwnd_window = getattr(getattr(self, "executor", None), "device_manager", None)
         hwnd_window = getattr(hwnd_window, "hwnd_window", None)
@@ -364,35 +301,23 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             return False
 
     def _cleanup_navigator_runtime(self):
-        if self._is_map_ws_client_enabled():
-            self._stop_map_ws_client()
-        if self._is_ws_position_server_enabled():
-            self._stop_ws_position_server()
         self.clear_window_arrows()
-        self._ws_server_start_logged = False
 
-    def _get_account_map_content(self) -> str:
-        source = self.config.get(MAP_SOURCE_KEY, MAP_SOURCE_AUTO)
-        if source == MAP_SOURCE_MANUAL:
-            return str(self.config.get("content") or "").strip()
+    @staticmethod
+    def _world_position_xyz(position: dict) -> tuple[float | None, float, float | None]:
+        """从世界坐标快照读取水平坐标和可选高度。"""
 
-        if source == MAP_SOURCE_ACCOUNT:
-            selected_account = str(self.config.get("地图账号") or "").strip()
-            if not selected_account:
-                return ""
-            account_id = resolve_account_id(selected_account, create_if_missing=False) or selected_account
-            return get_account_map_content(account_id, account_name=selected_account)
-
-        account_id = str(getattr(self, "current_account_id", "") or "").strip()
-        account_name = str(getattr(self, "current_user", "") or "").strip()
-
-        executor = getattr(self, "executor", None)
-        current_task = getattr(executor, "current_task", None) if executor is not None else None
-        if current_task is not None and current_task is not self:
-            account_id = account_id or str(getattr(current_task, "current_account_id", "") or "").strip()
-            account_name = account_name or str(getattr(current_task, "current_user", "") or "").strip()
-
-        return get_account_map_content(account_id or account_name, account_name=account_name)
+        try:
+            x = float(position["x"])
+            z = float(position["z"])
+        except (KeyError, TypeError, ValueError):
+            return None, 0.0, None
+        raw_y = position.get("y")
+        try:
+            y = float(raw_y) if raw_y is not None else 0.0
+        except (TypeError, ValueError):
+            y = 0.0
+        return x, y, z
 
     def _point_height_delta(self, pt: dict, item_name: str | None, py: float) -> float:
         """目标相对玩家的高度差（正值表示目标在上方），套用特殊物品的 Y 修正。"""
@@ -549,11 +474,80 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         return math.hypot(a[0] - b[0], a[1] - b[1])
 
     def _get_candidates_for_map(self, map_id: str, selected_items: list[str]) -> dict[str, list]:
-        # Use item_map_query to get items; then restrict to given map_id
         if not selected_items:
             return {}
-        summary = item_map_query.get_item_map(selected_items)
-        return summary.get(map_id, {})
+        static_items = item_map_query.get_item_map(selected_items).get(map_id, {})
+        official_items = self._official_marks_for_map(map_id)
+        if official_items:
+            selected = set(selected_items)
+            official_items = {name: points for name, points in official_items.items() if name in selected}
+        return map_mark_query.merge_item_maps([static_items, official_items])
+
+    def _official_marks_for_map(self, map_id: str) -> dict[str, list]:
+        """Fetch and cache current-map user facilities from the official map API."""
+
+        now = self.active_time()
+        last_fetched = self._official_marks_fetched_at.get(map_id, 0.0)
+        if (
+            map_id in self._official_marks_cache or map_id in self._official_marks_empty
+        ) and now - last_fetched < OFFICIAL_MARKS_CACHE_TTL:
+            return self._official_marks_cache.get(map_id, {})
+
+        service = self.get_runtime_position_service()
+        if service is None:
+            return {}
+        api_get = getattr(service, "_map_api_get", None)
+        if not callable(api_get):
+            return {}
+        if not getattr(service, "_map_ws_cred", ""):
+            return {}
+
+        account = getattr(service, "_map_ws_account", None)
+        if not isinstance(account, dict) or not account:
+            resolver = getattr(service, "_resolve_map_account_from_cred", None)
+            if not callable(resolver):
+                return {}
+            try:
+                account = resolver()
+            except Exception as exc:
+                self.log_info(f"读取官方地图设施失败，继续使用本地物品点位: {exc}")
+                return {}
+        if not isinstance(account, dict) or not account:
+            return {}
+
+        try:
+            response = api_get(
+                "/web/v1/game/endfield/map/mark/list",
+                {"mapId": map_id, **account},
+            )
+        except Exception as exc:
+            self.log_info(f"读取官方地图设施失败，继续使用本地物品点位: {exc}")
+            self._official_marks_fetched_at[map_id] = now
+            return {}
+
+        if not isinstance(response, dict) or response.get("code") not in (None, 0):
+            self._official_marks_fetched_at[map_id] = now
+            return {}
+
+        points = map_mark_query.extract_mark_points(response, map_id=map_id)
+        self._official_marks_fetched_at[map_id] = now
+        user_map_mark_store.persist_user_marks(
+            response,
+            map_id=map_id,
+            account_id=str(getattr(self, "current_account_id", "") or "").strip(),
+            map_user_id=str(getattr(service, "_map_ws_user_id", "") or "").strip(),
+            role_id=str(account.get("roleId") or "").strip(),
+            server_id=str(account.get("serverId") or "").strip(),
+        )
+        if points:
+            self._official_marks_cache[map_id] = points
+            self._official_marks_empty.discard(map_id)
+            return points
+
+        # 接口成功但没有设施属于稳定结果，缓存空结果避免每轮重复请求。
+        self._official_marks_empty.add(map_id)
+        self._official_marks_cache.pop(map_id, None)
+        return {}
 
     def _draw_nav_arrow(self, dx: float, dz: float, tooltip: str):
         try:
@@ -742,46 +736,17 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 return
 
             self._navigator_window_missing_logged = False
-            map_cred = self._get_account_map_content()
-
-            if map_cred:
-                if self._is_ws_position_server_enabled():
-                    self._stop_ws_position_server()
-                if not self._is_map_ws_client_enabled() or self._map_ws_auth_source != map_cred:
-                    self.log_info("ItemNavigatorTask 启动 - 正在启动官方地图WS客户端")
-                    self._start_map_ws_client(map_cred)
-                    self._ws_server_start_logged = False
-            else:
-                if self._is_map_ws_client_enabled():
-                    self._stop_map_ws_client()
-                if not self._is_ws_position_server_enabled():
-                    self.log_info("ItemNavigatorTask 启动 - 正在启动WS服务")
-                    self._start_ws_position_server(host="127.0.0.1", port=3001)
-                    self._ws_server_start_logged = False
-                elif not self._ws_server_start_logged:
-                    # 首次检测到 WS 服务已启动，仅记录一次
-                    self.log_info("ItemNavigatorTask: WS服务已启动 ws://127.0.0.1:3001")
-                    self._ws_server_start_logged = True
-
             # read current selected items from task config (this is user-facing)
             selected_items = list(self.config.get("选择物品") or [])
-
-            # fetch player position from local websocket service
-            # 优先获取最新数据，如果没有新数据则返回缓存的旧值（避免"数据不完整"错误）
-            try:
-                payload = self._recv_ws_position_payload_or_cached(timeout=0.1)
-            except Exception:
-                self.info_set("导航", "无法读取WS位置")
+            position = self.world_pose(max_age=1.5)
+            if position is None:
+                self.info_set("导航", "运行时定位状态待接收...")
                 self.sleep(1.0)
                 return
-
-            # parse payload (兼容扁平结构 / data 包裹)
-            pos, map_id, px, py, pz = self._extract_position_payload(payload)
-            if not pos or not map_id:
-                if map_cred:
-                    self.info_set("导航", "地图WS位置数据待接收...")
-                else:
-                    self.info_set("导航", "WS位置数据待接收... (需要客户端连接到 ws://127.0.0.1:3001)")
+            map_id = str(position.get("map_id") or "")
+            px, py, pz = self._world_position_xyz(position)
+            if not map_id or px is None or pz is None:
+                self.info_set("导航", "定位坐标待锚定...")
                 self.sleep(1.0)
                 return
 

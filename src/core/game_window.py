@@ -27,7 +27,7 @@ def find_game_hwnd(window_config: dict, timeout: float = 10.0, interval: float =
         candidates = []
         foreground_hwnd = win32gui.GetForegroundWindow()
 
-        def collect(hwnd, _):
+        def collect(hwnd, _, candidates=candidates, foreground_hwnd=foreground_hwnd):
             """Collect candidate window handles matching the configured criteria."""
             try:
                 if not win32gui.IsWindowVisible(hwnd):

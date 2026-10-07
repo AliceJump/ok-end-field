@@ -165,7 +165,7 @@ class TestReactionRules(unittest.TestCase):
         self.assertFalse(SPELL_BURST_RULE.scales_with_stacks)
 
     def test_all_spell_reactions_scale_with_stacks(self):
-        # §4：公测口径四种法术反应触发伤害均为 80%×(1+异常等级)
+        # §4：公测口径四种法术反应触发伤害均为 80%x(1+异常等级)
         # （冻结 130% 固定为二测口径，已按 calc-framework/gamekee 公测口径修正）
         for element in (
             EffectType.ATTACH_BURN,
@@ -184,7 +184,7 @@ class TestReactionRules(unittest.TestCase):
         self.assertEqual(by_name["碎冰"].multiplier, 120.0)
         self.assertEqual(by_name["击飞"].multiplier, 120.0)
         self.assertEqual(by_name["倒地"].multiplier, 120.0)
-        # 层数相关（×(1+异常等级)）：猛击 150%、碎甲 50%，且都消耗全部破防层
+        # 层数相关（x(1+异常等级)）：猛击 150%、碎甲 50%，且都消耗全部破防层
         self.assertEqual(by_name["猛击"].multiplier, 150.0)
         self.assertTrue(by_name["猛击"].consumes_all)
         self.assertTrue(by_name["猛击"].scales_with_stacks)

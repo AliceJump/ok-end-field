@@ -10,11 +10,13 @@ range unless later evidence narrows them.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from src.data.character_capabilities import load_character_capabilities
 
@@ -196,12 +198,12 @@ class HiddenStateExpectation:
 
     UNKNOWN_BINARY = 0.5
 
-    _RESOURCE_EFFECTS = {
+    _RESOURCE_EFFECTS: ClassVar[dict[str, str]] = {
         "STACK_SIGN": "insight",
         "STACK_HUNTING_ARROW": "hunting_arrow",
         "STACK_QINGTING_SWORD": "qingting_sword",
     }
-    _STATUS_RESOURCES = {
+    _STATUS_RESOURCES: ClassVar[dict[str, str]] = {
         "STATUS_CONDUCTING": "conducting",
     }
 
@@ -268,7 +270,7 @@ class HiddenStateExpectation:
                 threshold = int(float(raw))
             except ValueError:
                 return self.UNKNOWN_BINARY
-            for (slot, resource_key), belief in self.resources.items():
+            for (_slot, resource_key), belief in self.resources.items():
                 if resource_key == key:
                     return belief.probability_at_least(threshold)
             return self.UNKNOWN_BINARY
@@ -340,15 +342,11 @@ class HiddenStateExpectation:
                     continue
                 if ".." in raw:
                     low, high = raw.split("..", 1)
-                    try:
+                    with contextlib.suppress(ValueError):
                         self.resources[(slot, key)] = belief.add_uniform(int(float(low)), int(float(high)), success)
-                    except ValueError:
-                        pass
                 else:
-                    try:
+                    with contextlib.suppress(ValueError):
                         self.resources[(slot, key)] = belief.add(int(float(raw)), success)
-                    except ValueError:
-                        pass
                 continue
             if token.startswith("STATUS_CONDUCTING:"):
                 _effect, raw = token.split(":", 1)
@@ -362,10 +360,8 @@ class HiddenStateExpectation:
                     if raw == "+1_or_apply":
                         self.resources[(slot, resource_key)] = belief.add(1, success)
                     else:
-                        try:
+                        with contextlib.suppress(ValueError):
                             self.resources[(slot, resource_key)] = belief.add(int(float(raw)), success)
-                        except ValueError:
-                            pass
                     self.conditions["STATUS_CONDUCTING"] = self.resources[(slot, resource_key)].probability_at_least(1)
                 continue
             if token.startswith("ATTACH_"):
@@ -469,16 +465,15 @@ class HiddenStateExpectation:
 
         fraction, basis = self._full_probability_for(actor, kind, transition)
         full_probability = fraction
-        if "expected_" in basis:
-            if mechanic := self.mechanics.get(actor):
-                if mechanic.archetype == "main_control_attack_channel" and kind == "战技":
-                    belief = self.attachments.get("ATTACH_NATURAL")
-                    if belief is not None:
-                        full_probability = belief.full_probability
-                elif mechanic.archetype == "consume_status_build_stack_burst" and kind == "战技":
-                    matches = [belief for (_slot, key), belief in self.resources.items() if key == "conducting"]
-                    if matches:
-                        full_probability = matches[0].full_probability
+        if "expected_" in basis and (mechanic := self.mechanics.get(actor)):
+            if mechanic.archetype == "main_control_attack_channel" and kind == "战技":
+                belief = self.attachments.get("ATTACH_NATURAL")
+                if belief is not None:
+                    full_probability = belief.full_probability
+            elif mechanic.archetype == "consume_status_build_stack_burst" and kind == "战技":
+                matches = [belief for (_slot, key), belief in self.resources.items() if key == "conducting"]
+                if matches:
+                    full_probability = matches[0].full_probability
         return ExpectedDamage(
             envelope.low,
             envelope.expected(fraction),

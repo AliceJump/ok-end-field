@@ -192,7 +192,7 @@ def main() -> int:
                 related: list[Response] = []
                 print(f"[{kind} {position:03d}/{len(items):03d}] {name} ({item_id})", flush=True)
 
-                def on_response(response: Response) -> None:
+                def on_response(response: Response, related: list[Response] = related) -> None:
                     if response.status == 200 and response.url.startswith(RELATED_API):
                         related.append(response)
 

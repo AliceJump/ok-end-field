@@ -68,7 +68,7 @@ BaseEfTask(
 
 ### 2.2 业务 Mixin
 
-`src/tasks/mixin/` 保留跨任务业务能力：
+`src/tasks/mixin/` 保留跨领域通用能力，`src/tasks/navigation/mixin/` 保留导航领域能力：
 
 ```text
 BaseEfTask
@@ -83,7 +83,9 @@ BaseEfTask
     └── AccountMixin
 ```
 
-`EndCommandMixin`、`WsPositionMixin` 是无 `BaseEfTask` 基类的协作 Mixin，通过最终任务组合获得任务能力。
+`EndCommandMixin`、`WsPositionMixin`、`RuntimeStateMixin` 是无 `BaseEfTask` 基类的
+协作 Mixin，通过最终任务组合获得任务能力。`WsPositionMixin` 是定位底层的南向适配器，
+业务任务读取实时位置时应使用 `RuntimeStateMixin`，不要直接消费 WS。
 
 ### 2.3 实际任务 MRO
 
@@ -121,13 +123,19 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 | 6    | `DemoDrawTask`             | `src.tasks.onetime.DemoDrawTask`          |
 | 7    | `YingTuoTask`              | `src.tasks.onetime.YingTuoTask`           |
 | 8    | `TestStartGame`            | `src.tasks.onetime.TestStartGame`         |
-| 9    | `RealtimeYoloScanTask`     | `src.tasks.test.RealtimeDetectTask`       |
-| 10   | `RealtimeDetectTask`       | `src.tasks.test.RealtimeDetectTask`       |
-| 11   | `PeriodicScreenshotTask`   | `src.tasks.test.PeriodicScreenshotTask`   |
-| 12   | `DiagnosisTask`            | `src.tasks.test.DiagnosisTask`            |
-| 13   | `MouseRotationCalibration` | `src.tasks.test.MouseRotationCalibration` |
-| 14   | `TestArrowAngle`           | `src.tasks.test.TestArrowAngle`           |
-| 15   | `TestCircularPulseDetect`  | `src.tasks.test.TestCircularPulseDetect`  |
+| 9    | `MinimapRealtimePosition`  | `src.tasks.localization.MinimapRealtimePosition` |
+| 10   | `MinimapRegionCheck`       | `src.tasks.localization.MinimapRegionCheck` |
+| 11   | `MinimapScaleCapture`      | `src.tasks.localization.MinimapScaleCapture` |
+| 12   | `MinimapTurnToHeading`     | `src.tasks.localization.MinimapTurnToHeading` |
+| 13   | `MinimapNavigateToPoint`   | `src.tasks.navigation.MinimapNavigateToPoint` |
+| 14   | `RealtimeYoloScanTask`     | `src.tasks.test.RealtimeDetectTask`       |
+| 15   | `RealtimeDetectTask`       | `src.tasks.test.RealtimeDetectTask`       |
+| 16   | `PeriodicScreenshotTask`   | `src.tasks.test.PeriodicScreenshotTask`   |
+| 17   | `DiagnosisTask`            | `src.tasks.test.DiagnosisTask`            |
+| 18   | `MouseRotationCalibration` | `src.tasks.test.MouseRotationCalibration` |
+| 19   | `TestArrowAngle`           | `src.tasks.test.TestArrowAngle`           |
+| 20   | `TestCircularPulseDetect`  | `src.tasks.test.TestCircularPulseDetect`  |
+| 21   | `TeamCompositionDetectTask` | `src.tasks.test.TeamCompositionDetectTask` |
 
 一次性任务按「业务任务（`src.tasks.onetime.*`）→ 调试/测试任务（`src.tasks.test.*`）」分组排列。
 
@@ -137,10 +145,12 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 
 | 顺序 | 类                    | 模块                                    |
 | ---- | --------------------- | --------------------------------------- |
-| 1    | `AutoCombatTask`      | `src.tasks.trigger.AutoCombatTask`      |
-| 2    | `AutoInteractionTask` | `src.tasks.trigger.AutoInteractionTask` |
-| 3    | `AutoPickTask`        | `src.tasks.trigger.AutoPickTask`        |
-| 4    | `ItemNavigatorTask`   | `src.tasks.trigger.ItemNavigatorTask`   |
+| 1    | `MinimapPositionTask` | `src.tasks.localization.MinimapPositionTask` |
+| 2    | `AutoCombatTask`      | `src.tasks.trigger.AutoCombatTask`      |
+| 3    | `AutoInteractionTask` | `src.tasks.trigger.AutoInteractionTask` |
+| 4    | `AutoPickTask`        | `src.tasks.trigger.AutoPickTask`        |
+| 5    | `ItemNavigatorTask`   | `src.tasks.trigger.ItemNavigatorTask`   |
+| 6    | `TemplateMonitorTask` | `src.tasks.trigger.TemplateMonitorTask` |
 
 当前没有 `AutoLoginTask.py` 或触发式自动登录注册。登录切换能力由 `LoginMixin`/`AccountMixin` 供多账号任务调用。
 
@@ -167,6 +177,7 @@ ok-end-field/
 │   ├── core/
 │   │   ├── BaseEfTask.py
 │   │   ├── BattleConfig.py
+│   │   ├── NavConfig.py
 │   │   ├── config_migration.py
 │   │   ├── global_config_store.py
 │   │   ├── sequence_parser.py
@@ -176,9 +187,15 @@ ok-end-field/
 │   │       ├── process_manager.py
 │   │       ├── runtime_mixin.py
 │   │       └── window_arrow_drawing_mixin.py
+│   ├── localization/             # 小地图定位、融合、朝向与位置接口
+│   ├── nav/                      # 二维网格、A* 规划与路线跟随
+│   ├── runtime_state/            # 进程内 latest-value 状态网关与主题契约
 │   ├── tasks/
 │   │   ├── onetime/              # 一次性任务和 AutoCombatLogic
-│   │   ├── trigger/              # 四个已注册后台任务
+│   │   ├── localization/         # 定位、标定和朝向任务
+│   │   ├── navigation/           # 导航任务与导航领域 Mixin
+│   │   ├── trigger/              # 通用后台触发任务
+│   │   ├── test/                 # 通用诊断与算法测试任务
 │   │   ├── mixin/                # 业务能力 Mixin
 │   │   ├── account/              # 账号解析、稳定 ID 和覆盖存储
 │   │   └── daily/                # Feature 组合、runner、汇总和 misc 子功能
@@ -269,7 +286,8 @@ class MyTask(BaseEfTask):
 
 ### 6.2 新增业务 Mixin
 
-- 跨任务业务能力放 `src/tasks/mixin/`。
+- 跨领域通用能力放 `src/tasks/mixin/`。
+- 导航、定位和滑索能力放 `src/tasks/navigation/mixin/`。
 - 基础运行时能力才放 `src/core/base_mixin/`。
 - Mixin 不定义最终任务的 `name`、`description` 或 `run()`。
 - 若继承 `BaseEfTask`，使用协作式 `super()`。
@@ -295,8 +313,11 @@ self.default_config_group.update({...})
 - `Battle Config`
 - `Ensure Main Once Action Sleep`
 - `Zip Line Config`
+- `Nav Config`
 
 战斗任务通过 `BattleMixin.get_battle_config()` 读取。任务可通过「使用独立配置」开关选择全局或独立战斗配置；「使用独立配置」关闭时，`get_battle_config()` 直接返回全局配置，账号任务覆盖不会生效。仅当「使用独立配置」开启时，绑定账号上下文后，账号任务覆盖才为最高优先级。不要在多个任务中复制全局战斗默认值。
+
+网格导航的定位真值、分辨率档位比例尺与轴映射，以及网格规划、行走和脱困参数均由 `Nav Config` 统一提供；导航任务侧只保留目标 X/Z 等单次目标参数。定位链路见[小地图定位](小地图定位.md)，规划与执行见[网格导航](网格导航.md)。
 
 ### 6.4 Feature 资源
 

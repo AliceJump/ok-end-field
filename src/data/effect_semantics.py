@@ -134,7 +134,7 @@ EFFECT_SEMANTICS: dict[EffectType, EffectSemantics] = {
     EffectType.STATUS_SHATTER: _s(EffectOwner.ENEMY),
     # 猛击：瞬时大量物理伤害结算
     EffectType.STATUS_HEAVY_STRIKE: _e(EffectOwner.ENEMY),
-    # 失衡：状态，失衡值满进入，×1.3 承伤窗口
+    # 失衡：状态，失衡值满进入，x1.3 承伤窗口
     EffectType.STATUS_STAGGER: _s(EffectOwner.ENEMY, refresh=RefreshPolicy.REPLACE),
     # ---- 法术异常：持续状态（触发伤害部分由反应规则表结算） ----
     EffectType.STATUS_CORROSION: _s(EffectOwner.ENEMY),

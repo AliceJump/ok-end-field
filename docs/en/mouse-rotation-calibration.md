@@ -1,36 +1,38 @@
 # Mouse Rotation Calibration (MouseRotationCalibration) Investigation Summary
 
 > Date: 2026-08-08
+> Updated: 2026-09-26
 > Task involved: `src/tasks/test/MouseRotationCalibration.py`
-> Conclusion status: **Core conclusion settled; flat-ground re-test pending to confirm the terrain hypothesis**
+> Conclusion status: **The task now uses zipline mode; start it after boarding a zipline, and no W press is used**
 
 ## 1. Task introduction
 
-`MouseRotationCalibration` is a debug-visible test task that calibrates the conversion coefficient between 「mouse horizontal displacement pixels ↔ character view rotation angle」:
+`MouseRotationCalibration` is a debug-visible test task that calibrates the conversion coefficient between 「mouse horizontal displacement pixels ↔ zipline view rotation angle」:
 
 $$k = \frac{\Delta yaw}{dx} = \frac{after - before}{dx}$$
 
 - Mouse right `dx>0` → view turns left `Δyaw<0`, so **k is always negative**.
 - The coefficient is in 「°/px」; after calibration it can convert a target turn angle to mouse displacement: `dx = round(target_yaw / k)`.
 - Not persisted; calibrated on every run. It also supports manually filling in the coefficient to skip calibration and directly verify.
+- The task assumes the character is already on a zipline. Rotating the view with the mouse updates the minimap arrow directly, so neither calibration nor verification presses W.
+- The old ground workflow depended on W to refresh the facing and was affected by terrain and slope drift. Use zipline mode when re-running calibration.
 
-### Config keys (13)
+### Config keys (12)
 
 | Config key | Current value | Description |
 |---|---|---|
-| `标定位移dx` (Calibration displacement dx) | 400 | Used for single-displacement calibration |
-| `标定位移列表(逗号分隔)` (Calibration displacement list (comma-separated)) | `400,600,1000` | Multi-displacement calibration plan |
+| `标定位移dx` (Calibration displacement dx) | 100 | Used for single-displacement calibration |
+| `标定位移列表(逗号分隔)` (Calibration displacement list (comma-separated)) | empty | Multi-displacement calibration plan |
 | `重复次数` (Repeat count) | 4 | Sample count per displacement |
-| `W长按时间(秒)` (W hold time (seconds)) | 0.2 | How long to hold W to refresh the facing |
-| `角度刷新等待(秒)` (Angle refresh wait (seconds)) | 1.0 | Wait for the arrow to refresh after pressing W |
-| `转向后等待(秒)` (Wait after turning (seconds)) | 0.3 | Wait for the turn to settle after sending mouse displacement |
+| `角度刷新等待(秒)` (Angle refresh wait (seconds)) | 0.1 | Wait for the view to refresh before reading the arrow angle |
+| `转向后等待(秒)` (Wait after turning (seconds)) | 0.3 | Wait for the zipline view rotation to settle after sending mouse displacement |
 | `最低置信度` (Minimum confidence) | 0.6 | Arrow OCR confidence threshold |
 | `验证目标角度(度)` (Verification target angle (degrees)) | 90.0 | For single-angle verification |
 | `验证角度列表(逗号分隔)` (Verification angle list (comma-separated)) | `44,55,77,99` | Multi-angle verification plan |
 | `验证次数` (Verification count) | 2 | Verification count per angle |
 | `验证误差容差(度)` (Verification error tolerance (degrees)) | 5.0 | PASS tolerance |
 | `左右方向成对验证` (Paired left/right verification) | true | Automatically adds the opposite direction per angle |
-| `手动yaw_per_pixel(留空用标定)` (Manual yaw_per_pixel (leave empty to calibrate)) | `-0.083` | Manual coefficient (positive values are auto-negated) |
+| `手动yaw_per_pixel(留空用标定)` (Manual yaw_per_pixel (leave empty to calibrate)) | empty | Manual coefficient (positive values are auto-negated) |
 
 ## 2. Feature evolution history
 
@@ -42,10 +44,11 @@ $$k = \frac{\Delta yaw}{dx} = \frac{after - before}{dx}$$
 6. **Added wait after turning** (17:01) → decouples turn completion from W-refresh facing, to rule out timing hypotheses.
 7. **Added paired left/right verification** (17:09) → auto-adds the opposite direction per angle, to investigate left/right asymmetry.
 8. **Added automatic negation of the manual coefficient** (before 17:31) → prevents sign errors.
+9. **Changed to zipline mode** (2026-09-26) → removed the W hold and all W presses; the task assumes the character is already on a zipline and reads the arrow directly after mouse view rotation.
 
 ## 3. All run-round data
 
-### 3.1 Debug period (13:15-13:26) — no valid data
+### 3.1 Old ground-workflow debug period (13:15-13:26) — no valid data
 
 | Time | Config | Observation |
 |---|---|---|
@@ -112,6 +115,8 @@ $$k = \frac{\Delta yaw}{dx} = \frac{after - before}{dx}$$
 
 ## 4. Cross-round stable conclusions
 
+> The data below comes from the old ground + W workflow and is retained only to explain historical differences. Re-calibrate on a zipline with the current task.
+
 1. **Left turns (dx<0) are stable**: across rounds -400→+30~32°, -600→+45.5~50.5°, -1000→+76.5~87°, with large-displacement k stable at **-0.076~-0.084**.
 2. **Right turns (dx>0) are strongly affected by start/terrain**: the same displacement differs by 8~12° across starts.
 3. **Recommended coefficient ≈ -0.082 ~ -0.084 °/px** (the 17:13 round is most symmetric, smallest std 0.004).
@@ -145,7 +150,7 @@ Visual aid: watch the arrow direction while moving forward with W; if the arrow 
 
 ## 7. Follow-up suggestions
 
-1. **Re-test on flat ground** to confirm the terrain hypothesis (the only pending experiment).
+1. **Calibrate on a zipline**: board one before starting the task and confirm that the minimap arrow follows mouse view rotation.
 2. **Align the start facing**: formal turning tasks should align the start facing before turning to reduce terrain influence.
 3. **Use small-angle segments for formal turning**: each step ≤30° (≈360px), and use per-direction coefficients (k_pos / k_neg).
 4. **Minor state-judgment fix**: it is suggested to change 「FAIL only when both verifications fail; a single FAIL is WARN」 to the stricter 「FAIL when both fail」; the current implementation may under-report.
@@ -154,6 +159,6 @@ Visual aid: watch the arrow direction while moving forward with W; if the arrow 
 
 - Task source: `src/tasks/test/MouseRotationCalibration.py`
 - Run config: `configs/MouseRotationCalibration.json`
-- Unit tests: `tests/TestMouseRotationCalibration.py` (12 cases, all pass)
+- Unit tests: `tests/TestMouseRotationCalibration.py` (10 cases, all pass)
 - Mouse send layer: `src/interaction/Mouse.py` (`send_mouse_delta`, symmetric in sign)
 - Core API: `src/core/base_mixin/runtime_mixin.py` (`get_arrow_angle` / `press_key` / `active_and_send_mouse_delta`)

@@ -3,6 +3,7 @@ import tempfile
 import threading
 import webbrowser
 from pathlib import Path
+from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
@@ -54,21 +55,21 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
     经「账号配置」页可按账号覆盖。
     """
 
-    CFG_BOAT_TASKS = "帝江号任务"
-    CFG_OTHER_TASKS = "其他任务"
-    CFG_BATTLE_TASKS = "战斗任务"
-    CFG_REWARD_TASKS = "奖励任务"
-    CFG_DELIVERY_TASKS = "自动送货任务"
-    CFG_TAIL_TASKS = "收尾任务"
+    CFG_BOAT_TASKS: ClassVar[str] = "帝江号任务"
+    CFG_OTHER_TASKS: ClassVar[str] = "其他任务"
+    CFG_BATTLE_TASKS: ClassVar[str] = "战斗任务"
+    CFG_REWARD_TASKS: ClassVar[str] = "奖励任务"
+    CFG_DELIVERY_TASKS: ClassVar[str] = "自动送货任务"
+    CFG_TAIL_TASKS: ClassVar[str] = "收尾任务"
 
-    BOAT_TASKS = ["送礼", "帝江号整理", "帝江号收菜"]
-    OTHER_TASKS = ["收邮件", "转交运送委托", "地区建设", "造装备", "收信用", "买信用商店"]
-    BATTLE_TASKS = ["刷体力", "演算"]
-    REWARD_TASKS = ["活动奖励", "日常奖励"]
-    DELIVERY_TASKS = ["自动送货"]
-    TAIL_TASKS = ["传送到帝江号右侧传送点"]
+    BOAT_TASKS: ClassVar[list[str]] = ["送礼", "帝江号整理", "帝江号收菜"]
+    OTHER_TASKS: ClassVar[list[str]] = ["收邮件", "转交运送委托", "地区建设", "造装备", "收信用", "买信用商店"]
+    BATTLE_TASKS: ClassVar[list[str]] = ["刷体力", "演算"]
+    REWARD_TASKS: ClassVar[list[str]] = ["活动奖励", "日常奖励"]
+    DELIVERY_TASKS: ClassVar[list[str]] = ["自动送货"]
+    TAIL_TASKS: ClassVar[list[str]] = ["传送到帝江号右侧传送点"]
 
-    _LEGACY_TASK_KEYS = {
+    _LEGACY_TASK_KEYS: ClassVar[dict[str, str]] = {
         "送礼": "⭐送礼",
         "帝江号整理": "⭐帝江号整理",
         "帝江号收菜": "⭐帝江号收菜",
@@ -86,13 +87,13 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         "传送到帝江号右侧传送点": "⭐传送到帝江号右侧传送点",
     }
 
-    _LEGACY_DEFAULTS = {
+    _LEGACY_DEFAULTS: ClassVar[dict[str, bool]] = {
         **dict.fromkeys(BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS, True),
         "自动送货": False,
         "传送到帝江号右侧传送点": True,
     }
 
-    config_value_migrations = {
+    config_value_migrations: ClassVar[dict[str, object]] = {
         CFG_BOAT_TASKS: _legacy_daily_task_list(
             [
                 ("送礼", "⭐送礼"),
@@ -137,7 +138,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         }
     )
 
-    account_config_blacklist = {
+    account_config_blacklist: ClassVar[set[str]] = {
         "发生异常时终止游戏",
         "仅退出游戏",
         "自动打开汇总文件",

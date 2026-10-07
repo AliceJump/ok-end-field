@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import queue
 import threading
@@ -77,16 +78,16 @@ def reset_enemy_presence_probe(task) -> None:
 
 def _scaled_px(value: int, _screen_width: int, screen_height: int) -> int:
     scale = screen_height / 1080.0
-    return max(1, int(round(value * scale)))
+    return max(1, round(value * scale))
 
 
 def _normalized_rect(frame, region):
     height, width = frame.shape[:2]
     x1, y1, x2, y2 = region
-    px1 = max(0, min(width, int(round(x1 * width))))
-    py1 = max(0, min(height, int(round(y1 * height))))
-    px2 = max(px1, min(width, int(round(x2 * width))))
-    py2 = max(py1, min(height, int(round(y2 * height))))
+    px1 = max(0, min(width, round(x1 * width)))
+    py1 = max(0, min(height, round(y1 * height)))
+    px2 = max(px1, min(width, round(x2 * width)))
+    py2 = max(py1, min(height, round(y2 * height)))
     return px1, py1, px2, py2
 
 
@@ -137,7 +138,7 @@ def _row_has_overlapping_run(row, candidate_left: int, candidate_right: int, min
     transitions = np.diff(padded)
     starts = np.flatnonzero(transitions == 1)
     ends = np.flatnonzero(transitions == -1)
-    for start, end in zip(starts, ends):
+    for start, end in zip(starts, ends, strict=False):
         if end - start < min_run:
             continue
         overlap = min(end, candidate_right) - max(start, candidate_left)
@@ -328,7 +329,7 @@ def _annotate_enemy_presence_frame(frame, scanned_regions, hits, state: EnemyPre
     """Draw the exact detector evidence onto a copy of the current capture frame."""
     annotated = frame.copy()
     height = annotated.shape[0]
-    thickness = max(1, int(round(height / 540.0)))
+    thickness = max(1, round(height / 540.0))
     font_scale = max(0.45, height / 2160.0)
 
     for label, rect, hit in scanned_regions:
@@ -369,7 +370,7 @@ def _annotate_enemy_presence_frame(frame, scanned_regions, hits, state: EnemyPre
     cv2.putText(
         annotated,
         f"enemy_presence={state.value}",
-        (10, max(26, int(round(32 * height / 1080.0)))),
+        (10, max(26, round(32 * height / 1080.0))),
         cv2.FONT_HERSHEY_SIMPLEX,
         max(0.55, height / 1800.0),
         _DEBUG_TEXT_COLOR,
@@ -406,7 +407,7 @@ def _hit_rect_to_json(rect) -> dict[str, int]:
 def _build_enemy_presence_inform(stem, frame, scanned_regions, hits, state, sequence, captured_at):
     """Build the sidecar payload that explains exactly what this probe inspected."""
     screen_height, screen_width = frame.shape[:2]
-    hit_map = {label: rect for label, rect in hits}
+    hit_map = dict(hits)
     regions = []
     for label, rect, hit in scanned_regions:
         regions.append(
@@ -483,10 +484,8 @@ def _log_enemy_presence_save_error_once(task, exc: Exception) -> None:
     task._enemy_presence_debug_save_error_logged = True
     log_debug = getattr(task, "log_debug", None)
     if callable(log_debug):
-        try:
+        with contextlib.suppress(Exception):
             log_debug(f"敌人存在检测调试帧保存失败: {exc}")
-        except Exception:
-            pass
 
 
 def _enemy_presence_artifact_worker(work_queue) -> None:

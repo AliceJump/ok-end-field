@@ -21,7 +21,12 @@ class DailyDeliveryTask(DeliveryTask):
 
         # 日常任务负责账号循环与完成后退出；测试入口、仅接取/仅送货等
         # 独立任务选项不应出现在日常专属卡片，也不参与此任务的运行。
-        daily_keys = {"_enabled", self.CFG_TARGET_TICKET_NUM, self.CFG_DELIVERY_AREA}
+        daily_keys = {
+            "_enabled",
+            self.CFG_TARGET_TICKET_NUM,
+            self.CFG_DELIVERY_AREA,
+            self.CFG_ARRIVAL_MODE,
+        }
         self.default_config = {key: value for key, value in self.default_config.items() if key in daily_keys}
         self.config_description = {key: value for key, value in self.config_description.items() if key in daily_keys}
         self.config_type = {key: value for key, value in self.config_type.items() if key in daily_keys}

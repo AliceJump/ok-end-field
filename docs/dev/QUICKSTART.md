@@ -98,7 +98,7 @@ class MyTriggerTask(BaseEfTask, TriggerTask):
 
 ```python
 from src.tasks.mixin.battle_mixin import BattleMixin
-from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 
 
 class MyBattleTask(MapMixin, BattleMixin):

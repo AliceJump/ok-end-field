@@ -715,7 +715,7 @@ class TimedCombatLogic:
 
         mismatches = [
             (index + 1, expected, current)
-            for index, (expected, current) in enumerate(zip(self.team, detected))
+            for index, (expected, current) in enumerate(zip(self.team, detected, strict=False))
             if expected != "?" and current != "?" and current != expected
         ]
         if mismatches:
@@ -724,7 +724,7 @@ class TimedCombatLogic:
 
         filled_slots = [
             (str(index + 1), current)
-            for index, (expected, current) in enumerate(zip(self.team, detected))
+            for index, (expected, current) in enumerate(zip(self.team, detected, strict=False))
             if expected == "?" and current != "?"
         ]
         if filled_slots:
@@ -735,7 +735,7 @@ class TimedCombatLogic:
             self._configure_team(completed, reset_runtime=False, filled_slots=filled_slots)
 
         candidates = set()
-        for index, (expected, current) in enumerate(zip(self.team, detected), 1):
+        for index, (expected, current) in enumerate(zip(self.team, detected, strict=False), 1):
             token = str(index)
             if expected == "?" or token in self.disabled_slots:
                 continue

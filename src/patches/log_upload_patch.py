@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import calendar
+import contextlib
 import io
 import json
 import subprocess
@@ -201,10 +202,8 @@ def _prompt_upload_note() -> str:
         dlg = MessageBoxBase(parent)
         dlg.setWindowTitle(og.app.tr("日志上传"))
 
-        try:
+        with contextlib.suppress(Exception):
             FluentStyleSheet.DIALOG.apply(dlg)
-        except Exception:
-            pass
 
         title = SubtitleLabel(og.app.tr("日志上传"), dlg)
         tip = BodyLabel(og.app.tr("请填写如下信息以便排查（错误描述为必填）"))
@@ -326,10 +325,7 @@ def _prompt_upload_note() -> str:
             except Exception:
                 selected_month = now.month
 
-            if selected_month == now.month:
-                max_day = now.day
-            else:
-                max_day = calendar.monthrange(now.year, selected_month)[1]
+            max_day = now.day if selected_month == now.month else calendar.monthrange(now.year, selected_month)[1]
 
             previous_day = preferred_day or day_cb.currentText() or f"{max_day:02d}"
             day_cb.clear()
@@ -391,10 +387,8 @@ def _prompt_upload_note() -> str:
         dlg.widget.setMinimumHeight(420)
 
         accepted = dlg.exec()
-        try:
+        with contextlib.suppress(Exception):
             timer.stop()
-        except Exception:
-            pass
         if not accepted:
             return ""
 

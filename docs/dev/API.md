@@ -8,8 +8,11 @@
 
 - 基类组合：[BaseEfTask.py](../../src/core/BaseEfTask.py)
 - 核心能力：[src/core/base_mixin/](../../src/core/base_mixin/)
-- 业务能力：[src/tasks/mixin/](../../src/tasks/mixin/)
-- 配置：[global_config_store.py](../../src/core/global_config_store.py)、[BattleConfig.py](../../src/core/BattleConfig.py)、[KeyConfig.py](../../src/interaction/KeyConfig.py)
+- 通用业务能力：[src/tasks/mixin/](../../src/tasks/mixin/)
+- 导航领域能力：[src/tasks/navigation/](../../src/tasks/navigation/)
+- 运行时状态：[src/runtime_state/](../../src/runtime_state/)
+- 导航：[src/nav/](../../src/nav/)
+- 配置：[global_config_store.py](../../src/core/global_config_store.py)、[NavConfig.py](../../src/core/NavConfig.py)、[BattleConfig.py](../../src/core/BattleConfig.py)、[KeyConfig.py](../../src/interaction/KeyConfig.py)
 
 ## 1. BaseEfTask 与 MRO
 
@@ -34,6 +37,7 @@ BaseEfTask
 ```text
 BattleMixin ────────────────> BaseEfTask
 MapMixin ───────────────────> BaseEfTask
+RuntimeStateMixin ──────────> 协作 Mixin
 NavigationMixin ────────────> BaseEfTask
 ├── LiaisonMixin
 └── ZipLineMixin
@@ -80,7 +84,23 @@ button = self.box_of_screen_scaled(1920, 1080, 1600, 900, 1800, 1020)
 
 `ScreenPosition` 当前提供：`top_left`、`top_right`、`bottom_left`、`bottom_right`、`bottom_right_quarter`、`left`、`right`、`top`、`bottom`、`center`，以及 `nav_b/nav_c/nav_esc/nav_panel`、`interact_pick_f`、`combat_skill_1..4`、`combat_ult_1..4`、`combat_default_link_skill`、`combat_skill_bar`、`combat_ult_bar`。
 
-### 1.2 特征匹配
+### 1.2 运行时状态
+
+业务任务通过 `RuntimeStateMixin` 读取跨任务实时状态，不要直接消费 WS 队列或直接
+调用定位所有者的内部采样方法。
+
+```text
+def world_pose(*, frame=None, max_age=1.0, refresh=True, now=None) -> dict | None
+def wait_world_pose(predicate=None, *, frame=None, max_age=1.0, timeout=10.0, tick=0.1)
+def runtime_state(topic, *, max_age=None, now=None) -> dict | None
+def publish_runtime_state(topic, value, *, source="", ttl=None, now=None)
+```
+
+`world_pose()` 会通过控制面请求 `MinimapPositionTask` 采样一帧并发布
+`RuntimeTopic.WORLD_POSE`。返回 `None` 表示没有快照或快照已超过 `max_age`。
+完整主题和扩展规则见[运行时状态总线](运行时状态总线.md)。
+
+### 1.3 特征匹配
 
 定义于 `src/core/base_mixin/runtime_mixin.py`。
 
@@ -148,7 +168,7 @@ def wait_click_feature(
 
 命中后点击框内相对位置，成功返回 `True`，未命中且不抛异常时返回 `False`。`alt=True` 走 `click_with_alt`。
 
-### 1.3 OCR 与登录截图
+### 1.4 OCR 与登录截图
 
 普通 `ocr`、`wait_ocr` 来自 `ok-script`。项目覆盖了点击等待和登录截图入口：
 
@@ -177,7 +197,7 @@ def login_ocr(
 
 这些入口使用 Win32 屏幕捕获绕过登录界面无法由常规 WGC 帧可靠捕获的问题。
 
-### 1.4 点击、按键和移动
+### 1.5 点击、按键和移动
 
 ```text
 def click(
@@ -229,7 +249,7 @@ def move_to_target_once(
 
 步长、减速半径和死区会按当前分辨率缩放。
 
-### 1.5 场景与 UI
+### 1.6 场景与 UI
 
 ```text
 def is_main(self, esc=False, need_active=True) -> bool
@@ -265,7 +285,7 @@ def safe_back(self, match=None, feature=None, box=None,
 
 至少提供 `match` 或 `feature`；目标未出现时持续返回，成功返回 `True`，总超时返回 `False`。
 
-### 1.6 YOLO
+### 1.7 YOLO
 
 ```text
 def yolo_detect(
@@ -324,6 +344,7 @@ map_key = hotkeys.get("Map Key", "m")
 | `Battle Config` | `DEFAULT_BATTLE_CONFIG` 战斗参数 |
 | `Ensure Main Once Action Sleep` | `SingleActionWithDelay` |
 | `Zip Line Config` | 送货/淤积点滑索路线与滚动设置 |
+| `Nav Config` | 小地图定位真值、分辨率档位比例尺与轴映射 |
 
 `get_global_config(name)` 返回持久化 `ok.util.config.Config`。未知名称只有在已加载配置中能找到对应键时才回退返回该配置，否则抛 `RuntimeError`。全局配置页由 `get_all_visible_configs()` 和 `GlobalConfigTab` 构建。
 
@@ -405,7 +426,7 @@ def auto_battle(self, no_battle: bool = False)
 ### 3.2 MapMixin
 
 ```text
-from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 
 def task_to_transfer_point(self, need_location_list=None)
 def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False)
@@ -417,7 +438,7 @@ def to_near_transfer_point(self, need_track, need_location_list=None, need_reser
 ### 3.3 NavigationMixin
 
 ```text
-from src.tasks.mixin.navigation_mixin import NavigationMixin
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 
 def navigate_until_target(
     self, target, nav=None,
@@ -478,7 +499,7 @@ def collect_and_give_gifts(self)
 ### 3.5 ZipLineMixin
 
 ```text
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 def on_zip_line_start(
     self, delivery_to, need_scroll=None, target=None, need_v=True,

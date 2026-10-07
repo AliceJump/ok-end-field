@@ -7,10 +7,10 @@ rewriting the scheduler.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class EnemyPresence(str, Enum):
+class EnemyPresence(StrEnum):
     """Whether a targetable enemy is visibly present in the combat scene."""
 
     UNKNOWN = "unknown"
@@ -18,7 +18,7 @@ class EnemyPresence(str, Enum):
     ABSENT = "absent"
 
 
-class ActionBlockReason(str, Enum):
+class ActionBlockReason(StrEnum):
     """On-screen reason explaining why a just-requested skill did not fire."""
 
     TOO_FAR = "too_far"

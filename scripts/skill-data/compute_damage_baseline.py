@@ -297,7 +297,7 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
             continue
         if "消耗" in label and ("倍率" in label or "伤害" in label):
             # 消耗型伤害行（如「消耗每层附着 / 额外伤害倍率」）：按消耗层数结算，
-            # 触发条件通常保证层数供给，但每层倍率口径（平叠 vs ×(1+异常等级)）
+            # 触发条件通常保证层数供给，但每层倍率口径（平叠 vs x(1+异常等级)）
             # 待打桩裁决（ROTATION_REQUIREMENTS P1-8 C9），A 层裸伤害不计入。
             conditional.append(f"{label}: {last}（按消耗层数，A 层不计）")
             continue

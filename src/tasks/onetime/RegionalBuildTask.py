@@ -1,4 +1,5 @@
 import re
+from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
@@ -13,8 +14,8 @@ from src.data.world_map_utils import (
 from src.icons import Icons
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.common import Common, GoodsInfo
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 
 def _edit_distance(left: str, right: str) -> int:
@@ -34,8 +35,8 @@ _DIGITS_ONLY_RE = re.compile(r"^\d+$")
 class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
     """地区建设子任务：据点兑换、买卖货与买物资的按地区编排，日常任务经 DailyFeature 接入。"""
 
-    OPTIONS = ["据点兑换", "买物资", "买卖货"]
-    DEFAULT_OPTIONS = ["据点兑换", "买卖货"]
+    OPTIONS: ClassVar[list[str]] = ["据点兑换", "买物资", "买卖货"]
+    DEFAULT_OPTIONS: ClassVar[list[str]] = ["据点兑换", "买卖货"]
     CFG_SHOP_WHITELIST = "购物白名单"
     CFG_BUY_GIFT = "是否买礼物"
 
@@ -682,43 +683,41 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
                 )
             ):
                 can_buy = True
-            if buy_good:
-                if can_buy:
-                    back_to_area_deadline = self.active_time() + 20
-                    while not self.wait_ocr(
-                        match=self.lang.daily_trade_mixin.k_d6bdcc47,
-                        box=self.box.top_left,
-                        time_out=1,
-                    ):
-                        if self.active_time() > back_to_area_deadline:
-                            self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
-                            return False, went_friend_boat
-                        self.back()
-                    self.click(buy_good.name_box)
-                    self.wait_ui_stable(refresh_interval=1)
-                    if self.plus_max():
-                        self.wait_click_ocr(match=self.lang.daily_trade_mixin.k_7cf40bbd, box=self.box.bottom_right)
-                        self.wait_pop_up()
-                        for sg in sell_goods:
-                            if sg.good_name == buy_good.good_name:
-                                sg.stock_quantity += 1
-                                self.log_info(f"{sg.good_name} 本次已购买，存货数量更新为 {sg.stock_quantity}")
-                                break
-                    else:
-                        self.log_info("未找到加号按钮，无法购买")
-                        self.back()
+            if buy_good and can_buy:
+                back_to_area_deadline = self.active_time() + 20
+                while not self.wait_ocr(
+                    match=self.lang.daily_trade_mixin.k_d6bdcc47,
+                    box=self.box.top_left,
+                    time_out=1,
+                ):
+                    if self.active_time() > back_to_area_deadline:
+                        self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
+                        return False, went_friend_boat
+                    self.back()
+                self.click(buy_good.name_box)
+                self.wait_ui_stable(refresh_interval=1)
+                if self.plus_max():
+                    self.wait_click_ocr(match=self.lang.daily_trade_mixin.k_7cf40bbd, box=self.box.bottom_right)
+                    self.wait_pop_up()
+                    for sg in sell_goods:
+                        if sg.good_name == buy_good.good_name:
+                            sg.stock_quantity += 1
+                            self.log_info(f"{sg.good_name} 本次已购买，存货数量更新为 {sg.stock_quantity}")
+                            break
+                else:
+                    self.log_info("未找到加号按钮，无法购买")
+                    self.back()
 
             if after_buy is not None:
                 after_buy(area)
 
-            if sell_goods:
-                if not self.wait_click_ocr(
-                    match=self.lang.daily_trade_mixin.k_33fb3f9c,
-                    box=self.box.top,
-                    time_out=5,
-                ):
-                    self.log_info("未能切回弹性需求物资，跳过卖出操作")
-                    continue
+            if sell_goods and not self.wait_click_ocr(
+                match=self.lang.daily_trade_mixin.k_33fb3f9c,
+                box=self.box.top,
+                time_out=5,
+            ):
+                self.log_info("未能切回弹性需求物资，跳过卖出操作")
+                continue
 
             for sell_good in sell_goods:
                 if sell_good.stock_quantity <= 0:
@@ -823,7 +822,9 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
 
         return True
 
-    def buy(self, pattern_list=[]):
+    def buy(self, pattern_list=None):
+        if pattern_list is None:
+            pattern_list = []
         good_list = [None]
         if len(pattern_list) > 0:
             good_list = self.ocr(x=200 / 3840, y=520 / 2160, to_x=3680 / 3840, to_y=1140 / 2160, match=pattern_list)
@@ -860,12 +861,11 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
 
         for area in areas_list:
             self.log_info(self.tr("开始处理地区建设: {area}").format(area=self.tr(area)))
-            if enabled_outpost:
-                if not self.exchange_outpost_goods(
-                    target_areas=[area],
-                    keep_area_context=True,
-                ):
-                    self.log_info(self.tr("据点兑换失败: {area}").format(area=self.tr(area)))
+            if enabled_outpost and not self.exchange_outpost_goods(
+                target_areas=[area],
+                keep_area_context=True,
+            ):
+                self.log_info(self.tr("据点兑换失败: {area}").format(area=self.tr(area)))
 
             if enabled_trade:
                 # 买卖货：买入后通过 after_buy 回调执行「买物资」。

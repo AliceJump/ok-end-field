@@ -336,9 +336,7 @@ def _needs_separate_enhancement(condition: ConditionAnalysis) -> bool:
     if re.search(r"命中(?:敌人|目标)", trigger) and re.search(r"获得|恢复|生成", result):
         return False
     # 自身增益叠层达到上限是一个连续增益链，不一定需要单独条件效果。
-    if "叠加至最大层数" in trigger:
-        return False
-    return True
+    return "叠加至最大层数" not in trigger
 
 
 def _analyze_operator(detail_path: Path, current_characters: dict[str, dict]) -> OperatorAnalysis:

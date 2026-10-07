@@ -57,7 +57,7 @@ class TestSnapshotChecks(unittest.TestCase):
             "A配": {"set": "A", "part": "配件"},
             "B配": {"set": "B", "part": "配件"},
         }
-        pieces = builds.select_official_pieces(list(equipment) + ["A甲1"], equipment)
+        pieces = builds.select_official_pieces([*list(equipment), "A甲1"], equipment)
         self.assertEqual(pieces, ["A甲1", "A手", "A配", "B配"])
         self.assertEqual(builds.select_official_pieces(["A甲1", "A甲2", "A手"], equipment), ["A甲1", "A手", None, None])
 
