@@ -1,4 +1,4 @@
-"""build_loadout_data 装备基础属性解析测试。"""
+"""build_loadout_data 装备基础属性与官方推荐配装解析测试。"""
 
 import importlib.util
 import json
@@ -24,6 +24,34 @@ class TestParseEquip(unittest.TestCase):
         ):
             parsed = mod.parse_equip(item, "1", {})
         self.assertEqual(parsed["lv70_stats"], {"生命值": 1000, "物理伤害加成": "+5%", "暴击率加成": "+12.5%"})
+
+    def test_recommended_loadout_preserves_duplicate_accessory_slots(self):
+        item = {"document": {"documentMap": {}}}
+        # 取自 2026-10-07 森空岛 item/info 的险关手甲（itemId=2335）推荐表结构：
+        # 提弗洛斯 2116 / 险关装甲 2334 / 险关手甲 2335 / 险关通信器 2336 ×2。
+        table = [
+            ["推荐干员", "推荐用途", "装备推荐", "", "", ""],
+            ["[entry:2116]", "套组", "护甲", "[entry:2334]", "护手", "[entry:2335]"],
+            ["", "", "配件Ⅰ", "[entry:2336]", "配件Ⅱ", "[entry:2336]"],
+        ]
+        with (
+            mock.patch.object(mod, "_iter_widget_contents", return_value=[("推荐装备干员", "recommended")]),
+            mock.patch.object(mod, "_document_tables", return_value=[table]),
+        ):
+            parsed = mod.parse_equip(item, "2335", {})
+        self.assertEqual(parsed["recommended_operator_ids"], ["2116"])
+        self.assertEqual(
+            parsed["recommended_loadouts"],
+            [
+                {
+                    "operator_id": "2116",
+                    "armor_id": "2334",
+                    "gloves_id": "2335",
+                    "accessory_1_id": "2336",
+                    "accessory_2_id": "2336",
+                }
+            ],
+        )
 
 
 class TestSnapshotSafety(unittest.TestCase):
