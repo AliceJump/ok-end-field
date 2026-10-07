@@ -67,7 +67,8 @@ def audit(characters=None, *, samples=5, with_benchmark=True):
         programs = []
         for program in catalog.candidates():
             unknown = sorted({reason for event in walk_combat_events(program.events) for reason in event.unresolved})
-            programs.append({"key": program.key, "kind": program.kind, "unresolved": unknown})
+            programs.append({"key": program.key, "kind": program.kind, "unresolved": unknown,
+                             "scenario_ignored_nodes": list(program.scenario_ignored_nodes)})
             total += 1
             complete += not unknown
             blocking.update({reason_type(reason) for reason in unknown})
