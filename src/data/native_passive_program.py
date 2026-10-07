@@ -4,13 +4,14 @@ from dataclasses import dataclass, replace
 
 from src.data.combat_expressions import CombatExpression
 from src.data.combat_simulation import ActionProgram, CombatEvent, NativeBuffChange, NativeTarget, UnresolvedMechanic
+from src.data.immutable_combat_value import ImmutableCombatValue
 from src.data.native_action_program import compile_native_action
 from src.data.native_buff_program import compile_buff_definition
 from src.data.native_gameplay import native_enums, native_record
 
 
 @dataclass(frozen=True)
-class NativePassiveProgram:
+class NativePassiveProgram(ImmutableCombatValue):
     key: str
     source: str
     program: ActionProgram

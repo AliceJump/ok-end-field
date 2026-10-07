@@ -6,6 +6,7 @@ import math
 from dataclasses import dataclass, field
 
 from src.data.damage_modifiers import DamageBucket, DamageModifierSpec
+from src.data.immutable_combat_value import ImmutableCombatValue
 
 
 @dataclass(frozen=True)
@@ -35,7 +36,7 @@ class FixedDamagePanel:
 
 
 @dataclass(frozen=True)
-class DamageHit:
+class DamageHit(ImmutableCombatValue):
     actor: str
     enemy: str
     element: str
@@ -68,7 +69,7 @@ class ActiveDamageModifier:
 
 
 @dataclass(frozen=True)
-class DamageField:
+class DamageField(ImmutableCombatValue):
     source_actor: str
     expires_at: float
 

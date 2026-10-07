@@ -6,13 +6,15 @@ import math
 import struct
 from dataclasses import dataclass
 
+from src.data.immutable_combat_value import ImmutableCombatValue
+
 
 class MissingCombatInput(ValueError):
     pass
 
 
 @dataclass(frozen=True)
-class CombatExpression:
+class CombatExpression(ImmutableCombatValue):
     operation: str
     operands: tuple[CombatExpression | float | str, ...]
 
