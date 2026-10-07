@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import queue
 import threading
 from datetime import datetime
@@ -31,18 +32,18 @@ ENEMY_NORMAL_HP_SLICES = 4
 # target-locking during ABSENT, so a later PRESENT resumes immediately.
 ENEMY_ABSENT_CONFIRM_ROUNDS = 2
 
-# 1080p reference geometry. Sampling and candidate geometry scale with capture
-# height, so 4K doubles the UI geometry while ultrawide aspect ratios do not
-# incorrectly enlarge the expected HP-bar thickness/length.
+# 1080p reference geometry. Sampling and candidate height scale with capture
+# height, while width decisions are derived from the measured candidate height
+# so distant/thinner bars get proportionally smaller width thresholds.
 ENEMY_HP_SAMPLE_STEP_1080 = 3
-ENEMY_HP_MIN_RUN_1080 = 10
-ENEMY_HP_DIRECT_RUN_1080 = 40
 ENEMY_HP_MIN_HEIGHT_1080 = 4
+ENEMY_HP_MIN_WIDTH_HEIGHT_RATIO = 2.0
+ENEMY_HP_DIRECT_WIDTH_HEIGHT_RATIO = 10.0
 
 # Short pink runs are accepted only when a nearby horizontal UI edge confirms
 # that the pixels belong to an HP/stagger-bar structure instead of combat VFX.
-# Long runs skip this second stage: the supplied 1080p evidence contains false
-# fire/VFX runs up to 31 px, while 40+ px hits are unambiguous HP bars.
+# Candidate widths below 2x their measured height are rejected, widths from 2x
+# to below 10x require this context, and widths at least 10x pass directly.
 ENEMY_HP_CONTEXT_SEARCH_DOWN_1080 = 12
 ENEMY_HP_CONTEXT_X_PAD_1080 = 80
 ENEMY_HP_CONTEXT_MIN_EDGE_RUN_1080 = 18
@@ -78,6 +79,13 @@ def reset_enemy_presence_probe(task) -> None:
 def _scaled_px(value: int, _screen_width: int, screen_height: int) -> int:
     scale = screen_height / 1080.0
     return max(1, int(round(value * scale)))
+
+
+def _enemy_hp_width_thresholds(height: int) -> tuple[int, int]:
+    """Return reject/context and context/direct width boundaries for ``height``."""
+    min_width = max(1, int(math.ceil(height * ENEMY_HP_MIN_WIDTH_HEIGHT_RATIO)))
+    direct_width = max(min_width, int(math.ceil(height * ENEMY_HP_DIRECT_WIDTH_HEIGHT_RATIO)))
+    return min_width, direct_width
 
 
 def _normalized_rect(frame, region):
@@ -161,10 +169,6 @@ def _has_enemy_hp_context(
     remaining pink fill. Fire-team particles can satisfy the pink geometry by
     themselves, but normally do not have a nearby aligned horizontal UI edge.
     """
-    direct_run = _scaled_px(ENEMY_HP_DIRECT_RUN_1080, screen_width, screen_height)
-    if width >= direct_run:
-        return True
-
     search_down = _scaled_px(ENEMY_HP_CONTEXT_SEARCH_DOWN_1080, screen_width, screen_height)
     x_pad = _scaled_px(ENEMY_HP_CONTEXT_X_PAD_1080, screen_width, screen_height)
     min_edge_run = _scaled_px(ENEMY_HP_CONTEXT_MIN_EDGE_RUN_1080, screen_width, screen_height)
@@ -202,12 +206,15 @@ def _find_enemy_hp_run(
         return None
 
     sample_step = _scaled_px(ENEMY_HP_SAMPLE_STEP_1080, screen_width, screen_height)
-    min_run = _scaled_px(ENEMY_HP_MIN_RUN_1080, screen_width, screen_height)
     min_height = _scaled_px(ENEMY_HP_MIN_HEIGHT_1080, screen_width, screen_height)
+    # Discovery only needs the smallest width that could ever survive the
+    # height-relative reject boundary. The exact threshold is recomputed from
+    # each candidate's measured height below.
+    discovery_min_run, _ = _enemy_hp_width_thresholds(min_height)
 
     sampled = roi[::sample_step]
     mask = cv2.inRange(sampled, ENEMY_HP_BGR_LOWER, ENEMY_HP_BGR_UPPER)
-    horizontal = cv2.erode(mask, _run_kernel(min_run))
+    horizontal = cv2.erode(mask, _run_kernel(discovery_min_run))
     points = cv2.findNonZero(horizontal)
     if points is None:
         return None
@@ -251,20 +258,25 @@ def _find_enemy_hp_run(
         hit_top = int(top + run_start)
         hit_width = int(right - left + 1)
         hit_height = int(run_end - run_start + 1)
-        context_source = roi if context_roi is None else context_roi
-        context_x, context_y = context_offset if context_roi is not None else (0, 0)
-        if not _has_enemy_hp_context(
-            context_source,
-            int(left) + int(context_x),
-            hit_top + int(context_y),
-            hit_width,
-            hit_height,
-            screen_width,
-            screen_height,
-        ):
-            # A short pink VFX run is not enough. Keep looking in this ROI for
-            # another candidate that has the surrounding HP/stagger-bar shape.
+        min_width, direct_width = _enemy_hp_width_thresholds(hit_height)
+        if hit_width < min_width:
             continue
+
+        if hit_width < direct_width:
+            context_source = roi if context_roi is None else context_roi
+            context_x, context_y = context_offset if context_roi is not None else (0, 0)
+            if not _has_enemy_hp_context(
+                context_source,
+                int(left) + int(context_x),
+                hit_top + int(context_y),
+                hit_width,
+                hit_height,
+                screen_width,
+                screen_height,
+            ):
+                # Widths in the middle band need the supporting HP/stagger-bar
+                # structure. Keep looking for another candidate if it is absent.
+                continue
 
         return int(left), hit_top, hit_width, hit_height
     return None
@@ -645,10 +657,12 @@ def probe_enemy_presence_fast(task) -> EnemyPresence:
     for ABSENT; partial rounds stay UNKNOWN so skill scheduling is never paused
     from an incomplete scan.
 
-    Pink runs at least 40 px long at 1080p are accepted directly. Shorter runs
-    down to the 10 px minimum must also have a nearby aligned horizontal UI edge
-    from the HP/stagger-bar structure. All geometry thresholds scale with screen
-    height, so the direct-pass threshold is 80 px at 4K.
+    Pink-run width thresholds are derived from each candidate's measured height.
+    Widths below 2x height are rejected, widths from 2x to below 10x height must
+    also have a nearby aligned horizontal HP/stagger-bar edge, and widths at
+    least 10x height pass directly. The height floor and sampling cadence still
+    scale with capture height, while distance-driven UI shrinkage naturally
+    lowers the corresponding width thresholds.
 
     With framework ``use_overlay`` enabled, the blue debug layer shows the
     exact ROI(s) scanned by this probe call and the green layer shows the exact
