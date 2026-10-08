@@ -87,6 +87,8 @@ def _node(node):
     name = node.get('$type', '').split(',')[0].rsplit('.', 1)[-1]
     if name == 'OrConditionAction+Data':
         return HighlightExpression('or', tuple(_sequence(child) for child in body.get('conditionList', ())))
+    if name == 'CheckAllowNormalSkillHighlight+Data':
+        return _atom('availability', canonical(node))
     if name == 'CheckTagMatch+Data':
         parsed = _tag_query(body.get('query', {}), body.get('checkTarget'))
         if parsed is not None:

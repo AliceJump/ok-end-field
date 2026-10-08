@@ -3,7 +3,7 @@
   "source_revision": "cc9b471b50cdd6bc8b3a148b4eca93deef4efa02",
   "actors": 32,
   "closed": 21,
-  "snapshot_sha256": "71bd4359f309e1bc39e8353fad403fef0aa4adca207117c640b7d49e8eb107c7",
+  "snapshot_sha256": "d871dd5ca71b5cf85b2fb9ee8685e760cd810d7fe969990925dbec29d0b6018d",
   "source_hashes": {
     "assets/data/skill_timings/20261002/index.json": "2b0ead66e568f93d9e0b269f9a7a16921d530338cb5cfe0573a6786236d60e4b",
     "assets/data/skill_timings/20261002/records.json.gz": "e15ff2073e253262ba97cb919216039e4603de01cdd6a7bc598f06e127d62019",
@@ -26,6 +26,7 @@
     "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
     "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
   },
-  "exporter_sha256": "af48bd34d528a77b119b2ac5479cb554b0ac1eeb964bab021a955d6e361e3fb7",
-  "damage_reviewer_sha256": "62816f651fb16345aba470482bb92725439842de23015b46d9a84265b49f64ea"
+  "exporter_sha256": "7c3c37cb3c5067118a872826564cfd89d15fdc7d9e58b57bdebb92fc5ff6200b",
+  "damage_reviewer_sha256": "62816f651fb16345aba470482bb92725439842de23015b46d9a84265b49f64ea",
+  "condition_reviewer_sha256": "efd51725794f89d25ecee5b75e01102a16442428504fff10bebaddd060e4a6d4"
 }

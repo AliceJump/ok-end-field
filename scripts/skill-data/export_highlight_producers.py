@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 from export_release_burst_snapshot import ROOT, _clean_revision
+from reviewed_condition_transitions import reviewed_transitions
 from reviewed_highlight_damage import reviewed_damage
 
 ELEMENT_NAMES = ('Fire', 'Pulse', 'Cryst', 'Natural')
@@ -208,7 +209,8 @@ def export(source, revision, destination):
     fixed_rows = json.loads((source / 'assets/data/fixed_damage_baseline.json').read_text(encoding='utf8'))
     payload = {'schema_version': 1, 'scope': 'current_team_skill_source_model', 'tags': domain,
                'elements': [identities[i] for i in range(4)], 'actors': actors,
-               'damage_bindings': reviewed_damage(store, fixed_rows)}
+               'damage_bindings': reviewed_damage(store, fixed_rows),
+               'condition_transitions': reviewed_transitions(store, native_record, domain)}
     paths = ('assets/data/skill_timings/20261002/index.json', 'assets/data/skill_timings/20261002/records.json.gz',
              'assets/data/character_progression/20261003/index.json', 'assets/data/character_progression/20261003/characters.json',
              'assets/data/character_progression/20261003/supplement.json.gz', 'assets/data/common_mechanics/20261003/index.json',
@@ -223,7 +225,8 @@ def export(source, revision, destination):
                 'source_hashes': {path: hashlib.sha256((source / path).read_bytes()).hexdigest() for path in paths},
                 'native_inputs': store.index['native_inputs'],
                 'exporter_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                'damage_reviewer_sha256': hashlib.sha256((Path(__file__).parent / 'reviewed_highlight_damage.py').read_bytes()).hexdigest()}
+                'damage_reviewer_sha256': hashlib.sha256((Path(__file__).parent / 'reviewed_highlight_damage.py').read_bytes()).hexdigest(),
+                'condition_reviewer_sha256': hashlib.sha256((Path(__file__).parent / 'reviewed_condition_transitions.py').read_bytes()).hexdigest()}
     destination.mkdir(parents=True, exist_ok=True)
     (destination / 'snapshot.json').write_bytes(raw)
     (destination / 'index.json').write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + '\n').encode('utf8'))
