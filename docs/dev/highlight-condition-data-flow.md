@@ -57,6 +57,8 @@
 
 伊冯被动实际名称为 `chr_0017_yvonne_passive_0` 及对应buff，已从研究补充资源取得；不能把接入快照没有无后缀 `..._passive` 当成不存在天赋。仍有 SkillAffix 未解释，因此伊冯队伍来源不关闭。表中“无”只指所列标签的此来源模型，不代表目标、命中、次数、生命周期或四维 producer 闭环。
 
+补查本地 `tmp/skill-timing-research/all_vfs_indexes.json` 的456100份资源条目（文件SHA256 `9b7e278c009a06b309e036a2f3952f1757a78e1e4d61637a6fec26ea02f91f78`）：未找到精确 `Json/SkillData/chr_0038_purrche_block.json` 或 `chr_0028_wulfa_absorb_entity_effect.json`。后一项只有 `_1.json`、`_2.json` 相邻资源，已解码但不擅自当成无后缀引用的别名。原生引用是否实际启用、是否被实体模板/参数覆盖仍待核准；目前保持缺失引用诊断，不将搜索未找到变成“实际机制不存在”。
+
 ## 本批真正改变选招的技能
 
 狼卫「灼热弹道」原固定报价把普通段和条件追加段一起相加，本批按当前白圈把它们分开。五份实际原生记录SHA锁定在 `scripts/skill-data/reviewed_highlight_damage.py`；等级表行、基线等级/潜能也锁定在新快照。当前既定P5、技能12：
@@ -101,3 +103,5 @@ uv run --locked python scripts/skill-data/export_highlight_producers.py --source
 ```
 
 测试分别归入来源提取、布尔推断和真实决策三份文件，CI职责已登记。27项新增覆盖三元/嵌套OR、共同条件、开放来源/未知count/标签继承、模型矛盾、false/unknown替换、按钮变体及owner范围、hash/非法倍率拒绝、真实候选和溢出报价、SP不足不释放、同一批动作因条件伤害改变排序、预测中不传播旧条件。全仓1115项通过（24.110秒）；108份测试的CI职责、12份变更Python的AST、Ruff I/F及diff-check通过。两个新产物逐字节重导出一致；固定面板、释放/辅助/姿态产物未改，未游戏现场验证。接口、来源模型统计或测试通过不等于整套战斗机制完成。
+
+运行时续批 `95c7dc92` 已推送PR #489；该head的CodeRabbit增量status=success、没有新增actionable意见，CI测试/构建和Sonar通过。导出清单改为固定LF后27项再次通过（0.945秒），两份产物仍逐字节相同。本补查仅文档，不增加原生程序覆盖或强化报价数量；PR未合并。
