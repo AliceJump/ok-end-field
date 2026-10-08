@@ -903,7 +903,8 @@
                 "base": 0.1,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/antal_skill/rank_stats/电磁脆弱效果/专精3",
@@ -935,7 +936,8 @@
                 "base": 0.1,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/antal_skill/rank_stats/灼热脆弱效果/专精3",
@@ -1143,7 +1145,8 @@
                 "base": 0.2200000047683716,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/antal_ultimate/rank_stats/电磁增幅效果/专精3",
@@ -1176,7 +1179,8 @@
                 "base": 0.2200000047683716,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/antal_ultimate/rank_stats/灼热增幅效果/专精3",
@@ -1213,7 +1217,8 @@
                 "base": 0.2200000047683716,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/antal_ultimate/rank_stats/电磁增幅效果/专精3",
@@ -1246,7 +1251,8 @@
                 "base": 0.2200000047683716,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/antal_ultimate/rank_stats/灼热增幅效果/专精3",
@@ -1587,7 +1593,8 @@
                     "base": 0.04,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
@@ -1619,7 +1626,8 @@
                     "base": 0.04,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
@@ -1704,7 +1712,8 @@
                     "base": 0.04,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
@@ -1736,7 +1745,8 @@
                     "base": 0.04,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
@@ -1793,7 +1803,8 @@
                       }
                     ],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
@@ -1835,7 +1846,8 @@
                       }
                     ],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
@@ -2286,7 +2298,8 @@
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0007_ikut/talentNodeMap/chr_0007_ikut_passive_skill_0_2/parameters/pulse_up",
@@ -2620,7 +2633,8 @@
                     "base": 0.2,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/ardelia_skill/rank_stats/脆弱效果/专精3",
@@ -2655,7 +2669,8 @@
                     "base": 0.2,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/ardelia_skill/rank_stats/脆弱效果/专精3",
@@ -3125,7 +3140,8 @@
                 "base": 0.336,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
@@ -3202,7 +3218,8 @@
                 "base": 0.336,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
@@ -3320,7 +3337,8 @@
                 "base": 0.10000000149011612,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0012_avywen/talentNodeMap/chr_0012_avywen_passive_skill_1_2/parameters/pulse_vul_rate",
@@ -3747,7 +3765,8 @@
                 "base": 0.07,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/camille_skill/rank_stats/灼热脆弱效果/专精3",
@@ -5163,7 +5182,8 @@
             "base": 0.98,
             "terms": [],
             "by_count": [],
-            "count_input": null
+            "count_input": null,
+            "accumulation": "linear"
           },
           "sources": [
             "weapons/扶摇/weapon_skills/0/ranks/Rank 9/夜幕·青云"
@@ -6362,7 +6382,8 @@
                 "base": 0.30000001192092896,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/atk_up",
@@ -6415,7 +6436,8 @@
                 "base": 0.20000000298023224,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_1_2/parameters/dmg"
@@ -6481,7 +6503,8 @@
                 "base": 0.15000000596046448,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/atk_up",
@@ -6711,7 +6734,8 @@
                 "base": 0.336,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
@@ -6789,7 +6813,8 @@
                     "base": 0.15,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/estella_link/rank_stats/物理脆弱倍率/专精3",
@@ -6830,7 +6855,8 @@
                 "base": 0.336,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
@@ -7402,7 +7428,8 @@
                 "base": 0.20000000298023224,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_0_2/parameters/dmg_up"
@@ -7453,7 +7480,8 @@
                 "base": 0.20000000298023224,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_1_2/parameters/atk_up",
@@ -7912,7 +7940,8 @@
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/gilberta_ultimate/rank_stats/基础法术脆弱效果/专精3",
@@ -7975,7 +8004,8 @@
                       }
                     ],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/gilberta_ultimate/rank_stats/基础法术脆弱效果/专精3",
@@ -8374,7 +8404,8 @@
                 "base": 2.1,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "weapons/熔铸火焰/weapon_skills/0/ranks/Rank 9/夜幕·嘶鸣烈火"
@@ -8648,7 +8679,8 @@
                       }
                     ],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "CharGrowthTable/chr_0026_lastrite/talentNodeMap/chr_0026_lastrite_passive_skill_0_2/parameters/crystal_up",
@@ -9120,7 +9152,8 @@
                     "base": 0.12,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/lifeng_skill/rank_stats/物理脆弱效果/专精3",
@@ -9354,7 +9387,8 @@
             "base": 0.56,
             "terms": [],
             "by_count": [],
-            "count_input": null
+            "count_input": null,
+            "accumulation": "linear"
           },
           "sources": [
             "weapons/负山/weapon_skills/0/ranks/Rank 9/效益·山川在我"
@@ -10129,7 +10163,8 @@
                 "base": 0.1,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/liino_skill/rank_stats/攻击力提升/专精3",
@@ -10245,7 +10280,8 @@
                 "base": 0.1,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/liino_ultimate/rank_stats/攻击力提升/专精3",
@@ -10283,7 +10319,8 @@
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/liino_ultimate/rank_stats/每点意志提升的 / 增幅效果/专精3",
@@ -10324,7 +10361,8 @@
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/liino_ultimate/rank_stats/每点意志提升的 / 增幅效果/专精3",
@@ -10757,7 +10795,8 @@
                     "base": 0.05,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/mi_fu_link/rank_stats/物理脆弱效果/专精3",
@@ -11104,7 +11143,8 @@
                 "base": 0.336,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "weapons/遗忘/weapon_skills/0/ranks/Rank 9/夜幕·耻辱"
@@ -11178,7 +11218,8 @@
                 "base": 0.672,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "weapons/遗忘/weapon_skills/0/ranks/Rank 9/夜幕·耻辱"
@@ -11238,7 +11279,8 @@
                 "base": 0.30000001192092896,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0004_pelica/talentNodeMap/chr_0004_pelica_passive_skill_0_2/parameters/dmg"
@@ -12014,7 +12056,8 @@
                 "base": 0.07999999821186066,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0029_pograni/talentNodeMap/chr_0029_pograni_passive_skill_0_2/parameters/atk_up",
@@ -12322,7 +12365,8 @@
                 "base": 0.030000001192092896,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/purrchena_ultimate/rank_stats/脆弱效果/专精3",
@@ -12714,7 +12758,8 @@
                     "base": 0.25,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/rossi_link/rank_stats/暴击率提升/专精3",
@@ -12746,7 +12791,8 @@
                     "base": 0.5,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/rossi_link/rank_stats/暴击伤害提升/专精3",
@@ -12866,7 +12912,8 @@
                 "base": 0.11999999731779099,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0028_wulfa/talentNodeMap/chr_0028_wulfa_passive_skill_0_2/parameters/damage_up",
@@ -13616,7 +13663,8 @@
                         0.1
                       ]
                     ],
-                    "count_input": "consumed.whirlpool"
+                    "count_input": "consumed.whirlpool",
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/tangtang_skill/rank_stats/两个水龙卷 / 法术脆弱/专精3",
@@ -13717,7 +13765,8 @@
                 "base": 0.2,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "equipments/清波重甲/set_effect"
@@ -14075,7 +14124,8 @@
                 "base": 0.1,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/typhoeus_link/rank_stats/自然爆发伤害提高/专精3",
@@ -14476,7 +14526,8 @@
                 "base": 0.2,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "equipments/清波重甲/set_effect"
@@ -14559,7 +14610,8 @@
                 "base": 0.30000001192092896,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0006_wolfgd/talentNodeMap/chr_0006_wolfgd_passive_skill_0_2/parameters/add",
@@ -14881,7 +14933,8 @@
                     "base": 0.20000000074505805,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/xaihi_skill/rank_stats/法术增幅效果/专精3",
@@ -14996,7 +15049,8 @@
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/xaihi_ultimate/rank_stats/基础寒冷增幅效果/专精3",
@@ -15039,7 +15093,8 @@
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/xaihi_ultimate/rank_stats/基础自然增幅效果/专精3",
@@ -15086,7 +15141,8 @@
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/xaihi_ultimate/rank_stats/基础寒冷增幅效果/专精3",
@@ -15129,7 +15185,8 @@
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "character_skills/xaihi_ultimate/rank_stats/基础自然增幅效果/专精3",
@@ -15187,7 +15244,8 @@
                 "base": 0.10000000149011612,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0011_seraph/talentNodeMap/chr_0011_seraph_passive_skill_0_2/parameters/cryst_up",
@@ -15645,7 +15703,8 @@
                       }
                     ],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/yvonne_ultimate/rank_stats/每层暴击率增加/专精3"
@@ -15702,7 +15761,8 @@
                     "base": 0.6,
                     "terms": [],
                     "by_count": [],
-                    "count_input": null
+                    "count_input": null,
+                    "accumulation": "linear"
                   },
                   "sources": [
                     "character_skills/yvonne_ultimate/rank_stats/满层暴击伤害增加/专精3"
@@ -15780,7 +15840,8 @@
                 "base": 0.20000000298023224,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0017_yvonne/talentNodeMap/chr_0017_yvonne_passive_skill_1_2/parameters/inflict_up"
@@ -15817,7 +15878,8 @@
                 "base": 0.4000000059604645,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "CharGrowthTable/chr_0017_yvonne/talentNodeMap/chr_0017_yvonne_passive_skill_1_2/parameters/status_up"
@@ -16224,7 +16286,8 @@
                 "base": 1.1200000047683716,
                 "terms": [],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "linear"
               },
               "sources": [
                 "weapons/孤舟/weapon_skills/0/ranks/Rank 9/压制·流霆",
@@ -16285,13 +16348,14 @@
                 "base": 0.18000000715255737,
                 "terms": [
                   {
-                    "input": "source.battle_lightning_hits",
+                    "input": "source.zhuangfy_talent1_marks",
                     "coefficient": 0.019999999552965164,
                     "cap": null
                   }
                 ],
                 "by_count": [],
-                "count_input": null
+                "count_input": null,
+                "accumulation": "native_float32_repeated_add"
               },
               "sources": [
                 "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2/parameters/base_rate",
@@ -16299,7 +16363,7 @@
                 "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2/parameters/duration"
               ],
               "required_inputs": [
-                "source.battle_lightning_hits"
+                "source.zhuangfy_talent1_marks"
               ],
               "unresolved": null,
               "producer_status": "not_verified_by_this_audit"
@@ -16587,6 +16651,48 @@
             },
             "subType": 6
           },
+          "keyword_template": "buff_common_affixes_enhance_pulse",
+          "keyword_template_blackboard": [
+            {
+              "isDynamic": true,
+              "key": "rate",
+              "valueDouble": 0.2,
+              "valueStr": ""
+            },
+            {
+              "isDynamic": false,
+              "key": "duration",
+              "valueDouble": 0.8,
+              "valueStr": ""
+            },
+            {
+              "isDynamic": false,
+              "key": "child_buff_id",
+              "valueDouble": 0.0,
+              "valueStr": "buff_common_affixes_enhance_pulse_default_child"
+            }
+          ],
+          "selected_keyword_child": "buff_common_affixes_enhance_pulse_default_child",
+          "keyword_attribute_modifier": {
+            "attributeModifiers": [
+              {
+                "attributeType": 66,
+                "formulaItem": 5,
+                "modifyAttributeType": 0,
+                "param": {
+                  "blackboardKey": "rate",
+                  "useBlackboardKey": true,
+                  "value": 0.0
+                }
+              }
+            ],
+            "isConvertedAttribute": false
+          },
+          "keyword_child_attribute_modifier": {
+            "attributeModifiers": [],
+            "isConvertedAttribute": false
+          },
+          "rate_accumulation": "native_float32_repeated_add; explicit source.zhuangfy_talent1_marks required",
           "marker_definitions": {
             "buff_chr_0030_zhuangfy_talent1": {
               "duration": {
@@ -17343,13 +17449,25 @@
               "bytes": 528,
               "byte_identical": true,
               "installed_vfs_md5_verified": true
+            },
+            "buff_common_affixes_enhance_pulse": {
+              "sha256": "5f090c91ce28c3c2cf5e821d417cf8b6286b57d266196c12409992f4893477c1",
+              "bytes": 630,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            },
+            "buff_common_affixes_enhance_pulse_default_child": {
+              "sha256": "1fc3eb6731ae3c11b7c1698bf563aa50b6da9b6397cb2860105dcb33ec3d3f52",
+              "bytes": 550,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
             }
           },
           "execution_status": "not_bound; evidence_candidate_only",
           "unexecuted_components": [
             "squad-in-fight or actual smart_target gate and native marker frames",
             "AddBuff context publication, existing-instance and reentrant event ordering",
-            "EnhancedAction child selection, dynamic rate edits and parent cleanup",
+            "EnhancedAction template/child execution, dynamic rate propagation and parent cleanup",
             "area tick index, actual SwordNum, Jump and marker count; not inferred from damage hits"
           ]
         }

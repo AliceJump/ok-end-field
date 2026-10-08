@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+import struct
 from dataclasses import dataclass
 from enum import Enum
 
@@ -33,8 +34,28 @@ class ModifierMagnitude(ImmutableCombatValue):
     terms: tuple[MagnitudeTerm, ...] = ()
     by_count: tuple[tuple[int, float], ...] = ()
     count_input: str | None = None
+    accumulation: str = "linear"
 
     def evaluate(self, inputs: dict[str, float]) -> float | None:
+        if self.accumulation == "native_float32_repeated_add":
+            if len(self.terms) != 1 or self.count_input is not None or self.by_count or self.terms[0].cap is not None:
+                return None
+            term = self.terms[0]
+            count = inputs.get(term.input)
+            # This is a consumer work budget, not a gameplay stack cap. Larger
+            # inputs stay unknown; never clamp them or invent a marker count.
+            if count is None or not math.isfinite(count) or count != int(count) or not 0 <= count <= 100000:
+                return None
+            try:
+                value = struct.unpack("<f", struct.pack("<f", self.base))[0]
+                increment = struct.unpack("<f", struct.pack("<f", term.coefficient))[0]
+                for _ in range(int(count)):
+                    value = struct.unpack("<f", struct.pack("<f", value + increment))[0]
+            except (OverflowError, struct.error):
+                return None
+            return value if math.isfinite(value) else None
+        if self.accumulation != "linear":
+            return None
         value = self.base
         if self.count_input is not None:
             count = inputs.get(self.count_input)
@@ -161,12 +182,19 @@ def bind_damage_modifier(data: dict, *, skill_id: str, skills: dict, rank: int |
             duration += value
         else:
             raise ValueError(f"Unknown damage adjustment: {adjustment['operation']}")
+    accumulation = strength.get("accumulation", "linear")
+    if accumulation not in {"linear", "native_float32_repeated_add"}:
+        raise ValueError(f"Unknown modifier accumulation: {accumulation}")
+    if accumulation == "native_float32_repeated_add" and (
+        len(terms) != 1 or terms[0].cap is not None or by_count or strength.get("count_input") is not None
+    ):
+        raise ValueError("Native repeated addition needs one uncapped marker-count term")
     return DamageModifierSpec(
         key=data["key"],
         bucket=DamageBucket(data["bucket"]),
         elements=tuple(data["elements"]),
         recipient=data["recipient"],
-        magnitude=ModifierMagnitude(base, tuple(terms), by_count, strength.get("count_input")),
+        magnitude=ModifierMagnitude(base, tuple(terms), by_count, strength.get("count_input"), accumulation),
         trigger=data["trigger"],
         damage_tags=tuple(data.get("damage_tags", [])),
         permanent=data.get("permanent", False),

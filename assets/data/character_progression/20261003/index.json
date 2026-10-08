@@ -1,5 +1,5 @@
 {
-  "characters_sha256": "fcf292e641c5a5b4170c54ff8c93be4b434267913952151f971902c29a15afc4",
+  "characters_sha256": "5309432af9941451ab248d11ed3454aad7e5c18c37e0fcbbfa0d255f3c789e1e",
   "counts": {
     "characters": 32,
     "description_resource_clauses": 62,
@@ -10,7 +10,7 @@
     "supplement_records": 26,
     "talent_ranks": 127
   },
-  "damage_modifier_rules_sha256": "6647e7fb96f963f9e44bee4947cc9fa0bd27e2620cac2e19ae3ff24b5081fded",
+  "damage_modifier_rules_sha256": "d6a5a408191052e3dc0daeea272043abea5f79fae4fa7efda3961543069083a0",
   "description_resource_review_sha256": "2f3cdaf800c22f9905dfc3c846f1b487ee246f4a0eac08e7c581bb7a4cd20a0c",
   "endmin_reward_scan_sha256": "3ac58af86f5736349f1db4d441bd7f0b38c264bcfe7c7e3eae474a5875d5e1ce",
   "input_sha256": {

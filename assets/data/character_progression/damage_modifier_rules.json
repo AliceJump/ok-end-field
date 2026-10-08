@@ -288,13 +288,14 @@
         },
         "terms": [
           {
-            "input": "source.battle_lightning_hits",
+            "input": "source.zhuangfy_talent1_marks",
             "coefficient": {
               "passive": "chr_0030_zhuangfy_talent_1_2",
               "parameter": "enhance_rate"
             }
           }
-        ]
+        ],
+        "accumulation": "native_float32_repeated_add"
       },
       "duration": {
         "passive": "chr_0030_zhuangfy_talent_1_2",

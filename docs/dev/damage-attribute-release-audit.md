@@ -67,7 +67,7 @@ TimedDamageState.apply_final_attribute_delta接收生产者已确认的最终属
 | 全角色动态四维 | 原生AttributeModifier、百分比叠层/转换顺序、RefreshBuffAttrModifierValue及实际producer未统一执行；只有确认后的最终差值可消费 |
 | 黎风四维转攻击 | 动态转换/快照/刷新不明，相关属性变化拒绝完整估价 |
 | 赛希终结技 | FinalNonConverted智识生产者未知；实际buff创建/EnhancedAction时点未执行，不补默认值 |
-| 庄方宜战技天赋 | 原有battle_cast定义不等于真实producer：已定位普通/姿态战技6/5帧基础mark→OnAddedBuff、区域tick/末段追加mark、基础max1替换；Added/Output上下文、EnhancedAction、实际tick/剑数及清理未执行。八份原生来源及逐技能门槛见native-zhuangfy-release-audit.md；不把未知次数填0或按cast0/伤害数推定 |
+| 庄方宜战技天赋 | 原有battle_cast定义不等于真实producer：普通/姿态战技6/5帧基础mark→OnAddedBuff、区域tick/末段追加mark、基础max1替换已定位。实际Pulse模板/默认child与逐mark ADDSS核准，幅度消费者改读source.zhuangfy_talent1_marks做float32重复加法；Added/Output上下文、EnhancedAction实例传播、实际tick/剑数及清理未执行。十份原生来源见native-zhuangfy-release-audit.md；不默认0或按cast0/伤害数推定 |
 | 秋栗P3 | 已接实际原生创建块及buff实例攻击加成，见下方续作；完整终结技能其他节点、真实中断/识别仍未完成 |
 | 孤舟终结技 | 第九批已从原生OnBeforeCastSkill核准25秒/112%并接成功模型释放，见native-guzhou-release-audit.md；完整原生事件发布/父根清理仍未完成，法术异常消费分支未自动触发 |
 | 碾骨、50式应龙 | 原生套装/件数/参数、snapshot→乘层数→创建cast buff→消费全部pending已核准，见native-next-skill-set-audit.md；Aura Source/Owner、cast命中上下文及SkillAffix引用清理尚未执行，不当成普通持续buff |

@@ -55,6 +55,11 @@ def release_evidence(character, *, root=ROOT):
     base_id = create["buffs"][0]["buffId"]
     base = records[base_id]["data"]
     enhanced = base["buffEventAction"][0]["actions"][0]["actionData"][0]["$value"]
+    # Current native GetKeywordBuffName(Enhanced=3, Pulse=6) literal join;
+    # overrideChildBuffId=false keeps the template's child_buff_id string.
+    keyword_id = "buff_common_affixes_enhance_pulse"
+    keyword = records[keyword_id]["data"]
+    child_id = next(row["valueStr"] for row in keyword["blackboard"] if row["key"] == "child_buff_id")
     marker_ids = {MARKER, *(bid for edit in enhanced["enhancingList"] for bid in edit["buffIds"])}
     producers = []
     for key, record in records.items():
@@ -84,6 +89,10 @@ def release_evidence(character, *, root=ROOT):
              "listener_buff_condition": listener[0]["$value"], "base_buff_creation": create,
              "base_buff": base_id, "base_duration": base["duration"], "base_stacking": base["stackingSettings"],
              "enhanced_callback_event": base["buffEventAction"][0]["buffEvent"], "enhanced_action": enhanced,
+             "keyword_template": keyword_id, "keyword_template_blackboard": keyword["blackboard"],
+             "selected_keyword_child": child_id, "keyword_attribute_modifier": keyword["attributeModifier"],
+             "keyword_child_attribute_modifier": records[child_id]["data"]["attributeModifier"],
+             "rate_accumulation": "native_float32_repeated_add; explicit source.zhuangfy_talent1_marks required",
              "marker_definitions": {key: {name: records[key]["data"][name]
                                            for name in ("duration", "lifeType", "stackingSettings")}
                                     for key in sorted(marker_ids)},
@@ -91,5 +100,5 @@ def release_evidence(character, *, root=ROOT):
              "execution_status": "not_bound; evidence_candidate_only",
              "unexecuted_components": ["squad-in-fight or actual smart_target gate and native marker frames",
                                        "AddBuff context publication, existing-instance and reentrant event ordering",
-                                       "EnhancedAction child selection, dynamic rate edits and parent cleanup",
+                                       "EnhancedAction template/child execution, dynamic rate propagation and parent cleanup",
                                        "area tick index, actual SwordNum, Jump and marker count; not inferred from damage hits"]}]

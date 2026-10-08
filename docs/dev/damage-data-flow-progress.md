@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-08第十三批：核准Enhanced=3/Pulse=6模板literal及overrideChildBuffId=false分支，实际走Pulse模板/默认child，快照8→10份。原生mark增强先GetFloat(rate)、每次ADDSS后写回，天地造化幅度改为native_float32_repeated_add，输入source.zhuangfy_talent1_marks，不由旧hit数填充；其他linear规则不变。缺计数/无效计数保持未知，真实发布/模板实例传播/通知和清理仍未执行。4项新增、77项相关及全仓1416项通过（169.727秒），最后模板/子对象证据补齐后21项通过；首次专项的测试构造遗漏team已修正。32面板/128报价/profile数值不变，只更新来源；14/2与2/111不提高。详见native-zhuangfy-release-audit.md。下一步继续真实标记发布、EnhancedAction与四维producer，仍不接master。
+
 > 2026-10-08第十二批：庄方宜天地造化八份原生记录按当前VFS/回编码核准，满级18%/2%/5秒覆盖原始零BB。普通/姿态战技基础mark在6/5帧，需战斗或smart_target门槛；区域技能12～64帧tick及69帧末段另产追加mark，不能按伤害次数/最大剑数填充。OnAddedBuff→基础Stack/max1→OnEnable EnhancedAction链及每技能台账已补；原生AddBuff的接收/来源通知、空新结果分支也定位，完整发布/增强/清理继续未知。本批未增加执行绑定，32/128、14/2及2/111不变。3项新增、37项相关通过（13.264秒），未重复纯台账无关全仓；最近全仓仍第十批1406项。见[native-zhuangfy-release-audit.md](native-zhuangfy-release-audit.md)。
 
 > 2026-10-08第十一批：碾骨/50式应龙的原生套装等级、装备名称及九份父/检测/pending/伤害buff核准；仅艾维文娜4件与大潘/萤石各3件启用，三位碾骨散件不启用。30号施放事件先积层，下次指定技能snapshot→乘实际层数→创建同cast buff→消费全部pending。SkillAffix实体引用可超过动作结束，未用普通定时buff替代。逐角色/24技能（含散件未激活）已登记来源、生产/消费类型及未执行项。3项新增与37项相关通过；32面板/128报价、14/2条绑定和2/111完整程序不变。见[native-next-skill-set-audit.md](native-next-skill-set-audit.md)。

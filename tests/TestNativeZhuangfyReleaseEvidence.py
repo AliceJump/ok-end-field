@@ -68,7 +68,7 @@ class TestNativeZhuangfyReleaseEvidence(unittest.TestCase):
         self.assertEqual(talent["native_marker_release_evidence"], [candidate["passive_id"]])
         # Keeping the known base must not silently supply zero for the unknown
         # actual addition count in the existing full magnitude contract.
-        self.assertIn("source.battle_lightning_hits", talent["damage_rules"][0]["required_inputs"])
+        self.assertIn("source.zhuangfy_talent1_marks", talent["damage_rules"][0]["required_inputs"])
 
     def test_source_hash_build_and_byte_verification_fail_closed(self):
         for change in ("hash", "build", "byte_proof"):
