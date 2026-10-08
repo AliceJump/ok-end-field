@@ -18,12 +18,12 @@ class TestReleaseBurstPlanner(unittest.TestCase):
     def test_export_scope_and_selected_builds(self):
         rows = read_snapshot()
         self.assertEqual(len(rows), 32)
-        self.assertEqual(sum(len(r["rules"]) for r in rows.values()), 8)
-        self.assertEqual(len([r for r in rows.values() if r["rules"]]), 7)
+        self.assertEqual(sum(len(r["rules"]) for r in rows.values()), 13)
+        self.assertEqual(len([r for r in rows.values() if r["rules"]]), 9)
         self.assertEqual(rows["管理员"]["profile"]["potential"], 3)
         self.assertEqual(rows["余烬"]["profile"]["character_level"], 80)
         self.assertEqual(rows["余烬"]["profile"]["skill_rank"], 9)
-        for name in ("赛希", "梨诺", "洁尔佩塔", "噗切娜", "伊冯"):
+        for name in ("洁尔佩塔", "噗切娜", "伊冯"):
             self.assertFalse(rows[name]["rules"])
         for row in rows.values():
             self.assertNotIn("link", row["quotes"])
@@ -32,6 +32,7 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
             (path / "index.json").write_bytes((SNAPSHOT / "index.json").read_bytes())
+            (path / "support-evidence.json").write_bytes((SNAPSHOT / "support-evidence.json").read_bytes())
             (path / "snapshot.json").write_bytes((SNAPSHOT / "snapshot.json").read_bytes() + b" ")
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
                 read_snapshot(path)
@@ -46,6 +47,7 @@ class TestReleaseBurstPlanner(unittest.TestCase):
             manifest = json.loads((SNAPSHOT / "index.json").read_text(encoding="utf8"))
             manifest["snapshot_sha256"] = hashlib.sha256(payload).hexdigest()
             (path / "snapshot.json").write_bytes(payload)
+            (path / "support-evidence.json").write_bytes((SNAPSHOT / "support-evidence.json").read_bytes())
             (path / "index.json").write_text(json.dumps(manifest), encoding="utf8")
             with self.assertRaisesRegex(ValueError, "Unconfirmed"):
                 read_snapshot(path)
@@ -145,6 +147,126 @@ class TestReleaseBurstPlanner(unittest.TestCase):
                    ReleaseBurstAction("2", "battle", 1, 1000, 350, 100))
         self.assertIsNone(planner.choose(actions, 300, 0))
 
+    def test_support_strength_uses_rank_potential_and_unrounded_fixed_attribute(self):
+        rows = read_snapshot()
+        xai = rows["赛希"]["rules"][0]
+        liino = next(r for r in rows["梨诺"]["rules"] if r["bucket"] == "amplification")
+        evidence = {r["character"]: r for r in json.loads((SNAPSHOT / "support-evidence.json").read_text(encoding="utf8"))}
+        self.assertEqual(evidence["赛希"]["input_domain"], "source.native.final_nonconverted.41")
+        self.assertEqual(evidence["梨诺"]["input_domain"], "source.native.final_nonconverted.42")
+        self.assertEqual(evidence["赛希"]["input_value"], 366)
+        self.assertEqual(evidence["梨诺"]["input_value"], 890.838)
+        self.assertAlmostEqual(xai["magnitude"]["base"], (.24 + .0003 * 366) * 1.1, places=7)
+        self.assertAlmostEqual(liino["magnitude"]["base"], .0004 * 890.838, places=7)
+        for name, block in evidence.items():
+            native = load_skill_timings().record(block["skill"])
+            self.assertEqual(native["source"]["sha256"], block["native_record_sha256"][block["skill"]])
+            self.assertIn("without_dynamic_four_stats", block["input_policy"])
+            self.assertEqual(block["profile"]["potential"], 5 if name == "赛希" else 0)
+
+    def test_xaihi_release_delay_element_filter_and_full_duration(self):
+        planner = ReleaseBurstPlanner(["赛希", "伊冯", "佩丽卡"])
+        before = planner.price("2", "ult", 0)
+        wrong = planner.price("3", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(planner.price("2", "ult", 1), before)
+        self.assertGreater(planner.price("2", "ult", 2), before)
+        self.assertEqual(planner.price("3", "battle", 2), wrong)
+        self.assertGreater(planner.price("2", "ult", 13), before)
+        self.assertEqual(planner.price("2", "ult", 14), before)
+
+    def test_xaihi_zero_damage_opener_is_selected_before_cold_carry(self):
+        planner = ReleaseBurstPlanner(["赛希", "伊冯"])
+        actions = (ReleaseBurstAction("1", "ult", 3, 0), ReleaseBurstAction("2", "ult", 2, 1000))
+        chosen = planner.choose(actions, 0, 0)
+        self.assertEqual(chosen.sequence, (("1", "ult"), ("2", "ult")))
+        self.assertGreater(chosen.damage, 1380)
+        self.assertFalse(planner.bonuses)
+
+    def test_liino_team_attack_combines_with_only_matching_element_amp(self):
+        planner = ReleaseBurstPlanner(["梨诺", "佩丽卡", "伊冯", "陈千语"])
+        before = [planner.price(a, "battle", 0) for a in ("2", "3", "4")]
+        planner.confirm("1", "ult", 0)
+        ratios = [planner.price(a, "battle", 3) / value for a, value in zip(("2", "3", "4"), before)]
+        self.assertGreater(ratios[0], 1.35)
+        self.assertGreater(ratios[1], 1)
+        self.assertLess(ratios[1], 1.2)
+        self.assertGreater(ratios[2], 1)
+        self.assertLess(ratios[2], 1.2)
+        self.assertEqual(planner.price("2", "battle", 2), before[0])
+
+    def test_liino_channel_blocks_cancel_and_normal_but_not_teammates(self):
+        planner = ReleaseBurstPlanner(["梨诺", "佩丽卡"])
+        opener = ReleaseBurstAction("1", "ult", 3, 0, same_actor_duration=18.25)
+        cancel = ReleaseBurstAction("1", "battle", 1, 100000, 25, 25)
+        carry = ReleaseBurstAction("2", "ult", 2, 1000)
+        chosen = planner.choose((opener, carry), 0, 0)
+        self.assertEqual(chosen.action, opener)
+        planner.confirm("1", "ult", 0)
+        self.assertTrue(planner.action_blocked("1", "battle", 1))
+        self.assertTrue(planner.action_blocked("1", "normal", 3))
+        self.assertFalse(planner.action_blocked("2", "battle", 3))
+        chosen = planner.choose((cancel, carry), 25, 3)
+        self.assertNotIn(("1", "battle"), chosen.sequence)
+        self.assertFalse(planner.action_blocked("1", "battle", 18))
+
+    def test_liino_source_cancel_refresh_and_unavailable_cleanup(self):
+        planner = ReleaseBurstPlanner(["梨诺", "佩丽卡"])
+        before = planner.price("2", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(len(planner.bonuses), 6)
+        planner.confirm("2", "battle", 3)
+        self.assertGreater(planner.price("2", "battle", 4), before)
+        planner.confirm("1", "battle", 4)
+        self.assertEqual(planner.price("2", "battle", 4), before)
+        planner.confirm("1", "ult", 20)
+        self.assertGreater(planner.price("2", "battle", 23), before)
+        planner.source_unavailable("1")
+        self.assertEqual(planner.price("2", "battle", 23), before)
+
+    def test_liino_ongoing_and_finish_damage_not_instantly_quoted(self):
+        planner = ReleaseBurstPlanner(["梨诺"])
+        quote = planner.quote("1", "ult")
+        self.assertEqual(quote["crit_expect"], 0)
+        self.assertIn("not_forecast", quote["pricing_scope"])
+        self.assertEqual(planner.price("1", "ult", 0, value=49073.9), 0)
+        self.assertIsNone(planner.choose((ReleaseBurstAction("1", "ult", 3, 0),), 0, 0))
+
+    def test_two_supports_add_matching_amp_and_refresh_without_duplicate_layers(self):
+        planner = ReleaseBurstPlanner(["梨诺", "安塔尔", "佩丽卡"])
+        before = planner.price("3", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("2", "ult", 0)
+        panel = planner.rows["3"]["panel"]
+        atk = panel["attack_white"] * (1 + panel["attack_percent"]) + panel["attack_flat"]
+        atk_up = planner.rules["1", "ult"][0]["magnitude"]["base"]
+        amp = sum(s["magnitude"]["base"] for a in ("1", "2") for s in planner.rules[a, "ult"]
+                  if s["bucket"] == "amplification" and "电磁" in s["elements"])
+        self.assertAlmostEqual(planner.price("3", "battle", 3) / before,
+                               (1 + panel["attack_white"] * atk_up / atk) * (1 + amp))
+        planner.confirm("1", "ult", 5)
+        self.assertAlmostEqual(planner.price("3", "battle", 8) / before,
+                               (1 + panel["attack_white"] * atk_up / atk) * (1 + amp))
+
+    def test_support_evidence_change_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            for name in ("index.json", "snapshot.json", "support-evidence.json"):
+                (path / name).write_bytes((SNAPSHOT / name).read_bytes())
+            (path / "support-evidence.json").write_bytes(b"[]")
+            with self.assertRaisesRegex(ValueError, "Support evidence"):
+                read_snapshot(path)
+
+    def test_nature_beneficiary_receives_both_new_support_windows(self):
+        planner = ReleaseBurstPlanner(["赛希", "梨诺", "艾尔黛拉"])
+        before = planner.price("3", "normal", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("2", "ult", 0)
+        self.assertGreater(planner.price("3", "normal", 3) / before, 1.7)
+        planner.confirm("2", "battle", 4)
+        self.assertAlmostEqual(planner.price("3", "normal", 5) / before, 1 + .38478, places=7)
+
 
 class TestReleaseBurstDispatch(unittest.TestCase):
     def make_logic(self):
@@ -213,3 +335,44 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         logic.step()
         self.assertEqual(task.keys, ["e"])
         self.assertFalse(logic.release_burst.bonuses)
+
+    def test_liino_real_step_opens_team_burst_without_18_second_wait(self):
+        task, logic = self.make_logic()
+        task.sp = 0
+        logic._configure_team(["梨诺", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        ready = logic._ready_ultimate_actions()
+        chosen = logic._release_burst_decision(ready, 0, task.now)
+        self.assertEqual(chosen.action.slot, "1")
+        self.assertLess(chosen.action.duration, 3)
+        self.assertGreater(chosen.action.same_actor_duration, 18)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertFalse(logic._try_battle_token("1", 300))
+        task.now = 3
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+
+    def test_xaihi_real_step_opens_cold_team_and_failure_does_not_apply(self):
+        task, logic = self.make_logic()
+        task.sp = 0
+        logic._configure_team(["赛希", "伊冯", "狼卫", "陈千语"], reset_runtime=True)
+        with patch.object(task, "use_ult", return_value=False):
+            self.assertFalse(logic._use_timed_ultimate("1", logic.store.profiles("赛希", "ult"), burst_selected=True))
+        self.assertFalse(logic.release_burst.bonuses)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        task.now = 3
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+
+    def test_dead_liino_channel_cleanup_preserves_other_supports(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["梨诺", "安塔尔", "佩丽卡", "狼卫"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        logic.release_burst.confirm("2", "ult", 0)
+        logic.disabled_slots.add("1")
+        task.ults = set()
+        task.sp = 0
+        logic.step()
+        self.assertFalse(any(b.source == "1" for b in logic.release_burst.bonuses))
+        self.assertTrue(any(b.source == "2" for b in logic.release_burst.bonuses))
