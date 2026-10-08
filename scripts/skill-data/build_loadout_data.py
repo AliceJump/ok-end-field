@@ -155,7 +155,7 @@ def _parse_recommended_loadout(table: list[list[str]]) -> dict[str, str | None] 
         return None
 
     operator_id: str | None = None
-    slots: dict[str, str | None] = {key: None for key in _RECOMMENDED_SLOT_KEYS.values()}
+    slots: dict[str, str | None] = dict.fromkeys(_RECOMMENDED_SLOT_KEYS.values())
     for row in table[1:]:
         cells = [_cell_text(cell).strip() for cell in row]
         if operator_id is None and cells:
