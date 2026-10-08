@@ -47,6 +47,8 @@ def release_evidence(character, *, root=ROOT):
     selected = next((talent for talent in character.progression.talents if talent.effect_id == PASSIVE), None)
     if selected is None:
         return []
+    from src.data.reviewed_marker_events import notification_binding
+
     records = read_snapshot(root=root)
     data = records[SKILL]["data"]
     event = data["actionGroupData"]["passiveEventActions"][0]
@@ -98,6 +100,7 @@ def release_evidence(character, *, root=ROOT):
                                     for key in sorted(marker_ids)},
              "marker_producers": producers, "sources": {key: record["source"] for key, record in records.items()},
              "execution_status": "not_bound; evidence_candidate_only",
+             "marker_notification_binding": notification_binding(),
              "unexecuted_components": ["squad-in-fight or actual smart_target gate and native marker frames",
                                        "AddBuff context publication, existing-instance and reentrant event ordering",
                                        "EnhancedAction template/child execution, dynamic rate propagation and parent cleanup",

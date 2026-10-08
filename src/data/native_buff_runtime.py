@@ -268,6 +268,10 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         _callbacks(world, instance, 0)
         _callbacks(world, instance, 3)
         _callbacks(world, instance, 5)
+        from src.data.reviewed_marker_events import publish_marker_added
+
+        if uid in world.native_buff_instances:
+            publish_marker_added(world, instance, action_id, inputs)
         if uid not in world.native_buff_instances:
             continue
         if passive_root is not None:

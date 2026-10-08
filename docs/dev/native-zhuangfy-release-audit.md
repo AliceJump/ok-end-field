@@ -57,3 +57,17 @@ _DoApplyKeywordBuff（56570/RVA3dfaa00，3000字节窗口SHA256=fa9dbf105812d5ba
 因此canonical天地造化幅度使用`native_float32_repeated_add`：起始rate先float32，每个实际追加mark再做一次float32加法。输入改为`source.zhuangfy_talent1_marks`，与伤害hit/受击目标条数分开。0、1、3、10个显式mark的rate分别为0.18000000715255737、0.20000000298023224、0.23999999463558197、0.3800000548362732；旧double线性乘次数不能严格复现。其他加成默认linear不变。缺mark数、负数、小数、非有限数或超过消费者工作预算时返回未知，预算不是游戏层数上限，也不截断到上限。旧battle_lightning_hits键不再供应这份新输入。
 
 本批只修已确认数值消费者和实际模板证据。canonical的battle_cast标签仍是旧模型粗略触发，不能当原生标记帧证明；不新增模型释放绑定，也不改变完整程序覆盖。真实mark计数、EnhancedAction注册、属性通知/刷新、父子清理与实际释放帧仍未闭环。导入前全部进度快照重生成逐字节一致；改后32面板/128报价/profile数值不变，仅来源摘要更新。4项新增覆盖逐mark精度、未知/旧输入、普通linear隔离、格式拒绝和实际电磁结算。
+
+## 第十四批：已确认标记片段的接收与来源通知
+
+`reviewed_marker_events`仅批准普通/姿态战技创建基础标记、姿态区域创建追加标记这三份原生producer中的两个plain self标记。实例必须是Unlimited、原始0.10000000149011612秒、无BB/回调/订阅/属性项、无父根或动作绑定；改对象/定义/producer则保留未知。创建完成后按原生次序发布接受者OnAddedBuff，再发布来源OnOutputBuff，传递实际标记ID、对象及明确的模型skill_type。不存在尚未执行的本角色前置事件时才允许这条受限通知；其他角色的前置事件不阻断本人路径。
+
+选中的满级天地造化真实OnAddedBuff订阅随后创建5秒基础实例，使用18%/2%/5秒选中BB。基础标记到期不提前销毁基础实例；第二次确认基础标记按原始Stack/max1替换旧基础实例，旧截止不销毁新实例。追加mark仅发布自己的ID，不误触发基础mark监听器，不重建或延长基础实例。普通cast、重复/资源不足/死亡的动作都不补造标记。提前移除及预测副本互不污染。
+
+这里只执行调用者已经确认门槛/帧的实际原始创建片段。完整技能的战斗/smart_target门槛、69帧区域目标检查、tick/SwordNum/Jump仍未知；没有加入cast0标记或命中数→mark数映射。inheritSourceSkillCastInfo的完整身份、前置修改、Unique/Refresh/null-result重入通知、EnhancedAction注册/rate/属性刷新/父子清理仍未绑定，基础实例创建不等于实际增幅结算。canonical粗略battle_cast规则及缺mark数诊断不被移除，也不供应零计数。
+
+逐角色和四技能台账新增独立`marker_notification_binding`，完整producer仍not_bound；14模型释放/2原生ATK实例绑定及完整程序2/111不增加。6项新专项分别验收实际普通/姿态片段和选中天赋、两通知顺序、替换/到期/隔离、追加mark、未经核准入口、前置回调与失败动作。70项相关回归通过（14.017秒）；全仓1421项通过（109.905秒），最后补失败动作专项后9项通过。首次测试构造遗漏action_id/读取错误视图/片段选择只取到前置检查已修正；首次相关命令包含不存在的测试模块，换成真实Ability/父根模块后通过，未删除失败语义。
+
+同版代码继续定位增强后的调用：4e23233实际是Buff.RefreshPriority（60710/RVA6043d7c，3000字节SHA256=61702efd53fbd19f2b2be08a57c96d68b82cc080a40f23c4c8db12a6834bbafd），4e2323d是Buff.OnBlackboardValueChange（60721/RVA43b0b00，3000字节SHA256=a271659bba28cdcaf110241ebe7a809eb3005edd031748f69fcf0378d819e907），不能把第一调用直接称为属性重算。后者在43b0b44继续调用43b0ca0，携带BuffData、BB及a8字段；这条下游刷新/缓存/转换链继续核准。4e23256的373e510是get_buffInstId（60654，3000字节SHA256=6d1ce97ad29ec54e33b8c9e599e5aeb3ae5165c98b9a8d94dfe7c66f0b40512e），用于后续通知，不能代替属性身份。
+
+第十四批保存后fetch发现master前进两个提交，已保留rebase前备份并无冲突同步至3d3f8adb。同步后的全仓1436项通过（110.343秒），包括最后失败动作专项及master新增测试；仍只推送研究分支，没有接入master编排。

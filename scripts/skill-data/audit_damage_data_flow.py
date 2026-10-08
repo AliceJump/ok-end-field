@@ -345,6 +345,7 @@ def audit(rows=None):
                 "full_skill_execution": "not_assessed; see mechanism coverage audit",
                 "native_marker_release_checks": [
                     {"passive_id": candidate["passive_id"], "status": candidate["execution_status"],
+                     "marker_notification_binding": candidate["marker_notification_binding"],
                      "this_unit_is_producer_kind": skill.skill_type.value == "战技",
                      "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"}
                     for candidate in entry["native_marker_release_candidates"]],

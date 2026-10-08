@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-08第十四批：仅已确认的庄方宜普通/姿态/区域原始片段创建plain self标记后，发布OnAddedBuff→OnOutputBuff；真实满级天赋监听器创建5秒基础实例。替换/旧截止/到期/提前移除/预测隔离及追加mark不误刷新均验证。前置回调/改定义/未经核准producer保留未知，完整门槛、castInfo、EnhancedAction/计数/属性传播与父子清理仍未绑定，不供应0或最大mark数。逐角色/四技能台账单列受限notification绑定，14/2与2/111不提高，32面板/128报价不变。70项相关及全仓1421项通过（109.905秒），最后失败动作专项后9项通过。原生后续调用已精确定位为RefreshPriority→OnBlackboardValueChange，下游43b0ca0待核准。见native-zhuangfy-release-audit.md；automation-2保留。
+
 > 2026-10-08第十三批：核准Enhanced=3/Pulse=6模板literal及overrideChildBuffId=false分支，实际走Pulse模板/默认child，快照8→10份。原生mark增强先GetFloat(rate)、每次ADDSS后写回，天地造化幅度改为native_float32_repeated_add，输入source.zhuangfy_talent1_marks，不由旧hit数填充；其他linear规则不变。缺计数/无效计数保持未知，真实发布/模板实例传播/通知和清理仍未执行。4项新增、77项相关及全仓1416项通过（169.727秒），最后模板/子对象证据补齐后21项通过；首次专项的测试构造遗漏team已修正。32面板/128报价/profile数值不变，只更新来源；14/2与2/111不提高。详见native-zhuangfy-release-audit.md。下一步继续真实标记发布、EnhancedAction与四维producer，仍不接master。
 
 > 2026-10-08第十二批：庄方宜天地造化八份原生记录按当前VFS/回编码核准，满级18%/2%/5秒覆盖原始零BB。普通/姿态战技基础mark在6/5帧，需战斗或smart_target门槛；区域技能12～64帧tick及69帧末段另产追加mark，不能按伤害次数/最大剑数填充。OnAddedBuff→基础Stack/max1→OnEnable EnhancedAction链及每技能台账已补；原生AddBuff的接收/来源通知、空新结果分支也定位，完整发布/增强/清理继续未知。本批未增加执行绑定，32/128、14/2及2/111不变。3项新增、37项相关通过（13.264秒），未重复纯台账无关全仓；最近全仓仍第十批1406项。见[native-zhuangfy-release-audit.md](native-zhuangfy-release-audit.md)。

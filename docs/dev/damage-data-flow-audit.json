@@ -16044,6 +16044,29 @@
             {
               "passive_id": "chr_0030_zhuangfy_talent_1_2",
               "status": "not_bound; evidence_candidate_only",
+              "marker_notification_binding": {
+                "scope": "confirmed_raw_plain_self_marker_fragment_only",
+                "producers": {
+                  "buff_chr_0030_zhuangfy_talent1": [
+                    "chr_0030_zhuangfy_normal_skill",
+                    "chr_0030_zhuangfy_normal_skill_ult"
+                  ],
+                  "buff_chr_0030_zhuangfy_talent1_mark": [
+                    "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+                  ]
+                },
+                "events": [
+                  "OnAddedBuff",
+                  "OnOutputBuff"
+                ],
+                "full_producer": "not_bound",
+                "excluded": [
+                  "pre-add callbacks",
+                  "Unique/Refresh/null-result notifications",
+                  "full cast-info identity",
+                  "EnhancedAction/mark count/attribute propagation"
+                ]
+              },
               "this_unit_is_producer_kind": false,
               "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"
             }
@@ -16150,6 +16173,29 @@
             {
               "passive_id": "chr_0030_zhuangfy_talent_1_2",
               "status": "not_bound; evidence_candidate_only",
+              "marker_notification_binding": {
+                "scope": "confirmed_raw_plain_self_marker_fragment_only",
+                "producers": {
+                  "buff_chr_0030_zhuangfy_talent1": [
+                    "chr_0030_zhuangfy_normal_skill",
+                    "chr_0030_zhuangfy_normal_skill_ult"
+                  ],
+                  "buff_chr_0030_zhuangfy_talent1_mark": [
+                    "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+                  ]
+                },
+                "events": [
+                  "OnAddedBuff",
+                  "OnOutputBuff"
+                ],
+                "full_producer": "not_bound",
+                "excluded": [
+                  "pre-add callbacks",
+                  "Unique/Refresh/null-result notifications",
+                  "full cast-info identity",
+                  "EnhancedAction/mark count/attribute propagation"
+                ]
+              },
               "this_unit_is_producer_kind": true,
               "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"
             }
@@ -16228,6 +16274,29 @@
             {
               "passive_id": "chr_0030_zhuangfy_talent_1_2",
               "status": "not_bound; evidence_candidate_only",
+              "marker_notification_binding": {
+                "scope": "confirmed_raw_plain_self_marker_fragment_only",
+                "producers": {
+                  "buff_chr_0030_zhuangfy_talent1": [
+                    "chr_0030_zhuangfy_normal_skill",
+                    "chr_0030_zhuangfy_normal_skill_ult"
+                  ],
+                  "buff_chr_0030_zhuangfy_talent1_mark": [
+                    "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+                  ]
+                },
+                "events": [
+                  "OnAddedBuff",
+                  "OnOutputBuff"
+                ],
+                "full_producer": "not_bound",
+                "excluded": [
+                  "pre-add callbacks",
+                  "Unique/Refresh/null-result notifications",
+                  "full cast-info identity",
+                  "EnhancedAction/mark count/attribute propagation"
+                ]
+              },
               "this_unit_is_producer_kind": false,
               "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"
             }
@@ -16308,6 +16377,29 @@
             {
               "passive_id": "chr_0030_zhuangfy_talent_1_2",
               "status": "not_bound; evidence_candidate_only",
+              "marker_notification_binding": {
+                "scope": "confirmed_raw_plain_self_marker_fragment_only",
+                "producers": {
+                  "buff_chr_0030_zhuangfy_talent1": [
+                    "chr_0030_zhuangfy_normal_skill",
+                    "chr_0030_zhuangfy_normal_skill_ult"
+                  ],
+                  "buff_chr_0030_zhuangfy_talent1_mark": [
+                    "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+                  ]
+                },
+                "events": [
+                  "OnAddedBuff",
+                  "OnOutputBuff"
+                ],
+                "full_producer": "not_bound",
+                "excluded": [
+                  "pre-add callbacks",
+                  "Unique/Refresh/null-result notifications",
+                  "full cast-info identity",
+                  "EnhancedAction/mark count/attribute propagation"
+                ]
+              },
               "this_unit_is_producer_kind": false,
               "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"
             }
@@ -17464,6 +17556,29 @@
             }
           },
           "execution_status": "not_bound; evidence_candidate_only",
+          "marker_notification_binding": {
+            "scope": "confirmed_raw_plain_self_marker_fragment_only",
+            "producers": {
+              "buff_chr_0030_zhuangfy_talent1": [
+                "chr_0030_zhuangfy_normal_skill",
+                "chr_0030_zhuangfy_normal_skill_ult"
+              ],
+              "buff_chr_0030_zhuangfy_talent1_mark": [
+                "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+              ]
+            },
+            "events": [
+              "OnAddedBuff",
+              "OnOutputBuff"
+            ],
+            "full_producer": "not_bound",
+            "excluded": [
+              "pre-add callbacks",
+              "Unique/Refresh/null-result notifications",
+              "full cast-info identity",
+              "EnhancedAction/mark count/attribute propagation"
+            ]
+          },
           "unexecuted_components": [
             "squad-in-fight or actual smart_target gate and native marker frames",
             "AddBuff context publication, existing-instance and reentrant event ordering",

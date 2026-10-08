@@ -33,6 +33,11 @@ class TestNativeZhuangfyReleaseEvidence(unittest.TestCase):
         self.assertTrue(enhanced["asChildBuff"])
         self.assertFalse(enhanced["overrideChildBuffId"])
         self.assertEqual(candidate["execution_status"], "not_bound; evidence_candidate_only")
+        binding = candidate["marker_notification_binding"]
+        self.assertEqual(binding["events"], ["OnAddedBuff", "OnOutputBuff"])
+        self.assertEqual(binding["full_producer"], "not_bound")
+        self.assertEqual(binding["producers"]["buff_chr_0030_zhuangfy_talent1_mark"],
+                         ["chr_0030_zhuangfy_normal_skill_ult_abilityrange"])
 
     def test_base_frames_target_gate_and_area_mark_count_stay_distinct(self):
         candidate = release_evidence(get_character("zhuang_fangyi"))[0]
