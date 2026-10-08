@@ -47,8 +47,13 @@ class ConditionTransition:
             return {}
         result = {}
         for spec in read_producers()['condition_transitions'].get(row['key'], ()):
-            if store.record(spec['skill_id'])['source']['sha256'] != spec['record_hashes'][spec['skill_id']]:
-                raise ValueError('Unreviewed live condition transition record')
+            for record_id, expected in spec['record_hashes'].items():
+                try:
+                    actual = store.record(record_id)['source']['sha256']
+                except KeyError as error:
+                    raise ValueError(f'Missing live condition transition record: {record_id}') from error
+                if actual != expected:
+                    raise ValueError(f'Unreviewed live condition transition record: {record_id}')
             result[spec['kind']] = cls(frozenset(spec['preserves_recommended_tags']))
         return result
 
