@@ -130,7 +130,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 return True
         return False
 
-    def _align_zip_line_distance(self, zip_line, need_scroll=None, tolerance=50, max_time=100):
+    def _align_zip_line_distance(
+        self,
+        zip_line,
+        need_scroll=None,
+        tolerance=50,
+        max_time=100,
+        raise_if_fail=True,
+    ):
         return self.align_ocr_or_find_target_to_center(
             self._zip_line_distance_pattern(zip_line),
             is_num=True,
@@ -141,6 +148,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             ],
             tolerance=tolerance,
             max_time=max_time,
+            raise_if_fail=raise_if_fail,
         )
 
     def _zip_line_stop_state(self):
@@ -205,13 +213,27 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
                 if attempt >= 2 or self.active_time() - gate_retry_start >= 20:
                     break
-                self._align_zip_line_distance(zip_line, need_scroll=need_scroll, tolerance=50, max_time=10)
+                realigned = self._align_zip_line_distance(
+                    zip_line,
+                    need_scroll=need_scroll,
+                    tolerance=50,
+                    max_time=10,
+                    raise_if_fail=False,
+                )
+                if not realigned:
+                    last_reason = "gate"
+                    self.log_info(f"滑索{zip_line}重新对中失败，进入直接点击 + E 回退")
+                    break
 
             if not activated:
-                self.log_info(f"滑索{zip_line}门控重试耗尽，回退直接点击 + E")
-                if not self._legacy_click_on_zip_line():
-                    self.log_info(f"滑索{zip_line}已点击但 E 未生效", notify=True)
-                    raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
+                if last_reason == "gate":
+                    self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击 + E")
+                    if not self._legacy_click_on_zip_line():
+                        self.log_info(f"滑索{zip_line}直接点击后 E 未生效", notify=True)
+                        raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
+                else:
+                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
+                    raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
 
             start = self.active_time()
             while True:
