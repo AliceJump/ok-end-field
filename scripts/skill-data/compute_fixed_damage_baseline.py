@@ -18,7 +18,7 @@ from src.data.damage_resolution import FixedDamagePanel
 from src.data.damage_state_rules import fixed_weapon_bonuses
 from src.data.fixed_skill_modifiers import fixed_skill_crit
 from src.data.native_damage_scalars import reaction_scalars
-from src.data.reviewed_damage_rows import reviewed_row_counts
+from src.data.reviewed_damage_rows import reviewed_base_element, reviewed_row_counts
 
 ROOT = Path(__file__).resolve().parents[2]
 ATTRIBUTES = {39: "力量", 40: "敏捷", 41: "智识", 42: "意志"}
@@ -198,6 +198,8 @@ def compute(key: str, tables: dict) -> dict:
                         raise ValueError(f"Ambiguous/missing component damage row: {quote['skill_id']}/{label}")
                     component["rank_values"][label] = matches[0]["values"][0]
         tag, element = SKILL_TAGS[skill["skill_type"]], skill["element"]
+        if reviewed:
+            element = reviewed_base_element(reviewed) or element
         non_crit = panel.attack() * multiplier / 100 * (1 + panel.bonus_for(element, (tag,)))
         non_crit *= 1 + panel.amplification[element]
         quote.update(multiplier_pct=round(multiplier, 1), non_crit=round(non_crit, 1),
@@ -205,7 +207,7 @@ def compute(key: str, tables: dict) -> dict:
                      crit_expect=round(non_crit * (1 + min(1, max(0, panel.crit_rate_for((tag,)))) * panel.crit_damage), 1))
         quote["quote_basis"] = {
             "skill_rank": rank,
-            "element": skill["element"],
+            "element": element,
             "damage_tags": [SKILL_TAGS[skill["skill_type"]]],
             "multiplier": multiplier / 100,
             "crit_policy": "baseline_expectation",

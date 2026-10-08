@@ -2115,15 +2115,51 @@
           "quote_status": "replay_verified",
           "quote_basis": {
             "skill_rank": 12,
-            "element": "电磁",
+            "element": "物理",
             "damage_tags": [
               "skill"
             ],
-            "multiplier": 6.07,
+            "multiplier": 2.02,
             "crit_policy": "baseline_expectation",
-            "scope": "rank_row_sum_without_conditional_rows"
+            "scope": "reviewed_base_rows"
           },
-          "row_semantics": null,
+          "row_semantics": {
+            "character_id": "arclight",
+            "evidence": "native chr_0007_ikut_normal_skill mutually exclusive ordinary/enhanced paths; canonical rank_stats",
+            "base_rows": [
+              "第一段伤害倍率",
+              "第二段伤害倍率"
+            ],
+            "base_scope": "nominal_two_physical_slashes_without_conditional_electric_followup_or_hit_confirmation",
+            "native_base_element": {
+              "element": "物理",
+              "damage_type": 0,
+              "parameter_key": "atk_scale",
+              "record": "chr_0007_ikut_normal_skill",
+              "record_sha256": "338ddd04e7453cb9fba84e8d867b1e61fd2eba38140b9f1bf6b774b19297dd50",
+              "declaration_frames": [
+                19,
+                24,
+                112,
+                118
+              ]
+            },
+            "components": [
+              {
+                "key": "导电追加",
+                "rows": [
+                  "追加伤害倍率"
+                ],
+                "role": "conditional_followup",
+                "condition": "推荐目标导电，普通/强化路径互斥；136帧重新检查导电和距离，追加电磁damageType3；备用物理目标tar排除smart_target，不给同目标重复相加",
+                "damage_class": "skill",
+                "element": "电磁",
+                "rank_values": {
+                  "追加伤害倍率": "405%"
+                }
+              }
+            ]
+          },
           "conditional_rows_not_in_quote": [],
           "damage_rules": [],
           "branches": [
@@ -17879,7 +17915,7 @@
     "model_release_bonus_bindings": 14,
     "native_buff_attribute_damage_bindings": 2,
     "target_state_bonus_bindings": 2,
-    "skills_with_reviewed_row_membership": 18,
+    "skills_with_reviewed_row_membership": 19,
     "skills_with_structural_data_gaps": 0,
     "skills_pending_semantic_review": 128,
     "complete_characters": null,

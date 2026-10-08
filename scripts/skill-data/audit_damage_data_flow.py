@@ -24,7 +24,7 @@ from src.data.native_attribute_modifiers import reviewed_attack_binding
 from src.data.native_gameplay import native_enums, native_record
 from src.data.native_tags import native_tag_id, tag_names
 from src.data.native_zhuangfy_evidence import release_evidence
-from src.data.reviewed_damage_rows import reviewed_row_counts
+from src.data.reviewed_damage_rows import reviewed_base_element, reviewed_row_counts
 from src.data.skill_timing import SkillTimingStore
 
 
@@ -283,9 +283,10 @@ def audit(rows=None):
             else:
                 try:
                     typed = read_fixed_quote(row, matches[0])
-                    if typed.element != skill.element.value or typed.skill_type != skill.skill_type.value:
-                        raise ValueError("Quote/canonical skill identity or element mismatch")
                     reviewed = reviewed_rows.get(skill.skill_id)
+                    element = (reviewed_base_element(reviewed) if reviewed else None) or skill.element.value
+                    if typed.element != element or typed.skill_type != skill.skill_type.value:
+                        raise ValueError("Quote/canonical skill identity or element mismatch")
                     if reviewed:
                         membership = dict(matches[0]["row_semantics"])
                         components = [{name: value for name, value in component.items() if name != "rank_values"}

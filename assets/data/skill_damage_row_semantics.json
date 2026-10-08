@@ -117,6 +117,21 @@
         {"key": "强化第三段", "rows": ["强化第三段 / 伤害倍率"], "role": "replacement", "condition": "本次事件消耗的最高破防层数为4层，替换普通第三段", "damage_class": "combo"}
       ]
     },
+    "arclight_skill": {
+      "character_id": "arclight",
+      "evidence": "native chr_0007_ikut_normal_skill mutually exclusive ordinary/enhanced paths; canonical rank_stats",
+      "base_rows": ["第一段伤害倍率", "第二段伤害倍率"],
+      "base_scope": "nominal_two_physical_slashes_without_conditional_electric_followup_or_hit_confirmation",
+      "native_base_element": {
+        "element": "物理", "damage_type": 0, "parameter_key": "atk_scale",
+        "record": "chr_0007_ikut_normal_skill",
+        "record_sha256": "338ddd04e7453cb9fba84e8d867b1e61fd2eba38140b9f1bf6b774b19297dd50",
+        "declaration_frames": [19, 24, 112, 118]
+      },
+      "components": [
+        {"key": "导电追加", "rows": ["追加伤害倍率"], "role": "conditional_followup", "condition": "推荐目标导电，普通/强化路径互斥；136帧重新检查导电和距离，追加电磁damageType3；备用物理目标tar排除smart_target，不给同目标重复相加", "damage_class": "skill", "element": "电磁"}
+      ]
+    },
     "laevatain_skill": {
       "character_id": "laevatain",
       "evidence": "native chr_0016_laevat_normal_skill and normal_skill_abilityentity; canonical rank_stats",

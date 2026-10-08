@@ -10,6 +10,53 @@ from src.data.native_gameplay import native_record
 from src.data.skill_timing import load_skill_timings
 
 
+def _damage_units(value):
+    if isinstance(value, list):
+        for child in value:
+            yield from _damage_units(child)
+    elif isinstance(value, dict):
+        if '$type' in value and not value['$value'].get('isEnable', True):
+            return
+        if value.get('$type', '').endswith('.DamageAction+DamageActionData'):
+            yield from value['$value']['damageUnits']
+        else:
+            for child in value.values():
+                yield from _damage_units(child)
+
+
+def reviewed_base_element(reviewed, *, store=None):
+    """Prove the base units' element without treating branch declarations as hits."""
+    basis = reviewed.get('native_base_element')
+    if basis is None:
+        return None
+    # This reviewed override is limited to Arclight's two physical slashes.
+    if (basis['element'] != '物理' or type(basis['damage_type']) is not int or basis['damage_type'] != 0
+            or reviewed['character_id'] != 'arclight' or basis['parameter_key'] != 'atk_scale'):
+        raise ValueError('Unreviewed base damage element')
+    record = native_record(store or load_skill_timings(), basis['record'])
+    if record['source']['sha256'] != basis['record_sha256']:
+        raise ValueError('Unreviewed native base damage record')
+    frames = []
+    for window in record['data']['actionGroupData']['timelineActions']:
+        # The 136-frame fallback/other-target attacks are not either base
+        # slash. Their shared parameter does not make them unconditional base.
+        if window['_startFrame'] not in basis['declaration_frames']:
+            continue
+        for unit in _damage_units(window['_sequenceActionData']):
+            calc = unit.get('atkCalculation')
+            if (unit['damageAttributeType'] != 0 or unit['simpleCalculation'] or calc is None
+                    or not calc['$type'].endswith('.AtkScaleCalculation')):
+                continue
+            parameter = calc['$value']['atkScale']
+            if parameter['useBlackboardKey'] and parameter['blackboardKey'] == basis['parameter_key']:
+                if unit['damageType'] != basis['damage_type']:
+                    raise ValueError('Native base damage element differs from reviewed units')
+                frames.append(window['_startFrame'])
+    if frames != basis['declaration_frames'] or frames != [19, 24, 112, 118]:
+        raise ValueError('Unreviewed native base element declarations')
+    return basis['element']
+
+
 def reviewed_row_counts(reviewed, *, store=None):
     rows = reviewed['base_rows']
     counts = reviewed.get('base_row_counts', {row: 1 for row in rows})
