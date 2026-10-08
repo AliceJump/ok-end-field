@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "source_revision": "cc9b471b50cdd6bc8b3a148b4eca93deef4efa02",
+  "actors": 32,
+  "closed": 21,
+  "snapshot_sha256": "d28416f2db4b7c2e4f6f64bb5790263ddaf29572327051b453afb45c0f04a666",
+  "source_hashes": {
+    "assets/data/skill_timings/20261002/index.json": "2b0ead66e568f93d9e0b269f9a7a16921d530338cb5cfe0573a6786236d60e4b",
+    "assets/data/skill_timings/20261002/records.json.gz": "e15ff2073e253262ba97cb919216039e4603de01cdd6a7bc598f06e127d62019",
+    "assets/data/character_progression/20261003/index.json": "e5e4f8fe61f13339c3c59a7a1a02e00a244798126a1651d9f9f812371d9fdab7",
+    "assets/data/character_progression/20261003/characters.json": "5309432af9941451ab248d11ed3454aad7e5c18c37e0fcbbfa0d255f3c789e1e",
+    "assets/data/character_progression/20261003/supplement.json.gz": "bc69d5017b44e9d64d1bde546676187326aed9270e5ca493f3de8415e7244252",
+    "assets/data/common_mechanics/20261003/index.json": "56e1dda3a01d49d1b34f557655032d0ee2dcc03b79a836becc04392e7c6f9553",
+    "assets/data/common_mechanics/20261003/records.json.gz": "e8a457dcd856592b4a424598e563b2d065263ee0c9df1b4352f6b461daded837",
+    "assets/data/common_mechanics/20261003/assets.json.gz": "485ebe9de11ca314ccff3de1f301035ef8882031768a7e7feae5f2dcb91ccf45",
+    "assets/data/common_mechanics/20261003/enums.json": "2fd57644cb9d0cfa3046fb6d57307f56554ab1d6aecbe852b4748c9fe8a57af5",
+    "src/data/native_spell_runtime.py": "080f263061090f074a96eb72e8e12f957940efa0b30222b6c03e177b094e1d3d",
+    "src/data/native_tags.py": "1f4c07cb4e77eb4196cdfbebe8a308e00a9a05ad1619519b73c92dd1673d71b4",
+    "docs/dev/native-combat-execution-audit.md": "d0472310750aa6e6d36577c87717a16d9e3ae84735a52a5cfef00b60a5aba54b",
+    "assets/data/fixed_damage_baseline.json": "2ff295c2cc64bc5793af99490e5e5d855cd1afb69e4b9b58c50bb39d6dd88ffb",
+    "assets/data/skill_timings/20261002/ranked_blackboards.json.gz": "9e309bba6955954b3de6f67f207b422b61250576b1234f7d611bfe8729787ec1",
+    "assets/data/character_skills/wulfgard.json": "fe649ebc0ab40bcbb16d3425eda37da648cbc123a081ae0887be855d6271a659"
+  },
+  "native_inputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "exporter_sha256": "16fb8880596cddeacd2d20e2e25fd4a34ad54ad09e4e173597ba8923cdfd8e71",
+  "damage_reviewer_sha256": "1a771f8b5d2fafb19b3da0e8249bd9c949ace25c14544f183537bda3e53d3cb3"
+}

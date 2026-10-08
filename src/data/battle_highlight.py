@@ -10,6 +10,9 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from src.data.highlight_conditions import HighlightInference, infer_highlight, parse_highlight
+from src.data.highlight_producers import TeamProducerClosure
+
 
 @dataclass(frozen=True)
 class BattleHighlightObservation:
@@ -17,6 +20,8 @@ class BattleHighlightObservation:
     condition_json: str
     ready: bool | None
     observed_at: float
+    inference: HighlightInference = HighlightInference()
+    model_inference: HighlightInference = HighlightInference()
 
     @property
     def confirmed_condition(self):
@@ -24,10 +29,11 @@ class BattleHighlightObservation:
 
 
 class BattleHighlightState:
-    def __init__(self, store):
+    def __init__(self, store, team=()):
         self.store = store
         self.conditions = {}
         self.observations: dict[str, BattleHighlightObservation] = {}
+        self.closure = TeamProducerClosure.for_team(team) if team else None
 
     def condition(self, profiles):
         """Only bind a single, nonempty predicate for the current button."""
@@ -57,6 +63,9 @@ class BattleHighlightState:
         observation = BattleHighlightObservation(
             tuple(profile.skill_id for profile in profiles), condition,
             value if type(value) is bool else None, now,
+            infer_highlight(parse_highlight(condition), value),
+            infer_highlight(parse_highlight(condition), value,
+                            possible=self.closure.possible if self.closure is not None else None),
         )
         self.observations[slot] = observation
         return observation

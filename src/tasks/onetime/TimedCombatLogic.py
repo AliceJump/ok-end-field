@@ -583,7 +583,7 @@ class TimedCombatLogic:
             previous_phase_indices = {}
 
         self.team = team
-        self.battle_highlights = BattleHighlightState(self.store) if isinstance(self.store, SkillTimingStore) else None
+        self.battle_highlights = BattleHighlightState(self.store, team) if isinstance(self.store, SkillTimingStore) else None
         self.task._battle_team = list(team)
         self.ult_order = generate_damage_rotation(team)
         self.order = [
@@ -1014,6 +1014,10 @@ class TimedCombatLogic:
         quote = self.damage_quotes.get(name)
         damage = quote.battle if quote is not None else 0.0
         if self.release_burst is not None:
+            if token in self.release_burst.highlight_damage:
+                observation = self.battle_highlights.observations.get(token) if self.battle_highlights is not None else None
+                base, extra = self.release_burst.battle_values(token, observation)
+                damage = base + extra
             priced = self.release_burst.price(token, "battle", self._clock(), value=damage)
             if priced is not None:
                 damage = priced
@@ -1142,9 +1146,11 @@ class TimedCombatLogic:
                 or not self._ready(profiles, slot=token, kind="battle")
                 or (not self.phase_planner.can_spend(token, "battle", sp, cost) and token not in future_free)):
             return None
+        observation = self.battle_highlights.observations.get(token) if self.battle_highlights is not None else None
+        base, extra = self.release_burst.battle_values(token, observation)
         return ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
-                                  quote["crit_expect"], gate, cost,
-                                  same_actor_duration=max(p.actionable for p in profiles))
+                                  base, gate, cost, same_actor_duration=max(p.actionable for p in profiles),
+                                  observed_bonus=extra)
 
     def _release_normal_candidate(self, now):
         main = self._burst_main_control
