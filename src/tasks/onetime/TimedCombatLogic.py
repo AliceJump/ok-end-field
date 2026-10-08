@@ -363,23 +363,27 @@ class TimedCombatLogic:
     def _mechanic_for_token(self, token):
         return self.team_mechanics.get(token)
 
+    def _multi_stage_battle_context(self, token, name):
+        mechanic = self._mechanic_for_token(token)
+        if mechanic is None or mechanic.archetype != "multi_stage_battle":
+            return None
+        phases = self.store.battle_phase_profiles(name)
+        battle_transitions = tuple(transition for transition in mechanic.transitions if transition.action == "battle")
+        if not phases or len(phases) != len(battle_transitions):
+            return None
+        index = min(self.battle_phase_indices.get(token, 0), len(phases) - 1)
+        transition = battle_transitions[index]
+        gate, cost = transition.sp_gate, transition.sp_cost
+        if gate is None or cost is None:
+            return None
+        return (phases[index],), float(gate), max(0.0, float(cost) - transition.sp_refund)
+
     def _battle_context(self, token):
         """Resolve the currently visible battle-button phase and its SP semantics."""
         name = self.team[int(token) - 1]
-        mechanic = self._mechanic_for_token(token)
-        if mechanic is not None and mechanic.archetype == "multi_stage_battle":
-            phases = self.store.battle_phase_profiles(name)
-            battle_transitions = tuple(
-                transition for transition in mechanic.transitions if transition.action == "battle"
-            )
-            if phases and len(phases) == len(battle_transitions):
-                index = min(self.battle_phase_indices.get(token, 0), len(phases) - 1)
-                transition = battle_transitions[index]
-                gate = transition.sp_gate
-                cost = transition.sp_cost
-                if gate is not None and cost is not None:
-                    return (phases[index],), float(gate), max(0.0, float(cost) - transition.sp_refund)
-
+        phased = self._multi_stage_battle_context(token, name)
+        if phased is not None:
+            return phased
         profiles = self.store.profiles(name, "battle")
         reviewed_stance = self.release_burst.stance_spec(token) if self.release_burst is not None else None
         if reviewed_stance is not None and self.release_burst.stance_at(token, self._clock()) is not None:
