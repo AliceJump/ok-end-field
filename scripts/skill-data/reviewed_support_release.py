@@ -7,16 +7,11 @@ fixed build, as its other quotes do. Do not generalise this to changed builds.
 
 from dataclasses import asdict
 
+VALUE = "$value"
 
-def support_release(row, store):
-    from src.data.damage_modifiers import DamageBucket, DamageModifierSpec, ModifierMagnitude
-    from src.data.native_gameplay import native_record
 
-    from src.data.character_skills import get_character
-
+def _validate_build(row):
     key = row["key"]
-    if key not in {"xaihi", "liino"}:
-        return [], None
     profile = row["profile"]
     expected = {"xaihi": (5, "骑士精神"), "liino": (0, "曜夜的首演")}[key]
     selected_builds = {
@@ -28,24 +23,23 @@ def support_release(row, store):
     if (tuple(row["build"]["pieces"]) != selected_builds[key] or profile["character_level"] != 90
             or row["data_flow"]["runtime_modifiers"] != "not_applied"):
         raise ValueError("Changed support gear/level/runtime modifiers require a new attribute review")
-    char = get_character(key, potential=profile["potential"], skill_rank=profile["skill_rank"])
-    native = char.progression.native_id + "_ultimate_skill"
-    record = native_record(store, native)
-    index, stat, attribute = (17, "智识", 41) if key == "xaihi" else (22, "意志", 42)
-    block = record["data"]["actionGroupData"]["timelineActions"][index]
-    expected_frame = 58 if key == "xaihi" else 77
-    if block["_startFrame"] != expected_frame:
-        raise ValueError("Support release marker changed")
+
+
+def _validate_attribute(row, char, attribute):
     basis = row["attribute_basis"]
     if (basis["domain"] != "final_panel" or basis["unverified_attack_dependencies"]
-            or profile["conditional_talent_state"] != "untriggered"):
+            or row["profile"]["conditional_talent_state"] != "untriggered"):
         raise ValueError("Support projection requires the reviewed constant build")
     for passive in (*char.progression.talents, *char.progression.active_potentials):
         for mod in passive.modifiers:
             attr = mod.get("attrModifier")
             if attr and attr["attrType"] == attribute and (mod["activeCondition"] or attr["modifyAttributeType"] != 0):
                 raise ValueError("Converted/conditional support attribute cannot use this projection")
-    value = basis["totals"][stat]
+
+
+def _support_records(key, store, native, record):
+    from src.data.native_gameplay import native_record
+
     ids = (["buff_chr_0011_seraph_atk_buff", "buff_chr_0011_seraph_ultimate_effect",
             "buff_chr_0011_seraph_ultimate_effect_2"] if key == "xaihi" else
            ["buff_chr_0035_liino_ultskill_music_tag", "buff_chr_0035_liino_normalskill_buff_atkup",
@@ -61,22 +55,24 @@ def support_release(row, store):
     for name, native_row in {native: record, **records}.items():
         if name in reviewed_hashes and native_row["source"]["sha256"] != reviewed_hashes[name]:
             raise ValueError("Reviewed support native block changed")
-    owner = records[ids[0]]["data"]
-    query = (owner["buffEventAction"][0]["actions"][0]["actionData"][0]["$value"]
-             if key == "xaihi" else block["_sequenceActionData"]["actionData"][0]["$value"])
+    return ids, records
+
+
+def _support_query(key, owner, block, attribute):
+    query = (owner["buffEventAction"][0]["actions"][0]["actionData"][0][VALUE]
+             if key == "xaihi" else block["_sequenceActionData"]["actionData"][0][VALUE])
     if (query["attributeType"] != attribute or query["storeAttributeType"] != 1
             or query["useFloor"] or query["targetSettings"]["targetSource"] != 1):
         raise ValueError("Support scaling attribute domain changed")
     if key == "liino":
-        aura = owner["buffEventAction"][0]["actions"][0]["actionData"][0]["$value"]
+        aura = owner["buffEventAction"][0]["actions"][0]["actionData"][0][VALUE]
         if (aura["auraType"] != 1 or aura["shapeData"]["_shape"] != 0
                 or aura["targetObjectType"] != 8 or not aura["targetFilter"]["checkAlive"]):
             raise ValueError("Support team aura selector changed")
-    skill = next(s for s in char.skills if s.skill_id == key + "_ultimate")
-    specs = [effect.damage_modifier for effect in skill.effects if effect.damage_modifier is not None]
-    if len(specs) != (2 if key == "xaihi" else 3):
-        raise ValueError("Support bonus selection changed")
-    selected = {p["key"]: p["value"] for p in store.ranked_skill(native, profile["skill_rank"])["blackboard"]}
+    return query
+
+
+def _support_amplitude(key, char, selected, value):
     # Xaihi's potential modifies all three amplitude parameters, independently.
     scale = next(p.parameters["atk_up"] for p in char.progression.active_potentials
                  if p.effect_id.endswith("potential_5")) if key == "xaihi" else 1.0
@@ -84,6 +80,38 @@ def support_release(row, store):
                selected["wisd_max" if key == "xaihi" else "will_max"] * scale)
     if key == "xaihi":
         rate += selected["atk_up"] * scale
+    return scale, rate
+
+
+def support_release(row, store):
+    from src.data.native_gameplay import native_record
+
+    from src.data.character_skills import get_character
+
+    key = row["key"]
+    if key not in {"xaihi", "liino"}:
+        return [], None
+    _validate_build(row)
+    profile = row["profile"]
+    char = get_character(key, potential=profile["potential"], skill_rank=profile["skill_rank"])
+    native = char.progression.native_id + "_ultimate_skill"
+    record = native_record(store, native)
+    index, stat, attribute = (17, "智识", 41) if key == "xaihi" else (22, "意志", 42)
+    block = record["data"]["actionGroupData"]["timelineActions"][index]
+    expected_frame = 58 if key == "xaihi" else 77
+    if block["_startFrame"] != expected_frame:
+        raise ValueError("Support release marker changed")
+    _validate_attribute(row, char, attribute)
+    basis = row["attribute_basis"]
+    value = basis["totals"][stat]
+    ids, records = _support_records(key, store, native, record)
+    query = _support_query(key, records[ids[0]]["data"], block, attribute)
+    skill = next(s for s in char.skills if s.skill_id == key + "_ultimate")
+    specs = [effect.damage_modifier for effect in skill.effects if effect.damage_modifier is not None]
+    if len(specs) != (2 if key == "xaihi" else 3):
+        raise ValueError("Support bonus selection changed")
+    selected = {p["key"]: p["value"] for p in store.ranked_skill(native, profile["skill_rank"])["blackboard"]}
+    scale, rate = _support_amplitude(key, char, selected, value)
     duration = selected["duration" if key == "xaihi" else "ultmusic_duration"]
     evidence = {"character": row["character"], "skill": native,
                 "release_frame": expected_frame, "fps": store.index["frames_per_second"],
@@ -95,6 +123,12 @@ def support_release(row, store):
                                          **{k: r["source"]["sha256"] for k, r in records.items()}},
                 "duration": duration, "amplification": rate,
                 "source_hashes": row["data_flow"]["sources"]}
+    return _constant_rules(specs, key, selected, rate, duration, native, expected_frame, evidence["fps"]), evidence
+
+
+def _constant_rules(specs, key, selected, rate, duration, native, expected_frame, fps):
+    from src.data.damage_modifiers import DamageBucket, DamageModifierSpec, ModifierMagnitude
+
     result = []
     for spec in specs:
         magnitude = selected["atk_up"] if spec.bucket == DamageBucket.ATTACK else rate
@@ -102,7 +136,7 @@ def support_release(row, store):
                                       ModifierMagnitude(magnitude), "ultimate_cast", duration=duration,
                                       sources=(*spec.sources, f"native:{native}:frame:{expected_frame}"))
         data = asdict(constant)
-        data.update(kind="ult", starts_after=expected_frame / evidence["fps"],
+        data.update(kind="ult", starts_after=expected_frame / fps,
                     ends_on_source_action=key == "liino", blocks_source_actions=["battle", "normal"] if key == "liino" else [])
         result.append(data)
-    return result, evidence
+    return result
