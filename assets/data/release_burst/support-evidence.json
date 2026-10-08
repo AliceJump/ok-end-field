@@ -1,0 +1,286 @@
+[
+  {
+    "character": "梨诺",
+    "skill": "chr_0035_liino_ultimate_skill",
+    "release_frame": 77,
+    "fps": 30,
+    "input_domain": "source.native.final_nonconverted.42",
+    "input_policy": "fixed_build_projection_without_dynamic_four_stats_or_conversions",
+    "input_value": 890.838,
+    "attribute_basis": {
+      "schema_version": 2,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "敏捷",
+      "totals": {
+        "力量": 89.0,
+        "敏捷": 176.0,
+        "智识": 145.0,
+        "意志": 890.838
+      },
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
+    },
+    "profile": {
+      "character_level": 90,
+      "skill_rank": 12,
+      "potential": 0,
+      "potential_basis": "user_six_star_p0",
+      "all_attribute_nodes": true,
+      "constant_passive_sources": [],
+      "conditional_talent_state": "untriggered",
+      "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "build": {
+      "weapon": "曜夜的首演",
+      "matrix": "无瑕基质·医疗",
+      "set_main": "长息装备组",
+      "set_off": null,
+      "pieces": [
+        "长息轻护甲",
+        "长息手套",
+        "长息辅助臂",
+        "生物辅助护板"
+      ]
+    },
+    "native_query": {
+      "isEnable": true,
+      "priorityLevel": 0,
+      "priorityOffset": 0,
+      "serverActionIndex": 53,
+      "attributeType": 42,
+      "baseValue": {
+        "blackboardKey": "",
+        "useBlackboardKey": false,
+        "value": 0.0
+      },
+      "divisorValue": {
+        "blackboardKey": "",
+        "useBlackboardKey": false,
+        "value": 1.0
+      },
+      "key": "fnlatk_up",
+      "multiplierValue": {
+        "blackboardKey": "will_up",
+        "useBlackboardKey": true,
+        "value": 1.0
+      },
+      "primaryAttributeType": 0,
+      "storeAttributeType": 1,
+      "targetSettings": {
+        "advancedDirection": {
+          "clampToXZ": true,
+          "customSourceAndTarget": false,
+          "directionType": 0,
+          "invertDirection": false,
+          "source": null,
+          "sourceMountPoint": 0,
+          "target": null,
+          "targetMountPoint": 0
+        },
+        "centerContextKey": "",
+        "centerToGround": false,
+        "centerType": 0,
+        "enableAdvancedDirection": false,
+        "ownerContextKey": "",
+        "selectorData": {
+          "finderData": null,
+          "postProcessorData": [],
+          "validatorData": []
+        },
+        "selectorDirection": 0,
+        "selectorOwner": 1,
+        "target": 1,
+        "targetContextKey": "",
+        "targetGroupKey": "",
+        "targetSource": 1
+      },
+      "useFloor": false
+    },
+    "ranked_parameters": {
+      "atk_scale": 0.1599999964237213,
+      "atk_scale_2": 6.400000095367432,
+      "atk_scale_3": 0.6000000238418579,
+      "display_atk_scale": 3.200000047683716,
+      "ultmusic_trigger": 1.5,
+      "poise": 20.0,
+      "ultheal_rate": 81.0,
+      "ultheal_value": 0.1899999976158142,
+      "atk_up": 0.10000000149011612,
+      "will_up": 0.00039999998989515007,
+      "will_max": 0.6000000238418579,
+      "ultmusic_duration": 15.0,
+      "finish_duration": 0.0,
+      "ultheal03_rate": 729.0,
+      "ultheal03_value": 1.7000000476837158
+    },
+    "potential_scale": 1.0,
+    "native_record_sha256": {
+      "chr_0035_liino_ultimate_skill": "2a844f1d6bf2db133fad1888fc15bb8d6c805bc1b456a3123cd47575b2459457",
+      "buff_chr_0035_liino_ultskill_music_tag": "3b3553f24e0c3887898d4db511f4d88f3f4353a50e423e8375d0dd2e6ee1571c",
+      "buff_chr_0035_liino_normalskill_buff_atkup": "c9c6f3531889d238986be31e7fff37a5061aa70d62c9a985dc210be35fe137a9",
+      "buff_chr_0035_liino_atkup": "4a696858d71d2a2cefec887ef199ef3f10bbe5bace6792b44731be384dc8bb27",
+      "buff_chr_0035_liino_atkup_owner": "771118ddafdff1e408c35ed54c3c802e9e1d5b0a743e39118f527e520212a6b2",
+      "buff_chr_0035_liino_ultskill_buff_atkup": "dc81a82b2cf9841e8edfa1c1b0bdc41e8125acdfbc25c1fdf1f7114b686643b3",
+      "buff_chr_0035_liino_spellenhance": "07e9445217290c7a463a1ba5e3e8744ccb3aad5a17216b3fc3b0452168399db8"
+    },
+    "duration": 15.0,
+    "amplification": 0.3563351909982157,
+    "source_hashes": {
+      "assets/data/character_skills/liino.json": "89c9d948b23a934fbf0573cdb20a85d454a42823fbc6b4b0db5ef17b48bb785f",
+      "assets/data/character_builds/liino.json": "59f80b781b77b2219d65f9e4263dfbf3147085960e1542a7c12819f9f4b75965",
+      "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+      "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+      "assets/data/character_progression/20261003/characters.json": "5309432af9941451ab248d11ed3454aad7e5c18c37e0fcbbfa0d255f3c789e1e",
+      "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+      "assets/data/character_progression/20261003/index.json": "e5e4f8fe61f13339c3c59a7a1a02e00a244798126a1651d9f9f812371d9fdab7",
+      "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+      "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+      "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+      "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
+      "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
+      "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+      "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+      "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+      "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
+      "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
+      "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
+    }
+  },
+  {
+    "character": "赛希",
+    "skill": "chr_0011_seraph_ultimate_skill",
+    "release_frame": 58,
+    "fps": 30,
+    "input_domain": "source.native.final_nonconverted.41",
+    "input_policy": "fixed_build_projection_without_dynamic_four_stats_or_conversions",
+    "input_value": 366.0,
+    "attribute_basis": {
+      "schema_version": 2,
+      "domain": "final_panel",
+      "primary": "意志",
+      "secondary": "智识",
+      "totals": {
+        "力量": 89.0,
+        "敏捷": 91.0,
+        "智识": 366.0,
+        "意志": 547.0
+      },
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
+    },
+    "profile": {
+      "character_level": 90,
+      "skill_rank": 12,
+      "potential": 5,
+      "potential_basis": "user_four_five_star_p5",
+      "all_attribute_nodes": true,
+      "constant_passive_sources": [
+        "chr_0011_seraph_potential_4"
+      ],
+      "conditional_talent_state": "untriggered",
+      "scope": "固定配装与常驻属性；余烬按专用档案，其余沿用原90级及最高技能列口径。技能触发的天赋/潜能、武器/套装增益由战斗状态处理，不预先施加。"
+    },
+    "build": {
+      "weapon": "骑士精神",
+      "matrix": "无瑕基质·医疗",
+      "set_main": "长息装备组",
+      "set_off": null,
+      "pieces": [
+        "长息轻护甲·壹型",
+        "涉渊护手",
+        "长息加固板",
+        "长息加固板"
+      ]
+    },
+    "native_query": {
+      "isEnable": true,
+      "priorityLevel": 0,
+      "priorityOffset": 0,
+      "serverActionIndex": 0,
+      "attributeType": 41,
+      "baseValue": {
+        "blackboardKey": "atk_up",
+        "useBlackboardKey": false,
+        "value": 0.0
+      },
+      "divisorValue": {
+        "blackboardKey": "",
+        "useBlackboardKey": false,
+        "value": 1.0
+      },
+      "key": "final_atkup",
+      "multiplierValue": {
+        "blackboardKey": "wisd_up",
+        "useBlackboardKey": true,
+        "value": 1.0
+      },
+      "primaryAttributeType": 0,
+      "storeAttributeType": 1,
+      "targetSettings": {
+        "advancedDirection": {
+          "clampToXZ": true,
+          "customSourceAndTarget": false,
+          "directionType": 0,
+          "invertDirection": false,
+          "source": null,
+          "sourceMountPoint": 0,
+          "target": null,
+          "targetMountPoint": 0
+        },
+        "centerContextKey": "",
+        "centerToGround": false,
+        "centerType": 0,
+        "enableAdvancedDirection": false,
+        "ownerContextKey": "",
+        "selectorData": {
+          "finderData": null,
+          "postProcessorData": [],
+          "validatorData": []
+        },
+        "selectorDirection": 0,
+        "selectorOwner": 1,
+        "target": 1,
+        "targetContextKey": "",
+        "targetGroupKey": "",
+        "targetSource": 1
+      },
+      "useFloor": false
+    },
+    "ranked_parameters": {
+      "atk_up": 0.23999999463558197,
+      "duration": 12.0,
+      "wisd_up": 0.0003000000142492354,
+      "wisd_max": 0.36000001430511475
+    },
+    "potential_scale": 1.100000023841858,
+    "native_record_sha256": {
+      "chr_0011_seraph_ultimate_skill": "aeb22f042668624c2de97fab95b2d8900eb6cb4017ef0eee1d0c786886f0c0da",
+      "buff_chr_0011_seraph_atk_buff": "1cc3a54f53c85fee01e7514fd14fc64e00ec9ecd00363b11d5d300f1339ad715",
+      "buff_chr_0011_seraph_ultimate_effect": "c3450ba84128987ee93d9b7c8b921358fc330e91ca544fdf1870cdbdd1a9a4ee",
+      "buff_chr_0011_seraph_ultimate_effect_2": "f0f9a2e8c697b238b5418e44c54a5686129e604f99aa55afbf33dd1a8a3633b9"
+    },
+    "duration": 12.0,
+    "amplification": 0.38478000817576424,
+    "source_hashes": {
+      "assets/data/character_skills/xaihi.json": "67662f09251e439c6b43bcb465557c2904c207583e1874816d13649c17e54f31",
+      "assets/data/character_builds/xaihi.json": "9967cc02a8fd2f0f6dda930a75fe40639b40772928aa1f4cbc2bd0fef74fba57",
+      "assets/data/weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+      "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+      "assets/data/character_progression/20261003/characters.json": "5309432af9941451ab248d11ed3454aad7e5c18c37e0fcbbfa0d255f3c789e1e",
+      "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+      "assets/data/character_progression/20261003/index.json": "e5e4f8fe61f13339c3c59a7a1a02e00a244798126a1651d9f9f812371d9fdab7",
+      "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
+      "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
+      "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
+      "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
+      "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
+      "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
+      "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
+      "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
+      "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
+      "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
+      "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
+    }
+  }
+]

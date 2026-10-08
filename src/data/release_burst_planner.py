@@ -29,6 +29,8 @@ def read_snapshot(path=SNAPSHOT):
             or hashlib.sha256(payload).hexdigest() != manifest["snapshot_sha256"]
             or len(manifest["source_revision"]) != 40 or not manifest["source_hashes"]):
         raise ValueError("Release snapshot provenance/hash mismatch")
+    if hashlib.sha256((path / "support-evidence.json").read_bytes()).hexdigest() != manifest["support_evidence_sha256"]:
+        raise ValueError("Support evidence hash mismatch")
     actors = data["actors"]
     if (len(actors) != manifest["actors"] or len({r["character"] for r in actors}) != len(actors)
             or sum(len(r["rules"]) for r in actors) != manifest["rules"]):
@@ -59,6 +61,9 @@ def read_snapshot(path=SNAPSHOT):
                     or spec["stack_policy"] != "replace" or spec["duration"] is None
                     or not math.isfinite(spec["duration"]) or spec["duration"] <= 0):
                 raise ValueError("Unconfirmed release rule cannot enter burst pricing")
+            if (not math.isfinite(spec["starts_after"]) or spec["starts_after"] < 0
+                    or not set(spec["blocks_source_actions"]) <= {"battle", "normal"}):
+                raise ValueError("Invalid release window")
     return {row["character"]: row for row in actors}
 
 
@@ -87,6 +92,7 @@ class ActiveReleaseBonus:
     source: str
     recipient: str
     expires_at: float
+    starts_at: float
 
 
 class ReleaseBurstPlanner:
@@ -132,8 +138,21 @@ class ReleaseBurstPlanner:
             if spec["recipient"] == "other_allies":
                 recipients = tuple(a for a in recipients if a != actor)
             bonuses[:] = [b for b in bonuses if not (b.source == actor and b.spec["key"] == spec["key"])]
-            bonuses.extend(ActiveReleaseBonus(spec, actor, recipient, now + spec["duration"])
+            starts = now + spec["starts_after"]
+            bonuses.extend(ActiveReleaseBonus(spec, actor, recipient, starts + spec["duration"], starts)
                            for recipient in recipients)
+
+    def action_blocked(self, actor, kind, now, *, bonuses=None):
+        current = self.bonuses if bonuses is None else bonuses
+        return any(b.source == actor and now < b.expires_at and kind in b.spec["blocks_source_actions"] for b in current)
+
+    def release_handoff(self, actor, kind):
+        rules = self.rules.get((actor, kind), ())
+        return max((s["starts_after"] + .05 for s in rules if s["blocks_source_actions"]), default=0)
+
+    def source_unavailable(self, actor):
+        # Channel-dependent windows end with the source; timed ally buffs do not.
+        self.bonuses[:] = [b for b in self.bonuses if b.source != actor or not b.spec["blocks_source_actions"]]
 
     def confirm(self, actor, kind, started):
         if self.last_confirmed.get((actor, kind)) == started:
@@ -149,6 +168,8 @@ class ReleaseBurstPlanner:
         quote = self.quote(actor, kind)
         if quote is None:
             return None
+        if quote.get("pricing_scope", "").startswith("support_opener_only"):
+            value = quote["crit_expect"]
         panel = self.rows[actor]["panel"]
         element, tags = quote["quote_basis"]["element"], set(quote["quote_basis"]["damage_tags"])
         # The exported quote already includes fixed weapon/gear/type bonuses.
@@ -158,7 +179,7 @@ class ReleaseBurstPlanner:
         additions = {"attack": 0.0, "damage_bonus": 0.0, "amplification": 0.0}
         for bonus in self.bonuses if bonuses is None else bonuses:
             spec = bonus.spec
-            if (bonus.recipient == actor and now < bonus.expires_at
+            if (bonus.recipient == actor and bonus.starts_at <= now < bonus.expires_at
                     and ("all" in spec["elements"] or element in spec["elements"])
                     and (not spec["damage_tags"] or set(spec["damage_tags"]) & tags)):
                 additions[spec["bucket"]] += spec["magnitude"]["base"]
@@ -180,6 +201,8 @@ class ReleaseBurstPlanner:
                     if index in indices or budget < max(action.sp_gate, action.sp_cost):
                         continue
                     started = max(time, actor_locks.get(action.slot, now))
+                    if self.action_blocked(action.slot, action.kind, started, bonuses=current):
+                        continue
                     end = started + action.duration
                     if end > now + horizon:
                         continue
@@ -215,6 +238,9 @@ class ReleaseBurstPlanner:
                 or any(a.kind not in {"normal", "battle", "ult"} or a.duration <= 0
                        or not all(math.isfinite(v) for v in (a.duration, a.value, a.sp_gate, a.sp_cost))
                        or a.value < 0 for a in actions)):
+            return None
+        actions = tuple(a for a in actions if not self.action_blocked(a.slot, a.kind, now))
+        if not actions:
             return None
         self.bonuses[:] = [b for b in self.bonuses if now < b.expires_at]
         if not self.bonuses and not any(self.rules.get((a.slot, a.kind)) for a in actions):

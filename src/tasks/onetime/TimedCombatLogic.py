@@ -851,6 +851,8 @@ class TimedCombatLogic:
 
     def _try_battle_token(self, token, sp, overflow=False, advance_cursor=True):
         now = self._clock()
+        if self.release_burst is not None and self.release_burst.action_blocked(token, "battle", now):
+            return False
         if not self._slot_available(token) or now < self.state_until.get(token, 0):
             return False
         if now < self.battle_retry_after.get(token, 0):
@@ -1025,8 +1027,11 @@ class TimedCombatLogic:
             quote = self.release_burst.quote(token, "ult")
             if quote is not None:
                 duration = max(max(p.actionable, .3) for p in profiles)
+                if self.release_burst.release_handoff(token, "ult"):
+                    duration = max(max(p.handoff for p in profiles), self.release_burst.release_handoff(token, "ult"))
                 duration = max(duration, self._ult_action_seconds.get(token, 0))
-                actions.append(ReleaseBurstAction(token, "ult", duration, quote["crit_expect"]))
+                actions.append(ReleaseBurstAction(token, "ult", duration, quote["crit_expect"],
+                                                 same_actor_duration=max(p.actionable for p in profiles)))
         for index in range(len(self.team)):
             token = str(index + 1)
             if not self._slot_available(token) or now < self.state_until.get(token, 0) or now < self.battle_retry_after.get(token, 0):
@@ -1047,7 +1052,8 @@ class TimedCombatLogic:
         main = self._burst_main_control
         duration = self.release_burst.normal_durations.get(main)
         quote = self.release_burst.quote(main, "normal")
-        if main is not None and duration is not None and quote is not None and self._slot_available(main) and self._allowed():
+        if (main is not None and duration is not None and quote is not None and self._slot_available(main)
+                and self._allowed() and not self.release_burst.action_blocked(main, "normal", now)):
             actions.append(ReleaseBurstAction(main, "normal", duration, quote["crit_expect"]))
         return self.release_burst.choose(actions, max(0.0, sp), now)
 
@@ -1085,6 +1091,9 @@ class TimedCombatLogic:
         detector = getattr(self.task, "detect_current_char_index", None)
         current = detector() if self.release_burst is not None and callable(detector) else None
         self._burst_main_control = str(current + 1) if type(current) is int and 0 <= current < len(self.team) else None
+        if self.release_burst is not None:
+            for token in self.disabled_slots:
+                self.release_burst.source_unavailable(token)
         if self._probe_action_feedback() is not None:
             return
         self._confirm_battle(now)

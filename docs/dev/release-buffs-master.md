@@ -1,5 +1,9 @@
 # 释放确定增益接入 master 排轴
 
+2026-10-09续批已增加赛希「栈溢出」寒冷/自然增幅、梨诺「晨星的协奏曲」全队攻击及电磁/自然增幅。当前为9角色13条规则，包含58/77帧开始延迟、梨诺姿态保护与来源清理；属性缩放明确限定当前固定配装投影，不代表研究分支的真实 FinalNonConverted producer 闭合。梨诺持续/结束伤害不作为即时释放伤害。具体证据、幅度和边界见 [support-release-integration.md](support-release-integration.md)。下文首批7/8及验证数字保留为历史记录。
+
+续批新增13项测试，专项98项通过（2.916秒），全仓1054项通过（33.058秒）；Ruff I/F与diff-check通过。固定32面板、profile、build及原8条规则强度保持一致；只有梨诺终结直接伤害被明确限定为辅助起手报价。三份导出产物逐字节重生成校验，未做游戏现场验证。
+
 分支 codex/release-buffs-master 从 origin/master 3d3f8adb 建立，仅提取释放增益层。研究来源是 codex/effect-semantics-normalization 的 cc9b471b50cdd6bc8b3a148b4eca93deef4efa02；不合并其完整战斗世界、原生程序、资源模拟、技能 schema 或其他机制改动。
 
 使用时开启现有战斗配置「技能时间排轴」，AutoCombatLogic 才会路由到 TimedCombatLogic。master 原默认关闭的配置值保持不变；开关关闭时继续原普通自动战斗路径。
