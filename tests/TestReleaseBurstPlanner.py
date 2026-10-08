@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from src.data.combat_observation import ActionBlockReason
 from src.data.release_burst_planner import SNAPSHOT, ReleaseBurstAction, ReleaseBurstPlanner, read_snapshot
 from src.data.skill_timing import load_skill_timings
 from src.data.team_phase_planner import BurstAction, CombatPhase, make_burst_plan
@@ -484,8 +485,16 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertEqual(task.keys, ["ult_1"])
         task.now = 3.2
         logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        task.battle_pulses.add("1")
+        logic.step()
         self.assertEqual(task.keys, ["ult_1", "1"])
         self.assertEqual(logic.active[0].skill_id, "chr_0030_zhuangfy_normal_skill_ult")
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        self.assertIsNotNone(logic.pending)
+        task.battle_pulses.clear()
+        logic.step()
         self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
         self.assertEqual(logic._battle_context("1")[1:], (100, 100))
         task.now = 28
@@ -504,9 +513,115 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
         logic.release_burst.confirm("1", "ult", 0)
         task.now = 3.2
-        with patch.object(logic, "_wait_assumed_success_feedback", return_value=True):
-            self.assertTrue(logic._try_battle_token("1", 0))
+        task.battle_pulses.add("1")
+        self.assertTrue(logic._try_battle_token("1", 0))
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.DURING_SKILL
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.DURING_SKILL)
         self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+
+    def test_zhuang_free_battle_waits_for_own_pulse_without_blocking_teammate(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.now = 3.2
+        task.sp = 300
+        task.ults = set()
+        task.battle_pulses.add("2")
+        self.assertFalse(logic._try_battle_token("1", 300))
+        self.assertEqual(task.keys, [])
+        with patch.object(logic.release_burst, "choose", return_value=None) as choose:
+            logic._release_burst_decision([], 300, task.now)
+            self.assertFalse(any(a.slot == "1" and a.kind == "battle" for a in choose.call_args.args[0]))
+            self.assertTrue(any(a.slot == "2" and a.kind == "battle" for a in choose.call_args.args[0]))
+        self.assertTrue(logic._try_battle_token("2", 300))
+        self.assertEqual(task.keys, ["2"])
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+
+    def test_zhuang_white_pulse_failure_keeps_charge_until_retry_and_success(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.now = 3.2
+        task.sp = 0
+        task.battle_pulses.add("1")
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.DURING_SKILL
+        self.assertTrue(logic._try_battle_token("1", 0))
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.DURING_SKILL)
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        self.assertFalse(logic._try_battle_token("1", 0))
+        task.probe_combat_action_block_reason = lambda: None
+        task.now = logic.battle_retry_after["1"] + .01
+        task.battle_pulses.clear()
+        self.assertFalse(logic._try_battle_token("1", 0))
+        task.battle_pulses.add("1")
+        self.assertTrue(logic._try_battle_token("1", 0))
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        task.battle_pulses.clear()
+        logic._confirm_battle(task.now)
+        self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
+        self.assertFalse(logic._try_battle_token("1", 0))
+        self.assertEqual(task.keys, ["1", "1"])
+        self.assertEqual(logic._battle_context("1")[1:], (100, 100))
+
+    def test_zhuang_paid_battle_also_waits_for_white_and_confirms_by_disappearance(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        task.now = 3.2
+        self.assertFalse(logic._try_battle_token("1", 300))
+        task.battle_pulses.add("1")
+        self.assertTrue(logic._try_battle_token("1", 300))
+        self.assertEqual(logic.pending, (300, "1", 100))
+        task.sp = 200  # SP alone must not confirm while the button remains white.
+        logic._confirm_battle(task.now)
+        self.assertIsNotNone(logic.pending)
+        task.battle_pulses.clear()
+        with patch.object(logic, "_sample_sp") as sample:
+            logic._confirm_battle(task.now)
+            sample.assert_not_called()
+        self.assertIsNone(logic.pending)
+        self.assertIn(logic.active[0].skill_id, logic.cooldowns)
+        self.assertTrue(any("白色脉冲消失，确认释放" in m for m in task.messages))
+
+    def test_zhuang_pending_white_or_unknown_times_out_without_consuming_charge(self):
+        for observed in (True, None):
+            with self.subTest(observed=observed):
+                task, logic = self.make_logic()
+                logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+                logic.release_burst.confirm("1", "ult", 0)
+                task.now = 3.2
+                task.battle_pulses.add("1")
+                self.assertTrue(logic._try_battle_token("1", 0))
+                task.is_battle_skill_pulsing = lambda _token: observed
+                task.now = 3.3
+                logic._confirm_battle(task.now)
+                self.assertIsNotNone(logic.pending)
+                task.now = 4.01
+                logic._confirm_battle(task.now)
+                self.assertIsNone(logic.pending)
+                self.assertEqual(logic.active, ())
+                self.assertFalse(logic.cooldowns)
+                self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+                self.assertEqual(task.keys, ["1"])
+
+    def test_zhuang_pulse_cannot_bypass_stance_start_or_expiry(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.battle_pulses.add("1")
+        task.now = 2
+        self.assertFalse(logic._try_battle_token("1", 0))
+        task.now = 28
+        self.assertFalse(logic._try_battle_token("1", 0))
+        self.assertEqual(task.keys, [])
+
+    def test_zhuang_missing_pulse_probe_does_not_fall_back_to_timer_press(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.now = 3.2
+        task.is_battle_skill_pulsing = None
+        self.assertFalse(logic._try_battle_token("1", 300))
+        self.assertEqual(task.keys, [])
 
     def test_zhuang_unused_free_flag_never_survives_actual_stance_expiry(self):
         task, logic = self.make_logic()

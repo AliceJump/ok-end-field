@@ -448,6 +448,9 @@ class TimedCombatLogic:
         if self.pending is None:
             return
         before_sp, token, expected_cost = self.pending
+        if self._battle_uses_pulse(token):
+            self._confirm_pulsed_battle(now, before_sp, token, expected_cost)
+            return
         current_sp = self._sample_sp(force=True)
         elapsed = max(0.0, now - self.started)
         minimum_drop = max(
@@ -455,24 +458,39 @@ class TimedCombatLogic:
             expected_cost - self.assume_success_sp_threshold - self._NATURAL_SP_PER_SECOND * elapsed,
         )
         if current_sp >= 0 and before_sp - current_sp >= minimum_drop:
-            self.pending = None
-            advance_cursor = self.pending_advance_cursor
-            self.pending_advance_cursor = True
-            self._accept_battle_skill(token, advance_cursor=advance_cursor)
+            self._accept_pending_battle(token)
             self.task.log_info(
                 f"时间排轴: 战技 {token} 技力消耗已确认 ({before_sp:.1f}->{current_sp:.1f}, 阈值 {minimum_drop:.1f})"
             )
         elif now - self.started >= 0.8:
-            self.pending = None
-            self._clear_action_attempt_feedback()
-            self.pending_advance_cursor = True
-            self._reset_conditional_battle_phase_after_failed_attempt(token)
-            self.battle_retry_after[token] = now + self._FAILED_CAST_RETRY_DELAY
-            self._clear_active(now)
-            self.next_sp_probe_at = min(self.next_sp_probe_at, now)
-            self.task.log_info(
-                f"时间排轴: 战技 {token} 未确认消耗，清除未证实时间轴，{self._FAILED_CAST_RETRY_DELAY:.2f}s 后可重试"
-            )
+            self._reject_pending_battle(token, now, "未确认消耗")
+
+    def _accept_pending_battle(self, token):
+        self.pending = None
+        advance_cursor = self.pending_advance_cursor
+        self.pending_advance_cursor = True
+        self._accept_battle_skill(token, advance_cursor=advance_cursor)
+
+    def _reject_pending_battle(self, token, now, reason):
+        self.pending = None
+        self._clear_action_attempt_feedback()
+        self.pending_advance_cursor = True
+        self._reset_conditional_battle_phase_after_failed_attempt(token)
+        self.battle_retry_after[token] = now + self._FAILED_CAST_RETRY_DELAY
+        self._clear_active(now)
+        self.next_sp_probe_at = min(self.next_sp_probe_at, now)
+        self.task.log_info(
+            f"时间排轴: 战技 {token} {reason}，清除未证实时间轴，{self._FAILED_CAST_RETRY_DELAY:.2f}s 后可重试"
+        )
+
+    def _confirm_pulsed_battle(self, now, before_sp, token, expected_cost):
+        """Accept only a valid post-key observation of the white ring disappearing."""
+        if self._battle_pulse_state(token) is False:
+            self._note_assumed_sp_spend(before_sp, expected_cost)
+            self._accept_pending_battle(token)
+            self.task.log_info(f"时间排轴: 庄方宜战技 {token} 按键后白色脉冲消失，确认释放")
+        elif now - self.started >= 0.8:
+            self._reject_pending_battle(token, now, "未确认白色脉冲消失")
 
     def _set_cooldowns(self, profiles=None, started=None):
         profiles = self.active if profiles is None else profiles
@@ -858,6 +876,18 @@ class TimedCombatLogic:
                 return
             self.cursor = (self.cursor + 1) % len(self.order)
 
+    def _battle_uses_pulse(self, token):
+        mechanic = self._mechanic_for_token(token)
+        return mechanic is not None and mechanic.key == "zhuang_fangyi"
+
+    def _battle_pulse_state(self, token):
+        probe = getattr(self.task, "is_battle_skill_pulsing", None)
+        state = probe(token) if callable(probe) else None
+        return state if type(state) is bool else None
+
+    def _battle_pulse_ready(self, token):
+        return not self._battle_uses_pulse(token) or self._battle_pulse_state(token) is True
+
     def _try_battle_token(self, token, sp, overflow=False, advance_cursor=True):
         now = self._clock()
         if self.release_burst is not None and self.release_burst.action_blocked(token, "battle", now):
@@ -885,6 +915,8 @@ class TimedCombatLogic:
             return False
         if not self.phase_planner.can_spend(token, "battle", sp, expected_cost):
             return False
+        if not self._battle_pulse_ready(token):
+            return False
 
         self.phase_planner.start_if_ready(token, "battle")
         started = self._clock()
@@ -894,7 +926,10 @@ class TimedCombatLogic:
         self._begin(profiles, started, slot=token, kind="battle")
         self.pending_advance_cursor = advance_cursor
 
-        if expected_cost <= self.assume_success_sp_threshold:
+        if self._battle_uses_pulse(token):
+            self.pending = (sp, token, expected_cost)
+            self.task.log_info(f"时间排轴: 庄方宜战技 {token} 白色脉冲就绪，按键后等待白色消失")
+        elif expected_cost <= self.assume_success_sp_threshold:
             if self._wait_assumed_success_feedback():
                 return True
             self._note_assumed_sp_spend(sp, expected_cost)
@@ -1072,6 +1107,8 @@ class TimedCombatLogic:
         if not self._slot_available(token) or now < self.state_until.get(token, 0) or now < self.battle_retry_after.get(token, 0):
             return None
         if token == self.forced_main_control_slot and now < self.forced_main_control_until:
+            return None
+        if token not in future_free and not self._battle_pulse_ready(token):
             return None
         mechanic = self._mechanic_for_token(token)
         if mechanic is not None and mechanic.archetype == "multi_stage_battle":
