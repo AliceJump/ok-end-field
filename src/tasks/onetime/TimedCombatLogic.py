@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from collections import deque
 
+from src.data.battle_highlight import BattleHighlightState
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
 from src.data.combat_observation import (
     ActionBlockReason,
@@ -62,6 +63,7 @@ class TimedCombatLogic:
         self._holding = False
         self.damage_quotes = {}
         self.release_burst = None
+        self.battle_highlights = None
         self._burst_main_control = None
         self._ult_action_seconds = {}
         self.plan = None
@@ -581,6 +583,7 @@ class TimedCombatLogic:
             previous_phase_indices = {}
 
         self.team = team
+        self.battle_highlights = BattleHighlightState(self.store) if isinstance(self.store, SkillTimingStore) else None
         self.task._battle_team = list(team)
         self.ult_order = generate_damage_rotation(team)
         self.order = [
@@ -883,10 +886,29 @@ class TimedCombatLogic:
     def _battle_pulse_state(self, token):
         probe = getattr(self.task, "is_battle_skill_pulsing", None)
         state = probe(token) if callable(probe) else None
+        if self.battle_highlights is not None:
+            profiles, _, _ = self._battle_context(token)
+            observation = self.battle_highlights.observe(token, profiles, state, self._clock())
+            if observation is not None:
+                return observation.ready
         return state if type(state) is bool else None
 
     def _battle_pulse_ready(self, token):
         return not self._battle_uses_pulse(token) or self._battle_pulse_state(token) is True
+
+    def _observe_battle_highlights(self):
+        if self.battle_highlights is None:
+            return
+        for index in range(len(self.team)):
+            token = str(index + 1)
+            if not self._slot_available(token):
+                self.battle_highlights.observations.pop(token, None)
+                continue
+            profiles, _, _ = self._battle_context(token)
+            if self.battle_highlights.condition(profiles) is not None:
+                self._battle_pulse_state(token)
+            else:
+                self.battle_highlights.observations.pop(token, None)
 
     def _try_battle_token(self, token, sp, overflow=False, advance_cursor=True):
         now = self._clock()
@@ -1168,6 +1190,7 @@ class TimedCombatLogic:
     def step(self):
         """One refreshed HUD observation; no legacy strategy switches are read."""
         now = self._clock()
+        self._observe_battle_highlights()
         detector = getattr(self.task, "detect_current_char_index", None)
         current = detector() if self.release_burst is not None and callable(detector) else None
         self._burst_main_control = str(current + 1) if type(current) is int and 0 <= current < len(self.team) else None
