@@ -167,6 +167,9 @@ class TestHighlightInference(unittest.TestCase):
         manifest = json.loads((SNAPSHOT / 'index.json').read_text(encoding='utf8'))
         exporter = Path(__file__).resolve().parents[1] / 'scripts/skill-data/export_highlight_producers.py'
         self.assertEqual(hashlib.sha256(exporter.read_bytes()).hexdigest(), manifest['exporter_sha256'])
+        for name, key in (('reviewed_highlight_damage.py', 'damage_reviewer_sha256'),
+                          ('reviewed_condition_transitions.py', 'condition_reviewer_sha256')):
+            self.assertEqual(hashlib.sha256((exporter.parent / name).read_bytes()).hexdigest(), manifest[key])
         data = read_producers()
         self.assertEqual(len(data['actors']), 32)
         self.assertTrue(all(row['evidence'] or not row['tags'] for row in data['actors'].values()))

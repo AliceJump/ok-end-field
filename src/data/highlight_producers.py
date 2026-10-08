@@ -34,6 +34,13 @@ def read_producers(path=SNAPSHOT):
     if (any(not set(a['tags']) <= domain or a['closed'] != (not a['gaps']) for a in data['actors'].values())
             or sum(a['closed'] for a in data['actors'].values()) != manifest['closed']):
         raise ValueError('Invalid producer source boundary')
+    for actor, transitions in data['condition_transitions'].items():
+        for spec in transitions:
+            if (actor != 'antal' or spec['kind'] != 'ult' or spec['skill_id'] != 'chr_0023_antal_ultimate_skill'
+                    or spec['scope'] != 'nominal_unchanged_enemy_tags; no_target_identity_or_remaining_lifetime'
+                    or not spec['record_hashes'] or spec['skill_id'] not in spec['record_hashes']
+                    or not spec['preserves_recommended_tags'] or not set(spec['preserves_recommended_tags']) <= domain):
+                raise ValueError('Invalid reviewed condition transition')
     for actor, binding in data['damage_bindings'].items():
         if actor == 'arclight':
             components = binding['base_components'] + binding['conditional_components']

@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from collections import deque
 
+from src.data.battle_conditions import ConditionRequirement, ForecastConditions
 from src.data.battle_highlight import BattleHighlightState
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
 from src.data.combat_observation import (
@@ -1119,7 +1120,8 @@ class TimedCombatLogic:
         normal = self._release_normal_candidate(now)
         if normal is not None:
             actions.append(normal)
-        return self.release_burst.choose(actions, max(0.0, sp), now)
+        conditions = self.battle_highlights.forecast_conditions() if self.battle_highlights is not None else ForecastConditions()
+        return self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions)
 
     def _release_ultimate_candidate(self, token, profiles):
         quote = self.release_burst.quote(token, "ult")
@@ -1156,7 +1158,8 @@ class TimedCombatLogic:
         return ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
                                   base, gate, cost, same_actor_duration=max(p.actionable for p in profiles),
                                   observed_bonus=extra, base_components=base_components,
-                                  observed_components=extra_components)
+                                  observed_components=extra_components,
+                                  condition=ConditionRequirement.from_observation(token, observation))
 
     def _release_normal_candidate(self, now):
         main = self._burst_main_control
