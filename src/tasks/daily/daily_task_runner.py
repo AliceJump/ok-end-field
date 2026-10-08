@@ -9,6 +9,10 @@ TaskItem = tuple[str, Callable[[], object]]
 TaskItemWithSwitch = tuple[str, Callable[[], object], Callable[[], bool]]
 
 
+class FatalTaskFailure(RuntimeError):
+    """当前任务发生仅限本账号的致命失败，跳过该账号剩余任务。"""
+
+
 def _new_task_status(task_items: Iterable[TaskItem | TaskItemWithSwitch]) -> dict[str, list[str]]:
     return {"success": [], "failed": [], "skipped": [], "all": [item[0] for item in task_items]}
 
@@ -213,6 +217,18 @@ class DailyTaskRunner:
                     predicate = item[2] if len(item) > 2 else None
                     try:
                         success = self.execute_task(key, func, predicate)
+                    except FatalTaskFailure as e:
+                        if key not in self.task_status["failed"]:
+                            self.task_status["failed"].append(key)
+                        self.set_task_failure(str(e), task_name=key)
+                        if key not in self.failure_screenshot_tasks:
+                            try:
+                                self.task.screenshot(f"DailyTask_FatalTask_{key}")
+                            except Exception:
+                                pass
+                        self._abort_current_round_after_fatal_failure(key)
+                        round_aborted = True
+                        break
                     except Exception as e:
                         if key not in self.fatal_task_keys:
                             raise

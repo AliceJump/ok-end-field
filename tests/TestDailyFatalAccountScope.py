@@ -1,6 +1,6 @@
 import unittest
 
-from src.tasks.daily.daily_task_runner import DailyTaskRunner
+from src.tasks.daily.daily_task_runner import DailyTaskRunner, FatalTaskFailure
 
 
 class _MultiAccountHarness:
@@ -98,6 +98,28 @@ class TestDailyFatalAccountScope(unittest.TestCase):
         self.assertIn("boom", runner.failure_details["account-0"]["critical"])
         self.assertEqual(runner.final_summary["per_round"][0]["skipped"], ["after"])
         self.assertEqual(runner.final_summary["per_round"][1]["success"], ["critical", "after"])
+
+
+    def test_dynamic_fatal_exception_skips_only_current_account(self):
+        task = _MultiAccountHarness()
+        calls = []
+
+        def critical():
+            calls.append((task.current_account_index, "critical"))
+            if task.current_account_index == 0:
+                raise FatalTaskFailure("cargo still in transit")
+            return True
+
+        def after():
+            calls.append((task.current_account_index, "after"))
+            return True
+
+        runner = DailyTaskRunner(task, [("critical", critical), ("after", after)])
+        runner.run()
+
+        self.assertEqual(calls, [(0, "critical"), (1, "critical"), (1, "after")])
+        self.assertIn("cargo still in transit", runner.failure_details["account-0"]["critical"])
+        self.assertEqual(runner.final_summary["per_round"][0]["skipped"], ["after"])
 
 
 if __name__ == "__main__":

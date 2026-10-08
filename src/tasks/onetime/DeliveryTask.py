@@ -2,6 +2,7 @@ import shutil
 import webbrowser
 from pathlib import Path
 
+from ok import TaskDisabledException
 from qfluentwidgets import FluentIcon
 
 from src.core.config_migration import _NO_MIGRATION
@@ -23,6 +24,7 @@ from src.data.delivery_area_service import (
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.account.account_mixin import AccountMixin
+from src.tasks.daily.daily_task_runner import FatalTaskFailure
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
@@ -189,9 +191,28 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self._delivery_stage = str(stage)
         self.info_set("自动送货阶段", self._delivery_stage)
 
+    def _delivery_confirmed(self, reason: str) -> bool:
+        self._cargo_in_transit = False
+        self._delivery_fatal_failure = False
+        self.log_info(f"自动送货已确认送达 | {reason}")
+        return True
+
+    def _delivery_target_check_box(self, target_box, margin=0.01):
+        if target_box is None:
+            return None
+        margin_x = self.width * margin
+        margin_y = self.height * margin
+        x1 = max(0.0, (target_box.x - margin_x) / self.width)
+        y1 = max(0.0, (target_box.y - margin_y) / self.height)
+        x2 = min(1.0, (target_box.x + target_box.width + margin_x) / self.width)
+        y2 = min(1.0, (target_box.y + target_box.height + margin_y) / self.height)
+        return self.box_of_screen(x1, y1, x2, y2)
+
     def _delivery_fail(self, message: str) -> bool:
         self._delivery_failure_recorded = True
+        self._delivery_fatal_failure = bool(getattr(self, "_cargo_in_transit", False))
         detail = f"自动送货失败 | 阶段={self._delivery_stage} | {message}"
+        self._delivery_last_failure = detail
         self.log_info(detail, notify=True)
         self.mark_task_failure(detail)
         return False
@@ -460,11 +481,45 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             return True
         return False
 
-    def to_end_and_submit(self, end_pattern):
-        """从仓储点出发到目标点并提交委托
+    def _confirm_delivery_after_submit(self, end_pattern, end_target_box):
+        reward_clicked = bool(
+            self.wait_click_feature(
+                feature=fL.reward_ok,
+                box=self.box.bottom,
+                time_out=2,
+                raise_if_not_found=False,
+            )
+        )
+        self.ensure_main()
+        if reward_clicked:
+            return self._delivery_confirmed("交付奖励确认按钮已处理")
+
+        if self.wait_feature(
+            feature=fL.delivery_success_check,
+            time_out=2,
+            raise_if_not_found=False,
+            horizontal_variance=0.02,
+            vertical_variance=0.02,
+        ):
+            return self._delivery_confirmed("检测到送达成功标记")
+
+        check_box = self._delivery_target_check_box(end_target_box)
+        if check_box is None:
+            return self._delivery_fail("提交后缺少原任务目标区域，无法确认送达成功")
+
+        for attempt in range(20):
+            if not self.ocr(match=end_pattern, frame=self.next_frame(), box=check_box):
+                return self._delivery_confirmed("原送货目标已从追踪位置消失")
+            if attempt < 19:
+                self.sleep(0.25)
+        return self._delivery_fail("提交后原任务目标在追踪位置持续存在，无法确认送达成功")
+
+    def to_end_and_submit(self, end_pattern, end_target_box=None):
+        """从仓储点出发到目标点并提交委托。
 
         Args:
-            end_pattern: 目标点的正则匹配模式
+            end_pattern: 目标点的正则匹配模式。
+            end_target_box: 取货后识别目标时得到的原始 OCR Box，用于提交后的局部消失确认。
         """
         if end_pattern == self.lang.DeliveryTask.k_6536f6f1:
             end_pattern = self.lang.DeliveryTask.k_0c1ef9f5
@@ -500,15 +555,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if not self.skip_dialog(time_out=5):
             return self._delivery_fail("交付后的对话流程未正常结束")
 
-        self.ensure_main()
-        if self.wait_ocr(
-            match=end_pattern,
-            box=self.box.left,
-            time_out=2,
-            raise_if_not_found=False,
-        ):
-            return self._delivery_fail("提交后任务目标仍存在，无法确认送达成功")
-        return True
+        return self._confirm_delivery_after_submit(end_pattern, end_target_box)
 
     def _run_single_delivery_cycle(self):
         daily_mode = getattr(self, "_daily_delivery_mode", False)
@@ -566,8 +613,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 if not self.to_storage_point_and_back_zip_line():
                     return self._delivery_fail("未能完成取货路线或确认取货")
 
-                # 从这里开始视为已经携货；失败后由一键日常的 fatal 策略直接关游戏，
-                # 禁止再执行最终归位等协议传送恢复动作。
+                # 取货确认后进入携货状态；只有这个状态下的失败才会中止当前账号后续任务。
+                self._cargo_in_transit = True
                 self._set_delivery_stage(f"第{cycle_index}单：已取货，识别交付目标")
                 results = self.wait_ocr(
                     match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
@@ -587,16 +634,18 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
                 end_pattern = None
                 end_name = None
+                end_target_box = None
                 for result in results:
                     for pattern, target_name in ends_list_pattern_dict.items():
                         if pattern.search(result.name):
                             end_pattern = pattern
                             end_name = target_name
+                            end_target_box = result
                             break
                     if end_pattern is not None:
                         break
 
-                if end_pattern is None or end_name is None:
+                if end_pattern is None or end_name is None or end_target_box is None:
                     return self._delivery_fail("送货目标文本存在，但无法映射到已配置终点")
 
                 self._set_delivery_stage(f"第{cycle_index}单：已取货，滑索运送")
@@ -607,7 +656,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 )
 
                 self._set_delivery_stage(f"第{cycle_index}单：已取货，提交委托")
-                if not self.to_end_and_submit(end_pattern):
+                if not self.to_end_and_submit(end_pattern, end_target_box):
                     return False
 
                 self._set_delivery_stage(f"第{cycle_index}单：送达成功")
@@ -669,6 +718,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         """执行一轮日常自动送货；只有完整确认送达才返回 True。"""
         self._daily_delivery_mode = True
         self._delivery_failure_recorded = False
+        self._delivery_fatal_failure = False
+        self._delivery_last_failure = ""
+        self._cargo_in_transit = False
         self._set_delivery_stage("准备")
         try:
             self._ensure_delivery_area_config()
@@ -678,11 +730,20 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             if result is True:
                 self._set_delivery_stage("全部送达成功")
                 self.log_info("自动送货已确认完成", notify=True)
-            return result is True
+                return True
+            if self._delivery_fatal_failure:
+                raise FatalTaskFailure(self._delivery_last_failure or "携货期间自动送货失败")
+            return False
+        except FatalTaskFailure:
+            raise
+        except TaskDisabledException:
+            raise
         except Exception as e:
             if not self._delivery_failure_recorded:
                 self._delivery_fail(f"异常: {e}")
-            raise
+            if self._delivery_fatal_failure:
+                raise FatalTaskFailure(self._delivery_last_failure or f"携货期间自动送货异常: {e}") from e
+            return False
         finally:
             self._daily_delivery_mode = False
 

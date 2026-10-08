@@ -426,7 +426,6 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
                 self,
                 task_plan,
                 shared_state_task_keys=self.BOAT_STATE_TASK_KEYS,
-                fatal_task_keys={"⭐自动送货"},
             )
             self.daily_runner.run(repeat_times=repeat_times)
         finally:

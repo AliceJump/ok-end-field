@@ -19,6 +19,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             click=Mock(),
             send_key=Mock(),
             ocr=Mock(),
+            log_info=Mock(),
         )
 
     def test_distance_pattern_rejects_longer_numeric_distance(self):
@@ -130,6 +131,48 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub.click.assert_called_once()
         self.assertEqual(stub.send_key.call_count, 2)
         self.assertEqual(stub.ocr.call_count, 2)
+
+
+    def test_gold_gate_accepts_target_39_pixels_from_center(self):
+        processor = object()
+        target = SimpleNamespace(x=989, y=569, width=20, height=20)
+        stub = SimpleNamespace(
+            _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
+            make_hsv_isolator=Mock(return_value=processor),
+            ocr=Mock(return_value=[target]),
+            screen_center=Mock(return_value=(960, 540)),
+            scale_distance=lambda value: value,
+            height=1080,
+            next_frame=Mock(),
+        )
+
+        self.assertTrue(ZipLineMixin._zip_line_target_is_gold_and_centered(stub, 25, frame="frame"))
+
+    def test_gate_timeout_records_gate_failure_without_clicking(self):
+        stub = self._stub()
+        stub._zip_line_target_is_gold_and_centered = Mock(return_value=False)
+
+        self.assertFalse(ZipLineMixin.ensure_click_on_zip_line(stub, 25, lock_timeout=0))
+        self.assertEqual(stub._zip_line_last_failure, "gate")
+        stub.log_info.assert_called_with("滑索25金色门未通过")
+        stub.click.assert_not_called()
+
+    def test_e_failure_is_distinguished_from_gold_gate_failure(self):
+        stub = self._stub()
+        stub._zip_line_target_is_gold_and_centered = Mock(return_value=True)
+        stub.ocr.return_value = [SimpleNamespace(name="move")]
+
+        self.assertFalse(ZipLineMixin.ensure_click_on_zip_line(stub, 25, max_attempts=2))
+        self.assertEqual(stub._zip_line_last_failure, "e")
+        stub.log_info.assert_called_with("滑索25已点击，但 E 未触发滑行")
+
+    def test_fallback_uses_v111_click_and_e_until_stop_prompt_disappears(self):
+        stub = self._stub()
+        stub.ocr.side_effect = [[SimpleNamespace(name="move")], []]
+
+        self.assertTrue(ZipLineMixin._fallback_click_on_zip_line(stub, 25, max_attempts=3))
+        self.assertEqual(stub.click.call_count, 2)
+        self.assertEqual(stub.send_key.call_count, 2)
 
 
 if __name__ == "__main__":
