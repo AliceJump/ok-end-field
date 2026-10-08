@@ -85,3 +85,11 @@ Loader在2db1cff调用GetFloat(param)，2db1d36将实际整数计数转float32�
 这些来源已加入选中天赋的`keyword_attribute_refresh_evidence`，四技能继续引用该角色候选，full producer保持未绑定。新增专项从实际模板/子记录与原生枚举核对属性66、非转换、动态rate、child无属性与rate priority，保持未知的计数和转换边界。没有修改任何面板、报价、绑定数或执行逻辑；完整程序仍2/111。
 
 本批额外固定方法证据的已核准构建域；即使索引、manifest、payload一起换成另一构建也拒绝混用旧方法证明。1项新专项及marker/幅度/全角色台账相关28项通过（8.513秒）。没有执行逻辑变更，不重复第十四批已完成的全仓1436项。
+
+## 第十六批：补齐属性增强计数的初值证据
+
+`Buff.Reset`（60689/RVA2db0360，16000字节校验窗口SHA256=8af7c178774dd51b3918c106acd7bec783dc8e4187ea10595bfc84bbb2aad60d）在2db151c明确将m_enhanceCnt设为1，随后2db162f把同一字段交给属性loader。该位置在本方法主执行块及首次ret之前，不能因窗口包含邻接代码而误归属。这里补清楚初值来源，不往当前模型或最终伤害输入塞默认计数。
+
+`Buff._Enhance`（60716/RVA347aa90，5000字节SHA256=27177ca431e24596bb51f1c203c9304de95d1571d9edf926bde958ed2e799f46）在347aad4先增加m_enhanceCnt，347aae8执行buff event=6，再于347abe9调用属性loader、347ac66标记属性脏。不能省略中间回调、BB读值/覆盖和后续其他通知。TryEnhancingKeywordBuff的mark→ADDSS修改rate与这条buff计数增加仍是两条独立链。
+
+第十五批的“初始化未知”已更新为有来源的Reset=1；实际模板创建、增强回调/优先级组、缓存转换及父子清理继续未知。逐角色候选保留初值、更新次序、方法摘要；现有专项继续检查不转成最终计数/完整producer。不增加执行绑定、面板、报价或完整程序覆盖。

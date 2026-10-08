@@ -16823,6 +16823,24 @@
               "multiply_float32": "2db1d43",
               "to_double": "2db1d47"
             },
+            "enhance_count_initialization": {
+              "phase": "Buff.Reset",
+              "value": 1,
+              "instruction": "2db151c",
+              "field": "m_enhanceCnt"
+            },
+            "enhance_count_update": {
+              "phase": "Buff._Enhance",
+              "instruction": "347aad4",
+              "operation": "increment",
+              "callback_event": 6,
+              "order": [
+                "increment count",
+                "execute buff event 6",
+                "reload attributes",
+                "mark attributes dirty"
+              ]
+            },
             "method_windows": [
               {
                 "method": 60722,
@@ -16841,10 +16859,22 @@
                 "rva": "347a9d0",
                 "bytes": 6000,
                 "sha256": "6d1f9778b1b7eb66ce17484aaac786557585569631702105e5d75a87007622a2"
+              },
+              {
+                "method": 60689,
+                "rva": "2db0360",
+                "bytes": 16000,
+                "sha256": "8af7c178774dd51b3918c106acd7bec783dc8e4187ea10595bfc84bbb2aad60d"
+              },
+              {
+                "method": 60716,
+                "rva": "347aa90",
+                "bytes": 5000,
+                "sha256": "27177ca431e24596bb51f1c203c9304de95d1571d9edf926bde958ed2e799f46"
               }
             ],
             "unknown": [
-              "actual m_enhanceCnt initialization/update, not mark count or instance count",
+              "actual template creation and enhancement callback/update chain; not mark count or instance count",
               "priority group reorder and enable/disable consequences",
               "owner/source modifier registration, conversion and dirty dependencies",
               "dynamic child BB propagation and parent/replacement cleanup"

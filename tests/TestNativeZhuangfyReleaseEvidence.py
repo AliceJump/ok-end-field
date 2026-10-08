@@ -33,6 +33,12 @@ class TestNativeZhuangfyReleaseEvidence(unittest.TestCase):
         self.assertIn("m_enhanceCnt", proof["parameter_domain"])
         self.assertEqual(proof["status"], "evidence_only; attribute_producer_not_bound")
         self.assertTrue(any("not mark count" in item for item in proof["unknown"]))
+        self.assertEqual(proof["enhance_count_initialization"]["phase"], "Buff.Reset")
+        self.assertEqual(proof["enhance_count_initialization"]["value"], 1)
+        self.assertEqual(proof["enhance_count_update"]["order"][:2], ["increment count", "execute buff event 6"])
+        # This is the native Reset value, not a supplied final damage input or
+        # an assertion that the selected active producer has already run.
+        self.assertEqual(candidate["execution_status"], "not_bound; evidence_candidate_only")
 
     def test_selected_max_talent_patch_and_marker_receiving_event(self):
         candidate = release_evidence(get_character("zhuang_fangyi"))[0]

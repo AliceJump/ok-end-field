@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-08第十六批：同版Buff.Reset在2db151c明确初始化m_enhanceCnt=1，普通_Enhance先加一→buff event6→属性重载→MarkAttributesDirty。初值与回调次序加入逐角色原生候选，不当追加mark计数，也不向当前模型填默认最终值。模板创建/中间回调/优先级组/转换与父子清理仍未执行；32/128、14/2及完整程序2/111不变。相关28项通过；最近全仓仍同步master后的1436项。详见native-zhuangfy-release-audit.md，继续数据流，automation-2保留。
+
 > 2026-10-08第十五批：Pulse模板属性66/PulseEnhancedDmgIncrease在root、动态rate、默认child无属性、rate优先级及实际BB重载路径已核准。Buff+a8是m_enhanceCnt，不能当追加mark数；LoadAttributesModifier先GetFloat、计数转float32、MULSS、转double，返回mask后MarkAttributesDirty。候选台账单列属性刷新证据；初始化/优先级组/转换缓存/父子通知与外部分支继续未知，不启用收益或默认计数。方法证据新增固定构建域核验，拒绝索引与快照自洽地换成未复核的新构建。1新增及相关28项通过（8.513秒），最后全仓仍第十四批同步master后的1436项；纯证据不重复无关全仓。32/128、14/2和2/111不变，automation-2保留，下一步继续真实增强计数/缓存和父子清理。
 
 > 2026-10-08第十四批：仅已确认的庄方宜普通/姿态/区域原始片段创建plain self标记后，发布OnAddedBuff→OnOutputBuff；真实满级天赋监听器创建5秒基础实例。替换/旧截止/到期/提前移除/预测隔离及追加mark不误刷新均验证。前置回调/改定义/未经核准producer保留未知，完整门槛、castInfo、EnhancedAction/计数/属性传播与父子清理仍未绑定，不供应0或最大mark数。逐角色/四技能台账单列受限notification绑定，14/2与2/111不提高，32面板/128报价不变。70项相关及全仓1421项通过（109.905秒），最后失败动作专项后9项通过。原生后续调用已精确定位为RefreshPriority→OnBlackboardValueChange，下游43b0ca0待核准。见native-zhuangfy-release-audit.md；automation-2保留。
