@@ -143,10 +143,28 @@ class TestBattleConditionForecast(unittest.TestCase):
                                              conditions=self.state.forecast_conditions()))
 
     def test_reviewed_action_hash_must_match_live_store(self):
-        store = Mock(wraps=self.store)
-        store.record.side_effect = lambda key: {'source': {'sha256': '0' * 64}} if key == 'chr_0023_antal_ultimate_skill' else self.store.record(key)
-        with self.assertRaisesRegex(ValueError, 'Unreviewed live condition transition'):
-            ReleaseBurstPlanner(['安塔尔'], store=store)
+        dependencies = read_producers()['condition_transitions']['antal'][0]['record_hashes']
+        for changed in dependencies:
+            with self.subTest(changed=changed):
+                store = Mock(wraps=self.store)
+                store.record.side_effect = lambda key: {'source': {'sha256': '0' * 64}} if key == changed else self.store.record(key)
+                with self.assertRaisesRegex(ValueError, 'Unreviewed live condition transition record: ' + changed):
+                    ReleaseBurstPlanner(['安塔尔'], store=store)
+
+    def test_missing_child_record_cannot_keep_condition_preservation(self):
+        dependencies = read_producers()['condition_transitions']['antal'][0]['record_hashes']
+        for missing in dependencies:
+            with self.subTest(missing=missing):
+                store = Mock(wraps=self.store)
+
+                def read(key):
+                    if key == missing:
+                        raise KeyError(key)
+                    return self.store.record(key)
+
+                store.record.side_effect = read
+                with self.assertRaisesRegex(ValueError, 'Missing live condition transition record: ' + missing):
+                    ReleaseBurstPlanner(['安塔尔'], store=store)
 
     def test_real_step_selects_support_before_current_enhanced_output(self):
         task = FakeTask()
