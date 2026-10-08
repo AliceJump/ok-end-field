@@ -48,7 +48,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "akekuri_skill",
@@ -75,7 +76,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "akekuri_link",
@@ -122,7 +124,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "akekuri_ultimate",
@@ -149,7 +152,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -165,6 +169,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -179,6 +184,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -193,6 +199,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -207,6 +214,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -239,6 +247,7 @@
               }
             }
           ],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -253,6 +262,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -267,9 +277,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -338,7 +350,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "alesh_skill",
@@ -385,7 +398,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "alesh_link",
@@ -436,7 +450,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "alesh_ultimate",
@@ -463,7 +478,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -479,6 +495,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -493,6 +510,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -507,6 +525,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -521,6 +540,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -553,6 +573,7 @@
               }
             }
           ],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -567,6 +588,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -581,9 +603,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -652,7 +676,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "antal_skill",
@@ -745,7 +770,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "antal_link",
@@ -884,7 +910,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "antal_ultimate",
@@ -1046,7 +1073,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -1062,6 +1090,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1076,6 +1105,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1101,6 +1131,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1115,6 +1146,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1129,6 +1161,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1143,6 +1176,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1157,9 +1191,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -1226,7 +1262,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "arcane_skill",
@@ -1329,7 +1366,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "arcane_link",
@@ -1545,7 +1583,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "arcane_ultimate",
@@ -1590,7 +1629,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -1606,6 +1646,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1620,9 +1661,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -1691,7 +1734,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "arclight_skill",
@@ -1738,7 +1782,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "arclight_link",
@@ -1785,7 +1830,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "arclight_ultimate",
@@ -1832,7 +1878,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -1890,6 +1937,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1904,6 +1952,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1918,6 +1967,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1932,6 +1982,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1948,6 +1999,7 @@
           ],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1962,6 +2014,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1976,9 +2029,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2045,7 +2100,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "ardelia_skill",
@@ -2161,7 +2217,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "ardelia_link",
@@ -2198,7 +2255,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "ardelia_ultimate",
@@ -2225,7 +2283,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -2241,6 +2300,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2255,9 +2315,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2326,7 +2388,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "avywenna_skill",
@@ -2412,7 +2475,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "avywenna_link",
@@ -2474,7 +2538,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "avywenna_ultimate",
@@ -2501,7 +2566,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -2517,6 +2583,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2564,6 +2631,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2578,6 +2646,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2592,6 +2661,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2606,6 +2676,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2620,6 +2691,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2634,9 +2706,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2740,7 +2814,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "camille_skill",
@@ -2864,7 +2939,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "camille_link",
@@ -2940,7 +3016,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "camille_ultimate",
@@ -2985,7 +3062,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -3001,6 +3079,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3015,9 +3094,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -3086,7 +3167,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "catcher_skill",
@@ -3123,7 +3205,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "catcher_link",
@@ -3160,7 +3243,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "catcher_ultimate",
@@ -3187,7 +3271,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -3203,6 +3288,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3217,6 +3303,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3231,6 +3318,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3245,6 +3333,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3259,6 +3348,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3273,6 +3363,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3287,9 +3378,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -3358,7 +3451,15 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": [
+            {
+              "passive_id": "chr_0005_chen_talent_1_2",
+              "status": "not_bound; not_a_cast_bonus",
+              "damage_mask_gate": null,
+              "event_requirement": "explicit OnOutputDamage context; normal attack not in authored guards"
+            }
+          ]
         },
         {
           "skill_id": "chen_qianyu_skill",
@@ -3385,7 +3486,15 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": [
+            {
+              "passive_id": "chr_0005_chen_talent_1_2",
+              "status": "not_bound; not_a_cast_bonus",
+              "damage_mask_gate": 256,
+              "event_requirement": "explicit OnOutputDamage context; normal attack not in authored guards"
+            }
+          ]
         },
         {
           "skill_id": "chen_qianyu_link",
@@ -3432,7 +3541,15 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": [
+            {
+              "passive_id": "chr_0005_chen_talent_1_2",
+              "status": "not_bound; not_a_cast_bonus",
+              "damage_mask_gate": 8192,
+              "event_requirement": "explicit OnOutputDamage context; normal attack not in authored guards"
+            }
+          ]
         },
         {
           "skill_id": "chen_qianyu_ultimate",
@@ -3459,7 +3576,15 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": [
+            {
+              "passive_id": "chr_0005_chen_talent_1_2",
+              "status": "not_bound; not_a_cast_bonus",
+              "damage_mask_gate": 512,
+              "event_requirement": "explicit OnOutputDamage context; normal attack not in authored guards"
+            }
+          ]
         }
       ],
       "passives": [
@@ -3475,6 +3600,9 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [
+            "chr_0005_chen_talent_1_2"
+          ],
           "complete_semantic_review": false
         },
         {
@@ -3489,6 +3617,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3503,6 +3632,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3517,6 +3647,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3531,6 +3662,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3545,6 +3677,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3559,7 +3692,389 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
+        }
+      ],
+      "native_enhanced_attack_candidates": [
+        {
+          "passive_id": "chr_0005_chen_talent_1_2",
+          "parent_buff": "buff_chr_0005_chen_talent_0",
+          "attribute_buff": "buff_chr_0005_chen_talent_0_1",
+          "selected_parameters": {
+            "atk": 0.07999999821186066,
+            "duration": 10.0,
+            "max_stack": 5.0
+          },
+          "native_event_actions": [
+            {
+              "event": "OnOutputDamage",
+              "actions": [
+                {
+                  "actionData": [
+                    {
+                      "$tag": 91,
+                      "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                      "$value": {
+                        "isEnable": true,
+                        "priorityLevel": 0,
+                        "priorityOffset": 0,
+                        "serverActionIndex": 0,
+                        "checkType": 2,
+                        "mask": 256
+                      }
+                    },
+                    {
+                      "$tag": 146,
+                      "$type": "Beyond.Gameplay.Core.CreateBuffAction+Data",
+                      "$value": {
+                        "isEnable": true,
+                        "priorityLevel": 0,
+                        "priorityOffset": 0,
+                        "serverActionIndex": 1,
+                        "asChildBuff": true,
+                        "autoFinishByAction": false,
+                        "buffIconDurationSource": {
+                          "durationSourceType": 0,
+                          "timedMarkerId": ""
+                        },
+                        "buffs": [
+                          {
+                            "assignBlackboard": true,
+                            "assignItems": [
+                              {
+                                "directValueType": 0,
+                                "inputValueKey": "atk",
+                                "numericValue": 0.0,
+                                "stringValue": "",
+                                "targetKey": "atk",
+                                "useDirectValue": false
+                              },
+                              {
+                                "directValueType": 0,
+                                "inputValueKey": "duration",
+                                "numericValue": 0.0,
+                                "stringValue": "",
+                                "targetKey": "duration",
+                                "useDirectValue": false
+                              }
+                            ],
+                            "buffId": "buff_chr_0005_chen_talent_0_1",
+                            "buffIdKey": "",
+                            "readIdFromBlackboard": false
+                          }
+                        ],
+                        "buffSource": 1,
+                        "contextKey": "",
+                        "count": {
+                          "blackboardKey": "",
+                          "useBlackboardKey": false,
+                          "value": 1.0
+                        },
+                        "finishWithNextSkillIfNotInherited": true,
+                        "inheritSkillIdList": [],
+                        "inheritSourceSkillCastId": false,
+                        "inheritSourceSkillCastInfo": true,
+                        "isExtra": false,
+                        "overrideBuffIconDuration": false,
+                        "passTargetGroupsToBuff": false,
+                        "targetSettings": {
+                          "advancedDirection": {
+                            "clampToXZ": true,
+                            "customSourceAndTarget": false,
+                            "directionType": 0,
+                            "invertDirection": false,
+                            "source": null,
+                            "sourceMountPoint": 0,
+                            "target": null,
+                            "targetMountPoint": 0
+                          },
+                          "centerContextKey": "",
+                          "centerToGround": false,
+                          "centerType": 0,
+                          "enableAdvancedDirection": false,
+                          "ownerContextKey": "",
+                          "selectorData": {
+                            "finderData": null,
+                            "postProcessorData": [],
+                            "validatorData": []
+                          },
+                          "selectorDirection": 0,
+                          "selectorOwner": 1,
+                          "target": 0,
+                          "targetContextKey": "",
+                          "targetGroupKey": "",
+                          "targetSource": 4
+                        }
+                      }
+                    }
+                  ],
+                  "onlyExecuteWhenSourceIsGuard": false,
+                  "onlyExecuteWhenSourceIsMainChar": false
+                },
+                {
+                  "actionData": [
+                    {
+                      "$tag": 91,
+                      "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                      "$value": {
+                        "isEnable": true,
+                        "priorityLevel": 0,
+                        "priorityOffset": 0,
+                        "serverActionIndex": 2,
+                        "checkType": 2,
+                        "mask": 512
+                      }
+                    },
+                    {
+                      "$tag": 146,
+                      "$type": "Beyond.Gameplay.Core.CreateBuffAction+Data",
+                      "$value": {
+                        "isEnable": true,
+                        "priorityLevel": 0,
+                        "priorityOffset": 0,
+                        "serverActionIndex": 3,
+                        "asChildBuff": true,
+                        "autoFinishByAction": false,
+                        "buffIconDurationSource": {
+                          "durationSourceType": 0,
+                          "timedMarkerId": ""
+                        },
+                        "buffs": [
+                          {
+                            "assignBlackboard": true,
+                            "assignItems": [
+                              {
+                                "directValueType": 0,
+                                "inputValueKey": "atk",
+                                "numericValue": 0.0,
+                                "stringValue": "",
+                                "targetKey": "atk",
+                                "useDirectValue": false
+                              },
+                              {
+                                "directValueType": 0,
+                                "inputValueKey": "duration",
+                                "numericValue": 0.0,
+                                "stringValue": "",
+                                "targetKey": "duration",
+                                "useDirectValue": false
+                              }
+                            ],
+                            "buffId": "buff_chr_0005_chen_talent_0_1",
+                            "buffIdKey": "",
+                            "readIdFromBlackboard": false
+                          }
+                        ],
+                        "buffSource": 1,
+                        "contextKey": "",
+                        "count": {
+                          "blackboardKey": "",
+                          "useBlackboardKey": false,
+                          "value": 1.0
+                        },
+                        "finishWithNextSkillIfNotInherited": true,
+                        "inheritSkillIdList": [],
+                        "inheritSourceSkillCastId": false,
+                        "inheritSourceSkillCastInfo": true,
+                        "isExtra": false,
+                        "overrideBuffIconDuration": false,
+                        "passTargetGroupsToBuff": false,
+                        "targetSettings": {
+                          "advancedDirection": {
+                            "clampToXZ": true,
+                            "customSourceAndTarget": false,
+                            "directionType": 0,
+                            "invertDirection": false,
+                            "source": null,
+                            "sourceMountPoint": 0,
+                            "target": null,
+                            "targetMountPoint": 0
+                          },
+                          "centerContextKey": "",
+                          "centerToGround": false,
+                          "centerType": 0,
+                          "enableAdvancedDirection": false,
+                          "ownerContextKey": "",
+                          "selectorData": {
+                            "finderData": null,
+                            "postProcessorData": [],
+                            "validatorData": []
+                          },
+                          "selectorDirection": 0,
+                          "selectorOwner": 1,
+                          "target": 0,
+                          "targetContextKey": "",
+                          "targetGroupKey": "",
+                          "targetSource": 4
+                        }
+                      }
+                    }
+                  ],
+                  "onlyExecuteWhenSourceIsGuard": false,
+                  "onlyExecuteWhenSourceIsMainChar": false
+                },
+                {
+                  "actionData": [
+                    {
+                      "$tag": 91,
+                      "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                      "$value": {
+                        "isEnable": true,
+                        "priorityLevel": 0,
+                        "priorityOffset": 0,
+                        "serverActionIndex": 4,
+                        "checkType": 2,
+                        "mask": 8192
+                      }
+                    },
+                    {
+                      "$tag": 146,
+                      "$type": "Beyond.Gameplay.Core.CreateBuffAction+Data",
+                      "$value": {
+                        "isEnable": true,
+                        "priorityLevel": 0,
+                        "priorityOffset": 0,
+                        "serverActionIndex": 5,
+                        "asChildBuff": true,
+                        "autoFinishByAction": false,
+                        "buffIconDurationSource": {
+                          "durationSourceType": 0,
+                          "timedMarkerId": ""
+                        },
+                        "buffs": [
+                          {
+                            "assignBlackboard": true,
+                            "assignItems": [
+                              {
+                                "directValueType": 0,
+                                "inputValueKey": "atk",
+                                "numericValue": 0.0,
+                                "stringValue": "",
+                                "targetKey": "atk",
+                                "useDirectValue": false
+                              },
+                              {
+                                "directValueType": 0,
+                                "inputValueKey": "duration",
+                                "numericValue": 0.0,
+                                "stringValue": "",
+                                "targetKey": "duration",
+                                "useDirectValue": false
+                              }
+                            ],
+                            "buffId": "buff_chr_0005_chen_talent_0_1",
+                            "buffIdKey": "",
+                            "readIdFromBlackboard": false
+                          }
+                        ],
+                        "buffSource": 1,
+                        "contextKey": "",
+                        "count": {
+                          "blackboardKey": "",
+                          "useBlackboardKey": false,
+                          "value": 1.0
+                        },
+                        "finishWithNextSkillIfNotInherited": true,
+                        "inheritSkillIdList": [],
+                        "inheritSourceSkillCastId": false,
+                        "inheritSourceSkillCastInfo": true,
+                        "isExtra": false,
+                        "overrideBuffIconDuration": false,
+                        "passTargetGroupsToBuff": false,
+                        "targetSettings": {
+                          "advancedDirection": {
+                            "clampToXZ": true,
+                            "customSourceAndTarget": false,
+                            "directionType": 0,
+                            "invertDirection": false,
+                            "source": null,
+                            "sourceMountPoint": 0,
+                            "target": null,
+                            "targetMountPoint": 0
+                          },
+                          "centerContextKey": "",
+                          "centerToGround": false,
+                          "centerType": 0,
+                          "enableAdvancedDirection": false,
+                          "ownerContextKey": "",
+                          "selectorData": {
+                            "finderData": null,
+                            "postProcessorData": [],
+                            "validatorData": []
+                          },
+                          "selectorDirection": 0,
+                          "selectorOwner": 1,
+                          "target": 0,
+                          "targetContextKey": "",
+                          "targetGroupKey": "",
+                          "targetSource": 4
+                        }
+                      }
+                    }
+                  ],
+                  "onlyExecuteWhenSourceIsGuard": false,
+                  "onlyExecuteWhenSourceIsMainChar": false
+                }
+              ]
+            }
+          ],
+          "native_attribute_modifier": {
+            "attributeModifiers": [
+              {
+                "attributeType": 2,
+                "formulaItem": 6,
+                "modifyAttributeType": 0,
+                "param": {
+                  "blackboardKey": "atk",
+                  "useBlackboardKey": true,
+                  "value": 0.0
+                }
+              }
+            ],
+            "isConvertedAttribute": false
+          },
+          "native_duration": {
+            "blackboardKey": "duration",
+            "useBlackboardKey": true,
+            "value": 10.0
+          },
+          "native_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 5,
+            "maxStackCntKey": "",
+            "negatePriority": false,
+            "priority": 0.0,
+            "priorityKey": "",
+            "stackEffects": [],
+            "stackingKey": "",
+            "stackingType": 8,
+            "useMaxStackCntKey": false,
+            "usePriorityKey": false
+          },
+          "sources": {
+            "buff_chr_0005_chen_talent_0": {
+              "kind": "BuffData",
+              "bytes": 1089,
+              "consumed": 1089,
+              "md5": "5fd3ae7f4e883839b858827eda261064",
+              "sha256": "f2f5c5c3194f32d0f356dec0a4ff40782ed404e0904d9cd324b667d348ed3fea"
+            },
+            "buff_chr_0005_chen_talent_0_1": {
+              "kind": "BuffData",
+              "bytes": 332,
+              "consumed": 332,
+              "md5": "0acfa4257d66ae998e2d6f14917433c6",
+              "sha256": "6b7c03853d3fe1574cf5c785183713954a5f4f7aa81ad068f245fabb8a75eb2c"
+            }
+          },
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "event context publication and trigger ordering",
+            "EnhanceAndRefresh aggregate count, attribute rebuild and notifications",
+            "parent/early-removal chain under actual producer"
+          ]
         }
       ],
       "target_state_bonus_rules": [
@@ -3669,7 +4184,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "da_pan_skill",
@@ -3696,7 +4212,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "da_pan_link",
@@ -3743,7 +4260,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "da_pan_ultimate",
@@ -3770,7 +4288,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -3786,6 +4305,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3800,6 +4320,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3814,6 +4335,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3828,6 +4350,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3842,6 +4365,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3856,6 +4380,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3870,9 +4395,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -3975,7 +4502,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "ember_skill",
@@ -4022,7 +4550,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "ember_link",
@@ -4067,7 +4596,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "ember_ultimate",
@@ -4102,7 +4632,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -4118,6 +4649,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4132,9 +4664,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -4201,7 +4735,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "endministrator_skill",
@@ -4248,7 +4783,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "endministrator_link",
@@ -4303,7 +4839,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "endministrator_ultimate",
@@ -4350,7 +4887,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -4401,6 +4939,7 @@
           ],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4451,6 +4990,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4465,6 +5005,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4513,6 +5054,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4527,9 +5069,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -4598,7 +5142,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "estella_skill",
@@ -4660,7 +5205,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "estella_link",
@@ -4777,7 +5323,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "estella_ultimate",
@@ -4824,7 +5371,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -4840,6 +5388,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4854,6 +5403,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4874,6 +5424,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4888,6 +5439,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4902,6 +5454,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4916,6 +5469,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4930,9 +5484,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -5001,7 +5557,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "fluorite_skill",
@@ -5028,7 +5585,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "fluorite_link",
@@ -5079,7 +5637,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "fluorite_ultimate",
@@ -5148,7 +5707,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -5201,6 +5761,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5248,6 +5809,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5262,6 +5824,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5276,6 +5839,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5290,6 +5854,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5304,6 +5869,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5318,9 +5884,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -5387,7 +5955,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "gilberta_skill",
@@ -5414,7 +5983,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "gilberta_link",
@@ -5461,7 +6031,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "gilberta_ultimate",
@@ -5617,7 +6188,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -5633,6 +6205,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5647,9 +6220,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -5716,7 +6291,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "laevatain_skill",
@@ -5775,7 +6351,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "laevatain_link",
@@ -5826,7 +6403,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "laevatain_ultimate",
@@ -5897,7 +6475,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -5913,6 +6492,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5927,9 +6507,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -5996,7 +6578,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "last_rite_skill",
@@ -6085,7 +6668,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "last_rite_link",
@@ -6134,7 +6718,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "last_rite_ultimate",
@@ -6161,7 +6746,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -6183,6 +6769,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6197,9 +6784,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -6268,7 +6857,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "lifeng_skill",
@@ -6339,7 +6929,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "lifeng_link",
@@ -6390,7 +6981,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "lifeng_ultimate",
@@ -6437,7 +7029,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -6453,6 +7046,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6467,9 +7061,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [
         {
           "origin": "reviewed_fixed_weapon_target_predicate",
@@ -6575,7 +7171,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "liino_skill",
@@ -6636,7 +7233,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "liino_link",
@@ -6683,7 +7281,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "liino_ultimate",
@@ -6826,7 +7425,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -6842,6 +7442,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6856,9 +7457,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -6961,7 +7564,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "mi_fu_skill",
@@ -7081,7 +7685,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "mi_fu_link",
@@ -7170,7 +7775,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "mi_fu_ultimate",
@@ -7205,7 +7811,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -7221,6 +7828,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7235,9 +7843,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -7306,7 +7916,15 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": [
+            {
+              "passive_id": "chr_0004_pelica_potential_3",
+              "status": "not_bound; not_a_cast_bonus",
+              "damage_mask_gate": null,
+              "event_requirement": "actual OnOutputBuff with Conduct tag; not inferred from skill type"
+            }
+          ]
         },
         {
           "skill_id": "perlica_skill",
@@ -7333,7 +7951,15 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": [
+            {
+              "passive_id": "chr_0004_pelica_potential_3",
+              "status": "not_bound; not_a_cast_bonus",
+              "damage_mask_gate": null,
+              "event_requirement": "actual OnOutputBuff with Conduct tag; not inferred from skill type"
+            }
+          ]
         },
         {
           "skill_id": "perlica_link",
@@ -7405,7 +8031,15 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": [
+            {
+              "passive_id": "chr_0004_pelica_potential_3",
+              "status": "not_bound; not_a_cast_bonus",
+              "damage_mask_gate": null,
+              "event_requirement": "actual OnOutputBuff with Conduct tag; not inferred from skill type"
+            }
+          ]
         },
         {
           "skill_id": "perlica_ultimate",
@@ -7467,7 +8101,15 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": [
+            {
+              "passive_id": "chr_0004_pelica_potential_3",
+              "status": "not_bound; not_a_cast_bonus",
+              "damage_mask_gate": null,
+              "event_requirement": "actual OnOutputBuff with Conduct tag; not inferred from skill type"
+            }
+          ]
         }
       ],
       "passives": [
@@ -7520,6 +8162,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7534,6 +8177,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7548,6 +8192,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7562,6 +8207,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7576,6 +8222,9 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [
+            "chr_0004_pelica_potential_3"
+          ],
           "complete_semantic_review": false
         },
         {
@@ -7590,6 +8239,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7606,7 +8256,192 @@
             "ultimate": 0.30000001192092896
           },
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
+        }
+      ],
+      "native_enhanced_attack_candidates": [
+        {
+          "passive_id": "chr_0004_pelica_potential_3",
+          "parent_buff": "buff_chr_0004_pelica_potential_3",
+          "attribute_buff": "buff_chr_0004_pelica_potential_3_atkup",
+          "selected_parameters": {
+            "atk_duration": 5.0,
+            "atk_up": 0.20000000298023224,
+            "max_stack": 2.0
+          },
+          "native_event_actions": [
+            {
+              "event": "OnOutputBuff",
+              "actions": [
+                {
+                  "actionData": [
+                    {
+                      "$tag": 86,
+                      "$type": "Beyond.Gameplay.Core.Conditions.CheckBuffIdInContext+Data",
+                      "$value": {
+                        "blackboardKey": "",
+                        "buffIdList": [],
+                        "checkType": 1,
+                        "isEnable": true,
+                        "priorityLevel": 0,
+                        "priorityOffset": 0,
+                        "query": {
+                          "queryType": 0,
+                          "tags": [
+                            {
+                              "raw": "bf9d6e57"
+                            }
+                          ]
+                        },
+                        "serverActionIndex": 0
+                      }
+                    },
+                    {
+                      "$tag": 146,
+                      "$type": "Beyond.Gameplay.Core.CreateBuffAction+Data",
+                      "$value": {
+                        "asChildBuff": false,
+                        "autoFinishByAction": false,
+                        "buffIconDurationSource": {
+                          "durationSourceType": 0,
+                          "timedMarkerId": ""
+                        },
+                        "buffSource": 0,
+                        "buffs": [
+                          {
+                            "assignBlackboard": true,
+                            "assignItems": [
+                              {
+                                "directValueType": 0,
+                                "inputValueKey": "atk_up",
+                                "numericValue": 0.0,
+                                "stringValue": "",
+                                "targetKey": "atk_up",
+                                "useDirectValue": false
+                              },
+                              {
+                                "directValueType": 0,
+                                "inputValueKey": "atk_duration",
+                                "numericValue": 0.0,
+                                "stringValue": "",
+                                "targetKey": "atk_duration",
+                                "useDirectValue": false
+                              }
+                            ],
+                            "buffId": "buff_chr_0004_pelica_potential_3_atkup",
+                            "buffIdKey": "",
+                            "readIdFromBlackboard": false
+                          }
+                        ],
+                        "contextKey": "",
+                        "count": {
+                          "blackboardKey": "",
+                          "useBlackboardKey": false,
+                          "value": 1.0
+                        },
+                        "finishWithNextSkillIfNotInherited": true,
+                        "inheritSkillIdList": [],
+                        "inheritSourceSkillCastId": false,
+                        "inheritSourceSkillCastInfo": true,
+                        "isEnable": true,
+                        "isExtra": false,
+                        "overrideBuffIconDuration": false,
+                        "passTargetGroupsToBuff": false,
+                        "priorityLevel": 0,
+                        "priorityOffset": 0,
+                        "serverActionIndex": 1,
+                        "targetSettings": {
+                          "advancedDirection": {
+                            "clampToXZ": true,
+                            "customSourceAndTarget": false,
+                            "directionType": 0,
+                            "invertDirection": false,
+                            "source": null,
+                            "sourceMountPoint": 0,
+                            "target": null,
+                            "targetMountPoint": 0
+                          },
+                          "centerContextKey": "",
+                          "centerToGround": false,
+                          "centerType": 0,
+                          "enableAdvancedDirection": false,
+                          "ownerContextKey": "",
+                          "selectorData": {
+                            "finderData": null,
+                            "postProcessorData": [],
+                            "validatorData": []
+                          },
+                          "selectorDirection": 0,
+                          "selectorOwner": 1,
+                          "target": 0,
+                          "targetContextKey": "",
+                          "targetGroupKey": "",
+                          "targetSource": 4
+                        }
+                      }
+                    }
+                  ],
+                  "onlyExecuteWhenSourceIsGuard": false,
+                  "onlyExecuteWhenSourceIsMainChar": false
+                }
+              ]
+            }
+          ],
+          "native_attribute_modifier": {
+            "attributeModifiers": [
+              {
+                "attributeType": 2,
+                "formulaItem": 6,
+                "modifyAttributeType": 0,
+                "param": {
+                  "blackboardKey": "atk_up",
+                  "useBlackboardKey": true,
+                  "value": 0.0
+                }
+              }
+            ],
+            "isConvertedAttribute": false
+          },
+          "native_duration": {
+            "blackboardKey": "atk_duration",
+            "useBlackboardKey": true,
+            "value": 0.0
+          },
+          "native_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 2,
+            "maxStackCntKey": "",
+            "negatePriority": false,
+            "priority": 0.0,
+            "priorityKey": "",
+            "stackEffects": [],
+            "stackingKey": "",
+            "stackingType": 8,
+            "useMaxStackCntKey": false,
+            "usePriorityKey": false
+          },
+          "sources": {
+            "buff_chr_0004_pelica_potential_3": {
+              "byte_identical": true,
+              "bytes": 630,
+              "md5": "106af53ff280f421d02a314a4af008d6",
+              "sha256": "0a3fe68f1f790bbbe294037b2163fd0c6bd52b703beaf416a9553af166d08e79"
+            },
+            "buff_chr_0004_pelica_potential_3_atkup": {
+              "byte_identical": true,
+              "bytes": 347,
+              "md5": "499551134c3acabe24d609a44c367fb6",
+              "sha256": "ed90d3418bac21e95b335cb782eccc3a284dbf987287f02b64d98027f3f543ce"
+            }
+          },
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "event context publication and trigger ordering",
+            "EnhanceAndRefresh aggregate count, attribute rebuild and notifications",
+            "parent/early-removal chain under actual producer"
+          ]
         }
       ],
       "target_state_bonus_rules": [],
@@ -7714,7 +8549,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "pogranichnik_skill",
@@ -7770,7 +8606,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "pogranichnik_link",
@@ -7880,7 +8717,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "pogranichnik_ultimate",
@@ -7958,7 +8796,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -8007,6 +8846,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8021,9 +8861,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -8092,7 +8934,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "purrchena_skill",
@@ -8129,7 +8972,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "purrchena_link",
@@ -8166,7 +9010,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "purrchena_ultimate",
@@ -8231,7 +9076,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -8247,6 +9093,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8261,6 +9108,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8275,6 +9123,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8289,6 +9138,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8303,6 +9153,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8317,6 +9168,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8337,9 +9189,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -8406,7 +9260,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "rossi_skill",
@@ -8453,7 +9308,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "rossi_link",
@@ -8588,7 +9444,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "rossi_ultimate",
@@ -8615,7 +9472,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -8665,6 +9523,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8679,9 +9538,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -8750,7 +9611,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "snowshine_skill",
@@ -8787,7 +9649,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "snowshine_link",
@@ -8824,7 +9687,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "snowshine_ultimate",
@@ -8851,7 +9715,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -8867,6 +9732,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8881,6 +9747,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8895,6 +9762,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8909,6 +9777,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8923,6 +9792,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8937,6 +9807,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8951,9 +9822,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -9020,7 +9893,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "tangtang_skill",
@@ -9120,7 +9994,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "tangtang_link",
@@ -9208,7 +10083,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "tangtang_ultimate",
@@ -9245,7 +10121,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -9261,6 +10138,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9275,9 +10153,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -9344,7 +10224,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "typhoeus_skill",
@@ -9415,7 +10296,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "typhoeus_link",
@@ -9498,7 +10380,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "typhoeus_ultimate",
@@ -9525,7 +10408,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -9541,6 +10425,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9555,9 +10440,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -9626,7 +10513,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "wulfgard_skill",
@@ -9699,7 +10587,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "wulfgard_link",
@@ -9783,7 +10672,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "wulfgard_ultimate",
@@ -9810,7 +10700,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -9859,6 +10750,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9873,6 +10765,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9887,6 +10780,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9901,6 +10795,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9915,6 +10810,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9929,6 +10825,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9943,9 +10840,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -10014,7 +10913,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "xaihi_skill",
@@ -10097,7 +10997,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "xaihi_link",
@@ -10134,7 +11035,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "xaihi_ultimate",
@@ -10336,7 +11238,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -10385,6 +11288,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10399,6 +11303,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10419,6 +11324,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10433,6 +11339,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10447,6 +11354,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10461,6 +11369,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10486,9 +11395,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -10555,7 +11466,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "yvonne_skill",
@@ -10608,7 +11520,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "yvonne_link",
@@ -10655,7 +11568,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "yvonne_ultimate",
@@ -10808,7 +11722,8 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -10824,6 +11739,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10913,9 +11829,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -10982,7 +11900,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "zhuang_fangyi_skill",
@@ -11077,7 +11996,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "zhuang_fangyi_link",
@@ -11144,7 +12064,8 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification",
             "Conditional/replacement branches require individual semantic review"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         },
         {
           "skill_id": "zhuang_fangyi_ultimate",
@@ -11175,7 +12096,8 @@
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
-          "full_skill_execution": "not_assessed; see mechanism coverage audit"
+          "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_enhanced_attack_checks": []
         }
       ],
       "passives": [
@@ -11233,6 +12155,7 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -11247,9 +12170,11 @@
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
+          "native_enhanced_attack_evidence": [],
           "complete_semantic_review": false
         }
       ],
+      "native_enhanced_attack_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},

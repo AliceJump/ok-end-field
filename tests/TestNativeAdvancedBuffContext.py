@@ -104,7 +104,7 @@ class TestNativeAdvancedBuffContext(unittest.TestCase):
     def test_representative_catalog_keeps_ember_and_action_execution_blockers(self):
         catalog = build_combat_catalog(("弭弗", "骏卫", "余烬", "卡缪"), self.store)
         self.assertEqual(catalog.diagnostics, (
-            "Runtime condition: chr_0009_azrila_combo_skill/CheckDamageDecorateMask+Data",))
+            "Unreviewed native damage mask check mode: chr_0009_azrila_combo_skill/3",))
         self.assertTrue(any(event.unresolved for program in catalog.candidates(kind="battle")
                             for event in walk_combat_events(program.events)))
         triggers = [trigger for trigger, p in catalog.world.native_character_hooks if p.actor == "4"]

@@ -285,6 +285,15 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     event_defaults["event.buff_context"] = 0.0
                     test = CombatExpression("all", (combat_input("event.buff_context"),
                                                    combat_input("event.buff_data_available"), test))
+            elif name == "CheckDamageDecorateMask+Data":
+                if value["checkType"] not in {0, 1, 2}:
+                    raise UnresolvedMechanic(f"Unreviewed native damage mask check mode: {profile.skill_id}/{value['checkType']}")
+                if type(value["mask"]) != int or abs(value["mask"]) >= 2**53:
+                    raise UnresolvedMechanic("Native damage mask exceeds exact numeric input domain")
+                # No default and no alias from skill type/expected critical.
+                # The real damage event's context must supply its own mask.
+                test = CombatExpression("native_damage_mask", (combat_input("event.damage.decorate_mask"),
+                                        float(value["mask"]), float(value["checkType"])))
             elif name == "CheckObjectTypeMatch+Data":
                 target = value["target"]
                 if target["targetSource"] != 2 or target["targetGroupKey"] != "trigger":

@@ -6,6 +6,7 @@ import unittest
 from copy import deepcopy
 from pathlib import Path
 
+from src.data.character_skills import get_character
 from src.data.damage_modifiers import DamageBucket, DamageModifierSpec, MagnitudeTerm, ModifierMagnitude
 from src.data.damage_quote_data import read_fixed_quote, verify_sources
 from src.data.damage_resolution import TimedDamageState
@@ -167,6 +168,30 @@ class TestDamageDataFlow(unittest.TestCase):
                 if skill["type"] == "普通攻击":
                     self.assertEqual(self.quote(key, skill["type"]).aggregation_scope, "full_normal_sequence_not_one_hit")
         self.assertIn("without_physical_infliction", self.quote("pogranichnik").aggregation_scope)
+
+    def test_enhanced_attack_evidence_is_per_skill_and_not_counted_as_execution(self):
+        report = auditor.audit(self.rows)
+        self.assertEqual(report["summary"]["native_buff_attribute_damage_bindings"], 2)
+        by_key = {row["key"]: row for row in report["characters"]}
+        chen = by_key["chen_qianyu"]
+        candidate, = chen["native_enhanced_attack_candidates"]
+        self.assertEqual(candidate["selected_parameters"]["max_stack"], 5)
+        self.assertEqual(candidate["native_stacking"]["stackingType"], 8)
+        self.assertTrue(candidate["unexecuted_components"])
+        self.assertEqual(candidate["execution_status"], "not_bound; evidence_candidate_only")
+        masks = {s["type"]: s["native_enhanced_attack_checks"][0]["damage_mask_gate"] for s in chen["skills"]}
+        self.assertEqual(masks, {"普通攻击": None, "战技": 256, "连携技": 8192, "终结技": 512})
+        perlica = by_key["perlica"]
+        self.assertEqual(len(perlica["native_enhanced_attack_candidates"]), 1)
+        self.assertTrue(all("OnOutputBuff" in s["native_enhanced_attack_checks"][0]["event_requirement"]
+                            for s in perlica["skills"]))
+        for row in (chen, perlica):
+            for p in row["passives"]:
+                if p["native_enhanced_attack_evidence"]:
+                    self.assertFalse(p["native_buff_attribute_rules"])
+                    self.assertFalse(p["complete_semantic_review"])
+        self.assertFalse(auditor.enhanced_attack_evidence(get_character("perlica", potential=2),
+                                                       auditor.SkillTimingStore()))
 
     def test_self_consistent_but_wrong_reviewed_quote_is_caught_against_rank_source(self):
         row = deepcopy(self.by_key["mi_fu"])

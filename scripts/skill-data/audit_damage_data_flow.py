@@ -19,6 +19,7 @@ from src.data.damage_release_rules import KINDS, release_rules
 from src.data.damage_state_rules import fixed_weapon_bonuses, state_bonus_rules
 from src.data.fixed_skill_modifiers import fixed_skill_crit
 from src.data.native_attribute_modifiers import reviewed_attack_binding
+from src.data.native_gameplay import native_enums, native_record
 from src.data.skill_timing import SkillTimingStore
 
 
@@ -60,6 +61,39 @@ def effect_rules(effects, origin):
     return rules, gaps
 
 
+def enhanced_attack_evidence(character, store):
+    """Evidence candidates, deliberately separate from executable bindings."""
+    selected = {passive.effect_id: passive
+                for passive in (*character.progression.talents, *character.progression.active_potentials)}
+    reviewed = {"chr_0005_chen_talent_1_2": ("buff_chr_0005_chen_talent_0", "buff_chr_0005_chen_talent_0_1"),
+                "chr_0004_pelica_potential_3": ("buff_chr_0004_pelica_potential_3", "buff_chr_0004_pelica_potential_3_atkup")}
+    result = []
+    for passive_id, (parent_id, child_id) in reviewed.items():
+        if passive_id not in selected:
+            continue
+        parent, child = native_record(store, parent_id), native_record(store, child_id)
+        event_names = {row["value"]: key for key, row in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
+        sources = {}
+        for key, record in ((parent_id, parent), (child_id, child)):
+            proof = record.get("source")
+            if proof is None:
+                index = json.loads((ROOT / "assets/data/character_progression/20261003/index.json").read_text(encoding="utf-8"))
+                proof = index["supplement_verification"][key]
+            sources[key] = proof
+        result.append({"passive_id": passive_id, "parent_buff": parent_id, "attribute_buff": child_id,
+                       "selected_parameters": dict(selected[passive_id].parameters),
+                       "native_event_actions": [{"event": event_names[row["abilityEvent"]], "actions": row["actions"]}
+                                                for row in parent["data"]["abilityEventAction"]],
+                       "native_attribute_modifier": child["data"]["attributeModifier"],
+                       "native_duration": child["data"]["duration"],
+                       "native_stacking": child["data"]["stackingSettings"], "sources": sources,
+                       "execution_status": "not_bound; evidence_candidate_only",
+                       "unexecuted_components": ["event context publication and trigger ordering",
+                                                 "EnhanceAndRefresh aggregate count, attribute rebuild and notifications",
+                                                 "parent/early-removal chain under actual producer"]})
+    return result
+
+
 def audit(rows=None):
     if rows is None:
         rows = json.loads((ROOT / "assets/data/fixed_damage_baseline.json").read_text(encoding="utf-8"))
@@ -91,6 +125,8 @@ def audit(rows=None):
                  "source_gaps": source_gaps, "skills": [], "passives": []}
         releases = release_rules(character, row)
         native_attack = reviewed_attack_binding(character, store)
+        enhanced_attack = enhanced_attack_evidence(character, store)
+        entry["native_enhanced_attack_candidates"] = enhanced_attack
         entry["target_state_bonus_rules"] = [
             {**rule_record(spec, "reviewed_fixed_weapon_target_predicate"),
              "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"}
@@ -179,6 +215,14 @@ def audit(rows=None):
                     for spec in releases.get(KINDS.get(skill.skill_type.value), ())],
                 "pending_semantic_checks": pending,
                 "full_skill_execution": "not_assessed; see mechanism coverage audit",
+                "native_enhanced_attack_checks": [
+                    {"passive_id": candidate["passive_id"], "status": "not_bound; not_a_cast_bonus",
+                     "damage_mask_gate": {"战技": 256, "终结技": 512, "连携技": 8192}.get(skill.skill_type.value)
+                                         if key == "chen_qianyu" else None,
+                     "event_requirement": "explicit OnOutputDamage context; normal attack not in authored guards"
+                                          if key == "chen_qianyu" else
+                                          "actual OnOutputBuff with Conduct tag; not inferred from skill type"}
+                    for candidate in enhanced_attack],
             })
         for passive in (*character.progression.talents, *character.progression.active_potentials):
             # Ownership comes from the selected passive's bindings. Parameter
@@ -211,6 +255,8 @@ def audit(rows=None):
                                       "runtime_rule_parameter_references": dependencies,
                                       "fixed_skill_crit_filters": fixed_crit if passive in crit_passives else {},
                                       "native_buff_attribute_rules": [native_attack] if native_attack and native_attack["passive_id"] == passive.effect_id else [],
+                                      "native_enhanced_attack_evidence": [candidate["passive_id"] for candidate in enhanced_attack
+                                                                          if candidate["passive_id"] == passive.effect_id],
                                       "complete_semantic_review": False})
         report["characters"].append(entry)
     report["summary"] = {"characters": len(rows), "skills": total, "replay_verified_quotes": verified,

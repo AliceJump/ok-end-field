@@ -83,6 +83,21 @@ class CombatExpression(ImmutableCombatValue):
                 if any(a != int(a) for a in args):
                     raise MissingCombatInput("Non-integer combat mask")
                 value = float(bool(int(args[0]) & int(args[1])))
+            elif self.operation == "native_damage_mask":
+                # Native context stores an Int64. This numeric expression API
+                # uses doubles, so refuse values whose original integer cannot
+                # be preserved rather than silently losing high decoration bits.
+                if any(a != int(a) or abs(a) >= 2**53 for a in args[:2]):
+                    raise MissingCombatInput("Native damage mask is not an exact integer input")
+                actual, wanted, mode = int(args[0]), int(args[1]), args[2]
+                if mode == 0:
+                    value = float(actual == wanted)
+                elif mode == 1:
+                    value = float(bool(actual & wanted))
+                elif mode == 2:
+                    value = float(actual & wanted == wanted)
+                else:
+                    raise MissingCombatInput("Unreviewed native damage mask check mode")
             elif self.operation == "all":
                 value = float(all(args))
             elif self.operation == "any":
