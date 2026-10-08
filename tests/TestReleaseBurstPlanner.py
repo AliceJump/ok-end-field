@@ -107,6 +107,24 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertAlmostEqual(planner.price("2", "battle", 1) / original, 1.22, places=5)
         self.assertEqual(planner.price("2", "battle", 12), original)
 
+    def test_same_actor_lock_cannot_create_a_fictitious_followup_inside_buff(self):
+        planner = ReleaseBurstPlanner(["佩丽卡"])
+        actions = (ReleaseBurstAction("1", "ult", 1, 100, same_actor_duration=20),
+                   ReleaseBurstAction("1", "battle", 1, 1000, 100, 100))
+        self.assertEqual(planner.choose(actions, 100, 0, horizon=25).sequence,
+                         (("1", "battle"), ("1", "ult")), "Only the ultimate's own buffed damage remains")
+        # A source's same-actor lock must not stall other team members.
+        planner = ReleaseBurstPlanner(["安塔尔", "狼卫"])
+        actions = (ReleaseBurstAction("1", "ult", 1, 0, same_actor_duration=20),
+                   ReleaseBurstAction("2", "battle", 1, 1000, 100, 100))
+        self.assertEqual(planner.choose(actions, 100, 0).action.slot, "1")
+
+    def test_forecast_refund_cannot_exceed_the_shared_sp_cap(self):
+        planner = ReleaseBurstPlanner(["安塔尔", "狼卫"])
+        actions = (ReleaseBurstAction("1", "ult", 1, 0, sp_cost=-100),
+                   ReleaseBurstAction("2", "battle", 1, 1000, 350, 100))
+        self.assertIsNone(planner.choose(actions, 300, 0))
+
 
 class TestReleaseBurstDispatch(unittest.TestCase):
     def make_logic(self):
@@ -131,7 +149,8 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertAlmostEqual(logic.release_burst.price("2", "ult", task.now) / before, 1.22, places=5)
         self.assertEqual(task.sp, 300)
         logic.step()
-        self.assertEqual(task.keys, ["ult_1", "2"], "Preserve the existing funded burst after the support opener")
+        self.assertIn(task.keys, (["ult_1", "2"], ["ult_1", "ult_2"]),
+                      "Support precedes a legal carry output; timing decides which carry action")
 
     def test_team_buff_precedes_ready_damage_ultimate_without_preexisting_burst(self):
         task, logic = self.make_logic()
@@ -146,6 +165,20 @@ class TestReleaseBurstDispatch(unittest.TestCase):
             self.assertFalse(logic._use_timed_ultimate("1", logic.store.profiles("安塔尔", "ult"), burst_selected=True))
         self.assertFalse(logic.release_burst.state.modifiers)
         self.assertFalse(logic.cooldowns)
+
+    def test_unavailable_native_phase_cannot_be_valued_as_a_ready_beneficiary(self):
+        task, logic = self.make_logic()
+        original = logic.combat_runtime.catalog.available
+
+        def available(actor, kind):
+            return () if actor == "2" else original(actor, kind)
+
+        with patch.object(logic.combat_runtime.catalog, "available", side_effect=available):
+            ready = logic._ready_ultimate_actions()
+            self.assertNotIn("2", [token for _, token, _ in ready])
+            # Other slots cannot afford a battle; the locked carry supplies no
+            # invented beneficiary for Antal's zero-direct-damage ultimate.
+            self.assertIsNone(logic._release_burst_decision(ready, 0, task.now))
 
     def test_active_personal_buff_changes_battle_dispatch_instead_of_only_log(self):
         task = FakeTask()

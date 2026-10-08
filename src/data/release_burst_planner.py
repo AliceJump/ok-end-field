@@ -62,6 +62,7 @@ class ReleaseBurstAction:
     value: float
     sp_gate: float = 0.0
     sp_cost: float = 0.0
+    same_actor_duration: float | None = None
 
 
 @dataclass(frozen=True)
@@ -181,24 +182,27 @@ class ReleaseBurstPlanner:
         # At most four ready ultimates, four currently legal battles and one
         # current main-control normal-chain quote, once each. No assumed future
         # energy, hit results, SP regeneration or extra casts.
-        beam = [(0.0, now, sp, (), state)]
+        beam = [(0.0, now, sp, (), state, {})]
         best = beam[0]
         for _ in range(len(actions)):
             expanded = []
-            for damage, time, budget, indices, damage_state in beam:
+            for damage, time, budget, indices, damage_state, actor_locks in beam:
                 for index, action in enumerate(actions):
                     if index in indices or budget < max(action.sp_gate, action.sp_cost):
                         continue
-                    end = time + action.duration
+                    started = max(time, actor_locks.get(action.slot, now))
+                    end = started + action.duration
                     if end > now + horizon:
                         continue
                     forecast = _copy_state(damage_state)
                     if apply_releases:
-                        self.apply_release(forecast, action.slot, action.kind, time)
+                        self.apply_release(forecast, action.slot, action.kind, started)
                     priced = self.price(action.slot, action.kind, end, value=action.value, state=forecast)
                     if priced is None:
                         continue
-                    entry = (damage + priced, end, budget - action.sp_cost, (*indices, index), forecast)
+                    locks = dict(actor_locks)
+                    locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
+                    entry = (damage + priced, end, min(300.0, budget - action.sp_cost), (*indices, index), forecast, locks)
                     expanded.append(entry)
                     if (entry[0], -entry[1]) > (best[0], -best[1]):
                         best = entry

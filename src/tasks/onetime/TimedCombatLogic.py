@@ -1123,13 +1123,23 @@ class TimedCombatLogic:
                 "仅抑制该角色自身战技，其他角色技能/终结技照常"
             )
 
+    def _modeled_action_available(self, token, kind, profiles):
+        runtime = self.combat_runtime
+        if runtime is None:
+            return True
+        keys = {profile.skill_id for profile in profiles}
+        return (any(p.key in keys for p in runtime.catalog.available(token, kind))
+                or not runtime.catalog.candidates(token, kind))
+
     def _ready_ultimate_actions(self):
         ready = []
         for token in self.ult_order:
             if not self._slot_available(token):
                 continue
             profiles = self.store.profiles(self.team[int(token) - 1], "ult")
-            if self._ready(profiles, slot=token, kind="ult") and self.task._find_battle_ult("ult_" + token):
+            if (self._ready(profiles, slot=token, kind="ult")
+                    and self._modeled_action_available(token, "ult", profiles)
+                    and self.task._find_battle_ult("ult_" + token)):
                 quote = self.damage_quotes.get(self.team[int(token) - 1])
                 damage = quote.ult if quote else 0.0
                 if self.release_burst is not None:
@@ -1159,9 +1169,11 @@ class TimedCombatLogic:
             quote = self.damage_quotes.get(self.team[int(token) - 1])
             if (profiles and quote is not None and gate is not None and cost is not None and sp >= gate
                     and self._ready(profiles, slot=token, kind="battle")
+                    and self._modeled_action_available(token, "battle", profiles)
                     and self.phase_planner.can_spend(token, "battle", sp, cost)):
                 actions.append(ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
-                                                   quote.battle, gate, cost))
+                                                   quote.battle, gate, cost,
+                                                   same_actor_duration=max(p.actionable for p in profiles)))
         main = self._burst_main_control
         duration = self.release_burst.normal_durations.get(main)
         if main is not None and duration is not None and self._slot_available(main) and self._allowed():
