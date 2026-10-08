@@ -3,6 +3,7 @@
 import unittest
 from dataclasses import replace
 
+from src.data.battle_conditions import ForecastConditions
 from src.data.battle_highlight import BattleHighlightState
 from src.data.release_burst_planner import ReleaseBurstAction, ReleaseBurstPlanner
 from src.data.skill_timing import load_skill_timings
@@ -77,9 +78,9 @@ class TestHighlightDamageDecision(unittest.TestCase):
     def test_current_condition_is_not_carried_past_another_forecast_action(self):
         planner = ReleaseBurstPlanner(['狼卫', '余烬'])
         action = ReleaseBurstAction('1', 'battle', .5, 100, 100, 100, observed_bonus=2000)
-        node = (0.0, 0.0, 100.0, (), [], {}, {})
+        node = (0.0, 0.0, 100.0, (), [], {}, {}, ForecastConditions())
         first = planner._forecast_step(node, action, 1, 0, releases=False, horizon=6)
-        after_other = (0.0, .5, 100.0, (0,), [], {}, {})
+        after_other = (0.0, .5, 100.0, (0,), [], {}, {}, ForecastConditions())
         later = planner._forecast_step(after_other, action, 1, 0, releases=False, horizon=6)
         self.assertEqual(first[0], 2100)
         self.assertEqual(later[0], 100)
@@ -148,8 +149,8 @@ class TestHighlightDamageDecision(unittest.TestCase):
                                     observed_components=binding.conditional_components)
         planner.confirm('2', 'ult', 0)
         amp = 1 + next(s['magnitude']['base'] for s in planner.rules['2', 'ult'] if '电磁' in s['elements'])
-        first = (0.0, 0.0, 100.0, (), list(planner.bonuses), {}, {})
-        later = (0.0, .5, 100.0, (0,), list(planner.bonuses), {}, {})
+        first = (0.0, 0.0, 100.0, (), list(planner.bonuses), {}, {}, ForecastConditions())
+        later = (0.0, .5, 100.0, (0,), list(planner.bonuses), {}, {}, ForecastConditions())
         self.assertAlmostEqual(planner._forecast_step(first, action, 1, 0, releases=False, horizon=6)[0],
                                binding.base_value + binding.conditional_value * amp)
         self.assertAlmostEqual(planner._forecast_step(later, action, 1, 0, releases=False, horizon=6)[0],

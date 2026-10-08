@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from src.data.battle_conditions import ForecastConditions
 from src.data.highlight_conditions import HighlightInference, infer_highlight, parse_highlight
 from src.data.highlight_producers import TeamProducerClosure
 
@@ -34,6 +35,9 @@ class BattleHighlightState:
         self.conditions = {}
         self.observations: dict[str, BattleHighlightObservation] = {}
         self.closure = TeamProducerClosure.for_team(team) if team else None
+
+    def forecast_conditions(self):
+        return ForecastConditions.from_observations(self.observations)
 
     def condition(self, profiles):
         """Only bind a single, nonempty predicate for the current button."""

@@ -13,6 +13,7 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
+from src.data.battle_conditions import ConditionRequirement, ConditionTransition, ForecastConditions
 from src.data.highlight_damage import HighlightDamageBinding, HighlightDamageComponent
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "assets/data/release_burst"
@@ -110,6 +111,7 @@ class ReleaseBurstAction:
     observed_bonus: float = 0
     base_components: tuple[HighlightDamageComponent, ...] = ()
     observed_components: tuple[HighlightDamageComponent, ...] = ()
+    condition: ConditionRequirement | None = None
 
 
 @dataclass(frozen=True)
@@ -153,6 +155,8 @@ class ReleaseBurstPlanner:
             self._load_normal_timings(store)
         self.highlight_damage = {actor: binding for actor, row in self.rows.items()
                                  if (binding := HighlightDamageBinding.for_actor(row, store)) is not None}
+        self.condition_transitions = {(actor, kind): transition for actor, row in self.rows.items()
+                                      for kind, transition in ConditionTransition.for_actor(row, store).items()}
 
     @staticmethod
     def _basic_normal_profiles(store, character):
@@ -317,7 +321,7 @@ class ReleaseBurstPlanner:
         return value * ratio
 
     def _forecast_step(self, node, action, index, now, *, releases, horizon):
-        damage, time, budget, indices, current, actor_locks, stances = node
+        damage, time, budget, indices, current, actor_locks, stances, conditions = node
         if index in indices:
             return None
         started = max(time, actor_locks.get(action.slot, now))
@@ -339,12 +343,12 @@ class ReleaseBurstPlanner:
         next_stances = dict(stances)
         if releases:
             self._release(forecast, action.slot, action.kind, started)
-        # An observation of the current target/condition cannot certify the
-        # same condition after another action changes the combat state. Recheck
-        # on the next real step instead of propagating the high quote in search.
-        value = action.value + (action.observed_bonus if not indices else 0)
+        # Scene evidence survives only reviewed state-preserving actions.
+        # Unscoped legacy valuations still apply solely to the first action.
+        enhanced = conditions.supports(action.condition) if action.condition is not None else not indices
+        value = action.value + (action.observed_bonus if enhanced else 0)
         if action.base_components:
-            components = action.base_components + (action.observed_components if not indices else ())
+            components = action.base_components + (action.observed_components if enhanced else ())
             priced = self.price_components(action.slot, end, components, bonuses=forecast)
         else:
             priced = self.price(action.slot, action.kind, end, value=value,
@@ -355,8 +359,9 @@ class ReleaseBurstPlanner:
             self._advance_stance(next_stances, action.slot, action.kind, started)
         locks = dict(actor_locks)
         locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
+        next_conditions = conditions.after(action.slot, action.kind, self.condition_transitions.get((action.slot, action.kind)))
         return (damage + priced, end, min(300.0, budget - action.sp_cost),
-                (*indices, index), forecast, locks, next_stances)
+                (*indices, index), forecast, locks, next_stances, next_conditions)
 
     @staticmethod
     def _select_beam(expanded, quota):
@@ -369,8 +374,8 @@ class ReleaseBurstPlanner:
                 per_start[first] = per_start.get(first, 0) + 1
         return beam
 
-    def _search(self, actions, sp, now, *, releases, bonuses, horizon, width):
-        beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {})]
+    def _search(self, actions, sp, now, *, releases, bonuses, horizon, width, conditions):
+        beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions)]
         best = beam[0]
         for _ in actions:
             expanded = [entry for node in beam for index, action in enumerate(actions)
@@ -384,7 +389,7 @@ class ReleaseBurstPlanner:
             beam = self._select_beam(expanded, max(1, width // len(actions)))
         return best
 
-    def choose(self, actions, sp, now, *, horizon=12.0, width=16):
+    def choose(self, actions, sp, now, *, horizon=12.0, width=16, conditions=ForecastConditions()):
         actions = tuple(actions)
         if (not actions or len(actions) > 9 or sum(a.kind == "normal" for a in actions) > 1
                 or len({(a.slot, a.kind) for a in actions}) != len(actions)
@@ -401,8 +406,9 @@ class ReleaseBurstPlanner:
         if not self.bonuses and not self.stances and not any(self.rules.get((a.slot, a.kind)) for a in actions):
             return None
         best = self._search(actions, min(sp, 300), now, releases=True,
-                            bonuses=list(self.bonuses), horizon=horizon, width=width)
-        plain = self._search(actions, min(sp, 300), now, releases=False, bonuses=[], horizon=horizon, width=width)
+                            bonuses=list(self.bonuses), horizon=horizon, width=width, conditions=conditions)
+        plain = self._search(actions, min(sp, 300), now, releases=False, bonuses=[], horizon=horizon, width=width,
+                             conditions=conditions)
         if not best[3] or best[0] <= plain[0] + 1e-6 or actions[best[3][0]].kind == "normal":
             return None  # Normals are an existing held-output tail, not a new input.
         return ReleaseBurstDecision(actions[best[3][0]],
