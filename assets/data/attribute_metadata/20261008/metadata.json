@@ -1,0 +1,506 @@
+{
+  "schema_version": 1,
+  "domain": "raw_default_and_bounds; not_current_final_value",
+  "attributes": {
+    "39": {
+      "data": {
+        "attributeType": 39,
+        "bigIconName": "icon_attribute_big_str",
+        "defaultValue": 0.0,
+        "hasMaxValue": true,
+        "hasMinValue": true,
+        "iconName": "icon_attribute_str",
+        "maxValue": 100000.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 7440,
+          "format": "<i",
+          "raw_hex": "27000000",
+          "value": 39
+        },
+        "defaultValue": {
+          "offset": 7448,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 7464,
+          "format": "<d",
+          "raw_hex": "00000000006af840",
+          "value": 100000.0
+        },
+        "minValue": {
+          "offset": 7472,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 7456,
+          "format": "<?",
+          "raw_hex": "01",
+          "value": true
+        },
+        "hasMinValue": {
+          "offset": 7457,
+          "format": "<?",
+          "raw_hex": "01",
+          "value": true
+        }
+      }
+    },
+    "40": {
+      "data": {
+        "attributeType": 40,
+        "bigIconName": "icon_attribute_big_agi",
+        "defaultValue": 0.0,
+        "hasMaxValue": true,
+        "hasMinValue": true,
+        "iconName": "icon_attribute_agi",
+        "maxValue": 100000.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 7480,
+          "format": "<i",
+          "raw_hex": "28000000",
+          "value": 40
+        },
+        "defaultValue": {
+          "offset": 7488,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 7504,
+          "format": "<d",
+          "raw_hex": "00000000006af840",
+          "value": 100000.0
+        },
+        "minValue": {
+          "offset": 7512,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 7496,
+          "format": "<?",
+          "raw_hex": "01",
+          "value": true
+        },
+        "hasMinValue": {
+          "offset": 7497,
+          "format": "<?",
+          "raw_hex": "01",
+          "value": true
+        }
+      }
+    },
+    "41": {
+      "data": {
+        "attributeType": 41,
+        "bigIconName": "icon_attribute_big_wisd",
+        "defaultValue": 0.0,
+        "hasMaxValue": true,
+        "hasMinValue": true,
+        "iconName": "icon_attribute_wisd",
+        "maxValue": 100000.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 7520,
+          "format": "<i",
+          "raw_hex": "29000000",
+          "value": 41
+        },
+        "defaultValue": {
+          "offset": 7528,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 7544,
+          "format": "<d",
+          "raw_hex": "00000000006af840",
+          "value": 100000.0
+        },
+        "minValue": {
+          "offset": 7552,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 7536,
+          "format": "<?",
+          "raw_hex": "01",
+          "value": true
+        },
+        "hasMinValue": {
+          "offset": 7537,
+          "format": "<?",
+          "raw_hex": "01",
+          "value": true
+        }
+      }
+    },
+    "42": {
+      "data": {
+        "attributeType": 42,
+        "bigIconName": "icon_attribute_big_will",
+        "defaultValue": 0.0,
+        "hasMaxValue": true,
+        "hasMinValue": true,
+        "iconName": "icon_attribute_will",
+        "maxValue": 100000.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 7560,
+          "format": "<i",
+          "raw_hex": "2a000000",
+          "value": 42
+        },
+        "defaultValue": {
+          "offset": 7568,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 7584,
+          "format": "<d",
+          "raw_hex": "00000000006af840",
+          "value": 100000.0
+        },
+        "minValue": {
+          "offset": 7592,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 7576,
+          "format": "<?",
+          "raw_hex": "01",
+          "value": true
+        },
+        "hasMinValue": {
+          "offset": 7577,
+          "format": "<?",
+          "raw_hex": "01",
+          "value": true
+        }
+      }
+    },
+    "57": {
+      "data": {
+        "attributeType": 57,
+        "bigIconName": "",
+        "defaultValue": 0.0,
+        "hasMaxValue": false,
+        "hasMinValue": false,
+        "iconName": "icon_pulse_abnormal_damage_increase",
+        "maxValue": 0.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 8160,
+          "format": "<i",
+          "raw_hex": "39000000",
+          "value": 57
+        },
+        "defaultValue": {
+          "offset": 8168,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 8184,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "minValue": {
+          "offset": 8192,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 8176,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        },
+        "hasMinValue": {
+          "offset": 8177,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        }
+      }
+    },
+    "58": {
+      "data": {
+        "attributeType": 58,
+        "bigIconName": "",
+        "defaultValue": 0.0,
+        "hasMaxValue": false,
+        "hasMinValue": false,
+        "iconName": "icon_cryst_abnormal_damage_increase",
+        "maxValue": 0.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 8200,
+          "format": "<i",
+          "raw_hex": "3a000000",
+          "value": 58
+        },
+        "defaultValue": {
+          "offset": 8208,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 8224,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "minValue": {
+          "offset": 8232,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 8216,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        },
+        "hasMinValue": {
+          "offset": 8217,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        }
+      }
+    },
+    "76": {
+      "data": {
+        "attributeType": 76,
+        "bigIconName": "",
+        "defaultValue": 0.0,
+        "hasMaxValue": false,
+        "hasMinValue": false,
+        "iconName": "",
+        "maxValue": 0.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 8920,
+          "format": "<i",
+          "raw_hex": "4c000000",
+          "value": 76
+        },
+        "defaultValue": {
+          "offset": 8928,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 8944,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "minValue": {
+          "offset": 8952,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 8936,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        },
+        "hasMinValue": {
+          "offset": 8937,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        }
+      }
+    },
+    "77": {
+      "data": {
+        "attributeType": 77,
+        "bigIconName": "",
+        "defaultValue": 0.0,
+        "hasMaxValue": false,
+        "hasMinValue": false,
+        "iconName": "",
+        "maxValue": 0.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 8960,
+          "format": "<i",
+          "raw_hex": "4d000000",
+          "value": 77
+        },
+        "defaultValue": {
+          "offset": 8968,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 8984,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "minValue": {
+          "offset": 8992,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 8976,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        },
+        "hasMinValue": {
+          "offset": 8977,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        }
+      }
+    },
+    "78": {
+      "data": {
+        "attributeType": 78,
+        "bigIconName": "",
+        "defaultValue": 0.0,
+        "hasMaxValue": false,
+        "hasMinValue": false,
+        "iconName": "",
+        "maxValue": 0.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 9000,
+          "format": "<i",
+          "raw_hex": "4e000000",
+          "value": 78
+        },
+        "defaultValue": {
+          "offset": 9008,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 9024,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "minValue": {
+          "offset": 9032,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 9016,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        },
+        "hasMinValue": {
+          "offset": 9017,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        }
+      }
+    },
+    "79": {
+      "data": {
+        "attributeType": 79,
+        "bigIconName": "",
+        "defaultValue": 0.0,
+        "hasMaxValue": false,
+        "hasMinValue": false,
+        "iconName": "",
+        "maxValue": 0.0,
+        "minValue": 0.0
+      },
+      "byte_proof": {
+        "attribute_type": {
+          "offset": 9040,
+          "format": "<i",
+          "raw_hex": "4f000000",
+          "value": 79
+        },
+        "defaultValue": {
+          "offset": 9048,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "maxValue": {
+          "offset": 9064,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "minValue": {
+          "offset": 9072,
+          "format": "<d",
+          "raw_hex": "0000000000000000",
+          "value": 0.0
+        },
+        "hasMaxValue": {
+          "offset": 9056,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        },
+        "hasMinValue": {
+          "offset": 9057,
+          "format": "<?",
+          "raw_hex": "00",
+          "value": false
+        }
+      }
+    }
+  }
+}

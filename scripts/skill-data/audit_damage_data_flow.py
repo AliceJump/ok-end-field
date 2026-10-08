@@ -19,6 +19,7 @@ from src.data.damage_quote_data import read_fixed_quote, verify_sources
 from src.data.damage_release_rules import KINDS, release_rules
 from src.data.damage_state_rules import fixed_weapon_bonuses, state_bonus_rules
 from src.data.fixed_skill_modifiers import fixed_skill_crit
+from src.data.native_attribute_metadata import metadata_audit
 from src.data.native_attribute_modifiers import reviewed_attack_binding
 from src.data.native_gameplay import native_enums, native_record
 from src.data.native_tags import native_tag_id, tag_names
@@ -203,6 +204,7 @@ def audit(rows=None):
         entry["fixed_skill_crit_filters"] = fixed_crit
         entry["dynamic_attribute_flow"] = {
             "basis": row.get("attribute_basis"),
+            "native_raw_metadata": metadata_audit(row["attribute_basis"]),
             "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
             "native_attribute_change_producers": "not_verified",
             "native_weapon_attribute_candidates": weapon_attribute_evidence(character, row),

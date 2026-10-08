@@ -304,6 +304,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -634,6 +702,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -1228,6 +1364,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -1703,6 +1907,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -2076,6 +2348,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -2366,6 +2706,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -2763,6 +3171,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -3156,6 +3632,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -3444,6 +3988,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -4183,6 +4795,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -4472,6 +5152,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -4745,6 +5493,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -5155,6 +5971,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -5576,6 +6460,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -5981,6 +6933,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -6322,6 +7342,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -6614,6 +7702,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -6895,6 +8051,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -7268,6 +8492,74 @@
             "意志"
           ],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -8210,6 +9502,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -8600,6 +9960,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -9204,6 +10632,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -9629,6 +11125,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -9961,6 +11525,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -10316,6 +11948,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -10604,6 +12304,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -10941,6 +12709,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -11232,6 +13068,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -11637,6 +13541,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
@@ -12198,6 +14170,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -12637,6 +14677,74 @@
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
         },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
+        },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
         "native_weapon_attribute_candidates": []
@@ -13019,6 +15127,74 @@
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"
+        },
+        "native_raw_metadata": {
+          "source": "assets/data/attribute_metadata/20261008/index.json",
+          "domain": "raw_default_and_bounds; not_current_final_value",
+          "fixed_four_stat_bounds": "verified",
+          "attributes": {
+            "39": {
+              "name": "力量",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "40": {
+              "name": "敏捷",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "41": {
+              "name": "智识",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "42": {
+              "name": "意志",
+              "raw_default": 0.0,
+              "minimum": 0.0,
+              "maximum": 100000.0
+            },
+            "57": {
+              "name": "PulseAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "58": {
+              "name": "CrystAbnormalDamageIncrease",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "76": {
+              "name": "AtkIncreaseFactorFromStr",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "77": {
+              "name": "AtkIncreaseFactorFromAgi",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "78": {
+              "name": "AtkIncreaseFactorFromWisd",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            },
+            "79": {
+              "name": "AtkIncreaseFactorFromWill",
+              "raw_default": 0.0,
+              "minimum": null,
+              "maximum": null
+            }
+          },
+          "armed_final_producer_status": "not_bound; raw defaults cannot supply current final inputs"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified",
