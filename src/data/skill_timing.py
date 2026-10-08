@@ -376,6 +376,10 @@ class SkillTimingStore:
             effect_start=None if effect_frame is None else effect_frame / fps,
         )
 
+    def profile(self, skill_id: str) -> SkillTiming:
+        """Read one authored timing without inferring its button or phase."""
+        return self._profile_for_skill_id(skill_id)
+
     def profiles(self, character: str, kind: str) -> tuple[SkillTiming, ...]:
         """Resolve native entry skills; keep both administrator portrait variants."""
         profiles = []

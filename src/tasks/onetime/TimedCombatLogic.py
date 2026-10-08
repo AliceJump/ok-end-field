@@ -12,8 +12,9 @@ from src.data.combat_observation import (
     normalize_action_block_reason,
     normalize_enemy_presence,
 )
+from src.data.release_burst_planner import ReleaseBurstAction, ReleaseBurstPlanner
 from src.data.skill_rotation import generate_damage_rotation
-from src.data.skill_timing import SkillTiming, load_skill_timings
+from src.data.skill_timing import SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import (
     CombatPhase,
     TeamPhasePlanner,
@@ -60,6 +61,9 @@ class TimedCombatLogic:
         self.unconfirmed = False
         self._holding = False
         self.damage_quotes = {}
+        self.release_burst = None
+        self._burst_main_control = None
+        self._ult_action_seconds = {}
         self.plan = None
         self.cycle_samples = deque(maxlen=5)
         self._cycle_start = None
@@ -419,6 +423,8 @@ class TimedCombatLogic:
             self.task.log_info(f"时间排轴: 战技 {token} 条件段未确认，重置到首段状态")
 
     def _accept_battle_skill(self, token, advance_cursor=True):
+        if self.release_burst is not None:
+            self.release_burst.confirm(token, "battle", self.started)
         self._clear_action_attempt_feedback()
         self._observe_battle()
         self._set_cooldowns()
@@ -536,6 +542,8 @@ class TimedCombatLogic:
         previous_phase_indices = dict(self.battle_phase_indices)
 
         if reset_runtime:
+            self._burst_main_control = None
+            self._ult_action_seconds.clear()
             self.disabled_slots.clear()
             self.dead_slot_evidence.clear()
             self.battle_retry_after.clear()
@@ -595,6 +603,10 @@ class TimedCombatLogic:
             str(index + 1): self.store.ultimate_state(name) for index, name in enumerate(team) if name != "?"
         }
         self.damage_quotes = load_damage_quotes(team)
+        previous_burst = self.release_burst
+        self.release_burst = ReleaseBurstPlanner(team, store=self.store if isinstance(self.store, SkillTimingStore) else None)
+        if previous_burst is not None and not reset_runtime:
+            self.release_burst.preserve(previous_burst)
 
         burst_plans = build_team_burst_plans(team, self.mechanics, self.store)
         preferred_slots = tuple(token for token in self.ult_order if self._slot_available(token))
@@ -929,6 +941,10 @@ class TimedCombatLogic:
             return float("-inf")
         quote = self.damage_quotes.get(name)
         damage = quote.battle if quote is not None else 0.0
+        if self.release_burst is not None:
+            priced = self.release_burst.price(token, "battle", self._clock(), value=damage)
+            if priced is not None:
+                damage = priced
         handoff = max(max(profile.handoff, 0.3) for profile in profiles)
         return damage / handoff
 
@@ -984,9 +1000,91 @@ class TimedCombatLogic:
                 "仅抑制该角色自身战技，其他角色技能/终结技照常"
             )
 
+    def _ready_ultimate_actions(self):
+        ready = []
+        for token in self.ult_order:
+            if not self._slot_available(token):
+                continue
+            profiles = self.store.profiles(self.team[int(token) - 1], "ult")
+            if self._ready(profiles, slot=token, kind="ult") and self.task._find_battle_ult("ult_" + token):
+                quote = self.damage_quotes.get(self.team[int(token) - 1])
+                damage = quote.ult if quote else 0.0
+                if self.release_burst is not None:
+                    priced = self.release_burst.price(token, "ult", self._clock(), value=damage)
+                    if priced is not None:
+                        damage = priced
+                duration = max(max(p.actionable, .3) for p in profiles)
+                ready.append((damage / max(duration, self._ult_action_seconds.get(token, 0)), token, profiles))
+        return sorted(ready, key=lambda item: -item[0])
+
+    def _release_burst_decision(self, ready_ults, sp, now):
+        if self.release_burst is None or self.pending is not None:
+            return None
+        actions = []
+        for _, token, profiles in ready_ults:
+            quote = self.release_burst.quote(token, "ult")
+            if quote is not None:
+                duration = max(max(p.actionable, .3) for p in profiles)
+                duration = max(duration, self._ult_action_seconds.get(token, 0))
+                actions.append(ReleaseBurstAction(token, "ult", duration, quote["crit_expect"]))
+        for index in range(len(self.team)):
+            token = str(index + 1)
+            if not self._slot_available(token) or now < self.state_until.get(token, 0) or now < self.battle_retry_after.get(token, 0):
+                continue
+            if token == self.forced_main_control_slot and now < self.forced_main_control_until:
+                continue
+            mechanic = self._mechanic_for_token(token)
+            if mechanic is not None and mechanic.archetype == "multi_stage_battle":
+                continue  # A base quote cannot price the replacement button's phase.
+            profiles, gate, cost = self._battle_context(token)
+            quote = self.release_burst.quote(token, "battle")
+            if (profiles and quote is not None and gate is not None and cost is not None and sp >= gate
+                    and self._ready(profiles, slot=token, kind="battle")
+                    and self.phase_planner.can_spend(token, "battle", sp, cost)):
+                actions.append(ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
+                                                   quote["crit_expect"], gate, cost,
+                                                   same_actor_duration=max(p.actionable for p in profiles)))
+        main = self._burst_main_control
+        duration = self.release_burst.normal_durations.get(main)
+        quote = self.release_burst.quote(main, "normal")
+        if main is not None and duration is not None and quote is not None and self._slot_available(main) and self._allowed():
+            actions.append(ReleaseBurstAction(main, "normal", duration, quote["crit_expect"]))
+        return self.release_burst.choose(actions, max(0.0, sp), now)
+
+    def _use_timed_ultimate(self, token, profiles, *, burst_selected=False):
+        started = self._clock()
+        self._arm_action_feedback()
+        if not self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
+            return False
+        self._note_action_attempt("ult", token)
+        ended = self._clock()
+        self._ult_action_seconds[token] = max(0, ended - started)
+        if self.release_burst is not None:
+            self.release_burst.confirm(token, "ult", started)
+        self._observe_bonus("ult", token)
+        self._observe_phase_action(token, "ult")
+        self._set_cooldowns(profiles, started)
+        self._activate_state(token, self.ult_state_specs.get(token), "终结技", started)
+        self._after_ultimate_mechanic(token, ended)
+        self._clear_active(ended)
+        self.task.log_info(f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s")
+        post_ult_sp = self._sample_sp(force=True)
+        self._observe_phase_sp(post_ult_sp)
+        if self.forced_battle_token is not None:
+            forced = self.forced_battle_token
+            if self._slot_available(forced) and self._try_battle_token(forced, post_ult_sp, advance_cursor=False):
+                self.task.log_info(f"时间排轴: 终结技恢复插入机制战技 {forced}")
+                return True
+        if not burst_selected:
+            self._try_overflow_battle_skill(post_ult_sp, "终结技恢复")
+        return True
+
     def step(self):
         """One refreshed HUD observation; no legacy strategy switches are read."""
         now = self._clock()
+        detector = getattr(self.task, "detect_current_char_index", None)
+        current = detector() if self.release_burst is not None and callable(detector) else None
+        self._burst_main_control = str(current + 1) if type(current) is int and 0 <= current < len(self.team) else None
         if self._probe_action_feedback() is not None:
             return
         self._confirm_battle(now)
@@ -997,6 +1095,20 @@ class TimedCombatLogic:
         self._skip_active_state_slots()
         sp = self._sample_sp()
         phase = self._observe_phase_sp(sp)
+        if self.forced_main_control_slot is not None and now >= self.forced_main_control_until:
+            self.forced_main_control_slot = None
+            self.forced_main_control_until = 0.0
+        ready_ults = self._ready_ultimate_actions()
+        decision = self._release_burst_decision(ready_ults, sp, now)
+        if decision is not None:
+            action = decision.action
+            self.task.log_info(f"时间排轴增益爆发: {decision.sequence}，预测伤害 {decision.damage:.0f}，增益贡献 {decision.gain:.0f}")
+            if action.kind == "ult":
+                profiles = next(profiles for _, token, profiles in ready_ults if token == action.slot)
+                if self._use_timed_ultimate(action.slot, profiles, burst_selected=True):
+                    return
+            elif action.kind == "battle" and self._try_battle_token(action.slot, sp, advance_cursor=False):
+                return
 
         burst_action = self.phase_planner.next_action
         if (
@@ -1049,46 +1161,8 @@ class TimedCombatLogic:
                 )
                 return
 
-        ready_ults = []
-        if self.forced_main_control_slot is not None and now >= self.forced_main_control_until:
-            self.forced_main_control_slot = None
-            self.forced_main_control_until = 0.0
-        for token in self.ult_order:
-            if not self._slot_available(token):
-                continue
-            profiles = self.store.profiles(self.team[int(token) - 1], "ult")
-            if self._ready(profiles, slot=token, kind="ult") and self.task._find_battle_ult("ult_" + token):
-                quote = self.damage_quotes.get(self.team[int(token) - 1])
-                rate = quote.ult / max(max(p.actionable, 0.3) for p in profiles) if quote else 0
-                ready_ults.append((rate, token, profiles))
-        ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
-            started = self._clock()
-            self._arm_action_feedback()
-            if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
-                self._note_action_attempt("ult", token)
-                ended = self._clock()
-                self._observe_bonus("ult", token)
-                self._observe_phase_action(token, "ult")
-                self._set_cooldowns(profiles, started)
-                self._activate_state(token, self.ult_state_specs.get(token), "终结技", started)
-                self._after_ultimate_mechanic(token, ended)
-                self._clear_active(ended)
-                self.task.log_info(f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s")
-
-                post_ult_sp = self._sample_sp(force=True)
-                self._observe_phase_sp(post_ult_sp)
-                if self.forced_battle_token is not None:
-                    forced = self.forced_battle_token
-                    if self._slot_available(forced) and self._try_battle_token(
-                        forced,
-                        post_ult_sp,
-                        advance_cursor=False,
-                    ):
-                        self.task.log_info(f"时间排轴: 终结技恢复插入机制战技 {forced}")
-                        return
-                if self._try_overflow_battle_skill(post_ult_sp, "终结技恢复"):
-                    return
+            if self._use_timed_ultimate(token, profiles):
                 return
 
         if self._try_planned_battle_skill(sp):
