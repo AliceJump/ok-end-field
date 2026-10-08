@@ -555,6 +555,34 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertIn(("1", "normal"), chosen.sequence)
         self.assertGreater(chosen.gain, 0)
 
+    def test_normal_tail_respects_same_actor_replacement_allow_next(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        logic.release_burst.confirm("1", "battle", 3.2)
+        logic._begin((logic.store.profile("chr_0030_zhuangfy_normal_skill_ult"),), 3.2, slot="1", kind="battle")
+        logic._burst_main_control = "1"
+        self.assertEqual(logic.release_burst.normal_entry("1", 3.8)[0].skill_id, "chr_0030_zhuangfy_attack1_ult")
+        task.now = 3.8  # Other actors may act at 0.55s; own normal only at 1s.
+        with patch.object(logic.release_burst, "choose", return_value=None) as choose:
+            logic._release_burst_decision([], 0, task.now)
+            self.assertFalse(any(a.kind == "normal" for a in choose.call_args.args[0]))
+        task.now = 4.3
+        with patch.object(logic.release_burst, "choose", return_value=None) as choose:
+            logic._release_burst_decision([], 0, task.now)
+            self.assertTrue(any(a.kind == "normal" and a.slot == "1" for a in choose.call_args.args[0]))
+        self.assertEqual(logic.release_burst.normal_entry("1", 28)[0].skill_id, "chr_0030_zhuangfy_attack1")
+
+    def test_other_actor_normal_tail_still_uses_cross_actor_handoff(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic._begin(logic.store.profiles("佩丽卡", "battle"), 0, slot="2", kind="battle")
+        logic._burst_main_control = "1"
+        task.now = .6
+        with patch.object(logic.release_burst, "choose", return_value=None) as choose:
+            logic._release_burst_decision([], 0, task.now)
+            self.assertTrue(any(a.kind == "normal" and a.slot == "1" for a in choose.call_args.args[0]))
+
 
 class TestReleaseSnapshotExportBoundary(unittest.TestCase):
     @classmethod

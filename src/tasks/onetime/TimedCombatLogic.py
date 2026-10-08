@@ -1019,16 +1019,20 @@ class TimedCombatLogic:
             if self.release_burst is not None and self.release_burst.action_blocked(token, "ult", self._clock()):
                 continue
             profiles = self.store.profiles(self.team[int(token) - 1], "ult")
-            if self._ready(profiles, slot=token, kind="ult") and self.task._find_battle_ult("ult_" + token):
-                quote = self.damage_quotes.get(self.team[int(token) - 1])
-                damage = quote.ult if quote else 0.0
-                if self.release_burst is not None:
-                    priced = self.release_burst.price(token, "ult", self._clock(), value=damage)
-                    if priced is not None:
-                        damage = priced
-                duration = max(max(p.actionable, .3) for p in profiles)
-                ready.append((damage / max(duration, self._ult_action_seconds.get(token, 0)), token, profiles))
+            if not self._ready(profiles, slot=token, kind="ult") or not self.task._find_battle_ult("ult_" + token):
+                continue
+            ready.append((self._ultimate_damage_rate(token, profiles), token, profiles))
         return sorted(ready, key=lambda item: -item[0])
+
+    def _ultimate_damage_rate(self, token, profiles):
+        quote = self.damage_quotes.get(self.team[int(token) - 1])
+        damage = quote.ult if quote else 0.0
+        if self.release_burst is not None:
+            priced = self.release_burst.price(token, "ult", self._clock(), value=damage)
+            if priced is not None:
+                damage = priced
+        duration = max(max(p.actionable, .3) for p in profiles)
+        return damage / max(duration, self._ult_action_seconds.get(token, 0))
 
     def _release_burst_decision(self, ready_ults, sp, now):
         if self.release_burst is None or self.pending is not None:
@@ -1036,39 +1040,59 @@ class TimedCombatLogic:
         actions = []
         future_free = {token for _, token, _ in ready_ults if self.release_burst.stance_spec(token) is not None}
         for _, token, profiles in ready_ults:
-            quote = self.release_burst.quote(token, "ult")
-            if quote is not None:
-                duration = max(max(p.actionable, .3) for p in profiles)
-                if self.release_burst.release_handoff(token, "ult"):
-                    duration = max(max(p.handoff for p in profiles), self.release_burst.release_handoff(token, "ult"))
-                duration = max(duration, self._ult_action_seconds.get(token, 0))
-                actions.append(ReleaseBurstAction(token, "ult", duration, quote["crit_expect"],
-                                                 same_actor_duration=max(p.actionable for p in profiles)))
+            action = self._release_ultimate_candidate(token, profiles)
+            if action is not None:
+                actions.append(action)
         for index in range(len(self.team)):
-            token = str(index + 1)
-            if not self._slot_available(token) or now < self.state_until.get(token, 0) or now < self.battle_retry_after.get(token, 0):
-                continue
-            if token == self.forced_main_control_slot and now < self.forced_main_control_until:
-                continue
-            mechanic = self._mechanic_for_token(token)
-            if mechanic is not None and mechanic.archetype == "multi_stage_battle":
-                continue  # A base quote cannot price the replacement button's phase.
-            profiles, gate, cost = self._battle_context(token)
-            quote = self.release_burst.quote(token, "battle")
-            if (profiles and quote is not None and gate is not None and cost is not None
-                    and (sp >= gate or token in future_free)
-                    and self._ready(profiles, slot=token, kind="battle")
-                    and (self.phase_planner.can_spend(token, "battle", sp, cost) or token in future_free)):
-                actions.append(ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
-                                                   quote["crit_expect"], gate, cost,
-                                                   same_actor_duration=max(p.actionable for p in profiles)))
+            action = self._release_battle_candidate(str(index + 1), sp, now, future_free)
+            if action is not None:
+                actions.append(action)
+        normal = self._release_normal_candidate(now)
+        if normal is not None:
+            actions.append(normal)
+        return self.release_burst.choose(actions, max(0.0, sp), now)
+
+    def _release_ultimate_candidate(self, token, profiles):
+        quote = self.release_burst.quote(token, "ult")
+        if quote is None:
+            return None
+        duration = max(max(p.actionable, .3) for p in profiles)
+        handoff = self.release_burst.release_handoff(token, "ult")
+        if handoff:
+            duration = max(max(p.handoff for p in profiles), handoff)
+        duration = max(duration, self._ult_action_seconds.get(token, 0))
+        return ReleaseBurstAction(token, "ult", duration, quote["crit_expect"],
+                                  same_actor_duration=max(p.actionable for p in profiles))
+
+    def _release_battle_candidate(self, token, sp, now, future_free):
+        if not self._slot_available(token) or now < self.state_until.get(token, 0) or now < self.battle_retry_after.get(token, 0):
+            return None
+        if token == self.forced_main_control_slot and now < self.forced_main_control_until:
+            return None
+        mechanic = self._mechanic_for_token(token)
+        if mechanic is not None and mechanic.archetype == "multi_stage_battle":
+            return None  # A base quote cannot price the replacement button's phase.
+        profiles, gate, cost = self._battle_context(token)
+        quote = self.release_burst.quote(token, "battle")
+        if (not profiles or quote is None or gate is None or cost is None
+                or (sp < gate and token not in future_free)
+                or not self._ready(profiles, slot=token, kind="battle")
+                or (not self.phase_planner.can_spend(token, "battle", sp, cost) and token not in future_free)):
+            return None
+        return ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
+                                  quote["crit_expect"], gate, cost,
+                                  same_actor_duration=max(p.actionable for p in profiles))
+
+    def _release_normal_candidate(self, now):
         main = self._burst_main_control
         duration = self.release_burst.normal_duration(main, now)
+        normal_entry = self.release_burst.normal_entry(main, now)
         quote = self.release_burst.quote(main, "normal")
         if (main is not None and duration is not None and quote is not None and self._slot_available(main)
-                and self._allowed() and not self.release_burst.action_blocked(main, "normal", now)):
-            actions.append(ReleaseBurstAction(main, "normal", duration, quote["crit_expect"]))
-        return self.release_burst.choose(actions, max(0.0, sp), now)
+                and normal_entry and self._allowed(normal_entry, candidate_slot=main, candidate_kind="normal")
+                and not self.release_burst.action_blocked(main, "normal", now)):
+            return ReleaseBurstAction(main, "normal", duration, quote["crit_expect"])
+        return None
 
     def _use_timed_ultimate(self, token, profiles, *, burst_selected=False):
         started = self._clock()

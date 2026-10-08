@@ -36,59 +36,59 @@ def reviewed_locations(source, destination):
     return selected, output
 
 
-def export(source, revision, destination):
-    if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
-        raise ValueError("Source revision must be a full lowercase commit SHA")
-    source, destination = reviewed_locations(source, destination)
+def _clean_revision(source, revision):
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
     wanted = subprocess.check_output(["git", "rev-parse", "--verify", "--end-of-options", revision], cwd=source, text=True).strip()
     dirty = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], cwd=source, text=True)
     if head != wanted or dirty:
         raise ValueError("Export requires the requested clean research revision")
-    sys.path.insert(0, str(source))
-    from src.data.release_burst_planner import ReleaseBurstPlanner
-    from src.data.skill_timing import load_skill_timings
+    return head
 
-    baseline_path = source / "assets/data/fixed_damage_baseline.json"
-    rows = json.loads(baseline_path.read_text(encoding="utf8"))
-    names = [row["character"] for row in rows]
-    planner = ReleaseBurstPlanner(names, store=load_skill_timings())
+
+def _actor_rules(planner, index, row, store):
+    rules = []
+    for kind in ("battle", "ult"):
+        for spec in planner.rules.get((str(index), kind), ()):
+            data = asdict(spec)
+            data["kind"] = kind
+            data["ends_on_source_action"] = spec.key == "buff_chr_0019_karin_potential_3"
+            data["starts_after"] = 0.0
+            data["blocks_source_actions"] = []
+            rules.append(data)
+    additions, evidence = support_release(row, store)
+    rules.extend(additions)
+    return rules, evidence
+
+
+def _actor_quotes(planner, index, row):
+    quotes = {}
+    for kind in ("normal", "battle", "ult"):
+        quote = planner.quotes.get((str(index), kind))
+        if quote is None:
+            continue
+        quotes[kind] = {key: quote[key] for key in ("non_crit", "crit_expect", "bonus_pct", "quote_basis")}
+        if row["key"] == "liino" and kind == "ult":
+            # Ongoing pulses and the non-interrupted closing explosion are not
+            # an immediate release quote. Do not invent hits.
+            quotes[kind].update(non_crit=0.0, crit_expect=0.0,
+                                pricing_scope="support_opener_only; sustained_and_closing_damage_not_forecast")
+    return quotes
+
+
+def _collect_actors(rows, planner, store):
     actors, supports = [], []
-    store = load_skill_timings()
     for index, row in enumerate(rows, 1):
-        rules = []
-        for kind in ("battle", "ult"):
-            for spec in planner.rules.get((str(index), kind), ()):
-                data = asdict(spec)
-                data["kind"] = kind
-                data["ends_on_source_action"] = spec.key == "buff_chr_0019_karin_potential_3"
-                data["starts_after"] = 0.0
-                data["blocks_source_actions"] = []
-                rules.append(data)
-        additions, evidence = support_release(row, store)
-        rules.extend(additions)
+        rules, evidence = _actor_rules(planner, index, row, store)
         if evidence:
             supports.append(evidence)
-        quotes = {}
-        for kind in ("normal", "battle", "ult"):
-            quote = planner.quotes.get((str(index), kind))
-            if quote is not None:
-                quotes[kind] = {key: quote[key] for key in ("non_crit", "crit_expect", "bonus_pct", "quote_basis")}
-                if row["key"] == "liino" and kind == "ult":
-                    # Ongoing pulses and the non-interrupted closing explosion
-                    # are not an immediate release quote. Do not invent hits.
-                    quotes[kind].update(non_crit=0.0, crit_expect=0.0,
-                                        pricing_scope="support_opener_only; sustained_and_closing_damage_not_forecast")
         actors.append({"character": row["character"], "key": row["key"], "profile": row["profile"],
                        "build": row["build"], "panel": row["panel"]["damage_basis"],
-                       "attribute_basis": row["attribute_basis"], "quotes": quotes, "rules": rules,
-                       "stance": release_stance(row, store)})
-    # This export is a reviewed boundary, not automatic admission of new rules.
-    expected = {"安塔尔": 2, "秋栗": 1, "佩丽卡": 1, "庄方宜": 1,
-                "莱万汀": 1, "艾维文娜": 1, "埃特拉": 1, "赛希": 2, "梨诺": 3}
-    actual = {row["character"]: len(row["rules"]) for row in actors if row["rules"]}
-    if len(actors) != 32 or actual != expected:
-        raise ValueError("Release-only export scope changed; review before widening it")
+                       "attribute_basis": row["attribute_basis"], "quotes": _actor_quotes(planner, index, row),
+                       "rules": rules, "stance": release_stance(row, store)})
+    return actors, supports
+
+
+def _evidence_hashes(source, rows):
     paths = {"assets/data/fixed_damage_baseline.json", "src/data/release_burst_planner.py",
              "src/data/damage_release_rules.py", "src/data/native_attribute_modifiers.py",
              "src/data/reviewed_weapon_release.py", "assets/data/skill_timings/20261002/index.json",
@@ -102,6 +102,31 @@ def export(source, revision, destination):
         if not source_file.is_relative_to(source):
             raise ValueError("Source evidence path escapes reviewed checkout")
         hashes[path] = hashlib.sha256(source_file.read_bytes()).hexdigest()
+    return hashes
+
+
+def export(source, revision, destination):
+    if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+        raise ValueError("Source revision must be a full lowercase commit SHA")
+    source, destination = reviewed_locations(source, destination)
+    head = _clean_revision(source, revision)
+    sys.path.insert(0, str(source))
+    from src.data.release_burst_planner import ReleaseBurstPlanner
+    from src.data.skill_timing import load_skill_timings
+
+    baseline_path = source / "assets/data/fixed_damage_baseline.json"
+    rows = json.loads(baseline_path.read_text(encoding="utf8"))
+    names = [row["character"] for row in rows]
+    planner = ReleaseBurstPlanner(names, store=load_skill_timings())
+    store = load_skill_timings()
+    actors, supports = _collect_actors(rows, planner, store)
+    # This export is a reviewed boundary, not automatic admission of new rules.
+    expected = {"安塔尔": 2, "秋栗": 1, "佩丽卡": 1, "庄方宜": 1,
+                "莱万汀": 1, "艾维文娜": 1, "埃特拉": 1, "赛希": 2, "梨诺": 3}
+    actual = {row["character"]: len(row["rules"]) for row in actors if row["rules"]}
+    if len(actors) != 32 or actual != expected:
+        raise ValueError("Release-only export scope changed; review before widening it")
+    hashes = _evidence_hashes(source, rows)
     data = {"schema_version": 1, "scope": "confirmed_release_bonuses", "actors": actors,
             "excluded": ["hit_or_target_outcomes", "field_occupancy", "combo_release",
                          "native_four_stat_producers", "unconfirmed_nonconverted_attributes"]}
