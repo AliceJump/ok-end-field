@@ -13,7 +13,7 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
-from src.data.highlight_damage import HighlightDamageBinding
+from src.data.highlight_damage import HighlightDamageBinding, HighlightDamageComponent
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "assets/data/release_burst"
 ELEMENTS = {"all", "物理", "寒冷", "灼热", "电磁", "自然"}
@@ -108,6 +108,8 @@ class ReleaseBurstAction:
     sp_cost: float = 0
     same_actor_duration: float | None = None
     observed_bonus: float = 0
+    base_components: tuple[HighlightDamageComponent, ...] = ()
+    observed_components: tuple[HighlightDamageComponent, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -269,6 +271,15 @@ class ReleaseBurstPlanner:
         quote = self.quote(actor, 'battle')
         return (quote['crit_expect'], 0.0) if quote is not None else (None, 0.0)
 
+    def battle_components(self, actor, observation=None):
+        binding = self.highlight_damage.get(actor)
+        return binding.components(observation) if binding is not None else ((), ())
+
+    def price_components(self, actor, now, components, *, bonuses=None):
+        values = [self._price_value(actor, now, c.element, set(c.damage_tags), c.bonus_pct, c.value, bonuses)
+                  for c in components]
+        return sum(values) if all(v is not None for v in values) else None
+
     def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None):
         quote = self.quote(actor, kind)
         if quote is None:
@@ -280,11 +291,15 @@ class ReleaseBurstPlanner:
                 value = None  # A base master value cannot undo an action replacement.
         if quote.get("pricing_scope", "").startswith("support_opener_only"):
             value = quote["crit_expect"]
+        return self._price_value(actor, now, quote["quote_basis"]["element"],
+                                 set(quote["quote_basis"]["damage_tags"]), quote["bonus_pct"],
+                                 quote["crit_expect"] if value is None else value, bonuses)
+
+    def _price_value(self, actor, now, element, tags, bonus_pct, value, bonuses):
         panel = self.rows[actor]["panel"]
-        element, tags = quote["quote_basis"]["element"], set(quote["quote_basis"]["damage_tags"])
         # The exported quote already includes fixed weapon/gear/type bonuses.
         # Adding panel.damage_bonus again would dilute each dynamic increment.
-        base_bonus = quote["bonus_pct"] / 100
+        base_bonus = bonus_pct / 100
         base_amp = panel["amplification"].get(element, 0)
         additions = {"attack": 0.0, "damage_bonus": 0.0, "amplification": 0.0}
         for bonus in self.bonuses if bonuses is None else bonuses:
@@ -299,7 +314,7 @@ class ReleaseBurstPlanner:
         ratio = ((attack + panel["attack_white"] * additions["attack"]) / attack
                  * max(0, 1 + base_bonus + additions["damage_bonus"]) / (1 + base_bonus)
                  * max(0, 1 + base_amp + additions["amplification"]) / (1 + base_amp))
-        return (quote["crit_expect"] if value is None else value) * ratio
+        return value * ratio
 
     def _forecast_step(self, node, action, index, now, *, releases, horizon):
         damage, time, budget, indices, current, actor_locks, stances = node
@@ -328,8 +343,12 @@ class ReleaseBurstPlanner:
         # same condition after another action changes the combat state. Recheck
         # on the next real step instead of propagating the high quote in search.
         value = action.value + (action.observed_bonus if not indices else 0)
-        priced = self.price(action.slot, action.kind, end, value=value,
-                            bonuses=forecast, stances=stances)
+        if action.base_components:
+            components = action.base_components + (action.observed_components if not indices else ())
+            priced = self.price_components(action.slot, end, components, bonuses=forecast)
+        else:
+            priced = self.price(action.slot, action.kind, end, value=value,
+                                bonuses=forecast, stances=stances)
         if priced is None:
             return None
         if releases:

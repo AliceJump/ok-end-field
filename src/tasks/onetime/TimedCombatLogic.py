@@ -1014,11 +1014,15 @@ class TimedCombatLogic:
         quote = self.damage_quotes.get(name)
         damage = quote.battle if quote is not None else 0.0
         if self.release_burst is not None:
+            components = ()
             if token in self.release_burst.highlight_damage:
                 observation = self.battle_highlights.observations.get(token) if self.battle_highlights is not None else None
                 base, extra = self.release_burst.battle_values(token, observation)
                 damage = base + extra
-            priced = self.release_burst.price(token, "battle", self._clock(), value=damage)
+                base_components, extra_components = self.release_burst.battle_components(token, observation)
+                components = base_components + extra_components
+            priced = (self.release_burst.price_components(token, self._clock(), components) if components
+                      else self.release_burst.price(token, "battle", self._clock(), value=damage))
             if priced is not None:
                 damage = priced
         handoff = max(max(profile.handoff, 0.3) for profile in profiles)
@@ -1148,9 +1152,11 @@ class TimedCombatLogic:
             return None
         observation = self.battle_highlights.observations.get(token) if self.battle_highlights is not None else None
         base, extra = self.release_burst.battle_values(token, observation)
+        base_components, extra_components = self.release_burst.battle_components(token, observation)
         return ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
                                   base, gate, cost, same_actor_duration=max(p.actionable for p in profiles),
-                                  observed_bonus=extra)
+                                  observed_bonus=extra, base_components=base_components,
+                                  observed_components=extra_components)
 
     def _release_normal_candidate(self, now):
         main = self._burst_main_control
