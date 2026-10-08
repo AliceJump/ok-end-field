@@ -633,7 +633,9 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     stacking = data["stackingSettings"]
                     maximum = stacking["maxStackCnt"] if stacking["maxStackCnt"] > 0 else None
                     definition = None
-                    if stacking["stackingType"] in {0, 2, 7}:
+                    if stacking["stackingType"] in {0, 2, 7} or (
+                        stacking["stackingType"] == 4 and buff_id == "buff_chr_0024_deepfin_potential_3"
+                    ):
                         from src.data.native_buff_program import compile_buff_definition
 
                         definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,

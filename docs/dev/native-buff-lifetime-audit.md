@@ -151,3 +151,24 @@ Skill.CastEnd在0x30f5b14将m_buffsDuringSkill复制到临时名单，然后执�
 | AbilitySystem._DetachSkillInternal | 0x5fb3240 | 4500 | 79987ed504f279d8ad655a7197d3bd8cdd89a077e595be16bae8e8bbd2d8935a |
 
 Skill.CastEnd沿用前文9000字节窗口的校验哈希；这些均为读取范围，不宣称窗口是完整方法长度。新增12项Skill专项与已有名单/动作绑定/Ability专项合计40项通过（4.687秒）；覆盖转交失败、同Skill自继承、旧UID/旧CastEnd、Unique、自然寿命和隔离。全仓最终结果记录在mechanism-flow-progress.md；tmp/mechanism_coverage_skill_attached.json仍2/111，未做现场验证。
+
+## 2026-10-08：阿列什P3的受限Refresh执行
+
+重新校验当前DLL/metadata与skill_timings原生输入摘要一致。BuffStackingSettings.StackingType的value__实际为short；原始默认值是两字节小端，不可使用压缩int32读取。Refresh=4（field_index=44633、metadata绝对字节偏移32637184、raw=0400），EnhanceAndRefresh=8（44637、32637192、0800）。类型8的重复分支在未到上限时增加组计数并调用旧buff._Enhance，随后刷新旧实例时长；不能把它视为独立计时层。其属性重算/计数事件顺序仍未批准执行，陈千语与佩丽卡的这两条叠层依然待办。
+
+类型4分支取得首个未结束旧实例；不存在则走普通新实例路径，存在则分配临时输入对象，只用其duration更新旧实例，再返回旧对象。机器码刷新辅助仅调用新对象get_duration与旧对象剩余时长，并经SUBSS/COMISS选择新时长或保留剩余值；epsilon为RVA0xa8c2ce0的acc52737，即float32约1e-5。新时长明显更短不会截短旧剩余；阈值以内可选略短的新值，因此不是一律now+duration或double的max。任一对象lifeType=1则旧对象永久；时长setter更新剩余时长并取原总时长与新剩余的max。本离线模型按已知事件时间计算剩余，不声称已复现客户端每帧浮点累减/停时钟。
+
+| 核验窗口 | RVA | 字节数 | SHA256 |
+| --- | --- | --- | --- |
+| StackBuff类型8入口 | 0x373b3d0 | 287 | 7fc53a8948180e4750cf4441d61fd600765d84fe88c79abbd6c6a477d3a99739 |
+| StackBuff类型4入口 | 0x373b5a5 | 140 | f363bea1b1b9a880cc5838a3496abd75dbc80719b3188079172670f17bb56028 |
+| 类型4重复分支 | 0x4e23764 | 160 | 590daa7fbd7f7c09cad2cd2913ecdf23fad7127cf2be47044469d03e5404d06d |
+| 内联Refresh辅助 | 0x44406b0 | 230 | 0466b048b2ba383e0047df02ebd5195a603af0b3e455c96197380cb4f7eed4ad |
+| 时长setter | 0x44407a0 | 230 | da4fb737e111c8530ce43d058c583438967875abda9ab7cf0a8a0b7f8d9d9833 |
+| 新实例get_duration | 0x2e5d7d0 | 170 | 294148b37a77732f10a8a1b8dece74c94810a3b4ef00ed655d4163ba61350125 |
+| 旧实例剩余读取 | 0x2e5d690 | 170 | 12bcf06260e289591227ce90ea335bc96b099a9f53c5aae9cdb75641724a56db |
+| Float max比较路径 | 0x3529090 | 180 | 109a90083ccf62ef8ddb3f5949c087882d2c7d66248a2edc9f89d0b65aa306c9 |
+
+这些是摘要校验窗口，非完整方法长度。只批准buff_chr_0024_deepfin_potential_3的无回调、无订阅、非周期、无动作/父根绑定刷新。重复施加保留UID、源角色、原BB和攻击快照；不读取maxStackCnt，不重新创建层或执行Enable。新截止排队但旧截止不能结束刷新后的对象，显式移除后新建也不受旧队列影响。其他类型4、周期、父子/跨技能根和回调仍拒绝。实际珍鳞结果/概率、完整连携程序未执行，不能将本入口绑定到每次连携cast；只验证确认结果后的原始team FindTarget+CreateBuff片段。
+
+7项新增专项与44项相关回归覆盖原始组选择和大小写继承键、10秒到期、重复保留快照/来源、长/短/epsilon时长、忽略旧最大层数键、永久时长、旧截止、显式移除/新UID、预测隔离及未批准定义拒绝。程序树复测仍2/111，完整验证结果见damage-data-flow-progress.md。

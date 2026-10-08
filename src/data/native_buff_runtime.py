@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import heapq
 import math
+import struct
 from dataclasses import dataclass, replace
 
 from src.data.combat_expressions import MissingCombatInput
@@ -40,6 +41,31 @@ def _stacking_group(world, owner, key, definition):
     identity = definition.stacking_key if definition.stacking_key is not None else key
     return [v for v in world.native_buff_instances.values() if v.owner == owner
             and (v.definition.stacking_key if v.definition.stacking_key is not None else v.key) == identity]
+
+
+def _single(value):
+    try:
+        result = struct.unpack("<f", struct.pack("<f", value))[0]
+    except (OverflowError, struct.error) as error:
+        raise UnresolvedMechanic("Native Refresh duration exceeds float32") from error
+    if not math.isfinite(result):
+        raise UnresolvedMechanic("Non-finite native Refresh duration")
+    return result
+
+
+def _refresh_duration(world, instance, duration):
+    """Native type 4 keeps the original instance and only refreshes its timer."""
+    if instance.expires is None or duration is None:
+        instance.expires = None
+    else:
+        remaining = _single(max(0, instance.expires - world.time))
+        # Verified SUBSS/COMISS branch: shorter by <= native epsilon may replace
+        # the remainder. This is not blindly now+duration or max in double.
+        threshold = _single(remaining - _single(1e-5))
+        chosen = duration if duration >= threshold else remaining
+        instance.expires = world.time + chosen
+        _schedule(world, instance, instance.expires, "finish")
+    _sync(world, instance.owner, instance.key)
 
 
 def _sync(world, owner, key):
@@ -178,22 +204,40 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     values.update({key: expression.evaluate(inputs) for key, expression in definition.inherited})
     duration = definition.duration.evaluate(values) if definition.duration is not None else None
     period = definition.period.evaluate(values)
+    if definition.stacking == 4:
+        from src.data.native_attribute_modifiers import ALESH_TEAM_ATTACK
+
+        # Only this reviewed plain, nonperiodic entry is approved. Callback,
+        # parent/action inheritance and generic type-4 semantics remain unbound.
+        if (change.key != ALESH_TEAM_ATTACK or definition.callbacks or definition.subscriptions
+                or definition.unresolved or not math.isfinite(period) or period > 0
+                or parent is not None or passive_root is not None
+                or change.action_finish_after is not None or change.inherit_skill_ids):
+            raise UnresolvedMechanic(f"Native Refresh needs plain reviewed buff binding: {change.key}")
+        if duration is not None:
+            duration = _single(duration)
     if parent is not None and (not math.isfinite(period) or period > 0):
         raise UnresolvedMechanic(f"Parent-bound periodic buff needs tick/end ordering: {change.key}")
     limit = definition.trigger_limit.evaluate(values)
-    # Unique and Unlimited do not read maxStackCnt; stale keys may be absent.
+    # Unique, Unlimited and reviewed Refresh do not read maxStackCnt.
     maximum = definition.maximum.evaluate(values) if definition.stacking == 2 else 0
     if duration is not None and duration < 0 or limit != int(limit) or maximum != int(maximum):
         raise UnresolvedMechanic(f"Invalid native buff parameters: {change.key}")
-    if definition.stacking not in {0, 2, 7}:
+    if definition.stacking not in {0, 2, 4, 7}:
         raise UnresolvedMechanic(f"Native buff stacking policy not yet bound: {change.key}/{definition.stacking}")
     group = _stacking_group(world, owner, change.key, definition)
-    if any(v.definition.stacking != definition.stacking or v.definition.maximum != definition.maximum for v in group):
+    if any(v.definition.stacking != definition.stacking or
+           definition.stacking != 4 and v.definition.maximum != definition.maximum for v in group):
         raise UnresolvedMechanic(f"Native shared stacking group has conflicting policies: {change.key}")
     world.unresolved.update(definition.unresolved)
     world.native_buff_tags[change.key] = definition.tags
     for _ in range(delta):
         existing = _stacking_group(world, owner, change.key, definition)
+        if definition.stacking == 4 and existing:
+            # StackBuff returns the first existing object, not a newly enabled
+            # layer. Source, BB, captured attribute and parent identity survive.
+            _refresh_duration(world, existing[0], duration)
+            continue
         if definition.stacking == 7 and existing:
             # Native Unique returns no created instance on reapplication, so
             # CreateBuff does not call SetBuffParent again for the old instance.

@@ -527,13 +527,31 @@
           "name": "愿者上钩",
           "rank": 3,
           "source": "CharacterPotentialTable/chr_0024_deepfin/potentialUnlockBundle/2",
-          "placement": "not_classified_as_damage_by_this_audit",
+          "placement": "native_buff_attribute_rule",
           "native_modifier_count": 3,
           "damage_rules": [],
           "skill_rule_references": [],
           "runtime_rule_parameter_references": [],
           "fixed_skill_crit_filters": {},
-          "native_buff_attribute_rules": [],
+          "native_buff_attribute_rules": [
+            {
+              "passive_id": "chr_0024_deepfin_potential_3",
+              "buff_id": "buff_chr_0024_deepfin_potential_3",
+              "bucket": "attack",
+              "recipient": "actual_buff_owner_from_confirmed_team_group",
+              "producer": "chr_0024_deepfin_combo_skill",
+              "input": "inherited_bb.atk_up",
+              "selected_parameter": 0.15000000596046448,
+              "evaluation": "instance_creation_snapshot",
+              "lifetime": "native_buff_uid; timed_Refresh_or_explicit_finish",
+              "verified_scope": "buff_instance_ATK_and_Refresh_only; rare_fish_outcome_and_full_combo_not_bound",
+              "sources": {
+                "passive": "CharacterPotentialTable/chr_0024_deepfin/potentialUnlockBundle/2",
+                "producer_sha256": "563fd8ee269d098ce95839e7de56d0f164b668662fe599a271dfa11c347a6b03",
+                "buff_sha256": "548a9a85effb17b21d86d64c6cda8b3446954cd0a0ab84a7ff4748dd7e46cdc0"
+              }
+            }
+          ],
           "complete_semantic_review": false
         },
         {
@@ -11231,7 +11249,7 @@
     "skill_damage_rules": 33,
     "selected_passive_damage_rules": 15,
     "model_release_bonus_bindings": 13,
-    "native_buff_attribute_damage_bindings": 1,
+    "native_buff_attribute_damage_bindings": 2,
     "target_state_bonus_bindings": 2,
     "skills_with_reviewed_row_membership": 16,
     "skills_with_structural_data_gaps": 0,
