@@ -149,7 +149,9 @@
           ],
           "lifetime_scope": "timed",
           "kind": "ult",
-          "ends_on_source_action": true
+          "ends_on_source_action": true,
+          "starts_after": 0.0,
+          "blocks_source_actions": []
         }
       ]
     },
@@ -419,7 +421,9 @@
           ],
           "lifetime_scope": "timed",
           "kind": "ult",
-          "ends_on_source_action": false
+          "ends_on_source_action": false,
+          "starts_after": 0.0,
+          "blocks_source_actions": []
         },
         {
           "key": "antal_ultimate:BUFF_BURN_UP",
@@ -452,7 +456,9 @@
           ],
           "lifetime_scope": "timed",
           "kind": "ult",
-          "ends_on_source_action": false
+          "ends_on_source_action": false,
+          "starts_after": 0.0,
+          "blocks_source_actions": []
         }
       ]
     },
@@ -955,7 +961,9 @@
           ],
           "lifetime_scope": "timed",
           "kind": "battle",
-          "ends_on_source_action": false
+          "ends_on_source_action": false,
+          "starts_after": 0.0,
+          "blocks_source_actions": []
         }
       ]
     },
@@ -1812,7 +1820,9 @@
           ],
           "lifetime_scope": "timed",
           "kind": "battle",
-          "ends_on_source_action": false
+          "ends_on_source_action": false,
+          "starts_after": 0.0,
+          "blocks_source_actions": []
         }
       ]
     },
@@ -2196,7 +2206,9 @@
           ],
           "lifetime_scope": "timed",
           "kind": "ult",
-          "ends_on_source_action": false
+          "ends_on_source_action": false,
+          "starts_after": 0.0,
+          "blocks_source_actions": []
         }
       ]
     },
@@ -2536,8 +2548,8 @@
           }
         },
         "ult": {
-          "non_crit": 47876.9,
-          "crit_expect": 49073.9,
+          "non_crit": 0.0,
+          "crit_expect": 0.0,
           "bonus_pct": 0.0,
           "quote_basis": {
             "skill_rank": 12,
@@ -2548,10 +2560,128 @@
             "multiplier": 10.2,
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
-          }
+          },
+          "pricing_scope": "support_opener_only; sustained_and_closing_damage_not_forecast"
         }
       },
-      "rules": []
+      "rules": [
+        {
+          "key": "liino_ultimate:BUFF_ATTACK_UP",
+          "bucket": "attack",
+          "elements": [
+            "all"
+          ],
+          "recipient": "team",
+          "magnitude": {
+            "base": 0.10000000149011612,
+            "terms": [],
+            "by_count": [],
+            "count_input": null,
+            "accumulation": "linear"
+          },
+          "trigger": "ultimate_cast",
+          "damage_tags": [],
+          "permanent": false,
+          "condition_inputs": [],
+          "duration": 15.0,
+          "duration_input": null,
+          "evaluation": "application",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "unresolved": null,
+          "sources": [
+            "character_skills/liino_ultimate/rank_stats/攻击力提升/专精3",
+            "character_skills/liino_ultimate/rank_stats/高歌姿态持续时间 / （秒）/专精3",
+            "native:chr_0035_liino_ultimate_skill:frame:77"
+          ],
+          "lifetime_scope": "timed",
+          "kind": "ult",
+          "starts_after": 2.566666666666667,
+          "ends_on_source_action": true,
+          "blocks_source_actions": [
+            "battle",
+            "normal"
+          ]
+        },
+        {
+          "key": "liino_ultimate:BUFF_ELECTROMAGNETIC_UP",
+          "bucket": "amplification",
+          "elements": [
+            "电磁"
+          ],
+          "recipient": "team",
+          "magnitude": {
+            "base": 0.3563351909982157,
+            "terms": [],
+            "by_count": [],
+            "count_input": null,
+            "accumulation": "linear"
+          },
+          "trigger": "ultimate_cast",
+          "damage_tags": [],
+          "permanent": false,
+          "condition_inputs": [],
+          "duration": 15.0,
+          "duration_input": null,
+          "evaluation": "application",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "unresolved": null,
+          "sources": [
+            "character_skills/liino_ultimate/rank_stats/每点意志提升的 / 增幅效果/专精3",
+            "character_skills/liino_ultimate/rank_stats/意志提升的 / 增幅上限/专精3",
+            "character_skills/liino_ultimate/rank_stats/高歌姿态持续时间 / （秒）/专精3",
+            "native:chr_0035_liino_ultimate_skill:frame:77"
+          ],
+          "lifetime_scope": "timed",
+          "kind": "ult",
+          "starts_after": 2.566666666666667,
+          "ends_on_source_action": true,
+          "blocks_source_actions": [
+            "battle",
+            "normal"
+          ]
+        },
+        {
+          "key": "liino_ultimate:BUFF_NATURAL_UP",
+          "bucket": "amplification",
+          "elements": [
+            "自然"
+          ],
+          "recipient": "team",
+          "magnitude": {
+            "base": 0.3563351909982157,
+            "terms": [],
+            "by_count": [],
+            "count_input": null,
+            "accumulation": "linear"
+          },
+          "trigger": "ultimate_cast",
+          "damage_tags": [],
+          "permanent": false,
+          "condition_inputs": [],
+          "duration": 15.0,
+          "duration_input": null,
+          "evaluation": "application",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "unresolved": null,
+          "sources": [
+            "character_skills/liino_ultimate/rank_stats/每点意志提升的 / 增幅效果/专精3",
+            "character_skills/liino_ultimate/rank_stats/意志提升的 / 增幅上限/专精3",
+            "character_skills/liino_ultimate/rank_stats/高歌姿态持续时间 / （秒）/专精3",
+            "native:chr_0035_liino_ultimate_skill:frame:77"
+          ],
+          "lifetime_scope": "timed",
+          "kind": "ult",
+          "starts_after": 2.566666666666667,
+          "ends_on_source_action": true,
+          "blocks_source_actions": [
+            "battle",
+            "normal"
+          ]
+        }
+      ]
     },
     {
       "character": "弭弗",
@@ -2821,7 +2951,9 @@
           ],
           "lifetime_scope": "timed",
           "kind": "ult",
-          "ends_on_source_action": false
+          "ends_on_source_action": false,
+          "starts_after": 0.0,
+          "blocks_source_actions": []
         }
       ]
     },
@@ -3759,7 +3891,84 @@
           }
         }
       },
-      "rules": []
+      "rules": [
+        {
+          "key": "xaihi_ultimate:BUFF_COLD_UP",
+          "bucket": "amplification",
+          "elements": [
+            "寒冷"
+          ],
+          "recipient": "team",
+          "magnitude": {
+            "base": 0.38478000817576424,
+            "terms": [],
+            "by_count": [],
+            "count_input": null,
+            "accumulation": "linear"
+          },
+          "trigger": "ultimate_cast",
+          "damage_tags": [],
+          "permanent": false,
+          "condition_inputs": [],
+          "duration": 12.0,
+          "duration_input": null,
+          "evaluation": "application",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "unresolved": null,
+          "sources": [
+            "character_skills/xaihi_ultimate/rank_stats/基础寒冷增幅效果/专精3",
+            "character_skills/xaihi_ultimate/rank_stats/每点智识提升的 / 增幅效果/专精3",
+            "character_skills/xaihi_ultimate/rank_stats/智识提升增幅上限/专精3",
+            "character_skills/xaihi_ultimate/rank_stats/持续时间（秒）/专精3",
+            "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4/parameters/atk_up",
+            "native:chr_0011_seraph_ultimate_skill:frame:58"
+          ],
+          "lifetime_scope": "timed",
+          "kind": "ult",
+          "starts_after": 1.9333333333333333,
+          "ends_on_source_action": false,
+          "blocks_source_actions": []
+        },
+        {
+          "key": "xaihi_ultimate:BUFF_NATURAL_UP",
+          "bucket": "amplification",
+          "elements": [
+            "自然"
+          ],
+          "recipient": "team",
+          "magnitude": {
+            "base": 0.38478000817576424,
+            "terms": [],
+            "by_count": [],
+            "count_input": null,
+            "accumulation": "linear"
+          },
+          "trigger": "ultimate_cast",
+          "damage_tags": [],
+          "permanent": false,
+          "condition_inputs": [],
+          "duration": 12.0,
+          "duration_input": null,
+          "evaluation": "application",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "unresolved": null,
+          "sources": [
+            "character_skills/xaihi_ultimate/rank_stats/基础自然增幅效果/专精3",
+            "character_skills/xaihi_ultimate/rank_stats/每点智识提升的 / 增幅效果/专精3",
+            "character_skills/xaihi_ultimate/rank_stats/智识提升增幅上限/专精3",
+            "character_skills/xaihi_ultimate/rank_stats/持续时间（秒）/专精3",
+            "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4/parameters/atk_up",
+            "native:chr_0011_seraph_ultimate_skill:frame:58"
+          ],
+          "lifetime_scope": "timed",
+          "kind": "ult",
+          "starts_after": 1.9333333333333333,
+          "ends_on_source_action": false,
+          "blocks_source_actions": []
+        }
+      ]
     },
     {
       "character": "伊冯",
@@ -4026,7 +4235,9 @@
           ],
           "lifetime_scope": "timed",
           "kind": "ult",
-          "ends_on_source_action": false
+          "ends_on_source_action": false,
+          "starts_after": 0.0,
+          "blocks_source_actions": []
         }
       ]
     }
