@@ -51,6 +51,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertTrue(kwargs["is_num"])
         self.assertTrue(kwargs["need_scroll"])
         self.assertEqual(kwargs["tolerance"], 50)
+        self.assertTrue(kwargs["raise_if_fail"])
 
     def test_gold_center_check_uses_fifty_pixel_tolerance(self):
         processor = object()
@@ -156,7 +157,25 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(first_kwargs["tolerance"], 50)
         self.assertEqual(retry_kwargs["tolerance"], 50)
         self.assertEqual(retry_kwargs["max_time"], 10)
+        self.assertFalse(retry_kwargs["raise_if_fail"])
         stub._legacy_click_on_zip_line.assert_not_called()
+
+    def test_gate_realign_failure_falls_back_without_raising_alignment_error(self):
+        stub = self._stub()
+        stub._align_zip_line_distance = Mock(side_effect=[True, False])
+        stub._try_click_on_zip_line = Mock(return_value=(False, "gate"))
+        stub._legacy_click_on_zip_line = Mock(return_value=True)
+        stub.log_info = Mock()
+        stub.wait_ocr = Mock(return_value=False)
+        stub.ensure_main = Mock()
+        stub.ocr.return_value = [SimpleNamespace(name="move")]
+
+        ZipLineMixin.zip_line_list_go(stub, [108])
+
+        self.assertEqual(stub._align_zip_line_distance.call_count, 2)
+        retry_kwargs = stub._align_zip_line_distance.call_args_list[1].kwargs
+        self.assertFalse(retry_kwargs["raise_if_fail"])
+        stub._legacy_click_on_zip_line.assert_called_once_with()
 
     def test_gate_retry_exhaustion_falls_back_to_direct_click_and_e(self):
         stub = self._stub()
@@ -173,6 +192,19 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(stub._try_click_on_zip_line.call_count, 3)
         self.assertEqual(stub._align_zip_line_distance.call_count, 3)
         stub._legacy_click_on_zip_line.assert_called_once_with()
+
+    def test_interaction_failure_does_not_use_unlocked_legacy_fallback(self):
+        stub = self._stub()
+        stub._align_zip_line_distance = Mock(return_value=True)
+        stub._try_click_on_zip_line = Mock(return_value=(False, "interaction"))
+        stub._legacy_click_on_zip_line = Mock(return_value=True)
+        stub.log_info = Mock()
+
+        with self.assertRaisesRegex(RuntimeError, "点击后 E 连续未生效"):
+            ZipLineMixin.zip_line_list_go(stub, [108])
+
+        self.assertEqual(stub._try_click_on_zip_line.call_count, 3)
+        stub._legacy_click_on_zip_line.assert_not_called()
 
     def test_legacy_fallback_repeats_click_and_e_without_gold_gate(self):
         stub = self._stub()
