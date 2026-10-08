@@ -13,6 +13,8 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
+from src.data.highlight_damage import HighlightDamageBinding
+
 SNAPSHOT = Path(__file__).resolve().parents[2] / "assets/data/release_burst"
 ELEMENTS = {"all", "物理", "寒冷", "灼热", "电磁", "自然"}
 TAGS = {"normal", "skill", "combo", "ultimate"}
@@ -105,6 +107,7 @@ class ReleaseBurstAction:
     sp_gate: float = 0
     sp_cost: float = 0
     same_actor_duration: float | None = None
+    observed_bonus: float = 0
 
 
 @dataclass(frozen=True)
@@ -146,6 +149,8 @@ class ReleaseBurstPlanner:
         self.stance_normal_entries = {}
         if store is not None:
             self._load_normal_timings(store)
+        self.highlight_damage = {actor: binding for actor, row in self.rows.items()
+                                 if (binding := HighlightDamageBinding.for_actor(row, store)) is not None}
 
     @staticmethod
     def _basic_normal_profiles(store, character):
@@ -257,6 +262,13 @@ class ReleaseBurstPlanner:
         row = self.rows.get(actor)
         return row["quotes"].get(kind) if row is not None else None
 
+    def battle_values(self, actor, observation=None):
+        binding = self.highlight_damage.get(actor)
+        if binding is not None:
+            return binding.values(observation)
+        quote = self.quote(actor, 'battle')
+        return (quote['crit_expect'], 0.0) if quote is not None else (None, 0.0)
+
     def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None):
         quote = self.quote(actor, kind)
         if quote is None:
@@ -312,7 +324,11 @@ class ReleaseBurstPlanner:
         next_stances = dict(stances)
         if releases:
             self._release(forecast, action.slot, action.kind, started)
-        priced = self.price(action.slot, action.kind, end, value=action.value,
+        # An observation of the current target/condition cannot certify the
+        # same condition after another action changes the combat state. Recheck
+        # on the next real step instead of propagating the high quote in search.
+        value = action.value + (action.observed_bonus if not indices else 0)
+        priced = self.price(action.slot, action.kind, end, value=value,
                             bonuses=forecast, stances=stances)
         if priced is None:
             return None
