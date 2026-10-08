@@ -79,6 +79,12 @@ class TestEnemyHealthProbe(unittest.TestCase):
         direct[21:26, 100:150] = HP_BGR
         self.assertTrue(_has_enemy_hp_run(direct, 1920, 1080))
 
+    def test_direct_threshold_uses_full_candidate_height(self):
+        roi = np.zeros((120, 400, 3), dtype=np.uint8)
+        roi[21:51, 100:200] = HP_BGR
+
+        self.assertFalse(_has_enemy_hp_run(roi, 1920, 1080))
+
     def test_reject_threshold_tracks_candidate_height(self):
         accepted = np.zeros((100, 400, 3), dtype=np.uint8)
         accepted[21:25, 100:108] = HP_BGR
@@ -94,6 +100,13 @@ class TestEnemyHealthProbe(unittest.TestCase):
         roi = np.zeros((140, 400, 3), dtype=np.uint8)
         for y in range(0, 60, 3):
             roi[y, 20:28] = HP_BGR
+        roi[75:80, 100:150] = HP_BGR
+
+        self.assertTrue(_has_enemy_hp_run(roi, 1920, 1080))
+
+    def test_tall_narrow_rows_do_not_starve_later_valid_hp_bar(self):
+        roi = np.zeros((140, 400, 3), dtype=np.uint8)
+        roi[0:48, 20:28] = HP_BGR
         roi[75:80, 100:150] = HP_BGR
 
         self.assertTrue(_has_enemy_hp_run(roi, 1920, 1080))
