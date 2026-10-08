@@ -3623,6 +3623,65 @@
         "chr_0006_wolfgd_normal_skill_plus_projhit": "9545b02ee32225dc9095546a89473e09853205c1482096c66d43fb179444b5e4"
       },
       "ranked_row_sha256": "bc8418f3e4fbfaed545b3483edd582c6037a6052a8c481563b39c79d5cbf0389"
+    },
+    "arclight": {
+      "skill_id": "chr_0007_ikut_normal_skill",
+      "rank": 12,
+      "potential": 5,
+      "scope": "native_nominal_components_without_hit_confirmation; current_action_only",
+      "base_components": [
+        {
+          "element": "物理",
+          "damage_tags": [
+            "skill"
+          ],
+          "hits": 2,
+          "parameter_key": "atk_scale",
+          "parameter": 1.0099999904632568,
+          "bonus_pct": 29.9,
+          "non_crit": 6605.4602349647585,
+          "crit_expect": 6770.596740838877
+        }
+      ],
+      "conditional_components": [
+        {
+          "element": "电磁",
+          "damage_tags": [
+            "skill"
+          ],
+          "hits": 1,
+          "parameter_key": "atk_scale2",
+          "parameter": 4.050000190734863,
+          "bonus_pct": 33.6,
+          "non_crit": 13620.84553237401,
+          "crit_expect": 13961.36667068336
+        }
+      ],
+      "record_hashes": {
+        "chr_0007_ikut_normal_skill": "338ddd04e7453cb9fba84e8d867b1e61fd2eba38140b9f1bf6b774b19297dd50"
+      },
+      "panel_sha256": "670765e2c345bbce619ccda49b6328853109820f3bced7dca4c746c7782e8f83",
+      "profile_sha256": "8a383b6875527b880e1121444b3d316244235eeb2d106b62951470df868dedd0",
+      "build_sha256": "95bac610f12a984d261a1d89638ca99c23aab7019e5d1be2dd241d87291011a0",
+      "ranked_row_sha256": "5824bf7d00d0fe125fad6d293d2154074a9bb4ae3507784b3bf8d81f3ba42c1c",
+      "control_flow": {
+        "base_frames": [
+          19,
+          24
+        ],
+        "enhanced_base_frames": [
+          112,
+          118
+        ],
+        "conditional_frame": 136,
+        "conduct_entry_sets": "SpawnThird=1",
+        "jump_compare": "Equals=4",
+        "enhanced_jump": 96,
+        "base_exit_jump": 204,
+        "conditional_target": "smart_target",
+        "other_target_group": "tar_excludes_smart_target",
+        "scope": "nominal_recommended_target_in_range; late_conduct_and_distance_recheck_unobserved"
+      }
     }
   }
 }

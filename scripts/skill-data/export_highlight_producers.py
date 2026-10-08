@@ -216,7 +216,7 @@ def export(source, revision, destination):
              'assets/data/common_mechanics/20261003/enums.json', 'src/data/native_spell_runtime.py', 'src/data/native_tags.py',
              'docs/dev/native-combat-execution-audit.md', 'assets/data/fixed_damage_baseline.json',
              'assets/data/skill_timings/20261002/ranked_blackboards.json.gz',
-             'assets/data/character_skills/wulfgard.json')
+             'assets/data/character_skills/wulfgard.json', 'assets/data/character_skills/arclight.json')
     raw = (json.dumps(payload, ensure_ascii=False, indent=2) + '\n').encode('utf8')
     manifest = {'schema_version': 1, 'source_revision': revision, 'actors': len(actors),
                 'closed': sum(a['closed'] for a in actors.values()), 'snapshot_sha256': hashlib.sha256(raw).hexdigest(),
