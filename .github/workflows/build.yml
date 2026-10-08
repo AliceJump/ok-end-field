@@ -91,7 +91,7 @@ jobs:
       - name: Install uv
         run: |
           pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
-          # 准备最小校验环境：创建空 venv并只装 packaging（marker 解析），
+          # 准备最小校验环境：创建空 venv 并只装 packaging（marker 解析），
           # 供 --no-sync 校验使用，避免同步项目全量依赖
           uv venv .venv
           uv pip install --python .venv packaging==26.3
