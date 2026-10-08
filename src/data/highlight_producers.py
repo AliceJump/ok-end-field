@@ -34,7 +34,19 @@ def read_producers(path=SNAPSHOT):
     if (any(not set(a['tags']) <= domain or a['closed'] != (not a['gaps']) for a in data['actors'].values())
             or sum(a['closed'] for a in data['actors'].values()) != manifest['closed']):
         raise ValueError('Invalid producer source boundary')
-    for binding in data['damage_bindings'].values():
+    for actor, binding in data['damage_bindings'].items():
+        if actor == 'arclight':
+            components = binding['base_components'] + binding['conditional_components']
+            if (binding['scope'] != 'native_nominal_components_without_hit_confirmation; current_action_only'
+                    or binding['rank'] != 12 or binding['potential'] != 5
+                    or [c['element'] for c in components] != ['物理', '电磁']
+                    or [c['hits'] for c in components] != [2, 1]
+                    or any(type(c['hits']) is not int or c['damage_tags'] != ['skill']
+                           or any(type(c[k]) not in (int, float) or not math.isfinite(c[k]) or c[k] <= 0
+                                  for k in ('parameter', 'non_crit', 'crit_expect'))
+                           or not math.isfinite(c['bonus_pct']) or c['bonus_pct'] <= -100 for c in components)):
+                raise ValueError('Invalid highlight damage components')
+            continue
         if (binding['scope'] != 'native_nominal_projectiles_without_hit_confirmation; current_action_only'
                 or any(type(binding[key]) is not int or binding[key] <= 0
                        for key in ('rank', 'base_projectiles', 'extra_projectiles'))
