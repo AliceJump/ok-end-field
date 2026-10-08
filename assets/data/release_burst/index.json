@@ -98,8 +98,8 @@
   "rules": 13,
   "support_evidence_sha256": "5689d265e22be15805c55ec520c50f13f5d163513d8092254621657868cde730",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "f099e7c605487f0b2c04d0d85e63aee80619f4c99cfb15f46f2cc02428a80fd1",
-    "reviewed_support_release.py": "acb680357950e9c03230cb17ff2f4710687882803ca5786013a3ac262454e3c5",
+    "export_release_burst_snapshot.py": "70c80baeb02714cab64ae0e38e35fa208549542f31d7851689ef0006104e1f9d",
+    "reviewed_support_release.py": "f2c26229742a99f6ee236d61d0ecf6747f11433ed86473ffd51bf07b33498458",
     "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792"
   },
   "stances": 1

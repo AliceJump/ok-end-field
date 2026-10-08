@@ -18,6 +18,61 @@ ELEMENTS = {"all", "物理", "寒冷", "灼热", "电磁", "自然"}
 TAGS = {"normal", "skill", "combo", "ultimate"}
 
 
+def _validate_stance(row):
+    stance = row.get("stance")
+    if stance is None:
+        return
+    if (row["key"] != "zhuang_fangyi" or stance["trigger"] != "ult"
+            or stance["free_battle_uses"] != 1 or set(stance["quotes"]) != {"normal", "battle"}
+            or not stance["source_evidence"]["native_record_sha256"]
+            or any(not math.isfinite(stance[k]) or stance[k] <= 0 for k in
+                   ("duration", "normal_duration", "battle_handoff", "battle_actionable"))
+            or not math.isfinite(stance["starts_after"]) or stance["starts_after"] < 0):
+        raise ValueError("Unconfirmed release stance")
+
+
+def _validate_quote(quote):
+    if (quote["quote_basis"]["element"] not in ELEMENTS - {"all"}
+            or not set(quote["quote_basis"]["damage_tags"]) <= TAGS
+            or not all(math.isfinite(quote[key]) for key in ("non_crit", "crit_expect", "bonus_pct"))):
+        raise ValueError("Invalid fixed quote")
+
+
+def _validate_rule(spec):
+    magnitude = spec["magnitude"]
+    if (spec["kind"] not in {"battle", "ult"} or spec["trigger"] != {
+            "battle": "battle_cast", "ult": "ultimate_cast"}[spec["kind"]]
+            or spec["recipient"] not in {"self", "team", "other_allies"}
+            or spec["bucket"] not in {"attack", "damage_bonus", "amplification"}
+            or not spec["elements"] or not set(spec["elements"]) <= ELEMENTS
+            or not set(spec["damage_tags"]) <= TAGS or not spec["sources"]
+            or magnitude["terms"] or magnitude["by_count"] or magnitude["count_input"]
+            or magnitude["accumulation"] != "linear" or not math.isfinite(magnitude["base"])
+            or spec["unresolved"] or spec["condition_inputs"] or spec["duration_input"]
+            or spec["permanent"] or spec["lifetime_scope"] != "timed"
+            or spec["evaluation"] != "application" or spec["max_stacks"] != 1
+            or spec["stack_policy"] != "replace" or spec["duration"] is None
+            or not math.isfinite(spec["duration"]) or spec["duration"] <= 0):
+        raise ValueError("Unconfirmed release rule cannot enter burst pricing")
+    if (not math.isfinite(spec["starts_after"]) or spec["starts_after"] < 0
+            or not set(spec["blocks_source_actions"]) <= {"battle", "normal"}):
+        raise ValueError("Invalid release window")
+
+
+def _validate_actor(row):
+    for key in ("attack_white", "attack_percent", "attack_flat", "attribute_factor"):
+        if not math.isfinite(row["panel"][key]):
+            raise ValueError("Invalid fixed attack basis")
+    _validate_stance(row)
+    quotes = list(row["quotes"].values())
+    if row.get("stance") is not None:
+        quotes.extend(row["stance"]["quotes"].values())
+    for quote in quotes:
+        _validate_quote(quote)
+    for spec in row["rules"]:
+        _validate_rule(spec)
+
+
 @lru_cache(maxsize=4)
 def read_snapshot(path=SNAPSHOT):
     path = Path(path)
@@ -37,43 +92,7 @@ def read_snapshot(path=SNAPSHOT):
             or sum(r.get("stance") is not None for r in actors) != manifest["stances"]):
         raise ValueError("Release snapshot selection mismatch")
     for row in actors:
-        panel = row["panel"]
-        for key in ("attack_white", "attack_percent", "attack_flat", "attribute_factor"):
-            if not math.isfinite(panel[key]):
-                raise ValueError("Invalid fixed attack basis")
-        stance = row.get("stance")
-        if stance is not None:
-            if (row["key"] != "zhuang_fangyi" or stance["trigger"] != "ult"
-                    or stance["free_battle_uses"] != 1 or set(stance["quotes"]) != {"normal", "battle"}
-                    or not stance["source_evidence"]["native_record_sha256"]
-                    or any(not math.isfinite(stance[k]) or stance[k] <= 0 for k in
-                           ("duration", "normal_duration", "battle_handoff", "battle_actionable"))
-                    or not math.isfinite(stance["starts_after"]) or stance["starts_after"] < 0):
-                raise ValueError("Unconfirmed release stance")
-        for quote in (*row["quotes"].values(), *(stance["quotes"].values() if stance else ())):
-            if (quote["quote_basis"]["element"] not in ELEMENTS - {"all"}
-                    or not set(quote["quote_basis"]["damage_tags"]) <= TAGS
-                    or not all(math.isfinite(quote[key]) for key in ("non_crit", "crit_expect", "bonus_pct"))):
-                raise ValueError("Invalid fixed quote")
-        for spec in row["rules"]:
-            magnitude = spec["magnitude"]
-            if (spec["kind"] not in {"battle", "ult"} or spec["trigger"] != {
-                    "battle": "battle_cast", "ult": "ultimate_cast"}[spec["kind"]]
-                    or spec["recipient"] not in {"self", "team", "other_allies"}
-                    or spec["bucket"] not in {"attack", "damage_bonus", "amplification"}
-                    or not spec["elements"] or not set(spec["elements"]) <= ELEMENTS
-                    or not set(spec["damage_tags"]) <= TAGS or not spec["sources"]
-                    or magnitude["terms"] or magnitude["by_count"] or magnitude["count_input"]
-                    or magnitude["accumulation"] != "linear" or not math.isfinite(magnitude["base"])
-                    or spec["unresolved"] or spec["condition_inputs"] or spec["duration_input"]
-                    or spec["permanent"] or spec["lifetime_scope"] != "timed"
-                    or spec["evaluation"] != "application" or spec["max_stacks"] != 1
-                    or spec["stack_policy"] != "replace" or spec["duration"] is None
-                    or not math.isfinite(spec["duration"]) or spec["duration"] <= 0):
-                raise ValueError("Unconfirmed release rule cannot enter burst pricing")
-            if (not math.isfinite(spec["starts_after"]) or spec["starts_after"] < 0
-                    or not set(spec["blocks_source_actions"]) <= {"battle", "normal"}):
-                raise ValueError("Invalid release window")
+        _validate_actor(row)
     return {row["character"]: row for row in actors}
 
 
@@ -123,24 +142,36 @@ class ReleaseBurstPlanner:
         self.stances = {}
         self.last_confirmed = {}
         self.normal_durations = {}
+        self.normal_entries = {}
+        self.stance_normal_entries = {}
         if store is not None:
-            for actor, row in self.rows.items():
-                # One basic normal-chain tail, never an enhanced stance or hit proof.
-                profiles = []
-                ult = store.profiles(row["character"], "ult")
-                if not ult:
-                    continue
-                native_ids = {p.skill_id.split("_ultimate")[0] for p in ult}
-                if len(native_ids) != 1:
-                    continue  # Ambiguous variants do not establish a normal chain.
-                native_id = native_ids.pop()
-                for index in range(1, 7):
-                    try:
-                        profiles.append(store.profile(f"{native_id}_attack{index}"))
-                    except KeyError:
-                        break
-                if profiles:
-                    self.normal_durations[actor] = sum(max(p.actionable, .3) for p in profiles)
+            self._load_normal_timings(store)
+
+    @staticmethod
+    def _basic_normal_profiles(store, character):
+        # Ambiguous ultimate variants do not establish a basic normal chain.
+        native_ids = {p.skill_id.split("_ultimate")[0] for p in store.profiles(character, "ult")}
+        if len(native_ids) != 1:
+            return []
+        native_id = native_ids.pop()
+        profiles = []
+        for index in range(1, 7):
+            try:
+                profiles.append(store.profile(f"{native_id}_attack{index}"))
+            except KeyError:
+                break
+        return profiles
+
+    def _load_normal_timings(self, store):
+        for actor, row in self.rows.items():
+            profiles = self._basic_normal_profiles(store, row["character"])
+            if not profiles:
+                continue
+            self.normal_durations[actor] = sum(max(p.actionable, .3) for p in profiles)
+            self.normal_entries[actor] = (profiles[0],)
+            spec = row.get("stance")
+            if spec is not None:
+                self.stance_normal_entries[actor] = (store.profile(spec["normal_profiles"][0]),)
 
     def preserve(self, previous):
         unchanged = {str(i + 1) for i, name in enumerate(self.team)
@@ -169,6 +200,10 @@ class ReleaseBurstPlanner:
     def normal_duration(self, actor, now):
         spec = self.stance_spec(actor)
         return spec["normal_duration"] if self.stance_at(actor, now) is not None else self.normal_durations.get(actor)
+
+    def normal_entry(self, actor, now):
+        entries = self.stance_normal_entries if self.stance_at(actor, now) is not None else self.normal_entries
+        return entries.get(actor, ())
 
     def _stance_action(self, action, now, stances):
         stance = self.stance_at(action.slot, now, stances=stances)
@@ -254,57 +289,64 @@ class ReleaseBurstPlanner:
                  * max(0, 1 + base_amp + additions["amplification"]) / (1 + base_amp))
         return (quote["crit_expect"] if value is None else value) * ratio
 
+    def _forecast_step(self, node, action, index, now, *, releases, horizon):
+        damage, time, budget, indices, current, actor_locks, stances = node
+        if index in indices:
+            return None
+        started = max(time, actor_locks.get(action.slot, now))
+        pending_stance = stances.get(action.slot)
+        if pending_stance is not None and action.kind in {"battle", "normal"}:
+            started = max(started, pending_stance.starts_at)
+        action = self._stance_action(action, started, stances)
+        if budget < max(action.sp_gate, action.sp_cost):
+            return None
+        if self.action_blocked(action.slot, action.kind, started, bonuses=current):
+            return None
+        end = started + action.duration
+        if end > now + horizon:
+            return None
+        stance = self.stance_at(action.slot, started, stances=stances)
+        if stance is not None and action.kind in {"normal", "battle"} and end >= stance.expires_at:
+            return None  # Do not credit a complete enhanced action across an uncertain exit.
+        forecast = list(current)
+        next_stances = dict(stances)
+        if releases:
+            self._release(forecast, action.slot, action.kind, started)
+        priced = self.price(action.slot, action.kind, end, value=action.value,
+                            bonuses=forecast, stances=stances)
+        if priced is None:
+            return None
+        if releases:
+            self._advance_stance(next_stances, action.slot, action.kind, started)
+        locks = dict(actor_locks)
+        locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
+        return (damage + priced, end, min(300.0, budget - action.sp_cost),
+                (*indices, index), forecast, locks, next_stances)
+
+    @staticmethod
+    def _select_beam(expanded, quota):
+        expanded.sort(key=lambda entry: (-entry[0], entry[1], entry[3]))
+        per_start, beam = {}, []
+        for entry in expanded:
+            first = entry[3][0]
+            if per_start.get(first, 0) < quota:
+                beam.append(entry)
+                per_start[first] = per_start.get(first, 0) + 1
+        return beam
+
     def _search(self, actions, sp, now, *, releases, bonuses, horizon, width):
         beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {})]
         best = beam[0]
         for _ in actions:
-            expanded = []
-            for damage, time, budget, indices, current, actor_locks, stances in beam:
-                for index, action in enumerate(actions):
-                    if index in indices:
-                        continue
-                    started = max(time, actor_locks.get(action.slot, now))
-                    pending_stance = stances.get(action.slot)
-                    if pending_stance is not None and action.kind in {"battle", "normal"}:
-                        started = max(started, pending_stance.starts_at)
-                    action = self._stance_action(action, started, stances)
-                    if budget < max(action.sp_gate, action.sp_cost):
-                        continue
-                    if self.action_blocked(action.slot, action.kind, started, bonuses=current):
-                        continue
-                    end = started + action.duration
-                    if end > now + horizon:
-                        continue
-                    stance = self.stance_at(action.slot, started, stances=stances)
-                    if stance is not None and action.kind in {"normal", "battle"} and end >= stance.expires_at:
-                        continue  # Do not credit a complete enhanced action across an uncertain exit.
-                    forecast = list(current)
-                    next_stances = dict(stances)
-                    if releases:
-                        self._release(forecast, action.slot, action.kind, started)
-                    priced = self.price(action.slot, action.kind, end, value=action.value,
-                                        bonuses=forecast, stances=stances)
-                    if priced is None:
-                        continue
-                    if releases:
-                        self._advance_stance(next_stances, action.slot, action.kind, started)
-                    locks = dict(actor_locks)
-                    locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
-                    entry = (damage + priced, end, min(300.0, budget - action.sp_cost),
-                             (*indices, index), forecast, locks, next_stances)
-                    expanded.append(entry)
-                    if (entry[0], -entry[1]) > (best[0], -best[1]):
-                        best = entry
+            expanded = [entry for node in beam for index, action in enumerate(actions)
+                        if (entry := self._forecast_step(node, action, index, now,
+                                                        releases=releases, horizon=horizon)) is not None]
             if not expanded:
                 break
-            expanded.sort(key=lambda entry: (-entry[0], entry[1], entry[3]))
-            per_start, beam = {}, []
-            quota = max(1, width // len(actions))
-            for entry in expanded:
-                first = entry[3][0]
-                if per_start.get(first, 0) < quota:
-                    beam.append(entry)
-                    per_start[first] = per_start.get(first, 0) + 1
+            candidate = max(expanded, key=lambda entry: (entry[0], -entry[1]))
+            if (candidate[0], -candidate[1]) > (best[0], -best[1]):
+                best = candidate
+            beam = self._select_beam(expanded, max(1, width // len(actions)))
         return best
 
     def choose(self, actions, sp, now, *, horizon=12.0, width=16):
