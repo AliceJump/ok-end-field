@@ -70,7 +70,7 @@ TimedDamageState.apply_final_attribute_delta接收生产者已确认的最终属
 | 庄方宜战技天赋 | 原有battle_cast定义存在，但雷击命中次数、增幅累加及重置输入未闭环；本批不把未知次数填0 |
 | 秋栗P3 | 已接实际原生创建块及buff实例攻击加成，见下方续作；完整终结技能其他节点、真实中断/识别仍未完成 |
 | 孤舟终结技 | 第九批已从原生OnBeforeCastSkill核准25秒/112%并接成功模型释放，见native-guzhou-release-audit.md；完整原生事件发布/父根清理仍未完成，法术异常消费分支未自动触发 |
-| 碾骨、50式应龙 | 下次技能增益的层数消费、跨角色触发/指代与早期清理还需逐项确认，不当成普通持续buff |
+| 碾骨、50式应龙 | 原生套装/件数/参数、snapshot→乘层数→创建cast buff→消费全部pending已核准，见native-next-skill-set-audit.md；Aura Source/Owner、cast命中上下文及SkillAffix引用清理尚未执行，不当成普通持续buff |
 | 赛希满血晶体、卡缪血翼、弭弗连携脆弱 | 实际治疗结果、目标/投射物附着及命中producer未闭环，不能由cast推定 |
 | 洁尔佩塔、提弗洛斯、黎诺场地/姿态 | 场地实例、进出目标、提前退出及跨技能清理尚未全接；通用接口不等于实际producer |
 | 伊冯暴击层、概率免疫、额外攻击 | 实际次数/条件/消费未确认，保留原缺口 |

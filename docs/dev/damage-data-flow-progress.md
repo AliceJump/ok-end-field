@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-08第十一批：碾骨/50式应龙的原生套装等级、装备名称及九份父/检测/pending/伤害buff核准；仅艾维文娜4件与大潘/萤石各3件启用，三位碾骨散件不启用。30号施放事件先积层，下次指定技能snapshot→乘实际层数→创建同cast buff→消费全部pending。SkillAffix实体引用可超过动作结束，未用普通定时buff替代。逐角色/24技能（含散件未激活）已登记来源、生产/消费类型及未执行项。3项新增与37项相关通过；32面板/128报价、14/2条绑定和2/111完整程序不变。见[native-next-skill-set-audit.md](native-next-skill-set-audit.md)。
+
 > 2026-10-08第十批：取得原始AttributeMetaTable十行及逐字段字节证据，确认四维raw default=0且范围0～100000，57/58和76～79默认0但边界开关关闭。重新核准FieldMeta→CreateDefault→CreateFrom/Reset初始化，逐角色审计检查固定四维范围，raw default不填入当前armed/final。百分比组件的原生加乘顺序已定位，实际基数/转换/缓存producer仍待办；不启用负山、不消除黎风/赛希未知。32面板/128报价及14/2条绑定不变，完整程序仍2/111。见[native-attribute-components-audit.md](native-attribute-components-audit.md)。3项新增、20项专项及全仓1406项通过（176.013秒）。
 
 > 2026-10-08第九批：孤舟“终结后”的时点已由原生OnBeforeCastSkill=30核准，Rank9的112%/25秒只增强self战技电磁伤害；已接离线成功释放、刷新、移除/到期与预测隔离。原生完整事件/父根/命中发布仍未完成，消耗法术异常56%分支不按cast触发。模型释放绑定13→14，完整程序树复测仍2/111；固定面板与报价不变。4项新增、53项相关及全仓1403项通过（92.556秒）。见[native-guzhou-release-audit.md](native-guzhou-release-audit.md)，继续原生四维组件/百分比与其他待确认producer。

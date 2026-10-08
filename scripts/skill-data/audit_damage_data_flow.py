@@ -162,6 +162,61 @@ def weapon_attribute_evidence(character, row):
     return result
 
 
+def next_skill_set_evidence(row):
+    """Keep pending stacks, cast-bound damage and affix cleanup as separate stages."""
+    folder = ROOT / "assets/data/equipment_mechanics/20261008"
+    manifest = json.loads((folder / "index.json").read_text(encoding="utf-8"))
+    raw = (folder / "next_skill_sets.json").read_bytes()
+    if hashlib.sha256(raw).hexdigest() != manifest["files"]["next_skill_sets.json"]:
+        raise ValueError("Native next-skill set evidence hash mismatch")
+    evidence = json.loads(raw)
+    inputs = json.loads((ROOT / "assets/data/skill_timings/20261002/index.json").read_text(encoding="utf-8"))["native_inputs"]
+    if (evidence["schema_version"] != 1 or evidence["scope"] != "evidence_only; not_runtime_binding"
+            or evidence["native_inputs"] != inputs or manifest["native_inputs"] != inputs):
+        raise ValueError("Native next-skill set evidence domain/build mismatch")
+    chains = {"suit_attri01": ("buff_equipsuit_attrisuit_01", "buff_equipsuit_attrisuitup_01",
+                              "buff_equipsuit_attrisuitup_02", "连携技", "战技"),
+              "suit_atk02": ("buff_equipsuit_atk_02_aruadetect", "buff_equipsuit_atk_02_addcombodamage",
+                             "buff_equipsuit_atk_02_addcombodamage_buff", "战技", "连携技")}
+    result = []
+    for suit_id, (detector, pending, damage, producer_kind, consumer_kind) in chains.items():
+        suit = evidence["sets"][suit_id]
+        names = {piece["name"]: native_id for native_id, piece in suit["pieces"].items()}
+        pieces = [names[name] for name in row["build"]["pieces"] if name in names]
+        if not pieces:
+            continue
+        native = suit["suit"]["list"][0]
+        patch = suit["rank_patch"]
+        if (set(suit["pieces"]) != set(suit["suit"]["equipList"])
+                or patch["level"] != native["skillLv"] or patch["skillId"] != native["skillID"]):
+            raise ValueError("Native next-skill set membership/rank mismatch")
+        parameters = {entry["key"]: entry["value"] for entry in patch["blackboard"]}
+        records = evidence["records"]
+        chain_ids = (native["skillID"], detector, pending, damage)
+        if any(not records[key]["source"]["byte_identical"] for key in chain_ids):
+            raise ValueError("Native next-skill set lacks byte-identical evidence")
+        result.append({"set": suit["name"], "native_set": suit_id,
+                       "selected_piece_ids": pieces, "required_pieces": native["equipCnt"],
+                       "activated_by_selected_build": len(pieces) >= native["equipCnt"],
+                       "selected_parameters": parameters, "description": suit["description"],
+                       "producer_skill": native["skillID"], "release_detector": detector,
+                       "pending_stack_buff": pending, "cast_damage_buff": damage,
+                       "producer_skill_kind": producer_kind, "consumer_skill_kind": consumer_kind,
+                       "event": "OnBeforeCastSkill",
+                       "consumer_actions": [action["$type"].rsplit(".", 1)[-1]
+                                            for action in records[pending]["data"]["abilityEventAction"][0]["actions"][0]["actionData"]],
+                       "native_stacking": records[pending]["data"]["stackingSettings"],
+                       "damage_conditions": records[damage]["data"]["damageModifier"][0]["condition"],
+                       "lifetime": "SkillAffixAction; no authored duration or assumed action-end timer",
+                       "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+                       "execution_status": "not_bound; evidence_candidate_only",
+                       "unexecuted_components": ["selected set parent and event source/owner binding",
+                                                 "pending stack snapshot, float32 multiply, ordered consume-all",
+                                                 "CheckSkillCastId and actual hit decoration/source context",
+                                                 "SkillAffix projectile/entity/buff reference tracking and early cleanup"]})
+    return result
+
+
 def audit(rows=None):
     if rows is None:
         rows = json.loads((ROOT / "assets/data/fixed_damage_baseline.json").read_text(encoding="utf-8"))
@@ -195,6 +250,7 @@ def audit(rows=None):
         native_attack = reviewed_attack_binding(character, store)
         enhanced_attack = enhanced_attack_evidence(character, store)
         entry["native_enhanced_attack_candidates"] = enhanced_attack
+        entry["native_next_skill_set_candidates"] = next_skill_set_evidence(row)
         entry["target_state_bonus_rules"] = [
             {**rule_record(spec, "reviewed_fixed_weapon_target_predicate"),
              "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"}
@@ -285,6 +341,14 @@ def audit(rows=None):
                     for spec in releases.get(KINDS.get(skill.skill_type.value), ())],
                 "pending_semantic_checks": pending,
                 "full_skill_execution": "not_assessed; see mechanism coverage audit",
+                "native_next_skill_set_checks": [
+                    {"set": candidate["set"], "selected_piece_count": len(candidate["selected_piece_ids"]),
+                     "activated_by_selected_build": candidate["activated_by_selected_build"],
+                     "this_unit_is_producer_kind": skill.skill_type.value == candidate["producer_skill_kind"],
+                     "this_unit_is_consumer_kind": skill.skill_type.value == candidate["consumer_skill_kind"],
+                     "status": candidate["execution_status"],
+                     "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"}
+                    for candidate in entry["native_next_skill_set_candidates"]],
                 "native_weapon_attribute_checks": [
                     {"attribute_buff": candidate["attribute_buff"], "status": candidate["execution_status"],
                      "this_unit_is_normal_skill": skill.skill_type.value == "战技",

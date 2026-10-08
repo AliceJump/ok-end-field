@@ -49,6 +49,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -78,6 +79,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -127,6 +129,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -156,6 +159,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -286,6 +290,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -424,6 +429,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -473,6 +479,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -526,6 +533,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -555,6 +563,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -685,6 +694,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -823,6 +833,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -918,6 +929,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -1059,6 +1071,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -1223,6 +1236,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -1346,6 +1360,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -1482,6 +1497,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -1587,6 +1603,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -1805,6 +1822,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -1852,6 +1870,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -1889,6 +1908,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2027,6 +2047,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -2076,6 +2097,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -2125,6 +2147,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -2174,6 +2197,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -2330,6 +2354,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2466,6 +2491,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -2584,6 +2620,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": true,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -2623,6 +2670,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": true,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -2652,6 +2710,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -2689,6 +2758,88 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [
+        {
+          "set": "碾骨",
+          "native_set": "suit_attri01",
+          "selected_piece_ids": [
+            "item_equip_t4_suit_attri01_body_04"
+          ],
+          "required_pieces": 3,
+          "activated_by_selected_build": false,
+          "selected_parameters": {
+            "atk_up": 0.15000000596046448,
+            "dmg_up": 0.30000001192092896,
+            "max_stack": 2.0
+          },
+          "description": "3件套组效果：装备者攻击力<@ba.vup>+{atk_up:0%}</>。\n当装备者施放连携技时，获得一层<@ba.key>碾骨重压</>，下一次的战技伤害<@ba.vup>+{dmg_up:0%}</>，<@ba.key>碾骨重压</>最多可叠加{max_stack:0}层。",
+          "producer_skill": "passive_equipsuit_attrisuit_01",
+          "release_detector": "buff_equipsuit_attrisuit_01",
+          "pending_stack_buff": "buff_equipsuit_attrisuitup_01",
+          "cast_damage_buff": "buff_equipsuit_attrisuitup_02",
+          "producer_skill_kind": "连携技",
+          "consumer_skill_kind": "战技",
+          "event": "OnBeforeCastSkill",
+          "consumer_actions": [
+            "CheckSkillType+Data",
+            "SaveBuffStackNumAdvanced+Data",
+            "ModifyDynamicBlackboard+Data",
+            "CreateBuffAction+Data",
+            "FinishBuffAdvanced+Data"
+          ],
+          "native_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 2,
+            "maxStackCntKey": "max_stack",
+            "negatePriority": false,
+            "priority": 0.0,
+            "priorityKey": "",
+            "stackEffects": [],
+            "stackingKey": "",
+            "stackingType": 2,
+            "useMaxStackCntKey": true,
+            "usePriorityKey": false
+          },
+          "damage_conditions": {
+            "actionData": [
+              {
+                "$tag": 115,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 0
+                }
+              },
+              {
+                "$tag": 91,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 1,
+                  "checkType": 2,
+                  "mask": 256
+                }
+              }
+            ],
+            "onlyExecuteWhenSourceIsGuard": false,
+            "onlyExecuteWhenSourceIsMainChar": false
+          },
+          "lifetime": "SkillAffixAction; no authored duration or assumed action-end timer",
+          "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "selected set parent and event source/owner binding",
+            "pending stack snapshot, float32 multiply, ordered consume-all",
+            "CheckSkillCastId and actual hit decoration/source context",
+            "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+          ]
+        }
+      ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2827,6 +2978,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 4,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -2915,6 +3077,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 4,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": true,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -2979,6 +3152,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 4,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": true,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -3008,6 +3192,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 4,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -3153,6 +3348,91 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [
+        {
+          "set": "碾骨",
+          "native_set": "suit_attri01",
+          "selected_piece_ids": [
+            "item_equip_t4_suit_attri01_body_04",
+            "item_equip_t4_suit_attri01_hand_02",
+            "item_equip_t4_suit_attri01_edc_03",
+            "item_equip_t4_suit_attri01_edc_03"
+          ],
+          "required_pieces": 3,
+          "activated_by_selected_build": true,
+          "selected_parameters": {
+            "atk_up": 0.15000000596046448,
+            "dmg_up": 0.30000001192092896,
+            "max_stack": 2.0
+          },
+          "description": "3件套组效果：装备者攻击力<@ba.vup>+{atk_up:0%}</>。\n当装备者施放连携技时，获得一层<@ba.key>碾骨重压</>，下一次的战技伤害<@ba.vup>+{dmg_up:0%}</>，<@ba.key>碾骨重压</>最多可叠加{max_stack:0}层。",
+          "producer_skill": "passive_equipsuit_attrisuit_01",
+          "release_detector": "buff_equipsuit_attrisuit_01",
+          "pending_stack_buff": "buff_equipsuit_attrisuitup_01",
+          "cast_damage_buff": "buff_equipsuit_attrisuitup_02",
+          "producer_skill_kind": "连携技",
+          "consumer_skill_kind": "战技",
+          "event": "OnBeforeCastSkill",
+          "consumer_actions": [
+            "CheckSkillType+Data",
+            "SaveBuffStackNumAdvanced+Data",
+            "ModifyDynamicBlackboard+Data",
+            "CreateBuffAction+Data",
+            "FinishBuffAdvanced+Data"
+          ],
+          "native_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 2,
+            "maxStackCntKey": "max_stack",
+            "negatePriority": false,
+            "priority": 0.0,
+            "priorityKey": "",
+            "stackEffects": [],
+            "stackingKey": "",
+            "stackingType": 2,
+            "useMaxStackCntKey": true,
+            "usePriorityKey": false
+          },
+          "damage_conditions": {
+            "actionData": [
+              {
+                "$tag": 115,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 0
+                }
+              },
+              {
+                "$tag": 91,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 1,
+                  "checkType": 2,
+                  "mask": 256
+                }
+              }
+            ],
+            "onlyExecuteWhenSourceIsGuard": false,
+            "onlyExecuteWhenSourceIsMainChar": false
+          },
+          "lifetime": "SkillAffixAction; no authored duration or assumed action-end timer",
+          "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "selected set parent and event source/owner binding",
+            "pending stack snapshot, float32 multiply, ordered consume-all",
+            "CheckSkillCastId and actual hit decoration/source context",
+            "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+          ]
+        }
+      ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -3326,6 +3606,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -3452,6 +3733,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -3530,6 +3812,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -3577,6 +3860,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -3614,6 +3898,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -3752,6 +4037,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -3791,6 +4077,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -3830,6 +4117,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -3859,6 +4147,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -3971,6 +4260,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -4109,6 +4399,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
             {
@@ -4145,6 +4436,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
             {
@@ -4201,6 +4493,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
             {
@@ -4237,6 +4530,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
             {
@@ -4738,6 +5032,7 @@
           ]
         }
       ],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [
         {
           "origin": "reviewed_fixed_weapon_target_predicate",
@@ -4915,6 +5210,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "50式应龙",
+              "selected_piece_count": 3,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -4944,6 +5250,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "50式应龙",
+              "selected_piece_count": 3,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": true,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -4993,6 +5310,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "50式应龙",
+              "selected_piece_count": 3,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": true,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -5022,6 +5350,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "50式应龙",
+              "selected_piece_count": 3,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -5134,6 +5473,90 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [
+        {
+          "set": "50式应龙",
+          "native_set": "suit_atk02",
+          "selected_piece_ids": [
+            "item_equip_t4_suit_atk02_body_01",
+            "item_equip_t4_suit_atk02_edc_01",
+            "item_equip_t4_suit_atk02_edc_01"
+          ],
+          "required_pieces": 3,
+          "activated_by_selected_build": true,
+          "selected_parameters": {
+            "atk_up": 0.15000000596046448,
+            "dmg_up": 0.20000000298023224,
+            "max_stack": 3.0
+          },
+          "description": "3件套组效果：装备者攻击力<@ba.vup>+{atk_up:0%}</>。\n当小队内任意干员施放战技时，装备者获得一层<@ba.key>应龙之锐</>，使得该干员下一次连携技伤害<@ba.vup>+{dmg_up:0%}</>，<@ba.key>应龙之锐</>最多叠加{max_stack:0}层。",
+          "producer_skill": "passive_equipsuit_atk_02",
+          "release_detector": "buff_equipsuit_atk_02_aruadetect",
+          "pending_stack_buff": "buff_equipsuit_atk_02_addcombodamage",
+          "cast_damage_buff": "buff_equipsuit_atk_02_addcombodamage_buff",
+          "producer_skill_kind": "战技",
+          "consumer_skill_kind": "连携技",
+          "event": "OnBeforeCastSkill",
+          "consumer_actions": [
+            "CheckSkillType+Data",
+            "SaveBuffStackNumAdvanced+Data",
+            "ModifyDynamicBlackboard+Data",
+            "CreateBuffAction+Data",
+            "FinishBuffAdvanced+Data"
+          ],
+          "native_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 5,
+            "maxStackCntKey": "max_stack",
+            "negatePriority": false,
+            "priority": 0.0,
+            "priorityKey": "",
+            "stackEffects": [],
+            "stackingKey": "",
+            "stackingType": 2,
+            "useMaxStackCntKey": true,
+            "usePriorityKey": false
+          },
+          "damage_conditions": {
+            "actionData": [
+              {
+                "$tag": 115,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 0
+                }
+              },
+              {
+                "$tag": 91,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 1,
+                  "checkType": 2,
+                  "mask": 8192
+                }
+              }
+            ],
+            "onlyExecuteWhenSourceIsGuard": false,
+            "onlyExecuteWhenSourceIsMainChar": false
+          },
+          "lifetime": "SkillAffixAction; no authored duration or assumed action-end timer",
+          "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "selected set parent and event source/owner binding",
+            "pending stack snapshot, float32 multiply, ordered consume-all",
+            "CheckSkillCastId and actual hit decoration/source context",
+            "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+          ]
+        }
+      ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -5306,6 +5729,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -5355,6 +5779,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -5402,6 +5827,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -5439,6 +5865,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -5476,6 +5903,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -5612,6 +6040,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -5661,6 +6090,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -5718,6 +6148,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -5767,6 +6198,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -5954,6 +6386,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -6092,6 +6525,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -6156,6 +6590,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -6275,6 +6710,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -6324,6 +6760,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -6442,6 +6879,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -6580,6 +7018,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "50式应龙",
+              "selected_piece_count": 3,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -6609,6 +7058,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "50式应龙",
+              "selected_piece_count": 3,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": true,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -6662,6 +7122,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "50式应龙",
+              "selected_piece_count": 3,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": true,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -6733,6 +7204,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "50式应龙",
+              "selected_piece_count": 3,
+              "activated_by_selected_build": true,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -6915,6 +7397,90 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [
+        {
+          "set": "50式应龙",
+          "native_set": "suit_atk02",
+          "selected_piece_ids": [
+            "item_equip_t4_suit_atk02_body_02",
+            "item_equip_t4_suit_atk02_hand_01",
+            "item_equip_t4_suit_atk02_edc_03"
+          ],
+          "required_pieces": 3,
+          "activated_by_selected_build": true,
+          "selected_parameters": {
+            "atk_up": 0.15000000596046448,
+            "dmg_up": 0.20000000298023224,
+            "max_stack": 3.0
+          },
+          "description": "3件套组效果：装备者攻击力<@ba.vup>+{atk_up:0%}</>。\n当小队内任意干员施放战技时，装备者获得一层<@ba.key>应龙之锐</>，使得该干员下一次连携技伤害<@ba.vup>+{dmg_up:0%}</>，<@ba.key>应龙之锐</>最多叠加{max_stack:0}层。",
+          "producer_skill": "passive_equipsuit_atk_02",
+          "release_detector": "buff_equipsuit_atk_02_aruadetect",
+          "pending_stack_buff": "buff_equipsuit_atk_02_addcombodamage",
+          "cast_damage_buff": "buff_equipsuit_atk_02_addcombodamage_buff",
+          "producer_skill_kind": "战技",
+          "consumer_skill_kind": "连携技",
+          "event": "OnBeforeCastSkill",
+          "consumer_actions": [
+            "CheckSkillType+Data",
+            "SaveBuffStackNumAdvanced+Data",
+            "ModifyDynamicBlackboard+Data",
+            "CreateBuffAction+Data",
+            "FinishBuffAdvanced+Data"
+          ],
+          "native_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 5,
+            "maxStackCntKey": "max_stack",
+            "negatePriority": false,
+            "priority": 0.0,
+            "priorityKey": "",
+            "stackEffects": [],
+            "stackingKey": "",
+            "stackingType": 2,
+            "useMaxStackCntKey": true,
+            "usePriorityKey": false
+          },
+          "damage_conditions": {
+            "actionData": [
+              {
+                "$tag": 115,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 0
+                }
+              },
+              {
+                "$tag": 91,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 1,
+                  "checkType": 2,
+                  "mask": 8192
+                }
+              }
+            ],
+            "onlyExecuteWhenSourceIsGuard": false,
+            "onlyExecuteWhenSourceIsMainChar": false
+          },
+          "lifetime": "SkillAffixAction; no authored duration or assumed action-end timer",
+          "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "selected set parent and event source/owner binding",
+            "pending stack snapshot, float32 multiply, ordered consume-all",
+            "CheckSkillCastId and actual hit decoration/source context",
+            "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+          ]
+        }
+      ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -7051,6 +7617,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7080,6 +7647,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7129,6 +7697,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7287,6 +7856,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -7324,6 +7894,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -7460,6 +8031,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7521,6 +8093,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7574,6 +8147,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7647,6 +8221,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -7684,6 +8259,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -7820,6 +8396,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7911,6 +8498,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": true,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7962,6 +8560,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": true,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -7991,6 +8600,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -8034,6 +8654,88 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [
+        {
+          "set": "碾骨",
+          "native_set": "suit_attri01",
+          "selected_piece_ids": [
+            "item_equip_t4_suit_attri01_body_03"
+          ],
+          "required_pieces": 3,
+          "activated_by_selected_build": false,
+          "selected_parameters": {
+            "atk_up": 0.15000000596046448,
+            "dmg_up": 0.30000001192092896,
+            "max_stack": 2.0
+          },
+          "description": "3件套组效果：装备者攻击力<@ba.vup>+{atk_up:0%}</>。\n当装备者施放连携技时，获得一层<@ba.key>碾骨重压</>，下一次的战技伤害<@ba.vup>+{dmg_up:0%}</>，<@ba.key>碾骨重压</>最多可叠加{max_stack:0}层。",
+          "producer_skill": "passive_equipsuit_attrisuit_01",
+          "release_detector": "buff_equipsuit_attrisuit_01",
+          "pending_stack_buff": "buff_equipsuit_attrisuitup_01",
+          "cast_damage_buff": "buff_equipsuit_attrisuitup_02",
+          "producer_skill_kind": "连携技",
+          "consumer_skill_kind": "战技",
+          "event": "OnBeforeCastSkill",
+          "consumer_actions": [
+            "CheckSkillType+Data",
+            "SaveBuffStackNumAdvanced+Data",
+            "ModifyDynamicBlackboard+Data",
+            "CreateBuffAction+Data",
+            "FinishBuffAdvanced+Data"
+          ],
+          "native_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 2,
+            "maxStackCntKey": "max_stack",
+            "negatePriority": false,
+            "priority": 0.0,
+            "priorityKey": "",
+            "stackEffects": [],
+            "stackingKey": "",
+            "stackingType": 2,
+            "useMaxStackCntKey": true,
+            "usePriorityKey": false
+          },
+          "damage_conditions": {
+            "actionData": [
+              {
+                "$tag": 115,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 0
+                }
+              },
+              {
+                "$tag": 91,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 1,
+                  "checkType": 2,
+                  "mask": 256
+                }
+              }
+            ],
+            "onlyExecuteWhenSourceIsGuard": false,
+            "onlyExecuteWhenSourceIsMainChar": false
+          },
+          "lifetime": "SkillAffixAction; no authored duration or assumed action-end timer",
+          "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "selected set parent and event source/owner binding",
+            "pending stack snapshot, float32 multiply, ordered consume-all",
+            "CheckSkillCastId and actual hit decoration/source context",
+            "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+          ]
+        }
+      ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -8172,6 +8874,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [
             {
               "attribute_buff": "buff_wpn_lance_0012_attribute2",
@@ -8258,6 +8961,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [
             {
               "attribute_buff": "buff_wpn_lance_0012_attribute2",
@@ -8324,6 +9028,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [
             {
               "attribute_buff": "buff_wpn_lance_0012_attribute2",
@@ -8386,6 +9091,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [
             {
               "attribute_buff": "buff_wpn_lance_0012_attribute2",
@@ -8436,6 +9142,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [
         {
           "origin": "reviewed_fixed_weapon_target_predicate",
@@ -9190,6 +9897,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -9253,6 +9961,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -9302,6 +10011,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -9447,6 +10157,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -9484,6 +10195,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -9656,6 +10368,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -9778,6 +10491,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -9869,6 +10583,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -9906,6 +10621,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -9943,6 +10659,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -10081,6 +10798,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
             {
@@ -10117,6 +10835,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
             {
@@ -10198,6 +10917,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
             {
@@ -10269,6 +10989,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
             {
@@ -10612,6 +11333,7 @@
           ]
         }
       ],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {
@@ -10787,6 +11509,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -10845,6 +11568,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -10957,6 +11681,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -11037,6 +11762,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -11107,6 +11833,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -11245,6 +11972,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -11284,6 +12012,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -11323,6 +12052,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -11390,6 +12120,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -11508,6 +12239,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -11644,6 +12376,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -11693,6 +12426,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -11830,6 +12564,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -11859,6 +12594,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -11930,6 +12666,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -12068,6 +12805,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -12107,6 +12855,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": true,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -12146,6 +12905,17 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": true,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -12175,6 +12945,17 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [
+            {
+              "set": "碾骨",
+              "selected_piece_count": 1,
+              "activated_by_selected_build": false,
+              "this_unit_is_producer_kind": false,
+              "this_unit_is_consumer_kind": false,
+              "status": "not_bound; evidence_candidate_only",
+              "event_requirement": "explicit release -> pending count -> matching cast snapshot/consume -> same-cast damage/affix cleanup"
+            }
+          ],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -12287,6 +13068,88 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [
+        {
+          "set": "碾骨",
+          "native_set": "suit_attri01",
+          "selected_piece_ids": [
+            "item_equip_t4_suit_attri01_body_04"
+          ],
+          "required_pieces": 3,
+          "activated_by_selected_build": false,
+          "selected_parameters": {
+            "atk_up": 0.15000000596046448,
+            "dmg_up": 0.30000001192092896,
+            "max_stack": 2.0
+          },
+          "description": "3件套组效果：装备者攻击力<@ba.vup>+{atk_up:0%}</>。\n当装备者施放连携技时，获得一层<@ba.key>碾骨重压</>，下一次的战技伤害<@ba.vup>+{dmg_up:0%}</>，<@ba.key>碾骨重压</>最多可叠加{max_stack:0}层。",
+          "producer_skill": "passive_equipsuit_attrisuit_01",
+          "release_detector": "buff_equipsuit_attrisuit_01",
+          "pending_stack_buff": "buff_equipsuit_attrisuitup_01",
+          "cast_damage_buff": "buff_equipsuit_attrisuitup_02",
+          "producer_skill_kind": "连携技",
+          "consumer_skill_kind": "战技",
+          "event": "OnBeforeCastSkill",
+          "consumer_actions": [
+            "CheckSkillType+Data",
+            "SaveBuffStackNumAdvanced+Data",
+            "ModifyDynamicBlackboard+Data",
+            "CreateBuffAction+Data",
+            "FinishBuffAdvanced+Data"
+          ],
+          "native_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 2,
+            "maxStackCntKey": "max_stack",
+            "negatePriority": false,
+            "priority": 0.0,
+            "priorityKey": "",
+            "stackEffects": [],
+            "stackingKey": "",
+            "stackingType": 2,
+            "useMaxStackCntKey": true,
+            "usePriorityKey": false
+          },
+          "damage_conditions": {
+            "actionData": [
+              {
+                "$tag": 115,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 0
+                }
+              },
+              {
+                "$tag": 91,
+                "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                "$value": {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 1,
+                  "checkType": 2,
+                  "mask": 256
+                }
+              }
+            ],
+            "onlyExecuteWhenSourceIsGuard": false,
+            "onlyExecuteWhenSourceIsMainChar": false
+          },
+          "lifetime": "SkillAffixAction; no authored duration or assumed action-end timer",
+          "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "selected set parent and event source/owner binding",
+            "pending stack snapshot, float32 multiply, ordered consume-all",
+            "CheckSkillCastId and actual hit decoration/source context",
+            "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+          ]
+        }
+      ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -12423,6 +13286,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -12525,6 +13389,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -12615,6 +13480,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -12654,6 +13520,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -12691,6 +13558,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -12827,6 +13695,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -12900,6 +13769,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -12985,6 +13855,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -13014,6 +13885,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -13051,6 +13923,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -13189,6 +14062,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -13264,6 +14138,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -13350,6 +14225,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -13379,6 +14255,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -13524,6 +14401,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -13662,6 +14540,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -13747,6 +14626,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -13786,6 +14666,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -13990,6 +14871,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -14152,6 +15034,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -14288,6 +15171,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -14343,6 +15227,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -14392,6 +15277,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -14547,6 +15433,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -14659,6 +15546,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -14795,6 +15683,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -14892,6 +15781,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -14961,6 +15851,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         },
@@ -15031,6 +15922,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
         }
@@ -15110,6 +16002,7 @@
         }
       ],
       "native_enhanced_attack_candidates": [],
+      "native_next_skill_set_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},

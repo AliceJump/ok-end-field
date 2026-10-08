@@ -1,0 +1,2897 @@
+{
+  "schema_version": 1,
+  "scope": "evidence_only; not_runtime_binding",
+  "native_inputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "native_read_plan_sha256": "4da5cd92c653bbe3b2f399f237572d2ba8859655ba12e0476a6c212a9a70f40d",
+  "sets": {
+    "suit_atk02": {
+      "suit": {
+        "equipList": [
+          "item_equip_t4_suit_atk02_body_01",
+          "item_equip_t4_suit_atk02_body_02",
+          "item_equip_t4_suit_atk02_body_03",
+          "item_equip_t4_suit_atk02_body_04",
+          "item_equip_t4_suit_atk02_hand_01",
+          "item_equip_t4_suit_atk02_hand_02",
+          "item_equip_t4_suit_atk02_edc_01",
+          "item_equip_t4_suit_atk02_edc_02",
+          "item_equip_t4_suit_atk02_edc_03",
+          "item_equip_t4_suit_atk02_edc_04",
+          "item_equip_t4_suit_atk02_edc_05"
+        ],
+        "list": [
+          {
+            "equipCnt": 3,
+            "skillID": "passive_equipsuit_atk_02",
+            "skillLv": 1,
+            "suitID": "suit_atk02",
+            "suitLogoName": "icon_pack_wuling_suit_atk02",
+            "suitName": {
+              "id": -7630189515413167967,
+              "text": ""
+            }
+          }
+        ]
+      },
+      "name": "50式应龙",
+      "rank_patch": {
+        "blackboard": [
+          {
+            "key": "atk_up",
+            "value": 0.15000000596046448,
+            "valueStr": ""
+          },
+          {
+            "key": "dmg_up",
+            "value": 0.20000000298023224,
+            "valueStr": ""
+          },
+          {
+            "key": "max_stack",
+            "value": 3.0,
+            "valueStr": ""
+          }
+        ],
+        "coolDown": 0.0,
+        "costType": 0,
+        "costValue": 0.0,
+        "description": {
+          "id": 2185421779195027723,
+          "text": ""
+        },
+        "iconBgType": 0,
+        "iconId": "",
+        "level": 1,
+        "maxChargeTime": 1,
+        "skillId": "passive_equipsuit_atk_02",
+        "skillName": {
+          "id": 0,
+          "text": ""
+        },
+        "subDescDataList": [],
+        "tagId": "",
+        "useSkillGroupIcon": false
+      },
+      "description": "3件套组效果：装备者攻击力<@ba.vup>+{atk_up:0%}</>。\n当小队内任意干员施放战技时，装备者获得一层<@ba.key>应龙之锐</>，使得该干员下一次连携技伤害<@ba.vup>+{dmg_up:0%}</>，<@ba.key>应龙之锐</>最多叠加{max_stack:0}层。",
+      "pieces": {
+        "item_equip_t4_suit_atk02_body_01": {
+          "name_id": -8659145463891661877,
+          "name": "50式应龙重甲"
+        },
+        "item_equip_t4_suit_atk02_body_02": {
+          "name_id": -8506402002341140906,
+          "name": "50式应龙重甲·壹型"
+        },
+        "item_equip_t4_suit_atk02_body_03": {
+          "name_id": 7102505131627171148,
+          "name": "50式应龙重甲·贰型"
+        },
+        "item_equip_t4_suit_atk02_body_04": {
+          "name_id": -3549355605297524951,
+          "name": "50式应龙轻甲"
+        },
+        "item_equip_t4_suit_atk02_hand_01": {
+          "name_id": 1716949376971040253,
+          "name": "50式应龙护手"
+        },
+        "item_equip_t4_suit_atk02_hand_02": {
+          "name_id": -160753427735506308,
+          "name": "50式应龙护手·壹型"
+        },
+        "item_equip_t4_suit_atk02_edc_01": {
+          "name_id": -179799016364795944,
+          "name": "50式应龙雷达"
+        },
+        "item_equip_t4_suit_atk02_edc_02": {
+          "name_id": 5679685119144521326,
+          "name": "50式应龙雷达·壹型"
+        },
+        "item_equip_t4_suit_atk02_edc_03": {
+          "name_id": -347959475561368199,
+          "name": "50式应龙雷达·贰型"
+        },
+        "item_equip_t4_suit_atk02_edc_04": {
+          "name_id": 2606751888017344914,
+          "name": "50式应龙短刃"
+        },
+        "item_equip_t4_suit_atk02_edc_05": {
+          "name_id": 5576104556869703013,
+          "name": "50式应龙短刃·壹型"
+        }
+      }
+    },
+    "suit_attri01": {
+      "suit": {
+        "equipList": [
+          "item_equip_t4_suit_attri01_body_01",
+          "item_equip_t4_suit_attri01_body_02",
+          "item_equip_t4_suit_attri01_body_03",
+          "item_equip_t4_suit_attri01_body_04",
+          "item_equip_t4_suit_attri01_hand_01",
+          "item_equip_t4_suit_attri01_hand_02",
+          "item_equip_t4_suit_attri01_edc_03",
+          "item_equip_t4_suit_attri01_edc_04",
+          "item_equip_t4_suit_attri01_edc_05",
+          "item_equip_t4_suit_attri01_edc_06",
+          "item_equip_t4_suit_attri01_edc_07",
+          "item_equip_t4_suit_attri01_body_05",
+          "item_equip_t4_suit_attri01_hand_03",
+          "item_equip_t4_suit_attri01_edc_02"
+        ],
+        "list": [
+          {
+            "equipCnt": 3,
+            "skillID": "passive_equipsuit_attrisuit_01",
+            "skillLv": 1,
+            "suitID": "suit_attri01",
+            "suitLogoName": "icon_pack_wuling_suit_attri01",
+            "suitName": {
+              "id": -5935672926878943329,
+              "text": ""
+            }
+          }
+        ]
+      },
+      "name": "碾骨",
+      "rank_patch": {
+        "blackboard": [
+          {
+            "key": "atk_up",
+            "value": 0.15000000596046448,
+            "valueStr": ""
+          },
+          {
+            "key": "dmg_up",
+            "value": 0.30000001192092896,
+            "valueStr": ""
+          },
+          {
+            "key": "max_stack",
+            "value": 2.0,
+            "valueStr": ""
+          }
+        ],
+        "coolDown": 0.0,
+        "costType": 0,
+        "costValue": 0.0,
+        "description": {
+          "id": -1115847808811921581,
+          "text": ""
+        },
+        "iconBgType": 0,
+        "iconId": "",
+        "level": 1,
+        "maxChargeTime": 1,
+        "skillId": "passive_equipsuit_attrisuit_01",
+        "skillName": {
+          "id": 0,
+          "text": ""
+        },
+        "subDescDataList": [],
+        "tagId": "",
+        "useSkillGroupIcon": false
+      },
+      "description": "3件套组效果：装备者攻击力<@ba.vup>+{atk_up:0%}</>。\n当装备者施放连携技时，获得一层<@ba.key>碾骨重压</>，下一次的战技伤害<@ba.vup>+{dmg_up:0%}</>，<@ba.key>碾骨重压</>最多可叠加{max_stack:0}层。",
+      "pieces": {
+        "item_equip_t4_suit_attri01_body_01": {
+          "name_id": 9145730138615713953,
+          "name": "碾骨重护甲"
+        },
+        "item_equip_t4_suit_attri01_body_02": {
+          "name_id": -3900649813779378064,
+          "name": "碾骨重护甲·壹型"
+        },
+        "item_equip_t4_suit_attri01_body_03": {
+          "name_id": 97175223045850886,
+          "name": "碾骨披巾"
+        },
+        "item_equip_t4_suit_attri01_body_04": {
+          "name_id": 2948107189948298526,
+          "name": "碾骨披巾·壹型"
+        },
+        "item_equip_t4_suit_attri01_hand_01": {
+          "name_id": -6372057042269937456,
+          "name": "碾骨腕带"
+        },
+        "item_equip_t4_suit_attri01_hand_02": {
+          "name_id": 7665136748818923798,
+          "name": "碾骨腕带·壹型"
+        },
+        "item_equip_t4_suit_attri01_edc_03": {
+          "name_id": 4670546706535904809,
+          "name": "碾骨小雕像"
+        },
+        "item_equip_t4_suit_attri01_edc_04": {
+          "name_id": -642307027908106688,
+          "name": "碾骨面具"
+        },
+        "item_equip_t4_suit_attri01_edc_05": {
+          "name_id": -2342031140772054365,
+          "name": "碾骨面具·壹型"
+        },
+        "item_equip_t4_suit_attri01_edc_06": {
+          "name_id": 3515742160626771407,
+          "name": "碾骨小雕像·壹型"
+        },
+        "item_equip_t4_suit_attri01_edc_07": {
+          "name_id": 2341711373244428212,
+          "name": "碾骨面具·贰型"
+        },
+        "item_equip_t4_suit_attri01_body_05": {
+          "name_id": -8277020376586152970,
+          "name": "碾骨重护甲·贰型"
+        },
+        "item_equip_t4_suit_attri01_hand_03": {
+          "name_id": 8622541932237050167,
+          "name": "碾骨手套"
+        },
+        "item_equip_t4_suit_attri01_edc_02": {
+          "name_id": 597049943002129075,
+          "name": "碾骨小雕像·贰型"
+        }
+      }
+    }
+  },
+  "records": {
+    "passive_equipsuit_atk_02": {
+      "kind": "SkillData",
+      "data": {
+        "actionGroupData": {
+          "passiveEventActions": [],
+          "timelineActions": []
+        },
+        "aiExclusiveFrame": 0,
+        "attackRangeType": 0,
+        "blackboard": [
+          {
+            "isDynamic": false,
+            "key": "atk_up",
+            "valueDouble": 0.0,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "dmg_up",
+            "valueDouble": 0.2,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "max_stack",
+            "valueDouble": 0.0,
+            "valueStr": ""
+          }
+        ],
+        "buffInputBase": null,
+        "buffs": [
+          {
+            "assignBlackboard": true,
+            "assignItems": [
+              {
+                "directValueType": 0,
+                "inputValueKey": "atk_up",
+                "numericValue": 0.0,
+                "stringValue": "",
+                "targetKey": "atk_up",
+                "useDirectValue": false
+              },
+              {
+                "directValueType": 0,
+                "inputValueKey": "dmg_up",
+                "numericValue": 0.0,
+                "stringValue": "",
+                "targetKey": "dmg_up",
+                "useDirectValue": false
+              },
+              {
+                "directValueType": 0,
+                "inputValueKey": "max_stack",
+                "numericValue": 0.0,
+                "stringValue": "",
+                "targetKey": "max_stack",
+                "useDirectValue": false
+              }
+            ],
+            "buffId": "buff_equipsuit_atk_02"
+          }
+        ],
+        "canCastInAir": false,
+        "canCastInWater": false,
+        "canDummyCast": true,
+        "canMove": false,
+        "cardAttributeModifier": {
+          "attributeModifiers": [
+            {
+              "attributeType": 2,
+              "formulaItem": 6,
+              "modifyAttributeType": 0,
+              "param": {
+                "blackboardKey": "atk_up",
+                "useBlackboardKey": true,
+                "value": 0.0
+              }
+            }
+          ],
+          "isConvertedAttribute": false
+        },
+        "castData": {
+          "castAngle": 360.0,
+          "castDistance": {
+            "blackboardKey": "",
+            "useBlackboardKey": false,
+            "value": 0.0
+          },
+          "checkCastDistanceType": 0,
+          "checkHeightDiff": false,
+          "cooldownTime": 0.0,
+          "costData": {
+            "atbValueThreshold": 0.0,
+            "costType": 0,
+            "costValue": 0.0
+          },
+          "heightDiffLimit": {
+            "blackboardKey": "",
+            "useBlackboardKey": false,
+            "value": 0.0
+          },
+          "maxChargeTime": 1,
+          "rotateType": 1,
+          "startCdFrame": 0,
+          "useCustomCastDistance": false
+        },
+        "castType": 1,
+        "characterReturnToIdle": false,
+        "comboSkillUIBigSpriteName": "",
+        "comboSkillUISpriteName": "",
+        "dontInterruptCombo": false,
+        "dummyPositionOffset": {
+          "raw": "000000000000000000000000"
+        },
+        "durationFrame": 0,
+        "exclusiveFrame": 0,
+        "hittableAttackRange": 0.0,
+        "iconBgType": 0,
+        "iconId": "",
+        "level": 1,
+        "needEnemyOutOfScreenWarning": false,
+        "needEnemyOutOfScreenWarningOverrideValue": false,
+        "offsetRecordFrame": 0,
+        "overrideHittableObjAttackRange": false,
+        "overrideNeedEnemyOutOfScreenWarning": false,
+        "passiveSkillType": 0,
+        "rootMotionCliffCheck": true,
+        "selectStrategy": 0,
+        "showNotRecommendState": false,
+        "skillHighlightCondition": {
+          "actionData": [],
+          "onlyExecuteWhenSourceIsGuard": false,
+          "onlyExecuteWhenSourceIsMainChar": false
+        },
+        "skillId": "passive_equipsuit_atk_02",
+        "skillName": "",
+        "skillSpecification": 0,
+        "skillTags": {
+          "predefinedTag": []
+        },
+        "smartTargetBuffFindSettings": {
+          "buffIdList": [],
+          "checkType": 0,
+          "tagQuery": {
+            "queryType": 0,
+            "tags": []
+          }
+        },
+        "smartTargetBuffIds": [],
+        "smartTargetSelectStrategy": 0,
+        "smartTargetTagQuery": {
+          "queryType": 0,
+          "tags": []
+        },
+        "switchToBuffConfig": {
+          "asSkillCast": true,
+          "buffs": [],
+          "buffSource": {
+            "advancedDirection": {
+              "clampToXZ": true,
+              "customSourceAndTarget": false,
+              "directionType": 0,
+              "invertDirection": false,
+              "source": null,
+              "sourceMountPoint": 0,
+              "target": null,
+              "targetMountPoint": 0
+            },
+            "centerContextKey": "",
+            "centerToGround": false,
+            "centerType": 0,
+            "enableAdvancedDirection": false,
+            "ownerContextKey": "",
+            "selectorData": {
+              "finderData": null,
+              "postProcessorData": [],
+              "validatorData": []
+            },
+            "selectorDirection": 0,
+            "selectorOwner": 1,
+            "target": 0,
+            "targetContextKey": "",
+            "targetGroupKey": "",
+            "targetSource": 4
+          },
+          "condition": {
+            "actionData": [],
+            "onlyExecuteWhenSourceIsGuard": false,
+            "onlyExecuteWhenSourceIsMainChar": false
+          },
+          "targets": {
+            "advancedDirection": {
+              "clampToXZ": true,
+              "customSourceAndTarget": false,
+              "directionType": 0,
+              "invertDirection": false,
+              "source": null,
+              "sourceMountPoint": 0,
+              "target": null,
+              "targetMountPoint": 0
+            },
+            "centerContextKey": "",
+            "centerToGround": false,
+            "centerType": 0,
+            "enableAdvancedDirection": false,
+            "ownerContextKey": "",
+            "selectorData": {
+              "finderData": null,
+              "postProcessorData": [],
+              "validatorData": []
+            },
+            "selectorDirection": 0,
+            "selectorOwner": 1,
+            "target": 0,
+            "targetContextKey": "",
+            "targetGroupKey": "",
+            "targetSource": 0
+          }
+        },
+        "switchToCenterBeforeCast": false,
+        "tagDuringAttach": {
+          "predefinedTag": []
+        },
+        "toggleBuffs": [],
+        "uiRangeHints": [],
+        "useAIExclusiveFrame": false
+      },
+      "source": {
+        "sha256": "ae43dc66ee7e123108ecfc6ad416b60a36e8f71f3ae2f3f78e3cf7b4842a370a",
+        "bytes": 653,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    },
+    "buff_equipsuit_atk_02": {
+      "kind": "BuffData",
+      "data": {
+        "abilityEventAction": [],
+        "addingCooldown": {
+          "blackboardKey": "cd",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "applyTags": [],
+        "attributeModifier": {
+          "attributeModifiers": [],
+          "isConvertedAttribute": false
+        },
+        "blackboard": [
+          {
+            "isDynamic": false,
+            "key": "atk_up",
+            "valueDouble": 0.1,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "dmg_up",
+            "valueDouble": 0.2,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "max_stack",
+            "valueDouble": 5.0,
+            "valueStr": ""
+          }
+        ],
+        "buffEventAction": [
+          {
+            "actions": [
+              {
+                "actionData": [
+                  {
+                    "$tag": 22,
+                    "$type": "Beyond.Gameplay.Core.AuraAction+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 0,
+                      "actionInAura": {
+                        "actionData": [],
+                        "onlyExecuteWhenSourceIsGuard": false,
+                        "onlyExecuteWhenSourceIsMainChar": false
+                      },
+                      "actionWhenExitAura": {
+                        "actionData": [],
+                        "onlyExecuteWhenSourceIsGuard": false,
+                        "onlyExecuteWhenSourceIsMainChar": false
+                      },
+                      "auraDebugName": "equipsuit_atk_02",
+                      "auraRoot": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      },
+                      "auraType": 1,
+                      "buffIconDurationSource": {
+                        "durationSourceType": 0,
+                        "timedMarkerId": ""
+                      },
+                      "buffInput": [
+                        {
+                          "assignBlackboard": true,
+                          "assignItems": [
+                            {
+                              "directValueType": 0,
+                              "inputValueKey": "dmg_up",
+                              "numericValue": 0.0,
+                              "stringValue": "",
+                              "targetKey": "dmg_up",
+                              "useDirectValue": false
+                            },
+                            {
+                              "directValueType": 0,
+                              "inputValueKey": "max_stack",
+                              "numericValue": 0.0,
+                              "stringValue": "",
+                              "targetKey": "max_stack",
+                              "useDirectValue": false
+                            }
+                          ],
+                          "buffId": "buff_equipsuit_atk_02_aruadetect"
+                        }
+                      ],
+                      "buffSource": 1,
+                      "excludeColliderOptions": 0,
+                      "excludeOwner": false,
+                      "filterFactionSource": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 1
+                      },
+                      "fixedWhenStart": false,
+                      "includeUnmarkable": false,
+                      "influenceAngle": {
+                        "blackboardKey": "",
+                        "useBlackboardKey": false,
+                        "value": 360.0
+                      },
+                      "influenceDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "influenceDirectionAngleOffset": {
+                        "blackboardKey": "",
+                        "useBlackboardKey": false,
+                        "value": 0.0
+                      },
+                      "inheritSourceSkillCastId": false,
+                      "limitInfluenceAngle": false,
+                      "limitInfluenceCountPerTarget": false,
+                      "limitInfluenceHeight": false,
+                      "maxInfluenceCountPerTarget": 1,
+                      "maxInfluenceHeight": {
+                        "blackboardKey": "",
+                        "useBlackboardKey": false,
+                        "value": 0.0
+                      },
+                      "overrideBuffIconDuration": false,
+                      "shapeData": {
+                        "_center": {
+                          "raw": "000000000000000000000000"
+                        },
+                        "_centerXKey": "",
+                        "_centerYKey": "",
+                        "_centerZKey": "",
+                        "_extent": {
+                          "raw": "000000000000000000000000"
+                        },
+                        "_extentXKey": "",
+                        "_extentYKey": "",
+                        "_extentZKey": "",
+                        "_height": 0.0,
+                        "_heightKey": "",
+                        "_radius": 0.0,
+                        "_radiusKey": "",
+                        "_rotationOffset": {
+                          "raw": "000000000000000000000000"
+                        },
+                        "_shape": 0,
+                        "_useCenterKey": false,
+                        "_useExtentKey": false
+                      },
+                      "targetFilter": {
+                        "autoSetTargetFaction": true,
+                        "checkAlive": true,
+                        "factionTarget": 0,
+                        "filterGameplayTag": false,
+                        "filterObjectType": false,
+                        "filterSlot": false,
+                        "objectType": -1,
+                        "slotIndex": 0,
+                        "tagQuery": {
+                          "queryType": 0,
+                          "tags": []
+                        },
+                        "targetFactionType": 0
+                      },
+                      "targetObjectType": 8
+                    }
+                  }
+                ],
+                "onlyExecuteWhenSourceIsGuard": false,
+                "onlyExecuteWhenSourceIsMainChar": false
+              }
+            ],
+            "buffEvent": 5
+          }
+        ],
+        "damageModifier": [],
+        "dispelConfig": {
+          "raw": "0000000000000000"
+        },
+        "duration": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "finishOnRepatriate": false,
+        "globalModifier": [],
+        "hasAddingCooldown": false,
+        "hasIcon": false,
+        "healModifier": [],
+        "iconConfig": {
+          "_orderPriorityConfig": {
+            "raw": "000000000000000064000000"
+          },
+          "_spritePath": "",
+          "abnormalColorType": 0,
+          "blinkInMainCharHpBar": false,
+          "charHpBarVfxType": 0,
+          "forceRaiseIconEvent": false,
+          "hasCharHpBarVfxType": false,
+          "iconStyleInSquad": 0,
+          "onlyShowForMainCharacter": false,
+          "playStrongInAnimation": false,
+          "showDirectlyInHeadBuff": false,
+          "showInHeadBarAttached": false,
+          "showInHeadBarCommon": false,
+          "showInSquadIcon": false,
+          "showProgressInHpBar": false,
+          "showProgressInNormalSkillButton": false,
+          "showProgressInUltimateSkillButton": false,
+          "showWarningBackground": false,
+          "useWeakProgressInNormalSkillButton": false
+        },
+        "id": "buff_equipsuit_atk_02",
+        "igniteEventAction": [],
+        "ignoreCooldownWhenAdding": false,
+        "ignoreTagImmune": false,
+        "lifeType": 1,
+        "maxTriggerCnt": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 1
+        },
+        "onlyUseSelfTimeDilation": false,
+        "poiseModifier": [],
+        "shieldConfigs": [],
+        "stackingSettings": {
+          "identifierType": 0,
+          "isNeedStackEffect": false,
+          "maxStackCnt": 0,
+          "maxStackCntKey": "",
+          "negatePriority": false,
+          "priority": 0.0,
+          "priorityKey": "",
+          "stackEffects": [],
+          "stackingKey": "",
+          "stackingType": 0,
+          "useMaxStackCntKey": false,
+          "usePriorityKey": false
+        },
+        "tagsAfterTriggerExtendBuffAction": [],
+        "timelineActions": [],
+        "triggerInterval": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "useTimeDilationDt": false,
+        "waitFirstTriggerInterval": true
+      },
+      "source": {
+        "sha256": "99f2e40815cc0b1b8a6db779ae97e5fdaf949b181af5e6a9187ef9486450d306",
+        "bytes": 807,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    },
+    "buff_equipsuit_atk_02_aruadetect": {
+      "kind": "BuffData",
+      "data": {
+        "abilityEventAction": [
+          {
+            "abilityEvent": 30,
+            "actions": [
+              {
+                "actionData": [
+                  {
+                    "$tag": 120,
+                    "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillType+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 0,
+                      "attackTypeMask": -1,
+                      "checkTargetCurSkill": false,
+                      "mustBeforeExclusiveTime": false,
+                      "skillOwner": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 0
+                      },
+                      "skillTypeList": [
+                        2
+                      ]
+                    }
+                  },
+                  {
+                    "$tag": 146,
+                    "$type": "Beyond.Gameplay.Core.CreateBuffAction+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 1,
+                      "asChildBuff": true,
+                      "autoFinishByAction": false,
+                      "buffIconDurationSource": {
+                        "durationSourceType": 0,
+                        "timedMarkerId": ""
+                      },
+                      "buffs": [
+                        {
+                          "assignBlackboard": true,
+                          "assignItems": [
+                            {
+                              "directValueType": 0,
+                              "inputValueKey": "dmg_up",
+                              "numericValue": 0.0,
+                              "stringValue": "",
+                              "targetKey": "dmg_up",
+                              "useDirectValue": false
+                            },
+                            {
+                              "directValueType": 0,
+                              "inputValueKey": "max_stack",
+                              "numericValue": 0.0,
+                              "stringValue": "",
+                              "targetKey": "max_stack",
+                              "useDirectValue": false
+                            }
+                          ],
+                          "buffId": "buff_equipsuit_atk_02_addcombodamage",
+                          "buffIdKey": "",
+                          "readIdFromBlackboard": false
+                        }
+                      ],
+                      "buffSource": 0,
+                      "contextKey": "",
+                      "count": {
+                        "blackboardKey": "",
+                        "useBlackboardKey": false,
+                        "value": 1.0
+                      },
+                      "finishWithNextSkillIfNotInherited": true,
+                      "inheritSkillIdList": [],
+                      "inheritSourceSkillCastId": false,
+                      "inheritSourceSkillCastInfo": true,
+                      "isExtra": false,
+                      "overrideBuffIconDuration": false,
+                      "passTargetGroupsToBuff": false,
+                      "targetSettings": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 1
+                      }
+                    }
+                  }
+                ],
+                "onlyExecuteWhenSourceIsGuard": false,
+                "onlyExecuteWhenSourceIsMainChar": false
+              }
+            ]
+          }
+        ],
+        "addingCooldown": {
+          "blackboardKey": "cd",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "applyTags": [],
+        "attributeModifier": {
+          "attributeModifiers": [],
+          "isConvertedAttribute": false
+        },
+        "blackboard": [
+          {
+            "isDynamic": false,
+            "key": "atk_up",
+            "valueDouble": 0.1,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "dmg_up",
+            "valueDouble": 0.2,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "max_stack",
+            "valueDouble": 5.0,
+            "valueStr": ""
+          }
+        ],
+        "buffEventAction": [],
+        "damageModifier": [],
+        "dispelConfig": {
+          "raw": "0000000000000000"
+        },
+        "duration": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "finishOnRepatriate": false,
+        "globalModifier": [],
+        "hasAddingCooldown": false,
+        "hasIcon": false,
+        "healModifier": [],
+        "iconConfig": {
+          "_orderPriorityConfig": {
+            "raw": "000000000000000064000000"
+          },
+          "_spritePath": "",
+          "abnormalColorType": 0,
+          "blinkInMainCharHpBar": false,
+          "charHpBarVfxType": 0,
+          "forceRaiseIconEvent": false,
+          "hasCharHpBarVfxType": false,
+          "iconStyleInSquad": 0,
+          "onlyShowForMainCharacter": false,
+          "playStrongInAnimation": false,
+          "showDirectlyInHeadBuff": false,
+          "showInHeadBarAttached": false,
+          "showInHeadBarCommon": false,
+          "showInSquadIcon": false,
+          "showProgressInHpBar": false,
+          "showProgressInNormalSkillButton": false,
+          "showProgressInUltimateSkillButton": false,
+          "showWarningBackground": false,
+          "useWeakProgressInNormalSkillButton": false
+        },
+        "id": "buff_equipsuit_atk_02_aruadetect",
+        "igniteEventAction": [],
+        "ignoreCooldownWhenAdding": false,
+        "ignoreTagImmune": false,
+        "lifeType": 1,
+        "maxTriggerCnt": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 1
+        },
+        "onlyUseSelfTimeDilation": false,
+        "poiseModifier": [],
+        "shieldConfigs": [],
+        "stackingSettings": {
+          "identifierType": 0,
+          "isNeedStackEffect": false,
+          "maxStackCnt": 0,
+          "maxStackCntKey": "",
+          "negatePriority": false,
+          "priority": 0.0,
+          "priorityKey": "",
+          "stackEffects": [],
+          "stackingKey": "",
+          "stackingType": 0,
+          "useMaxStackCntKey": false,
+          "usePriorityKey": false
+        },
+        "tagsAfterTriggerExtendBuffAction": [],
+        "timelineActions": [],
+        "triggerInterval": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "useTimeDilationDt": false,
+        "waitFirstTriggerInterval": true
+      },
+      "source": {
+        "sha256": "8ca0d8d4aeb4bb8861baf29ed9d73d11c09e87a4975fd7def7734bb23754c2a9",
+        "bytes": 662,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    },
+    "buff_equipsuit_atk_02_addcombodamage": {
+      "kind": "BuffData",
+      "data": {
+        "abilityEventAction": [
+          {
+            "abilityEvent": 30,
+            "actions": [
+              {
+                "actionData": [
+                  {
+                    "$tag": 120,
+                    "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillType+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 0,
+                      "attackTypeMask": -1,
+                      "checkTargetCurSkill": false,
+                      "mustBeforeExclusiveTime": false,
+                      "skillOwner": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 0
+                      },
+                      "skillTypeList": [
+                        6
+                      ]
+                    }
+                  },
+                  {
+                    "$tag": 310,
+                    "$type": "Beyond.Gameplay.Core.SaveBuffStackNumAdvanced+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 1,
+                      "buffSettings": {
+                        "buffIdList": [
+                          "buff_equipsuit_atk_02_addcombodamage"
+                        ],
+                        "checkType": 0,
+                        "tagQuery": {
+                          "queryType": 0,
+                          "tags": []
+                        }
+                      },
+                      "buffStackNumType": 0,
+                      "checkTarget": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      },
+                      "key": "stack",
+                      "limitSkillCastId": false
+                    }
+                  },
+                  {
+                    "$tag": 236,
+                    "$type": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 2,
+                      "calculateType": 0,
+                      "calculationTarget": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      },
+                      "directValue": true,
+                      "key": "dmg_up",
+                      "operation": 2,
+                      "value": {
+                        "blackboardKey": "stack",
+                        "useBlackboardKey": true,
+                        "value": 0.0
+                      }
+                    }
+                  },
+                  {
+                    "$tag": 146,
+                    "$type": "Beyond.Gameplay.Core.CreateBuffAction+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 3,
+                      "asChildBuff": false,
+                      "autoFinishByAction": false,
+                      "buffIconDurationSource": {
+                        "durationSourceType": 0,
+                        "timedMarkerId": ""
+                      },
+                      "buffs": [
+                        {
+                          "assignBlackboard": true,
+                          "assignItems": [
+                            {
+                              "directValueType": 0,
+                              "inputValueKey": "dmg_up",
+                              "numericValue": 0.0,
+                              "stringValue": "",
+                              "targetKey": "dmg_up",
+                              "useDirectValue": false
+                            }
+                          ],
+                          "buffId": "buff_equipsuit_atk_02_addcombodamage_buff",
+                          "buffIdKey": "",
+                          "readIdFromBlackboard": false
+                        }
+                      ],
+                      "buffSource": 1,
+                      "contextKey": "",
+                      "count": {
+                        "blackboardKey": "stack",
+                        "useBlackboardKey": false,
+                        "value": 1.0
+                      },
+                      "finishWithNextSkillIfNotInherited": true,
+                      "inheritSkillIdList": [],
+                      "inheritSourceSkillCastId": false,
+                      "inheritSourceSkillCastInfo": true,
+                      "isExtra": false,
+                      "overrideBuffIconDuration": false,
+                      "passTargetGroupsToBuff": false,
+                      "targetSettings": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      }
+                    }
+                  },
+                  {
+                    "$tag": 180,
+                    "$type": "Beyond.Gameplay.Core.FinishBuffAdvanced+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 4,
+                      "buffOwner": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      },
+                      "buffSettings": {
+                        "buffIdList": [
+                          "buff_equipsuit_atk_02_addcombodamage"
+                        ],
+                        "checkType": 0,
+                        "tagQuery": {
+                          "queryType": 0,
+                          "tags": []
+                        }
+                      },
+                      "buffSource": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 1
+                      },
+                      "finishAll": true,
+                      "finishLayerCnt": {
+                        "blackboardKey": "",
+                        "useBlackboardKey": false,
+                        "value": 1.0
+                      },
+                      "finishSource": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 1
+                      },
+                      "isAbsorbed": false,
+                      "isFinishedEarly": false,
+                      "limitSource": false
+                    }
+                  }
+                ],
+                "onlyExecuteWhenSourceIsGuard": false,
+                "onlyExecuteWhenSourceIsMainChar": false
+              }
+            ]
+          }
+        ],
+        "addingCooldown": {
+          "blackboardKey": "cd",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "applyTags": [],
+        "attributeModifier": {
+          "attributeModifiers": [],
+          "isConvertedAttribute": false
+        },
+        "blackboard": [
+          {
+            "isDynamic": false,
+            "key": "atk_up",
+            "valueDouble": 0.1,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": true,
+            "key": "dmg_up",
+            "valueDouble": 0.2,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": true,
+            "key": "stack",
+            "valueDouble": 5.0,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "max_stack",
+            "valueDouble": 5.0,
+            "valueStr": ""
+          }
+        ],
+        "buffEventAction": [],
+        "damageModifier": [],
+        "dispelConfig": {
+          "raw": "0000000000000000"
+        },
+        "duration": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "finishOnRepatriate": false,
+        "globalModifier": [],
+        "hasAddingCooldown": false,
+        "hasIcon": true,
+        "healModifier": [],
+        "iconConfig": {
+          "_orderPriorityConfig": {
+            "raw": "000000000000000064000000"
+          },
+          "_spritePath": "icon_battle_buff_atk_up",
+          "abnormalColorType": 0,
+          "blinkInMainCharHpBar": false,
+          "charHpBarVfxType": 0,
+          "forceRaiseIconEvent": false,
+          "hasCharHpBarVfxType": false,
+          "iconStyleInSquad": 0,
+          "onlyShowForMainCharacter": false,
+          "playStrongInAnimation": false,
+          "showDirectlyInHeadBuff": false,
+          "showInHeadBarAttached": false,
+          "showInHeadBarCommon": false,
+          "showInSquadIcon": true,
+          "showProgressInHpBar": false,
+          "showProgressInNormalSkillButton": false,
+          "showProgressInUltimateSkillButton": false,
+          "showWarningBackground": false,
+          "useWeakProgressInNormalSkillButton": false
+        },
+        "id": "buff_equipsuit_atk_02_addcombodamage",
+        "igniteEventAction": [],
+        "ignoreCooldownWhenAdding": false,
+        "ignoreTagImmune": false,
+        "lifeType": 1,
+        "maxTriggerCnt": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 1
+        },
+        "onlyUseSelfTimeDilation": false,
+        "poiseModifier": [],
+        "shieldConfigs": [],
+        "stackingSettings": {
+          "identifierType": 0,
+          "isNeedStackEffect": false,
+          "maxStackCnt": 5,
+          "maxStackCntKey": "max_stack",
+          "negatePriority": false,
+          "priority": 0.0,
+          "priorityKey": "",
+          "stackEffects": [],
+          "stackingKey": "",
+          "stackingType": 2,
+          "useMaxStackCntKey": true,
+          "usePriorityKey": false
+        },
+        "tagsAfterTriggerExtendBuffAction": [],
+        "timelineActions": [],
+        "triggerInterval": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "useTimeDilationDt": false,
+        "waitFirstTriggerInterval": true
+      },
+      "source": {
+        "sha256": "48c6350ea86b2394646a93d1cce8fb642f2dbc8f36ddf08c33440a7d0538cfed",
+        "bytes": 1251,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    },
+    "buff_equipsuit_atk_02_addcombodamage_buff": {
+      "kind": "BuffData",
+      "data": {
+        "abilityEventAction": [],
+        "addingCooldown": {
+          "blackboardKey": "cd",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "applyTags": [],
+        "attributeModifier": {
+          "attributeModifiers": [],
+          "isConvertedAttribute": false
+        },
+        "blackboard": [
+          {
+            "isDynamic": false,
+            "key": "dmg_up",
+            "valueDouble": 0.2,
+            "valueStr": ""
+          }
+        ],
+        "buffEventAction": [
+          {
+            "actions": [
+              {
+                "actionData": [
+                  {
+                    "$tag": 356,
+                    "$type": "Beyond.Gameplay.Core.SkillAffixAction+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 2
+                    }
+                  }
+                ],
+                "onlyExecuteWhenSourceIsGuard": false,
+                "onlyExecuteWhenSourceIsMainChar": false
+              }
+            ],
+            "buffEvent": 5
+          },
+          {
+            "actions": [
+              {
+                "actionData": [
+                  {
+                    "$tag": 155,
+                    "$type": "Beyond.Gameplay.Core.DebugPrintAction+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 3,
+                      "bbKey": "dmg_up",
+                      "color": {
+                        "raw": "0000803f00000000000000000000803f"
+                      },
+                      "identifier": "cx123",
+                      "logType": 1,
+                      "target": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 0
+                      }
+                    }
+                  }
+                ],
+                "onlyExecuteWhenSourceIsGuard": false,
+                "onlyExecuteWhenSourceIsMainChar": false
+              }
+            ],
+            "buffEvent": 0
+          }
+        ],
+        "damageModifier": [
+          {
+            "condition": {
+              "actionData": [
+                {
+                  "$tag": 115,
+                  "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+                  "$value": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 0
+                  }
+                },
+                {
+                  "$tag": 91,
+                  "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                  "$value": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 1,
+                    "checkType": 2,
+                    "mask": 8192
+                  }
+                }
+              ],
+              "onlyExecuteWhenSourceIsGuard": false,
+              "onlyExecuteWhenSourceIsMainChar": false
+            },
+            "damageProcessors": [
+              {
+                "$tag": 5,
+                "$type": "Beyond.Gameplay.Core.DamageScaleProcessor",
+                "$value": {
+                  "addition": {
+                    "blackboardKey": "dmg_up",
+                    "useBlackboardKey": true,
+                    "value": 0.0
+                  },
+                  "side": 0,
+                  "zoneName": "NormalCalcZone"
+                }
+              }
+            ],
+            "enableSide": 0
+          }
+        ],
+        "dispelConfig": {
+          "raw": "0000000000000000"
+        },
+        "duration": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "finishOnRepatriate": false,
+        "globalModifier": [],
+        "hasAddingCooldown": false,
+        "hasIcon": false,
+        "healModifier": [],
+        "iconConfig": {
+          "_orderPriorityConfig": {
+            "raw": "000000000000000064000000"
+          },
+          "_spritePath": "",
+          "abnormalColorType": 0,
+          "blinkInMainCharHpBar": false,
+          "charHpBarVfxType": 0,
+          "forceRaiseIconEvent": false,
+          "hasCharHpBarVfxType": false,
+          "iconStyleInSquad": 0,
+          "onlyShowForMainCharacter": false,
+          "playStrongInAnimation": false,
+          "showDirectlyInHeadBuff": false,
+          "showInHeadBarAttached": false,
+          "showInHeadBarCommon": false,
+          "showInSquadIcon": false,
+          "showProgressInHpBar": false,
+          "showProgressInNormalSkillButton": false,
+          "showProgressInUltimateSkillButton": false,
+          "showWarningBackground": false,
+          "useWeakProgressInNormalSkillButton": false
+        },
+        "id": "buff_equipsuit_atk_02_addcombodamage_buff",
+        "igniteEventAction": [],
+        "ignoreCooldownWhenAdding": false,
+        "ignoreTagImmune": false,
+        "lifeType": 1,
+        "maxTriggerCnt": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 1
+        },
+        "onlyUseSelfTimeDilation": false,
+        "poiseModifier": [],
+        "shieldConfigs": [],
+        "stackingSettings": {
+          "identifierType": 0,
+          "isNeedStackEffect": false,
+          "maxStackCnt": 5,
+          "maxStackCntKey": "",
+          "negatePriority": false,
+          "priority": 0.0,
+          "priorityKey": "",
+          "stackEffects": [],
+          "stackingKey": "",
+          "stackingType": 7,
+          "useMaxStackCntKey": false,
+          "usePriorityKey": false
+        },
+        "tagsAfterTriggerExtendBuffAction": [],
+        "timelineActions": [],
+        "triggerInterval": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "useTimeDilationDt": false,
+        "waitFirstTriggerInterval": true
+      },
+      "source": {
+        "sha256": "b35b8ef8bd0ef376a1d78743aaa288dc345ea59951a5cb31395b340eec98c46b",
+        "bytes": 526,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    },
+    "passive_equipsuit_attrisuit_01": {
+      "kind": "SkillData",
+      "data": {
+        "actionGroupData": {
+          "passiveEventActions": [],
+          "timelineActions": []
+        },
+        "aiExclusiveFrame": 0,
+        "attackRangeType": 0,
+        "blackboard": [
+          {
+            "isDynamic": false,
+            "key": "atk_up",
+            "valueDouble": 0.05,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "dmg_up",
+            "valueDouble": 0.0,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "max_stack",
+            "valueDouble": 0.0,
+            "valueStr": ""
+          }
+        ],
+        "buffInputBase": null,
+        "buffs": [
+          {
+            "assignBlackboard": true,
+            "assignItems": [
+              {
+                "directValueType": 0,
+                "inputValueKey": "atk_up",
+                "numericValue": 0.0,
+                "stringValue": "",
+                "targetKey": "atk_up",
+                "useDirectValue": false
+              },
+              {
+                "directValueType": 0,
+                "inputValueKey": "dmg_up",
+                "numericValue": 0.0,
+                "stringValue": "",
+                "targetKey": "dmg_up",
+                "useDirectValue": false
+              },
+              {
+                "directValueType": 0,
+                "inputValueKey": "max_stack",
+                "numericValue": 0.0,
+                "stringValue": "",
+                "targetKey": "max_stack",
+                "useDirectValue": false
+              }
+            ],
+            "buffId": "buff_equipsuit_attrisuit_01"
+          }
+        ],
+        "canCastInAir": false,
+        "canCastInWater": false,
+        "canDummyCast": true,
+        "canMove": false,
+        "cardAttributeModifier": {
+          "attributeModifiers": [
+            {
+              "attributeType": 2,
+              "formulaItem": 6,
+              "modifyAttributeType": 0,
+              "param": {
+                "blackboardKey": "atk_up",
+                "useBlackboardKey": true,
+                "value": 0.0
+              }
+            }
+          ],
+          "isConvertedAttribute": false
+        },
+        "castData": {
+          "castAngle": 360.0,
+          "castDistance": {
+            "blackboardKey": "",
+            "useBlackboardKey": false,
+            "value": 0.0
+          },
+          "checkCastDistanceType": 0,
+          "checkHeightDiff": false,
+          "cooldownTime": 0.0,
+          "costData": {
+            "atbValueThreshold": 0.0,
+            "costType": 0,
+            "costValue": 0.0
+          },
+          "heightDiffLimit": {
+            "blackboardKey": "",
+            "useBlackboardKey": false,
+            "value": 0.0
+          },
+          "maxChargeTime": 1,
+          "rotateType": 1,
+          "startCdFrame": 0,
+          "useCustomCastDistance": false
+        },
+        "castType": 1,
+        "characterReturnToIdle": false,
+        "comboSkillUIBigSpriteName": "",
+        "comboSkillUISpriteName": "",
+        "dontInterruptCombo": false,
+        "dummyPositionOffset": {
+          "raw": "000000000000000000000000"
+        },
+        "durationFrame": 0,
+        "exclusiveFrame": 0,
+        "hittableAttackRange": 0.0,
+        "iconBgType": 0,
+        "iconId": "",
+        "level": 1,
+        "needEnemyOutOfScreenWarning": false,
+        "needEnemyOutOfScreenWarningOverrideValue": false,
+        "offsetRecordFrame": 0,
+        "overrideHittableObjAttackRange": false,
+        "overrideNeedEnemyOutOfScreenWarning": false,
+        "passiveSkillType": 0,
+        "rootMotionCliffCheck": true,
+        "selectStrategy": 0,
+        "showNotRecommendState": false,
+        "skillHighlightCondition": {
+          "actionData": [],
+          "onlyExecuteWhenSourceIsGuard": false,
+          "onlyExecuteWhenSourceIsMainChar": false
+        },
+        "skillId": "passive_equipsuit_attrisuit_01",
+        "skillName": "",
+        "skillSpecification": 0,
+        "skillTags": {
+          "predefinedTag": []
+        },
+        "smartTargetBuffFindSettings": {
+          "buffIdList": [],
+          "checkType": 0,
+          "tagQuery": {
+            "queryType": 0,
+            "tags": []
+          }
+        },
+        "smartTargetBuffIds": [],
+        "smartTargetSelectStrategy": 0,
+        "smartTargetTagQuery": {
+          "queryType": 0,
+          "tags": []
+        },
+        "switchToBuffConfig": {
+          "asSkillCast": true,
+          "buffs": [],
+          "buffSource": {
+            "advancedDirection": {
+              "clampToXZ": true,
+              "customSourceAndTarget": false,
+              "directionType": 0,
+              "invertDirection": false,
+              "source": null,
+              "sourceMountPoint": 0,
+              "target": null,
+              "targetMountPoint": 0
+            },
+            "centerContextKey": "",
+            "centerToGround": false,
+            "centerType": 0,
+            "enableAdvancedDirection": false,
+            "ownerContextKey": "",
+            "selectorData": {
+              "finderData": null,
+              "postProcessorData": [],
+              "validatorData": []
+            },
+            "selectorDirection": 0,
+            "selectorOwner": 1,
+            "target": 0,
+            "targetContextKey": "",
+            "targetGroupKey": "",
+            "targetSource": 4
+          },
+          "condition": {
+            "actionData": [],
+            "onlyExecuteWhenSourceIsGuard": false,
+            "onlyExecuteWhenSourceIsMainChar": false
+          },
+          "targets": {
+            "advancedDirection": {
+              "clampToXZ": true,
+              "customSourceAndTarget": false,
+              "directionType": 0,
+              "invertDirection": false,
+              "source": null,
+              "sourceMountPoint": 0,
+              "target": null,
+              "targetMountPoint": 0
+            },
+            "centerContextKey": "",
+            "centerToGround": false,
+            "centerType": 0,
+            "enableAdvancedDirection": false,
+            "ownerContextKey": "",
+            "selectorData": {
+              "finderData": null,
+              "postProcessorData": [],
+              "validatorData": []
+            },
+            "selectorDirection": 0,
+            "selectorOwner": 1,
+            "target": 0,
+            "targetContextKey": "",
+            "targetGroupKey": "",
+            "targetSource": 0
+          }
+        },
+        "switchToCenterBeforeCast": false,
+        "tagDuringAttach": {
+          "predefinedTag": []
+        },
+        "toggleBuffs": [],
+        "uiRangeHints": [],
+        "useAIExclusiveFrame": false
+      },
+      "source": {
+        "sha256": "669ae16427f7ec459d00a6a4311bcbb12debfd63a8f11a0bbfae0be9042aced1",
+        "bytes": 665,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    },
+    "buff_equipsuit_attrisuit_01": {
+      "kind": "BuffData",
+      "data": {
+        "abilityEventAction": [
+          {
+            "abilityEvent": 30,
+            "actions": [
+              {
+                "actionData": [
+                  {
+                    "$tag": 120,
+                    "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillType+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 0,
+                      "attackTypeMask": -1,
+                      "checkTargetCurSkill": false,
+                      "mustBeforeExclusiveTime": false,
+                      "skillOwner": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 0
+                      },
+                      "skillTypeList": [
+                        6
+                      ]
+                    }
+                  },
+                  {
+                    "$tag": 146,
+                    "$type": "Beyond.Gameplay.Core.CreateBuffAction+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 1,
+                      "asChildBuff": true,
+                      "autoFinishByAction": false,
+                      "buffIconDurationSource": {
+                        "durationSourceType": 0,
+                        "timedMarkerId": ""
+                      },
+                      "buffs": [
+                        {
+                          "assignBlackboard": true,
+                          "assignItems": [
+                            {
+                              "directValueType": 0,
+                              "inputValueKey": "dmg_up",
+                              "numericValue": 0.0,
+                              "stringValue": "",
+                              "targetKey": "dmg_up",
+                              "useDirectValue": false
+                            },
+                            {
+                              "directValueType": 0,
+                              "inputValueKey": "max_stack",
+                              "numericValue": 0.0,
+                              "stringValue": "",
+                              "targetKey": "max_stack",
+                              "useDirectValue": false
+                            }
+                          ],
+                          "buffId": "buff_equipsuit_attrisuitup_01",
+                          "buffIdKey": "",
+                          "readIdFromBlackboard": false
+                        }
+                      ],
+                      "buffSource": 1,
+                      "contextKey": "",
+                      "count": {
+                        "blackboardKey": "",
+                        "useBlackboardKey": false,
+                        "value": 1.0
+                      },
+                      "finishWithNextSkillIfNotInherited": true,
+                      "inheritSkillIdList": [],
+                      "inheritSourceSkillCastId": false,
+                      "inheritSourceSkillCastInfo": true,
+                      "isExtra": false,
+                      "overrideBuffIconDuration": false,
+                      "passTargetGroupsToBuff": false,
+                      "targetSettings": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      }
+                    }
+                  }
+                ],
+                "onlyExecuteWhenSourceIsGuard": false,
+                "onlyExecuteWhenSourceIsMainChar": false
+              }
+            ]
+          }
+        ],
+        "addingCooldown": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "applyTags": [],
+        "attributeModifier": {
+          "attributeModifiers": [],
+          "isConvertedAttribute": false
+        },
+        "blackboard": [
+          {
+            "isDynamic": false,
+            "key": "atk_up",
+            "valueDouble": 0.05,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "dmg_up",
+            "valueDouble": 0.3,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "max_stack",
+            "valueDouble": 2.0,
+            "valueStr": ""
+          }
+        ],
+        "buffEventAction": [],
+        "damageModifier": [],
+        "dispelConfig": {
+          "raw": "0000000000000000"
+        },
+        "duration": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "finishOnRepatriate": false,
+        "globalModifier": [],
+        "hasAddingCooldown": false,
+        "hasIcon": false,
+        "healModifier": [],
+        "iconConfig": {
+          "_orderPriorityConfig": {
+            "raw": "000000000000000064000000"
+          },
+          "_spritePath": "",
+          "abnormalColorType": 0,
+          "blinkInMainCharHpBar": false,
+          "charHpBarVfxType": 0,
+          "forceRaiseIconEvent": false,
+          "hasCharHpBarVfxType": false,
+          "iconStyleInSquad": 0,
+          "onlyShowForMainCharacter": false,
+          "playStrongInAnimation": false,
+          "showDirectlyInHeadBuff": false,
+          "showInHeadBarAttached": false,
+          "showInHeadBarCommon": false,
+          "showInSquadIcon": false,
+          "showProgressInHpBar": false,
+          "showProgressInNormalSkillButton": false,
+          "showProgressInUltimateSkillButton": false,
+          "showWarningBackground": false,
+          "useWeakProgressInNormalSkillButton": false
+        },
+        "id": "buff_equipsuit_attrisuit_01",
+        "igniteEventAction": [],
+        "ignoreCooldownWhenAdding": false,
+        "ignoreTagImmune": false,
+        "lifeType": 1,
+        "maxTriggerCnt": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 1
+        },
+        "onlyUseSelfTimeDilation": false,
+        "poiseModifier": [],
+        "shieldConfigs": [],
+        "stackingSettings": {
+          "identifierType": 0,
+          "isNeedStackEffect": false,
+          "maxStackCnt": 0,
+          "maxStackCntKey": "",
+          "negatePriority": false,
+          "priority": 0.0,
+          "priorityKey": "",
+          "stackEffects": [],
+          "stackingKey": "",
+          "stackingType": 7,
+          "useMaxStackCntKey": false,
+          "usePriorityKey": false
+        },
+        "tagsAfterTriggerExtendBuffAction": [],
+        "timelineActions": [],
+        "triggerInterval": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "useTimeDilationDt": false,
+        "waitFirstTriggerInterval": true
+      },
+      "source": {
+        "sha256": "9ce0657521fd6d513fc7127dfd55e1b888a4a9fbed3cc311b55b6466db6f0f36",
+        "bytes": 648,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    },
+    "buff_equipsuit_attrisuitup_01": {
+      "kind": "BuffData",
+      "data": {
+        "abilityEventAction": [
+          {
+            "abilityEvent": 30,
+            "actions": [
+              {
+                "actionData": [
+                  {
+                    "$tag": 120,
+                    "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillType+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 0,
+                      "attackTypeMask": -1,
+                      "checkTargetCurSkill": false,
+                      "mustBeforeExclusiveTime": false,
+                      "skillOwner": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 0
+                      },
+                      "skillTypeList": [
+                        2
+                      ]
+                    }
+                  },
+                  {
+                    "$tag": 310,
+                    "$type": "Beyond.Gameplay.Core.SaveBuffStackNumAdvanced+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 1,
+                      "buffSettings": {
+                        "buffIdList": [
+                          "buff_equipsuit_attrisuitup_01"
+                        ],
+                        "checkType": 0,
+                        "tagQuery": {
+                          "queryType": 0,
+                          "tags": []
+                        }
+                      },
+                      "buffStackNumType": 0,
+                      "checkTarget": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      },
+                      "key": "stack",
+                      "limitSkillCastId": false
+                    }
+                  },
+                  {
+                    "$tag": 236,
+                    "$type": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 2,
+                      "calculateType": 0,
+                      "calculationTarget": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      },
+                      "directValue": true,
+                      "key": "dmg_up",
+                      "operation": 2,
+                      "value": {
+                        "blackboardKey": "stack",
+                        "useBlackboardKey": true,
+                        "value": 0.0
+                      }
+                    }
+                  },
+                  {
+                    "$tag": 146,
+                    "$type": "Beyond.Gameplay.Core.CreateBuffAction+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 3,
+                      "asChildBuff": false,
+                      "autoFinishByAction": false,
+                      "buffIconDurationSource": {
+                        "durationSourceType": 0,
+                        "timedMarkerId": ""
+                      },
+                      "buffs": [
+                        {
+                          "assignBlackboard": true,
+                          "assignItems": [
+                            {
+                              "directValueType": 0,
+                              "inputValueKey": "dmg_up",
+                              "numericValue": 0.0,
+                              "stringValue": "",
+                              "targetKey": "dmg_up",
+                              "useDirectValue": false
+                            }
+                          ],
+                          "buffId": "buff_equipsuit_attrisuitup_02",
+                          "buffIdKey": "",
+                          "readIdFromBlackboard": false
+                        }
+                      ],
+                      "buffSource": 1,
+                      "contextKey": "",
+                      "count": {
+                        "blackboardKey": "",
+                        "useBlackboardKey": false,
+                        "value": 1.0
+                      },
+                      "finishWithNextSkillIfNotInherited": true,
+                      "inheritSkillIdList": [],
+                      "inheritSourceSkillCastId": false,
+                      "inheritSourceSkillCastInfo": true,
+                      "isExtra": false,
+                      "overrideBuffIconDuration": false,
+                      "passTargetGroupsToBuff": false,
+                      "targetSettings": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      }
+                    }
+                  },
+                  {
+                    "$tag": 180,
+                    "$type": "Beyond.Gameplay.Core.FinishBuffAdvanced+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 4,
+                      "buffOwner": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 4
+                      },
+                      "buffSettings": {
+                        "buffIdList": [
+                          "buff_equipsuit_attrisuitup_01"
+                        ],
+                        "checkType": 0,
+                        "tagQuery": {
+                          "queryType": 0,
+                          "tags": []
+                        }
+                      },
+                      "buffSource": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 1
+                      },
+                      "finishAll": true,
+                      "finishLayerCnt": {
+                        "blackboardKey": "",
+                        "useBlackboardKey": false,
+                        "value": 1.0
+                      },
+                      "finishSource": {
+                        "advancedDirection": {
+                          "clampToXZ": true,
+                          "customSourceAndTarget": false,
+                          "directionType": 0,
+                          "invertDirection": false,
+                          "source": null,
+                          "sourceMountPoint": 0,
+                          "target": null,
+                          "targetMountPoint": 0
+                        },
+                        "centerContextKey": "",
+                        "centerToGround": false,
+                        "centerType": 0,
+                        "enableAdvancedDirection": false,
+                        "ownerContextKey": "",
+                        "selectorData": {
+                          "finderData": null,
+                          "postProcessorData": [],
+                          "validatorData": []
+                        },
+                        "selectorDirection": 0,
+                        "selectorOwner": 1,
+                        "target": 0,
+                        "targetContextKey": "",
+                        "targetGroupKey": "",
+                        "targetSource": 1
+                      },
+                      "isAbsorbed": false,
+                      "isFinishedEarly": false,
+                      "limitSource": false
+                    }
+                  }
+                ],
+                "onlyExecuteWhenSourceIsGuard": false,
+                "onlyExecuteWhenSourceIsMainChar": false
+              }
+            ]
+          }
+        ],
+        "addingCooldown": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "applyTags": [],
+        "attributeModifier": {
+          "attributeModifiers": [],
+          "isConvertedAttribute": false
+        },
+        "blackboard": [
+          {
+            "isDynamic": true,
+            "key": "dmg_up",
+            "valueDouble": 0.05,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": false,
+            "key": "max_stack",
+            "valueDouble": 2.0,
+            "valueStr": ""
+          },
+          {
+            "isDynamic": true,
+            "key": "stack",
+            "valueDouble": 0.0,
+            "valueStr": ""
+          }
+        ],
+        "buffEventAction": [],
+        "damageModifier": [],
+        "dispelConfig": {
+          "raw": "0000000000000000"
+        },
+        "duration": {
+          "blackboardKey": "duration",
+          "useBlackboardKey": true,
+          "value": 20.0
+        },
+        "finishOnRepatriate": false,
+        "globalModifier": [],
+        "hasAddingCooldown": false,
+        "hasIcon": true,
+        "healModifier": [],
+        "iconConfig": {
+          "_orderPriorityConfig": {
+            "raw": "000000000000000064000000"
+          },
+          "_spritePath": "icon_battle_buff_atk_up",
+          "abnormalColorType": 0,
+          "blinkInMainCharHpBar": false,
+          "charHpBarVfxType": 0,
+          "forceRaiseIconEvent": false,
+          "hasCharHpBarVfxType": false,
+          "iconStyleInSquad": 0,
+          "onlyShowForMainCharacter": false,
+          "playStrongInAnimation": false,
+          "showDirectlyInHeadBuff": false,
+          "showInHeadBarAttached": false,
+          "showInHeadBarCommon": false,
+          "showInSquadIcon": true,
+          "showProgressInHpBar": false,
+          "showProgressInNormalSkillButton": false,
+          "showProgressInUltimateSkillButton": false,
+          "showWarningBackground": false,
+          "useWeakProgressInNormalSkillButton": false
+        },
+        "id": "buff_equipsuit_attrisuitup_01",
+        "igniteEventAction": [],
+        "ignoreCooldownWhenAdding": false,
+        "ignoreTagImmune": false,
+        "lifeType": 1,
+        "maxTriggerCnt": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 1
+        },
+        "onlyUseSelfTimeDilation": false,
+        "poiseModifier": [],
+        "shieldConfigs": [],
+        "stackingSettings": {
+          "identifierType": 0,
+          "isNeedStackEffect": false,
+          "maxStackCnt": 2,
+          "maxStackCntKey": "max_stack",
+          "negatePriority": false,
+          "priority": 0.0,
+          "priorityKey": "",
+          "stackEffects": [],
+          "stackingKey": "",
+          "stackingType": 2,
+          "useMaxStackCntKey": true,
+          "usePriorityKey": false
+        },
+        "tagsAfterTriggerExtendBuffAction": [],
+        "timelineActions": [],
+        "triggerInterval": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "useTimeDilationDt": false,
+        "waitFirstTriggerInterval": true
+      },
+      "source": {
+        "sha256": "4a80db11850f3b09738e7e2da3237bd25a31b0a23baf0f519f53c4efb5fadde2",
+        "bytes": 1195,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    },
+    "buff_equipsuit_attrisuitup_02": {
+      "kind": "BuffData",
+      "data": {
+        "abilityEventAction": [],
+        "addingCooldown": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "applyTags": [],
+        "attributeModifier": {
+          "attributeModifiers": [],
+          "isConvertedAttribute": false
+        },
+        "blackboard": [
+          {
+            "isDynamic": false,
+            "key": "dmg_up",
+            "valueDouble": 0.05,
+            "valueStr": ""
+          }
+        ],
+        "buffEventAction": [
+          {
+            "actions": [
+              {
+                "actionData": [
+                  {
+                    "$tag": 356,
+                    "$type": "Beyond.Gameplay.Core.SkillAffixAction+Data",
+                    "$value": {
+                      "isEnable": true,
+                      "priorityLevel": 0,
+                      "priorityOffset": 0,
+                      "serverActionIndex": 2
+                    }
+                  }
+                ],
+                "onlyExecuteWhenSourceIsGuard": false,
+                "onlyExecuteWhenSourceIsMainChar": false
+              }
+            ],
+            "buffEvent": 5
+          }
+        ],
+        "damageModifier": [
+          {
+            "condition": {
+              "actionData": [
+                {
+                  "$tag": 115,
+                  "$type": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+                  "$value": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 0
+                  }
+                },
+                {
+                  "$tag": 91,
+                  "$type": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+                  "$value": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 1,
+                    "checkType": 2,
+                    "mask": 256
+                  }
+                }
+              ],
+              "onlyExecuteWhenSourceIsGuard": false,
+              "onlyExecuteWhenSourceIsMainChar": false
+            },
+            "damageProcessors": [
+              {
+                "$tag": 5,
+                "$type": "Beyond.Gameplay.Core.DamageScaleProcessor",
+                "$value": {
+                  "addition": {
+                    "blackboardKey": "dmg_up",
+                    "useBlackboardKey": true,
+                    "value": 0.0
+                  },
+                  "side": 0,
+                  "zoneName": "NormalCalcZone"
+                }
+              }
+            ],
+            "enableSide": 0
+          }
+        ],
+        "dispelConfig": {
+          "raw": "0000000000000000"
+        },
+        "duration": {
+          "blackboardKey": "duration",
+          "useBlackboardKey": true,
+          "value": 20.0
+        },
+        "finishOnRepatriate": false,
+        "globalModifier": [],
+        "hasAddingCooldown": false,
+        "hasIcon": false,
+        "healModifier": [],
+        "iconConfig": {
+          "_orderPriorityConfig": {
+            "raw": "000000000000000064000000"
+          },
+          "_spritePath": "",
+          "abnormalColorType": 0,
+          "blinkInMainCharHpBar": false,
+          "charHpBarVfxType": 0,
+          "forceRaiseIconEvent": false,
+          "hasCharHpBarVfxType": false,
+          "iconStyleInSquad": 0,
+          "onlyShowForMainCharacter": false,
+          "playStrongInAnimation": false,
+          "showDirectlyInHeadBuff": false,
+          "showInHeadBarAttached": false,
+          "showInHeadBarCommon": false,
+          "showInSquadIcon": false,
+          "showProgressInHpBar": false,
+          "showProgressInNormalSkillButton": false,
+          "showProgressInUltimateSkillButton": false,
+          "showWarningBackground": false,
+          "useWeakProgressInNormalSkillButton": false
+        },
+        "id": "buff_equipsuit_attrisuitup_02",
+        "igniteEventAction": [],
+        "ignoreCooldownWhenAdding": false,
+        "ignoreTagImmune": false,
+        "lifeType": 1,
+        "maxTriggerCnt": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 1
+        },
+        "onlyUseSelfTimeDilation": false,
+        "poiseModifier": [],
+        "shieldConfigs": [],
+        "stackingSettings": {
+          "identifierType": 0,
+          "isNeedStackEffect": false,
+          "maxStackCnt": 1,
+          "maxStackCntKey": "",
+          "negatePriority": false,
+          "priority": 0.0,
+          "priorityKey": "",
+          "stackEffects": [],
+          "stackingKey": "",
+          "stackingType": 2,
+          "useMaxStackCntKey": false,
+          "usePriorityKey": false
+        },
+        "tagsAfterTriggerExtendBuffAction": [],
+        "timelineActions": [],
+        "triggerInterval": {
+          "blackboardKey": "",
+          "useBlackboardKey": false,
+          "value": 0.0
+        },
+        "useTimeDilationDt": false,
+        "waitFirstTriggerInterval": true
+      },
+      "source": {
+        "sha256": "5a6649dbb4d898e98090fcefea0d2095405dc652e7402f516283533275a80517",
+        "bytes": 383,
+        "byte_identical": true,
+        "installed_vfs_md5_verified": true
+      }
+    }
+  },
+  "table_sources": {
+    "EquipSuitTable": {
+      "bytes": 12028,
+      "sha256": "930d5176b496f00b7e03ccc8667a0d90f047de136bd4279ed5bbf4f8ce20f61e",
+      "file_md5_verified": true
+    },
+    "SkillPatchTable": {
+      "bytes": 1132328,
+      "sha256": "179d6adb5e836257d0e59b6387dfa1fc2ca24ca8edbda0489cf6238abb9f9fca",
+      "file_md5_verified": true
+    },
+    "ItemTable": {
+      "bytes": 659740,
+      "sha256": "e2c6aab73a489d2687bfacbf3fb0cbc60de6269db7c21981d90de49e49c247ad",
+      "file_md5_verified": true
+    },
+    "I18nTextTable_CN": {
+      "bytes": 9513700,
+      "sha256": "fca1a4ea03ccd38dd20c664e5c4efc53178cb4e9df722c1ebba10e37f4426ea1",
+      "file_md5_verified": true
+    }
+  }
+}
