@@ -10,7 +10,7 @@ class TestZipLineGoldGate(unittest.TestCase):
     @staticmethod
     def _stub():
         lang = SimpleNamespace(zip_line_mixin=SimpleNamespace(k_2f4f4a2f="move", k_0b1e4f35="leave"))
-        return SimpleNamespace(
+        stub = SimpleNamespace(
             lang=lang,
             box_of_screen=lambda *_args: "stop_box",
             next_frame=lambda: object(),
@@ -20,6 +20,11 @@ class TestZipLineGoldGate(unittest.TestCase):
             send_key=Mock(),
             ocr=Mock(),
         )
+        stub._zip_line_stop_state = lambda: ZipLineMixin._zip_line_stop_state(stub)
+        stub._try_click_on_zip_line = lambda *args, **kwargs: ZipLineMixin._try_click_on_zip_line(
+            stub, *args, **kwargs
+        )
+        return stub
 
     def test_distance_pattern_rejects_longer_numeric_distance(self):
         pattern = ZipLineMixin._zip_line_distance_pattern(108)
@@ -45,8 +50,9 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(kwargs["ocr_frame_processor_list"], [gold_processor, white_processor])
         self.assertTrue(kwargs["is_num"])
         self.assertTrue(kwargs["need_scroll"])
+        self.assertEqual(kwargs["tolerance"], 50)
 
-    def test_gold_center_check_uses_generic_hsv_ocr_processor(self):
+    def test_gold_center_check_uses_fifty_pixel_tolerance(self):
         processor = object()
         target = SimpleNamespace(x=950, y=569, width=20, height=20)
         stub = SimpleNamespace(
@@ -54,7 +60,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             make_hsv_isolator=Mock(return_value=processor),
             ocr=Mock(return_value=[target]),
             screen_center=Mock(return_value=(960, 540)),
-            scale_distance=Mock(return_value=20),
+            scale_distance=Mock(return_value=50),
             height=1080,
             next_frame=Mock(),
         )
@@ -65,6 +71,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub.make_hsv_isolator.assert_called_once_with(hR.GOLD_TEXT)
         self.assertIs(stub.ocr.call_args.kwargs["frame_processor"], processor)
         self.assertEqual(stub.ocr.call_args.kwargs["frame"], "frame")
+        stub.scale_distance.assert_called_once_with(50)
 
     def test_white_or_unlocked_target_never_clicks(self):
         stub = self._stub()
@@ -130,6 +137,52 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub.click.assert_called_once()
         self.assertEqual(stub.send_key.call_count, 2)
         self.assertEqual(stub.ocr.call_count, 2)
+
+    def test_gate_failure_realigns_with_same_fifty_pixel_tolerance(self):
+        stub = self._stub()
+        stub._align_zip_line_distance = Mock(return_value=True)
+        stub._try_click_on_zip_line = Mock(side_effect=[(False, "gate"), (True, None)])
+        stub._legacy_click_on_zip_line = Mock(return_value=True)
+        stub.log_info = Mock()
+        stub.wait_ocr = Mock(return_value=False)
+        stub.ensure_main = Mock()
+        stub.ocr.return_value = [SimpleNamespace(name="move")]
+
+        ZipLineMixin.zip_line_list_go(stub, [108], need_scroll=True)
+
+        self.assertEqual(stub._align_zip_line_distance.call_count, 2)
+        first_kwargs = stub._align_zip_line_distance.call_args_list[0].kwargs
+        retry_kwargs = stub._align_zip_line_distance.call_args_list[1].kwargs
+        self.assertEqual(first_kwargs["tolerance"], 50)
+        self.assertEqual(retry_kwargs["tolerance"], 50)
+        self.assertEqual(retry_kwargs["max_time"], 10)
+        stub._legacy_click_on_zip_line.assert_not_called()
+
+    def test_gate_retry_exhaustion_falls_back_to_direct_click_and_e(self):
+        stub = self._stub()
+        stub._align_zip_line_distance = Mock(return_value=True)
+        stub._try_click_on_zip_line = Mock(return_value=(False, "gate"))
+        stub._legacy_click_on_zip_line = Mock(return_value=True)
+        stub.log_info = Mock()
+        stub.wait_ocr = Mock(return_value=False)
+        stub.ensure_main = Mock()
+        stub.ocr.return_value = [SimpleNamespace(name="move")]
+
+        ZipLineMixin.zip_line_list_go(stub, [108])
+
+        self.assertEqual(stub._try_click_on_zip_line.call_count, 3)
+        self.assertEqual(stub._align_zip_line_distance.call_count, 3)
+        stub._legacy_click_on_zip_line.assert_called_once_with()
+
+    def test_legacy_fallback_repeats_click_and_e_without_gold_gate(self):
+        stub = self._stub()
+        stub.ocr.side_effect = [[SimpleNamespace(name="move")], []]
+
+        result = ZipLineMixin._legacy_click_on_zip_line(stub, max_attempts=3)
+
+        self.assertTrue(result)
+        self.assertEqual(stub.click.call_count, 2)
+        self.assertEqual(stub.send_key.call_count, 2)
 
 
 if __name__ == "__main__":
