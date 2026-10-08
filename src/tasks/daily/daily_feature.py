@@ -57,10 +57,9 @@ class DailyFeature:
         self.predicate = predicate
 
     def plan_item(self):
-        """返回任务清单元素 ``(任务名, 执行函数)`` 或 ``(任务名, 执行函数, 谓词)``。
-
-        任务名即宿主配置里的开关键名。
-        """
+        """返回 runner 任务项；支持动态 fatal 的子任务附带第四个失败谓词。"""
+        if hasattr(self.task_class, "daily_failure_is_fatal"):
+            return (self.switch_key, self.run, self.predicate, self.failure_is_fatal)
         if self.predicate is not None:
             return (self.switch_key, self.run, self.predicate)
         return (self.switch_key, self.run)
@@ -130,10 +129,6 @@ class DailyFeature:
 
     def run(self):
         """在子任务实例上执行业务流程，前后注入/恢复宿主的账号上下文。"""
-        runner = getattr(self.host, "daily_runner", None)
-        if runner is not None and hasattr(runner, "fatal_task_predicates"):
-            runner.fatal_task_predicates[self.switch_key] = self.failure_is_fatal
-
         impl = self._resolve_impl()
         if impl is None:
             self.host.log_info(
