@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "native_inputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "evidence_only": true,
+  "files": {
+    "burden.json": "ba4cbfaffe5da7d54feb9e5e8327f9eeae0cf1ac03a112bb8ce210170c37882e"
+  }
+}

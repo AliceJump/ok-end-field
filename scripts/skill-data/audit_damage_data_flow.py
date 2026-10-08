@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -20,6 +21,7 @@ from src.data.damage_state_rules import fixed_weapon_bonuses, state_bonus_rules
 from src.data.fixed_skill_modifiers import fixed_skill_crit
 from src.data.native_attribute_modifiers import reviewed_attack_binding
 from src.data.native_gameplay import native_enums, native_record
+from src.data.native_tags import native_tag_id, tag_names
 from src.data.skill_timing import SkillTimingStore
 
 
@@ -94,6 +96,71 @@ def enhanced_attack_evidence(character, store):
     return result
 
 
+def weapon_attribute_evidence(character, row):
+    """Native equipment evidence stays separate from executable attribute deltas."""
+    if row["build"]["weapon"] != "负山":
+        return []
+    if character.progression.baseline.weapon_name not in (None, "负山"):
+        raise ValueError("Weapon evidence differs from the selected profile")
+    folder = ROOT / "assets/data/equipment_mechanics/20261008"
+    manifest = json.loads((folder / "index.json").read_text(encoding="utf-8"))
+    raw = (folder / "burden.json").read_bytes()
+    if hashlib.sha256(raw).hexdigest() != manifest["files"]["burden.json"]:
+        raise ValueError("Native weapon evidence hash mismatch")
+    evidence = json.loads(raw)
+    native_inputs = json.loads((ROOT / "assets/data/skill_timings/20261002/index.json").read_text(encoding="utf-8"))["native_inputs"]
+    if (not manifest["evidence_only"] or evidence["schema_version"] != 1
+            or evidence["scope"] != "evidence_only; not_runtime_binding"
+            or evidence["native_inputs"] != native_inputs or manifest["native_inputs"] != native_inputs):
+        raise ValueError("Unsupported native weapon evidence domain/build")
+    skill_id = evidence["weapon_basic"]["weaponPotentialSkill"]
+    patch = evidence["selected_rank_patch"]
+    build = json.loads((ROOT / f"assets/data/character_builds/{row['key']}.json").read_text(encoding="utf-8"))
+    if patch["skillId"] != skill_id or patch["level"] != build["weapon"]["skill_rank"]:
+        raise ValueError("Native weapon evidence rank mismatch")
+    parameters = {item["key"]: item["valueDouble"]
+                  for item in evidence["records"][skill_id]["data"]["blackboard"]}
+    parameters.update({item["key"]: item["value"] for item in patch["blackboard"]})
+    event_names = {item["value"]: name for name, item in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
+    result = []
+    for event in evidence["records"][skill_id]["data"]["actionGroupData"]["passiveEventActions"]:
+        for block in event["actions"]:
+            actions = block["actionData"]
+            context = next(action["$value"] for action in actions
+                           if action["$type"].endswith("CheckBuffIdInContext+Data"))
+            query = context["query"]
+            origin = next(action["$value"] for action in actions
+                          if action["$type"].endswith("CheckOriginSkillType+Data"))
+            create = next(action["$value"] for action in actions
+                          if action["$type"].endswith("CreateBuffAction+Data"))
+            marker = next(action["$value"] for action in actions
+                          if action["$type"].endswith("CreateTimedMarker+Data"))
+            marker_condition = next(action["$value"] for action in actions
+                                    if action["$type"].endswith("CheckTimedMarkerCondition+Data"))
+            attachment = create["buffs"][0]
+            buff_id = attachment["buffId"]
+            buff = evidence["records"][buff_id]["data"]
+            result.append({"weapon_id": evidence["weapon_id"], "producer_skill": skill_id,
+                           "attribute_buff": buff_id, "selected_rank": patch["level"],
+                           "selected_parameters": parameters,
+                           "event": event_names[event["abilityEvent"]],
+                           "buff_context_condition": context,
+                           "tag_query": query,
+                           "tag_paths": [tag_names()[native_tag_id(tag)] for tag in query["tags"]],
+                           "origin_skill_condition": origin, "create_buff": create,
+                           "timed_marker": marker, "timed_marker_condition": marker_condition,
+                           "native_attribute_modifier": buff["attributeModifier"],
+                           "native_duration": buff["duration"], "native_stacking": buff["stackingSettings"],
+                           "source": "assets/data/equipment_mechanics/20261008/burden.json",
+                           "execution_status": "not_bound; evidence_candidate_only",
+                           "unexecuted_components": ["OnBeforeOutputBuff context, ownership and exact trigger ordering",
+                                                     "origin skill cast/source and independent cooldown markers",
+                                                     "non-converted BaseMultiplier components; never multiply final panel blindly",
+                                                     "Refresh callbacks, max_stack BB input and parent cleanup",
+                                                     "Lifeng converted attack refresh under four-stat changes"]})
+    return result
+
+
 def audit(rows=None):
     if rows is None:
         rows = json.loads((ROOT / "assets/data/fixed_damage_baseline.json").read_text(encoding="utf-8"))
@@ -138,6 +205,7 @@ def audit(rows=None):
             "basis": row.get("attribute_basis"),
             "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
             "native_attribute_change_producers": "not_verified",
+            "native_weapon_attribute_candidates": weapon_attribute_evidence(character, row),
         }
         quotes = {}
         for quote in row["skills"]:
@@ -215,6 +283,11 @@ def audit(rows=None):
                     for spec in releases.get(KINDS.get(skill.skill_type.value), ())],
                 "pending_semantic_checks": pending,
                 "full_skill_execution": "not_assessed; see mechanism coverage audit",
+                "native_weapon_attribute_checks": [
+                    {"attribute_buff": candidate["attribute_buff"], "status": candidate["execution_status"],
+                     "this_unit_is_normal_skill": skill.skill_type.value == "战技",
+                     "event_requirement": "OnBeforeOutputBuff with matching tag and original NormalSkill; not cast or confirmed application"}
+                    for candidate in entry["dynamic_attribute_flow"]["native_weapon_attribute_candidates"]],
                 "native_enhanced_attack_checks": [
                     {"passive_id": candidate["passive_id"], "status": "not_bound; not_a_cast_bonus",
                      "damage_mask_gate": {"战技": 256, "终结技": 512, "连携技": 8192}.get(skill.skill_type.value)
