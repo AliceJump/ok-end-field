@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
@@ -33,14 +33,24 @@ def read_snapshot(path=SNAPSHOT):
         raise ValueError("Support evidence hash mismatch")
     actors = data["actors"]
     if (len(actors) != manifest["actors"] or len({r["character"] for r in actors}) != len(actors)
-            or sum(len(r["rules"]) for r in actors) != manifest["rules"]):
+            or sum(len(r["rules"]) for r in actors) != manifest["rules"]
+            or sum(r.get("stance") is not None for r in actors) != manifest["stances"]):
         raise ValueError("Release snapshot selection mismatch")
     for row in actors:
         panel = row["panel"]
         for key in ("attack_white", "attack_percent", "attack_flat", "attribute_factor"):
             if not math.isfinite(panel[key]):
                 raise ValueError("Invalid fixed attack basis")
-        for quote in row["quotes"].values():
+        stance = row.get("stance")
+        if stance is not None:
+            if (row["key"] != "zhuang_fangyi" or stance["trigger"] != "ult"
+                    or stance["free_battle_uses"] != 1 or set(stance["quotes"]) != {"normal", "battle"}
+                    or not stance["source_evidence"]["native_record_sha256"]
+                    or any(not math.isfinite(stance[k]) or stance[k] <= 0 for k in
+                           ("duration", "normal_duration", "battle_handoff", "battle_actionable"))
+                    or not math.isfinite(stance["starts_after"]) or stance["starts_after"] < 0):
+                raise ValueError("Unconfirmed release stance")
+        for quote in (*row["quotes"].values(), *(stance["quotes"].values() if stance else ())):
             if (quote["quote_basis"]["element"] not in ELEMENTS - {"all"}
                     or not set(quote["quote_basis"]["damage_tags"]) <= TAGS
                     or not all(math.isfinite(quote[key]) for key in ("non_crit", "crit_expect", "bonus_pct"))):
@@ -95,6 +105,13 @@ class ActiveReleaseBonus:
     starts_at: float
 
 
+@dataclass(frozen=True)
+class ActiveReleaseStance:
+    starts_at: float
+    expires_at: float
+    free_battle: bool = True
+
+
 class ReleaseBurstPlanner:
     def __init__(self, team, *, store=None, snapshot=SNAPSHOT):
         self.team = tuple(team)
@@ -103,6 +120,7 @@ class ReleaseBurstPlanner:
         self.rules = {(actor, kind): tuple(s for s in row["rules"] if s["kind"] == kind)
                       for actor, row in self.rows.items() for kind in ("battle", "ult")}
         self.bonuses = []
+        self.stances = {}
         self.last_confirmed = {}
         self.normal_durations = {}
         if store is not None:
@@ -129,6 +147,41 @@ class ReleaseBurstPlanner:
                      if i < len(previous.team) and name == previous.team[i]}
         self.bonuses = [b for b in previous.bonuses if b.source in unchanged]
         self.last_confirmed = {key: time for key, time in previous.last_confirmed.items() if key[0] in unchanged}
+        self.stances = {actor: stance for actor, stance in previous.stances.items() if actor in unchanged}
+
+    def stance_at(self, actor, now, *, stances=None):
+        current = (self.stances if stances is None else stances).get(actor)
+        return current if current is not None and current.starts_at <= now < current.expires_at else None
+
+    def stance_spec(self, actor):
+        return self.rows.get(actor, {}).get("stance")
+
+    def _advance_stance(self, stances, actor, kind, started):
+        spec = self.stance_spec(actor)
+        if spec is None:
+            return
+        if kind == spec["trigger"]:
+            starts = started + spec["starts_after"]
+            stances[actor] = ActiveReleaseStance(starts, starts + spec["duration"])
+        elif kind == "battle" and self.stance_at(actor, started, stances=stances) is not None:
+            stances[actor] = replace(stances[actor], free_battle=False)
+
+    def normal_duration(self, actor, now):
+        spec = self.stance_spec(actor)
+        return spec["normal_duration"] if self.stance_at(actor, now) is not None else self.normal_durations.get(actor)
+
+    def _stance_action(self, action, now, stances):
+        stance = self.stance_at(action.slot, now, stances=stances)
+        if stance is None:
+            return action
+        spec = self.stance_spec(action.slot)
+        if action.kind == "normal":
+            return replace(action, duration=spec["normal_duration"], same_actor_duration=spec["normal_duration"])
+        if action.kind == "battle":
+            return replace(action, duration=spec["battle_handoff"], same_actor_duration=spec["battle_actionable"],
+                           sp_gate=0 if stance.free_battle else action.sp_gate,
+                           sp_cost=0 if stance.free_battle else action.sp_cost)
+        return action
 
     def _release(self, bonuses, actor, kind, now):
         bonuses[:] = [b for b in bonuses if now < b.expires_at
@@ -143,6 +196,9 @@ class ReleaseBurstPlanner:
                            for recipient in recipients)
 
     def action_blocked(self, actor, kind, now, *, bonuses=None):
+        stance = self.stances.get(actor) if bonuses is None else None
+        if kind == "ult" and stance is not None and now < stance.expires_at:
+            return True  # The live ultimate button is now the stance cancel action.
         current = self.bonuses if bonuses is None else bonuses
         return any(b.source == actor and now < b.expires_at and kind in b.spec["blocks_source_actions"] for b in current)
 
@@ -153,21 +209,28 @@ class ReleaseBurstPlanner:
     def source_unavailable(self, actor):
         # Channel-dependent windows end with the source; timed ally buffs do not.
         self.bonuses[:] = [b for b in self.bonuses if b.source != actor or not b.spec["blocks_source_actions"]]
+        self.stances.pop(actor, None)
 
     def confirm(self, actor, kind, started):
         if self.last_confirmed.get((actor, kind)) == started:
             return
         self.last_confirmed[actor, kind] = started
         self._release(self.bonuses, actor, kind, started)
+        self._advance_stance(self.stances, actor, kind, started)
 
     def quote(self, actor, kind):
         row = self.rows.get(actor)
         return row["quotes"].get(kind) if row is not None else None
 
-    def price(self, actor, kind, now, *, value=None, bonuses=None):
+    def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None):
         quote = self.quote(actor, kind)
         if quote is None:
             return None
+        if self.stance_at(actor, now, stances=stances) is not None:
+            enhanced = self.stance_spec(actor)["quotes"].get(kind)
+            if enhanced is not None:
+                quote = enhanced
+                value = None  # A base master value cannot undo an action replacement.
         if quote.get("pricing_scope", "").startswith("support_opener_only"):
             value = quote["crit_expect"]
         panel = self.rows[actor]["panel"]
@@ -192,29 +255,43 @@ class ReleaseBurstPlanner:
         return (quote["crit_expect"] if value is None else value) * ratio
 
     def _search(self, actions, sp, now, *, releases, bonuses, horizon, width):
-        beam = [(0.0, now, sp, (), bonuses, {})]
+        beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {})]
         best = beam[0]
         for _ in actions:
             expanded = []
-            for damage, time, budget, indices, current, actor_locks in beam:
+            for damage, time, budget, indices, current, actor_locks, stances in beam:
                 for index, action in enumerate(actions):
-                    if index in indices or budget < max(action.sp_gate, action.sp_cost):
+                    if index in indices:
                         continue
                     started = max(time, actor_locks.get(action.slot, now))
+                    pending_stance = stances.get(action.slot)
+                    if pending_stance is not None and action.kind in {"battle", "normal"}:
+                        started = max(started, pending_stance.starts_at)
+                    action = self._stance_action(action, started, stances)
+                    if budget < max(action.sp_gate, action.sp_cost):
+                        continue
                     if self.action_blocked(action.slot, action.kind, started, bonuses=current):
                         continue
                     end = started + action.duration
                     if end > now + horizon:
                         continue
+                    stance = self.stance_at(action.slot, started, stances=stances)
+                    if stance is not None and action.kind in {"normal", "battle"} and end >= stance.expires_at:
+                        continue  # Do not credit a complete enhanced action across an uncertain exit.
                     forecast = list(current)
+                    next_stances = dict(stances)
                     if releases:
                         self._release(forecast, action.slot, action.kind, started)
-                    priced = self.price(action.slot, action.kind, end, value=action.value, bonuses=forecast)
+                    priced = self.price(action.slot, action.kind, end, value=action.value,
+                                        bonuses=forecast, stances=stances)
                     if priced is None:
                         continue
+                    if releases:
+                        self._advance_stance(next_stances, action.slot, action.kind, started)
                     locks = dict(actor_locks)
                     locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
-                    entry = (damage + priced, end, min(300.0, budget - action.sp_cost), (*indices, index), forecast, locks)
+                    entry = (damage + priced, end, min(300.0, budget - action.sp_cost),
+                             (*indices, index), forecast, locks, next_stances)
                     expanded.append(entry)
                     if (entry[0], -entry[1]) > (best[0], -best[1]):
                         best = entry
@@ -243,7 +320,8 @@ class ReleaseBurstPlanner:
         if not actions:
             return None
         self.bonuses[:] = [b for b in self.bonuses if now < b.expires_at]
-        if not self.bonuses and not any(self.rules.get((a.slot, a.kind)) for a in actions):
+        self.stances = {actor: stance for actor, stance in self.stances.items() if now < stance.expires_at}
+        if not self.bonuses and not self.stances and not any(self.rules.get((a.slot, a.kind)) for a in actions):
             return None
         best = self._search(actions, min(sp, 300), now, releases=True,
                             bonuses=list(self.bonuses), horizon=horizon, width=width)

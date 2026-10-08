@@ -153,7 +153,8 @@
           "starts_after": 0.0,
           "blocks_source_actions": []
         }
-      ]
+      ],
+      "stance": null
     },
     {
       "character": "阿列什",
@@ -271,7 +272,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "安塔尔",
@@ -460,7 +462,8 @@
           "starts_after": 0.0,
           "blocks_source_actions": []
         }
-      ]
+      ],
+      "stance": null
     },
     {
       "character": "诀",
@@ -576,7 +579,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "弧光",
@@ -694,7 +698,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "艾尔黛拉",
@@ -810,7 +815,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "艾维文娜",
@@ -965,7 +971,8 @@
           "starts_after": 0.0,
           "blocks_source_actions": []
         }
-      ]
+      ],
+      "stance": null
     },
     {
       "character": "卡缪",
@@ -1081,7 +1088,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "卡契尔",
@@ -1199,7 +1207,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "陈千语",
@@ -1319,7 +1328,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "大潘",
@@ -1437,7 +1447,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "余烬",
@@ -1553,7 +1564,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "管理员",
@@ -1669,7 +1681,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "埃特拉",
@@ -1824,7 +1837,8 @@
           "starts_after": 0.0,
           "blocks_source_actions": []
         }
-      ]
+      ],
+      "stance": null
     },
     {
       "character": "萤石",
@@ -1942,7 +1956,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "洁尔佩塔",
@@ -2058,7 +2073,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "莱万汀",
@@ -2210,7 +2226,8 @@
           "starts_after": 0.0,
           "blocks_source_actions": []
         }
-      ]
+      ],
+      "stance": null
     },
     {
       "character": "别礼",
@@ -2326,7 +2343,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "黎风",
@@ -2447,7 +2465,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "梨诺",
@@ -2681,7 +2700,8 @@
             "normal"
           ]
         }
-      ]
+      ],
+      "stance": null
     },
     {
       "character": "弭弗",
@@ -2797,7 +2817,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "佩丽卡",
@@ -2955,7 +2976,8 @@
           "starts_after": 0.0,
           "blocks_source_actions": []
         }
-      ]
+      ],
+      "stance": null
     },
     {
       "character": "骏卫",
@@ -3071,7 +3093,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "噗切娜",
@@ -3189,7 +3212,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "洛茜",
@@ -3305,7 +3329,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "昼雪",
@@ -3423,7 +3448,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "汤汤",
@@ -3539,7 +3565,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "提弗洛斯",
@@ -3655,7 +3682,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "狼卫",
@@ -3773,7 +3801,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "赛希",
@@ -3968,7 +3997,8 @@
           "ends_on_source_action": false,
           "blocks_source_actions": []
         }
-      ]
+      ],
+      "stance": null
     },
     {
       "character": "伊冯",
@@ -4084,7 +4114,8 @@
           }
         }
       },
-      "rules": []
+      "rules": [],
+      "stance": null
     },
     {
       "character": "庄方宜",
@@ -4239,7 +4270,110 @@
           "starts_after": 0.0,
           "blocks_source_actions": []
         }
-      ]
+      ],
+      "stance": {
+        "key": "buff_chr_0030_zhuangfy_ult_base",
+        "trigger": "ult",
+        "starts_after": 2.6,
+        "duration": 25.0,
+        "free_battle_uses": 1,
+        "battle_profile": "chr_0030_zhuangfy_normal_skill_ult",
+        "battle_handoff": 0.55,
+        "battle_actionable": 4.916666666666667,
+        "normal_duration": 3.783333333333333,
+        "normal_profiles": [
+          "chr_0030_zhuangfy_attack1_ult",
+          "chr_0030_zhuangfy_attack2_ult",
+          "chr_0030_zhuangfy_attack3_ult"
+        ],
+        "quotes": {
+          "normal": {
+            "non_crit": 89877.64939204325,
+            "crit_expect": 92124.59062684432,
+            "bonus_pct": 84.7,
+            "quote_basis": {
+              "skill_rank": 12,
+              "element": "电磁",
+              "damage_tags": [
+                "normal"
+              ],
+              "multiplier": 6.599999904632568,
+              "crit_policy": "baseline_expectation",
+              "scope": "enhanced_three_stage_chain"
+            }
+          },
+          "battle": {
+            "non_crit": 14243.420124196196,
+            "crit_expect": 14599.5056273011,
+            "bonus_pct": 138.5,
+            "quote_basis": {
+              "skill_rank": 12,
+              "element": "电磁",
+              "damage_tags": [
+                "skill"
+              ],
+              "multiplier": 0.8100000023841858,
+              "crit_policy": "baseline_expectation",
+              "scope": "enhanced_single_lightning_unit_without_sword_count"
+            }
+          }
+        },
+        "source_evidence": {
+          "native_record_sha256": {
+            "chr_0030_zhuangfy_ultimate_skill": "5f1b6d1f1770f81aa78c2e51b4c982e8a8a17f4113e3fc7f1610f7859611e3cd",
+            "buff_chr_0030_zhuangfy_ult_base": "6dd56f3d4820572c0916a897a480f2e0ec7f2cc9789a2baf9c98f13e3491b9de",
+            "buff_chr_0030_zhuangfy_ult_skill_free": "27a73b38baf26c48eeb978ae1793c13b1e1bd4ab826751a3bc023e1303822092",
+            "chr_0030_zhuangfy_normal_skill_ult": "33483a4c247260eb69cdd90ab80a604c113fb8e57a79817d3a39f54dbf971ccf",
+            "chr_0030_zhuangfy_attack1_ult": "71ac383a8b3b87b2cab4b36d6b63a2e20ca4e1d37fb7ec5cfdc2787c09b9e3c7",
+            "chr_0030_zhuangfy_attack2_ult": "f2f8763e14acf3e800e8b1ca54bdb7b5f2f63b657ce7b850daac227ecd311e89",
+            "chr_0030_zhuangfy_attack3_ult": "16869e9f3ca84b6efdfb67f383ffc3f7954ea9c1a7d9869d20c9b7bc38c0246a"
+          },
+          "ranked_parameters": {
+            "chr_0030_zhuangfy_ultimate_skill": {
+              "duration": 25.0,
+              "combo_cd_rate": 4.0,
+              "duration_extra": 1.0
+            },
+            "chr_0030_zhuangfy_normal_skill_ult": {
+              "atk_scale": 0.8100000023841858,
+              "poise": 15.0,
+              "remain_sword_limit": 9.0,
+              "sword_duration": 36.0,
+              "atk_up_per_conduct": 0.18000000715255737,
+              "max_conduct_sword": 3.0,
+              "atb_return": 0.0,
+              "sword_range": 50.0,
+              "final_rate": 6.0,
+              "free_sword_limit": 3.0
+            },
+            "chr_0030_zhuangfy_attack1_ult": {
+              "atk_scale": 1.5
+            },
+            "chr_0030_zhuangfy_attack2_ult": {
+              "atk_scale": 2.0999999046325684
+            },
+            "chr_0030_zhuangfy_attack3_ult": {
+              "atk_scale": 3.0,
+              "poise": 18.0,
+              "atb": 20.0
+            }
+          },
+          "release_frame": 78,
+          "fps": 30,
+          "normal_edge_seconds": [
+            0.7833333333333333,
+            0.9500000000000001,
+            2.05
+          ],
+          "excluded": [
+            "sword_count",
+            "conductive_consumption",
+            "hit_confirmation",
+            "combo_dispatch",
+            "native_extend_buff_lifetime"
+          ]
+        }
+      }
     }
   ],
   "excluded": [

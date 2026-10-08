@@ -93,12 +93,14 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "88dcfc012aab0a48cae86540a689eec4a239a3de90f5a7207379b72b8556d5ff",
+  "snapshot_sha256": "423a9fedf59f3786da18935c355f7279f6f6ac0604e610bb6dbc0f281a4f445e",
   "actors": 32,
   "rules": 13,
   "support_evidence_sha256": "5689d265e22be15805c55ec520c50f13f5d163513d8092254621657868cde730",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "3d8117fc6b15868d0c2d366ea9071e582c9c0f5b17e2fd0125f098d2aed1c270",
-    "reviewed_support_release.py": "acb680357950e9c03230cb17ff2f4710687882803ca5786013a3ac262454e3c5"
-  }
+    "export_release_burst_snapshot.py": "f099e7c605487f0b2c04d0d85e63aee80619f4c99cfb15f46f2cc02428a80fd1",
+    "reviewed_support_release.py": "acb680357950e9c03230cb17ff2f4710687882803ca5786013a3ac262454e3c5",
+    "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792"
+  },
+  "stances": 1
 }

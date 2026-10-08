@@ -1,7 +1,9 @@
 """Release gains reach actual scheduler dispatch without the research simulator."""
 
 import hashlib
+import importlib.util
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -267,6 +269,95 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         planner.confirm("2", "battle", 4)
         self.assertAlmostEqual(planner.price("3", "normal", 5) / before, 1 + .38478, places=7)
 
+    def test_zhuang_stance_replaces_base_multipliers_and_preserves_bonus_buckets(self):
+        planner = ReleaseBurstPlanner(["庄方宜", "安塔尔"], store=load_skill_timings())
+        spec = planner.stance_spec("1")
+        self.assertAlmostEqual(spec["quotes"]["normal"]["quote_basis"]["multiplier"], 6.6, places=6)
+        self.assertAlmostEqual(spec["quotes"]["battle"]["quote_basis"]["multiplier"], .81, places=6)
+        self.assertIn("without_sword_count", spec["quotes"]["battle"]["quote_basis"]["scope"])
+        basic = planner.price("1", "normal", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(planner.price("1", "normal", 2.59), basic)
+        enhanced = planner.price("1", "normal", 3, value=1)
+        self.assertAlmostEqual(enhanced, spec["quotes"]["normal"]["crit_expect"])
+        self.assertGreater(enhanced / basic, 1.77)
+        lightning = spec["quotes"]["battle"]["crit_expect"]
+        self.assertAlmostEqual(planner.price("1", "battle", 3) / lightning, 1 + 1.12 / 2.385, places=6)
+        planner.confirm("2", "ult", 3)
+        self.assertGreater(planner.price("1", "normal", 4), enhanced)
+
+    def test_zhuang_stance_first_free_is_consumed_once_and_not_reopened_by_duplicate(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        planner.confirm("1", "ult", 0)
+        self.assertTrue(planner.stance_at("1", 3).free_battle)
+        planner.confirm("1", "battle", 3)
+        self.assertFalse(planner.stance_at("1", 4).free_battle)
+        planner.confirm("1", "ult", 0)
+        self.assertFalse(planner.stance_at("1", 4).free_battle)
+        planner.confirm("1", "ult", 20)
+        self.assertTrue(planner.stance_at("1", 23).free_battle)
+
+    def test_zhuang_stance_expiry_cleans_strength_and_unused_free_charge(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        basic = planner.price("1", "normal", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertIsNotNone(planner.stance_at("1", 27.59))
+        self.assertIsNone(planner.stance_at("1", 27.6))
+        # The independent weapon still runs from cast to 25; do not conflate lifetimes.
+        self.assertEqual(planner.price("1", "normal", 27.6), basic)
+        planner.source_unavailable("1")
+        self.assertFalse(planner.stances)
+
+    def test_zhuang_zero_sp_forecast_promotes_ultimate_then_free_battle(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        ult = ReleaseBurstAction("1", "ult", 3.15, 0, same_actor_duration=3.15)
+        battle = ReleaseBurstAction("1", "battle", 4.65, planner.quote("1", "battle")["crit_expect"], 100, 100)
+        chosen = planner.choose((ult, battle), 0, 0)
+        self.assertEqual(chosen.sequence, (("1", "ult"), ("1", "battle")))
+        self.assertGreater(chosen.damage, planner.quote("1", "battle")["crit_expect"])
+        self.assertFalse(planner.stances)
+        self.assertIsNone(planner.choose((battle,), 0, 0))
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(planner.choose((battle,), 0, 3).action.kind, "battle")
+        planner.confirm("1", "battle", 3)
+        self.assertIsNone(planner.choose((battle,), 0, 4))
+
+    def test_zhuang_replacement_normal_timing_makes_ultimate_a_real_burst_candidate(self):
+        planner = ReleaseBurstPlanner(["庄方宜"], store=load_skill_timings())
+        normal = ReleaseBurstAction("1", "normal", planner.normal_durations["1"], planner.quote("1", "normal")["crit_expect"])
+        ult = ReleaseBurstAction("1", "ult", 3.15, 0, same_actor_duration=3.15)
+        chosen = planner.choose((ult, normal), 0, 0)
+        self.assertEqual(chosen.action.kind, "ult")
+        self.assertIn(("1", "normal"), chosen.sequence)
+        planner.confirm("1", "ult", 0)
+        self.assertLess(planner.normal_duration("1", 3), 4)
+        self.assertGreater(planner.normal_duration("1", 27.6), 4)
+
+    def test_zhuang_forecast_refuses_complete_enhanced_chain_across_expiry(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        planner.confirm("1", "ult", 0)
+        normal = ReleaseBurstAction("1", "normal", 1, 100)
+        self.assertIsNone(planner.choose((normal,), 0, 26))
+        self.assertTrue(planner.stance_at("1", 26).free_battle)
+
+    def test_zhuang_stance_keeps_affecting_decisions_after_weapon_buff_expiry(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        planner.confirm("1", "ult", 0)
+        battle = ReleaseBurstAction("1", "battle", 4.65, planner.quote("1", "battle")["crit_expect"], 100, 100)
+        chosen = planner.choose((battle,), 0, 26)
+        self.assertEqual(chosen.action.kind, "battle")
+        self.assertGreater(chosen.gain, 0)
+
+    def test_zhuang_preserve_keeps_only_unchanged_actor_stance(self):
+        planner = ReleaseBurstPlanner(["庄方宜", "?"])
+        planner.confirm("1", "ult", 0)
+        filled = ReleaseBurstPlanner(["庄方宜", "安塔尔"])
+        filled.preserve(planner)
+        self.assertTrue(filled.stance_at("1", 3).free_battle)
+        changed = ReleaseBurstPlanner(["安塔尔", "庄方宜"])
+        changed.preserve(planner)
+        self.assertFalse(changed.stances)
+
 
 class TestReleaseBurstDispatch(unittest.TestCase):
     def make_logic(self):
@@ -376,3 +467,122 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         logic.step()
         self.assertFalse(any(b.source == "1" for b in logic.release_burst.bonuses))
         self.assertTrue(any(b.source == "2" for b in logic.release_burst.bonuses))
+
+    def test_zhuang_step_forecasts_free_battle_even_with_zero_shared_sp(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        task.ults = {"1", "2"}
+        task.sp = 0
+        chosen = logic._release_burst_decision(logic._ready_ultimate_actions(), 0, 0)
+        self.assertIn(("1", "ult"), chosen.sequence)
+        self.assertIn(("1", "battle"), chosen.sequence)
+        task.ults = {"1"}
+        chosen = logic._release_burst_decision(logic._ready_ultimate_actions(), 0, 0)
+        self.assertEqual((chosen.action.slot, chosen.action.kind), ("1", "ult"))
+        self.assertGreater(chosen.gain, 0)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        task.now = 3.2
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "1"])
+        self.assertEqual(logic.active[0].skill_id, "chr_0030_zhuangfy_normal_skill_ult")
+        self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
+        self.assertEqual(logic._battle_context("1")[1:], (100, 100))
+        task.now = 28
+        self.assertEqual(logic._battle_context("1")[0][0].skill_id, "chr_0030_zhuangfy_normal_skill")
+
+    def test_zhuang_rejected_ultimate_creates_neither_stance_nor_free_battle(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        with patch.object(task, "use_ult", return_value=False):
+            self.assertFalse(logic._use_timed_ultimate("1", logic.store.profiles("庄方宜", "ult"), burst_selected=True))
+        self.assertFalse(logic.release_burst.stances)
+        self.assertFalse(logic.free_battle_once)
+
+    def test_zhuang_existing_failed_cast_feedback_does_not_consume_free_charge(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.now = 3.2
+        with patch.object(logic, "_wait_assumed_success_feedback", return_value=True):
+            self.assertTrue(logic._try_battle_token("1", 0))
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+
+    def test_zhuang_unused_free_flag_never_survives_actual_stance_expiry(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        logic.free_battle_once.add("1")
+        logic.forced_battle_token = "1"
+        task.sp = 0
+        task.ults = set()
+        task.now = 28
+        self.assertEqual(logic._battle_context("1")[1:], (100, 100))
+        self.assertFalse(logic._try_battle_token("1", 0))
+        logic.step()
+        self.assertNotIn("1", logic.free_battle_once)
+        self.assertIsNone(logic.forced_battle_token)
+
+    def test_zhuang_cancel_ultimate_button_is_not_another_burst_opener(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.ults = {"1"}
+        task.now = 16
+        self.assertFalse(logic._ready_ultimate_actions())
+        self.assertFalse(logic._use_timed_ultimate("1", logic.store.profiles("庄方宜", "ult")))
+        self.assertFalse(task.keys)
+        task.now = 28
+        self.assertTrue(logic._ready_ultimate_actions())
+
+    def test_zhuang_main_control_normal_replacement_affects_real_dispatch(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        task.ults = {"1"}
+        task.sp = 0
+        with patch.object(task, "detect_current_char_index", return_value=0, create=True):
+            chosen = None
+            original = logic.release_burst.choose
+
+            def capture(*args, **kwargs):
+                nonlocal chosen
+                chosen = original(*args, **kwargs)
+                return chosen
+
+            with patch.object(logic.release_burst, "choose", side_effect=capture):
+                logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertIn(("1", "normal"), chosen.sequence)
+        self.assertGreater(chosen.gain, 0)
+
+
+class TestReleaseSnapshotExportBoundary(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Path(__file__).resolve().parents[1]
+        directory = cls.root / "scripts/skill-data"
+        sys.path.insert(0, str(directory))
+        try:
+            spec = importlib.util.spec_from_file_location("reviewed_release_export", directory / "export_release_burst_snapshot.py")
+            cls.exporter = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(cls.exporter)
+        finally:
+            sys.path.remove(str(directory))
+
+    def test_revision_option_and_non_sha_rejected_before_git_execution(self):
+        for revision in ("--help", "master", "a" * 39, "a" * 40 + "^{tree}"):
+            with self.subTest(revision=revision), patch.object(self.exporter.subprocess, "check_output") as git:
+                with self.assertRaisesRegex(ValueError, "full lowercase"):
+                    self.exporter.export(self.root, revision, SNAPSHOT)
+                git.assert_not_called()
+
+    def test_only_registered_checkouts_and_named_repo_outputs_are_selected(self):
+        listing = f"worktree {self.root.as_posix()}\nHEAD {'a' * 40}\n"
+        with tempfile.TemporaryDirectory() as directory, patch.object(self.exporter.subprocess, "check_output", return_value=listing):
+            with self.assertRaisesRegex(ValueError, "registered checkout"):
+                self.exporter.reviewed_locations(directory, SNAPSHOT)
+            with self.assertRaisesRegex(ValueError, "Output must"):
+                self.exporter.reviewed_locations(self.root, directory)
+            source, output = self.exporter.reviewed_locations(self.root, SNAPSHOT)
+            self.assertEqual(source, self.root)
+            self.assertEqual(output.resolve(), SNAPSHOT)

@@ -381,12 +381,17 @@ class TimedCombatLogic:
                     return (phases[index],), float(gate), max(0.0, float(cost) - transition.sp_refund)
 
         profiles = self.store.profiles(name, "battle")
+        reviewed_stance = self.release_burst.stance_spec(token) if self.release_burst is not None else None
+        if reviewed_stance is not None and self.release_burst.stance_at(token, self._clock()) is not None:
+            profiles = (self.store.profile(reviewed_stance["battle_profile"]),)
+            if self.release_burst.stance_at(token, self._clock()).free_battle:
+                return profiles, 0.0, 0.0
         point_costs = [profile.skill_points for profile in profiles]
         sp_costs = [profile.sp_cost for profile in profiles]
         cost = None if not profiles or None in sp_costs else max(sp_costs)
         if cost is None and profiles and None not in point_costs:
             cost = max(point_costs) * 100.0
-        if token in self.free_battle_once and profiles:
+        if token in self.free_battle_once and profiles and reviewed_stance is None:
             return profiles, 0.0, 0.0
         return profiles, cost, cost
 
@@ -853,6 +858,10 @@ class TimedCombatLogic:
         now = self._clock()
         if self.release_burst is not None and self.release_burst.action_blocked(token, "battle", now):
             return False
+        if self.release_burst is not None and self.release_burst.stance_spec(token) is not None:
+            stance = self.release_burst.stances.get(token)
+            if stance is not None and now < stance.starts_at:
+                return False
         if not self._slot_available(token) or now < self.state_until.get(token, 0):
             return False
         if now < self.battle_retry_after.get(token, 0):
@@ -1007,6 +1016,8 @@ class TimedCombatLogic:
         for token in self.ult_order:
             if not self._slot_available(token):
                 continue
+            if self.release_burst is not None and self.release_burst.action_blocked(token, "ult", self._clock()):
+                continue
             profiles = self.store.profiles(self.team[int(token) - 1], "ult")
             if self._ready(profiles, slot=token, kind="ult") and self.task._find_battle_ult("ult_" + token):
                 quote = self.damage_quotes.get(self.team[int(token) - 1])
@@ -1023,6 +1034,7 @@ class TimedCombatLogic:
         if self.release_burst is None or self.pending is not None:
             return None
         actions = []
+        future_free = {token for _, token, _ in ready_ults if self.release_burst.stance_spec(token) is not None}
         for _, token, profiles in ready_ults:
             quote = self.release_burst.quote(token, "ult")
             if quote is not None:
@@ -1043,14 +1055,15 @@ class TimedCombatLogic:
                 continue  # A base quote cannot price the replacement button's phase.
             profiles, gate, cost = self._battle_context(token)
             quote = self.release_burst.quote(token, "battle")
-            if (profiles and quote is not None and gate is not None and cost is not None and sp >= gate
+            if (profiles and quote is not None and gate is not None and cost is not None
+                    and (sp >= gate or token in future_free)
                     and self._ready(profiles, slot=token, kind="battle")
-                    and self.phase_planner.can_spend(token, "battle", sp, cost)):
+                    and (self.phase_planner.can_spend(token, "battle", sp, cost) or token in future_free)):
                 actions.append(ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
                                                    quote["crit_expect"], gate, cost,
                                                    same_actor_duration=max(p.actionable for p in profiles)))
         main = self._burst_main_control
-        duration = self.release_burst.normal_durations.get(main)
+        duration = self.release_burst.normal_duration(main, now)
         quote = self.release_burst.quote(main, "normal")
         if (main is not None and duration is not None and quote is not None and self._slot_available(main)
                 and self._allowed() and not self.release_burst.action_blocked(main, "normal", now)):
@@ -1059,6 +1072,8 @@ class TimedCombatLogic:
 
     def _use_timed_ultimate(self, token, profiles, *, burst_selected=False):
         started = self._clock()
+        if self.release_burst is not None and self.release_burst.action_blocked(token, "ult", started):
+            return False
         self._arm_action_feedback()
         if not self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
             return False
@@ -1094,6 +1109,13 @@ class TimedCombatLogic:
         if self.release_burst is not None:
             for token in self.disabled_slots:
                 self.release_burst.source_unavailable(token)
+            for token in tuple(self.free_battle_once):
+                if self.release_burst.stance_spec(token) is not None:
+                    stance = self.release_burst.stances.get(token)
+                    if stance is None or now >= stance.expires_at:
+                        self.free_battle_once.discard(token)
+                        if self.forced_battle_token == token:
+                            self.forced_battle_token = None
         if self._probe_action_feedback() is not None:
             return
         self._confirm_battle(now)
