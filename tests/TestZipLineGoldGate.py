@@ -206,6 +206,19 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(stub._try_click_on_zip_line.call_count, 3)
         stub._legacy_click_on_zip_line.assert_not_called()
 
+    def test_interaction_failure_stays_sticky_if_later_retry_hits_gate(self):
+        stub = self._stub()
+        stub._align_zip_line_distance = Mock(side_effect=[True, True, False])
+        stub._try_click_on_zip_line = Mock(side_effect=[(False, "interaction"), (False, "gate")])
+        stub._legacy_click_on_zip_line = Mock(return_value=True)
+        stub.log_info = Mock()
+
+        with self.assertRaisesRegex(RuntimeError, "点击后 E 连续未生效"):
+            ZipLineMixin.zip_line_list_go(stub, [108])
+
+        self.assertEqual(stub._try_click_on_zip_line.call_count, 2)
+        stub._legacy_click_on_zip_line.assert_not_called()
+
     def test_legacy_fallback_repeats_click_and_e_without_gold_gate(self):
         stub = self._stub()
         stub.ocr.side_effect = [[SimpleNamespace(name="move")], []]
