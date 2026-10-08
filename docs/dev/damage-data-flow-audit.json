@@ -12881,7 +12881,44 @@
           "damage_rules": [],
           "branches": [],
           "data_gaps": [],
-          "model_release_bonus_rules": [],
+          "model_release_bonus_rules": [
+            {
+              "origin": "reviewed_release",
+              "key": "weapon:1382:压制·流霆:ult",
+              "bucket": "damage_bonus",
+              "elements": [
+                "电磁"
+              ],
+              "damage_tags": [
+                "skill"
+              ],
+              "recipient": "self",
+              "trigger": "ultimate_cast",
+              "duration": 25.0,
+              "duration_input": null,
+              "permanent": false,
+              "lifetime_scope": "timed",
+              "evaluation": "application",
+              "max_stacks": 1,
+              "stack_policy": "replace",
+              "condition_inputs": [],
+              "magnitude": {
+                "base": 1.1200000047683716,
+                "terms": [],
+                "by_count": [],
+                "count_input": null
+              },
+              "sources": [
+                "weapons/孤舟/weapon_skills/0/ranks/Rank 9/压制·流霆",
+                "equipment_mechanics/20261008/guzhou.json/selected_rank_patch",
+                "equipment_mechanics/20261008/guzhou.json/records/sk_wpn_funnel_0015/OnBeforeCastSkill",
+                "equipment_mechanics/20261008/guzhou.json/records/buff_wpn_funnel_0015_ultimate"
+              ],
+              "required_inputs": [],
+              "unresolved": null,
+              "producer_status": "successful_model_release; native_frame_not_verified"
+            }
+          ],
           "pending_semantic_checks": [
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
@@ -12996,7 +13033,7 @@
     "replay_verified_quotes": 128,
     "skill_damage_rules": 33,
     "selected_passive_damage_rules": 15,
-    "model_release_bonus_bindings": 13,
+    "model_release_bonus_bindings": 14,
     "native_buff_attribute_damage_bindings": 2,
     "target_state_bonus_bindings": 2,
     "skills_with_reviewed_row_membership": 16,

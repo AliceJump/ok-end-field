@@ -6,6 +6,7 @@
   },
   "evidence_only": true,
   "files": {
-    "burden.json": "ba4cbfaffe5da7d54feb9e5e8327f9eeae0cf1ac03a112bb8ce210170c37882e"
+    "burden.json": "ba4cbfaffe5da7d54feb9e5e8327f9eeae0cf1ac03a112bb8ce210170c37882e",
+    "guzhou.json": "644d440edab4454cfe4d65b10d06233e53020c400caeb5a956aceec89841caa6"
   }
 }

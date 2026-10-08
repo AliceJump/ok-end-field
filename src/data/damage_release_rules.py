@@ -2,7 +2,7 @@
 
 The model's successful action start is its release event. This does not prove
 the native animation frame. Only reviewed 'on release' rules are bound here;
-'after', hit, conditional and aura rules still need their own event producer.
+Prose 'after' needs native event evidence; hits and auras need their own producer.
 """
 
 import json
@@ -66,6 +66,10 @@ def release_rules(character, row, *, root=ROOT):
         raise ValueError("Release rules must use the selected fixed weapon")
     weapons = _read_json(root / "assets/data/weapons.json")
     weapon = weapons[name]
+    if name == "孤舟":
+        from src.data.reviewed_weapon_release import guzhou_ultimate_rule
+
+        result["ult"].append(guzhou_ultimate_rule(weapon, build, root=root))
     for (reviewed_name, perk), patterns in WEAPON_PATTERNS.items():
         if name != reviewed_name:
             continue

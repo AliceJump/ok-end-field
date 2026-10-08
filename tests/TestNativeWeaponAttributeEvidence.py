@@ -64,7 +64,7 @@ class TestNativeWeaponAttributeEvidence(unittest.TestCase):
                                 for item in skill["native_weapon_attribute_checks"]))
             self.assertTrue(skill["pending_semantic_checks"])
         self.assertEqual(report["summary"]["native_buff_attribute_damage_bindings"], 2)
-        self.assertEqual(report["summary"]["model_release_bonus_bindings"], 13)
+        self.assertEqual(report["summary"]["model_release_bonus_bindings"], 14)
         self.assertEqual(report["summary"]["skills_pending_semantic_review"], 128)
         other = deepcopy(self.row)
         other["build"]["weapon"] = "扶摇"
