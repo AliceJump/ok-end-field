@@ -31,8 +31,10 @@ def inventory(*, root=ROOT):
             return "deferred_identified_combo"
         if rule["required_inputs"]:
             return "deferred_attribute_input"
-        if rule["trigger"] in {"battle_cast", "ultimate_cast"}:
-            return "first_release_candidate"
+        if rule["trigger"] == "ultimate_cast":
+            return "first_ultimate_burst_candidate"
+        if rule["trigger"] == "battle_cast":
+            return "later_battle_release"
         return "deferred_producer"
 
     def evidence_record(character, field, candidate, pointer):
@@ -89,14 +91,47 @@ def inventory(*, root=ROOT):
     for key, count in totals.items():
         if audit["summary"][key] != count:
             raise ValueError("Inventory count differs from audit: " + key)
-    return {"schema_version": 1, "scope": "inventory_only; no_master_integration_or_observation_implementation",
+    # This shortlist describes ultimate-related windows, not automatic production.
+    # Preserve field/hit/stance requirements and the gravity rule's branch alias.
+    burst = [index for index, record in enumerate(records)
+             if record["unit"].startswith("终结技 / ")
+             or record["rule"].get("trigger") == "ultimate_hit"
+             or record["rule"].get("producer", "").endswith("_ultimate_skill")]
+    ready = [index for index in burst if records[index]["category"] == "first_ultimate_burst_candidate"]
+    pending = [index for index in burst if index not in ready]
+    team_recipients = {"team", "enemy", "actual_buff_owner_from_living_team_selector"}
+    team = [index for index in burst if records[index]["rule"]["recipient"] in team_recipients]
+    personal = [index for index in burst if records[index]["rule"]["recipient"] == "self"]
+    if set(burst) != set(team + personal):
+        raise ValueError("Ultimate burst recipient needs explicit review")
+
+    def burst_summary(indices):
+        return {"record_indices": indices, "rows": len(indices),
+                "characters": len({records[index]["character_key"] for index in indices}),
+                "distinct_source_rules": len({(records[index]["character_key"],
+                                              records[index]["rule"].get("key")
+                                              or records[index]["rule"]["buff_id"]) for index in indices})}
+
+    return {"schema_version": 2, "scope": "inventory_only; no_master_integration_or_observation_implementation",
             "source": {"audit": AUDIT, "sha256": hashlib.sha256(raw).hexdigest()},
             "count_unit": "per character / source / trigger or branch; aliases of a released skill are counted once",
             "summary": {"fixed_panels": len(audit["characters"]), "fixed_quotes": audit["summary"]["replay_verified_quotes"],
                         "registered_rule_or_instance_rows": len(records), "categories": dict(Counter(r["category"] for r in records)),
                         "additional_native_evidence_candidates": len(evidence), "inactive_selected_set_rows": len(inactive)},
+            "ultimate_burst_shortlist": {
+                "priority": "Team ultimate-opened damage windows first, including enemy vulnerability; personal windows are separate and shared-SP battle-release bonuses are secondary.",
+                "first_model_release_candidates": burst_summary(ready),
+                "pending_input_or_production": burst_summary(pending),
+                "team_windows": {
+                    "first_model_release_candidates": burst_summary([index for index in ready if index in team]),
+                    "pending_input_or_production": burst_summary([index for index in pending if index in team])},
+                "personal_windows": {
+                    "first_model_release_candidates": burst_summary([index for index in ready if index in personal]),
+                    "pending_input_or_production": burst_summary([index for index in pending if index in personal])},
+                "boundary": "Individual ultimate energy and animation still matter; subsequent battle attacks retain their SP costs. No orchestration is implemented."},
             "categories": {
-                "first_release_candidate": "Use an identified successful battle/ultimate release; exact native frame is outside this model contract.",
+                "first_ultimate_burst_candidate": "Use an identified successful ultimate release; exact native frame is outside this model contract.",
+                "later_battle_release": "Shared-SP battle-release bonuses are secondary to the requested ultimate burst shortlist.",
                 "conditional_current_target": "Calculate only with explicit current hit target predicates; missing input stays unknown.",
                 "confirmed_native_fragment_only": "Confirmed fragment/outcome and recipient/lifetime required; no automatic cast mapping.",
                 "deferred_identified_combo": "Keep master combo handling; anonymous E does not identify owner or skill.",

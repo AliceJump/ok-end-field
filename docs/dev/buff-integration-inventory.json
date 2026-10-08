@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": "inventory_only; no_master_integration_or_observation_implementation",
   "source": {
     "audit": "docs/dev/damage-data-flow-audit.json",
@@ -13,7 +13,8 @@
     "categories": {
       "confirmed_native_fragment_only": 2,
       "deferred_producer": 40,
-      "first_release_candidate": 7,
+      "first_ultimate_burst_candidate": 5,
+      "later_battle_release": 2,
       "deferred_identified_combo": 5,
       "conditional_current_target": 6,
       "deferred_attribute_input": 2
@@ -21,8 +22,93 @@
     "additional_native_evidence_candidates": 8,
     "inactive_selected_set_rows": 3
   },
+  "ultimate_burst_shortlist": {
+    "priority": "Team ultimate-opened damage windows first, including enemy vulnerability; personal windows are separate and shared-SP battle-release bonuses are secondary.",
+    "first_model_release_candidates": {
+      "record_indices": [
+        4,
+        5,
+        30,
+        40,
+        60
+      ],
+      "rows": 5,
+      "characters": 4,
+      "distinct_source_rules": 5
+    },
+    "pending_input_or_production": {
+      "record_indices": [
+        0,
+        17,
+        28,
+        29,
+        35,
+        36,
+        37,
+        43,
+        53,
+        54,
+        56,
+        57
+      ],
+      "rows": 12,
+      "characters": 7,
+      "distinct_source_rules": 11
+    },
+    "team_windows": {
+      "first_model_release_candidates": {
+        "record_indices": [
+          4,
+          5
+        ],
+        "rows": 2,
+        "characters": 1,
+        "distinct_source_rules": 2
+      },
+      "pending_input_or_production": {
+        "record_indices": [
+          0,
+          17,
+          28,
+          29,
+          35,
+          36,
+          37,
+          43,
+          53,
+          54
+        ],
+        "rows": 10,
+        "characters": 6,
+        "distinct_source_rules": 9
+      }
+    },
+    "personal_windows": {
+      "first_model_release_candidates": {
+        "record_indices": [
+          30,
+          40,
+          60
+        ],
+        "rows": 3,
+        "characters": 3,
+        "distinct_source_rules": 3
+      },
+      "pending_input_or_production": {
+        "record_indices": [
+          56,
+          57
+        ],
+        "rows": 2,
+        "characters": 1,
+        "distinct_source_rules": 2
+      }
+    },
+    "boundary": "Individual ultimate energy and animation still matter; subsequent battle attacks retain their SP costs. No orchestration is implemented."
+  },
   "categories": {
-    "first_release_candidate": "Use an identified successful battle/ultimate release; exact native frame is outside this model contract.",
+    "first_ultimate_burst_candidate": "Use an identified successful ultimate release; exact native frame is outside this model contract.",
+    "later_battle_release": "Shared-SP battle-release bonuses are secondary to the requested ultimate burst shortlist.",
     "conditional_current_target": "Calculate only with explicit current hit target predicates; missing input stays unknown.",
     "confirmed_native_fragment_only": "Confirmed fragment/outcome and recipient/lifetime required; no automatic cast mapping.",
     "deferred_identified_combo": "Keep master combo handling; anonymous E does not identify owner or skill.",
@@ -163,7 +249,7 @@
       "character": "安塔尔",
       "unit": "终结技 / 超频时刻",
       "origin": "skill",
-      "category": "first_release_candidate",
+      "category": "first_ultimate_burst_candidate",
       "rule": {
         "origin": "reviewed_release",
         "key": "antal_ultimate:BUFF_ELECTROMAGNETIC_UP",
@@ -204,7 +290,7 @@
       "character": "安塔尔",
       "unit": "终结技 / 超频时刻",
       "origin": "skill",
-      "category": "first_release_candidate",
+      "category": "first_ultimate_burst_candidate",
       "rule": {
         "origin": "reviewed_release",
         "key": "antal_ultimate:BUFF_BURN_UP",
@@ -637,7 +723,7 @@
       "character": "艾维文娜",
       "unit": "战技 / 雷枪·截回",
       "origin": "selected_weapon_or_set",
-      "category": "first_release_candidate",
+      "category": "later_battle_release",
       "rule": {
         "origin": "reviewed_release",
         "key": "weapon:105:压制·太空物理学:battle",
@@ -968,7 +1054,7 @@
       "character": "埃特拉",
       "unit": "战技 / 凝声",
       "origin": "selected_weapon_or_set",
-      "category": "first_release_candidate",
+      "category": "later_battle_release",
       "rule": {
         "origin": "reviewed_release",
         "key": "weapon:105:压制·太空物理学:battle",
@@ -1281,7 +1367,7 @@
       "character": "莱万汀",
       "unit": "终结技 / 黄昏",
       "origin": "selected_weapon_or_set",
-      "category": "first_release_candidate",
+      "category": "first_ultimate_burst_candidate",
       "rule": {
         "origin": "reviewed_release",
         "key": "weapon:70:夜幕·嘶鸣烈火:ult",
@@ -1713,7 +1799,7 @@
       "character": "佩丽卡",
       "unit": "终结技 / 协议ε·70.41κ",
       "origin": "selected_weapon_or_set",
-      "category": "first_release_candidate",
+      "category": "first_ultimate_burst_candidate",
       "rule": {
         "origin": "reviewed_release",
         "key": "weapon:128:夜幕·耻辱:ult",
@@ -2598,7 +2684,7 @@
       "character": "庄方宜",
       "unit": "终结技 / 万钧风雷",
       "origin": "selected_weapon_or_set",
-      "category": "first_release_candidate",
+      "category": "first_ultimate_burst_candidate",
       "rule": {
         "origin": "reviewed_release",
         "key": "weapon:1382:压制·流霆:ult",
