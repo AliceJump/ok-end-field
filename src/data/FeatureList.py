@@ -117,6 +117,7 @@ class FeatureList(str, Enum):
     danger_4_2k = "danger_4_2k"
     danger_5_2k = "danger_5_2k"
     default_link_skill = "default_link_skill"
+    delivery_success_check = "delivery_success_check"
     demo_double_open = "demo_double_open"
     demo_left_time = "demo_left_time"
     demo_random_button = "demo_random_button"

@@ -1,15 +1,21 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 
 from ok import TaskDisabledException
 
 TaskItem = tuple[str, Callable[[], object]]
 # 可选的第三元素：开关谓词。提供时替代默认的 config.get(key) 判断（例如多开关 OR 逻辑）。
 TaskItemWithSwitch = tuple[str, Callable[[], object], Callable[[], bool]]
+TaskItemWithPolicy = tuple[
+    str,
+    Callable[[], object],
+    Callable[[], bool] | None,
+    Callable[[], bool | None],
+]
 
 
-def _new_task_status(task_items: Iterable[TaskItem | TaskItemWithSwitch]) -> dict[str, list[str]]:
+def _new_task_status(task_items: Iterable[TaskItem | TaskItemWithSwitch | TaskItemWithPolicy]) -> dict[str, list[str]]:
     return {"success": [], "failed": [], "skipped": [], "all": [item[0] for item in task_items]}
 
 
@@ -22,11 +28,13 @@ class DailyTaskRunner:
         task_items: Iterable[TaskItem],
         shared_state_task_keys: Iterable[str] = (),
         fatal_task_keys: Iterable[str] = (),
+        fatal_task_predicates: Mapping[str, Callable[[], bool | None]] | None = None,
     ):
         self.task = task
         self.task_items = list(task_items)
         self.shared_state_task_keys = set(shared_state_task_keys)
         self.fatal_task_keys = set(fatal_task_keys)
+        self.fatal_task_predicates = dict(fatal_task_predicates or {})
         self.task_status = _new_task_status(self.task_items)
         self.current_task_key: str | None = None
         self.failure_details: dict[str, dict[str, str]] = {}
@@ -49,6 +57,28 @@ class DailyTaskRunner:
     def _prepare_shared_task_state(self, key):
         if key not in self.shared_state_task_keys:
             self._reset_shared_task_state()
+
+    def _has_managed_fatal_policy(self, key: str, predicate=None) -> bool:
+        return predicate is not None or key in self.fatal_task_keys or key in self.fatal_task_predicates
+
+    def _failure_is_fatal(self, key: str, predicate=None) -> bool:
+        if predicate is None:
+            predicate = self.fatal_task_predicates.get(key)
+        if predicate is None:
+            return key in self.fatal_task_keys
+        try:
+            result = predicate()
+            if result is None:
+                return key in self.fatal_task_keys
+            return bool(result)
+        except Exception as e:
+            self.task.log_info(
+                self.task.tr("关键失败判定异常，按 fatal 处理 | {key}: {err}").format(
+                    key=self.task.tr(key), err=e
+                ),
+                notify=True,
+            )
+            return True
 
     def get_current_task_name(self) -> str:
         return str(self.current_task_key or self.final_summary.get("current_task", "") or "")
@@ -211,10 +241,11 @@ class DailyTaskRunner:
                 for item in self.task_items:
                     key, func = item[0], item[1]
                     predicate = item[2] if len(item) > 2 else None
+                    fatal_predicate = item[3] if len(item) > 3 else None
                     try:
                         success = self.execute_task(key, func, predicate)
                     except Exception as e:
-                        if key not in self.fatal_task_keys:
+                        if not self._has_managed_fatal_policy(key, fatal_predicate):
                             raise
                         if key not in self.task_status["failed"]:
                             self.task_status["failed"].append(key)
@@ -224,11 +255,19 @@ class DailyTaskRunner:
                                 self.task.screenshot(f"DailyTask_FatalTask_{key}")
                             except Exception:
                                 pass
-                        self._abort_current_round_after_fatal_failure(key)
-                        round_aborted = True
-                        break
+                        if self._failure_is_fatal(key, fatal_predicate):
+                            self._abort_current_round_after_fatal_failure(key)
+                            round_aborted = True
+                            break
+                        self.task.log_info(
+                            self.task.tr("任务 {key} 异常失败，但未满足终止条件，继续当前账号后续任务").format(
+                                key=self.task.tr(key)
+                            ),
+                            notify=True,
+                        )
+                        continue
 
-                    if success is False and key in self.fatal_task_keys:
+                    if success is False and self._failure_is_fatal(key, fatal_predicate):
                         self._abort_current_round_after_fatal_failure(key)
                         round_aborted = True
                         break

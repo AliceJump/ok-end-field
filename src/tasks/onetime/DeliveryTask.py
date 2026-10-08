@@ -169,6 +169,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.try_time = 0
         self._delivery_stage = "未开始"
         self._delivery_failure_recorded = False
+        self._delivery_cargo_in_transit = False
+        self._delivery_failure_requires_abort = False
         self.add_exit_after_config()
         self.validate_unique_sub_config_parents()
 
@@ -191,10 +193,22 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
     def _delivery_fail(self, message: str) -> bool:
         self._delivery_failure_recorded = True
+        self._delivery_failure_requires_abort = bool(self._delivery_cargo_in_transit)
         detail = f"自动送货失败 | 阶段={self._delivery_stage} | {message}"
         self.log_info(detail, notify=True)
         self.mark_task_failure(detail)
         return False
+
+    def daily_failure_is_fatal(self) -> bool:
+        """只有携货状态下发生的失败才应终止当前账号后续日常任务。"""
+        return bool(self._delivery_failure_requires_abort)
+
+    def _confirm_delivery_success(self, evidence: str) -> bool:
+        """记录送达成功证据，并立即解除携货 fatal 状态。"""
+        self._delivery_cargo_in_transit = False
+        self._delivery_failure_requires_abort = False
+        self.log_info(f"已确认送达成功：{evidence}")
+        return True
 
     def _to_delivery_point_config_key(self, location_name: str | None) -> str:
         if location_name is None:
@@ -460,12 +474,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             return True
         return False
 
-    def to_end_and_submit(self, end_pattern):
-        """从仓储点出发到目标点并提交委托
-
-        Args:
-            end_pattern: 目标点的正则匹配模式
-        """
+    def to_end_and_submit(self, end_pattern, end_target_box=None):
+        """从仓储点出发到目标点并提交委托，并以正向证据确认送达。"""
         if end_pattern == self.lang.DeliveryTask.k_6536f6f1:
             end_pattern = self.lang.DeliveryTask.k_0c1ef9f5
         self.align_ocr_or_find_target_to_center(
@@ -500,17 +510,46 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if not self.skip_dialog(time_out=5):
             return self._delivery_fail("交付后的对话流程未正常结束")
 
-        self.ensure_main()
-        if self.wait_ocr(
-            match=end_pattern,
-            box=self.box.left,
-            time_out=2,
+        if self.wait_feature(
+            feature=fL.delivery_success_check,
+            time_out=1,
+            threshold=0.8,
             raise_if_not_found=False,
         ):
-            return self._delivery_fail("提交后任务目标仍存在，无法确认送达成功")
-        return True
+            self.ensure_main()
+            return self._confirm_delivery_success("检测到送达成功对勾")
+
+        if self.wait_click_feature(
+            feature=fL.reward_ok,
+            time_out=1.5,
+            threshold=0.8,
+            raise_if_not_found=False,
+        ):
+            self.ensure_main()
+            return self._confirm_delivery_success("已点击交付奖励确认")
+
+        self.ensure_main()
+        if self.wait_feature(
+            feature=fL.delivery_success_check,
+            time_out=0.5,
+            threshold=0.8,
+            raise_if_not_found=False,
+        ):
+            return self._confirm_delivery_success("返回主界面后检测到送达成功对勾")
+
+        if end_target_box is None:
+            return self._delivery_fail("提交后未捕获送达成功证据，且缺少原送货目标识别框")
+
+        target_disappear_start = self.active_time()
+        while self.active_time() - target_disappear_start <= 5:
+            if not self.ocr(match=end_pattern, box=end_target_box, frame=self.next_frame()):
+                return self._confirm_delivery_success("原送货目标已从识别框消失")
+            self.sleep(0.1)
+        return self._delivery_fail("提交后原送货目标在原识别框内持续存在，无法确认送达成功")
 
     def _run_single_delivery_cycle(self):
+        self._delivery_cargo_in_transit = False
+        self._delivery_failure_requires_abort = False
         daily_mode = getattr(self, "_daily_delivery_mode", False)
         run_mode = self.RUN_NORMAL if daily_mode else self.config.get(self.CFG_RUN_MODE, self.RUN_NORMAL)
         if daily_mode or self.config.get(self.CFG_TEST_TARGET, self.TEST_NONE) == self.TEST_NONE:
@@ -566,8 +605,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 if not self.to_storage_point_and_back_zip_line():
                     return self._delivery_fail("未能完成取货路线或确认取货")
 
-                # 从这里开始视为已经携货；失败后由一键日常的 fatal 策略直接关游戏，
-                # 禁止再执行最终归位等协议传送恢复动作。
+                # 取货动作完成后才进入携货 fatal 状态；成功送达证据会立即解除。
+                self._delivery_cargo_in_transit = True
                 self._set_delivery_stage(f"第{cycle_index}单：已取货，识别交付目标")
                 results = self.wait_ocr(
                     match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
@@ -587,16 +626,18 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
                 end_pattern = None
                 end_name = None
+                end_target_box = None
                 for result in results:
                     for pattern, target_name in ends_list_pattern_dict.items():
                         if pattern.search(result.name):
                             end_pattern = pattern
                             end_name = target_name
+                            end_target_box = result
                             break
                     if end_pattern is not None:
                         break
 
-                if end_pattern is None or end_name is None:
+                if end_pattern is None or end_name is None or end_target_box is None:
                     return self._delivery_fail("送货目标文本存在，但无法映射到已配置终点")
 
                 self._set_delivery_stage(f"第{cycle_index}单：已取货，滑索运送")
@@ -607,7 +648,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 )
 
                 self._set_delivery_stage(f"第{cycle_index}单：已取货，提交委托")
-                if not self.to_end_and_submit(end_pattern):
+                if not self.to_end_and_submit(end_pattern, end_target_box=end_target_box):
                     return False
 
                 self._set_delivery_stage(f"第{cycle_index}单：送达成功")
@@ -669,6 +710,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         """执行一轮日常自动送货；只有完整确认送达才返回 True。"""
         self._daily_delivery_mode = True
         self._delivery_failure_recorded = False
+        self._delivery_cargo_in_transit = False
+        self._delivery_failure_requires_abort = False
         self._set_delivery_stage("准备")
         try:
             self._ensure_delivery_area_config()
