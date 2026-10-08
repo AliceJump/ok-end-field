@@ -117,6 +117,17 @@ class DailyFeature:
         with self._account_context(impl):
             return impl.config.get(key, default)
 
+    def failure_is_fatal(self) -> bool:
+        """询问子任务当前失败是否应终止当前账号的后续日常任务。"""
+        impl = self._resolve_impl()
+        if impl is None:
+            return False
+        checker = getattr(impl, "daily_failure_is_fatal", None)
+        if not callable(checker):
+            return False
+        with self._account_context(impl):
+            return bool(checker())
+
     def run(self):
         """在子任务实例上执行业务流程，前后注入/恢复宿主的账号上下文。"""
         impl = self._resolve_impl()
