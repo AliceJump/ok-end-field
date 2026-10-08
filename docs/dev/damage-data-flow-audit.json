@@ -49,6 +49,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -79,6 +80,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -129,6 +131,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -159,6 +162,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -178,6 +182,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -193,6 +198,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -208,6 +214,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -223,6 +230,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -256,6 +264,7 @@
             }
           ],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -271,6 +280,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -286,11 +296,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -429,6 +441,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -479,6 +492,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -533,6 +547,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -563,6 +578,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -582,6 +598,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -597,6 +614,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -612,6 +630,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -627,6 +646,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -660,6 +680,7 @@
             }
           ],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -675,6 +696,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -690,11 +712,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -833,6 +857,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -929,6 +954,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -1071,6 +1097,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -1236,6 +1263,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -1255,6 +1283,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1270,6 +1299,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1296,6 +1326,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1311,6 +1342,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1326,6 +1358,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1341,6 +1374,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1356,11 +1390,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -1497,6 +1533,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -1603,6 +1640,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -1822,6 +1860,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -1870,6 +1909,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -1889,6 +1929,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -1904,11 +1945,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2047,6 +2090,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -2097,6 +2141,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -2147,6 +2192,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -2197,6 +2243,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -2258,6 +2305,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2273,6 +2321,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2288,6 +2337,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2303,6 +2353,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2320,6 +2371,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2335,6 +2387,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2350,11 +2403,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2491,6 +2546,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -2620,6 +2676,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -2670,6 +2727,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -2710,6 +2768,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -2739,6 +2798,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -2754,6 +2814,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
@@ -2840,6 +2901,7 @@
           ]
         }
       ],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -2978,6 +3040,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -3077,6 +3140,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -3152,6 +3216,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -3192,6 +3257,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -3221,6 +3287,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3269,6 +3336,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3284,6 +3352,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3299,6 +3368,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3314,6 +3384,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3329,6 +3400,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3344,6 +3416,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
@@ -3433,6 +3506,7 @@
           ]
         }
       ],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -3606,6 +3680,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -3733,6 +3808,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -3812,6 +3888,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -3860,6 +3937,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -3879,6 +3957,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -3894,11 +3973,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -4037,6 +4118,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -4077,6 +4159,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -4117,6 +4200,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -4147,6 +4231,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -4166,6 +4251,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4181,6 +4267,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4196,6 +4283,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4211,6 +4299,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4226,6 +4315,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4241,6 +4331,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4256,11 +4347,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -4399,6 +4492,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
@@ -4436,6 +4530,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
@@ -4493,6 +4588,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
@@ -4530,6 +4626,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
@@ -4558,6 +4655,7 @@
           "native_enhanced_attack_evidence": [
             "chr_0005_chen_talent_1_2"
           ],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4573,6 +4671,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4588,6 +4687,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4603,6 +4703,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4618,6 +4719,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4633,6 +4735,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -4648,6 +4751,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
@@ -5033,6 +5137,7 @@
         }
       ],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [
         {
           "origin": "reviewed_fixed_weapon_target_predicate",
@@ -5210,6 +5315,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "50式应龙",
@@ -5250,6 +5356,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "50式应龙",
@@ -5310,6 +5417,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "50式应龙",
@@ -5350,6 +5458,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "50式应龙",
@@ -5379,6 +5488,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5394,6 +5504,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5409,6 +5520,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5424,6 +5536,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5439,6 +5552,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5454,6 +5568,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5469,6 +5584,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
@@ -5557,6 +5673,7 @@
           ]
         }
       ],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -5729,6 +5846,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -5779,6 +5897,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -5827,6 +5946,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -5865,6 +5985,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -5884,6 +6005,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -5899,11 +6021,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -6040,6 +6164,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -6090,6 +6215,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -6148,6 +6274,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -6198,6 +6325,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -6252,6 +6380,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6303,6 +6432,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6318,6 +6448,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6367,6 +6498,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6382,11 +6514,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -6525,6 +6659,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -6590,6 +6725,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -6710,6 +6846,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -6760,6 +6897,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -6779,6 +6917,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6794,6 +6933,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6815,6 +6955,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6830,6 +6971,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6845,6 +6987,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6860,6 +7003,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -6875,11 +7019,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -7018,6 +7164,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "50式应龙",
@@ -7058,6 +7205,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "50式应龙",
@@ -7122,6 +7270,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "50式应龙",
@@ -7204,6 +7353,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "50式应龙",
@@ -7270,6 +7420,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7318,6 +7469,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7333,6 +7485,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7348,6 +7501,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7363,6 +7517,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7378,6 +7533,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7393,6 +7549,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
@@ -7481,6 +7638,7 @@
           ]
         }
       ],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -7617,6 +7775,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -7647,6 +7806,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -7697,6 +7857,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -7856,6 +8017,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -7875,6 +8037,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -7890,11 +8053,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -8031,6 +8196,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -8093,6 +8259,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -8147,6 +8314,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -8221,6 +8389,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -8240,6 +8409,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8255,11 +8425,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -8396,6 +8568,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -8498,6 +8671,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -8560,6 +8734,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -8600,6 +8775,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -8635,6 +8811,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -8650,6 +8827,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
@@ -8736,6 +8914,7 @@
           ]
         }
       ],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -8874,6 +9053,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [
             {
@@ -8961,6 +9141,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [
             {
@@ -9028,6 +9209,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [
             {
@@ -9091,6 +9273,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [
             {
@@ -9123,6 +9306,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -9138,11 +9322,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [
         {
           "origin": "reviewed_fixed_weapon_target_predicate",
@@ -9897,6 +10083,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -9961,6 +10148,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -10011,6 +10199,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -10157,6 +10346,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -10176,6 +10366,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10191,11 +10382,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -10368,6 +10561,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -10491,6 +10685,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -10583,6 +10778,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -10621,6 +10817,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -10640,6 +10837,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -10655,11 +10853,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -10798,6 +10998,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
@@ -10835,6 +11036,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
@@ -10917,6 +11119,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
@@ -10989,6 +11192,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": [
@@ -11052,6 +11256,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -11067,6 +11272,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -11082,6 +11288,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -11097,6 +11304,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -11114,6 +11322,7 @@
           "native_enhanced_attack_evidence": [
             "chr_0004_pelica_potential_3"
           ],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -11129,6 +11338,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -11146,6 +11356,7 @@
           },
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
@@ -11334,6 +11545,7 @@
         }
       ],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {
@@ -11509,6 +11721,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -11568,6 +11781,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -11681,6 +11895,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -11762,6 +11977,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -11814,6 +12030,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -11829,11 +12046,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -11972,6 +12191,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -12012,6 +12232,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -12052,6 +12273,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -12120,6 +12342,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -12139,6 +12362,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -12154,6 +12378,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -12169,6 +12394,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -12184,6 +12410,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -12199,6 +12426,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -12214,6 +12442,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -12235,11 +12464,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -12376,6 +12607,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -12426,6 +12658,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -12564,6 +12797,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -12594,6 +12828,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -12647,6 +12882,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -12662,11 +12898,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -12805,6 +13043,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -12855,6 +13094,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -12905,6 +13145,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -12945,6 +13186,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [
             {
               "set": "碾骨",
@@ -12974,6 +13216,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -12989,6 +13232,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -13004,6 +13248,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -13019,6 +13264,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -13034,6 +13280,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -13049,6 +13296,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -13064,6 +13312,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
@@ -13150,6 +13399,7 @@
           ]
         }
       ],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -13286,6 +13536,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -13389,6 +13640,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -13480,6 +13732,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -13520,6 +13773,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -13539,6 +13793,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -13554,11 +13809,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -13695,6 +13952,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -13769,6 +14027,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -13855,6 +14114,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -13885,6 +14145,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -13904,6 +14165,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -13919,11 +14181,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -14062,6 +14326,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -14138,6 +14403,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -14225,6 +14491,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -14255,6 +14522,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -14307,6 +14575,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14322,6 +14591,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14337,6 +14607,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14352,6 +14623,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14367,6 +14639,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14382,6 +14655,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14397,11 +14671,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -14540,6 +14816,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -14626,6 +14903,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -14666,6 +14944,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -14871,6 +15150,7 @@
             "Damage-rule producers, input supply and outcome timing not verified by this audit"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -14923,6 +15203,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14938,6 +15219,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14959,6 +15241,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14974,6 +15257,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -14989,6 +15273,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -15004,6 +15289,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -15030,11 +15316,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -15171,6 +15459,7 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -15227,6 +15516,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -15277,6 +15567,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -15433,6 +15724,7 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -15452,6 +15744,7 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         },
         {
@@ -15542,11 +15835,13 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},
@@ -15683,6 +15978,14 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [
+            {
+              "passive_id": "chr_0030_zhuangfy_talent_1_2",
+              "status": "not_bound; evidence_candidate_only",
+              "this_unit_is_producer_kind": false,
+              "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"
+            }
+          ],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -15781,6 +16084,14 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [
+            {
+              "passive_id": "chr_0030_zhuangfy_talent_1_2",
+              "status": "not_bound; evidence_candidate_only",
+              "this_unit_is_producer_kind": true,
+              "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"
+            }
+          ],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -15851,6 +16162,14 @@
             "Conditional/replacement branches require individual semantic review"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [
+            {
+              "passive_id": "chr_0030_zhuangfy_talent_1_2",
+              "status": "not_bound; evidence_candidate_only",
+              "this_unit_is_producer_kind": false,
+              "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"
+            }
+          ],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -15922,6 +16241,14 @@
             "Rank-row aggregation still needs native hit/count and conditional-attack verification"
           ],
           "full_skill_execution": "not_assessed; see mechanism coverage audit",
+          "native_marker_release_checks": [
+            {
+              "passive_id": "chr_0030_zhuangfy_talent_1_2",
+              "status": "not_bound; evidence_candidate_only",
+              "this_unit_is_producer_kind": false,
+              "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"
+            }
+          ],
           "native_next_skill_set_checks": [],
           "native_weapon_attribute_checks": [],
           "native_enhanced_attack_checks": []
@@ -15983,6 +16310,9 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [
+            "chr_0030_zhuangfy_talent_1_2"
+          ],
           "complete_semantic_review": false
         },
         {
@@ -15998,11 +16328,1032 @@
           "fixed_skill_crit_filters": {},
           "native_buff_attribute_rules": [],
           "native_enhanced_attack_evidence": [],
+          "native_marker_release_evidence": [],
           "complete_semantic_review": false
         }
       ],
       "native_enhanced_attack_candidates": [],
       "native_next_skill_set_candidates": [],
+      "native_marker_release_candidates": [
+        {
+          "passive_id": "chr_0030_zhuangfy_talent_1_2",
+          "producer_skill": "chr_0030_zhuangfy_talent1",
+          "source": "assets/data/character_mechanics/20261008/zhuangfy_release.json.gz",
+          "selected_parameters": {
+            "base_rate": 0.18000000715255737,
+            "duration": 5.0,
+            "enhance_rate": 0.019999999552965164
+          },
+          "parameter_source": "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2",
+          "raw_skill_blackboard": [
+            {
+              "isDynamic": false,
+              "key": "duration",
+              "valueDouble": 0.0,
+              "valueStr": ""
+            },
+            {
+              "isDynamic": false,
+              "key": "enhance_rate",
+              "valueDouble": 0.0,
+              "valueStr": ""
+            },
+            {
+              "isDynamic": false,
+              "key": "base_rate",
+              "valueDouble": 0.0,
+              "valueStr": ""
+            }
+          ],
+          "receiving_event": 9,
+          "receiving_event_name": "OnAddedBuff",
+          "listener_buff_condition": {
+            "isEnable": true,
+            "priorityLevel": 0,
+            "priorityOffset": 0,
+            "serverActionIndex": 0,
+            "blackboardKey": "",
+            "buffIdList": [
+              {
+                "buffId": "buff_chr_0030_zhuangfy_talent1"
+              }
+            ],
+            "checkType": 0,
+            "query": {
+              "queryType": 0,
+              "tags": []
+            }
+          },
+          "base_buff_creation": {
+            "isEnable": true,
+            "priorityLevel": 0,
+            "priorityOffset": 0,
+            "serverActionIndex": 1,
+            "asChildBuff": false,
+            "autoFinishByAction": false,
+            "buffIconDurationSource": {
+              "durationSourceType": 0,
+              "timedMarkerId": ""
+            },
+            "buffs": [
+              {
+                "assignBlackboard": true,
+                "assignItems": [
+                  {
+                    "directValueType": 0,
+                    "inputValueKey": "duration",
+                    "numericValue": 0.0,
+                    "stringValue": "",
+                    "targetKey": "duration",
+                    "useDirectValue": false
+                  },
+                  {
+                    "directValueType": 0,
+                    "inputValueKey": "base_rate",
+                    "numericValue": 0.0,
+                    "stringValue": "",
+                    "targetKey": "base_rate",
+                    "useDirectValue": false
+                  },
+                  {
+                    "directValueType": 0,
+                    "inputValueKey": "enhance_rate",
+                    "numericValue": 0.0,
+                    "stringValue": "",
+                    "targetKey": "enhance_rate",
+                    "useDirectValue": false
+                  }
+                ],
+                "buffId": "buff_chr_0030_zhuangfy_talent1_base",
+                "buffIdKey": "",
+                "readIdFromBlackboard": false
+              }
+            ],
+            "buffSource": 0,
+            "contextKey": "",
+            "count": {
+              "blackboardKey": "stack_per_hit",
+              "useBlackboardKey": false,
+              "value": 1.0
+            },
+            "finishWithNextSkillIfNotInherited": true,
+            "inheritSkillIdList": [],
+            "inheritSourceSkillCastId": false,
+            "inheritSourceSkillCastInfo": true,
+            "isExtra": false,
+            "overrideBuffIconDuration": false,
+            "passTargetGroupsToBuff": false,
+            "targetSettings": {
+              "advancedDirection": {
+                "clampToXZ": true,
+                "customSourceAndTarget": false,
+                "directionType": 0,
+                "invertDirection": false,
+                "source": null,
+                "sourceMountPoint": 0,
+                "target": null,
+                "targetMountPoint": 0
+              },
+              "centerContextKey": "",
+              "centerToGround": false,
+              "centerType": 0,
+              "enableAdvancedDirection": false,
+              "ownerContextKey": "",
+              "selectorData": {
+                "finderData": null,
+                "postProcessorData": [],
+                "validatorData": []
+              },
+              "selectorDirection": 0,
+              "selectorOwner": 1,
+              "target": 0,
+              "targetContextKey": "",
+              "targetGroupKey": "",
+              "targetSource": 1
+            }
+          },
+          "base_buff": "buff_chr_0030_zhuangfy_talent1_base",
+          "base_duration": {
+            "blackboardKey": "duration",
+            "useBlackboardKey": true,
+            "value": 0.10000000149011612
+          },
+          "base_stacking": {
+            "identifierType": 0,
+            "isNeedStackEffect": false,
+            "maxStackCnt": 1,
+            "maxStackCntKey": "max_stack",
+            "negatePriority": false,
+            "priority": 1.0,
+            "priorityKey": "NormalSkillCtrl",
+            "stackEffects": [],
+            "stackingKey": "NormalSkillCtrl",
+            "stackingType": 2,
+            "useMaxStackCntKey": false,
+            "usePriorityKey": false
+          },
+          "enhanced_callback_event": 5,
+          "enhanced_action": {
+            "isEnable": true,
+            "priorityLevel": 0,
+            "priorityOffset": 0,
+            "serverActionIndex": 0,
+            "asChildBuff": true,
+            "autoFinishByAction": false,
+            "childBuffId": {
+              "blackboardKey": "",
+              "useBlackboardKey": false,
+              "value": "buff_common_affixes_enhance_pulse_zhuangfy_talent1_child"
+            },
+            "duration": {
+              "blackboardKey": "duration",
+              "useBlackboardKey": true,
+              "value": -1.0
+            },
+            "enhancingList": [
+              {
+                "buffIds": [
+                  "buff_chr_0030_zhuangfy_talent1_mark"
+                ],
+                "operationType": 1,
+                "value": {
+                  "blackboardKey": "enhance_rate",
+                  "useBlackboardKey": true,
+                  "value": 0.0
+                }
+              }
+            ],
+            "overrideChildBuffId": false,
+            "rate": {
+              "blackboardKey": "base_rate",
+              "useBlackboardKey": true,
+              "value": 0.0
+            },
+            "source": {
+              "advancedDirection": {
+                "clampToXZ": true,
+                "customSourceAndTarget": false,
+                "directionType": 0,
+                "invertDirection": false,
+                "source": null,
+                "sourceMountPoint": 0,
+                "target": null,
+                "targetMountPoint": 0
+              },
+              "centerContextKey": "",
+              "centerToGround": false,
+              "centerType": 0,
+              "enableAdvancedDirection": false,
+              "ownerContextKey": "",
+              "selectorData": {
+                "finderData": null,
+                "postProcessorData": [],
+                "validatorData": []
+              },
+              "selectorDirection": 0,
+              "selectorOwner": 1,
+              "target": 0,
+              "targetContextKey": "",
+              "targetGroupKey": "",
+              "targetSource": 1
+            },
+            "target": {
+              "advancedDirection": {
+                "clampToXZ": true,
+                "customSourceAndTarget": false,
+                "directionType": 0,
+                "invertDirection": false,
+                "source": null,
+                "sourceMountPoint": 0,
+                "target": null,
+                "targetMountPoint": 0
+              },
+              "centerContextKey": "",
+              "centerToGround": false,
+              "centerType": 0,
+              "enableAdvancedDirection": false,
+              "ownerContextKey": "",
+              "selectorData": {
+                "finderData": null,
+                "postProcessorData": [],
+                "validatorData": []
+              },
+              "selectorDirection": 0,
+              "selectorOwner": 1,
+              "target": 0,
+              "targetContextKey": "",
+              "targetGroupKey": "",
+              "targetSource": 1
+            },
+            "subType": 6
+          },
+          "marker_definitions": {
+            "buff_chr_0030_zhuangfy_talent1": {
+              "duration": {
+                "blackboardKey": "duration",
+                "useBlackboardKey": false,
+                "value": 0.10000000149011612
+              },
+              "lifeType": 0,
+              "stackingSettings": {
+                "identifierType": 0,
+                "isNeedStackEffect": false,
+                "maxStackCnt": 3,
+                "maxStackCntKey": "max_stack",
+                "negatePriority": false,
+                "priority": 1.0,
+                "priorityKey": "NormalSkillCtrl",
+                "stackEffects": [],
+                "stackingKey": "NormalSkillCtrl",
+                "stackingType": 0,
+                "useMaxStackCntKey": true,
+                "usePriorityKey": false
+              }
+            },
+            "buff_chr_0030_zhuangfy_talent1_mark": {
+              "duration": {
+                "blackboardKey": "duration",
+                "useBlackboardKey": false,
+                "value": 0.10000000149011612
+              },
+              "lifeType": 0,
+              "stackingSettings": {
+                "identifierType": 0,
+                "isNeedStackEffect": false,
+                "maxStackCnt": 3,
+                "maxStackCntKey": "max_stack",
+                "negatePriority": false,
+                "priority": 1.0,
+                "priorityKey": "NormalSkillCtrl",
+                "stackEffects": [],
+                "stackingKey": "NormalSkillCtrl",
+                "stackingType": 0,
+                "useMaxStackCntKey": true,
+                "usePriorityKey": false
+              }
+            }
+          },
+          "marker_producers": [
+            {
+              "skill": "chr_0030_zhuangfy_normal_skill",
+              "timeline_index": 16,
+              "start_frame": 6,
+              "end_frame": 7,
+              "creates": [
+                {
+                  "path": "/actionData/0/$value/failActions/actionData/0/$value/succeedActions/actionData/0",
+                  "action": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 88,
+                    "asChildBuff": false,
+                    "autoFinishByAction": false,
+                    "buffIconDurationSource": {
+                      "durationSourceType": 0,
+                      "timedMarkerId": ""
+                    },
+                    "buffs": [
+                      {
+                        "assignBlackboard": false,
+                        "assignItems": [],
+                        "buffId": "buff_chr_0030_zhuangfy_talent1",
+                        "buffIdKey": "",
+                        "readIdFromBlackboard": false
+                      }
+                    ],
+                    "buffSource": 0,
+                    "contextKey": "",
+                    "count": {
+                      "blackboardKey": "",
+                      "useBlackboardKey": false,
+                      "value": 1.0
+                    },
+                    "finishWithNextSkillIfNotInherited": true,
+                    "inheritSkillIdList": [],
+                    "inheritSourceSkillCastId": false,
+                    "inheritSourceSkillCastInfo": true,
+                    "isExtra": false,
+                    "overrideBuffIconDuration": false,
+                    "passTargetGroupsToBuff": false,
+                    "targetSettings": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "",
+                      "targetSource": 1
+                    }
+                  }
+                },
+                {
+                  "path": "/actionData/0/$value/succeedActions/actionData/0",
+                  "action": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 85,
+                    "asChildBuff": false,
+                    "autoFinishByAction": false,
+                    "buffIconDurationSource": {
+                      "durationSourceType": 0,
+                      "timedMarkerId": ""
+                    },
+                    "buffs": [
+                      {
+                        "assignBlackboard": false,
+                        "assignItems": [],
+                        "buffId": "buff_chr_0030_zhuangfy_talent1",
+                        "buffIdKey": "",
+                        "readIdFromBlackboard": false
+                      }
+                    ],
+                    "buffSource": 0,
+                    "contextKey": "",
+                    "count": {
+                      "blackboardKey": "",
+                      "useBlackboardKey": false,
+                      "value": 1.0
+                    },
+                    "finishWithNextSkillIfNotInherited": true,
+                    "inheritSkillIdList": [],
+                    "inheritSourceSkillCastId": false,
+                    "inheritSourceSkillCastInfo": true,
+                    "isExtra": false,
+                    "overrideBuffIconDuration": false,
+                    "passTargetGroupsToBuff": false,
+                    "targetSettings": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "",
+                      "targetSource": 1
+                    }
+                  }
+                }
+              ],
+              "control_actions": [
+                {
+                  "path": "/actionData/0/$value/conditionAction/actionData/0",
+                  "type": "Beyond.Gameplay.Core.Condition.CheckSquadInFight+Data",
+                  "data": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 84,
+                    "invertCondition": false
+                  }
+                },
+                {
+                  "path": "/actionData/0/$value/failActions/actionData/0/$value/conditionAction/actionData/0",
+                  "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+                  "data": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 87,
+                    "checkTarget": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "smart_target",
+                      "targetSource": 2
+                    },
+                    "compareType": 3,
+                    "containsHittableTarget": false,
+                    "excludeDeadEntity": false,
+                    "minNum": 1,
+                    "storeKey": ""
+                  }
+                }
+              ],
+              "tick_actions": []
+            },
+            {
+              "skill": "chr_0030_zhuangfy_normal_skill_ult",
+              "timeline_index": 10,
+              "start_frame": 5,
+              "end_frame": 6,
+              "creates": [
+                {
+                  "path": "/actionData/0/$value/failActions/actionData/0/$value/succeedActions/actionData/0",
+                  "action": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 78,
+                    "asChildBuff": false,
+                    "autoFinishByAction": false,
+                    "buffIconDurationSource": {
+                      "durationSourceType": 0,
+                      "timedMarkerId": ""
+                    },
+                    "buffs": [
+                      {
+                        "assignBlackboard": false,
+                        "assignItems": [],
+                        "buffId": "buff_chr_0030_zhuangfy_talent1",
+                        "buffIdKey": "",
+                        "readIdFromBlackboard": false
+                      }
+                    ],
+                    "buffSource": 0,
+                    "contextKey": "",
+                    "count": {
+                      "blackboardKey": "",
+                      "useBlackboardKey": false,
+                      "value": 1.0
+                    },
+                    "finishWithNextSkillIfNotInherited": true,
+                    "inheritSkillIdList": [],
+                    "inheritSourceSkillCastId": false,
+                    "inheritSourceSkillCastInfo": true,
+                    "isExtra": false,
+                    "overrideBuffIconDuration": false,
+                    "passTargetGroupsToBuff": false,
+                    "targetSettings": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "",
+                      "targetSource": 1
+                    }
+                  }
+                },
+                {
+                  "path": "/actionData/0/$value/succeedActions/actionData/0",
+                  "action": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 75,
+                    "asChildBuff": false,
+                    "autoFinishByAction": false,
+                    "buffIconDurationSource": {
+                      "durationSourceType": 0,
+                      "timedMarkerId": ""
+                    },
+                    "buffs": [
+                      {
+                        "assignBlackboard": false,
+                        "assignItems": [],
+                        "buffId": "buff_chr_0030_zhuangfy_talent1",
+                        "buffIdKey": "",
+                        "readIdFromBlackboard": false
+                      }
+                    ],
+                    "buffSource": 0,
+                    "contextKey": "",
+                    "count": {
+                      "blackboardKey": "",
+                      "useBlackboardKey": false,
+                      "value": 1.0
+                    },
+                    "finishWithNextSkillIfNotInherited": true,
+                    "inheritSkillIdList": [],
+                    "inheritSourceSkillCastId": false,
+                    "inheritSourceSkillCastInfo": true,
+                    "isExtra": false,
+                    "overrideBuffIconDuration": false,
+                    "passTargetGroupsToBuff": false,
+                    "targetSettings": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "",
+                      "targetSource": 1
+                    }
+                  }
+                }
+              ],
+              "control_actions": [
+                {
+                  "path": "/actionData/0/$value/conditionAction/actionData/0",
+                  "type": "Beyond.Gameplay.Core.Condition.CheckSquadInFight+Data",
+                  "data": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 74,
+                    "invertCondition": false
+                  }
+                },
+                {
+                  "path": "/actionData/0/$value/failActions/actionData/0/$value/conditionAction/actionData/0",
+                  "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+                  "data": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 77,
+                    "checkTarget": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "smart_target",
+                      "targetSource": 2
+                    },
+                    "compareType": 3,
+                    "containsHittableTarget": false,
+                    "excludeDeadEntity": false,
+                    "minNum": 1,
+                    "storeKey": ""
+                  }
+                }
+              ],
+              "tick_actions": []
+            },
+            {
+              "skill": "chr_0030_zhuangfy_normal_skill_ult_abilityrange",
+              "timeline_index": 5,
+              "start_frame": 12,
+              "end_frame": 64,
+              "creates": [
+                {
+                  "path": "/actionData/0/$value/actionOnTick/actionData/0/$value/succeedActions/actionData/0",
+                  "action": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 13,
+                    "asChildBuff": false,
+                    "autoFinishByAction": false,
+                    "buffIconDurationSource": {
+                      "durationSourceType": 0,
+                      "timedMarkerId": ""
+                    },
+                    "buffs": [
+                      {
+                        "assignBlackboard": false,
+                        "assignItems": [],
+                        "buffId": "buff_chr_0030_zhuangfy_talent1_mark",
+                        "buffIdKey": "",
+                        "readIdFromBlackboard": false
+                      }
+                    ],
+                    "buffSource": 0,
+                    "contextKey": "",
+                    "count": {
+                      "blackboardKey": "",
+                      "useBlackboardKey": false,
+                      "value": 1.0
+                    },
+                    "finishWithNextSkillIfNotInherited": true,
+                    "inheritSkillIdList": [],
+                    "inheritSourceSkillCastId": false,
+                    "inheritSourceSkillCastInfo": true,
+                    "isExtra": false,
+                    "overrideBuffIconDuration": false,
+                    "passTargetGroupsToBuff": false,
+                    "targetSettings": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "",
+                      "targetSource": 1
+                    }
+                  }
+                }
+              ],
+              "control_actions": [
+                {
+                  "path": "/actionData/0/$value/actionOnTick/actionData/0/$value/conditionAction/actionData/0",
+                  "type": "Beyond.Gameplay.Core.CompareFloat+Data",
+                  "data": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 12,
+                    "compare": 0,
+                    "valueA": {
+                      "blackboardKey": "tick_index",
+                      "useBlackboardKey": true,
+                      "value": 0.0
+                    },
+                    "valueB": {
+                      "blackboardKey": "EntityBB_SwordNum",
+                      "useBlackboardKey": true,
+                      "value": 0.0
+                    }
+                  }
+                },
+                {
+                  "path": "/actionData/0/$value/actionOnTick/actionData/0/$value/failActions/actionData/0",
+                  "type": "Beyond.Gameplay.Core.JumpToAction+Data",
+                  "data": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 22,
+                    "conditionAction": {
+                      "actionData": [],
+                      "onlyExecuteWhenSourceIsGuard": false,
+                      "onlyExecuteWhenSourceIsMainChar": false
+                    },
+                    "destFrame": 64
+                  }
+                },
+                {
+                  "path": "/actionData/0/$value/actionOnTick/actionData/0/$value/succeedActions/actionData/2/$value/conditionAction/actionData/0",
+                  "type": "Beyond.Gameplay.Core.CompareFloat+Data",
+                  "data": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 16,
+                    "compare": 4,
+                    "valueA": {
+                      "blackboardKey": "tick_index",
+                      "useBlackboardKey": true,
+                      "value": 0.0
+                    },
+                    "valueB": {
+                      "blackboardKey": "",
+                      "useBlackboardKey": false,
+                      "value": 1.0
+                    }
+                  }
+                }
+              ],
+              "tick_actions": [
+                {
+                  "isEnable": true,
+                  "priorityLevel": 0,
+                  "priorityOffset": 0,
+                  "serverActionIndex": 10,
+                  "executeEachFrame": false,
+                  "tickInterval": 0.20000000298023224,
+                  "tickIntervalBlackboardKey": "",
+                  "useTickIntervalBlackboardKey": false
+                }
+              ]
+            },
+            {
+              "skill": "chr_0030_zhuangfy_normal_skill_ult_abilityrange",
+              "timeline_index": 6,
+              "start_frame": 69,
+              "end_frame": 70,
+              "creates": [
+                {
+                  "path": "/actionData/1",
+                  "action": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 24,
+                    "asChildBuff": false,
+                    "autoFinishByAction": false,
+                    "buffIconDurationSource": {
+                      "durationSourceType": 0,
+                      "timedMarkerId": ""
+                    },
+                    "buffs": [
+                      {
+                        "assignBlackboard": false,
+                        "assignItems": [],
+                        "buffId": "buff_chr_0030_zhuangfy_talent1_mark",
+                        "buffIdKey": "",
+                        "readIdFromBlackboard": false
+                      }
+                    ],
+                    "buffSource": 0,
+                    "contextKey": "",
+                    "count": {
+                      "blackboardKey": "",
+                      "useBlackboardKey": false,
+                      "value": 1.0
+                    },
+                    "finishWithNextSkillIfNotInherited": true,
+                    "inheritSkillIdList": [],
+                    "inheritSourceSkillCastId": false,
+                    "inheritSourceSkillCastInfo": true,
+                    "isExtra": false,
+                    "overrideBuffIconDuration": false,
+                    "passTargetGroupsToBuff": false,
+                    "targetSettings": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "",
+                      "targetSource": 1
+                    }
+                  }
+                }
+              ],
+              "control_actions": [
+                {
+                  "path": "/actionData/0",
+                  "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+                  "data": {
+                    "isEnable": true,
+                    "priorityLevel": 0,
+                    "priorityOffset": 0,
+                    "serverActionIndex": 23,
+                    "checkTarget": {
+                      "advancedDirection": {
+                        "clampToXZ": true,
+                        "customSourceAndTarget": false,
+                        "directionType": 0,
+                        "invertDirection": false,
+                        "source": null,
+                        "sourceMountPoint": 0,
+                        "target": null,
+                        "targetMountPoint": 0
+                      },
+                      "centerContextKey": "",
+                      "centerToGround": false,
+                      "centerType": 0,
+                      "enableAdvancedDirection": false,
+                      "ownerContextKey": "",
+                      "selectorData": {
+                        "finderData": null,
+                        "postProcessorData": [],
+                        "validatorData": []
+                      },
+                      "selectorDirection": 0,
+                      "selectorOwner": 1,
+                      "target": 0,
+                      "targetContextKey": "",
+                      "targetGroupKey": "tar",
+                      "targetSource": 2
+                    },
+                    "compareType": 3,
+                    "containsHittableTarget": false,
+                    "excludeDeadEntity": false,
+                    "minNum": 1,
+                    "storeKey": ""
+                  }
+                }
+              ],
+              "tick_actions": []
+            }
+          ],
+          "sources": {
+            "chr_0030_zhuangfy_talent1": {
+              "sha256": "8d3a815a9c25d5cae961c3b3298af174aa4b9de83fa60f58f3eda166b77cd9f0",
+              "bytes": 893,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            },
+            "chr_0030_zhuangfy_normal_skill": {
+              "sha256": "06a61a8b2630fbe792294c3a0dc0a9a24080d8c8be45cb5895d2f16f0f05a9fd",
+              "bytes": 23078,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            },
+            "chr_0030_zhuangfy_normal_skill_ult": {
+              "sha256": "33483a4c247260eb69cdd90ab80a604c113fb8e57a79817d3a39f54dbf971ccf",
+              "bytes": 23334,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            },
+            "chr_0030_zhuangfy_normal_skill_ult_abilityrange": {
+              "sha256": "d8c052a17e9f1332ba95277d19027e5df67af4e747fc601b4b171744f7daa6a2",
+              "bytes": 21592,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            },
+            "buff_chr_0030_zhuangfy_talent1": {
+              "sha256": "f89ddacb79396fa222615d921ae13e6d71a0336e6b89ba9fc7c84fcb468f60e1",
+              "bytes": 268,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            },
+            "buff_chr_0030_zhuangfy_talent1_mark": {
+              "sha256": "03c34a3ca7b5edb541f9ae562f468107f7cfd29882da52af986664cc358193b1",
+              "bytes": 273,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            },
+            "buff_chr_0030_zhuangfy_talent1_base": {
+              "sha256": "3eec3e44c4ccab29aea2af7117dac7bb100297386808100904a19aec4c3f1b1d",
+              "bytes": 705,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            },
+            "buff_common_affixes_enhance_pulse_zhuangfy_talent1_child": {
+              "sha256": "29dbefcac34676cc46fd69682999df5c54c3a3686c86a36fdb60720a2224b2dd",
+              "bytes": 528,
+              "byte_identical": true,
+              "installed_vfs_md5_verified": true
+            }
+          },
+          "execution_status": "not_bound; evidence_candidate_only",
+          "unexecuted_components": [
+            "squad-in-fight or actual smart_target gate and native marker frames",
+            "AddBuff context publication, existing-instance and reentrant event ordering",
+            "EnhancedAction child selection, dynamic rate edits and parent cleanup",
+            "area tick index, actual SwordNum, Jump and marker count; not inferred from damage hits"
+          ]
+        }
+      ],
       "target_state_bonus_rules": [],
       "fixed_weapon_bonus_filters": {},
       "fixed_skill_crit_filters": {},

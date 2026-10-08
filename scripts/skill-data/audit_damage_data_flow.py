@@ -23,6 +23,7 @@ from src.data.native_attribute_metadata import metadata_audit
 from src.data.native_attribute_modifiers import reviewed_attack_binding
 from src.data.native_gameplay import native_enums, native_record
 from src.data.native_tags import native_tag_id, tag_names
+from src.data.native_zhuangfy_evidence import release_evidence
 from src.data.skill_timing import SkillTimingStore
 
 
@@ -251,6 +252,7 @@ def audit(rows=None):
         enhanced_attack = enhanced_attack_evidence(character, store)
         entry["native_enhanced_attack_candidates"] = enhanced_attack
         entry["native_next_skill_set_candidates"] = next_skill_set_evidence(row)
+        entry["native_marker_release_candidates"] = release_evidence(character, root=ROOT)
         entry["target_state_bonus_rules"] = [
             {**rule_record(spec, "reviewed_fixed_weapon_target_predicate"),
              "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"}
@@ -341,6 +343,11 @@ def audit(rows=None):
                     for spec in releases.get(KINDS.get(skill.skill_type.value), ())],
                 "pending_semantic_checks": pending,
                 "full_skill_execution": "not_assessed; see mechanism coverage audit",
+                "native_marker_release_checks": [
+                    {"passive_id": candidate["passive_id"], "status": candidate["execution_status"],
+                     "this_unit_is_producer_kind": skill.skill_type.value == "战技",
+                     "event_requirement": "native marker creation -> OnAddedBuff -> base EnhancedAction; area tick/mark edits stay separate"}
+                    for candidate in entry["native_marker_release_candidates"]],
                 "native_next_skill_set_checks": [
                     {"set": candidate["set"], "selected_piece_count": len(candidate["selected_piece_ids"]),
                      "activated_by_selected_build": candidate["activated_by_selected_build"],
@@ -396,6 +403,8 @@ def audit(rows=None):
                                       "native_buff_attribute_rules": [native_attack] if native_attack and native_attack["passive_id"] == passive.effect_id else [],
                                       "native_enhanced_attack_evidence": [candidate["passive_id"] for candidate in enhanced_attack
                                                                           if candidate["passive_id"] == passive.effect_id],
+                                      "native_marker_release_evidence": [candidate["passive_id"] for candidate in entry["native_marker_release_candidates"]
+                                                                         if candidate["passive_id"] == passive.effect_id],
                                       "complete_semantic_review": False})
         report["characters"].append(entry)
     report["summary"] = {"characters": len(rows), "skills": total, "replay_verified_quotes": verified,

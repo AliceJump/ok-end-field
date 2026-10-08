@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-08第十二批：庄方宜天地造化八份原生记录按当前VFS/回编码核准，满级18%/2%/5秒覆盖原始零BB。普通/姿态战技基础mark在6/5帧，需战斗或smart_target门槛；区域技能12～64帧tick及69帧末段另产追加mark，不能按伤害次数/最大剑数填充。OnAddedBuff→基础Stack/max1→OnEnable EnhancedAction链及每技能台账已补；原生AddBuff的接收/来源通知、空新结果分支也定位，完整发布/增强/清理继续未知。本批未增加执行绑定，32/128、14/2及2/111不变。3项新增、37项相关通过（13.264秒），未重复纯台账无关全仓；最近全仓仍第十批1406项。见[native-zhuangfy-release-audit.md](native-zhuangfy-release-audit.md)。
+
 > 2026-10-08第十一批：碾骨/50式应龙的原生套装等级、装备名称及九份父/检测/pending/伤害buff核准；仅艾维文娜4件与大潘/萤石各3件启用，三位碾骨散件不启用。30号施放事件先积层，下次指定技能snapshot→乘实际层数→创建同cast buff→消费全部pending。SkillAffix实体引用可超过动作结束，未用普通定时buff替代。逐角色/24技能（含散件未激活）已登记来源、生产/消费类型及未执行项。3项新增与37项相关通过；32面板/128报价、14/2条绑定和2/111完整程序不变。见[native-next-skill-set-audit.md](native-next-skill-set-audit.md)。
 
 > 2026-10-08第十批：取得原始AttributeMetaTable十行及逐字段字节证据，确认四维raw default=0且范围0～100000，57/58和76～79默认0但边界开关关闭。重新核准FieldMeta→CreateDefault→CreateFrom/Reset初始化，逐角色审计检查固定四维范围，raw default不填入当前armed/final。百分比组件的原生加乘顺序已定位，实际基数/转换/缓存producer仍待办；不启用负山、不消除黎风/赛希未知。32面板/128报价及14/2条绑定不变，完整程序仍2/111。见[native-attribute-components-audit.md](native-attribute-components-audit.md)。3项新增、20项专项及全仓1406项通过（176.013秒）。
