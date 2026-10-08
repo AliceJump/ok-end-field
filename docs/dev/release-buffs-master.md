@@ -2,6 +2,8 @@
 
 分支 codex/release-buffs-master 从 origin/master 3d3f8adb 建立，仅提取释放增益层。研究来源是 codex/effect-semantics-normalization 的 cc9b471b50cdd6bc8b3a148b4eca93deef4efa02；不合并其完整战斗世界、原生程序、资源模拟、技能 schema 或其他机制改动。
 
+使用时开启现有战斗配置「技能时间排轴」，AutoCombatLogic 才会路由到 TimedCombatLogic。master 原默认关闭的配置值保持不变；开关关闭时继续原普通自动战斗路径。
+
 ## 实际影响
 
 TimedCombatLogic.step 在原有爆发及终结排序前收集当前合法战技和 HUD 已就绪终结。ReleaseBurstPlanner 用12秒窗口、至多9个动作、每动作一次和共享SP预算比较输出顺序。成功释放就确定产生的增益在预测副本中生效，正收益起手直接调用现有 use_ult/_try_battle_token。例如安塔尔终结虽没有直接伤害，仍可因后续队员灼热/电磁输出收益先释放。没有受益动作、技力不足或窗口已过，不因该规则提前释放。
