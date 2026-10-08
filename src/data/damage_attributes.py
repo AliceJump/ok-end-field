@@ -1,4 +1,4 @@
-"""Confirmed final four-stat deltas and the unrounded attack attribute basis.
+"""Confirmed final four-stat deltas and native floored attack conversion.
 
 These do not implement native converted/non-converted formula domains or
 arbitrary percentage buffs. Producers must establish those semantics first.
@@ -8,6 +8,10 @@ import math
 from dataclasses import dataclass
 
 ATTRIBUTES = ("力量", "敏捷", "智识", "意志")
+# Reviewed BattleConst float32 values, promoted to double by the native
+# main/sub coefficient helpers. See damage-attribute-release-audit.md.
+MAIN_ATTACK_RATE = 0.004999999888241291
+SECONDARY_ATTACK_RATE = 0.0020000000949949026
 
 
 @dataclass(frozen=True)
@@ -19,7 +23,8 @@ class DamageAttributeBasis:
 
     @classmethod
     def from_dict(cls, data):
-        if data["schema_version"] != 1 or data["domain"] != "final_panel":
+        if (data["schema_version"] != 2 or data["domain"] != "final_panel"
+                or data["attack_conversion"] != "floor_final_main_sub"):
             raise ValueError("Unsupported damage attribute domain")
         primary, secondary = data["primary"], data["secondary"]
         totals = data["totals"]
@@ -32,12 +37,17 @@ class DamageAttributeBasis:
 
     def factor(self):
         values = dict(self.totals)
-        return 1 + .005 * values[self.primary] + (.002 * values[self.secondary] if self.secondary else 0)
+        return (1 + MAIN_ATTACK_RATE * math.floor(values[self.primary])
+                + (SECONDARY_ATTACK_RATE * math.floor(values[self.secondary]) if self.secondary else 0))
 
     def factor_delta(self, deltas):
         if any(deltas.get(attribute, 0) != 0 for attribute in self.unverified_attack_dependencies):
             raise ValueError("Dynamic attribute-dependent attack conversion is unverified")
-        return .005 * deltas.get(self.primary, 0) + (.002 * deltas.get(self.secondary, 0) if self.secondary else 0)
+        values = dict(self.totals)
+        return sum(rate * (math.floor(values[attribute] + deltas.get(attribute, 0))
+                           - math.floor(values[attribute]))
+                   for attribute, rate in ((self.primary, MAIN_ATTACK_RATE),
+                                           (self.secondary, SECONDARY_ATTACK_RATE)) if attribute)
 
 
 @dataclass(frozen=True)

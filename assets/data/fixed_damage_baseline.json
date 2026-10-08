@@ -6,7 +6,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "智识",
@@ -16,7 +16,8 @@
         "智识": 409.0,
         "意志": 264.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -45,7 +46,7 @@
         "attack_white": 809.0,
         "attack_percent": 0.67,
         "attack_flat": 0,
-        "attribute_factor": 3.653,
+        "attribute_factor": 3.652999997837469,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -79,7 +80,7 @@
         "type": "普通攻击",
         "multiplier_pct": 291.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 14361.8,
         "crit_expect": 14720.8,
@@ -104,7 +105,7 @@
         "type": "战技",
         "multiplier_pct": 320.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 15793.0,
         "crit_expect": 16187.8,
@@ -126,7 +127,7 @@
         "type": "连携技",
         "multiplier_pct": 180.0,
         "stagger": 5.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 8883.6,
         "crit_expect": 9105.7,
@@ -148,7 +149,7 @@
         "type": "终结技",
         "multiplier_pct": 0.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
@@ -191,7 +192,7 @@
       "  汇总词条: {'flat_敏捷': 167.0, 'flat_智识': 303.0, 'flat_意志': 156, 'pct_atk_pct': 67.0, 'flat_防御力': 140, 'pct_ult_charge': 76.1, 'pct_combo_cd': 15.0}",
       "  主能力: 敏捷（官方标签）总值 367",
       "  副能力: 智识（官方标注）总值 409",
-      "  攻击力 = (809 × 1.6700 + 0) × (1 + 0.005×367 + 0.002×409) = 4935.3"
+      "  攻击力 = (809.0 × 1.67 + 0) × 原生属性系数 3.652999997837469 = 4935.3; 主属性floor=367; 副属性floor=409"
     ],
     "profile": {
       "character_level": 90,
@@ -218,12 +219,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -241,7 +242,7 @@
     "primary_stat": "力量",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "智识",
@@ -251,7 +252,8 @@
         "智识": 381.0,
         "意志": 89.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -280,7 +282,7 @@
         "attack_white": 720.0,
         "attack_percent": 0.14,
         "attack_flat": 0,
-        "attribute_factor": 4.317,
+        "attribute_factor": 4.316999979084358,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -314,7 +316,7 @@
         "type": "普通攻击",
         "multiplier_pct": 310.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 10984.5,
         "crit_expect": 11259.1,
@@ -426,7 +428,7 @@
       "  汇总词条: {'flat_力量': 293.0, 'flat_智识': 256.0, 'pct_elem_寒冷': 64.6, 'pct_atk_pct': 14.0, 'flat_防御力': 140, 'pct_ult_dmg': 33.6, 'flat_敏捷': 55, 'pct_ult_charge': 60.099999999999994, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
       "  主能力: 力量（官方标签）总值 511",
       "  副能力: 智识（官方标注）总值 381",
-      "  攻击力 = (720 × 1.1400 + 0) × (1 + 0.005×511 + 0.002×381) = 3543.4"
+      "  攻击力 = (720.0 × 1.1400000000000001 + 0) × 原生属性系数 4.316999979084358 = 3543.4; 主属性floor=511; 副属性floor=381"
     ],
     "profile": {
       "character_level": 90,
@@ -453,12 +455,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -476,7 +478,7 @@
     "primary_stat": "智识",
     "secondary_stat": "力量",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "智识",
       "secondary": "力量",
@@ -486,11 +488,12 @@
         "智识": 514.0,
         "意志": 82.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 7144.5,
-      "ATK": 3440.2,
+      "ATK": 3439.2,
       "DEF": 140,
       "力量": 400.64,
       "敏捷": 86.0,
@@ -515,7 +518,7 @@
         "attack_white": 787.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.37128,
+        "attribute_factor": 4.369999980553985,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -549,10 +552,10 @@
         "type": "普通攻击",
         "multiplier_pct": 307.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 10561.4,
-        "crit_expect": 10825.4,
+        "non_crit": 10558.3,
+        "crit_expect": 10822.3,
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
@@ -574,10 +577,10 @@
         "type": "战技",
         "multiplier_pct": 200.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 6880.4,
-        "crit_expect": 7052.4,
+        "non_crit": 6878.4,
+        "crit_expect": 7050.3,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -596,10 +599,10 @@
         "type": "连携技",
         "multiplier_pct": 340.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 11696.7,
-        "crit_expect": 11989.1,
+        "non_crit": 11693.2,
+        "crit_expect": 11985.6,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -618,7 +621,7 @@
         "type": "终结技",
         "multiplier_pct": 0.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
@@ -660,7 +663,7 @@
       "  汇总词条: {'flat_智识': 289.0, 'pct_hp_pct': 10.0, 'flat_源石技艺强度': 78, 'pct_secondary': 28.0, 'flat_防御力': 140, 'flat_力量': 184, 'pct_ult_charge': 106.9, 'flat_生命值': 1000}",
       "  主能力: 智识（官方标签）总值 514",
       "  副能力: 力量（官方标注）总值 401",
-      "  攻击力 = (787 × 1.0000 + 0) × (1 + 0.005×514 + 0.002×401) = 3440.2"
+      "  攻击力 = (787.0 × 1.0 + 0) × 原生属性系数 4.369999980553985 = 3439.2; 主属性floor=514; 副属性floor=400"
     ],
     "profile": {
       "character_level": 90,
@@ -687,12 +690,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -710,7 +713,7 @@
     "primary_stat": "智识",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "智识",
       "secondary": "意志",
@@ -720,11 +723,12 @@
         "智识": 812.16,
         "意志": 362.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
-      "ATK": 6843.5,
+      "ATK": 6842.6,
       "DEF": 140,
       "力量": 91.0,
       "敏捷": 93.0,
@@ -749,7 +753,7 @@
         "attack_white": 817.0,
         "attack_percent": 0.44799999999999995,
         "attack_flat": 0,
-        "attribute_factor": 5.7848,
+        "attribute_factor": 5.783999943640083,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -785,8 +789,8 @@
         "stagger": 0.0,
         "bonus_pct": 75.8,
         "amplification_pct": 0,
-        "non_crit": 42228.4,
-        "crit_expect": 43284.1,
+        "non_crit": 42222.6,
+        "crit_expect": 43278.2,
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
@@ -810,8 +814,8 @@
         "stagger": 10.0,
         "bonus_pct": 75.8,
         "amplification_pct": 0,
-        "non_crit": 60154.5,
-        "crit_expect": 61658.3,
+        "non_crit": 60146.1,
+        "crit_expect": 61649.8,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -832,8 +836,8 @@
         "stagger": 10.0,
         "bonus_pct": 75.8,
         "amplification_pct": 0,
-        "non_crit": 84216.2,
-        "crit_expect": 86321.7,
+        "non_crit": 84204.6,
+        "crit_expect": 86309.7,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -854,8 +858,8 @@
         "stagger": 20.0,
         "bonus_pct": 75.8,
         "amplification_pct": 0,
-        "non_crit": 238211.7,
-        "crit_expect": 244167.0,
+        "non_crit": 238178.7,
+        "crit_expect": 244133.2,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -895,7 +899,7 @@
       "  汇总词条: {'flat_智识': 421, 'pct_ult_charge': 46.4, 'pct_atk_pct': 44.8, 'flat_防御力': 140, 'flat_意志': 198, 'pct_elem_灼热': 39.9, 'pct_elem_自然': 39.9, 'pct_all_skill_dmg': 35.9, 'pct_primary': 26.9, 'flat_源石技艺强度': 30}",
       "  主能力: 智识（官方标签）总值 812，含主能力词条+26.9%",
       "  副能力: 意志（官方标注）总值 362",
-      "  攻击力 = (817 × 1.4480 + 0) × (1 + 0.005×812 + 0.002×362) = 6843.5"
+      "  攻击力 = (817.0 × 1.448 + 0) × 原生属性系数 5.783999943640083 = 6842.6; 主属性floor=812; 副属性floor=362"
     ],
     "profile": {
       "character_level": 90,
@@ -920,12 +924,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -941,7 +945,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "智识",
@@ -951,7 +955,8 @@
         "智识": 297.0,
         "意志": 153.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -980,7 +985,7 @@
         "attack_white": 811.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 3.1039999999999996,
+        "attribute_factor": 3.103999994462356,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -1128,7 +1133,7 @@
       "  汇总词条: {'flat_敏捷': 97.0, 'flat_智识': 174.0, 'flat_源石技艺强度': 78, 'pct_elem_灼热': 33.6, 'pct_elem_寒冷': 33.6, 'pct_elem_电磁': 33.6, 'pct_elem_自然': 33.6, 'flat_防御力': 140, 'flat_力量': 154, 'pct_ult_dmg': 33.6, 'pct_ult_charge': 26.7, 'pct_combo_dmg': 53.8, 'flat_意志': 53, 'pct_elem_物理': 29.9, 'pct_combo_cd': 15.0}",
       "  主能力: 敏捷（官方标签）总值 302",
       "  副能力: 智识（官方标注）总值 297",
-      "  攻击力 = (811 × 1.0000 + 0) × (1 + 0.005×302 + 0.002×297) = 2517.3"
+      "  攻击力 = (811.0 × 1.0 + 0) × 原生属性系数 3.103999994462356 = 2517.3; 主属性floor=302; 副属性floor=297"
     ],
     "profile": {
       "character_level": 90,
@@ -1155,12 +1160,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -1178,7 +1183,7 @@
     "primary_stat": "智识",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "智识",
       "secondary": "意志",
@@ -1188,7 +1193,8 @@
         "智识": 499.0,
         "意志": 368.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 6495.0,
@@ -1217,7 +1223,7 @@
         "attack_white": 818.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.231,
+        "attribute_factor": 4.230999979190528,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -1251,7 +1257,7 @@
         "type": "普通攻击",
         "multiplier_pct": 400.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 13843.8,
         "crit_expect": 14189.9,
@@ -1276,7 +1282,7 @@
         "type": "战技",
         "multiplier_pct": 320.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 11075.1,
         "crit_expect": 11351.9,
@@ -1298,7 +1304,7 @@
         "type": "连携技",
         "multiplier_pct": 350.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 12113.4,
         "crit_expect": 12416.2,
@@ -1320,7 +1326,7 @@
         "type": "终结技",
         "multiplier_pct": 165.0,
         "stagger": 3.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 5710.6,
         "crit_expect": 5853.3,
@@ -1362,7 +1368,7 @@
       "  汇总词条: {'flat_智识': 294, 'pct_heal_eff': 46.4, 'flat_防御力': 140, 'flat_敏捷': 75, 'flat_意志': 250, 'pct_ult_charge': 106.7, 'flat_生命值': 1000}",
       "  主能力: 智识（官方标签）总值 499",
       "  副能力: 意志（官方标注）总值 368",
-      "  攻击力 = (818 × 1.0000 + 0) × (1 + 0.005×499 + 0.002×368) = 3461.0"
+      "  攻击力 = (818.0 × 1.0 + 0) × 原生属性系数 4.230999979190528 = 3461.0; 主属性floor=499; 副属性floor=368"
     ],
     "profile": {
       "character_level": 90,
@@ -1387,12 +1393,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -1408,7 +1414,7 @@
     "primary_stat": "意志",
     "secondary_stat": "敏捷",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "意志",
       "secondary": "敏捷",
@@ -1418,7 +1424,8 @@
         "智识": 110.0,
         "意志": 418.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -1447,7 +1454,7 @@
         "attack_white": 812.0,
         "attack_percent": 0.54,
         "attack_flat": 0,
-        "attribute_factor": 3.7279999999999998,
+        "attribute_factor": 3.7279999835882336,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -1481,7 +1488,7 @@
         "type": "普通攻击",
         "multiplier_pct": 312.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 14544.8,
         "crit_expect": 14908.4,
@@ -1595,7 +1602,7 @@
       "  汇总词条: {'flat_意志': 210.0, 'pct_elem_电磁': 66.5, 'pct_atk_pct': 54.0, 'pct_elem_灼热': 33.6, 'pct_elem_寒冷': 58.5, 'pct_elem_自然': 33.6, 'flat_防御力': 140, 'flat_敏捷': 213, 'pct_ult_charge': 16.0, 'flat_力量': 55, 'pct_skill_dmg': 107.6}",
       "  主能力: 意志（官方标签）总值 418",
       "  副能力: 敏捷（官方标注）总值 319",
-      "  攻击力 = (812 × 1.5400 + 0) × (1 + 0.005×418 + 0.002×319) = 4661.8"
+      "  攻击力 = (812.0 × 1.54 + 0) × 原生属性系数 3.7279999835882336 = 4661.8; 主属性floor=418; 副属性floor=319"
     ],
     "profile": {
       "character_level": 90,
@@ -1622,12 +1629,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -1645,7 +1652,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "智识",
@@ -1655,7 +1662,8 @@
         "智识": 381.0,
         "意志": 92.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -1684,7 +1692,7 @@
         "attack_white": 815.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.427,
+        "attribute_factor": 4.426999976625666,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -1921,7 +1929,7 @@
       "  汇总词条: {'flat_敏捷': 313, 'pct_elem_灼热': 43.3, 'pct_ult_charge': 126.5, 'flat_防御力': 140, 'flat_智识': 252, 'flat_力量': 41, 'pct_combo_dmg': 53.8, 'pct_combo_cd': 15.0}",
       "  主能力: 敏捷（官方标签）总值 533",
       "  副能力: 智识（官方标注）总值 381",
-      "  攻击力 = (815 × 1.0000 + 0) × (1 + 0.005×533 + 0.002×381) = 3608.0"
+      "  攻击力 = (815.0 × 1.0 + 0) × 原生属性系数 4.426999976625666 = 3608.0; 主属性floor=533; 副属性floor=381"
     ],
     "profile": {
       "character_level": 90,
@@ -1946,12 +1954,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -1967,7 +1975,7 @@
     "primary_stat": "力量",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "意志",
@@ -1977,7 +1985,8 @@
         "智识": 299.0,
         "意志": 522.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 11561.1,
@@ -2006,7 +2015,7 @@
         "attack_white": 795.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 3.2239999999999998,
+        "attribute_factor": 3.224000023212284,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -2040,7 +2049,7 @@
         "type": "普通攻击",
         "multiplier_pct": 448.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 11482.6,
         "crit_expect": 11769.7,
@@ -2065,7 +2074,7 @@
         "type": "战技",
         "multiplier_pct": 400.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 10252.3,
         "crit_expect": 10508.6,
@@ -2087,7 +2096,7 @@
         "type": "连携技",
         "multiplier_pct": 280.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 7176.6,
         "crit_expect": 7356.0,
@@ -2109,7 +2118,7 @@
         "type": "终结技",
         "multiplier_pct": 870.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 22298.8,
         "crit_expect": 22856.3,
@@ -2152,7 +2161,7 @@
       "  汇总词条: {'flat_防御力': 160.0, 'flat_意志': 416.0, 'pct_hp_pct': 78.0, 'pct_heal_eff': 28.0, 'flat_智识': 213, 'flat_源石技艺强度': 26, 'pct_ult_charge': 90.7, 'flat_生命值': 1000}",
       "  主能力: 力量（官方标签）总值 236",
       "  副能力: 意志（官方标注）总值 522",
-      "  攻击力 = (795 × 1.0000 + 0) × (1 + 0.005×236 + 0.002×522) = 2563.1"
+      "  攻击力 = (795.0 × 1.0 + 0) × 原生属性系数 3.224000023212284 = 2563.1; 主属性floor=236; 副属性floor=522"
     ],
     "profile": {
       "character_level": 90,
@@ -2179,12 +2188,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -2202,7 +2211,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "力量",
@@ -2212,7 +2221,8 @@
         "智识": 85.0,
         "意志": 93.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -2241,7 +2251,7 @@
         "attack_white": 792.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.205,
+        "attribute_factor": 4.2049999688752,
         "crit_rate": 0.245,
         "crit_damage": 0.5,
         "amplification": {
@@ -2387,7 +2397,7 @@
       "  汇总词条: {'flat_敏捷': 294.0, 'pct_elem_物理': 8.0, 'pct_crit_rate': 19.5, 'flat_防御力': 140, 'flat_力量': 184, 'flat_源石技艺强度': 26, 'pct_ult_dmg': 190.7, 'pct_stagger_eff': 20.0}",
       "  主能力: 敏捷（官方标签）总值 525",
       "  副能力: 力量（官方标注）总值 290",
-      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×525 + 0.002×290) = 3330.4",
+      "  攻击力 = (792.0 × 1.0 + 0) × 原生属性系数 4.2049999688752 = 3330.4; 主属性floor=525; 副属性floor=290",
       "  [固定武器元素/类型过滤] 扶摇: {'物理:skill': 0.42, '物理:ultimate': 0.42}"
     ],
     "profile": {
@@ -2415,12 +2425,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -2438,7 +2448,7 @@
     "primary_stat": "力量",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "意志",
@@ -2448,7 +2458,8 @@
         "智识": 94.0,
         "意志": 286.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -2477,7 +2488,7 @@
         "attack_white": 803.0,
         "attack_percent": 0.54,
         "attack_flat": 0,
-        "attribute_factor": 4.2170000000000005,
+        "attribute_factor": 4.216999968048185,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -2560,7 +2571,7 @@
         "stagger": 15.0,
         "bonus_pct": 135.7,
         "amplification_pct": 0,
-        "non_crit": 79893.8,
+        "non_crit": 79893.7,
         "crit_expect": 81891.1,
         "conditional_rows": [],
         "quote_basis": {
@@ -2622,7 +2633,7 @@
       "  汇总词条: {'flat_力量': 294.0, 'pct_elem_物理': 135.70000000000002, 'pct_atk_pct': 54.0, 'flat_防御力': 140, 'flat_意志': 184}",
       "  主能力: 力量（官方标签）总值 529",
       "  副能力: 意志（官方标注）总值 286",
-      "  攻击力 = (803 × 1.5400 + 0) × (1 + 0.005×529 + 0.002×286) = 5214.8"
+      "  攻击力 = (803.0 × 1.54 + 0) × 原生属性系数 4.216999968048185 = 5214.8; 主属性floor=529; 副属性floor=286"
     ],
     "profile": {
       "character_level": 90,
@@ -2649,12 +2660,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -2672,7 +2683,7 @@
     "primary_stat": "力量",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "意志",
@@ -2682,11 +2693,12 @@
         "智识": 77.0,
         "意志": 332.88000000000005
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 8012.8,
-      "ATK": 3352.6,
+      "ATK": 3351.3,
       "DEF": 140,
       "力量": 622.0,
       "敏捷": 87.0,
@@ -2711,7 +2723,7 @@
         "attack_white": 702.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.77576,
+        "attribute_factor": 4.773999962024391,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -2747,8 +2759,8 @@
         "stagger": 0.0,
         "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 14449.6,
-        "crit_expect": 14810.9,
+        "non_crit": 14444.3,
+        "crit_expect": 14805.4,
         "conditional_rows": [
           "处决攻击倍率: 720%",
           "下落攻击倍率: 144%"
@@ -2809,8 +2821,8 @@
         "stagger": 10.0,
         "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 10460.1,
-        "crit_expect": 10721.6,
+        "non_crit": 10456.2,
+        "crit_expect": 10717.6,
         "conditional_rows": [
           "受击后额外造成 / 失衡值: 10（需要施放过程中受到伤害）"
         ],
@@ -2842,8 +2854,8 @@
         "stagger": 10.0,
         "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 6168.8,
-        "crit_expect": 6323.0,
+        "non_crit": 6166.5,
+        "crit_expect": 6320.6,
         "conditional_rows": [],
         "row_semantics": {
           "character_id": "ember",
@@ -2873,8 +2885,8 @@
         "stagger": 25.0,
         "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 17433.4,
-        "crit_expect": 17869.3,
+        "non_crit": 17427.0,
+        "crit_expect": 17862.7,
         "conditional_rows": [],
         "row_semantics": {
           "character_id": "ember",
@@ -2923,7 +2935,7 @@
       "  汇总词条: {'flat_力量': 403, 'pct_hp_pct': 62.4, 'pct_secondary': 14.0, 'flat_防御力': 140, 'flat_意志': 184, 'pct_heal_eff': 33.5, 'pct_ult_charge': 26.7}",
       "  主能力: 力量（官方标签）总值 622",
       "  副能力: 意志（官方标注）总值 333",
-      "  攻击力 = (702 × 1.0000 + 0) × (1 + 0.005×622 + 0.002×333) = 3352.6"
+      "  攻击力 = (702.0 × 1.0 + 0) × 原生属性系数 4.773999962024391 = 3351.3; 主属性floor=622; 副属性floor=332"
     ],
     "profile": {
       "character_level": 80,
@@ -2948,12 +2960,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -2969,7 +2981,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "力量",
@@ -2979,7 +2991,8 @@
         "智识": 96.0,
         "意志": 107.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -3008,7 +3021,7 @@
         "attack_white": 819.0,
         "attack_percent": 0.39,
         "attack_flat": 0,
-        "attribute_factor": 4.789000000000001,
+        "attribute_factor": 4.788999958196655,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -3154,7 +3167,7 @@
       "  汇总词条: {'flat_敏捷': 435, 'pct_atk_pct': 39.0, 'flat_源石技艺强度': 110, 'flat_防御力': 140, 'flat_力量': 184, 'pct_ult_dmg': 56.1, 'pct_elem_物理': 59.8, 'pct_stagger_eff': 20.0}",
       "  主能力: 敏捷（官方标签）总值 635",
       "  副能力: 力量（官方标注）总值 307",
-      "  攻击力 = (819 × 1.3900 + 0) × (1 + 0.005×635 + 0.002×307) = 5451.8"
+      "  攻击力 = (819.0 × 1.3900000000000001 + 0) × 原生属性系数 4.788999958196655 = 5451.8; 主属性floor=635; 副属性floor=307"
     ],
     "profile": {
       "character_level": 90,
@@ -3179,12 +3192,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -3200,7 +3213,7 @@
     "primary_stat": "意志",
     "secondary_stat": "力量",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "意志",
       "secondary": "力量",
@@ -3210,7 +3223,8 @@
         "智识": 248.0,
         "意志": 433.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 6495.0,
@@ -3239,7 +3253,7 @@
         "attack_white": 812.0,
         "attack_percent": 0.39,
         "attack_flat": 0,
-        "attribute_factor": 3.619,
+        "attribute_factor": 3.618999973172322,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -3273,7 +3287,7 @@
         "type": "普通攻击",
         "multiplier_pct": 293.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 11968.2,
         "crit_expect": 12267.4,
@@ -3320,7 +3334,7 @@
         "type": "连携技",
         "multiplier_pct": 1005.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 41051.2,
         "crit_expect": 42077.4,
@@ -3342,7 +3356,7 @@
         "type": "终结技",
         "multiplier_pct": 1100.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 44931.6,
         "crit_expect": 46054.9,
@@ -3387,7 +3401,7 @@
       "  汇总词条: {'flat_意志': 222.0, 'flat_力量': 123.0, 'pct_atk_pct': 39.0, 'pct_elem_灼热': 33.6, 'pct_elem_寒冷': 33.6, 'pct_elem_电磁': 33.6, 'pct_elem_自然': 33.6, 'flat_防御力': 140, 'pct_ult_charge': 106.7, 'flat_智识': 138, 'flat_生命值': 1000}",
       "  主能力: 意志（官方标签）总值 433",
       "  副能力: 力量（官方标注）总值 227",
-      "  攻击力 = (812 × 1.3900 + 0) × (1 + 0.005×433 + 0.002×227) = 4084.7"
+      "  攻击力 = (812.0 × 1.3900000000000001 + 0) × 原生属性系数 3.618999973172322 = 4084.7; 主属性floor=433; 副属性floor=227"
     ],
     "profile": {
       "character_level": 90,
@@ -3414,12 +3428,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -3437,7 +3451,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "智识",
@@ -3447,7 +3461,8 @@
         "智识": 417.0,
         "意志": 91.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -3476,7 +3491,7 @@
         "attack_white": 793.0,
         "attack_percent": 0.15,
         "attack_flat": 0,
-        "attribute_factor": 4.2139999999999995,
+        "attribute_factor": 4.213999986415729,
         "crit_rate": 0.14800000000000002,
         "crit_damage": 0.5,
         "amplification": {
@@ -3510,7 +3525,7 @@
         "type": "普通攻击",
         "multiplier_pct": 321.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 12335.9,
         "crit_expect": 13248.7,
@@ -3535,7 +3550,7 @@
         "type": "战技",
         "multiplier_pct": 420.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 16140.4,
         "crit_expect": 17334.8,
@@ -3579,7 +3594,7 @@
         "type": "终结技",
         "multiplier_pct": 1000.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 38429.6,
         "crit_expect": 41273.4,
@@ -3622,7 +3637,7 @@
       "  汇总词条: {'flat_敏捷': 248.0, 'flat_智识': 303.0, 'pct_elem_寒冷': 43.3, 'pct_crit_rate': 9.8, 'flat_防御力': 140, 'flat_力量': 75, 'pct_ult_charge': 49.4, 'pct_combo_dmg': 98.69999999999999, 'pct_atk_pct': 15.0}",
       "  主能力: 敏捷（官方标签）总值 476",
       "  副能力: 智识（官方标注）总值 417",
-      "  攻击力 = (793 × 1.1500 + 0) × (1 + 0.005×476 + 0.002×417) = 3843.0"
+      "  攻击力 = (793.0 × 1.15 + 0) × 原生属性系数 4.213999986415729 = 3843.0; 主属性floor=476; 副属性floor=417"
     ],
     "profile": {
       "character_level": 90,
@@ -3649,12 +3664,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -3672,7 +3687,7 @@
     "primary_stat": "意志",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "意志",
       "secondary": "智识",
@@ -3682,7 +3697,8 @@
         "智识": 340.0,
         "意志": 637.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 6495.0,
@@ -3711,7 +3727,7 @@
         "attack_white": 829.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.865,
+        "attribute_factor": 4.864999961107969,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -3857,7 +3873,7 @@
       "  汇总词条: {'flat_意志': 406, 'pct_ult_charge': 137.1, 'pct_elem_自然': 44.8, 'flat_防御力': 140, 'flat_智识': 213, 'flat_源石技艺强度': 26, 'flat_生命值': 1000}",
       "  主能力: 意志（官方标签）总值 637",
       "  副能力: 智识（官方标注）总值 340",
-      "  攻击力 = (829 × 1.0000 + 0) × (1 + 0.005×637 + 0.002×340) = 4033.1"
+      "  攻击力 = (829.0 × 1.0 + 0) × 原生属性系数 4.864999961107969 = 4033.1; 主属性floor=637; 副属性floor=340"
     ],
     "profile": {
       "character_level": 90,
@@ -3882,12 +3898,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -3903,7 +3919,7 @@
     "primary_stat": "智识",
     "secondary_stat": "力量",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "智识",
       "secondary": "力量",
@@ -3913,7 +3929,8 @@
         "智识": 696.0,
         "意志": 89.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -3942,7 +3959,7 @@
         "attack_white": 828.0,
         "attack_percent": 0.39,
         "attack_flat": 0,
-        "attribute_factor": 4.982,
+        "attribute_factor": 4.981999946059659,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -4092,7 +4109,7 @@
       "  汇总词条: {'flat_智识': 459, 'pct_atk_pct': 39.0, 'pct_elem_灼热': 69.69999999999999, 'flat_防御力': 140, 'flat_力量': 130, 'pct_ult_charge': 16.0, 'pct_elem_自然': 24.9, 'pct_skill_dmg': 107.6, 'flat_源石技艺强度': 30}",
       "  主能力: 智识（官方标签）总值 696",
       "  副能力: 力量（官方标注）总值 251",
-      "  攻击力 = (828 × 1.3900 + 0) × (1 + 0.005×696 + 0.002×251) = 5733.9"
+      "  攻击力 = (828.0 × 1.3900000000000001 + 0) × 原生属性系数 4.981999946059659 = 5733.9; 主属性floor=696; 副属性floor=251"
     ],
     "profile": {
       "character_level": 90,
@@ -4117,12 +4134,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -4138,7 +4155,7 @@
     "primary_stat": "力量",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "意志",
@@ -4148,7 +4165,8 @@
         "智识": 93.0,
         "意志": 331.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -4177,7 +4195,7 @@
         "attack_white": 837.0,
         "attack_percent": 0.39,
         "attack_flat": 0,
-        "attribute_factor": 4.722,
+        "attribute_factor": 4.721999963046983,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -4325,7 +4343,7 @@
       "  汇总词条: {'flat_力量': 397, 'pct_atk_pct': 39.0, 'pct_all_skill_dmg': 76.0, 'flat_防御力': 140, 'flat_意志': 222, 'pct_combo_dmg': 26.9, 'pct_elem_寒冷': 84.69999999999999, 'pct_elem_电磁': 84.69999999999999}",
       "  主能力: 力量（官方标签）总值 612",
       "  副能力: 意志（官方标注）总值 331",
-      "  攻击力 = (837 × 1.3900 + 0) × (1 + 0.005×612 + 0.002×331) = 5493.7"
+      "  攻击力 = (837.0 × 1.3900000000000001 + 0) × 原生属性系数 4.721999963046983 = 5493.7; 主属性floor=612; 副属性floor=331"
     ],
     "profile": {
       "character_level": 90,
@@ -4350,12 +4368,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -4371,7 +4389,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "力量",
@@ -4384,7 +4402,8 @@
       "unverified_attack_dependencies": [
         "智识",
         "意志"
-      ]
+      ],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -4413,7 +4432,7 @@
         "attack_white": 812.0,
         "attack_percent": 0.42800000302493574,
         "attack_flat": 0,
-        "attribute_factor": 4.749,
+        "attribute_factor": 4.748999959090725,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -4558,7 +4577,7 @@
       "  汇总词条: {'pct_atk_pct': 42.80000030249357, 'flat_敏捷': 435, 'pct_elem_物理': 73.19999999999999, 'flat_防御力': 140, 'flat_力量': 184, 'flat_源石技艺强度': 123}",
       "  主能力: 敏捷（官方标签）总值 627",
       "  副能力: 力量（官方标注）总值 307",
-      "  攻击力 = (812 × 1.4280 + 0) × (1 + 0.005×627 + 0.002×307) = 5506.6"
+      "  攻击力 = (812.0 × 1.4280000030249358 + 0) × 原生属性系数 4.748999959090725 = 5506.6; 主属性floor=627; 副属性floor=307"
     ],
     "profile": {
       "character_level": 90,
@@ -4585,12 +4604,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -4608,7 +4627,7 @@
     "primary_stat": "意志",
     "secondary_stat": "敏捷",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "意志",
       "secondary": "敏捷",
@@ -4618,11 +4637,12 @@
         "智识": 145.0,
         "意志": 890.838
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 6495.0,
-      "ATK": 4697.2,
+      "ATK": 4693.8,
       "DEF": 140,
       "力量": 89.0,
       "敏捷": 176.0,
@@ -4647,7 +4667,7 @@
         "attack_white": 809.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 5.80619,
+        "attribute_factor": 5.801999917253852,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -4681,10 +4701,10 @@
         "type": "普通攻击",
         "multiplier_pct": 343.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 16111.4,
-        "crit_expect": 16514.2,
+        "non_crit": 16099.8,
+        "crit_expect": 16502.3,
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
@@ -4706,10 +4726,10 @@
         "type": "战技",
         "multiplier_pct": 360.0,
         "stagger": 3.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 16909.9,
-        "crit_expect": 17332.7,
+        "non_crit": 16897.7,
+        "crit_expect": 17320.2,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -4728,10 +4748,10 @@
         "type": "连携技",
         "multiplier_pct": 360.0,
         "stagger": 5.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 16909.9,
-        "crit_expect": 17332.7,
+        "non_crit": 16897.7,
+        "crit_expect": 17320.2,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -4750,10 +4770,10 @@
         "type": "终结技",
         "multiplier_pct": 1020.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
-        "non_crit": 47911.5,
-        "crit_expect": 49109.3,
+        "non_crit": 47876.9,
+        "crit_expect": 49073.9,
         "conditional_rows": [],
         "quote_basis": {
           "skill_rank": 12,
@@ -4792,7 +4812,7 @@
       "  汇总词条: {'flat_意志': 465, 'pct_heal_eff': 46.4, 'flat_防御力': 140, 'pct_ult_charge': 74.7, 'flat_敏捷': 55, 'flat_智识': 54, 'pct_primary': 26.9, 'flat_生命值': 1000}",
       "  主能力: 意志（官方标签）总值 891，含主能力词条+26.9%",
       "  副能力: 敏捷（官方标注）总值 176",
-      "  攻击力 = (809 × 1.0000 + 0) × (1 + 0.005×891 + 0.002×176) = 4697.2"
+      "  攻击力 = (809.0 × 1.0 + 0) × 原生属性系数 5.801999917253852 = 4693.8; 主属性floor=890; 副属性floor=176"
     ],
     "profile": {
       "character_level": 90,
@@ -4817,12 +4837,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -4838,7 +4858,7 @@
     "primary_stat": "力量",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "意志",
@@ -4848,7 +4868,8 @@
         "智识": 90.0,
         "意志": 303.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -4877,7 +4898,7 @@
         "attack_white": 825.0,
         "attack_percent": 0.47,
         "attack_flat": 0,
-        "attribute_factor": 4.946,
+        "attribute_factor": 4.945999954128638,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -5112,7 +5133,7 @@
       "  汇总词条: {'flat_力量': 435, 'pct_atk_pct': 47.0, 'pct_elem_物理': 119.6, 'flat_防御力': 140, 'flat_意志': 184, 'flat_源石技艺强度': 44}",
       "  主能力: 力量（官方标签）总值 668",
       "  副能力: 意志（官方标注）总值 303",
-      "  攻击力 = (825 × 1.4700 + 0) × (1 + 0.005×668 + 0.002×303) = 5998.3"
+      "  攻击力 = (825.0 × 1.47 + 0) × 原生属性系数 4.945999954128638 = 5998.3; 主属性floor=668; 副属性floor=303"
     ],
     "profile": {
       "character_level": 90,
@@ -5137,12 +5158,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -5158,7 +5179,7 @@
     "primary_stat": "智识",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "智识",
       "secondary": "意志",
@@ -5168,7 +5189,8 @@
         "智识": 680.0,
         "意志": 243.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -5197,7 +5219,7 @@
         "attack_white": 798.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.886,
+        "attribute_factor": 4.885999947087839,
         "crit_rate": 0.19,
         "crit_damage": 0.5,
         "amplification": {
@@ -5349,7 +5371,7 @@
       "  汇总词条: {'flat_智识': 459, 'pct_elem_灼热': 43.3, 'pct_elem_寒冷': 43.3, 'pct_elem_电磁': 43.3, 'pct_elem_自然': 43.3, 'pct_crit_rate': 14.0, 'flat_防御力': 140, 'flat_意志': 130, 'flat_源石技艺强度': 162, 'pct_ult_charge': 26.7}",
       "  主能力: 智识（官方标签）总值 680",
       "  副能力: 意志（官方标注）总值 243",
-      "  攻击力 = (798 × 1.0000 + 0) × (1 + 0.005×680 + 0.002×243) = 3899.0",
+      "  攻击力 = (798.0 × 1.0 + 0) × 原生属性系数 4.885999947087839 = 3899.0; 主属性floor=680; 副属性floor=243",
       "  [固定潜能技能类型暴击] {'ultimate': 0.30000001192092896}"
     ],
     "profile": {
@@ -5377,12 +5399,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -5400,7 +5422,7 @@
     "primary_stat": "意志",
     "secondary_stat": "敏捷",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "意志",
       "secondary": "敏捷",
@@ -5410,7 +5432,8 @@
         "智识": 321.0,
         "意志": 483.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -5439,7 +5462,7 @@
         "attack_white": 821.0,
         "attack_percent": 0.39,
         "attack_flat": 0,
-        "attribute_factor": 3.895,
+        "attribute_factor": 3.89499996881932,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -5713,7 +5736,7 @@
       "  汇总词条: {'flat_意志': 250, 'pct_atk_pct': 39.0, 'pct_elem_物理': 74.69999999999999, 'flat_防御力': 140, 'flat_敏捷': 130, 'flat_智识': 224, 'pct_ult_charge': 42.7, 'flat_源石技艺强度': 53, 'pct_combo_cd': 15.0}",
       "  主能力: 意志（官方标签）总值 483",
       "  副能力: 敏捷（官方标注）总值 240",
-      "  攻击力 = (821 × 1.3900 + 0) × (1 + 0.005×483 + 0.002×240) = 4444.9"
+      "  攻击力 = (821.0 × 1.3900000000000001 + 0) × 原生属性系数 3.89499996881932 = 4444.9; 主属性floor=483; 副属性floor=240"
     ],
     "profile": {
       "character_level": 90,
@@ -5738,12 +5761,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -5759,7 +5782,7 @@
     "primary_stat": "力量",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "意志",
@@ -5769,7 +5792,8 @@
         "智识": 89.0,
         "意志": 466.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 8313.6,
@@ -5798,7 +5822,7 @@
         "attack_white": 720.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 3.6919999999999997,
+        "attribute_factor": 3.692000004928559,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -5832,7 +5856,7 @@
         "type": "普通攻击",
         "multiplier_pct": 454.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 12068.4,
         "crit_expect": 12370.1,
@@ -5857,7 +5881,7 @@
         "type": "战技",
         "multiplier_pct": 400.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 10633.0,
         "crit_expect": 10898.8,
@@ -5879,7 +5903,7 @@
         "type": "连携技",
         "multiplier_pct": 450.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 11962.1,
         "crit_expect": 12261.1,
@@ -5901,7 +5925,7 @@
         "type": "终结技",
         "multiplier_pct": 1050.0,
         "stagger": 25.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 27911.5,
         "crit_expect": 28609.3,
@@ -5944,7 +5968,7 @@
       "  汇总词条: {'flat_防御力': 148.0, 'flat_意志': 353.0, 'flat_力量': 124, 'pct_heal_eff': 37.1, 'pct_hp_pct': 28.0, 'pct_ult_charge': 42.7, 'flat_敏捷': 55, 'flat_生命值': 1000}",
       "  主能力: 力量（官方标签）总值 352",
       "  副能力: 意志（官方标注）总值 466",
-      "  攻击力 = (720 × 1.0000 + 0) × (1 + 0.005×352 + 0.002×466) = 2658.2"
+      "  攻击力 = (720.0 × 1.0 + 0) × 原生属性系数 3.692000004928559 = 2658.2; 主属性floor=352; 副属性floor=466"
     ],
     "profile": {
       "character_level": 90,
@@ -5971,12 +5995,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -5994,7 +6018,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "智识",
@@ -6004,7 +6028,8 @@
         "智识": 247.0,
         "意志": 89.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -6033,7 +6058,7 @@
         "attack_white": 828.0,
         "attack_percent": 0.44799999999999995,
         "attack_flat": 0,
-        "attribute_factor": 4.984,
+        "attribute_factor": 4.983999945456162,
         "crit_rate": 0.5650000000000001,
         "crit_damage": 0.5,
         "amplification": {
@@ -6067,7 +6092,7 @@
         "type": "普通攻击",
         "multiplier_pct": 413.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 24679.0,
         "crit_expect": 31650.8,
@@ -6092,7 +6117,7 @@
         "type": "战技",
         "multiplier_pct": 480.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 28682.6,
         "crit_expect": 36785.4,
@@ -6114,7 +6139,7 @@
         "type": "连携技",
         "multiplier_pct": 450.0,
         "stagger": 5.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 26889.9,
         "crit_expect": 34486.3,
@@ -6181,7 +6206,7 @@
       "  汇总词条: {'flat_敏捷': 462, 'pct_crit_rate': 51.5, 'pct_atk_pct': 44.8, 'flat_防御力': 140, 'flat_智识': 129, 'pct_ult_charge': 16.0, 'pct_ult_dmg': 58.5}",
       "  主能力: 敏捷（官方标签）总值 698",
       "  副能力: 智识（官方标注）总值 247",
-      "  攻击力 = (828 × 1.4480 + 0) × (1 + 0.005×698 + 0.002×247) = 5975.5"
+      "  攻击力 = (828.0 × 1.448 + 0) × 原生属性系数 4.983999945456162 = 5975.5; 主属性floor=698; 副属性floor=247"
     ],
     "profile": {
       "character_level": 90,
@@ -6206,12 +6231,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -6227,7 +6252,7 @@
     "primary_stat": "力量",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "意志",
@@ -6237,7 +6262,8 @@
         "智识": 231.0,
         "意志": 534.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 11561.1,
@@ -6266,7 +6292,7 @@
         "attack_white": 792.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 3.1380000000000003,
+        "attribute_factor": 3.1380000268109143,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -6300,7 +6326,7 @@
         "type": "普通攻击",
         "multiplier_pct": 481.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 11954.3,
         "crit_expect": 12253.1,
@@ -6325,7 +6351,7 @@
         "type": "战技",
         "multiplier_pct": 450.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 11183.8,
         "crit_expect": 11463.4,
@@ -6347,7 +6373,7 @@
         "type": "连携技",
         "multiplier_pct": 0.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
@@ -6369,7 +6395,7 @@
         "type": "终结技",
         "multiplier_pct": 515.0,
         "stagger": 20.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 12799.3,
         "crit_expect": 13119.3,
@@ -6412,7 +6438,7 @@
       "  汇总词条: {'flat_防御力': 160.0, 'flat_意志': 426.0, 'pct_hp_pct': 78.0, 'pct_heal_eff': 28.0, 'flat_敏捷': 75, 'pct_ult_charge': 106.7, 'flat_智识': 138, 'flat_生命值': 1000}",
       "  主能力: 力量（官方标签）总值 214",
       "  副能力: 意志（官方标注）总值 534",
-      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×214 + 0.002×534) = 2485.3"
+      "  攻击力 = (792.0 × 1.0 + 0) × 原生属性系数 3.1380000268109143 = 2485.3; 主属性floor=214; 副属性floor=534"
     ],
     "profile": {
       "character_level": 90,
@@ -6439,12 +6465,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -6462,7 +6488,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "力量",
@@ -6472,7 +6498,8 @@
         "智识": 126.0,
         "意志": 129.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -6501,7 +6528,7 @@
         "attack_white": 826.0,
         "attack_percent": 0.39,
         "attack_flat": 0,
-        "attribute_factor": 4.725,
+        "attribute_factor": 4.72499995585531,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -6647,7 +6674,7 @@
       "  汇总词条: {'flat_敏捷': 394, 'pct_atk_pct': 39.0, 'pct_elem_寒冷': 44.8, 'flat_防御力': 140, 'flat_力量': 157, 'pct_ult_charge': 16.0, 'pct_all_skill_dmg': 29.9, 'flat_智识': 41, 'flat_意志': 27, 'flat_源石技艺强度': 53, 'pct_skill_dmg': 53.8, 'pct_combo_cd': 15.0}",
       "  主能力: 敏捷（官方标签）总值 633",
       "  副能力: 力量（官方标注）总值 280",
-      "  攻击力 = (826 × 1.3900 + 0) × (1 + 0.005×633 + 0.002×280) = 5425.0"
+      "  攻击力 = (826.0 × 1.3900000000000001 + 0) × 原生属性系数 4.72499995585531 = 5425.0; 主属性floor=633; 副属性floor=280"
     ],
     "profile": {
       "character_level": 90,
@@ -6672,12 +6699,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -6693,7 +6720,7 @@
     "primary_stat": "敏捷",
     "secondary_stat": "意志",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "敏捷",
       "secondary": "意志",
@@ -6703,7 +6730,8 @@
         "智识": 99.0,
         "意志": 301.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -6732,7 +6760,7 @@
         "attack_white": 802.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.932,
+        "attribute_factor": 4.9319999541621655,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -6881,7 +6909,7 @@
       "  汇总词条: {'flat_敏捷': 432, 'pct_elem_自然': 59.3, 'flat_源石技艺强度': 217, 'flat_防御力': 140, 'flat_意志': 182, 'pct_elem_灼热': 16.0, 'pct_elem_寒冷': 16.0, 'pct_elem_电磁': 16.0}",
       "  主能力: 敏捷（官方标签）总值 666",
       "  副能力: 意志（官方标注）总值 301",
-      "  攻击力 = (802 × 1.0000 + 0) × (1 + 0.005×666 + 0.002×301) = 3955.5"
+      "  攻击力 = (802.0 × 1.0 + 0) × 原生属性系数 4.9319999541621655 = 3955.5; 主属性floor=666; 副属性floor=301"
     ],
     "profile": {
       "character_level": 90,
@@ -6906,12 +6934,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -6927,7 +6955,7 @@
     "primary_stat": "力量",
     "secondary_stat": "敏捷",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "力量",
       "secondary": "敏捷",
@@ -6937,7 +6965,8 @@
         "智识": 231.0,
         "意志": 166.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -6966,7 +6995,7 @@
         "attack_white": 784.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 3.26,
+        "attribute_factor": 3.25999998440966,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -7117,7 +7146,7 @@
       "  汇总词条: {'flat_力量': 131.0, 'flat_敏捷': 155.0, 'pct_elem_灼热': 106.80000000000001, 'pct_elem_寒冷': 76.9, 'pct_elem_电磁': 76.9, 'pct_elem_自然': 106.80000000000001, 'flat_防御力': 140, 'pct_ult_charge': 76.1, 'flat_智识': 139, 'flat_意志': 55, 'pct_combo_cd': 15.0}",
       "  主能力: 力量（官方标签）总值 352",
       "  副能力: 敏捷（官方标注）总值 250",
-      "  攻击力 = (784 × 1.0000 + 0) × (1 + 0.005×352 + 0.002×250) = 2555.8"
+      "  攻击力 = (784.0 × 1.0 + 0) × 原生属性系数 3.25999998440966 = 2555.8; 主属性floor=352; 副属性floor=250"
     ],
     "profile": {
       "character_level": 90,
@@ -7144,12 +7173,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -7167,7 +7196,7 @@
     "primary_stat": "意志",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "意志",
       "secondary": "智识",
@@ -7177,7 +7206,8 @@
         "智识": 366.0,
         "意志": 547.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 11561.1,
@@ -7206,7 +7236,7 @@
         "attack_white": 776.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.467,
+        "attribute_factor": 4.466999973636121,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -7240,7 +7270,7 @@
         "type": "普通攻击",
         "multiplier_pct": 315.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 10919.1,
         "crit_expect": 11192.1,
@@ -7265,7 +7295,7 @@
         "type": "战技",
         "multiplier_pct": 0.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
@@ -7287,7 +7317,7 @@
         "type": "连携技",
         "multiplier_pct": 450.0,
         "stagger": 10.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 15598.8,
         "crit_expect": 15988.7,
@@ -7309,7 +7339,7 @@
         "type": "终结技",
         "multiplier_pct": 0.0,
         "stagger": 0.0,
-        "bonus_pct": 0,
+        "bonus_pct": 0.0,
         "amplification_pct": 0,
         "non_crit": 0.0,
         "crit_expect": 0.0,
@@ -7352,7 +7382,7 @@
       "  汇总词条: {'flat_智识': 239.0, 'pct_heal_eff': 38.0, 'flat_意志': 337, 'pct_hp_pct': 78.0, 'flat_防御力': 128, 'pct_ult_charge': 27.9, 'flat_生命值': 1000}",
       "  主能力: 意志（官方标签）总值 547",
       "  副能力: 智识（官方标注）总值 366",
-      "  攻击力 = (776 × 1.0000 + 0) × (1 + 0.005×547 + 0.002×366) = 3466.4"
+      "  攻击力 = (776.0 × 1.0 + 0) × 原生属性系数 4.466999973636121 = 3466.4; 主属性floor=547; 副属性floor=366"
     ],
     "profile": {
       "character_level": 90,
@@ -7379,12 +7409,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -7402,7 +7432,7 @@
     "primary_stat": "智识",
     "secondary_stat": "敏捷",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "智识",
       "secondary": "敏捷",
@@ -7412,7 +7442,8 @@
         "智识": 671.0,
         "意志": 105.0
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
@@ -7441,7 +7472,7 @@
         "attack_white": 826.0,
         "attack_percent": 0.0,
         "attack_flat": 0,
-        "attribute_factor": 4.979,
+        "attribute_factor": 4.978999954648316,
         "crit_rate": 0.5650000000000001,
         "crit_damage": 0.5,
         "amplification": {
@@ -7589,7 +7620,7 @@
       "  汇总词条: {'flat_智识': 435, 'pct_crit_rate': 51.5, 'pct_elem_寒冷': 44.8, 'flat_防御力': 140, 'flat_敏捷': 184, 'pct_normal_attack_dmg': 47.8}",
       "  主能力: 智识（官方标签）总值 671",
       "  副能力: 敏捷（官方标注）总值 312",
-      "  攻击力 = (826 × 1.0000 + 0) × (1 + 0.005×671 + 0.002×312) = 4112.7"
+      "  攻击力 = (826.0 × 1.0 + 0) × 原生属性系数 4.978999954648316 = 4112.7; 主属性floor=671; 副属性floor=312"
     ],
     "profile": {
       "character_level": 90,
@@ -7614,12 +7645,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },
@@ -7635,7 +7666,7 @@
     "primary_stat": "意志",
     "secondary_stat": "智识",
     "attribute_basis": {
-      "schema_version": 1,
+      "schema_version": 2,
       "domain": "final_panel",
       "primary": "意志",
       "secondary": "智识",
@@ -7645,11 +7676,12 @@
         "智识": 307.0,
         "意志": 861.651
       },
-      "unverified_attack_dependencies": []
+      "unverified_attack_dependencies": [],
+      "attack_conversion": "floor_final_main_sub"
     },
     "panel": {
       "HP": 5495.0,
-      "ATK": 7377.0,
+      "ATK": 7372.9,
       "DEF": 140,
       "力量": 99.0,
       "敏捷": 99.0,
@@ -7674,7 +7706,7 @@
         "attack_white": 836.0,
         "attack_percent": 0.49,
         "attack_flat": 0,
-        "attribute_factor": 5.922255,
+        "attribute_factor": 5.918999932939187,
         "crit_rate": 0.05,
         "crit_damage": 0.5,
         "amplification": {
@@ -7710,8 +7742,8 @@
         "stagger": 0.0,
         "bonus_pct": 84.7,
         "amplification_pct": 0,
-        "non_crit": 50549.9,
-        "crit_expect": 51813.7,
+        "non_crit": 50522.1,
+        "crit_expect": 51785.2,
         "conditional_rows": [
           "处决攻击倍率: 900%",
           "下落攻击倍率: 180%"
@@ -7735,8 +7767,8 @@
         "stagger": 15.0,
         "bonus_pct": 138.5,
         "amplification_pct": 0,
-        "non_crit": 7917.4,
-        "crit_expect": 8115.3,
+        "non_crit": 7913.0,
+        "crit_expect": 8110.8,
         "conditional_rows": [
           "消耗每级导电 / 额外伤害倍率: 9%（按消耗层数，A 层不计）",
           "终结技期间 / 雷击伤害倍率: 81%",
@@ -7761,8 +7793,8 @@
         "stagger": 10.0,
         "bonus_pct": 84.7,
         "amplification_pct": 0,
-        "non_crit": 49051.1,
-        "crit_expect": 50277.4,
+        "non_crit": 49024.2,
+        "crit_expect": 50249.8,
         "conditional_rows": [
           "终结技期间 / 伤害倍率: 540%"
         ],
@@ -7830,7 +7862,7 @@
       "  汇总词条: {'flat_意志': 435, 'pct_atk_pct': 49.0, 'pct_elem_电磁': 84.69999999999999, 'flat_防御力': 140, 'flat_智识': 184, 'pct_elem_寒冷': 39.9, 'pct_skill_dmg': 53.8, 'pct_primary': 26.9}",
       "  主能力: 意志（官方标签）总值 862，含主能力词条+26.9%",
       "  副能力: 智识（官方标注）总值 307",
-      "  攻击力 = (836 × 1.4900 + 0) × (1 + 0.005×862 + 0.002×307) = 7377.0"
+      "  攻击力 = (836.0 × 1.49 + 0) × 原生属性系数 5.918999932939187 = 7372.9; 主属性floor=861; 副属性floor=307"
     ],
     "profile": {
       "character_level": 90,
@@ -7855,12 +7887,12 @@
         "assets/data/reaction_attributes/20261004/index.json": "e8e742e62fe464940b2d9c77d01007d712a9e62d74723015875dacd59e86cc8f",
         "assets/data/reaction_attributes/20261004/scalars.json.gz": "24fa4af9430e4fa4e97a04f0e3b60847148d93f8147f104ce23677a931ea8a87",
         "assets/data/reaction_attributes/20261004/CharacterTable.bytes.gz": "806702b13f391a85bd4b373e772f86c2c60ee7b5c6981e27eabc5c9a0babece9",
-        "scripts/skill-data/compute_fixed_damage_baseline.py": "a8c55c370d51cd0774d83b05a1c62d76fe266ed281dccbd98488e9b7954ee165",
+        "scripts/skill-data/compute_fixed_damage_baseline.py": "d841c73ac4e61c639f1bf58371f58938d3f5cf811d1b036b59d072f83d287300",
         "scripts/skill-data/compute_damage_baseline.py": "6871afcd2eccddbf9d1cb829c174b9cf1ff4c36788f530dbe9f29ae3600b66fb",
         "src/data/character_progression.py": "38b55c5b315df7fd706fed6ff0dcbaffbaab41c769f56d0581f53a2c5e3bedc8",
         "src/data/native_damage_scalars.py": "43141b8410626f98174de240ff528028c7b22e149f18d9ec7a82876ccf9f43bf",
         "assets/data/skill_damage_row_semantics.json": "f102b8031d98646cc22c2c53fc9a6c1ba01f71cbe52ab8792b3298a7f0b0bf33",
-        "src/data/damage_attributes.py": "cd12de7ddd0c0e8383e6bf76f43bc9b0b64b58ad85e1237685bbda55d9e6ef5d",
+        "src/data/damage_attributes.py": "43382d7af2d9f9f3449a7cf864dfd1357144f80467755ed7f20ac0a088a6c9c0",
         "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
         "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
       },

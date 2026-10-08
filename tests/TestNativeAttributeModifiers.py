@@ -129,7 +129,8 @@ class TestNativeAttributeModifiers(unittest.TestCase):
         self.assertAlmostEqual(self.result().non_crit, old + 100 * .2 * 2)
 
     def test_dynamic_final_attributes_and_native_attack_share_one_attack_basis(self):
-        basis = DamageAttributeBasis.from_dict({"schema_version": 1, "domain": "final_panel",
+        basis = DamageAttributeBasis.from_dict({"schema_version": 2, "domain": "final_panel",
+                "attack_conversion": "floor_final_main_sub",
                 "primary": "力量", "secondary": "敏捷",
                 "unverified_attack_dependencies": [],
                 "totals": {"力量": 100, "敏捷": 250, "智识": 0, "意志": 0}})

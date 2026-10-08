@@ -275,7 +275,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "智识",
@@ -285,7 +285,8 @@
             "智识": 409.0,
             "意志": 264.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -588,7 +589,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "智识",
@@ -598,7 +599,8 @@
             "智识": 381.0,
             "意志": 89.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -1163,7 +1165,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "智识",
           "secondary": "力量",
@@ -1173,7 +1175,8 @@
             "智识": 514.0,
             "意志": 82.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -1625,7 +1628,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "智识",
           "secondary": "意志",
@@ -1635,7 +1638,8 @@
             "智识": 812.16,
             "意志": 362.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -1980,7 +1984,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "智识",
@@ -1990,7 +1994,8 @@
             "智识": 297.0,
             "意志": 153.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -2258,7 +2263,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "智识",
           "secondary": "意志",
@@ -2268,7 +2273,8 @@
             "智识": 499.0,
             "意志": 368.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -2636,7 +2642,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "意志",
           "secondary": "敏捷",
@@ -2646,7 +2652,8 @@
             "智识": 110.0,
             "意志": 418.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -3016,7 +3023,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "智识",
@@ -3026,7 +3033,8 @@
             "智识": 381.0,
             "意志": 92.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -3287,7 +3295,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "意志",
@@ -3297,7 +3305,8 @@
             "智识": 299.0,
             "意志": 522.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -3597,7 +3606,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "力量",
@@ -3607,7 +3616,8 @@
             "智识": 85.0,
             "意志": 93.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -3868,7 +3878,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "意志",
@@ -3878,7 +3888,8 @@
             "智识": 94.0,
             "意志": 286.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -4129,7 +4140,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "意志",
@@ -4139,7 +4150,8 @@
             "智识": 77.0,
             "意志": 332.88000000000005
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -4523,7 +4535,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "力量",
@@ -4533,7 +4545,8 @@
             "智识": 96.0,
             "意志": 107.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -4925,7 +4938,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "意志",
           "secondary": "力量",
@@ -4935,7 +4948,8 @@
             "智识": 248.0,
             "意志": 433.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -5312,7 +5326,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "智识",
@@ -5322,7 +5336,8 @@
             "智识": 417.0,
             "意志": 91.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -5640,7 +5655,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "意志",
           "secondary": "智识",
@@ -5650,7 +5665,8 @@
             "智识": 340.0,
             "意志": 637.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -5919,7 +5935,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "智识",
           "secondary": "力量",
@@ -5929,7 +5945,8 @@
             "智识": 696.0,
             "意志": 89.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -6188,7 +6205,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "意志",
@@ -6198,7 +6215,8 @@
             "智识": 93.0,
             "意志": 331.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -6493,7 +6511,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "力量",
@@ -6506,7 +6524,8 @@
           "unverified_attack_dependencies": [
             "智识",
             "意志"
-          ]
+          ],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -6845,7 +6864,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "意志",
           "secondary": "敏捷",
@@ -6855,7 +6874,8 @@
             "智识": 145.0,
             "意志": 890.838
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -7223,7 +7243,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "意志",
@@ -7233,7 +7253,8 @@
             "智识": 90.0,
             "意志": 303.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -7595,7 +7616,7 @@
       },
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "智识",
           "secondary": "意志",
@@ -7605,7 +7626,8 @@
             "智识": 680.0,
             "意志": 243.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -8007,7 +8029,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "意志",
           "secondary": "敏捷",
@@ -8017,7 +8039,8 @@
             "智识": 321.0,
             "意志": 483.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -8322,7 +8345,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "意志",
@@ -8332,7 +8355,8 @@
             "智识": 89.0,
             "意志": 466.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -8663,7 +8687,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "智识",
@@ -8673,7 +8697,8 @@
             "智识": 247.0,
             "意志": 89.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -8934,7 +8959,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "意志",
@@ -8944,7 +8969,8 @@
             "智识": 231.0,
             "意志": 534.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -9257,7 +9283,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "力量",
@@ -9267,7 +9293,8 @@
             "智识": 126.0,
             "意志": 129.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -9536,7 +9563,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "敏捷",
           "secondary": "意志",
@@ -9546,7 +9573,8 @@
             "智识": 99.0,
             "意志": 301.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -9923,7 +9951,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "力量",
           "secondary": "敏捷",
@@ -9933,7 +9961,8 @@
             "智识": 231.0,
             "意志": 166.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -10465,7 +10494,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "意志",
           "secondary": "智识",
@@ -10475,7 +10504,8 @@
             "智识": 366.0,
             "意志": 547.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -10891,7 +10921,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "智识",
           "secondary": "敏捷",
@@ -10901,7 +10931,8 @@
             "智识": 671.0,
             "意志": 105.0
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"
@@ -11224,7 +11255,7 @@
       "fixed_skill_crit_filters": {},
       "dynamic_attribute_flow": {
         "basis": {
-          "schema_version": 1,
+          "schema_version": 2,
           "domain": "final_panel",
           "primary": "意志",
           "secondary": "智识",
@@ -11234,7 +11265,8 @@
             "智识": 307.0,
             "意志": 861.651
           },
-          "unverified_attack_dependencies": []
+          "unverified_attack_dependencies": [],
+          "attack_conversion": "floor_final_main_sub"
         },
         "consumer_status": "confirmed_final_deltas_supported; native formula domains not inferred",
         "native_attribute_change_producers": "not_verified"

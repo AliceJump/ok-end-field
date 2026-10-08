@@ -6,12 +6,14 @@ import copy
 import gzip
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import compute_damage_baseline as damage
 
 from src.data.character_progression import SNAPSHOT, load_character_progression
 from src.data.character_skills import get_character
+from src.data.damage_attributes import DamageAttributeBasis
 from src.data.damage_resolution import FixedDamagePanel
 from src.data.damage_state_rules import fixed_weapon_bonuses
 from src.data.fixed_skill_modifiers import fixed_skill_crit
@@ -118,6 +120,21 @@ def compute(key: str, tables: dict) -> dict:
         # The fixed talent was folded into attack_percent. Its native converted
         # attribute/snapshot refresh is not yet established for dynamic changes.
         result["attribute_basis"]["unverified_attack_dependencies"] = ["智识", "意志"]
+    # Keep the legacy generator/artifact isolated. Fixed quotes and runtime
+    # deltas share the reviewed native conversion, retaining raw four-stat totals.
+    result["attribute_basis"].update(schema_version=2, attack_conversion="floor_final_main_sub")
+    attributes = DamageAttributeBasis.from_dict(result["attribute_basis"])
+    result["panel"]["damage_basis"]["attribute_factor"] = attributes.factor()
+    fixed_panel = FixedDamagePanel(**result["panel"]["damage_basis"])
+    result["panel"]["ATK"] = round(fixed_panel.attack(), 1)
+    values = dict(attributes.totals)
+    result["trace"] = [line for line in result["trace"] if not line.strip().startswith("攻击力 =")]
+    result["trace"].append(
+        f"  攻击力 = ({fixed_panel.attack_white} × {1 + fixed_panel.attack_percent}"
+        f" + {fixed_panel.attack_flat}) × 原生属性系数 {attributes.factor()} = {fixed_panel.attack():.1f};"
+        f" 主属性floor={math.floor(values[attributes.primary])};"
+        f" 副属性floor={math.floor(values[attributes.secondary]) if attributes.secondary else 0}"
+    )
     for field in ("cycle_expect", "cycle_expect_link4"):
         result.pop(field, None)
     result["trace"] = [
@@ -171,13 +188,12 @@ def compute(key: str, tables: dict) -> dict:
                     if len(matches) != 1:
                         raise ValueError(f"Ambiguous/missing component damage row: {quote['skill_id']}/{label}")
                     component["rank_values"][label] = matches[0]["values"][0]
-        if reviewed or fixed_bonuses or fixed_crit:
-            tag, element = SKILL_TAGS[skill["skill_type"]], skill["element"]
-            non_crit = panel.attack() * multiplier / 100 * (1 + panel.bonus_for(element, (tag,)))
-            non_crit *= 1 + panel.amplification[element]
-            quote.update(multiplier_pct=round(multiplier, 1), non_crit=round(non_crit, 1),
-                         bonus_pct=round(panel.bonus_for(element, (tag,)) * 100, 1),
-                         crit_expect=round(non_crit * (1 + min(1, max(0, panel.crit_rate_for((tag,)))) * panel.crit_damage), 1))
+        tag, element = SKILL_TAGS[skill["skill_type"]], skill["element"]
+        non_crit = panel.attack() * multiplier / 100 * (1 + panel.bonus_for(element, (tag,)))
+        non_crit *= 1 + panel.amplification[element]
+        quote.update(multiplier_pct=round(multiplier, 1), non_crit=round(non_crit, 1),
+                     bonus_pct=round(panel.bonus_for(element, (tag,)) * 100, 1),
+                     crit_expect=round(non_crit * (1 + min(1, max(0, panel.crit_rate_for((tag,)))) * panel.crit_damage), 1))
         quote["quote_basis"] = {
             "skill_rank": rank,
             "element": skill["element"],
