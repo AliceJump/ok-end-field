@@ -239,22 +239,18 @@ def _find_enemy_hp_run(
         for x_value in segment_starts:
             x = int(x_value)
             y = int(sampled_y) * sample_step
-            radius = min_height + sample_step
-            top = max(0, y - radius)
-            bottom = min(roi.shape[0], y + radius + 1)
-            column = roi[top:bottom, x]
+            column = roi[:, x]
             matching = np.all(
                 (column >= ENEMY_HP_BGR_LOWER) & (column <= ENEMY_HP_BGR_UPPER),
                 axis=1,
             ).tolist()
 
             # The vertical evidence must belong to the very same horizontal
-            # candidate row. Do not combine a one-pixel horizontal candidate with a
-            # separate nearby vertical pink segment and call the union an exact hit.
-            run_start, run_end, run_height = _true_run_containing(matching, y - top)
+            # candidate row. Measure the complete contiguous run in this column
+            # so height-relative width thresholds use the real candidate height.
+            run_start, run_end, run_height = _true_run_containing(matching, y)
             if run_height < min_height:
                 continue
-            row_has_geometry = True
 
             sampled_row = mask[int(sampled_y)] != 0
             left = x
@@ -264,12 +260,13 @@ def _find_enemy_hp_run(
             while right + 1 < sampled_row.shape[0] and sampled_row[right + 1]:
                 right += 1
 
-            hit_top = int(top + run_start)
+            hit_top = int(run_start)
             hit_width = int(right - left + 1)
             hit_height = int(run_end - run_start + 1)
             min_width, direct_width = _enemy_hp_width_thresholds(hit_height)
             if hit_width < min_width:
                 continue
+            row_has_geometry = True
 
             if hit_width < direct_width:
                 context_source = roi if context_roi is None else context_roi
