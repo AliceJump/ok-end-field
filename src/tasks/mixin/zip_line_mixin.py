@@ -107,7 +107,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         """匹配完整距离数字，避免 108 错配到 1080m 等更长距离。"""
         return re.compile(rf"(?<!\d){re.escape(str(zip_line))}(?!\d)")
 
-    def _zip_line_target_is_gold_and_centered(self, zip_line, frame=None, tolerance=20):
+    def _zip_line_target_is_gold_and_centered(self, zip_line, frame=None, tolerance=50):
         """判断目标距离是否处于黄色锁定态且位于屏幕中心附近。"""
         result = self.ocr(
             match=self._zip_line_distance_pattern(zip_line),
@@ -143,6 +143,41 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             max_time=max_time,
         )
 
+    def _zip_line_stop_state(self):
+        return (
+            [
+                self.lang.zip_line_mixin.k_2f4f4a2f,
+                self.lang.zip_line_mixin.k_0b1e4f35,
+            ],
+            self.box_of_screen(0.351, 0.943, 0.657, 0.981),
+        )
+
+    def _try_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2):
+        """执行一次黄色门控 + 点击 + E，返回 ``(成功, 失败原因)``。"""
+        stop_match, stop_box = self._zip_line_stop_state()
+        lock_start = self.active_time()
+        while not self._zip_line_target_is_gold_and_centered(zip_line, frame=self.next_frame(), tolerance=50):
+            if self.active_time() - lock_start >= lock_timeout:
+                return False, "gate"
+            self.sleep(0.05)
+
+        self.click(after_sleep=0.1)
+        for _ in range(max_attempts):
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
+            if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
+                return True, None
+        return False, "interaction"
+
+    def _legacy_click_on_zip_line(self, max_attempts=5):
+        """黄色门控耗尽后的 v1.1.11 式直接点击 + E 回退。"""
+        stop_match, stop_box = self._zip_line_stop_state()
+        for _ in range(max_attempts):
+            self.click(after_sleep=0.1)
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
+            if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
+                return True
+        return False
+
     def zip_line_list_go(self, zip_line_list, need_scroll=None, target=None, need_v=False):
         """按顺序对齐滑索并执行滑行
 
@@ -154,15 +189,29 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         """
         for zip_line in zip_line_list:
-            self._align_zip_line_distance(zip_line, need_scroll=need_scroll)
+            self._align_zip_line_distance(zip_line, need_scroll=need_scroll, tolerance=50)
             self.log_info(f"成功将滑索调整到{zip_line}的中心")
 
-            if not self.ensure_click_on_zip_line(zip_line):
-                # 白色和黄色都可用于寻找/移动视角；只有最后准备 click 时才要求黄色。
-                self.log_info(f"滑索{zip_line}已对中但仍为白色，收紧对中后等待黄色锁定")
-                self._align_zip_line_distance(zip_line, need_scroll=need_scroll, tolerance=8, max_time=10)
-                if not self.ensure_click_on_zip_line(zip_line):
-                    raise RuntimeError(f"滑索{zip_line}未进入黄色锁定态，不执行校准点击")
+            gate_retry_start = self.active_time()
+            activated = False
+            last_reason = None
+            for attempt in range(3):
+                activated, last_reason = self._try_click_on_zip_line(zip_line)
+                if activated:
+                    break
+                if last_reason == "gate":
+                    self.log_info(f"滑索{zip_line}金色门未通过，重新对中后重试（{attempt + 1}/3）")
+                else:
+                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
+                if attempt >= 2 or self.active_time() - gate_retry_start >= 20:
+                    break
+                self._align_zip_line_distance(zip_line, need_scroll=need_scroll, tolerance=50, max_time=10)
+
+            if not activated:
+                self.log_info(f"滑索{zip_line}门控重试耗尽，回退直接点击 + E")
+                if not self._legacy_click_on_zip_line():
+                    self.log_info(f"滑索{zip_line}已点击但 E 未生效", notify=True)
+                    raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
 
             start = self.active_time()
             while True:
@@ -237,25 +286,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         self.ensure_main()
 
     def ensure_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2):
-        """等待目标黄色且居中后校准点击；click 后仅重试 E，不做二次颜色判断。"""
-        stop_match = [
-            self.lang.zip_line_mixin.k_2f4f4a2f,
-            self.lang.zip_line_mixin.k_0b1e4f35,
-        ]
-        stop_box = self.box_of_screen(0.351, 0.943, 0.657, 0.981)
-
-        lock_start = self.active_time()
-        while not self._zip_line_target_is_gold_and_centered(zip_line, frame=self.next_frame()):
-            if self.active_time() - lock_start >= lock_timeout:
-                return False
-            self.sleep(0.05)
-
-        # click 是一次性的校准动作：只有中心目标已经是黄色时才允许执行。
-        self.click(after_sleep=0.1)
-
-        # click 之后黄色门控已经完成；后续仅重试 E，直到停止提示消失或次数耗尽。
-        for _ in range(max_attempts):
-            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
-            if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
-                return True
-        return False
+        """兼容入口：一次黄色门控 + 点击 + E，失败由调用方决定是否重新对中。"""
+        success, _ = self._try_click_on_zip_line(
+            zip_line,
+            max_attempts=max_attempts,
+            lock_timeout=lock_timeout,
+        )
+        return success
