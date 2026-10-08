@@ -24,6 +24,7 @@ from src.data.native_attribute_modifiers import reviewed_attack_binding
 from src.data.native_gameplay import native_enums, native_record
 from src.data.native_tags import native_tag_id, tag_names
 from src.data.native_zhuangfy_evidence import release_evidence
+from src.data.reviewed_damage_rows import reviewed_row_counts
 from src.data.skill_timing import SkillTimingStore
 
 
@@ -299,7 +300,9 @@ def audit(rows=None):
                             if len(found) != 1:
                                 raise ValueError(f"Missing/ambiguous reviewed row: {label}")
                             values[label] = found[0]["values"][profile["skill_rank"] - 1]
-                        multiplier = sum(float(values[label].removesuffix("%")) / 100 for label in reviewed["base_rows"])
+                        counts = reviewed_row_counts(reviewed)
+                        multiplier = sum(float(values[label].removesuffix("%")) / 100 * counts[label]
+                                         for label in reviewed["base_rows"])
                         if not math.isclose(multiplier, typed.multiplier, abs_tol=1e-12):
                             raise ValueError("Reviewed quote multiplier differs from selected rank rows")
                         for component in matches[0]["row_semantics"]["components"]:

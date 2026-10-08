@@ -44,6 +44,13 @@ def verify_sources(row, root=ROOT):
         "src/data/damage_attributes.py",
         "src/data/damage_state_rules.py",
         "src/data/fixed_skill_modifiers.py",
+        "src/data/reviewed_damage_rows.py",
+        "src/data/native_gameplay.py", "src/data/skill_timing.py",
+        "assets/data/skill_timings/20261002/index.json",
+        "assets/data/skill_timings/20261002/records.json.gz",
+        "assets/data/character_progression/20261003/supplement.json.gz",
+        "assets/data/common_mechanics/20261003/index.json",
+        "assets/data/common_mechanics/20261003/records.json.gz",
     }
     if set(sources) != expected:
         raise ValueError("Incomplete fixed quote source ledger")

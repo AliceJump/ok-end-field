@@ -117,6 +117,33 @@
         {"key": "强化第三段", "rows": ["强化第三段 / 伤害倍率"], "role": "replacement", "condition": "本次事件消耗的最高破防层数为4层，替换普通第三段", "damage_class": "combo"}
       ]
     },
+    "laevatain_skill": {
+      "character_id": "laevatain",
+      "evidence": "native chr_0016_laevat_normal_skill and normal_skill_abilityentity; canonical rank_stats",
+      "base_rows": ["初始爆炸伤害倍率", "持续伤害每段倍率"],
+      "base_row_counts": {"初始爆炸伤害倍率": 1, "持续伤害每段倍率": 10},
+      "base_scope": "nominal_initial_and_ten_scheduled_pulses_without_hit_or_entity_lifetime_confirmation",
+      "native_schedule": {
+        "record": "chr_0016_laevat_normal_skill_abilityentity",
+        "record_sha256": "25921738f496d267afb6868274a77c51f2975fd3238d53699f2570b9b99ec860",
+        "row": "持续伤害每段倍率", "parameter_key": "atk_scale_2", "damage_type": 2,
+        "frames": [25, 29, 33, 37, 41, 45, 50, 54, 58, 62]
+      },
+      "components": [
+        {"key": "熔火追加", "rows": ["追加伤害倍率"], "role": "conditional_followup", "condition": "施放开始已至少4层熔火，保留has_max_energy快照；后续追加消耗全部，不能按末击时层数倒推", "damage_class": "skill"},
+        {"key": "终结姿态", "rows": ["终结技期间 / 第一段倍率", "终结技期间 / 第二段倍率", "终结技期间 / 追加攻击倍率"], "role": "replacement", "condition": "终结期间替换为normal_skill_during_ult，不与普通战技相加；期间/退出与各段路径尚未接通", "damage_class": "skill"}
+      ]
+    },
+    "yvonne_skill": {
+      "character_id": "yvonne",
+      "evidence": "native chr_0017_yvonne_normal_skill and normal_skill_projhit; canonical rank_stats",
+      "base_rows": ["基础伤害倍率"],
+      "base_scope": "ordinary_projectile_damage_without_attachment_consumption",
+      "components": [
+        {"key": "冻结固定追加", "rows": ["施加冻结伤害倍率"], "role": "conditional_followup", "condition": "晚期目标寒冷或自然附着分支：atk_scale_final += atk_scale2；不是替换基础倍率，也不在普通分支无条件添加", "damage_class": "skill"},
+        {"key": "消费附着追加", "rows": ["消耗每层附着 / 额外伤害倍率"], "role": "per_consumed_layer", "condition": "先按实际分支SaveBuffStackNumAdvanced记录目标寒冷或自然层数count，再算atk_scale_layer*count；未知count不默认1或最大值", "damage_class": "skill"}
+      ]
+    },
     "pogranichnik_ultimate": {
       "character_id": "pogranichnik",
       "evidence": "assets/data/character_skills/pogranichnik.json: skills[pogranichnik_ultimate].description, rank_stats",

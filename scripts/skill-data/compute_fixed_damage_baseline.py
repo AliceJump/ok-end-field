@@ -18,6 +18,7 @@ from src.data.damage_resolution import FixedDamagePanel
 from src.data.damage_state_rules import fixed_weapon_bonuses
 from src.data.fixed_skill_modifiers import fixed_skill_crit
 from src.data.native_damage_scalars import reaction_scalars
+from src.data.reviewed_damage_rows import reviewed_row_counts
 
 ROOT = Path(__file__).resolve().parents[2]
 ATTRIBUTES = {39: "力量", 40: "敏捷", 41: "智识", 42: "意志"}
@@ -39,6 +40,13 @@ def source_hashes(key):
         ROOT / "src/data/damage_attributes.py",
         ROOT / "src/data/damage_state_rules.py",
         ROOT / "src/data/fixed_skill_modifiers.py",
+        ROOT / "src/data/reviewed_damage_rows.py",
+        ROOT / "src/data/native_gameplay.py", ROOT / "src/data/skill_timing.py",
+        ROOT / "assets/data/skill_timings/20261002/index.json",
+        ROOT / "assets/data/skill_timings/20261002/records.json.gz",
+        SNAPSHOT / "supplement.json.gz",
+        ROOT / "assets/data/common_mechanics/20261003/index.json",
+        ROOT / "assets/data/common_mechanics/20261003/records.json.gz",
     ]
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
 
@@ -174,11 +182,12 @@ def compute(key: str, tables: dict) -> dict:
             if reviewed["character_id"] != key:
                 raise ValueError("Damage row semantics character mismatch")
             selected = []
+            counts = reviewed_row_counts(reviewed)
             for label in reviewed["base_rows"]:
                 matches = [row for row in skill["rank_stats"]["rows"] if row["label"] == label]
                 if len(matches) != 1:
                     raise ValueError(f"Ambiguous/missing reviewed damage row: {quote['skill_id']}/{label}")
-                selected.extend(matches)
+                selected.extend(matches * counts[label])
             multiplier, _, _ = damage._skill_multiplier({"rank_stats": {"rows": selected}})
             quote["row_semantics"] = copy.deepcopy(reviewed)
             for component in quote["row_semantics"]["components"]:
