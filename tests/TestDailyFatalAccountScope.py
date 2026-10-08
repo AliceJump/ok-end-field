@@ -99,6 +99,75 @@ class TestDailyFatalAccountScope(unittest.TestCase):
         self.assertEqual(runner.final_summary["per_round"][0]["skipped"], ["after"])
         self.assertEqual(runner.final_summary["per_round"][1]["success"], ["critical", "after"])
 
+    def test_dynamic_false_result_can_continue_despite_static_fatal_key(self):
+        task = _MultiAccountHarness(account_count=1)
+        calls = []
+
+        def critical():
+            calls.append("critical")
+            return False
+
+        def after():
+            calls.append("after")
+            return True
+
+        runner = DailyTaskRunner(
+            task,
+            [("critical", critical, None, lambda: False), ("after", after)],
+            fatal_task_keys={"critical"},
+        )
+        runner.run()
+
+        self.assertEqual(calls, ["critical", "after"])
+        self.assertEqual(runner.final_summary["per_round"][0]["failed"], ["critical"])
+        self.assertEqual(runner.final_summary["per_round"][0]["skipped"], [])
+
+    def test_dynamic_exception_can_continue_when_failure_is_not_fatal(self):
+        task = _MultiAccountHarness(account_count=1)
+        calls = []
+
+        def critical():
+            calls.append("critical")
+            raise RuntimeError("recoverable")
+
+        def after():
+            calls.append("after")
+            return True
+
+        runner = DailyTaskRunner(
+            task,
+            [("critical", critical, None, lambda: False), ("after", after)],
+            fatal_task_keys={"critical"},
+        )
+        runner.run()
+
+        self.assertEqual(calls, ["critical", "after"])
+        self.assertIn("recoverable", runner.failure_details["account-0"]["critical"])
+        self.assertEqual(runner.final_summary["per_round"][0]["failed"], ["critical"])
+        self.assertEqual(runner.final_summary["per_round"][0]["success"], ["after"])
+
+    def test_dynamic_true_result_still_aborts_current_account(self):
+        task = _MultiAccountHarness(account_count=1)
+        calls = []
+
+        def critical():
+            calls.append("critical")
+            return False
+
+        def after():
+            calls.append("after")
+            return True
+
+        runner = DailyTaskRunner(
+            task,
+            [("critical", critical, None, lambda: True), ("after", after)],
+            fatal_task_keys={"critical"},
+        )
+        runner.run()
+
+        self.assertEqual(calls, ["critical"])
+        self.assertEqual(runner.final_summary["per_round"][0]["skipped"], ["after"])
+
 
 if __name__ == "__main__":
     unittest.main()
