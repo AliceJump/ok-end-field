@@ -1,0 +1,2975 @@
+{
+  "schema_version": 1,
+  "scope": "inventory_only; no_master_integration_or_observation_implementation",
+  "source": {
+    "audit": "docs/dev/damage-data-flow-audit.json",
+    "sha256": "3ad7c269085f79c1b644c6bf8cfc18a9a1f3414aa58f56cbf8d54ec5bf92ec88"
+  },
+  "count_unit": "per character / source / trigger or branch; aliases of a released skill are counted once",
+  "summary": {
+    "fixed_panels": 32,
+    "fixed_quotes": 128,
+    "registered_rule_or_instance_rows": 62,
+    "categories": {
+      "confirmed_native_fragment_only": 2,
+      "deferred_producer": 40,
+      "first_release_candidate": 7,
+      "deferred_identified_combo": 5,
+      "conditional_current_target": 6,
+      "deferred_attribute_input": 2
+    },
+    "additional_native_evidence_candidates": 8,
+    "inactive_selected_set_rows": 3
+  },
+  "categories": {
+    "first_release_candidate": "Use an identified successful battle/ultimate release; exact native frame is outside this model contract.",
+    "conditional_current_target": "Calculate only with explicit current hit target predicates; missing input stays unknown.",
+    "confirmed_native_fragment_only": "Confirmed fragment/outcome and recipient/lifetime required; no automatic cast mapping.",
+    "deferred_identified_combo": "Keep master combo handling; anonymous E does not identify owner or skill.",
+    "deferred_attribute_input": "Verified formula needs actual native attribute-domain input, not final panel substitution.",
+    "deferred_producer": "Existing formula does not prove hit/outcome/field/count or cleanup production."
+  },
+  "records": [
+    {
+      "character_key": "akekuri",
+      "character": "秋栗",
+      "unit": "全力协作",
+      "origin": "native_attribute_instance",
+      "category": "confirmed_native_fragment_only",
+      "rule": {
+        "passive_id": "chr_0019_karin_potential_3",
+        "buff_id": "buff_chr_0019_karin_potential_3",
+        "bucket": "attack",
+        "recipient": "actual_buff_owner_from_living_team_selector",
+        "producer": "chr_0019_karin_ultimate_skill",
+        "input": "inherited_bb.atk",
+        "selected_parameter": 0.10000000149011612,
+        "evaluation": "instance_creation_snapshot",
+        "lifetime": "native_buff_uid; authored_action_end_or_explicit_finish",
+        "verified_scope": "original_P3_producer_block_and_buff; full_ultimate_not_complete",
+        "sources": {
+          "passive": "CharacterPotentialTable/chr_0019_karin/potentialUnlockBundle/2",
+          "producer_sha256": "f977103403fb597c5925827195a3547b08b90b7a613fc4dee2ba60ae376ba379",
+          "buff_sha256": "6c2f613243cd0e5beb6242c60c20ba84b232197b6645a26aeafb78b45d4a3f35"
+        }
+      }
+    },
+    {
+      "character_key": "alesh",
+      "character": "阿列什",
+      "unit": "愿者上钩",
+      "origin": "native_attribute_instance",
+      "category": "confirmed_native_fragment_only",
+      "rule": {
+        "passive_id": "chr_0024_deepfin_potential_3",
+        "buff_id": "buff_chr_0024_deepfin_potential_3",
+        "bucket": "attack",
+        "recipient": "actual_buff_owner_from_confirmed_team_group",
+        "producer": "chr_0024_deepfin_combo_skill",
+        "input": "inherited_bb.atk_up",
+        "selected_parameter": 0.15000000596046448,
+        "evaluation": "instance_creation_snapshot",
+        "lifetime": "native_buff_uid; timed_Refresh_or_explicit_finish",
+        "verified_scope": "buff_instance_ATK_and_Refresh_only; rare_fish_outcome_and_full_combo_not_bound",
+        "sources": {
+          "passive": "CharacterPotentialTable/chr_0024_deepfin/potentialUnlockBundle/2",
+          "producer_sha256": "563fd8ee269d098ce95839e7de56d0f164b668662fe599a271dfa11c347a6b03",
+          "buff_sha256": "548a9a85effb17b21d86d64c6cda8b3446954cd0a0ab84a7ff4748dd7e46cdc0"
+        }
+      }
+    },
+    {
+      "character_key": "antal",
+      "character": "安塔尔",
+      "unit": "战技 / 指定研究对象",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "antal_skill:VULN_ELECTROMAGNETIC",
+        "bucket": "vulnerability",
+        "elements": [
+          "电磁"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "on_hit",
+        "duration": 60.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.1,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/antal_skill/rank_stats/电磁脆弱效果/专精3",
+          "character_skills/antal_skill/rank_stats/持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "antal",
+      "character": "安塔尔",
+      "unit": "战技 / 指定研究对象",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "antal_skill:VULN_BURN",
+        "bucket": "vulnerability",
+        "elements": [
+          "灼热"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "on_hit",
+        "duration": 60.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.1,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/antal_skill/rank_stats/灼热脆弱效果/专精3",
+          "character_skills/antal_skill/rank_stats/持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "antal",
+      "character": "安塔尔",
+      "unit": "终结技 / 超频时刻",
+      "origin": "skill",
+      "category": "first_release_candidate",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "antal_ultimate:BUFF_ELECTROMAGNETIC_UP",
+        "bucket": "amplification",
+        "elements": [
+          "电磁"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "ultimate_cast",
+        "duration": 12.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.2200000047683716,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/antal_ultimate/rank_stats/电磁增幅效果/专精3",
+          "character_skills/antal_ultimate/rank_stats/持续时间（秒）/专精3",
+          "CharacterPotentialTable/chr_0023_antal/potentialUnlockBundle/0/parameters/rate"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "antal",
+      "character": "安塔尔",
+      "unit": "终结技 / 超频时刻",
+      "origin": "skill",
+      "category": "first_release_candidate",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "antal_ultimate:BUFF_BURN_UP",
+        "bucket": "amplification",
+        "elements": [
+          "灼热"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "ultimate_cast",
+        "duration": 12.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.2200000047683716,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/antal_ultimate/rank_stats/灼热增幅效果/专精3",
+          "character_skills/antal_ultimate/rank_stats/持续时间（秒）/专精3",
+          "CharacterPotentialTable/chr_0023_antal/potentialUnlockBundle/0/parameters/rate"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "arcane",
+      "character": "诀",
+      "unit": "战技 / 摧玉网格 / 阵诀·智：战技命中囹圄敌人",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "阵诀·智：战技命中囹圄敌人",
+        "key": "arcane_link:VULN_NATURAL",
+        "bucket": "vulnerability",
+        "elements": [
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "wisdom_confinement_hit",
+        "duration": 2.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.04,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
+          "character_skills/arcane_link/rank_stats/额外脆弱持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "arcane",
+      "character": "诀",
+      "unit": "战技 / 摧玉网格 / 阵诀·智：战技命中囹圄敌人",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "阵诀·智：战技命中囹圄敌人",
+        "key": "arcane_link:VULN_COLD",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "wisdom_confinement_hit",
+        "duration": 2.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.04,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
+          "character_skills/arcane_link/rank_stats/额外脆弱持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "arcane",
+      "character": "诀",
+      "unit": "连携技 / 应龙四式 / 应龙四式",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "应龙四式",
+        "key": "arcane_link:VULN_NATURAL",
+        "bucket": "vulnerability",
+        "elements": [
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "combo_wisdom_hit",
+        "duration": 4.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.04,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0032_lizhiyan_combo_skill/duration/rank=12"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "arcane",
+      "character": "诀",
+      "unit": "连携技 / 应龙四式 / 应龙四式",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "应龙四式",
+        "key": "arcane_link:VULN_COLD",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "combo_wisdom_hit",
+        "duration": 4.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.04,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0032_lizhiyan_combo_skill/duration/rank=12"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "arcane",
+      "character": "诀",
+      "unit": "连携技 / 应龙四式 / 应龙四式·阵诀·意",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "应龙四式·阵诀·意",
+        "key": "arcane_link:VULN_NATURAL",
+        "bucket": "vulnerability",
+        "elements": [
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "combo_will_hit",
+        "duration": 6.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.04,
+          "terms": [
+            {
+              "input": "source.意志",
+              "coefficient": 0.0001250000059371814,
+              "cap": 0.07999999821186066
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0032_lizhiyan_combo_skill/spell_vul_per_will/rank=12",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0032_lizhiyan_combo_skill/max_spell_vul_will/rank=12",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0032_lizhiyan_combo_skill/duration_will/rank=12"
+        ],
+        "required_inputs": [
+          "source.意志"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "arcane",
+      "character": "诀",
+      "unit": "连携技 / 应龙四式 / 应龙四式·阵诀·意",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "应龙四式·阵诀·意",
+        "key": "arcane_link:VULN_COLD",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "combo_will_hit",
+        "duration": 6.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.04,
+          "terms": [
+            {
+              "input": "source.意志",
+              "coefficient": 0.0001250000059371814,
+              "cap": 0.07999999821186066
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/arcane_link/rank_stats/脆弱效果/专精3",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0032_lizhiyan_combo_skill/spell_vul_per_will/rank=12",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0032_lizhiyan_combo_skill/max_spell_vul_will/rank=12",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0032_lizhiyan_combo_skill/duration_will/rank=12"
+        ],
+        "required_inputs": [
+          "source.意志"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "arclight",
+      "character": "弧光",
+      "unit": "荒野游人",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_0007_ikut_talent_1_2",
+        "key": "chr_0007_ikut_talent_1_2:damage_bonus",
+        "bucket": "damage_bonus",
+        "elements": [
+          "电磁"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "third_battle_extra_effect",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.0,
+          "terms": [
+            {
+              "input": "source.智识",
+              "coefficient": 0.0010399999355804185,
+              "cap": null
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0007_ikut/talentNodeMap/chr_0007_ikut_passive_skill_0_2/parameters/pulse_up",
+          "CharGrowthTable/chr_0007_ikut/talentNodeMap/chr_0007_ikut_passive_skill_0_2/parameters/duration",
+          "CharacterPotentialTable/chr_0007_ikut/potentialUnlockBundle/2/parameters/pulse_up"
+        ],
+        "required_inputs": [
+          "source.智识"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "ardelia",
+      "character": "艾尔黛拉",
+      "unit": "战技 / 奔腾的多利 / 腐蚀消耗双脆弱",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "腐蚀消耗双脆弱",
+        "key": "ardelia_skill:VULN_PHYSICAL",
+        "bucket": "vulnerability",
+        "elements": [
+          "物理"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "corrosion_consumed",
+        "duration": 30.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.2,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/ardelia_skill/rank_stats/脆弱效果/专精3",
+          "character_skills/ardelia_skill/rank_stats/脆弱持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "ardelia",
+      "character": "艾尔黛拉",
+      "unit": "战技 / 奔腾的多利 / 腐蚀消耗双脆弱",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "腐蚀消耗双脆弱",
+        "key": "ardelia_skill:VULN_ALL",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "corrosion_consumed",
+        "duration": 30.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.2,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/ardelia_skill/rank_stats/脆弱效果/专精3",
+          "character_skills/ardelia_skill/rank_stats/脆弱持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "avywenna",
+      "character": "艾维文娜",
+      "unit": "战技 / 雷枪·截回",
+      "origin": "selected_weapon_or_set",
+      "category": "first_release_candidate",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "weapon:105:压制·太空物理学:battle",
+        "bucket": "damage_bonus",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_cast",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.336,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "avywenna",
+      "character": "艾维文娜",
+      "unit": "连携技 / 雷枪·掣击",
+      "origin": "selected_weapon_or_set",
+      "category": "deferred_identified_combo",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "weapon:105:压制·太空物理学:link",
+        "bucket": "damage_bonus",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "combo_cast",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.336,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "avywenna",
+      "character": "艾维文娜",
+      "unit": "委婉手段",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_0012_avywen_talent_2_2",
+        "key": "chr_0012_avywen_talent_2_2:vulnerability",
+        "bucket": "vulnerability",
+        "elements": [
+          "电磁"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "ultimate_hit",
+        "duration": 10.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.10000000149011612,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0012_avywen/talentNodeMap/chr_0012_avywen_passive_skill_1_2/parameters/pulse_vul_rate",
+          "CharGrowthTable/chr_0012_avywen/talentNodeMap/chr_0012_avywen_passive_skill_1_2/parameters/pulse_vul_duration"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "camille",
+      "character": "卡缪",
+      "unit": "战技 / 驱火焚影",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "camille_skill:VULN_BURN",
+        "bucket": "vulnerability",
+        "elements": [
+          "灼热"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "blood_wing_attached",
+        "duration": 45.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.07,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/camille_skill/rank_stats/灼热脆弱效果/专精3",
+          "character_skills/camille_skill/rank_stats/衔火血翼持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "chen_qianyu",
+      "character": "陈千语",
+      "unit": "扶摇",
+      "origin": "selected_weapon_target",
+      "category": "conditional_current_target",
+      "rule": {
+        "origin": "reviewed_fixed_weapon_target_predicate",
+        "key": "weapon:72:夜幕·青云:enemy.staggered",
+        "bucket": "damage_bonus",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_start",
+        "duration": null,
+        "duration_input": null,
+        "permanent": true,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [
+          "enemy.staggered"
+        ],
+        "magnitude": {
+          "base": 0.98,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/扶摇/weapon_skills/0/ranks/Rank 9/夜幕·青云"
+        ],
+        "required_inputs": [
+          "enemy.staggered"
+        ],
+        "unresolved": null,
+        "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"
+      }
+    },
+    {
+      "character_key": "endministrator",
+      "character": "管理员",
+      "unit": "本质瓦解",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_9000_endmin_talent_1_2",
+        "key": "chr_9000_endmin_talent_1_2:attack",
+        "bucket": "attack",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "originium_crystal_consumed",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.30000001192092896,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/atk_up",
+          "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/duration"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "endministrator",
+      "character": "管理员",
+      "unit": "现实静滞",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_9000_endmin_talent_2_2",
+        "key": "chr_9000_endmin_talent_2_2:damage_taken",
+        "bucket": "damage_taken",
+        "elements": [
+          "物理"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "crystal_attached",
+        "duration": null,
+        "duration_input": null,
+        "permanent": true,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [
+          "enemy.has_crystal"
+        ],
+        "magnitude": {
+          "base": 0.20000000298023224,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_1_2/parameters/dmg"
+        ],
+        "required_inputs": [
+          "enemy.has_crystal"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "endministrator",
+      "character": "管理员",
+      "unit": "权能映射",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_9000_endmin_potential_2",
+        "key": "chr_9000_endmin_potential_2:attack",
+        "bucket": "attack",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "other_allies",
+        "trigger": "originium_crystal_consumed",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.15000000596046448,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/atk_up",
+          "CharacterPotentialTable/chr_9000_endmin/potentialUnlockBundle/1/parameters/ratio",
+          "CharGrowthTable/chr_9000_endmin/talentNodeMap/chr_9000_endmin_passive_skill_0_2/parameters/duration"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "estella",
+      "character": "埃特拉",
+      "unit": "战技 / 凝声",
+      "origin": "selected_weapon_or_set",
+      "category": "first_release_candidate",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "weapon:105:压制·太空物理学:battle",
+        "bucket": "damage_bonus",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_cast",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.336,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "estella",
+      "character": "埃特拉",
+      "unit": "连携技 / 失真 / 冻结状态额外伤害+物理脆弱",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "冻结状态额外伤害+物理脆弱",
+        "key": "estella_link:VULN_PHYSICAL",
+        "bucket": "vulnerability",
+        "elements": [
+          "物理"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "frozen_target_hit",
+        "duration": 9.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.15,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/estella_link/rank_stats/物理脆弱倍率/专精3",
+          "character_skills/estella_link/rank_stats/物理脆弱持续时间 / （秒）/专精3",
+          "CharacterPotentialTable/chr_0021_whiten/potentialUnlockBundle/0/parameters/rate_plus"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "estella",
+      "character": "埃特拉",
+      "unit": "连携技 / 失真",
+      "origin": "selected_weapon_or_set",
+      "category": "deferred_identified_combo",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "weapon:105:压制·太空物理学:link",
+        "bucket": "damage_bonus",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "combo_cast",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.336,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/J.E.T./weapon_skills/0/ranks/Rank 9/压制·太空物理学"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "fluorite",
+      "character": "萤石",
+      "unit": "落井下石爱好者",
+      "origin": "selected_passive",
+      "category": "conditional_current_target",
+      "rule": {
+        "origin": "chr_0022_bounda_talent_1_2",
+        "key": "chr_0022_bounda_talent_1_2:damage_bonus",
+        "bucket": "damage_bonus",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_start",
+        "duration": null,
+        "duration_input": null,
+        "permanent": true,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [
+          "enemy.slowed"
+        ],
+        "magnitude": {
+          "base": 0.20000000298023224,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_0_2/parameters/dmg_up"
+        ],
+        "required_inputs": [
+          "enemy.slowed"
+        ],
+        "unresolved": null,
+        "producer_status": "current_model_hit_target; no_proc_or_timed_trigger",
+        "native_condition_processor": "not_executed; canonical reviewed predicate only"
+      }
+    },
+    {
+      "character_key": "fluorite",
+      "character": "萤石",
+      "unit": "捉摸不定",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_0022_bounda_talent_2_2",
+        "key": "chr_0022_bounda_talent_2_2:attack",
+        "bucket": "attack",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "spell_damage_immunity_succeeded",
+        "duration": 10.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.20000000298023224,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_1_2/parameters/atk_up",
+          "CharGrowthTable/chr_0022_bounda/talentNodeMap/chr_0022_bounda_passive_skill_1_2/parameters/duration"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "gilberta",
+      "character": "洁尔佩塔",
+      "unit": "终结技 / 秘杖·重力场",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "gilberta_gravity:vulnerability",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "gravity_field_enter",
+        "duration": 5.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.3,
+          "terms": [
+            {
+              "input": "enemy.shred",
+              "coefficient": 0.03,
+              "cap": null
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/gilberta_ultimate/rank_stats/基础法术脆弱效果/专精3",
+          "character_skills/gilberta_ultimate/rank_stats/每层破防提升 / 法术脆弱/专精3",
+          "character_skills/gilberta_ultimate/rank_stats/力场持续时间（秒）/专精3"
+        ],
+        "required_inputs": [
+          "enemy.shred"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "gilberta",
+      "character": "洁尔佩塔",
+      "unit": "终结技 / 秘杖·重力场 / 破防→法术脆弱增强",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "破防→法术脆弱增强",
+        "key": "gilberta_gravity:vulnerability",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "gravity_field_enter",
+        "duration": 5.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.3,
+          "terms": [
+            {
+              "input": "enemy.shred",
+              "coefficient": 0.03,
+              "cap": null
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/gilberta_ultimate/rank_stats/基础法术脆弱效果/专精3",
+          "character_skills/gilberta_ultimate/rank_stats/每层破防提升 / 法术脆弱/专精3",
+          "character_skills/gilberta_ultimate/rank_stats/力场持续时间（秒）/专精3"
+        ],
+        "required_inputs": [
+          "enemy.shred"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "laevatain",
+      "character": "莱万汀",
+      "unit": "终结技 / 黄昏",
+      "origin": "selected_weapon_or_set",
+      "category": "first_release_candidate",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "weapon:70:夜幕·嘶鸣烈火:ult",
+        "bucket": "damage_bonus",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [
+          "normal"
+        ],
+        "recipient": "self",
+        "trigger": "ultimate_cast",
+        "duration": 20.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 2.1,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/熔铸火焰/weapon_skills/0/ranks/Rank 9/夜幕·嘶鸣烈火"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "last_rite",
+      "character": "别礼",
+      "unit": "战技 / 塞什卡的秘传 / 寒冷脆弱",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "寒冷脆弱",
+        "key": "last_rite_skill:VULN_COLD",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "spell_attachment_consumed",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.0,
+          "terms": [
+            {
+              "input": "consumed.spell_attachment",
+              "coefficient": 0.03999999910593033,
+              "cap": null
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0026_lastrite/talentNodeMap/chr_0026_lastrite_passive_skill_0_2/parameters/crystal_up",
+          "CharGrowthTable/chr_0026_lastrite/talentNodeMap/chr_0026_lastrite_passive_skill_0_2/parameters/duration"
+        ],
+        "required_inputs": [
+          "consumed.spell_attachment"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "lifeng",
+      "character": "黎风",
+      "unit": "战技 / 荡浊身 / 不破防时施加物理脆弱",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "不破防时施加物理脆弱",
+        "key": "lifeng_skill:VULN_PHYSICAL",
+        "bucket": "vulnerability",
+        "elements": [
+          "物理"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "final_hit_without_shred",
+        "duration": 12.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.12,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/lifeng_skill/rank_stats/物理脆弱效果/专精3",
+          "character_skills/lifeng_skill/rank_stats/物理脆弱持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "lifeng",
+      "character": "黎风",
+      "unit": "负山",
+      "origin": "selected_weapon_target",
+      "category": "conditional_current_target",
+      "rule": {
+        "origin": "reviewed_fixed_weapon_target_predicate",
+        "key": "weapon:103:效益·山川在我:enemy.shredded",
+        "bucket": "damage_bonus",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_start",
+        "duration": null,
+        "duration_input": null,
+        "permanent": true,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [
+          "enemy.shredded"
+        ],
+        "magnitude": {
+          "base": 0.56,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/负山/weapon_skills/0/ranks/Rank 9/效益·山川在我"
+        ],
+        "required_inputs": [
+          "enemy.shredded"
+        ],
+        "unresolved": null,
+        "producer_status": "current_actual_hit_target; no_proc_or_timed_trigger"
+      }
+    },
+    {
+      "character_key": "liino",
+      "character": "梨诺",
+      "unit": "战技 / 闪耀焦点",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "liino_skill:BUFF_ATTACK_UP",
+        "bucket": "attack",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "singing_aura_enter",
+        "duration": 60.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.1,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/liino_skill/rank_stats/攻击力提升/专精3",
+          "character_skills/liino_skill/rank_stats/演唱姿态持续时间 / （秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "liino",
+      "character": "梨诺",
+      "unit": "终结技 / 晨星的协奏曲",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "liino_ultimate:BUFF_ATTACK_UP",
+        "bucket": "attack",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "ultimate_aura_enter",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.1,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/liino_ultimate/rank_stats/攻击力提升/专精3",
+          "character_skills/liino_ultimate/rank_stats/高歌姿态持续时间 / （秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "liino",
+      "character": "梨诺",
+      "unit": "终结技 / 晨星的协奏曲",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "liino_ultimate:BUFF_ELECTROMAGNETIC_UP",
+        "bucket": "amplification",
+        "elements": [
+          "电磁"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "ultimate_aura_enter",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.0,
+          "terms": [
+            {
+              "input": "source.意志",
+              "coefficient": 0.0004,
+              "cap": 0.6
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/liino_ultimate/rank_stats/每点意志提升的 / 增幅效果/专精3",
+          "character_skills/liino_ultimate/rank_stats/意志提升的 / 增幅上限/专精3",
+          "character_skills/liino_ultimate/rank_stats/高歌姿态持续时间 / （秒）/专精3"
+        ],
+        "required_inputs": [
+          "source.意志"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "liino",
+      "character": "梨诺",
+      "unit": "终结技 / 晨星的协奏曲",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "liino_ultimate:BUFF_NATURAL_UP",
+        "bucket": "amplification",
+        "elements": [
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "ultimate_aura_enter",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.0,
+          "terms": [
+            {
+              "input": "source.意志",
+              "coefficient": 0.0004,
+              "cap": 0.6
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/liino_ultimate/rank_stats/每点意志提升的 / 增幅效果/专精3",
+          "character_skills/liino_ultimate/rank_stats/意志提升的 / 增幅上限/专精3",
+          "character_skills/liino_ultimate/rank_stats/高歌姿态持续时间 / （秒）/专精3"
+        ],
+        "required_inputs": [
+          "source.意志"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "mi_fu",
+      "character": "弭弗",
+      "unit": "连携技 / 拳出无悔 / 拳出无悔",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "拳出无悔",
+        "key": "mi_fu_link:VULN_PHYSICAL",
+        "bucket": "vulnerability",
+        "elements": [
+          "物理"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "combo_hit",
+        "duration": 16.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.05,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/mi_fu_link/rank_stats/物理脆弱效果/专精3",
+          "character_skills/mi_fu_link/rank_stats/物理脆弱持续时间（秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "perlica",
+      "character": "佩丽卡",
+      "unit": "连携技 / 即时协议·闪链",
+      "origin": "selected_weapon_or_set",
+      "category": "deferred_identified_combo",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "weapon:128:夜幕·耻辱:link",
+        "bucket": "damage_bonus",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "combo_cast",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.336,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/遗忘/weapon_skills/0/ranks/Rank 9/夜幕·耻辱"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "perlica",
+      "character": "佩丽卡",
+      "unit": "终结技 / 协议ε·70.41κ",
+      "origin": "selected_weapon_or_set",
+      "category": "first_release_candidate",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "weapon:128:夜幕·耻辱:ult",
+        "bucket": "damage_bonus",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "ultimate_cast",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.672,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/遗忘/weapon_skills/0/ranks/Rank 9/夜幕·耻辱"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "perlica",
+      "character": "佩丽卡",
+      "unit": "歼灭协议",
+      "origin": "selected_passive",
+      "category": "conditional_current_target",
+      "rule": {
+        "origin": "chr_0004_pelica_talent_1_2",
+        "key": "chr_0004_pelica_talent_1_2:damage_bonus",
+        "bucket": "damage_bonus",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_start",
+        "duration": null,
+        "duration_input": null,
+        "permanent": true,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [
+          "enemy.staggered"
+        ],
+        "magnitude": {
+          "base": 0.30000001192092896,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0004_pelica/talentNodeMap/chr_0004_pelica_passive_skill_0_2/parameters/dmg"
+        ],
+        "required_inputs": [
+          "enemy.staggered"
+        ],
+        "unresolved": null,
+        "producer_status": "current_model_hit_target; no_proc_or_timed_trigger",
+        "native_condition_processor": "not_executed; canonical reviewed predicate only"
+      }
+    },
+    {
+      "character_key": "pogranichnik",
+      "character": "骏卫",
+      "unit": "活着的旗帜",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_0029_pograni_talent_1_2",
+        "key": "chr_0029_pograni_talent_1_2:attack",
+        "bucket": "attack",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "own_skill_recovery_threshold_80",
+        "duration": 20.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 3,
+        "stack_policy": "independent",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.07999999821186066,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0029_pograni/talentNodeMap/chr_0029_pograni_passive_skill_0_2/parameters/atk_up",
+          "CharGrowthTable/chr_0029_pograni/talentNodeMap/chr_0029_pograni_passive_skill_0_2/parameters/duration"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "purrchena",
+      "character": "噗切娜",
+      "unit": "终结技 / 不许干坏事！",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "purrchena_ultimate:VULN_ALL",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "special_gift_hit",
+        "duration": 5.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.030000001192092896,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/purrchena_ultimate/rank_stats/脆弱效果/专精3",
+          "character_skills/purrchena_ultimate/rank_stats/脆弱持续时间（秒）/专精3",
+          "CharacterPotentialTable/chr_0038_purrche/potentialUnlockBundle/4/parameters/rate_vul"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "rossi",
+      "character": "洛茜",
+      "unit": "连携技 / 燎影时刻 / 第二段暴击增益",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "第二段暴击增益",
+        "key": "rossi_link:BUFF_CRIT_RATE_UP",
+        "bucket": "crit_rate",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "second_combo_hit",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.25,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/rossi_link/rank_stats/暴击率提升/专精3",
+          "character_skills/rossi_link/rank_stats/增益效果持续时间 / （秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "rossi",
+      "character": "洛茜",
+      "unit": "连携技 / 燎影时刻 / 第二段暴击增益",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "第二段暴击增益",
+        "key": "rossi_link:BUFF_CRIT_DMG_UP",
+        "bucket": "crit_damage",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "second_combo_hit",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.5,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/rossi_link/rank_stats/暴击伤害提升/专精3",
+          "character_skills/rossi_link/rank_stats/增益效果持续时间 / （秒）/专精3"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "rossi",
+      "character": "洛茜",
+      "unit": "斫痕",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_0028_wulfa_talent_1_2",
+        "key": "chr_0028_wulfa_talent_1_2:damage_taken",
+        "bucket": "damage_taken",
+        "elements": [
+          "物理",
+          "灼热"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "claw_mark_applied",
+        "duration": 25.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.11999999731779099,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0028_wulfa/talentNodeMap/chr_0028_wulfa_passive_skill_0_2/parameters/damage_up",
+          "CharGrowthTable/chr_0028_wulfa/talentNodeMap/chr_0028_wulfa_passive_skill_0_2/parameters/duration_bleed"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "tangtang",
+      "character": "汤汤",
+      "unit": "战技 / 踏潮卷浪！ / 消耗涡流形成额外水龙卷",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "消耗涡流形成额外水龙卷",
+        "key": "tangtang_skill:VULN_ALL",
+        "bucket": "vulnerability",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "whirlpool_consumed",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.0,
+          "terms": [],
+          "by_count": [
+            [
+              0,
+              0.0
+            ],
+            [
+              1,
+              0.05
+            ],
+            [
+              2,
+              0.1
+            ]
+          ],
+          "count_input": "consumed.whirlpool",
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/tangtang_skill/rank_stats/两个水龙卷 / 法术脆弱/专精3",
+          "character_skills/tangtang_skill/rank_stats/三个水龙卷 / 法术脆弱/专精3",
+          "character_skills/tangtang_skill/rank_stats/法术脆弱持续时间 / （秒）/专精3"
+        ],
+        "required_inputs": [
+          "consumed.whirlpool"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "tangtang",
+      "character": "汤汤",
+      "unit": "连携技 / 河水，助我！",
+      "origin": "selected_weapon_or_set",
+      "category": "deferred_identified_combo",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "set:清波:release_damage",
+        "bucket": "damage_bonus",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [
+          "normal",
+          "skill",
+          "combo",
+          "ultimate"
+        ],
+        "recipient": "self",
+        "trigger": "combo_cast",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 2,
+        "stack_policy": "independent",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.2,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "equipments/清波重甲/set_effect"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "typhoeus",
+      "character": "提弗洛斯",
+      "unit": "连携技 / 野棘丛生",
+      "origin": "skill",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "base",
+        "key": "typhoeus_link:VULN_NATURAL_BURST",
+        "bucket": "damage_taken",
+        "elements": [
+          "自然"
+        ],
+        "damage_tags": [
+          "natural_burst"
+        ],
+        "recipient": "enemy",
+        "trigger": "arrow_field_enter",
+        "duration": 6.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "field",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.1,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/typhoeus_link/rank_stats/自然爆发伤害提高/专精3",
+          "skill_timings/2026-10-02/SkillPatchTable/chr_0034_typhoea_combo_skill/persistent_time/rank=12"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "wulfgard",
+      "character": "狼卫",
+      "unit": "连携技 / 爆裂手雷·β型",
+      "origin": "selected_weapon_or_set",
+      "category": "deferred_identified_combo",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "set:清波:release_damage",
+        "bucket": "damage_bonus",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [
+          "normal",
+          "skill",
+          "combo",
+          "ultimate"
+        ],
+        "recipient": "self",
+        "trigger": "combo_cast",
+        "duration": 15.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 2,
+        "stack_policy": "independent",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.2,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "equipments/清波重甲/set_effect"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "wulfgard",
+      "character": "狼卫",
+      "unit": "灼热獠牙",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_0006_wolfgd_talent_1_2",
+        "key": "chr_0006_wolfgd_talent_1_2:damage_bonus",
+        "bucket": "damage_bonus",
+        "elements": [
+          "灼热"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "burning_applied",
+        "duration": 10.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.30000001192092896,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0006_wolfgd/talentNodeMap/chr_0006_wolfgd_passive_skill_0_2/parameters/add",
+          "CharGrowthTable/chr_0006_wolfgd/talentNodeMap/chr_0006_wolfgd_passive_skill_0_2/parameters/duration"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "xaihi",
+      "character": "赛希",
+      "unit": "战技 / 分布式拒绝服务 / 满血转法术增幅",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "满血转法术增幅",
+        "key": "xaihi_skill:BUFF_SPELL_UP",
+        "bucket": "amplification",
+        "elements": [
+          "寒冷",
+          "灼热",
+          "电磁",
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "main_control",
+        "trigger": "crystal_full_hp_heal",
+        "duration": 25.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.20000000074505805,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/xaihi_skill/rank_stats/法术增幅效果/专精3",
+          "character_skills/xaihi_skill/rank_stats/法术增幅持续时间 / （秒）/专精3",
+          "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/0/parameters/atk_up"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "xaihi",
+      "character": "赛希",
+      "unit": "终结技 / 栈溢出",
+      "origin": "skill",
+      "category": "deferred_attribute_input",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "xaihi_ultimate:BUFF_COLD_UP",
+        "bucket": "amplification",
+        "elements": [
+          "寒冷"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "ultimate_cast",
+        "duration": 12.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.2640000057220459,
+          "terms": [
+            {
+              "input": "source.native.final_nonconverted.41",
+              "coefficient": 0.00033000000715255735,
+              "cap": 0.39600000858306883
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/xaihi_ultimate/rank_stats/基础寒冷增幅效果/专精3",
+          "character_skills/xaihi_ultimate/rank_stats/每点智识提升的 / 增幅效果/专精3",
+          "character_skills/xaihi_ultimate/rank_stats/智识提升增幅上限/专精3",
+          "character_skills/xaihi_ultimate/rank_stats/持续时间（秒）/专精3",
+          "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4/parameters/atk_up"
+        ],
+        "required_inputs": [
+          "source.native.final_nonconverted.41"
+        ],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "xaihi",
+      "character": "赛希",
+      "unit": "终结技 / 栈溢出",
+      "origin": "skill",
+      "category": "deferred_attribute_input",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "xaihi_ultimate:BUFF_NATURAL_UP",
+        "bucket": "amplification",
+        "elements": [
+          "自然"
+        ],
+        "damage_tags": [],
+        "recipient": "team",
+        "trigger": "ultimate_cast",
+        "duration": 12.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.2640000057220459,
+          "terms": [
+            {
+              "input": "source.native.final_nonconverted.41",
+              "coefficient": 0.00033000000715255735,
+              "cap": 0.39600000858306883
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/xaihi_ultimate/rank_stats/基础自然增幅效果/专精3",
+          "character_skills/xaihi_ultimate/rank_stats/每点智识提升的 / 增幅效果/专精3",
+          "character_skills/xaihi_ultimate/rank_stats/智识提升增幅上限/专精3",
+          "character_skills/xaihi_ultimate/rank_stats/持续时间（秒）/专精3",
+          "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/4/parameters/atk_up"
+        ],
+        "required_inputs": [
+          "source.native.final_nonconverted.41"
+        ],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "xaihi",
+      "character": "赛希",
+      "unit": "启动进程",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_0011_seraph_talent_1_2",
+        "key": "chr_0011_seraph_talent_1_2:damage_taken",
+        "bucket": "damage_taken",
+        "elements": [
+          "寒冷"
+        ],
+        "damage_tags": [],
+        "recipient": "enemy",
+        "trigger": "combo_hit_cold_attached_or_frozen",
+        "duration": 5.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.10000000149011612,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0011_seraph/talentNodeMap/chr_0011_seraph_passive_skill_0_2/parameters/cryst_up",
+          "CharGrowthTable/chr_0011_seraph/talentNodeMap/chr_0011_seraph_passive_skill_0_2/parameters/duration"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "yvonne",
+      "character": "伊冯",
+      "unit": "终结技 / 冷冻射手 / 强化普攻累积暴击层数",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "强化普攻累积暴击层数",
+        "key": "yvonne_ultimate:BUFF_CRIT_RATE_UP",
+        "bucket": "crit_rate",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "enhanced_normal_crit_stack_changed",
+        "duration": null,
+        "duration_input": "ultimate.remaining",
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.0,
+          "terms": [
+            {
+              "input": "source.crit_stacks",
+              "coefficient": 0.03,
+              "cap": 0.3
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/yvonne_ultimate/rank_stats/每层暴击率增加/专精3"
+        ],
+        "required_inputs": [
+          "source.crit_stacks",
+          "ultimate.remaining"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "yvonne",
+      "character": "伊冯",
+      "unit": "终结技 / 冷冻射手 / 满层暴击伤害",
+      "origin": "skill_branch",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "满层暴击伤害",
+        "key": "yvonne_ultimate:BUFF_CRIT_DMG_UP",
+        "bucket": "crit_damage",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "crit_stacks_reached_10",
+        "duration": null,
+        "duration_input": "ultimate.remaining",
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.6,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "character_skills/yvonne_ultimate/rank_stats/满层暴击伤害增加/专精3"
+        ],
+        "required_inputs": [
+          "ultimate.remaining"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    },
+    {
+      "character_key": "yvonne",
+      "character": "伊冯",
+      "unit": "冰点",
+      "origin": "selected_passive",
+      "category": "conditional_current_target",
+      "rule": {
+        "origin": "chr_0017_yvonne_talent_2_2",
+        "key": "chr_0017_yvonne_talent_2_2:crit_damage:cold",
+        "bucket": "crit_damage",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_start",
+        "duration": null,
+        "duration_input": null,
+        "permanent": true,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [
+          "enemy.cold_attached",
+          "enemy.not_frozen"
+        ],
+        "magnitude": {
+          "base": 0.20000000298023224,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0017_yvonne/talentNodeMap/chr_0017_yvonne_passive_skill_1_2/parameters/inflict_up"
+        ],
+        "required_inputs": [
+          "enemy.cold_attached",
+          "enemy.not_frozen"
+        ],
+        "unresolved": null,
+        "producer_status": "current_model_hit_target; no_proc_or_timed_trigger",
+        "native_condition_processor": "not_executed; canonical reviewed predicate only"
+      }
+    },
+    {
+      "character_key": "yvonne",
+      "character": "伊冯",
+      "unit": "冰点",
+      "origin": "selected_passive",
+      "category": "conditional_current_target",
+      "rule": {
+        "origin": "chr_0017_yvonne_talent_2_2",
+        "key": "chr_0017_yvonne_talent_2_2:crit_damage:frozen",
+        "bucket": "crit_damage",
+        "elements": [
+          "all"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_start",
+        "duration": null,
+        "duration_input": null,
+        "permanent": true,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [
+          "enemy.frozen"
+        ],
+        "magnitude": {
+          "base": 0.4000000059604645,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0017_yvonne/talentNodeMap/chr_0017_yvonne_passive_skill_1_2/parameters/status_up"
+        ],
+        "required_inputs": [
+          "enemy.frozen"
+        ],
+        "unresolved": null,
+        "producer_status": "current_model_hit_target; no_proc_or_timed_trigger",
+        "native_condition_processor": "not_executed; canonical reviewed predicate only"
+      }
+    },
+    {
+      "character_key": "zhuang_fangyi",
+      "character": "庄方宜",
+      "unit": "终结技 / 万钧风雷",
+      "origin": "selected_weapon_or_set",
+      "category": "first_release_candidate",
+      "rule": {
+        "origin": "reviewed_release",
+        "key": "weapon:1382:压制·流霆:ult",
+        "bucket": "damage_bonus",
+        "elements": [
+          "电磁"
+        ],
+        "damage_tags": [
+          "skill"
+        ],
+        "recipient": "self",
+        "trigger": "ultimate_cast",
+        "duration": 25.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "application",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 1.1200000047683716,
+          "terms": [],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "linear"
+        },
+        "sources": [
+          "weapons/孤舟/weapon_skills/0/ranks/Rank 9/压制·流霆",
+          "equipment_mechanics/20261008/guzhou.json/selected_rank_patch",
+          "equipment_mechanics/20261008/guzhou.json/records/sk_wpn_funnel_0015/OnBeforeCastSkill",
+          "equipment_mechanics/20261008/guzhou.json/records/buff_wpn_funnel_0015_ultimate"
+        ],
+        "required_inputs": [],
+        "unresolved": null,
+        "producer_status": "successful_model_release; native_frame_not_verified"
+      }
+    },
+    {
+      "character_key": "zhuang_fangyi",
+      "character": "庄方宜",
+      "unit": "天地造化",
+      "origin": "selected_passive",
+      "category": "deferred_producer",
+      "rule": {
+        "origin": "chr_0030_zhuangfy_talent_1_2",
+        "key": "chr_0030_zhuangfy_talent_1_2:amplification",
+        "bucket": "amplification",
+        "elements": [
+          "电磁"
+        ],
+        "damage_tags": [],
+        "recipient": "self",
+        "trigger": "battle_cast",
+        "duration": 5.0,
+        "duration_input": null,
+        "permanent": false,
+        "lifetime_scope": "timed",
+        "evaluation": "hit",
+        "max_stacks": 1,
+        "stack_policy": "replace",
+        "condition_inputs": [],
+        "magnitude": {
+          "base": 0.18000000715255737,
+          "terms": [
+            {
+              "input": "source.zhuangfy_talent1_marks",
+              "coefficient": 0.019999999552965164,
+              "cap": null
+            }
+          ],
+          "by_count": [],
+          "count_input": null,
+          "accumulation": "native_float32_repeated_add"
+        },
+        "sources": [
+          "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2/parameters/base_rate",
+          "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2/parameters/enhance_rate",
+          "CharGrowthTable/chr_0030_zhuangfy/talentNodeMap/chr_0030_zhuangfy_passive_skill_0_2/parameters/duration"
+        ],
+        "required_inputs": [
+          "source.zhuangfy_talent1_marks"
+        ],
+        "unresolved": null,
+        "producer_status": "not_verified_by_this_audit"
+      }
+    }
+  ],
+  "additional_native_evidence": [
+    {
+      "character": "艾维文娜",
+      "kind": "native_next_skill_set_candidates",
+      "source_pointer": "/characters/6/native_next_skill_set_candidates/0",
+      "candidate": {
+        "set": "碾骨",
+        "selected_piece_ids": [
+          "item_equip_t4_suit_attri01_body_04",
+          "item_equip_t4_suit_attri01_hand_02",
+          "item_equip_t4_suit_attri01_edc_03",
+          "item_equip_t4_suit_attri01_edc_03"
+        ],
+        "activated_by_selected_build": true,
+        "selected_parameters": {
+          "atk_up": 0.15000000596046448,
+          "dmg_up": 0.30000001192092896,
+          "max_stack": 2.0
+        },
+        "producer_skill": "passive_equipsuit_attrisuit_01",
+        "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "selected set parent and event source/owner binding",
+          "pending stack snapshot, float32 multiply, ordered consume-all",
+          "CheckSkillCastId and actual hit decoration/source context",
+          "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+        ]
+      }
+    },
+    {
+      "character": "陈千语",
+      "kind": "native_enhanced_attack_candidates",
+      "source_pointer": "/characters/9/native_enhanced_attack_candidates/0",
+      "candidate": {
+        "passive_id": "chr_0005_chen_talent_1_2",
+        "parent_buff": "buff_chr_0005_chen_talent_0",
+        "attribute_buff": "buff_chr_0005_chen_talent_0_1",
+        "selected_parameters": {
+          "atk": 0.07999999821186066,
+          "duration": 10.0,
+          "max_stack": 5.0
+        },
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "event context publication and trigger ordering",
+          "EnhanceAndRefresh aggregate count, attribute rebuild and notifications",
+          "parent/early-removal chain under actual producer"
+        ]
+      }
+    },
+    {
+      "character": "大潘",
+      "kind": "native_next_skill_set_candidates",
+      "source_pointer": "/characters/10/native_next_skill_set_candidates/0",
+      "candidate": {
+        "set": "50式应龙",
+        "selected_piece_ids": [
+          "item_equip_t4_suit_atk02_body_01",
+          "item_equip_t4_suit_atk02_edc_01",
+          "item_equip_t4_suit_atk02_edc_01"
+        ],
+        "activated_by_selected_build": true,
+        "selected_parameters": {
+          "atk_up": 0.15000000596046448,
+          "dmg_up": 0.20000000298023224,
+          "max_stack": 3.0
+        },
+        "producer_skill": "passive_equipsuit_atk_02",
+        "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "selected set parent and event source/owner binding",
+          "pending stack snapshot, float32 multiply, ordered consume-all",
+          "CheckSkillCastId and actual hit decoration/source context",
+          "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+        ]
+      }
+    },
+    {
+      "character": "萤石",
+      "kind": "native_next_skill_set_candidates",
+      "source_pointer": "/characters/14/native_next_skill_set_candidates/0",
+      "candidate": {
+        "set": "50式应龙",
+        "selected_piece_ids": [
+          "item_equip_t4_suit_atk02_body_02",
+          "item_equip_t4_suit_atk02_hand_01",
+          "item_equip_t4_suit_atk02_edc_03"
+        ],
+        "activated_by_selected_build": true,
+        "selected_parameters": {
+          "atk_up": 0.15000000596046448,
+          "dmg_up": 0.20000000298023224,
+          "max_stack": 3.0
+        },
+        "producer_skill": "passive_equipsuit_atk_02",
+        "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "selected set parent and event source/owner binding",
+          "pending stack snapshot, float32 multiply, ordered consume-all",
+          "CheckSkillCastId and actual hit decoration/source context",
+          "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+        ]
+      }
+    },
+    {
+      "character": "黎风",
+      "kind": "native_weapon_attribute_candidates",
+      "source_pointer": "/characters/18/dynamic_attribute_flow/native_weapon_attribute_candidates/0",
+      "candidate": {
+        "weapon_id": "wpn_lance_0012",
+        "producer_skill": "sk_wpn_lance_0012",
+        "attribute_buff": "buff_wpn_lance_0012_attribute2",
+        "selected_rank": 9,
+        "selected_parameters": {
+          "dmg_up": 0.5600000023841858,
+          "all_attr_up": 0.2240000069141388,
+          "all_attr_up2": 0.2240000069141388,
+          "duration": 15.0,
+          "cd": 0.1
+        },
+        "source": "assets/data/equipment_mechanics/20261008/burden.json",
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "OnBeforeOutputBuff context, ownership and exact trigger ordering",
+          "origin skill cast/source and independent cooldown markers",
+          "non-converted BaseMultiplier components; never multiply final panel blindly",
+          "Refresh callbacks, max_stack BB input and parent cleanup",
+          "Lifeng converted attack refresh under four-stat changes"
+        ]
+      }
+    },
+    {
+      "character": "黎风",
+      "kind": "native_weapon_attribute_candidates",
+      "source_pointer": "/characters/18/dynamic_attribute_flow/native_weapon_attribute_candidates/1",
+      "candidate": {
+        "weapon_id": "wpn_lance_0012",
+        "producer_skill": "sk_wpn_lance_0012",
+        "attribute_buff": "buff_wpn_lance_0012_attribute",
+        "selected_rank": 9,
+        "selected_parameters": {
+          "dmg_up": 0.5600000023841858,
+          "all_attr_up": 0.2240000069141388,
+          "all_attr_up2": 0.2240000069141388,
+          "duration": 15.0,
+          "cd": 0.1
+        },
+        "source": "assets/data/equipment_mechanics/20261008/burden.json",
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "OnBeforeOutputBuff context, ownership and exact trigger ordering",
+          "origin skill cast/source and independent cooldown markers",
+          "non-converted BaseMultiplier components; never multiply final panel blindly",
+          "Refresh callbacks, max_stack BB input and parent cleanup",
+          "Lifeng converted attack refresh under four-stat changes"
+        ]
+      }
+    },
+    {
+      "character": "佩丽卡",
+      "kind": "native_enhanced_attack_candidates",
+      "source_pointer": "/characters/21/native_enhanced_attack_candidates/0",
+      "candidate": {
+        "passive_id": "chr_0004_pelica_potential_3",
+        "parent_buff": "buff_chr_0004_pelica_potential_3",
+        "attribute_buff": "buff_chr_0004_pelica_potential_3_atkup",
+        "selected_parameters": {
+          "atk_duration": 5.0,
+          "atk_up": 0.20000000298023224,
+          "max_stack": 2.0
+        },
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "event context publication and trigger ordering",
+          "EnhanceAndRefresh aggregate count, attribute rebuild and notifications",
+          "parent/early-removal chain under actual producer"
+        ]
+      }
+    },
+    {
+      "character": "庄方宜",
+      "kind": "native_marker_release_candidates",
+      "source_pointer": "/characters/31/native_marker_release_candidates/0",
+      "candidate": {
+        "passive_id": "chr_0030_zhuangfy_talent_1_2",
+        "producer_skill": "chr_0030_zhuangfy_talent1",
+        "source": "assets/data/character_mechanics/20261008/zhuangfy_release.json.gz",
+        "selected_parameters": {
+          "base_rate": 0.18000000715255737,
+          "duration": 5.0,
+          "enhance_rate": 0.019999999552965164
+        },
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "squad-in-fight or actual smart_target gate and native marker frames",
+          "AddBuff context publication, existing-instance and reentrant event ordering",
+          "EnhancedAction template/child execution, dynamic rate propagation and parent cleanup",
+          "area tick index, actual SwordNum, Jump and marker count; not inferred from damage hits"
+        ]
+      }
+    }
+  ],
+  "inactive_selected_sets": [
+    {
+      "character": "艾尔黛拉",
+      "kind": "native_next_skill_set_candidates",
+      "source_pointer": "/characters/5/native_next_skill_set_candidates/0",
+      "candidate": {
+        "set": "碾骨",
+        "selected_piece_ids": [
+          "item_equip_t4_suit_attri01_body_04"
+        ],
+        "activated_by_selected_build": false,
+        "selected_parameters": {
+          "atk_up": 0.15000000596046448,
+          "dmg_up": 0.30000001192092896,
+          "max_stack": 2.0
+        },
+        "producer_skill": "passive_equipsuit_attrisuit_01",
+        "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "selected set parent and event source/owner binding",
+          "pending stack snapshot, float32 multiply, ordered consume-all",
+          "CheckSkillCastId and actual hit decoration/source context",
+          "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+        ]
+      }
+    },
+    {
+      "character": "别礼",
+      "kind": "native_next_skill_set_candidates",
+      "source_pointer": "/characters/17/native_next_skill_set_candidates/0",
+      "candidate": {
+        "set": "碾骨",
+        "selected_piece_ids": [
+          "item_equip_t4_suit_attri01_body_03"
+        ],
+        "activated_by_selected_build": false,
+        "selected_parameters": {
+          "atk_up": 0.15000000596046448,
+          "dmg_up": 0.30000001192092896,
+          "max_stack": 2.0
+        },
+        "producer_skill": "passive_equipsuit_attrisuit_01",
+        "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "selected set parent and event source/owner binding",
+          "pending stack snapshot, float32 multiply, ordered consume-all",
+          "CheckSkillCastId and actual hit decoration/source context",
+          "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+        ]
+      }
+    },
+    {
+      "character": "昼雪",
+      "kind": "native_next_skill_set_candidates",
+      "source_pointer": "/characters/25/native_next_skill_set_candidates/0",
+      "candidate": {
+        "set": "碾骨",
+        "selected_piece_ids": [
+          "item_equip_t4_suit_attri01_body_04"
+        ],
+        "activated_by_selected_build": false,
+        "selected_parameters": {
+          "atk_up": 0.15000000596046448,
+          "dmg_up": 0.30000001192092896,
+          "max_stack": 2.0
+        },
+        "producer_skill": "passive_equipsuit_attrisuit_01",
+        "source": "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+        "execution_status": "not_bound; evidence_candidate_only",
+        "unexecuted_components": [
+          "selected set parent and event source/owner binding",
+          "pending stack snapshot, float32 multiply, ordered consume-all",
+          "CheckSkillCastId and actual hit decoration/source context",
+          "SkillAffix projectile/entity/buff reference tracking and early cleanup"
+        ]
+      }
+    }
+  ]
+}
