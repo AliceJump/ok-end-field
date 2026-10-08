@@ -1,5 +1,7 @@
 # 加成接入名单（2026-10-08）
 
+> 最新用户已授权实际接入“释放后确定产生”的增益。下面保留统计阶段的原始边界，当前执行结果以[release-burst-integration.md](release-burst-integration.md)为准：7角色8条规则已经进入TimedCombatLogic实际爆发决策；原统计JSON仍是来源审计快照，不作为运行时数据源。
+
 本次只统计，不接master、编排或识别端。按用户最新口径，以“终结技开启团队增伤窗口，再集中输出”的团队爆发为重点：全队伤害提升、属性增幅、攻击提升，以及让队友输出受益的敌方脆弱/易伤均纳入；自身伤害/暴击加成单列输出角色窗口。战技释放加成因占用公共技力，先往后放。终结技仍有自身能量和动画成本；窗口内后续战技仍消耗公共技力。
 
 口径为现有逐角色/技能审计及已批准的模型合同；“首批候选”表示可准备接入确认动作与结算入口，不表示原生完整producer或实战验证已完成。机器明细见[buff-integration-inventory.json](buff-integration-inventory.json)，可用`scripts/skill-data/inventory_damage_bonus_bindings.py --out docs/dev/buff-integration-inventory.json`重生成。首批为4位角色的5条规则；另有7位角色的终结相关效果待补输入/生产链，详细边界见下表，不要求整个机制模拟先完成。
