@@ -1,0 +1,731 @@
+"""Release gains reach actual scheduler dispatch without the research simulator."""
+
+import hashlib
+import importlib.util
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from src.data.combat_observation import ActionBlockReason
+from src.data.release_burst_planner import SNAPSHOT, ReleaseBurstAction, ReleaseBurstPlanner, read_snapshot
+from src.data.skill_timing import load_skill_timings
+from src.data.team_phase_planner import BurstAction, CombatPhase, make_burst_plan
+from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
+from tests.TestSkillTiming import FakeTask
+
+
+class TestReleaseBurstPlanner(unittest.TestCase):
+    def test_export_scope_and_selected_builds(self):
+        rows = read_snapshot()
+        self.assertEqual(len(rows), 32)
+        self.assertEqual(sum(len(r["rules"]) for r in rows.values()), 13)
+        self.assertEqual(len([r for r in rows.values() if r["rules"]]), 9)
+        self.assertEqual(rows["管理员"]["profile"]["potential"], 3)
+        self.assertEqual(rows["余烬"]["profile"]["character_level"], 80)
+        self.assertEqual(rows["余烬"]["profile"]["skill_rank"], 9)
+        for name in ("洁尔佩塔", "噗切娜", "伊冯"):
+            self.assertFalse(rows[name]["rules"])
+        for row in rows.values():
+            self.assertNotIn("link", row["quotes"])
+
+    def test_changed_snapshot_fails_hash_validation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "index.json").write_bytes((SNAPSHOT / "index.json").read_bytes())
+            (path / "support-evidence.json").write_bytes((SNAPSHOT / "support-evidence.json").read_bytes())
+            (path / "snapshot.json").write_bytes((SNAPSHOT / "snapshot.json").read_bytes() + b" ")
+            with self.assertRaisesRegex(ValueError, "hash mismatch"):
+                read_snapshot(path)
+
+    def test_unknown_input_rule_is_rejected_even_with_matching_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            data = json.loads((SNAPSHOT / "snapshot.json").read_text(encoding="utf8"))
+            rule = next(r["rules"][0] for r in data["actors"] if r["rules"])
+            rule["magnitude"]["terms"] = [{"input": "unknown", "coefficient": 1}]
+            payload = json.dumps(data).encode()
+            manifest = json.loads((SNAPSHOT / "index.json").read_text(encoding="utf8"))
+            manifest["snapshot_sha256"] = hashlib.sha256(payload).hexdigest()
+            (path / "snapshot.json").write_bytes(payload)
+            (path / "support-evidence.json").write_bytes((SNAPSHOT / "support-evidence.json").read_bytes())
+            (path / "index.json").write_text(json.dumps(manifest), encoding="utf8")
+            with self.assertRaisesRegex(ValueError, "Unconfirmed"):
+                read_snapshot(path)
+
+    def test_zero_direct_support_precedes_carry_and_prediction_is_isolated(self):
+        planner = ReleaseBurstPlanner(["安塔尔", "狼卫"])
+        actions = (ReleaseBurstAction("1", "ult", 1, 0), ReleaseBurstAction("2", "ult", 1, 1000),
+                   ReleaseBurstAction("2", "battle", 1, 1000, 100, 100))
+        chosen = planner.choose(actions, 100, 0)
+        self.assertEqual((chosen.action.slot, chosen.action.kind), ("1", "ult"))
+        self.assertAlmostEqual(chosen.damage, 2000 * (1 + .22000000476837158))
+        self.assertAlmostEqual(chosen.gain, 2000 * .22000000476837158)
+        self.assertFalse(planner.bonuses)
+
+    def test_wrong_element_budget_and_expired_window_do_not_promote_support(self):
+        planner = ReleaseBurstPlanner(["安塔尔", "陈千语"])
+        actions = (ReleaseBurstAction("1", "ult", 1, 0), ReleaseBurstAction("2", "battle", 1, 1000, 100, 100))
+        self.assertIsNone(planner.choose(actions, 100, 0))
+        planner = ReleaseBurstPlanner(["安塔尔", "狼卫"])
+        self.assertIsNone(planner.choose(actions, 99, 0))
+        late = (actions[0], ReleaseBurstAction("2", "battle", 12, 1000, 100, 100))
+        self.assertIsNone(planner.choose(late, 100, 0, horizon=20))
+
+    def test_source_refresh_duplicates_expiry_and_personal_filters(self):
+        planner = ReleaseBurstPlanner(["佩丽卡", "狼卫"])
+        before = planner.price("1", "battle", 0)
+        ally = planner.price("2", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(len(planner.bonuses), 1)
+        self.assertGreater(planner.price("1", "battle", 1), before)
+        self.assertEqual(planner.price("2", "battle", 1), ally)
+        planner.confirm("1", "ult", 10)
+        self.assertEqual(len(planner.bonuses), 1)
+        self.assertGreater(planner.price("1", "battle", 15), before)
+        self.assertEqual(planner.price("1", "battle", 25), before)
+        zhuang = ReleaseBurstPlanner(["庄方宜"])
+        ult, battle = zhuang.price("1", "ult", 0), zhuang.price("1", "battle", 0)
+        zhuang.confirm("1", "ult", 0)
+        self.assertEqual(zhuang.price("1", "ult", 1), ult)
+        self.assertGreater(zhuang.price("1", "battle", 1), battle)
+
+    def test_normal_only_bonus_changes_choice_without_leaking_to_battle(self):
+        planner = ReleaseBurstPlanner(["莱万汀"])
+        ult, normal = ReleaseBurstAction("1", "ult", 1, 1000), ReleaseBurstAction("1", "normal", 3, 1000)
+        self.assertIsNone(planner.choose((ult,), 100, 0))
+        self.assertEqual(planner.choose((ult, normal), 100, 0).action.kind, "ult")
+        before = planner.price("1", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(planner.price("1", "battle", 1), before)
+
+    def test_fixed_equipment_bonus_is_not_counted_twice_in_dynamic_ratio(self):
+        planner = ReleaseBurstPlanner(["艾维文娜"])
+        quote = planner.quote("1", "battle")
+        before = planner.price("1", "battle", 0)
+        self.assertAlmostEqual(quote["bonus_pct"], 174.1)
+        planner.confirm("1", "battle", 0)
+        self.assertAlmostEqual(planner.price("1", "battle", 1) / before,
+                               1 + .336 / (1 + 174.1 / 100))
+
+    def test_attack_window_uses_white_attack_and_source_action_cleanup(self):
+        planner = ReleaseBurstPlanner(["秋栗", "狼卫"])
+        panel = planner.rows["2"]["panel"]
+        before = planner.price("2", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        expected = 1 + panel["attack_white"] * .1 / (panel["attack_white"] * (1 + panel["attack_percent"]) + panel["attack_flat"])
+        self.assertAlmostEqual(planner.price("2", "battle", 1) / before, expected, places=7)
+        self.assertEqual(planner.price("2", "battle", 5), before)
+        planner.confirm("1", "ult", 10)
+        planner.confirm("2", "battle", 11)
+        self.assertGreater(planner.price("2", "battle", 11), before)
+        planner.confirm("1", "battle", 12)
+        self.assertEqual(planner.price("2", "battle", 12), before)
+
+    def test_late_portrait_preserves_the_accepted_team_window(self):
+        previous = ReleaseBurstPlanner(["安塔尔", "?"])
+        previous.confirm("1", "ult", 0)
+        planner = ReleaseBurstPlanner(["安塔尔", "狼卫"])
+        planner.preserve(previous)
+        base = planner.quote("2", "battle")["crit_expect"]
+        self.assertAlmostEqual(planner.price("2", "battle", 1) / base, 1.22, places=5)
+        self.assertEqual(planner.price("2", "battle", 12), base)
+
+    def test_same_actor_lock_does_not_delay_team_beneficiaries(self):
+        planner = ReleaseBurstPlanner(["佩丽卡"])
+        actions = (ReleaseBurstAction("1", "ult", 1, 100, same_actor_duration=20),
+                   ReleaseBurstAction("1", "battle", 1, 1000, 100, 100))
+        self.assertEqual(planner.choose(actions, 100, 0, horizon=25).sequence, (("1", "battle"), ("1", "ult")))
+        planner = ReleaseBurstPlanner(["安塔尔", "狼卫"])
+        actions = (ReleaseBurstAction("1", "ult", 1, 0, same_actor_duration=20),
+                   ReleaseBurstAction("2", "battle", 1, 1000, 100, 100))
+        self.assertEqual(planner.choose(actions, 100, 0).action.slot, "1")
+
+    def test_refund_cap_cannot_invent_an_affordable_beneficiary(self):
+        planner = ReleaseBurstPlanner(["安塔尔", "狼卫"])
+        actions = (ReleaseBurstAction("1", "ult", 1, 0, sp_cost=-100),
+                   ReleaseBurstAction("2", "battle", 1, 1000, 350, 100))
+        self.assertIsNone(planner.choose(actions, 300, 0))
+
+    def test_support_strength_uses_rank_potential_and_unrounded_fixed_attribute(self):
+        rows = read_snapshot()
+        xai = rows["赛希"]["rules"][0]
+        liino = next(r for r in rows["梨诺"]["rules"] if r["bucket"] == "amplification")
+        evidence = {r["character"]: r for r in json.loads((SNAPSHOT / "support-evidence.json").read_text(encoding="utf8"))}
+        self.assertEqual(evidence["赛希"]["input_domain"], "source.native.final_nonconverted.41")
+        self.assertEqual(evidence["梨诺"]["input_domain"], "source.native.final_nonconverted.42")
+        self.assertEqual(evidence["赛希"]["input_value"], 366)
+        self.assertEqual(evidence["梨诺"]["input_value"], 890.838)
+        self.assertAlmostEqual(xai["magnitude"]["base"], (.24 + .0003 * 366) * 1.1, places=7)
+        self.assertAlmostEqual(liino["magnitude"]["base"], .0004 * 890.838, places=7)
+        for name, block in evidence.items():
+            native = load_skill_timings().record(block["skill"])
+            self.assertEqual(native["source"]["sha256"], block["native_record_sha256"][block["skill"]])
+            self.assertIn("without_dynamic_four_stats", block["input_policy"])
+            self.assertEqual(block["profile"]["potential"], 5 if name == "赛希" else 0)
+
+    def test_xaihi_release_delay_element_filter_and_full_duration(self):
+        planner = ReleaseBurstPlanner(["赛希", "伊冯", "佩丽卡"])
+        before = planner.price("2", "ult", 0)
+        wrong = planner.price("3", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(planner.price("2", "ult", 1), before)
+        self.assertGreater(planner.price("2", "ult", 2), before)
+        self.assertEqual(planner.price("3", "battle", 2), wrong)
+        self.assertGreater(planner.price("2", "ult", 13), before)
+        self.assertEqual(planner.price("2", "ult", 14), before)
+
+    def test_xaihi_zero_damage_opener_is_selected_before_cold_carry(self):
+        planner = ReleaseBurstPlanner(["赛希", "伊冯"])
+        actions = (ReleaseBurstAction("1", "ult", 3, 0), ReleaseBurstAction("2", "ult", 2, 1000))
+        chosen = planner.choose(actions, 0, 0)
+        self.assertEqual(chosen.sequence, (("1", "ult"), ("2", "ult")))
+        self.assertGreater(chosen.damage, 1380)
+        self.assertFalse(planner.bonuses)
+
+    def test_liino_team_attack_combines_with_only_matching_element_amp(self):
+        planner = ReleaseBurstPlanner(["梨诺", "佩丽卡", "伊冯", "陈千语"])
+        before = [planner.price(a, "battle", 0) for a in ("2", "3", "4")]
+        planner.confirm("1", "ult", 0)
+        ratios = [planner.price(a, "battle", 3) / value for a, value in zip(("2", "3", "4"), before)]
+        self.assertGreater(ratios[0], 1.35)
+        self.assertGreater(ratios[1], 1)
+        self.assertLess(ratios[1], 1.2)
+        self.assertGreater(ratios[2], 1)
+        self.assertLess(ratios[2], 1.2)
+        self.assertEqual(planner.price("2", "battle", 2), before[0])
+
+    def test_liino_channel_blocks_cancel_and_normal_but_not_teammates(self):
+        planner = ReleaseBurstPlanner(["梨诺", "佩丽卡"])
+        opener = ReleaseBurstAction("1", "ult", 3, 0, same_actor_duration=18.25)
+        cancel = ReleaseBurstAction("1", "battle", 1, 100000, 25, 25)
+        carry = ReleaseBurstAction("2", "ult", 2, 1000)
+        chosen = planner.choose((opener, carry), 0, 0)
+        self.assertEqual(chosen.action, opener)
+        planner.confirm("1", "ult", 0)
+        self.assertTrue(planner.action_blocked("1", "battle", 1))
+        self.assertTrue(planner.action_blocked("1", "normal", 3))
+        self.assertFalse(planner.action_blocked("2", "battle", 3))
+        chosen = planner.choose((cancel, carry), 25, 3)
+        self.assertNotIn(("1", "battle"), chosen.sequence)
+        self.assertFalse(planner.action_blocked("1", "battle", 18))
+
+    def test_liino_source_cancel_refresh_and_unavailable_cleanup(self):
+        planner = ReleaseBurstPlanner(["梨诺", "佩丽卡"])
+        before = planner.price("2", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(len(planner.bonuses), 6)
+        planner.confirm("2", "battle", 3)
+        self.assertGreater(planner.price("2", "battle", 4), before)
+        planner.confirm("1", "battle", 4)
+        self.assertEqual(planner.price("2", "battle", 4), before)
+        planner.confirm("1", "ult", 20)
+        self.assertGreater(planner.price("2", "battle", 23), before)
+        planner.source_unavailable("1")
+        self.assertEqual(planner.price("2", "battle", 23), before)
+
+    def test_liino_ongoing_and_finish_damage_not_instantly_quoted(self):
+        planner = ReleaseBurstPlanner(["梨诺"])
+        quote = planner.quote("1", "ult")
+        self.assertEqual(quote["crit_expect"], 0)
+        self.assertIn("not_forecast", quote["pricing_scope"])
+        self.assertEqual(planner.price("1", "ult", 0, value=49073.9), 0)
+        self.assertIsNone(planner.choose((ReleaseBurstAction("1", "ult", 3, 0),), 0, 0))
+
+    def test_two_supports_add_matching_amp_and_refresh_without_duplicate_layers(self):
+        planner = ReleaseBurstPlanner(["梨诺", "安塔尔", "佩丽卡"])
+        before = planner.price("3", "battle", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("2", "ult", 0)
+        panel = planner.rows["3"]["panel"]
+        atk = panel["attack_white"] * (1 + panel["attack_percent"]) + panel["attack_flat"]
+        atk_up = planner.rules["1", "ult"][0]["magnitude"]["base"]
+        amp = sum(s["magnitude"]["base"] for a in ("1", "2") for s in planner.rules[a, "ult"]
+                  if s["bucket"] == "amplification" and "电磁" in s["elements"])
+        self.assertAlmostEqual(planner.price("3", "battle", 3) / before,
+                               (1 + panel["attack_white"] * atk_up / atk) * (1 + amp))
+        planner.confirm("1", "ult", 5)
+        self.assertAlmostEqual(planner.price("3", "battle", 8) / before,
+                               (1 + panel["attack_white"] * atk_up / atk) * (1 + amp))
+
+    def test_support_evidence_change_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            for name in ("index.json", "snapshot.json", "support-evidence.json"):
+                (path / name).write_bytes((SNAPSHOT / name).read_bytes())
+            (path / "support-evidence.json").write_bytes(b"[]")
+            with self.assertRaisesRegex(ValueError, "Support evidence"):
+                read_snapshot(path)
+
+    def test_nature_beneficiary_receives_both_new_support_windows(self):
+        planner = ReleaseBurstPlanner(["赛希", "梨诺", "艾尔黛拉"])
+        before = planner.price("3", "normal", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("2", "ult", 0)
+        self.assertGreater(planner.price("3", "normal", 3) / before, 1.7)
+        planner.confirm("2", "battle", 4)
+        self.assertAlmostEqual(planner.price("3", "normal", 5) / before, 1 + .38478, places=7)
+
+    def test_zhuang_stance_replaces_base_multipliers_and_preserves_bonus_buckets(self):
+        planner = ReleaseBurstPlanner(["庄方宜", "安塔尔"], store=load_skill_timings())
+        spec = planner.stance_spec("1")
+        self.assertAlmostEqual(spec["quotes"]["normal"]["quote_basis"]["multiplier"], 6.6, places=6)
+        self.assertAlmostEqual(spec["quotes"]["battle"]["quote_basis"]["multiplier"], .81, places=6)
+        self.assertIn("without_sword_count", spec["quotes"]["battle"]["quote_basis"]["scope"])
+        basic = planner.price("1", "normal", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(planner.price("1", "normal", 2.59), basic)
+        enhanced = planner.price("1", "normal", 3, value=1)
+        self.assertAlmostEqual(enhanced, spec["quotes"]["normal"]["crit_expect"])
+        self.assertGreater(enhanced / basic, 1.77)
+        lightning = spec["quotes"]["battle"]["crit_expect"]
+        self.assertAlmostEqual(planner.price("1", "battle", 3) / lightning, 1 + 1.12 / 2.385, places=6)
+        planner.confirm("2", "ult", 3)
+        self.assertGreater(planner.price("1", "normal", 4), enhanced)
+
+    def test_zhuang_stance_first_free_is_consumed_once_and_not_reopened_by_duplicate(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        planner.confirm("1", "ult", 0)
+        self.assertTrue(planner.stance_at("1", 3).free_battle)
+        planner.confirm("1", "battle", 3)
+        self.assertFalse(planner.stance_at("1", 4).free_battle)
+        planner.confirm("1", "ult", 0)
+        self.assertFalse(planner.stance_at("1", 4).free_battle)
+        planner.confirm("1", "ult", 20)
+        self.assertTrue(planner.stance_at("1", 23).free_battle)
+
+    def test_zhuang_stance_expiry_cleans_strength_and_unused_free_charge(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        basic = planner.price("1", "normal", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertIsNotNone(planner.stance_at("1", 27.59))
+        self.assertIsNone(planner.stance_at("1", 27.6))
+        # The independent weapon still runs from cast to 25; do not conflate lifetimes.
+        self.assertEqual(planner.price("1", "normal", 27.6), basic)
+        planner.source_unavailable("1")
+        self.assertFalse(planner.stances)
+
+    def test_zhuang_zero_sp_forecast_promotes_ultimate_then_free_battle(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        ult = ReleaseBurstAction("1", "ult", 3.15, 0, same_actor_duration=3.15)
+        battle = ReleaseBurstAction("1", "battle", 4.65, planner.quote("1", "battle")["crit_expect"], 100, 100)
+        chosen = planner.choose((ult, battle), 0, 0)
+        self.assertEqual(chosen.sequence, (("1", "ult"), ("1", "battle")))
+        self.assertGreater(chosen.damage, planner.quote("1", "battle")["crit_expect"])
+        self.assertFalse(planner.stances)
+        self.assertIsNone(planner.choose((battle,), 0, 0))
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(planner.choose((battle,), 0, 3).action.kind, "battle")
+        planner.confirm("1", "battle", 3)
+        self.assertIsNone(planner.choose((battle,), 0, 4))
+
+    def test_zhuang_replacement_normal_timing_makes_ultimate_a_real_burst_candidate(self):
+        planner = ReleaseBurstPlanner(["庄方宜"], store=load_skill_timings())
+        normal = ReleaseBurstAction("1", "normal", planner.normal_durations["1"], planner.quote("1", "normal")["crit_expect"])
+        ult = ReleaseBurstAction("1", "ult", 3.15, 0, same_actor_duration=3.15)
+        chosen = planner.choose((ult, normal), 0, 0)
+        self.assertEqual(chosen.action.kind, "ult")
+        self.assertIn(("1", "normal"), chosen.sequence)
+        planner.confirm("1", "ult", 0)
+        self.assertLess(planner.normal_duration("1", 3), 4)
+        self.assertGreater(planner.normal_duration("1", 27.6), 4)
+
+    def test_zhuang_forecast_refuses_complete_enhanced_chain_across_expiry(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        planner.confirm("1", "ult", 0)
+        normal = ReleaseBurstAction("1", "normal", 1, 100)
+        self.assertIsNone(planner.choose((normal,), 0, 26))
+        self.assertTrue(planner.stance_at("1", 26).free_battle)
+
+    def test_zhuang_stance_keeps_affecting_decisions_after_weapon_buff_expiry(self):
+        planner = ReleaseBurstPlanner(["庄方宜"])
+        planner.confirm("1", "ult", 0)
+        battle = ReleaseBurstAction("1", "battle", 4.65, planner.quote("1", "battle")["crit_expect"], 100, 100)
+        chosen = planner.choose((battle,), 0, 26)
+        self.assertEqual(chosen.action.kind, "battle")
+        self.assertGreater(chosen.gain, 0)
+
+    def test_zhuang_preserve_keeps_only_unchanged_actor_stance(self):
+        planner = ReleaseBurstPlanner(["庄方宜", "?"])
+        planner.confirm("1", "ult", 0)
+        filled = ReleaseBurstPlanner(["庄方宜", "安塔尔"])
+        filled.preserve(planner)
+        self.assertTrue(filled.stance_at("1", 3).free_battle)
+        changed = ReleaseBurstPlanner(["安塔尔", "庄方宜"])
+        changed.preserve(planner)
+        self.assertFalse(changed.stances)
+
+
+class TestReleaseBurstDispatch(unittest.TestCase):
+    def make_logic(self):
+        task = FakeTask()
+        task.ults = {"1", "2"}
+        task.sp = 300
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(["安塔尔", "莱万汀", "佩丽卡", "狼卫"], reset_runtime=True)
+        return task, logic
+
+    def test_real_step_inserts_support_before_existing_burst(self):
+        task, logic = self.make_logic()
+        plan = make_burst_plan("existing", (BurstAction("2", "莱万汀", "battle", "焚灭", sp_gate=100, sp_cost=100),),
+                               owner_slot="2", runtime_executable=True)
+        logic.phase_planner.configure((plan,))
+        before = logic.release_burst.price("2", "ult", 0)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertEqual(logic.phase_planner.state.phase, CombatPhase.BURST_READY)
+        self.assertAlmostEqual(logic.release_burst.price("2", "ult", task.now) / before, 1.22, places=5)
+        self.assertEqual(task.sp, 300)
+        logic.step()
+        self.assertIn(task.keys, (["ult_1", "2"], ["ult_1", "ult_2"]))
+
+    def test_free_team_opener_then_available_damage_ultimate_without_sp(self):
+        task, logic = self.make_logic()
+        task.sp = 0
+        logic.step()
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+
+    def test_rejected_release_does_not_commit_timers_or_cooldowns(self):
+        task, logic = self.make_logic()
+        with patch.object(task, "use_ult", return_value=False):
+            self.assertFalse(logic._use_timed_ultimate("1", logic.store.profiles("安塔尔", "ult"), burst_selected=True))
+        self.assertFalse(logic.release_burst.bonuses)
+        self.assertFalse(logic.cooldowns)
+
+    def test_unavailable_hud_or_dead_beneficiary_cannot_promote_support(self):
+        task, logic = self.make_logic()
+        task.sp = 0
+        task.ults = {"1"}
+        self.assertIsNone(logic._release_burst_decision(logic._ready_ultimate_actions(), 0, task.now))
+        task.ults = {"1", "2"}
+        logic.disabled_slots.add("2")
+        self.assertIsNone(logic._release_burst_decision(logic._ready_ultimate_actions(), 0, task.now))
+
+    def test_no_new_detector_or_implicit_main_control_after_ultimate(self):
+        task, logic = self.make_logic()
+        self.assertIsNone(logic._burst_main_control)
+        logic.step()
+        self.assertIsNone(logic._burst_main_control)
+
+    def test_unknown_current_arrow_cannot_reuse_an_old_normal_beneficiary(self):
+        task, logic = self.make_logic()
+        logic._burst_main_control = "2"
+        with patch.object(task, "detect_current_char_index", return_value=None, create=True):
+            logic.step()
+        self.assertIsNone(logic._burst_main_control)
+
+    def test_existing_combo_is_not_a_release_bonus_producer(self):
+        task, logic = self.make_logic()
+        task.ults = set()
+        task.sp = 0
+        task.link = True
+        logic.step()
+        self.assertEqual(task.keys, ["e"])
+        self.assertFalse(logic.release_burst.bonuses)
+
+    def test_liino_real_step_opens_team_burst_without_18_second_wait(self):
+        task, logic = self.make_logic()
+        task.sp = 0
+        logic._configure_team(["梨诺", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        ready = logic._ready_ultimate_actions()
+        chosen = logic._release_burst_decision(ready, 0, task.now)
+        self.assertEqual(chosen.action.slot, "1")
+        self.assertLess(chosen.action.duration, 3)
+        self.assertGreater(chosen.action.same_actor_duration, 18)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertFalse(logic._try_battle_token("1", 300))
+        task.now = 3
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+
+    def test_xaihi_real_step_opens_cold_team_and_failure_does_not_apply(self):
+        task, logic = self.make_logic()
+        task.sp = 0
+        logic._configure_team(["赛希", "伊冯", "狼卫", "陈千语"], reset_runtime=True)
+        with patch.object(task, "use_ult", return_value=False):
+            self.assertFalse(logic._use_timed_ultimate("1", logic.store.profiles("赛希", "ult"), burst_selected=True))
+        self.assertFalse(logic.release_burst.bonuses)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        task.now = 3
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+
+    def test_dead_liino_channel_cleanup_preserves_other_supports(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["梨诺", "安塔尔", "佩丽卡", "狼卫"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        logic.release_burst.confirm("2", "ult", 0)
+        logic.disabled_slots.add("1")
+        task.ults = set()
+        task.sp = 0
+        logic.step()
+        self.assertFalse(any(b.source == "1" for b in logic.release_burst.bonuses))
+        self.assertTrue(any(b.source == "2" for b in logic.release_burst.bonuses))
+
+    def test_zhuang_step_forecasts_free_battle_even_with_zero_shared_sp(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        task.ults = {"1", "2"}
+        task.sp = 0
+        chosen = logic._release_burst_decision(logic._ready_ultimate_actions(), 0, 0)
+        self.assertIn(("1", "ult"), chosen.sequence)
+        self.assertIn(("1", "battle"), chosen.sequence)
+        task.ults = {"1"}
+        chosen = logic._release_burst_decision(logic._ready_ultimate_actions(), 0, 0)
+        self.assertEqual((chosen.action.slot, chosen.action.kind), ("1", "ult"))
+        self.assertGreater(chosen.gain, 0)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        task.now = 3.2
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        task.battle_pulses.add("1")
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "1"])
+        self.assertEqual(logic.active[0].skill_id, "chr_0030_zhuangfy_normal_skill_ult")
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        self.assertIsNotNone(logic.pending)
+        task.battle_pulses.clear()
+        logic.step()
+        self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
+        self.assertEqual(logic._battle_context("1")[1:], (100, 100))
+        task.now = 28
+        self.assertEqual(logic._battle_context("1")[0][0].skill_id, "chr_0030_zhuangfy_normal_skill")
+
+    def test_zhuang_rejected_ultimate_creates_neither_stance_nor_free_battle(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        with patch.object(task, "use_ult", return_value=False):
+            self.assertFalse(logic._use_timed_ultimate("1", logic.store.profiles("庄方宜", "ult"), burst_selected=True))
+        self.assertFalse(logic.release_burst.stances)
+        self.assertFalse(logic.free_battle_once)
+
+    def test_zhuang_existing_failed_cast_feedback_does_not_consume_free_charge(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.now = 3.2
+        task.battle_pulses.add("1")
+        self.assertTrue(logic._try_battle_token("1", 0))
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.DURING_SKILL
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.DURING_SKILL)
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+
+    def test_zhuang_free_battle_waits_for_own_pulse_without_blocking_teammate(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.now = 3.2
+        task.sp = 300
+        task.ults = set()
+        task.battle_pulses.add("2")
+        self.assertFalse(logic._try_battle_token("1", 300))
+        self.assertEqual(task.keys, [])
+        with patch.object(logic.release_burst, "choose", return_value=None) as choose:
+            logic._release_burst_decision([], 300, task.now)
+            self.assertFalse(any(a.slot == "1" and a.kind == "battle" for a in choose.call_args.args[0]))
+            self.assertTrue(any(a.slot == "2" and a.kind == "battle" for a in choose.call_args.args[0]))
+        self.assertTrue(logic._try_battle_token("2", 300))
+        self.assertEqual(task.keys, ["2"])
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+
+    def test_zhuang_white_pulse_failure_keeps_charge_until_retry_and_success(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.now = 3.2
+        task.sp = 0
+        task.battle_pulses.add("1")
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.DURING_SKILL
+        self.assertTrue(logic._try_battle_token("1", 0))
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.DURING_SKILL)
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        self.assertFalse(logic._try_battle_token("1", 0))
+        task.probe_combat_action_block_reason = lambda: None
+        task.now = logic.battle_retry_after["1"] + .01
+        task.battle_pulses.clear()
+        self.assertFalse(logic._try_battle_token("1", 0))
+        task.battle_pulses.add("1")
+        self.assertTrue(logic._try_battle_token("1", 0))
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        task.battle_pulses.clear()
+        logic._confirm_battle(task.now)
+        self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
+        self.assertFalse(logic._try_battle_token("1", 0))
+        self.assertEqual(task.keys, ["1", "1"])
+        self.assertEqual(logic._battle_context("1")[1:], (100, 100))
+
+    def test_zhuang_paid_battle_also_waits_for_white_and_confirms_by_disappearance(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        task.now = 3.2
+        self.assertFalse(logic._try_battle_token("1", 300))
+        task.battle_pulses.add("1")
+        self.assertTrue(logic._try_battle_token("1", 300))
+        self.assertEqual(logic.pending, (300, "1", 100))
+        task.sp = 200  # SP alone must not confirm while the button remains white.
+        logic._confirm_battle(task.now)
+        self.assertIsNotNone(logic.pending)
+        task.battle_pulses.clear()
+        with patch.object(logic, "_sample_sp") as sample:
+            logic._confirm_battle(task.now)
+            sample.assert_not_called()
+        self.assertIsNone(logic.pending)
+        self.assertIn(logic.active[0].skill_id, logic.cooldowns)
+        self.assertTrue(any("白色脉冲消失，确认释放" in m for m in task.messages))
+
+    def test_zhuang_pending_white_or_unknown_times_out_without_consuming_charge(self):
+        for observed in (True, None):
+            with self.subTest(observed=observed):
+                task, logic = self.make_logic()
+                logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+                logic.release_burst.confirm("1", "ult", 0)
+                task.now = 3.2
+                task.battle_pulses.add("1")
+                self.assertTrue(logic._try_battle_token("1", 0))
+                task.is_battle_skill_pulsing = lambda _token: observed
+                task.now = 3.3
+                logic._confirm_battle(task.now)
+                self.assertIsNotNone(logic.pending)
+                task.now = 4.01
+                logic._confirm_battle(task.now)
+                self.assertIsNone(logic.pending)
+                self.assertEqual(logic.active, ())
+                self.assertFalse(logic.cooldowns)
+                self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+                self.assertEqual(task.keys, ["1"])
+
+    def test_zhuang_pulse_cannot_bypass_stance_start_or_expiry(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.battle_pulses.add("1")
+        task.now = 2
+        self.assertFalse(logic._try_battle_token("1", 0))
+        task.now = 28
+        self.assertFalse(logic._try_battle_token("1", 0))
+        self.assertEqual(task.keys, [])
+
+    def test_zhuang_missing_pulse_probe_does_not_fall_back_to_timer_press(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.now = 3.2
+        task.is_battle_skill_pulsing = None
+        self.assertFalse(logic._try_battle_token("1", 300))
+        self.assertEqual(task.keys, [])
+
+    def test_zhuang_unused_free_flag_never_survives_actual_stance_expiry(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        logic.free_battle_once.add("1")
+        logic.forced_battle_token = "1"
+        task.sp = 0
+        task.ults = set()
+        task.now = 28
+        self.assertEqual(logic._battle_context("1")[1:], (100, 100))
+        self.assertFalse(logic._try_battle_token("1", 0))
+        logic.step()
+        self.assertNotIn("1", logic.free_battle_once)
+        self.assertIsNone(logic.forced_battle_token)
+
+    def test_zhuang_cancel_ultimate_button_is_not_another_burst_opener(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        task.ults = {"1"}
+        task.now = 16
+        self.assertFalse(logic._ready_ultimate_actions())
+        self.assertFalse(logic._use_timed_ultimate("1", logic.store.profiles("庄方宜", "ult")))
+        self.assertFalse(task.keys)
+        task.now = 28
+        self.assertTrue(logic._ready_ultimate_actions())
+
+    def test_zhuang_main_control_normal_replacement_affects_real_dispatch(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        task.ults = {"1"}
+        task.sp = 0
+        with patch.object(task, "detect_current_char_index", return_value=0, create=True):
+            chosen = None
+            original = logic.release_burst.choose
+
+            def capture(*args, **kwargs):
+                nonlocal chosen
+                chosen = original(*args, **kwargs)
+                return chosen
+
+            with patch.object(logic.release_burst, "choose", side_effect=capture):
+                logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertIn(("1", "normal"), chosen.sequence)
+        self.assertGreater(chosen.gain, 0)
+
+    def test_normal_tail_respects_same_actor_replacement_allow_next(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic.release_burst.confirm("1", "ult", 0)
+        logic.release_burst.confirm("1", "battle", 3.2)
+        logic._begin((logic.store.profile("chr_0030_zhuangfy_normal_skill_ult"),), 3.2, slot="1", kind="battle")
+        logic._burst_main_control = "1"
+        self.assertEqual(logic.release_burst.normal_entry("1", 3.8)[0].skill_id, "chr_0030_zhuangfy_attack1_ult")
+        task.now = 3.8  # Other actors may act at 0.55s; own normal only at 1s.
+        with patch.object(logic.release_burst, "choose", return_value=None) as choose:
+            logic._release_burst_decision([], 0, task.now)
+            self.assertFalse(any(a.kind == "normal" for a in choose.call_args.args[0]))
+        task.now = 4.3
+        with patch.object(logic.release_burst, "choose", return_value=None) as choose:
+            logic._release_burst_decision([], 0, task.now)
+            self.assertTrue(any(a.kind == "normal" and a.slot == "1" for a in choose.call_args.args[0]))
+        self.assertEqual(logic.release_burst.normal_entry("1", 28)[0].skill_id, "chr_0030_zhuangfy_attack1")
+
+    def test_other_actor_normal_tail_still_uses_cross_actor_handoff(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "狼卫", "陈千语"], reset_runtime=True)
+        logic._begin(logic.store.profiles("佩丽卡", "battle"), 0, slot="2", kind="battle")
+        logic._burst_main_control = "1"
+        task.now = .6
+        with patch.object(logic.release_burst, "choose", return_value=None) as choose:
+            logic._release_burst_decision([], 0, task.now)
+            self.assertTrue(any(a.kind == "normal" and a.slot == "1" for a in choose.call_args.args[0]))
+
+
+class TestReleaseSnapshotExportBoundary(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Path(__file__).resolve().parents[1]
+        directory = cls.root / "scripts/skill-data"
+        sys.path.insert(0, str(directory))
+        try:
+            spec = importlib.util.spec_from_file_location("reviewed_release_export", directory / "export_release_burst_snapshot.py")
+            cls.exporter = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(cls.exporter)
+        finally:
+            sys.path.remove(str(directory))
+
+    def test_revision_option_and_non_sha_rejected_before_git_execution(self):
+        for revision in ("--help", "master", "a" * 39, "a" * 40 + "^{tree}"):
+            with self.subTest(revision=revision), patch.object(self.exporter.subprocess, "check_output") as git:
+                with self.assertRaisesRegex(ValueError, "full lowercase"):
+                    self.exporter.export(self.root, revision, SNAPSHOT)
+                git.assert_not_called()
+
+    def test_only_registered_checkouts_and_named_repo_outputs_are_selected(self):
+        listing = f"worktree {self.root.as_posix()}\nHEAD {'a' * 40}\n"
+        with tempfile.TemporaryDirectory() as directory, patch.object(self.exporter.subprocess, "check_output", return_value=listing):
+            with self.assertRaisesRegex(ValueError, "registered checkout"):
+                self.exporter.reviewed_locations(directory, SNAPSHOT)
+            with self.assertRaisesRegex(ValueError, "Output must"):
+                self.exporter.reviewed_locations(self.root, directory)
+            source, output = self.exporter.reviewed_locations(self.root, SNAPSHOT)
+            self.assertEqual(source, self.root)
+            self.assertEqual(output.resolve(), SNAPSHOT)

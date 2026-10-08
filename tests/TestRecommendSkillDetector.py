@@ -11,11 +11,15 @@
 """
 
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import cv2
 import numpy as np
 
+from src.core.BattleConfig import RECOMMEND_SKILL_REGIONS
 from src.image.recommend_skill_detector import RecommendSkillDetector
+from src.tasks.mixin.battle_mixin import BattleMixin
 
 W, H = 1280, 720
 
@@ -156,6 +160,47 @@ class TestRecommendSkillDetector(unittest.TestCase):
         self.det.reset()
         # 新战斗首帧白圈 → 重新产生上升沿。
         self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+
+
+class TestBattleSkillPulseQuery(unittest.TestCase):
+    def task_frame(self, count=4, white_slots=()):
+        frame = np.full((H, W, 3), COLOR_BG, np.uint8)
+        for slot, region in enumerate(RECOMMEND_SKILL_REGIONS[-count:], 1):
+            button = render(region["x"], region["y"], region["button_radius"],
+                            COLOR_WHITE if slot in white_slots else COLOR_RIM_REST)
+            frame = np.maximum(frame, button)
+        return SimpleNamespace(frame=frame, _battle_member_count=count)
+
+    def test_current_ring_is_read_only_and_maps_short_party_slots(self):
+        task = self.task_frame(3, {2})
+        detector = RecommendSkillDetector()
+        with patch("src.tasks.mixin.battle_mixin.get_recommend_skill_detector", return_value=detector):
+            self.assertIs(BattleMixin.is_battle_skill_pulsing(task, "1"), False)
+            self.assertIs(BattleMixin.is_battle_skill_pulsing(task, "2"), True)
+            self.assertIs(BattleMixin.is_battle_skill_pulsing(task, "2"), True)
+            self.assertIs(BattleMixin.is_battle_skill_pulsing(task, "3"), False)
+        self.assertTrue(detector.detect(task.frame, .920, .898, .037, "批次3"))
+        with patch("src.tasks.mixin.battle_mixin.get_recommend_skill_detector", return_value=detector):
+            self.assertIs(BattleMixin.is_battle_skill_pulsing(task, "2"), True)
+
+    def test_white_disappearance_is_false_but_flash_is_unknown(self):
+        task = self.task_frame(4, {1})
+        self.assertIs(BattleMixin.is_battle_skill_pulsing(task, "1"), True)
+        task.frame = self.task_frame(4).frame
+        self.assertIs(BattleMixin.is_battle_skill_pulsing(task, "1"), False)
+        task.frame = self.task_frame(4, {1, 2, 3, 4}).frame
+        self.assertIsNone(BattleMixin.is_battle_skill_pulsing(task, "1"))
+
+    def test_unusable_frame_or_party_is_not_disappearance(self):
+        task = self.task_frame()
+        for slot in ("0", "5", "unknown"):
+            self.assertIsNone(BattleMixin.is_battle_skill_pulsing(task, slot))
+        task.frame = None
+        self.assertIsNone(BattleMixin.is_battle_skill_pulsing(task, "1"))
+        task.frame = np.empty((0, 0, 3), dtype=np.uint8)
+        self.assertIsNone(BattleMixin.is_battle_skill_pulsing(task, "1"))
+        task._battle_member_count = 0
+        self.assertIsNone(BattleMixin.is_battle_skill_pulsing(task, "1"))
 
 
 if __name__ == "__main__":
