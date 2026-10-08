@@ -203,6 +203,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             gate_retry_start = self.active_time()
             activated = False
             last_reason = None
+            interaction_failed = False
             for attempt in range(3):
                 activated, last_reason = self._try_click_on_zip_line(zip_line)
                 if activated:
@@ -210,6 +211,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 if last_reason == "gate":
                     self.log_info(f"滑索{zip_line}金色门未通过，重新对中后重试（{attempt + 1}/3）")
                 else:
+                    interaction_failed = True
                     self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
                 if attempt >= 2 or self.active_time() - gate_retry_start >= 20:
                     break
@@ -222,18 +224,21 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 )
                 if not realigned:
                     last_reason = "gate"
-                    self.log_info(f"滑索{zip_line}重新对中失败，进入直接点击 + E 回退")
+                    self.log_info(f"滑索{zip_line}重新对中失败，进入失败处理")
                     break
 
             if not activated:
+                if interaction_failed:
+                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
+                    raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
                 if last_reason == "gate":
                     self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击 + E")
                     if not self._legacy_click_on_zip_line():
                         self.log_info(f"滑索{zip_line}直接点击后 E 未生效", notify=True)
                         raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
                 else:
-                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
-                    raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
+                    self.log_info(f"滑索{zip_line}交互失败", notify=True)
+                    raise RuntimeError(f"滑索{zip_line}交互失败")
 
             start = self.active_time()
             while True:
