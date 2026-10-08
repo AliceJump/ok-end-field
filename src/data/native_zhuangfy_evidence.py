@@ -10,6 +10,10 @@ FAMILY = "assets/data/character_mechanics/20261008"
 PASSIVE = "chr_0030_zhuangfy_talent_1_2"
 SKILL = "chr_0030_zhuangfy_talent1"
 MARKER = "buff_chr_0030_zhuangfy_talent1"
+VERIFIED_NATIVE_INPUTS = {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+}
 
 
 def read_snapshot(*, root=ROOT):
@@ -24,6 +28,8 @@ def read_snapshot(*, root=ROOT):
             or manifest["scope"] != "evidence_only; not_runtime_binding" or data["scope"] != manifest["scope"]
             or data["native_inputs"] != inputs or manifest["native_inputs"] != inputs):
         raise ValueError("Native Zhuang Fangyi evidence domain/build mismatch")
+    if inputs != VERIFIED_NATIVE_INPUTS:
+        raise ValueError("Native Zhuang Fangyi method evidence requires reviewed build")
     if len(data["records"]) != manifest["record_count"]:
         raise ValueError("Native Zhuang Fangyi evidence record count mismatch")
     for record in data["records"].values():
@@ -94,6 +100,29 @@ def release_evidence(character, *, root=ROOT):
              "keyword_template": keyword_id, "keyword_template_blackboard": keyword["blackboard"],
              "selected_keyword_child": child_id, "keyword_attribute_modifier": keyword["attributeModifier"],
              "keyword_child_attribute_modifier": records[child_id]["data"]["attributeModifier"],
+             "keyword_attribute_refresh_evidence": {
+                 "status": "evidence_only; attribute_producer_not_bound",
+                 "template_stacking": keyword["stackingSettings"],
+                 "parameter_domain": "dynamic bb.rate; actual buff m_enhanceCnt is a separate multiplier",
+                 "buff_fields": {"m_enhanceCnt": 168, "m_priority": 172, "attributeMask": 336,
+                                 "blackboard": 352, "owner": 376, "source": 392},
+                 "refresh_order": ["Buff.RefreshPriority", "Buff.OnBlackboardValueChange",
+                                   "Buff._ModifyAttributesModifier", "AttributeModifierLoader.LoadAttributesModifier",
+                                   "Attributes.MarkAttributesDirty"],
+                 "loader_arithmetic": "GetFloat(param) * float32(m_enhanceCnt) in MULSS, then CVTSS2SD",
+                 "loader_instructions": {"GetFloat": "2db1cff", "count_to_float32": "2db1d36",
+                                         "multiply_float32": "2db1d43", "to_double": "2db1d47"},
+                 "method_windows": [
+                     {"method": 60722, "rva": "43b0ca0", "bytes": 6000,
+                      "sha256": "309885182dcabd1ae60542601a30a90ec78026e391e2d2a30534c3e356563ef8"},
+                     {"method": 60584, "rva": "2db1c00", "bytes": 6000,
+                      "sha256": "f323aa798407d68f7bdec951b5f9a7ff3b87c487d57d3d855b1ca2642bbd7b9d"},
+                     {"method": 60541, "rva": "347a9d0", "bytes": 6000,
+                      "sha256": "6d1f9778b1b7eb66ce17484aaac786557585569631702105e5d75a87007622a2"}],
+                 "unknown": ["actual m_enhanceCnt initialization/update, not mark count or instance count",
+                             "priority group reorder and enable/disable consequences",
+                             "owner/source modifier registration, conversion and dirty dependencies",
+                             "dynamic child BB propagation and parent/replacement cleanup"]},
              "rate_accumulation": "native_float32_repeated_add; explicit source.zhuangfy_talent1_marks required",
              "marker_definitions": {key: {name: records[key]["data"][name]
                                            for name in ("duration", "lifeType", "stackingSettings")}

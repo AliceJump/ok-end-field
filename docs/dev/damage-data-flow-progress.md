@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-08第十五批：Pulse模板属性66/PulseEnhancedDmgIncrease在root、动态rate、默认child无属性、rate优先级及实际BB重载路径已核准。Buff+a8是m_enhanceCnt，不能当追加mark数；LoadAttributesModifier先GetFloat、计数转float32、MULSS、转double，返回mask后MarkAttributesDirty。候选台账单列属性刷新证据；初始化/优先级组/转换缓存/父子通知与外部分支继续未知，不启用收益或默认计数。方法证据新增固定构建域核验，拒绝索引与快照自洽地换成未复核的新构建。1新增及相关28项通过（8.513秒），最后全仓仍第十四批同步master后的1436项；纯证据不重复无关全仓。32/128、14/2和2/111不变，automation-2保留，下一步继续真实增强计数/缓存和父子清理。
+
 > 2026-10-08第十四批：仅已确认的庄方宜普通/姿态/区域原始片段创建plain self标记后，发布OnAddedBuff→OnOutputBuff；真实满级天赋监听器创建5秒基础实例。替换/旧截止/到期/提前移除/预测隔离及追加mark不误刷新均验证。前置回调/改定义/未经核准producer保留未知，完整门槛、castInfo、EnhancedAction/计数/属性传播与父子清理仍未绑定，不供应0或最大mark数。逐角色/四技能台账单列受限notification绑定，14/2与2/111不提高，32面板/128报价不变。70项相关及全仓1421项通过（109.905秒），最后失败动作专项后9项通过。原生后续调用已精确定位为RefreshPriority→OnBlackboardValueChange，下游43b0ca0待核准。见native-zhuangfy-release-audit.md；automation-2保留。
 
 > 2026-10-08第十三批：核准Enhanced=3/Pulse=6模板literal及overrideChildBuffId=false分支，实际走Pulse模板/默认child，快照8→10份。原生mark增强先GetFloat(rate)、每次ADDSS后写回，天地造化幅度改为native_float32_repeated_add，输入source.zhuangfy_talent1_marks，不由旧hit数填充；其他linear规则不变。缺计数/无效计数保持未知，真实发布/模板实例传播/通知和清理仍未执行。4项新增、77项相关及全仓1416项通过（169.727秒），最后模板/子对象证据补齐后21项通过；首次专项的测试构造遗漏team已修正。32面板/128报价/profile数值不变，只更新来源；14/2与2/111不提高。详见native-zhuangfy-release-audit.md。下一步继续真实标记发布、EnhancedAction与四维producer，仍不接master。
