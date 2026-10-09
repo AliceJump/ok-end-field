@@ -21,9 +21,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             ocr=Mock(),
         )
         stub._zip_line_stop_state = lambda: ZipLineMixin._zip_line_stop_state(stub)
-        stub._try_click_on_zip_line = lambda *args, **kwargs: ZipLineMixin._try_click_on_zip_line(
-            stub, *args, **kwargs
-        )
+        stub._try_click_on_zip_line = lambda *args, **kwargs: ZipLineMixin._try_click_on_zip_line(stub, *args, **kwargs)
         return stub
 
     def test_distance_pattern_rejects_longer_numeric_distance(self):

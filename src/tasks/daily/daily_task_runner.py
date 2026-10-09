@@ -73,9 +73,7 @@ class DailyTaskRunner:
             return bool(result)
         except Exception as e:
             self.task.log_info(
-                self.task.tr("关键失败判定异常，按 fatal 处理 | {key}: {err}").format(
-                    key=self.task.tr(key), err=e
-                ),
+                self.task.tr("关键失败判定异常，按 fatal 处理 | {key}: {err}").format(key=self.task.tr(key), err=e),
                 notify=True,
             )
             return True
