@@ -166,6 +166,7 @@ class TestOutpostExchange(unittest.TestCase):
                 self.assertEqual(feature.click.call_args_list[0].args[0].name, preferred)
 
     def test_empty_selection_does_not_exchange_goods(self):
+        """验证没有符合条件的货品时不选择货品或提交兑换。"""
         cases = [
             ("no_goods", [], [], set()),
             ("empty_ocr_text", [""], [], set()),
