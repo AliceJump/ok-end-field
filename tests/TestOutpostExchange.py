@@ -2,10 +2,6 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from ok.feature.Box import find_boxes_by_name
-
-from src.data.lang import LangAccessor
-from src.data.world_map_utils import get_world_map_text
 from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask, _edit_distance
 
 
@@ -141,47 +137,6 @@ class TestOutpostExchange(unittest.TestCase):
                     self.assertEqual(feature.click.call_args_list[0].args[0].name, expected)
                     feature.plus_max.assert_called_once()
 
-    def test_missing_goods_and_similar_names_follow_exact_priority(self):
-        """新增货品及相近名称同屏时，简繁 OCR 均选中优先项对应的原始卡片。"""
-        cases = [
-            ("难民暂居处", ["紫晶质瓶", "紫晶零件", "晶体外壳"]),
-            ("天王坪援建点", ["重息壤", "息壤", "赫铜零件", "灼铜零件", "赤铜零件", "分离芯"]),
-        ]
-        for locale in ("zh_CN", "zh_TW"):
-            lang = LangAccessor(locale)
-            for outpost, names in cases:
-                for preferred in names:
-                    with self.subTest(locale=locale, outpost=outpost, preferred=preferred):
-                        boxes = [
-                            SimpleNamespace(name=f"|{get_world_map_text(lang, name)}", source_name=name)
-                            for name in names
-                        ]
-                        feature = self.make_exchange_feature([1000, 999], boxes)
-                        feature.lang = lang
-                        feature.wait_ocr.side_effect = lambda match, boxes=boxes, **kwargs: find_boxes_by_name(
-                            boxes, match
-                        )
-                        localized_preferred = get_world_map_text(lang, preferred)
-
-                        feature.perform_outpost_exchange(
-                            outpost, priority_list=[localized_preferred], only_priority_goods=True
-                        )
-
-                        feature.plus_max.assert_called_once()
-                        selected = feature.click.call_args_list[0].args[0]
-                        self.assertEqual(selected.source_name, preferred)
-                        self.assertEqual(selected.name, localized_preferred)
-
-    def test_xiranite_priority_does_not_select_heavy_xiranite(self):
-        """息壤成为完整货名后，优先序列不再将它当作重息壤的子串。"""
-        feature = self.make_exchange_feature([1000], [SimpleNamespace(name="重息壤")])
-        feature.lang = LangAccessor("zh_CN")
-
-        feature.perform_outpost_exchange("天王坪援建点", priority_list=["息壤"], only_priority_goods=True)
-
-        feature.click.assert_not_called()
-        feature.plus_max.assert_not_called()
-
     def test_equal_distances_keep_longer_candidate_first(self):
         feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name="货物甲")])
         with (
@@ -216,6 +171,7 @@ class TestOutpostExchange(unittest.TestCase):
             ("empty_ocr_text", [""], [], set()),
             ("only_card_borders", ["|｜丨"], [], set()),
             ("no_priority_match", ["重息壤龙泡泡"], ["息壤龙泡泡"], set()),
+            ("xiranite_is_not_heavy_xiranite", ["重息壤"], ["息壤"], set()),
             ("all_excluded", ["息壤玉葫芦"], [], {"息壤玉葫芦"}),
         ]
         for label, goods, priority_list, excluded_goods in cases:

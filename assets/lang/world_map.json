@@ -4086,6 +4086,30 @@
     },
     "es_ES": {
       "pattern": "Botella de amatista"
+    },
+    "pt_BR": {
+      "pattern": "Garrafa de Ametista"
+    },
+    "de_DE": {
+      "pattern": "Amethyst-Flasche"
+    },
+    "fr_FR": {
+      "pattern": "Bouteille en améthyste"
+    },
+    "id_ID": {
+      "pattern": "Botol Ametis"
+    },
+    "it_IT": {
+      "pattern": "Bottiglia di ametista"
+    },
+    "ru_RU": {
+      "pattern": "Аметистовая бутылка"
+    },
+    "th_TH": {
+      "pattern": "ขวด​อเม​ทิส​ต์"
+    },
+    "vi_VN": {
+      "pattern": "Chai Thạch Anh Tím"
     }
   },
   "amethyst_part": {
@@ -4106,6 +4130,30 @@
     },
     "es_ES": {
       "pattern": "Pieza de amatista"
+    },
+    "pt_BR": {
+      "pattern": "Peça de Ametista"
+    },
+    "de_DE": {
+      "pattern": "Amethyst-Teil"
+    },
+    "fr_FR": {
+      "pattern": "Pièce en améthyste"
+    },
+    "id_ID": {
+      "pattern": "Bagian Ametis"
+    },
+    "it_IT": {
+      "pattern": "Parte di ametista"
+    },
+    "ru_RU": {
+      "pattern": "Аметистовая деталь"
+    },
+    "th_TH": {
+      "pattern": "ชิ้นส่วน​อเม​ทิส​ต์"
+    },
+    "vi_VN": {
+      "pattern": "Mảnh Thạch Anh Tím"
     }
   },
   "xiranite": {
@@ -4126,6 +4174,30 @@
     },
     "es_ES": {
       "pattern": "Xiranita"
+    },
+    "pt_BR": {
+      "pattern": "Xiranita"
+    },
+    "de_DE": {
+      "pattern": "Xiranit"
+    },
+    "fr_FR": {
+      "pattern": "Xiranite"
+    },
+    "id_ID": {
+      "pattern": "Xiranite"
+    },
+    "it_IT": {
+      "pattern": "Xiranite"
+    },
+    "ru_RU": {
+      "pattern": "Ксиранит"
+    },
+    "th_TH": {
+      "pattern": "ซี​เรน​ไนต์"
+    },
+    "vi_VN": {
+      "pattern": "Xiranite"
     }
   },
   "cuprium_part": {
@@ -4146,6 +4218,30 @@
     },
     "es_ES": {
       "pattern": "Pieza de cuprio"
+    },
+    "pt_BR": {
+      "pattern": "Peça de Cuprium"
+    },
+    "de_DE": {
+      "pattern": "Cuprium-Teil"
+    },
+    "fr_FR": {
+      "pattern": "Pièce en cuprium"
+    },
+    "id_ID": {
+      "pattern": "Bagian Cuprium"
+    },
+    "it_IT": {
+      "pattern": "Parte di cuprium"
+    },
+    "ru_RU": {
+      "pattern": "Куприевая деталь"
+    },
+    "th_TH": {
+      "pattern": "ชิ้นส่วน​คู​เพ​รี​ยม"
+    },
+    "vi_VN": {
+      "pattern": "Mảnh Đồng"
     }
   },
   "separator_core": {
@@ -4166,6 +4262,30 @@
     },
     "es_ES": {
       "pattern": "Núcleo separador"
+    },
+    "pt_BR": {
+      "pattern": "Núcleo Separador"
+    },
+    "de_DE": {
+      "pattern": "Separatorkern"
+    },
+    "fr_FR": {
+      "pattern": "Noyau séparateur"
+    },
+    "id_ID": {
+      "pattern": "Inti Pemisah"
+    },
+    "it_IT": {
+      "pattern": "Nucleo separatore"
+    },
+    "ru_RU": {
+      "pattern": "Ядро сепаратора"
+    },
+    "th_TH": {
+      "pattern": "แกน​ตัว​แยก"
+    },
+    "vi_VN": {
+      "pattern": "Lõi Phân Tách"
     }
   }
 }
