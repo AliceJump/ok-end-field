@@ -26,6 +26,17 @@ class _SlowTeamTask:
 
 
 class TimedTeamDetectionStabilityTest(unittest.TestCase):
+    def test_unused_right_portraits_do_not_break_native_team_stability(self):
+        task = _SlowTeamTask(["佩丽卡", "艾维文娜", "梨诺", "狼卫"])
+        logic = SimpleNamespace(task=task)
+        first, first_stable = _observe_once(logic, "initial", None, member_count=3)
+        task.team[-1] = "洛茜"
+        second, second_stable = _observe_once(logic, "initial", None, member_count=3)
+        self.assertEqual(first, ["佩丽卡", "艾维文娜", "梨诺"])
+        self.assertEqual(second, first)
+        self.assertFalse(first_stable)
+        self.assertTrue(second_stable)
+
     def test_slow_correct_observations_confirm_across_ticks(self):
         expected = ["庄方宜", "佩丽卡", "诀", "梨诺"]
         task = _SlowTeamTask(expected)

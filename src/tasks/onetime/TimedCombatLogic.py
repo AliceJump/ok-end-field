@@ -536,7 +536,7 @@ class TimedCombatLogic:
         self.task._battle_team_disabled_slots = ignored
 
     def _configure_team(self, team, *, reset_runtime=False, filled_slots=()):
-        """Apply a stable full-or-partial four-slot snapshot to the scheduler.
+        """Apply a stable full-or-partial 1..4-member snapshot to the scheduler.
 
         Composition-derived data is rebuilt whenever a '?' slot is completed,
         while cooldowns, active timelines and already-authored state timers stay
@@ -544,7 +544,7 @@ class TimedCombatLogic:
         completion does not.
         """
         team = list(team)
-        if len(team) != 4 or all(name == "?" for name in team):
+        if not 1 <= len(team) <= 4 or all(name == "?" for name in team):
             return False
 
         previous_team = list(self.team)
@@ -566,6 +566,7 @@ class TimedCombatLogic:
 
         self.team = team
         self.task._battle_team = list(team)
+        self.task._battle_member_count = len(team)
         self.ult_order = generate_damage_rotation(team)
         self.order = [
             token
@@ -728,7 +729,9 @@ class TimedCombatLogic:
             interval=0.05,
             confidence=2,
             deadline=deadline,
+            member_count=len(self.team),
         )
+        detected = list(detected)[: len(self.team)]
         if not stable or len(detected) != len(self.team) or all(member == "?" for member in detected):
             return
 
@@ -807,13 +810,19 @@ class TimedCombatLogic:
         )
 
     def _detect_team(self, deadline):
+        member_count = getattr(self.task, "_battle_member_count", None)
+        if member_count is not None and not 1 <= member_count <= 4:
+            return
         team, stable = self.task.detect_team_stable(
             max_attempts=2,
             interval=0.1,
             confidence=2,
             deadline=deadline,
+            member_count=member_count,
         )
-        if stable and len(team) == 4 and any(member != "?" for member in team):
+        if member_count is not None:
+            team = list(team)[:member_count]
+        if stable and 1 <= len(team) <= 4 and any(member != "?" for member in team):
             self._configure_team(team, reset_runtime=True)
 
     def _observe_battle(self):
@@ -1117,6 +1126,7 @@ class TimedCombatLogic:
     def run(self, start_sleep=None, no_battle=False, deadline=None):
         task = self.task
         task.exit_check_count = 0
+        task._non_settlement_exit_since = None
         reset_enemy_presence_probe(task)
         self._enemy_presence_confirmed = False
         self.enemy_pause_started = None

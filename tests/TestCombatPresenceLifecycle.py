@@ -95,7 +95,48 @@ class _TeamHudTask:
         pass
 
 
+class _PortraitTask:
+    _is_detected_team_frame_matched = BattleMixin._is_detected_team_frame_matched
+    _log_detected_team_member_result = BattleMixin._log_detected_team_member_result
+
+    def __init__(self, frames):
+        self.portraits = iter(frames)
+        self._battle_member_count = 3
+        self._battle_team = ["佩丽卡", "艾维文娜", "梨诺"]
+        self.now = 0.0
+
+    def active_time(self):
+        return self.now
+
+    def next_frame(self):
+        self.now += 0.1
+        return np.zeros((10, 10, 3), dtype=np.uint8)
+
+    def detect_team(self, frame):
+        return next(self.portraits)
+
+    def sleep(self, seconds):
+        self.now += seconds
+
+    def log_info(self, message):
+        pass
+
+
 class TestCombatPresenceLifecycle(unittest.TestCase):
+    def test_blocking_team_detection_ignores_unused_right_portrait_slots(self):
+        task = _PortraitTask([["佩丽卡", "艾维文娜", "梨诺", "狼卫"], ["佩丽卡", "艾维文娜", "梨诺", "洛茜"]])
+        self.assertEqual(
+            BattleMixin.detect_team_stable(task, max_attempts=2),
+            (["佩丽卡", "艾维文娜", "梨诺"], True),
+        )
+
+    def test_native_three_person_ultimate_animation_and_recovery_use_only_active_portraits(self):
+        for hidden in (True, False):
+            with self.subTest(hidden=hidden):
+                portraits = ["?", "?", "?"] if hidden else ["佩丽卡", "艾维文娜", "梨诺"]
+                task = _PortraitTask([[*portraits, "狼卫"], [*portraits, "洛茜"]])
+                self.assertTrue(BattleMixin._has_detected_team_member(task, require_four_unknown=hidden))
+
     def test_ready_skills_wait_through_initial_partial_scans_and_confirmed_absence(self):
         for patched in (False, True):
             for kind in ("battle", "link", "ult"):
@@ -150,6 +191,18 @@ class TestCombatPresenceLifecycle(unittest.TestCase):
         self.assertIsNotNone(ultimate)
         self.assertEqual(ultimate.x, task.boxes[-1].x)
 
+    def test_native_short_team_ultimates_use_right_aligned_skill_boxes(self):
+        for count in (1, 2, 3):
+            with self.subTest(count=count):
+                task = _TeamHudTask(count, visible_slots=range(1, count + 1))
+                task._battle_team = None
+                self.assertTrue(BattleMixin.in_team(task))
+                self.assertEqual(task._battle_member_count, count)
+                for slot in range(1, count + 1):
+                    ultimate = BattleMixin._find_battle_ult(task, f"ult_{slot}")
+                    self.assertIsNotNone(ultimate)
+                    self.assertEqual(ultimate.x, task.boxes[4 - count + slot - 1].x)
+
     def test_missing_team_icons_do_not_end_combat_while_sp_hud_remains(self):
         task = _ExitTask()
         for points in (0, 1, 3):
@@ -163,6 +216,35 @@ class TestCombatPresenceLifecycle(unittest.TestCase):
         task.team_visible = True
         task.points = 0
         self.assertFalse(task._check_single_exit_condition())
+
+    def test_sustained_level_ui_and_absent_enemy_end_combat_with_lingering_sp_hud(self):
+        task = _ExitTask()
+        task.has_lv = True
+        task.team_visible = True
+        task.points = 0
+        self.assertFalse(task._check_single_exit_condition())
+        task.now += 2.9
+        self.assertFalse(task._check_single_exit_condition())
+        task.now += 0.1
+        self.assertFalse(task.is_combat_ended(task._check_single_exit_condition()))
+        task.now += 0.5
+        self.assertTrue(task.is_combat_ended(task._check_single_exit_condition()))
+
+    def test_enemy_or_unknown_observation_interrupts_lingering_hud_exit_confirmation(self):
+        for presence in (EnemyPresence.PRESENT, EnemyPresence.UNKNOWN):
+            with self.subTest(presence=presence):
+                task = _ExitTask()
+                task.has_lv = True
+                task.points = 0
+                self.assertFalse(task._check_single_exit_condition())
+                task.now += 2.0
+                task.presence = presence
+                self.assertFalse(task._check_single_exit_condition())
+                task.presence = EnemyPresence.ABSENT
+                task.now += 2.0
+                self.assertFalse(task._check_single_exit_condition())
+                task.now += 2.9
+                self.assertFalse(task._check_single_exit_condition())
 
     def test_visible_enemy_blocks_exit_when_team_and_sp_hud_temporarily_disappear(self):
         task = _ExitTask()

@@ -669,6 +669,7 @@ class BattleMixin(BaseEfTask):
         interval: float = 0.2,
         confidence: int = 2,
         deadline: float | None = None,
+        member_count: int | None = None,
     ) -> tuple[list[str], bool]:
         """多帧稳定识别：连续 confidence 次识别出相同队伍才视为稳定。
 
@@ -679,12 +680,17 @@ class BattleMixin(BaseEfTask):
             interval:      每次采样间隔秒数
             confidence:    连续多少次相同结果视为稳定
             deadline:      可选截止时间戳（同 self.active_time() 单位），超时立即停止
+            member_count:  实际队伍人数；头像左对齐，只检查最左侧这些槽位
 
         Returns:
             (team, stable) 二元组
         """
         last_result: list[str] = []
         streak = 0
+        if member_count is None:
+            observed_count = getattr(self, "_battle_member_count", 0)
+            if 1 <= observed_count <= 4:
+                member_count = observed_count
 
         for i in range(max_attempts):
             if deadline is not None and self.active_time() >= deadline:
@@ -696,6 +702,8 @@ class BattleMixin(BaseEfTask):
                 continue
 
             current = self.detect_team(frame)
+            if member_count is not None:
+                current = current[:member_count]
 
             # 无效识别：空结果，或者全部都是 ?
             if not current or all(x == "?" for x in current):
@@ -731,7 +739,8 @@ class BattleMixin(BaseEfTask):
         因一个已经永久变成 "?" 的槽位每次都等到超时。
         """
         if require_four_unknown:
-            return bool(team) and len(team) == 4 and all(member == "?" for member in team)
+            member_count = len(battle_team) if battle_team else (getattr(self, "_battle_member_count", 0) or 4)
+            return bool(team) and len(team) == member_count and all(member == "?" for member in team)
         if not team or not battle_team or len(team) != len(battle_team):
             return False
         disabled = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
@@ -744,11 +753,11 @@ class BattleMixin(BaseEfTask):
         """记录队伍检测成功或超时的结果。"""
         if success:
             if require_four_unknown:
-                self.log_info(f"队伍稳定为 4 个未知角色: {team}")
+                self.log_info(f"队伍稳定为 {len(team)} 个未知角色: {team}")
             else:
                 self.log_info(f"队伍恢复确认: {team}")
         elif require_four_unknown:
-            self.log_info(f"等待队伍稳定为 4 个 '?' 超时（{time_out:.1f}秒）")
+            self.log_info(f"等待队伍头像全部暂不可见超时（{time_out:.1f}秒）")
         else:
             self.log_info(f"等待队伍恢复超时（{time_out:.1f}秒），目标队伍: {battle_team}")
 
@@ -759,7 +768,7 @@ class BattleMixin(BaseEfTask):
             等待队伍恢复为战斗开始时的完整队伍。
 
         require_four_unknown=True:
-            等待队伍连续两帧识别为 4 个 '?'。
+            等待实际队伍的所有头像连续两帧识别为 '?'，兼容 1～4 人队伍。
 
         超时返回 False。
         """
@@ -768,6 +777,7 @@ class BattleMixin(BaseEfTask):
         if not require_four_unknown and not battle_team:
             return False
 
+        member_count = len(battle_team) if battle_team else (getattr(self, "_battle_member_count", 0) or 4)
         start_time = self.active_time()
         matched_count = 0
 
@@ -778,7 +788,7 @@ class BattleMixin(BaseEfTask):
                 matched_count = 0
                 continue
 
-            team = self.detect_team(frame)
+            team = self.detect_team(frame)[:member_count]
             self.log_info(f"当前队伍角色: {team}")
 
             matched = self._is_detected_team_frame_matched(team, battle_team, require_four_unknown)
@@ -1174,6 +1184,7 @@ class BattleMixin(BaseEfTask):
         """
         # 结算模板优先检查：检测到 fL.b 结算模板同样判定战斗结束
         if self.find_feature(feature=fL.b):
+            self._non_settlement_exit_since = None
             self.log_info("退出检查通过: 检测到结算模板 fL.b")
             return True
 
@@ -1183,6 +1194,7 @@ class BattleMixin(BaseEfTask):
         if last_ult_time > 0:
             elapsed = self.active_time() - last_ult_time
             if elapsed < self.ULT_EXIT_DELAY:
+                self._non_settlement_exit_since = None
                 self.log_debug(f"终结技释放后延迟退出检查（已过 {elapsed:.1f}s，需等待 {self.ULT_EXIT_DELAY:.1f}s）")
                 return False
 
@@ -1191,14 +1203,28 @@ class BattleMixin(BaseEfTask):
         in_team = self.in_team()
 
         if not (has_lv or not in_team):
+            self._non_settlement_exit_since = None
             return False
 
         # 等级模板和队伍图标可能在倒地、状态切换或动画中误检/漏检。
-        # 技力 HUD（含零技力）或当前敌人血条仍在时，不进入退出确认。
+        # 技力 HUD 常驻时，只有等级标记与明确缺敌持续 3 秒才允许非结算退出。
+        presence = self.probe_enemy_presence()
+        if presence == EnemyPresence.PRESENT:
+            self._non_settlement_exit_since = None
+            return False
         if self.get_skill_bar_count() >= 0:
-            return False
-        if self.probe_enemy_presence() == EnemyPresence.PRESENT:
-            return False
+            if not has_lv or presence != EnemyPresence.ABSENT:
+                self._non_settlement_exit_since = None
+                return False
+            now = self.active_time()
+            candidate_since = getattr(self, "_non_settlement_exit_since", None)
+            if candidate_since is None or now < candidate_since:
+                self._non_settlement_exit_since = now
+                return False
+            if now - candidate_since < 3.0:
+                return False
+        else:
+            self._non_settlement_exit_since = None
 
         self.log_info(f"退出检查通过: has_lv={has_lv}, in_team={in_team},")
 
