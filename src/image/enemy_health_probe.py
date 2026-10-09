@@ -217,74 +217,86 @@ def _find_enemy_hp_run(
     sampled = roi[::sample_step]
     mask = cv2.inRange(sampled, ENEMY_HP_BGR_LOWER, ENEMY_HP_BGR_UPPER)
     horizontal = cv2.erode(mask, _run_kernel(discovery_min_run))
-    points = cv2.findNonZero(horizontal)
-    if points is None:
+    candidate_rows = np.flatnonzero(np.any(horizontal, axis=1))
+    if not candidate_rows.size:
         return None
 
-    candidates = points[:, 0, :]
     discovery_rows = 0
     geometry_rows = 0
+    rejected_context_boxes = set()
     # Thin one-row VFX can satisfy the cheap horizontal discovery gate. Let
     # those rows fail the vertical-height check without consuming the tighter
     # geometry-row budget, while keeping the raw discovery scan explicitly
     # bounded so lowering the discovery width cannot make work unbounded.
-    for sampled_y in np.unique(candidates[:, 1]):
+    for sampled_y in candidate_rows:
         if discovery_rows >= ENEMY_HP_MAX_DISCOVERY_ROWS or geometry_rows >= ENEMY_HP_MAX_GEOMETRY_ROWS:
             break
         discovery_rows += 1
         row_has_geometry = False
-        row_xs = np.sort(candidates[candidates[:, 1] == sampled_y, 0])
-        segment_starts = row_xs[np.r_[True, np.diff(row_xs) > 1]]
+        # The erosion mask already orders rows and columns. Avoid materializing
+        # every pink point and repeatedly filtering/sorting that full point list.
+        row_xs = np.flatnonzero(horizontal[int(sampled_y)])
+        segment_breaks = np.diff(row_xs) > 1
+        segment_starts = row_xs[np.r_[True, segment_breaks]]
+        segment_ends = row_xs[np.r_[segment_breaks, True]]
 
-        for x_value in segment_starts:
-            x = int(x_value)
+        for first_x, last_x in zip(segment_starts, segment_ends, strict=True):
+            first_x, last_x = int(first_x), int(last_x)
             y = int(sampled_y) * sample_step
-            column = roi[:, x]
-            matching = np.all(
-                (column >= ENEMY_HP_BGR_LOWER) & (column <= ENEMY_HP_BGR_UPPER),
-                axis=1,
-            ).tolist()
+            hit_width = 0
+            # The first discovery column can intersect a connected vertical VFX
+            # strip. Check at most three distinct columns, keeping the common
+            # successful first-column path and the discovery-row budgets intact.
+            for x in dict.fromkeys((first_x, (first_x + last_x) // 2, last_x)):
+                matching = cv2.inRange(roi[:, x : x + 1], ENEMY_HP_BGR_LOWER, ENEMY_HP_BGR_UPPER).ravel().tolist()
 
-            # The vertical evidence must belong to the very same horizontal
-            # candidate row. Measure the complete contiguous run in this column
-            # so height-relative width thresholds use the real candidate height.
-            run_start, run_end, run_height = _true_run_containing(matching, y)
-            if run_height < min_height:
-                continue
-
-            sampled_row = mask[int(sampled_y)] != 0
-            left = x
-            while left > 0 and sampled_row[left - 1]:
-                left -= 1
-            right = x
-            while right + 1 < sampled_row.shape[0] and sampled_row[right + 1]:
-                right += 1
-
-            hit_top = int(run_start)
-            hit_width = int(right - left + 1)
-            hit_height = int(run_end - run_start + 1)
-            min_width, direct_width = _enemy_hp_width_thresholds(hit_height)
-            if hit_width < min_width:
-                continue
-            row_has_geometry = True
-
-            if hit_width < direct_width:
-                context_source = roi if context_roi is None else context_roi
-                context_x, context_y = context_offset if context_roi is not None else (0, 0)
-                if not _has_enemy_hp_context(
-                    context_source,
-                    int(left) + int(context_x),
-                    hit_top + int(context_y),
-                    hit_width,
-                    hit_height,
-                    screen_width,
-                    screen_height,
-                ):
-                    # Widths in the middle band need the supporting HP/stagger-bar
-                    # structure. Keep looking for another candidate if it is absent.
+                # Measure the complete contiguous run containing this same
+                # sampled pixel; disconnected vertical evidence cannot count.
+                run_start, run_end, run_height = _true_run_containing(matching, y)
+                if run_height < min_height:
                     continue
 
-            return int(left), hit_top, hit_width, hit_height
+                if not hit_width:
+                    sampled_row = mask[int(sampled_y)] != 0
+                    left = first_x
+                    while left > 0 and sampled_row[left - 1]:
+                        left -= 1
+                    right = first_x
+                    while right + 1 < sampled_row.shape[0] and sampled_row[right + 1]:
+                        right += 1
+                    hit_width = int(right - left + 1)
+
+                hit_top = int(run_start)
+                hit_height = int(run_end - run_start + 1)
+                min_width, direct_width = _enemy_hp_width_thresholds(hit_height)
+                if hit_width < min_width:
+                    continue
+                row_has_geometry = True
+
+                if hit_width < direct_width:
+                    context_box = (int(left), hit_top, hit_width, hit_height)
+                    if context_box in rejected_context_boxes:
+                        continue
+                    context_source = roi if context_roi is None else context_roi
+                    context_x, context_y = context_offset if context_roi is not None else (0, 0)
+                    if not _has_enemy_hp_context(
+                        context_source,
+                        int(left) + int(context_x),
+                        hit_top + int(context_y),
+                        hit_width,
+                        hit_height,
+                        screen_width,
+                        screen_height,
+                    ):
+                        # The same box can recur in another representative column
+                        # or sampled row. Its context is unchanged within this call;
+                        # the row still consumes the geometry budget above.
+                        rejected_context_boxes.add(context_box)
+                        # A later column may reveal a shorter actual HP run that
+                        # passes directly or has the correctly aligned UI edge.
+                        continue
+
+                return int(left), hit_top, hit_width, hit_height
 
         if row_has_geometry:
             geometry_rows += 1
