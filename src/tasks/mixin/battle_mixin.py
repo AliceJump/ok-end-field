@@ -644,6 +644,16 @@ class BattleMixin(BaseEfTask):
             )
         return boxes
 
+    def switch_main_control(self, slot: int) -> bool:
+        """Send a fixed F1..F4 handoff; the caller confirms it on a later frame."""
+        team = getattr(self, "_battle_team", None) or []
+        member_count = len(team) or getattr(self, "_battle_member_count", 0)
+        ignored = getattr(self, "_battle_team_disabled_slots", set()) or set()
+        if not 1 <= slot <= min(member_count, 4) or slot - 1 in ignored:
+            return False
+        self.send_key(f"f{slot}")
+        return True
+
     def detect_current_char_index(self, frame=None) -> int | None:
         """判定当前操作角色是编队第几个（0 起，未识别返回 None）。
 
