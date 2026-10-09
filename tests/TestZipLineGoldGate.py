@@ -77,6 +77,31 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(kwargs["tolerance"], 50)
         self.assertTrue(kwargs["raise_if_fail"])
 
+    def test_ocr_fallback_checks_shared_deadline_between_chunks(self):
+        gold_processor = object()
+        white_processor = object()
+        stub = SimpleNamespace(
+            _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
+            make_hsv_isolator=Mock(side_effect=[gold_processor, white_processor]),
+            align_ocr_or_find_target_to_center=Mock(return_value=False),
+            active_time=Mock(side_effect=[0.0, 20.0]),
+            _zip_line_alignment_failed=lambda raise_if_fail: ZipLineMixin._zip_line_alignment_failed(raise_if_fail),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance_ocr(
+            stub,
+            108,
+            max_time=10,
+            raise_if_fail=False,
+            deadline=20.0,
+            max_iterations=17,
+        )
+
+        self.assertFalse(result)
+        stub.align_ocr_or_find_target_to_center.assert_called_once()
+        self.assertEqual(stub.align_ocr_or_find_target_to_center.call_args.kwargs["max_time"], 1)
+        self.assertFalse(stub.align_ocr_or_find_target_to_center.call_args.kwargs["raise_if_fail"])
+
     def test_icon_detector_ignores_blue_and_red_and_prefers_white_before_yellow(self):
         stub = self._detector_stub()
         frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
@@ -160,7 +185,58 @@ class TestZipLineGoldGate(unittest.TestCase):
             tolerance=50,
             max_time=100,
             raise_if_fail=True,
+            deadline=None,
+            max_iterations=None,
         )
+
+    def test_template_alignment_shares_retry_deadline_and_remaining_attempt_budget(self):
+        stub = SimpleNamespace(
+            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
+            scale_distance=Mock(return_value=50),
+            active_time=Mock(return_value=0.0),
+            next_frame=Mock(return_value="frame"),
+            _find_zip_line_template_target=Mock(return_value=None),
+            log_info=Mock(),
+            _align_zip_line_distance_ocr=Mock(return_value="fallback"),
+            sleep=Mock(),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance(stub, 108, max_time=10, deadline=20.0)
+
+        self.assertEqual(result, "fallback")
+        self.assertEqual(stub._find_zip_line_template_target.call_count, 3)
+        stub._align_zip_line_distance_ocr.assert_called_once_with(
+            108,
+            need_scroll=None,
+            tolerance=50,
+            max_time=10,
+            raise_if_fail=True,
+            deadline=20.0,
+            max_iterations=17,
+        )
+
+    def test_template_alignment_does_not_start_after_retry_deadline(self):
+        stub = SimpleNamespace(
+            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
+            scale_distance=Mock(return_value=50),
+            active_time=Mock(return_value=20.0),
+            next_frame=Mock(),
+            _find_zip_line_template_target=Mock(),
+            _align_zip_line_distance_ocr=Mock(),
+            _zip_line_alignment_failed=lambda raise_if_fail: ZipLineMixin._zip_line_alignment_failed(raise_if_fail),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance(
+            stub,
+            108,
+            max_time=10,
+            raise_if_fail=False,
+            deadline=20.0,
+        )
+
+        self.assertFalse(result)
+        stub.next_frame.assert_not_called()
+        stub._align_zip_line_distance_ocr.assert_not_called()
 
     def test_template_hit_resets_consecutive_miss_counter(self):
         candidate = {
@@ -300,6 +376,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(retry_kwargs["tolerance"], 50)
         self.assertEqual(retry_kwargs["max_time"], 10)
         self.assertFalse(retry_kwargs["raise_if_fail"])
+        self.assertEqual(retry_kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_not_called()
 
     def test_gate_realign_failure_falls_back_without_raising_alignment_error(self):
@@ -317,6 +394,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(stub._align_zip_line_distance.call_count, 2)
         retry_kwargs = stub._align_zip_line_distance.call_args_list[1].kwargs
         self.assertFalse(retry_kwargs["raise_if_fail"])
+        self.assertEqual(retry_kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_called_once_with()
 
     def test_gate_retry_exhaustion_falls_back_to_direct_click_and_e(self):
@@ -333,6 +411,8 @@ class TestZipLineGoldGate(unittest.TestCase):
 
         self.assertEqual(stub._try_click_on_zip_line.call_count, 3)
         self.assertEqual(stub._align_zip_line_distance.call_count, 3)
+        for retry_call in stub._align_zip_line_distance.call_args_list[1:]:
+            self.assertEqual(retry_call.kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_called_once_with()
 
     def test_interaction_failure_does_not_use_unlocked_legacy_fallback(self):
