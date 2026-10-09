@@ -89,6 +89,7 @@ class TimedCombatLogic:
         self.battle_retry_after = {}
         self.dead_slot_evidence = {}
         self.enemy_pause_started = None
+        self._enemy_presence_confirmed = False
         self.last_action_attempt = None
         self.phase_planner = TeamPhasePlanner()
         self._last_phase_log = None
@@ -106,11 +107,25 @@ class TimedCombatLogic:
         self._holding = False
         self.task.mouse_up(key="left")
 
+    def _await_first_enemy(self, state, now):
+        """Require positive enemy evidence before spending skills in a new fight."""
+        if self._enemy_presence_confirmed:
+            return False
+        if state == EnemyPresence.PRESENT:
+            self._enemy_presence_confirmed = True
+            return False
+        if self.enemy_pause_started is None:
+            self.enemy_pause_started = now
+            self.task.log_info("时间排轴敌人占位检测: 等待首次确认敌人出现，暂停技能调度；保持普攻和中键索敌")
+        return True
+
     def _enemy_operation_paused(self):
         """Pause skill scheduling while an explicit detector says no enemy exists.
 
-        UNKNOWN preserves current behavior. Once an explicit ABSENT observation
-        starts a pause, UNKNOWN does not resume skill scheduling; a positive
+        Startup requires PRESENT; an incomplete UNKNOWN scan cannot authorize
+        a cast. After the first PRESENT, UNKNOWN preserves current behavior.
+        Once an explicit ABSENT observation starts a pause, UNKNOWN does not
+        resume skill scheduling; a positive
         PRESENT observation is required. Normal attack and middle-button target
         acquisition must keep running during this pause because those inputs are
         what let a newly spawned or newly reachable enemy become targetable.
@@ -118,8 +133,12 @@ class TimedCombatLogic:
         elapsed time keep advancing on the monotonic combat clock.
         """
         probe = getattr(self.task, "probe_enemy_presence", None)
-        state = normalize_enemy_presence(probe() if callable(probe) else None)
+        if not callable(probe):
+            return False
+        state = normalize_enemy_presence(probe())
         now = self._clock()
+        if self._await_first_enemy(state, now):
+            return True
 
         if state == EnemyPresence.ABSENT:
             if self.enemy_pause_started is None:
@@ -517,7 +536,7 @@ class TimedCombatLogic:
         self.task._battle_team_disabled_slots = ignored
 
     def _configure_team(self, team, *, reset_runtime=False, filled_slots=()):
-        """Apply a stable full-or-partial four-slot snapshot to the scheduler.
+        """Apply a stable full-or-partial 1..4-member snapshot to the scheduler.
 
         Composition-derived data is rebuilt whenever a '?' slot is completed,
         while cooldowns, active timelines and already-authored state timers stay
@@ -525,7 +544,7 @@ class TimedCombatLogic:
         completion does not.
         """
         team = list(team)
-        if len(team) != 4 or all(name == "?" for name in team):
+        if not 1 <= len(team) <= 4 or all(name == "?" for name in team):
             return False
 
         previous_team = list(self.team)
@@ -547,6 +566,7 @@ class TimedCombatLogic:
 
         self.team = team
         self.task._battle_team = list(team)
+        self.task._battle_member_count = len(team)
         self.ult_order = generate_damage_rotation(team)
         self.order = [
             token
@@ -709,7 +729,9 @@ class TimedCombatLogic:
             interval=0.05,
             confidence=2,
             deadline=deadline,
+            member_count=len(self.team),
         )
+        detected = list(detected)[: len(self.team)]
         if not stable or len(detected) != len(self.team) or all(member == "?" for member in detected):
             return
 
@@ -788,13 +810,19 @@ class TimedCombatLogic:
         )
 
     def _detect_team(self, deadline):
+        member_count = getattr(self.task, "_battle_member_count", None)
+        if member_count is not None and not 1 <= member_count <= 4:
+            return
         team, stable = self.task.detect_team_stable(
             max_attempts=2,
             interval=0.1,
             confidence=2,
             deadline=deadline,
+            member_count=member_count,
         )
-        if stable and len(team) == 4 and any(member != "?" for member in team):
+        if member_count is not None:
+            team = list(team)[:member_count]
+        if stable and 1 <= len(team) <= 4 and any(member != "?" for member in team):
             self._configure_team(team, reset_runtime=True)
 
     def _observe_battle(self):
@@ -1099,6 +1127,9 @@ class TimedCombatLogic:
         task = self.task
         task.exit_check_count = 0
         reset_enemy_presence_probe(task)
+        self._enemy_presence_confirmed = False
+        self.enemy_pause_started = None
+        self._enemy_absent_candidate_since = None
         task.mouse_up(key="left")
         try:
             if self.store is None:

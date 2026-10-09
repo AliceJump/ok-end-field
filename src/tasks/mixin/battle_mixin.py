@@ -669,6 +669,7 @@ class BattleMixin(BaseEfTask):
         interval: float = 0.2,
         confidence: int = 2,
         deadline: float | None = None,
+        member_count: int | None = None,
     ) -> tuple[list[str], bool]:
         """多帧稳定识别：连续 confidence 次识别出相同队伍才视为稳定。
 
@@ -679,12 +680,17 @@ class BattleMixin(BaseEfTask):
             interval:      每次采样间隔秒数
             confidence:    连续多少次相同结果视为稳定
             deadline:      可选截止时间戳（同 self.active_time() 单位），超时立即停止
+            member_count:  实际队伍人数；头像左对齐，只检查最左侧这些槽位
 
         Returns:
             (team, stable) 二元组
         """
         last_result: list[str] = []
         streak = 0
+        if member_count is None:
+            observed_count = getattr(self, "_battle_member_count", 0)
+            if 1 <= observed_count <= 4:
+                member_count = observed_count
 
         for i in range(max_attempts):
             if deadline is not None and self.active_time() >= deadline:
@@ -696,6 +702,8 @@ class BattleMixin(BaseEfTask):
                 continue
 
             current = self.detect_team(frame)
+            if member_count is not None:
+                current = current[:member_count]
 
             # 无效识别：空结果，或者全部都是 ?
             if not current or all(x == "?" for x in current):
@@ -731,7 +739,8 @@ class BattleMixin(BaseEfTask):
         因一个已经永久变成 "?" 的槽位每次都等到超时。
         """
         if require_four_unknown:
-            return bool(team) and len(team) == 4 and all(member == "?" for member in team)
+            member_count = len(battle_team) if battle_team else (getattr(self, "_battle_member_count", 0) or 4)
+            return bool(team) and len(team) == member_count and all(member == "?" for member in team)
         if not team or not battle_team or len(team) != len(battle_team):
             return False
         disabled = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
@@ -744,11 +753,11 @@ class BattleMixin(BaseEfTask):
         """记录队伍检测成功或超时的结果。"""
         if success:
             if require_four_unknown:
-                self.log_info(f"队伍稳定为 4 个未知角色: {team}")
+                self.log_info(f"队伍稳定为 {len(team)} 个未知角色: {team}")
             else:
                 self.log_info(f"队伍恢复确认: {team}")
         elif require_four_unknown:
-            self.log_info(f"等待队伍稳定为 4 个 '?' 超时（{time_out:.1f}秒）")
+            self.log_info(f"等待队伍头像全部暂不可见超时（{time_out:.1f}秒）")
         else:
             self.log_info(f"等待队伍恢复超时（{time_out:.1f}秒），目标队伍: {battle_team}")
 
@@ -759,7 +768,7 @@ class BattleMixin(BaseEfTask):
             等待队伍恢复为战斗开始时的完整队伍。
 
         require_four_unknown=True:
-            等待队伍连续两帧识别为 4 个 '?'。
+            等待实际队伍的所有头像连续两帧识别为 '?'，兼容 1～4 人队伍。
 
         超时返回 False。
         """
@@ -768,6 +777,7 @@ class BattleMixin(BaseEfTask):
         if not require_four_unknown and not battle_team:
             return False
 
+        member_count = len(battle_team) if battle_team else (getattr(self, "_battle_member_count", 0) or 4)
         start_time = self.active_time()
         matched_count = 0
 
@@ -778,7 +788,7 @@ class BattleMixin(BaseEfTask):
                 matched_count = 0
                 continue
 
-            team = self.detect_team(frame)
+            team = self.detect_team(frame)[:member_count]
             self.log_info(f"当前队伍角色: {team}")
 
             matched = self._is_detected_team_frame_matched(team, battle_team, require_four_unknown)
@@ -1021,41 +1031,33 @@ class BattleMixin(BaseEfTask):
         sequence_valid = False
         skill_checks = []
         boxes = self._battle_feature_boxes("skill")
-        for box_index, box in enumerate(boxes, start=1):
-            result = self.find_one(fL.skill_1, box=box)
-            match_position = f"({result.x},{result.y})" if result is not None else "-"
-            match_score = f"{result.confidence:.3f}" if result is not None else "-"
-            skill_checks.append(
-                f"skill_1->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
-                f"{'命中' if result is not None else '未命中'}@{match_position}, score={match_score}"
-            )
-            if result is None:
+        battle_team = getattr(self, "_battle_team", None) or []
+        disabled_slots = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
+        for start_index in range(len(boxes)):
+            member_count = len(boxes) - start_index
+            disabled = disabled_slots if len(battle_team) == member_count else set()
+            available = [slot for slot in range(member_count) if slot not in disabled]
+            required_matches = min(2, len(available))
+            if not required_matches:
                 continue
 
-            if box_index == len(boxes):
-                # skill_1 位于最后一个框时，表示单人队伍。
-                found_skills = 1
-                sequence_valid = True
-                break
-
-            matched_skills = 1
-            for skill_offset in range(1, len(boxes) - box_index + 1):
-                skill_number = skill_offset + 1
-                next_box = boxes[box_index + skill_offset - 1]
-                next_result = self.find_one(f"skill_{skill_number}", box=next_box)
-                next_position = f"({next_result.x},{next_result.y})" if next_result is not None else "-"
-                next_score = f"{next_result.confidence:.3f}" if next_result is not None else "-"
+            matched_skills = 0
+            for slot in available:
+                skill_number = slot + 1
+                box_index = start_index + slot + 1
+                box = boxes[box_index - 1]
+                result = self.find_one(f"skill_{skill_number}", box=box)
+                match_position = f"({result.x},{result.y})" if result is not None else "-"
+                match_score = f"{result.confidence:.3f}" if result is not None else "-"
                 skill_checks.append(
-                    f"skill_{skill_number}->框{box_index + skill_offset}"
-                    f"({next_box.x},{next_box.y},{next_box.width},{next_box.height}) "
-                    f"{'命中' if next_result is not None else '未命中'}@{next_position}, "
-                    f"score={next_score}"
+                    f"skill_{skill_number}->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
+                    f"{'命中' if result is not None else '未命中'}@{match_position}, score={match_score}"
                 )
-                if next_result is not None:
+                if result is not None:
                     matched_skills += 1
-                    if matched_skills >= 2:
-                        # 起始框决定队伍人数；第二个技能模板命中后即可确认队伍状态。
-                        found_skills = len(boxes) - box_index + 1
+                    if matched_skills >= required_matches:
+                        # 按原始编号确认右锚定队伍；一号位倒地不改变其余技能/终结技的位置。
+                        found_skills = member_count
                         sequence_valid = True
                         break
 

@@ -5,8 +5,9 @@ from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
 
 class _PartialTeamTask:
-    def __init__(self, detected_team):
+    def __init__(self, detected_team, member_count=4):
         self.detected_team = list(detected_team)
+        self._battle_member_count = member_count
         self._battle_team = None
         self._battle_team_disabled_slots = set()
         self.messages = []
@@ -22,10 +23,63 @@ class _PartialTeamTask:
 
 
 class TestTimedCombatPartialTeam(unittest.TestCase):
-    def _logic(self, detected_team):
-        task = _PartialTeamTask(detected_team)
+    def _logic(self, detected_team, member_count=4):
+        task = _PartialTeamTask(detected_team, member_count)
         logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: 0.0)
         return task, logic
+
+    def test_native_short_teams_use_left_aligned_portraits_and_actual_slot_numbers(self):
+        portraits = ["佩丽卡", "艾维文娜", "梨诺", "?"]
+        for count in (1, 2, 3):
+            with self.subTest(count=count):
+                task, logic = self._logic(portraits, member_count=count)
+                logic._detect_team(1)
+
+                self.assertEqual(logic.team, portraits[:count])
+                self.assertEqual(task._battle_team, portraits[:count])
+                self.assertEqual(task._battle_team_disabled_slots, set())
+                self.assertTrue(logic.order)
+                self.assertEqual(set(logic.ult_order), {str(slot) for slot in range(1, count + 1)})
+                self.assertTrue(all(1 <= int(token) <= count for token in logic.order))
+                self.assertFalse(logic._slot_available(str(count + 1)))
+
+    def test_unconfirmed_skill_layout_does_not_assume_four_members(self):
+        _task, logic = self._logic(["佩丽卡", "艾维文娜", "梨诺", "?"], member_count=0)
+        logic._detect_team(1)
+        self.assertEqual(logic.team, [])
+
+    def test_portrait_match_outside_native_team_cannot_start_scheduler(self):
+        for count in (1, 2, 3):
+            with self.subTest(count=count):
+                _task, logic = self._logic(["?", "?", "?", "佩丽卡"], member_count=count)
+                logic._detect_team(1)
+                self.assertEqual(logic.team, [])
+
+    def test_missing_portrait_inside_native_three_person_team_keeps_its_slot(self):
+        task, logic = self._logic(["佩丽卡", "?", "梨诺", "?"], member_count=3)
+        logic._detect_team(1)
+        self.assertEqual(logic.team, ["佩丽卡", "?", "梨诺"])
+        self.assertEqual(task._battle_team_disabled_slots, {1})
+
+        task.detected_team = ["佩丽卡", "艾维文娜", "梨诺", "狼卫"]
+        logic._refresh_team_slots(1)
+        self.assertEqual(logic.team, ["佩丽卡", "艾维文娜", "梨诺"])
+        self.assertTrue(logic._slot_available("2"))
+        self.assertFalse(logic._slot_available("4"))
+
+    def test_native_three_person_team_keeps_layout_when_first_member_is_lost(self):
+        task, logic = self._logic(["佩丽卡", "艾维文娜", "梨诺", "?"], member_count=3)
+        logic._detect_team(1)
+        task.detected_team = ["?", "艾维文娜", "梨诺", "?"]
+        task._battle_member_count = 0
+        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+            logic._refresh_team_slots(1)
+
+        self.assertEqual(logic.team, ["佩丽卡", "艾维文娜", "梨诺"])
+        self.assertEqual(logic.disabled_slots, {"1"})
+        self.assertEqual(task._battle_team_disabled_slots, {0})
+        self.assertTrue(logic._slot_available("2"))
+        self.assertTrue(logic._slot_available("3"))
 
     def test_partial_team_starts_scheduler_with_known_slots(self):
         partial = ["佩丽卡", "狼卫", "?", "管理员"]
