@@ -117,13 +117,11 @@ When 『Outpost exchange only buys priority goods』 is enabled, only goods in t
 
 The 『Trading goods priority sequence』 option is empty by default, in which case the program recognizes *goods the outpost accepts* and trades the *program-supported goods* among them in **random order**.
 
-To make the program trade in order, fill the 『Trading goods priority sequence』 with **goods names or regular expressions separated by commas `,`**, so that:
+To make the program trade in order, fill the 『Trading goods priority sequence』 with **regular expressions separated by English commas `,`**, so that:
 
 - For **priority goods** that are both *accepted by the outpost* and *supported by the program*, they are traded in **fill order**.
 - Other goods are traded in random order after the priority goods.
 - Wrong / not accepted / not supported goods names are ignored.
-
-Complete names of supported goods use exact matching; other expressions use regular-expression matching. For example, `息壤` does not match `重息壤`; use `.*息壤.*` to match goods whose names contain `息壤`.
 
 #### Example
 
