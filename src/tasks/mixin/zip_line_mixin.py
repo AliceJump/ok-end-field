@@ -73,10 +73,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         说明文本通过 self.tr() 走 ok 的 gettext i18n（msgid 写入 ok.po，编译成 ok.mo 生效）。
         由 InstructionsMixin 延迟构建并追加到任务原有说明之后，使用滑索的任务无需在 __init__ 里显式调用。
         """
+        # 键名从滑索配置数据动态读取，不硬编码；显示时经 self.tr() 跟随 UI 语言翻译
         start_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if k.startswith("通向")]
         target_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if not k.startswith("通向")]
         gather_keys_raw = ZIP_LINE_GATHER_KEYS
 
+        # 例子动态取第一个送货目标及其配置值（查配置用原始键名，显示用翻译后键名）
         example_key_raw = target_keys_raw[0] if target_keys_raw else (start_keys_raw[0] if start_keys_raw else "")
         example_raw = str(self.zip_line_config.get(example_key_raw, "") or "").strip()
         example_seq = " → ".join(f"{n}m" for n in example_raw.split(",") if str(n).strip())
@@ -326,6 +328,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     f"accepted_delta={len(candidates) - candidate_count_before}"
                 )
 
+        # 相同距离同时存在时先检查白色，再检查黄色/金黄色；同色优先转动更少的目标。
         candidates.sort(key=lambda item: (0 if item["state"] == "white" else 1, item["radius"], -item["score"]))
         if callable(log_info):
             summary = ", ".join(
@@ -567,7 +570,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         self.click(after_sleep=0.1)
         for _ in range(max_attempts):
-            self.send_key("e")
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True, None
         return False, "interaction"
@@ -577,7 +580,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         stop_match, stop_box = self._zip_line_stop_state()
         for _ in range(max_attempts):
             self.click(after_sleep=0.1)
-            self.send_key("e")
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True
         return False
@@ -641,7 +644,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             start = self.active_time()
             while True:
                 self.next_frame()
-                self.send_key("e")
+                self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
                 self.sleep(0.1)
                 result = self.ocr(
                     match=[
@@ -681,7 +684,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     ),
                     passes=1,
                     duration=0.1,
-                    keys=("s", "w", "a", "d"),
+                    keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
                 )
                 if result:
                     self.press_key("v", after_sleep=1)
