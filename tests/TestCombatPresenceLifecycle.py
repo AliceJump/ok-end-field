@@ -4,7 +4,6 @@ from unittest.mock import patch
 import numpy as np
 from ok import Box
 
-from src.data.combat_observation import EnemyPresence
 from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.patches.timed_enemy_absence_stability_patch import _enemy_operation_paused_with_stability
 from src.tasks.mixin.battle_mixin import BattleMixin
@@ -43,33 +42,6 @@ class _SpawnTask(FakeTask):
     def use_ult(self, **kwargs):
         self.cast_times.append(self.now)
         return super().use_ult(**kwargs)
-
-
-class _ExitTask(FakeTask):
-    _check_single_exit_condition = BattleMixin._check_single_exit_condition
-    is_combat_ended = BattleMixin.is_combat_ended
-    ULT_EXIT_DELAY = BattleMixin.ULT_EXIT_DELAY
-
-    def __init__(self):
-        super().__init__()
-        self.now = 20.0
-        self.has_lv = False
-        self.team_visible = False
-        self.settlement = False
-        self.presence = EnemyPresence.ABSENT
-        self.points = -1
-
-    def find_feature(self, **kwargs):
-        return self.settlement
-
-    def ocr_lv(self):
-        return self.has_lv
-
-    def in_team(self):
-        return self.team_visible
-
-    def probe_enemy_presence(self):
-        return self.presence
 
 
 class _TeamHudTask:
@@ -202,73 +174,6 @@ class TestCombatPresenceLifecycle(unittest.TestCase):
                     ultimate = BattleMixin._find_battle_ult(task, f"ult_{slot}")
                     self.assertIsNotNone(ultimate)
                     self.assertEqual(ultimate.x, task.boxes[4 - count + slot - 1].x)
-
-    def test_missing_team_icons_do_not_end_combat_while_sp_hud_remains(self):
-        task = _ExitTask()
-        for points in (0, 1, 3):
-            with self.subTest(points=points):
-                task.points = points
-                self.assertFalse(task._check_single_exit_condition())
-
-    def test_level_template_does_not_end_combat_while_sp_hud_remains(self):
-        task = _ExitTask()
-        task.has_lv = True
-        task.team_visible = True
-        task.points = 0
-        self.assertFalse(task._check_single_exit_condition())
-
-    def test_sustained_level_ui_and_absent_enemy_end_combat_with_lingering_sp_hud(self):
-        task = _ExitTask()
-        task.has_lv = True
-        task.team_visible = True
-        task.points = 0
-        self.assertFalse(task._check_single_exit_condition())
-        task.now += 2.9
-        self.assertFalse(task._check_single_exit_condition())
-        task.now += 0.1
-        self.assertFalse(task.is_combat_ended(task._check_single_exit_condition()))
-        task.now += 0.5
-        self.assertTrue(task.is_combat_ended(task._check_single_exit_condition()))
-
-    def test_enemy_or_unknown_observation_interrupts_lingering_hud_exit_confirmation(self):
-        for presence in (EnemyPresence.PRESENT, EnemyPresence.UNKNOWN):
-            with self.subTest(presence=presence):
-                task = _ExitTask()
-                task.has_lv = True
-                task.points = 0
-                self.assertFalse(task._check_single_exit_condition())
-                task.now += 2.0
-                task.presence = presence
-                self.assertFalse(task._check_single_exit_condition())
-                task.presence = EnemyPresence.ABSENT
-                task.now += 2.0
-                self.assertFalse(task._check_single_exit_condition())
-                task.now += 2.9
-                self.assertFalse(task._check_single_exit_condition())
-
-    def test_visible_enemy_blocks_exit_when_team_and_sp_hud_temporarily_disappear(self):
-        task = _ExitTask()
-        task.presence = EnemyPresence.PRESENT
-        self.assertFalse(task._check_single_exit_condition())
-
-    def test_real_exit_still_requires_two_consecutive_observations(self):
-        task = _ExitTask()
-        task.has_lv = True
-        task.team_visible = True
-        self.assertFalse(task.is_combat_ended(task._check_single_exit_condition()))
-        task.points = 1
-        self.assertFalse(task.is_combat_ended(task._check_single_exit_condition()))
-        task.points = -1
-        self.assertFalse(task.is_combat_ended(task._check_single_exit_condition()))
-        self.assertTrue(task.is_combat_ended(task._check_single_exit_condition()))
-
-    def test_settlement_wins_over_lingering_enemy_and_combat_hud(self):
-        task = _ExitTask()
-        task.settlement = True
-        task.points = 3
-        task.presence = EnemyPresence.PRESENT
-        task._last_ult_release_time = task.now
-        self.assertTrue(task._check_single_exit_condition())
 
 
 if __name__ == "__main__":

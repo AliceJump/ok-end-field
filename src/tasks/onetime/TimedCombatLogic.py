@@ -1126,7 +1126,6 @@ class TimedCombatLogic:
     def run(self, start_sleep=None, no_battle=False, deadline=None):
         task = self.task
         task.exit_check_count = 0
-        task._non_settlement_exit_since = None
         reset_enemy_presence_probe(task)
         self._enemy_presence_confirmed = False
         self.enemy_pause_started = None

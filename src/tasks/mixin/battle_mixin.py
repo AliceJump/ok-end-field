@@ -1184,7 +1184,6 @@ class BattleMixin(BaseEfTask):
         """
         # 结算模板优先检查：检测到 fL.b 结算模板同样判定战斗结束
         if self.find_feature(feature=fL.b):
-            self._non_settlement_exit_since = None
             self.log_info("退出检查通过: 检测到结算模板 fL.b")
             return True
 
@@ -1194,7 +1193,6 @@ class BattleMixin(BaseEfTask):
         if last_ult_time > 0:
             elapsed = self.active_time() - last_ult_time
             if elapsed < self.ULT_EXIT_DELAY:
-                self._non_settlement_exit_since = None
                 self.log_debug(f"终结技释放后延迟退出检查（已过 {elapsed:.1f}s，需等待 {self.ULT_EXIT_DELAY:.1f}s）")
                 return False
 
@@ -1203,28 +1201,7 @@ class BattleMixin(BaseEfTask):
         in_team = self.in_team()
 
         if not (has_lv or not in_team):
-            self._non_settlement_exit_since = None
             return False
-
-        # 等级模板和队伍图标可能在倒地、状态切换或动画中误检/漏检。
-        # 技力 HUD 常驻时，只有等级标记与明确缺敌持续 3 秒才允许非结算退出。
-        presence = self.probe_enemy_presence()
-        if presence == EnemyPresence.PRESENT:
-            self._non_settlement_exit_since = None
-            return False
-        if self.get_skill_bar_count() >= 0:
-            if not has_lv or presence != EnemyPresence.ABSENT:
-                self._non_settlement_exit_since = None
-                return False
-            now = self.active_time()
-            candidate_since = getattr(self, "_non_settlement_exit_since", None)
-            if candidate_since is None or now < candidate_since:
-                self._non_settlement_exit_since = now
-                return False
-            if now - candidate_since < 3.0:
-                return False
-        else:
-            self._non_settlement_exit_since = None
 
         self.log_info(f"退出检查通过: has_lv={has_lv}, in_team={in_team},")
 
