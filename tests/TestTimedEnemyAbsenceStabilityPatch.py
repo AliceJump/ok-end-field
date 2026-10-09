@@ -5,6 +5,7 @@ from src.patches.timed_enemy_absence_stability_patch import (
     _ABSENT_CONFIRM_SECONDS,
     _enemy_operation_paused_with_stability,
 )
+from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
 
 class _Task:
@@ -19,11 +20,12 @@ class _Task:
         self.logs.append(message)
 
 
-class _Logic:
+class _Logic(TimedCombatLogic):
     def __init__(self):
         self.task = _Task()
         self.now = 1.0
         self.enemy_pause_started = None
+        self._enemy_presence_confirmed = True
 
     def _clock(self):
         return self.now

@@ -1021,41 +1021,33 @@ class BattleMixin(BaseEfTask):
         sequence_valid = False
         skill_checks = []
         boxes = self._battle_feature_boxes("skill")
-        for box_index, box in enumerate(boxes, start=1):
-            result = self.find_one(fL.skill_1, box=box)
-            match_position = f"({result.x},{result.y})" if result is not None else "-"
-            match_score = f"{result.confidence:.3f}" if result is not None else "-"
-            skill_checks.append(
-                f"skill_1->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
-                f"{'命中' if result is not None else '未命中'}@{match_position}, score={match_score}"
-            )
-            if result is None:
+        battle_team = getattr(self, "_battle_team", None) or []
+        disabled_slots = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
+        for start_index in range(len(boxes)):
+            member_count = len(boxes) - start_index
+            disabled = disabled_slots if len(battle_team) == member_count else set()
+            available = [slot for slot in range(member_count) if slot not in disabled]
+            required_matches = min(2, len(available))
+            if not required_matches:
                 continue
 
-            if box_index == len(boxes):
-                # skill_1 位于最后一个框时，表示单人队伍。
-                found_skills = 1
-                sequence_valid = True
-                break
-
-            matched_skills = 1
-            for skill_offset in range(1, len(boxes) - box_index + 1):
-                skill_number = skill_offset + 1
-                next_box = boxes[box_index + skill_offset - 1]
-                next_result = self.find_one(f"skill_{skill_number}", box=next_box)
-                next_position = f"({next_result.x},{next_result.y})" if next_result is not None else "-"
-                next_score = f"{next_result.confidence:.3f}" if next_result is not None else "-"
+            matched_skills = 0
+            for slot in available:
+                skill_number = slot + 1
+                box_index = start_index + slot + 1
+                box = boxes[box_index - 1]
+                result = self.find_one(f"skill_{skill_number}", box=box)
+                match_position = f"({result.x},{result.y})" if result is not None else "-"
+                match_score = f"{result.confidence:.3f}" if result is not None else "-"
                 skill_checks.append(
-                    f"skill_{skill_number}->框{box_index + skill_offset}"
-                    f"({next_box.x},{next_box.y},{next_box.width},{next_box.height}) "
-                    f"{'命中' if next_result is not None else '未命中'}@{next_position}, "
-                    f"score={next_score}"
+                    f"skill_{skill_number}->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
+                    f"{'命中' if result is not None else '未命中'}@{match_position}, score={match_score}"
                 )
-                if next_result is not None:
+                if result is not None:
                     matched_skills += 1
-                    if matched_skills >= 2:
-                        # 起始框决定队伍人数；第二个技能模板命中后即可确认队伍状态。
-                        found_skills = len(boxes) - box_index + 1
+                    if matched_skills >= required_matches:
+                        # 按原始编号确认右锚定队伍；一号位倒地不改变其余技能/终结技的位置。
+                        found_skills = member_count
                         sequence_valid = True
                         break
 
@@ -1199,6 +1191,13 @@ class BattleMixin(BaseEfTask):
         in_team = self.in_team()
 
         if not (has_lv or not in_team):
+            return False
+
+        # 等级模板和队伍图标可能在倒地、状态切换或动画中误检/漏检。
+        # 技力 HUD（含零技力）或当前敌人血条仍在时，不进入退出确认。
+        if self.get_skill_bar_count() >= 0:
+            return False
+        if self.probe_enemy_presence() == EnemyPresence.PRESENT:
             return False
 
         self.log_info(f"退出检查通过: has_lv={has_lv}, in_team={in_team},")
