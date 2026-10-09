@@ -5,8 +5,10 @@ from __future__ import annotations
 import unittest
 
 from src.data.character_mechanics import (
+    MainControlMode,
     clear_mechanics_cache,
     load_character_mechanics,
+    load_main_control_policies,
     mechanic_blockers,
 )
 from src.data.skill_timing import load_skill_timings
@@ -14,6 +16,19 @@ from src.data.timing_dps import DamageQuote, build_options
 
 
 class TestCharacterMechanics(unittest.TestCase):
+    def test_main_control_policies_distinguish_background_states_and_enhanced_attacks(self):
+        policies = load_main_control_policies()
+        for entry in (("洁尔佩塔", "battle"), ("梨诺", "battle"), ("梨诺", "ult")):
+            self.assertEqual(policies[entry].mode, MainControlMode.AVOID)
+        self.assertEqual(policies["庄方宜", "ult"].mode, MainControlMode.PREFER)
+        self.assertEqual(policies["庄方宜", "ult"].seconds, 25)
+        self.assertFalse(policies["庄方宜", "ult"].switches_automatically)
+        self.assertEqual(policies["伊冯", "ult"].seconds, 7)
+        self.assertTrue(policies["伊冯", "ult"].switches_automatically)
+        self.assertEqual(policies["秋栗", "ult"].mode, MainControlMode.AVOID)
+        self.assertTrue(policies["莱万汀", "ult"].switches_automatically)
+        self.assertNotIn(("洁尔佩塔", "ult"), policies)
+
     def setUp(self):
         clear_mechanics_cache()
 

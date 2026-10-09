@@ -22,6 +22,7 @@ from src.data.team_phase_planner import (
 from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycle
 from src.image.enemy_health_probe import reset_enemy_presence_probe
 from src.image.skill_bar_expected_probe import read_expected_skill_bar_sp
+from src.tasks.onetime.TimedMainControl import TimedMainControl
 
 
 class TimedCombatLogic:
@@ -93,9 +94,12 @@ class TimedCombatLogic:
         self.last_action_attempt = None
         self.phase_planner = TeamPhasePlanner()
         self._last_phase_log = None
+        self.main_control = TimedMainControl(self)
 
     def _hold(self, enabled, force=False):
         if enabled:
+            if self.main_control.waiting_for_confirmation(self._clock()):
+                return
             if self._holding and not force:
                 return
             self._holding = True
@@ -442,6 +446,7 @@ class TimedCombatLogic:
         self._observe_battle()
         self._set_cooldowns()
         self._activate_state(token, self.state_specs.get(token), "战技")
+        self.main_control.record_cast(token, "battle", self.active, self.started)
         self._observe_phase_action(token, "battle")
         self._advance_mechanic_battle(token)
         self.free_battle_once.discard(token)
@@ -555,6 +560,7 @@ class TimedCombatLogic:
         previous_phase_indices = dict(self.battle_phase_indices)
 
         if reset_runtime:
+            self.main_control.reset()
             self.disabled_slots.clear()
             self.dead_slot_evidence.clear()
             self.battle_retry_after.clear()
@@ -1018,6 +1024,8 @@ class TimedCombatLogic:
         if self._probe_action_feedback() is not None:
             return
         self._confirm_battle(now)
+        if self.main_control.update():
+            return
         if not self.team:
             self._hold(True)
             return
@@ -1100,9 +1108,13 @@ class TimedCombatLogic:
                 self._observe_phase_action(token, "ult")
                 self._set_cooldowns(profiles, started)
                 self._activate_state(token, self.ult_state_specs.get(token), "终结技", started)
+                self.main_control.record_cast(token, "ult", profiles, started, recovered_at=ended)
                 self._after_ultimate_mechanic(token, ended)
                 self._clear_active(ended)
                 self.task.log_info(f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s")
+
+                if self.main_control.update(force=True):
+                    return
 
                 post_ult_sp = self._sample_sp(force=True)
                 self._observe_phase_sp(post_ult_sp)
@@ -1126,6 +1138,9 @@ class TimedCombatLogic:
     def run(self, start_sleep=None, no_battle=False, deadline=None):
         task = self.task
         task.exit_check_count = 0
+        self.main_control.reset()
+        self.forced_main_control_slot = None
+        self.forced_main_control_until = 0.0
         reset_enemy_presence_probe(task)
         self._enemy_presence_confirmed = False
         self.enemy_pause_started = None
