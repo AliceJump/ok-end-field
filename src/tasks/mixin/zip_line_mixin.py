@@ -73,12 +73,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         说明文本通过 self.tr() 走 ok 的 gettext i18n（msgid 写入 ok.po，编译成 ok.mo 生效）。
         由 InstructionsMixin 延迟构建并追加到任务原有说明之后，使用滑索的任务无需在 __init__ 里显式调用。
         """
-        # 键名从滑索配置数据动态读取，不硬编码；显示时经 self.tr() 跟随 UI 语言翻译
         start_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if k.startswith("通向")]
         target_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if not k.startswith("通向")]
         gather_keys_raw = ZIP_LINE_GATHER_KEYS
 
-        # 例子动态取第一个送货目标及其配置值（查配置用原始键名，显示用翻译后键名）
         example_key_raw = target_keys_raw[0] if target_keys_raw else (start_keys_raw[0] if start_keys_raw else "")
         example_raw = str(self.zip_line_config.get(example_key_raw, "") or "").strip()
         example_seq = " → ".join(f"{n}m" for n in example_raw.split(",") if str(n).strip())
@@ -229,12 +227,18 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         white_mask = self._zip_line_hsv_mask(hsv, hR.WHITE)
         yellow_mask = self._zip_line_hsv_mask(hsv, _ZIP_LINE_YELLOW_ICON_RANGES)
         gold_mask = self._zip_line_hsv_mask(hsv, _ZIP_LINE_GOLD_RING_RANGES)
+        log_info = getattr(self, "log_info", None)
 
         left = max(0, center_x - radius_x - template_width)
         right = min(width, center_x + radius_x + template_width)
         top = max(0, center_y - radius_y - template_height)
         bottom = min(height, center_y + radius_y + template_height)
         if right - left < template_width or bottom - top < template_height:
+            if callable(log_info):
+                log_info(
+                    f"[zipline-template] invalid-search-area frame={width}x{height} "
+                    f"roi=({left},{top})-({right},{bottom}) template={template_width}x{template_height}"
+                )
             return []
 
         ellipse_mask = np.zeros((bottom - top, right - left), dtype=np.uint8)
@@ -255,8 +259,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         for source_mask, source_state in ((white_mask, "white"), (yellow_mask, "gold")):
             search_mask = cv2.bitwise_and(source_mask[top:bottom, left:right], ellipse_mask)
             scores = cv2.matchTemplate(search_mask, template, cv2.TM_CCOEFF_NORMED)
+            best_score = float(scores.max()) if scores.size else 0.0
             locations = np.argwhere(scores >= self._ZIP_LINE_TEMPLATE_THRESHOLD)
             locations = sorted(locations, key=lambda pos: float(scores[pos[0], pos[1]]), reverse=True)
+            raw_hit_count = len(locations)
+            candidate_count_before = len(candidates)
             for local_y, local_x in locations:
                 x = int(local_x + left)
                 y = int(local_y + top)
@@ -312,8 +319,21 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 if len(candidates) >= 32:
                     break
 
-        # 相同距离同时存在时先检查白色，再检查黄色/金黄色；同色优先转动更少的目标。
+            if callable(log_info):
+                log_info(
+                    f"[zipline-template] state={source_state} best={best_score:.3f} "
+                    f"threshold={self._ZIP_LINE_TEMPLATE_THRESHOLD:.3f} raw_hits={raw_hit_count} "
+                    f"accepted_delta={len(candidates) - candidate_count_before}"
+                )
+
         candidates.sort(key=lambda item: (0 if item["state"] == "white" else 1, item["radius"], -item["score"]))
+        if callable(log_info):
+            summary = ", ".join(
+                f"{item['state']}@({item['center_x']:.0f},{item['center_y']:.0f}) "
+                f"r={item['radius']:.2f} s={item['score']:.3f}"
+                for item in candidates[:12]
+            )
+            log_info(f"[zipline-template] candidates={len(candidates)} [{summary}]")
         return candidates
 
     def _zip_line_distance_box(self, candidate):
@@ -333,18 +353,42 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         """先定位合格图标，再只 OCR 对应图标正下方的目标距离。"""
         pattern = self._zip_line_distance_pattern(zip_line)
         candidates = self._detect_zip_line_icon_candidates(frame)
-        for candidate in candidates:
+        log_info = getattr(self, "log_info", None)
+        if callable(log_info):
+            log_info(f"[zipline-template] target={zip_line} candidate_count={len(candidates)}")
+        for index, candidate in enumerate(candidates):
             hsv_range = hR.WHITE if candidate["state"] == "white" else hR.GOLD_TEXT
+            distance_box = self._zip_line_distance_box(candidate)
+            if callable(log_info):
+                log_info(
+                    f"[zipline-template] target={zip_line} try={index + 1}/{len(candidates)} "
+                    f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f}) "
+                    f"r={candidate['radius']:.2f} score={candidate['score']:.3f} "
+                    f"distance_box=({distance_box.x},{distance_box.y},{distance_box.width},{distance_box.height}) "
+                    f"processor={'WHITE' if candidate['state'] == 'white' else 'GOLD_TEXT'}"
+                )
             result = self.ocr(
                 match=pattern,
-                box=self._zip_line_distance_box(candidate),
+                box=distance_box,
                 frame=frame,
                 frame_processor=self.make_hsv_isolator(hsv_range),
-                log=False,
+                log=True,
             )
             if result:
                 target = result[0] if isinstance(result, list) else result
+                if callable(log_info):
+                    log_info(
+                        f"[zipline-template] target={zip_line} local_ocr=hit "
+                        f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f})"
+                    )
                 return candidate, target
+            if callable(log_info):
+                log_info(
+                    f"[zipline-template] target={zip_line} local_ocr=miss "
+                    f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f})"
+                )
+        if callable(log_info):
+            log_info(f"[zipline-template] target={zip_line} no_candidate_with_matching_distance")
         return None
 
     def _zip_line_move_profile(self, ellipse_radius):
@@ -523,7 +567,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         self.click(after_sleep=0.1)
         for _ in range(max_attempts):
-            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
+            self.send_key("e")
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True, None
         return False, "interaction"
@@ -533,7 +577,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         stop_match, stop_box = self._zip_line_stop_state()
         for _ in range(max_attempts):
             self.click(after_sleep=0.1)
-            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
+            self.send_key("e")
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True
         return False
@@ -597,7 +641,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             start = self.active_time()
             while True:
                 self.next_frame()
-                self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
+                self.send_key("e")
                 self.sleep(0.1)
                 result = self.ocr(
                     match=[
@@ -637,7 +681,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     ),
                     passes=1,
                     duration=0.1,
-                    keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
+                    keys=("s", "w", "a", "d"),
                 )
                 if result:
                     self.press_key("v", after_sleep=1)
