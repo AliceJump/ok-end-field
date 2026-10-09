@@ -32,7 +32,7 @@ class TimedMainControl:
         self.next_probe_at = 0.0
         self.retry_at = 0.0
 
-    def record_cast(self, token, kind, profiles, started):
+    def record_cast(self, token, kind, profiles, started, recovered_at=None):
         logic = self.logic
         if not logic._slot_available(token) or not profiles:
             return
@@ -46,8 +46,11 @@ class TimedMainControl:
             if previous is not None and previous.mode == MainControlMode.AVOID:
                 until = max(until, previous.until)
         else:
-            effect_at = max((profile.effect_start or 0.0) for profile in profiles)
-            until = started + effect_at + policy.seconds
+            # Ultimate cutscenes may precede the usable enhanced-attack window.
+            # Keep the existing post-HUD-recovery origin rather than treating
+            # the first arbitrary gameplay effect as the attack buff's onset.
+            started = started if recovered_at is None else recovered_at
+            until = started + policy.seconds
         self.windows[token] = _ControlWindow(policy.mode, started, until)
         self.next_probe_at = 0.0
 

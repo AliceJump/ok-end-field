@@ -207,6 +207,19 @@ class TestTimedMainControl(unittest.TestCase):
         logic.step()
         self.assertEqual(task.keys, ["f1"])
 
+    def test_yvonne_full_control_window_begins_after_ultimate_hud_recovery(self):
+        task, logic = _control_logic(["伊冯", "佩丽卡"])
+        task.ults = {"1"}
+        task.auto_switch_ults = {"1"}
+        logic.ult_order = ["1"]
+        logic.step()
+        self.assertEqual(logic.forced_main_control_until, task.now + 7.0)
+        self.assertEqual(logic.main_control.preferred_until("1"), logic.forced_main_control_until)
+        task.now = 8.0
+        task.current = 1
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "f1"])
+
     def test_latest_enhanced_attack_window_wins_then_returns_to_still_active_owner(self):
         task, logic = _control_logic(["庄方宜", "伊冯", "佩丽卡"])
         _accept_cast(logic, "1", "ult")

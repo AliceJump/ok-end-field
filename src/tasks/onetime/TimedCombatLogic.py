@@ -1011,9 +1011,7 @@ class TimedCombatLogic:
 
         if mechanic.forced_main_control_seconds:
             self.forced_main_control_slot = token
-            self.forced_main_control_until = (
-                self.main_control.preferred_until(token) or ended + mechanic.forced_main_control_seconds
-            )
+            self.forced_main_control_until = ended + mechanic.forced_main_control_seconds
             self.task.log_info(
                 f"时间排轴机制: 终结技 {token} 保护自身主控普攻窗口 "
                 f"{mechanic.forced_main_control_seconds:.1f}s；"
@@ -1110,7 +1108,7 @@ class TimedCombatLogic:
                 self._observe_phase_action(token, "ult")
                 self._set_cooldowns(profiles, started)
                 self._activate_state(token, self.ult_state_specs.get(token), "终结技", started)
-                self.main_control.record_cast(token, "ult", profiles, started)
+                self.main_control.record_cast(token, "ult", profiles, started, recovered_at=ended)
                 self._after_ultimate_mechanic(token, ended)
                 self._clear_active(ended)
                 self.task.log_info(f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s")
