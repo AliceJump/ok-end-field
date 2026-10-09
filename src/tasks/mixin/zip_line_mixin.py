@@ -363,6 +363,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         profile["min_step"] = int(round(profile["min_step"] * boost))
         return profile
 
+    @staticmethod
+    def _zip_line_alignment_failed(raise_if_fail):
+        """保持通用对中 helper 的失败语义。"""
+        if raise_if_fail:
+            raise Exception("对中失败")
+        return False
+
     def _zip_line_target_is_gold_and_centered(self, zip_line, frame=None, tolerance=50):
         """判断目标距离是否处于黄色锁定态且位于屏幕中心附近。"""
         result = self.ocr(
@@ -393,20 +400,37 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         tolerance=50,
         max_time=100,
         raise_if_fail=True,
+        deadline=None,
+        max_iterations=None,
     ):
-        """保留原始全局 OCR 对中作为模板连续失败后的兜底。"""
-        return self.align_ocr_or_find_target_to_center(
-            self._zip_line_distance_pattern(zip_line),
-            is_num=True,
-            need_scroll=need_scroll,
-            ocr_frame_processor_list=[
-                self.make_hsv_isolator(hR.GOLD_TEXT),
-                self.make_hsv_isolator(hR.WHITE),
-            ],
-            tolerance=tolerance,
-            max_time=max_time,
-            raise_if_fail=raise_if_fail,
-        )
+        """保留原始全局 OCR 对中；有重试截止时间时按小段执行并共享剩余尝试预算。"""
+
+        def align_once(helper_max_time, helper_raise_if_fail):
+            return self.align_ocr_or_find_target_to_center(
+                self._zip_line_distance_pattern(zip_line),
+                is_num=True,
+                need_scroll=need_scroll,
+                ocr_frame_processor_list=[
+                    self.make_hsv_isolator(hR.GOLD_TEXT),
+                    self.make_hsv_isolator(hR.WHITE),
+                ],
+                tolerance=tolerance,
+                max_time=helper_max_time,
+                raise_if_fail=helper_raise_if_fail,
+            )
+
+        if deadline is None and max_iterations is None:
+            return align_once(max_time, raise_if_fail)
+
+        remaining_iterations = max_time * 2 if max_iterations is None else max(0, int(max_iterations))
+        while remaining_iterations >= 2:
+            if deadline is not None and self.active_time() >= deadline:
+                return self._zip_line_alignment_failed(raise_if_fail)
+            result = align_once(1, False)
+            if result:
+                return result
+            remaining_iterations -= 2
+        return self._zip_line_alignment_failed(raise_if_fail)
 
     def _align_zip_line_distance(
         self,
@@ -415,11 +439,20 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         tolerance=50,
         max_time=100,
         raise_if_fail=True,
+        deadline=None,
     ):
         """优先用滑索图标限定 OCR 候选；连续模板 miss 后退回原始 OCR。"""
         scaled_tolerance = self.scale_distance(tolerance)
         misses = 0
-        for _ in range(max(1, max_time * 2)):
+        iteration_budget = max(0, max_time * 2)
+        used_iterations = 0
+        if iteration_budget == 0:
+            return self._zip_line_alignment_failed(raise_if_fail)
+
+        for _ in range(iteration_budget):
+            if deadline is not None and self.active_time() >= deadline:
+                return self._zip_line_alignment_failed(raise_if_fail)
+            used_iterations += 1
             if need_scroll:
                 self.do_scroll(1, 400)
             frame = self.next_frame()
@@ -428,12 +461,15 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 misses += 1
                 if misses >= self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
                     self.log_info(f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，回退原始OCR对中")
+                    remaining_iterations = iteration_budget - used_iterations if deadline is not None else None
                     return self._align_zip_line_distance_ocr(
                         zip_line,
                         need_scroll=need_scroll,
                         tolerance=tolerance,
                         max_time=max_time,
                         raise_if_fail=raise_if_fail,
+                        deadline=deadline,
+                        max_iterations=remaining_iterations,
                     )
                 self.sleep(0.03)
                 continue
@@ -456,12 +492,15 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.sleep(0.01)
 
         self.log_info(f"滑索{zip_line}模板对中未在限制内收敛，回退原始OCR对中")
+        remaining_iterations = iteration_budget - used_iterations if deadline is not None else None
         return self._align_zip_line_distance_ocr(
             zip_line,
             need_scroll=need_scroll,
             tolerance=tolerance,
             max_time=max_time,
             raise_if_fail=raise_if_fail,
+            deadline=deadline,
+            max_iterations=remaining_iterations,
         )
 
     def _zip_line_stop_state(self):
@@ -514,6 +553,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.log_info(f"成功将滑索调整到{zip_line}的中心")
 
             gate_retry_start = self.active_time()
+            gate_retry_deadline = gate_retry_start + 20
             activated = False
             last_reason = None
             interaction_failed = False
@@ -526,7 +566,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 else:
                     interaction_failed = True
                     self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
-                if attempt >= 2 or self.active_time() - gate_retry_start >= 20:
+                if attempt >= 2 or self.active_time() >= gate_retry_deadline:
                     break
                 realigned = self._align_zip_line_distance(
                     zip_line,
@@ -534,6 +574,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     tolerance=50,
                     max_time=10,
                     raise_if_fail=False,
+                    deadline=gate_retry_deadline,
                 )
                 if not realigned:
                     last_reason = "gate"
