@@ -3107,3 +3107,18 @@ msgstr ""
 
 msgid "自动技能列表"
 msgstr "Lista automática de habilidades"
+
+msgid "紫晶质瓶"
+msgstr "Botella de amatista"
+
+msgid "紫晶零件"
+msgstr "Pieza de amatista"
+
+msgid "息壤"
+msgstr "Xiranita"
+
+msgid "赤铜零件"
+msgstr "Pieza de cuprio"
+
+msgid "分离芯"
+msgstr "Núcleo separador"

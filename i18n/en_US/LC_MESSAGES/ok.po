@@ -3011,3 +3011,18 @@ msgstr ""
 
 msgid "自动技能列表"
 msgstr "Auto Skill List"
+
+msgid "紫晶质瓶"
+msgstr "Amethyst Bottle"
+
+msgid "紫晶零件"
+msgstr "Amethyst Part"
+
+msgid "息壤"
+msgstr "Xiranite"
+
+msgid "赤铜零件"
+msgstr "Cuprium Part"
+
+msgid "分离芯"
+msgstr "Separator Core"

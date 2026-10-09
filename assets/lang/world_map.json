@@ -4067,5 +4067,105 @@
     "vi_VN": {
       "pattern": "Rừng Tuyết"
     }
+  },
+  "amethyst_bottle": {
+    "zh_CN": {
+      "pattern": "紫晶质瓶"
+    },
+    "zh_TW": {
+      "pattern": "紫晶質瓶"
+    },
+    "en_US": {
+      "pattern": "Amethyst Bottle"
+    },
+    "ja_JP": {
+      "pattern": "紫晶製ボトル"
+    },
+    "ko_KR": {
+      "pattern": "자수정 병"
+    },
+    "es_ES": {
+      "pattern": "Botella de amatista"
+    }
+  },
+  "amethyst_part": {
+    "zh_CN": {
+      "pattern": "紫晶零件"
+    },
+    "zh_TW": {
+      "pattern": "紫晶零件"
+    },
+    "en_US": {
+      "pattern": "Amethyst Part"
+    },
+    "ja_JP": {
+      "pattern": "紫晶部品"
+    },
+    "ko_KR": {
+      "pattern": "자수정 부품"
+    },
+    "es_ES": {
+      "pattern": "Pieza de amatista"
+    }
+  },
+  "xiranite": {
+    "zh_CN": {
+      "pattern": "息壤"
+    },
+    "zh_TW": {
+      "pattern": "息壤"
+    },
+    "en_US": {
+      "pattern": "Xiranite"
+    },
+    "ja_JP": {
+      "pattern": "息壌"
+    },
+    "ko_KR": {
+      "pattern": "식양"
+    },
+    "es_ES": {
+      "pattern": "Xiranita"
+    }
+  },
+  "cuprium_part": {
+    "zh_CN": {
+      "pattern": "赤铜零件"
+    },
+    "zh_TW": {
+      "pattern": "赤銅零件"
+    },
+    "en_US": {
+      "pattern": "Cuprium Part"
+    },
+    "ja_JP": {
+      "pattern": "赤銅部品"
+    },
+    "ko_KR": {
+      "pattern": "적동 부품"
+    },
+    "es_ES": {
+      "pattern": "Pieza de cuprio"
+    }
+  },
+  "separator_core": {
+    "zh_CN": {
+      "pattern": "分离芯"
+    },
+    "zh_TW": {
+      "pattern": "分離芯"
+    },
+    "en_US": {
+      "pattern": "Separator Core"
+    },
+    "ja_JP": {
+      "pattern": "分離コア"
+    },
+    "ko_KR": {
+      "pattern": "분리 필터"
+    },
+    "es_ES": {
+      "pattern": "Núcleo separador"
+    }
   }
 }
