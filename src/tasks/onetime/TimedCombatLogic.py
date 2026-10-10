@@ -727,6 +727,27 @@ class TimedCombatLogic:
         self._sync_task_team_slots()
         return True
 
+    def _restore_team_slots(self, detected):
+        """Stable recognition of the original portrait reverses a slot failure mask."""
+        restored = {
+            str(index)
+            for index, (expected, current) in enumerate(zip(self.team, detected, strict=True), 1)
+            if str(index) in self.disabled_slots and expected != "?" and current == expected
+        }
+        if not restored:
+            return
+        self.disabled_slots.difference_update(restored)
+        for token in restored:
+            self.dead_slot_evidence.pop(token, None)
+        self._sync_task_team_slots()
+        preferred_slots = tuple(token for token in self.ult_order if self._slot_available(token))
+        if self.phase_planner.restore_slots(restored, preferred_slots=preferred_slots):
+            self._last_phase_log = None
+            self.task.log_info("时间排轴阶段: 失效槽位恢复，重新准备爆发计划")
+        self._refresh_sp_threshold()
+        details = [f"{token}:{self.team[int(token) - 1]}" for token in sorted(restored, key=int)]
+        self.task.log_info(f"时间排轴恢复失效槽位 {details}，头像稳定恢复，保留原始槽位编号和冷却")
+
     def _refresh_team_slots(self, deadline):
         if not self.team:
             return
@@ -749,6 +770,8 @@ class TimedCombatLogic:
         if mismatches:
             self.task.log_debug(f"时间排轴忽略槽位刷新，已知角色位置不匹配: {mismatches}")
             return
+
+        self._restore_team_slots(detected)
 
         filled_slots = [
             (str(index + 1), current)
