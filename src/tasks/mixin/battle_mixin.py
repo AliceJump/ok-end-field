@@ -60,6 +60,7 @@ from src.data.FeatureList import FeatureList as fL
 from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.image.hsv_config import HSVRange as hR
 from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
+from src.image.team_keycap_detector import detect_team_keycaps
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
 # ── 编队识别：模块级常量与工具函数 ─────────────────────────────────────────
@@ -1043,6 +1044,28 @@ class BattleMixin(BaseEfTask):
         boxes = self._battle_feature_boxes("skill")
         battle_team = getattr(self, "_battle_team", None) or []
         disabled_slots = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
+        if len(boxes) == 4:
+            keycaps = detect_team_keycaps(getattr(self, "frame", None))
+            member_count = len(battle_team)
+            if not member_count and all(keycaps):
+                member_count = 4
+            if 1 <= member_count <= 4:
+                start_index = 4 - member_count
+                disabled = disabled_slots if len(battle_team) == member_count else set()
+                available = [slot for slot in range(member_count) if slot not in disabled]
+                # A single visible outline cannot distinguish a survivor from menu UI.
+                # Unknown partial teams still need digit templates to establish numbering.
+                # A missing first key may also be a newly shortened native team.
+                first_slot_confirmed = keycaps[start_index] or 0 in disabled
+                if (
+                    first_slot_confirmed
+                    and not any(keycaps[:start_index])
+                    and sum(keycaps[start_index + slot] for slot in available) >= 2
+                ):
+                    self._battle_member_count = member_count
+                    mask = "".join("1" if found else "0" for found in keycaps)
+                    self.log_debug(f"队伍人数检测: {member_count} 人，按键外框/文字: {mask}")
+                    return True
         for start_index in range(len(boxes)):
             member_count = len(boxes) - start_index
             disabled = disabled_slots if len(battle_team) == member_count else set()

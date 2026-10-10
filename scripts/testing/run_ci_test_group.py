@@ -100,6 +100,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestAutoCombat.py",
             "TestCombatStartupWait.py",
             "TestCombatPresenceLifecycle.py",
+            "TestTeamKeycapDetector.py",
             "TestTimedMainControl.py",
             "TestCombatDecisionTrace.py",
             "TestExpectedSkillBarProbe.py",

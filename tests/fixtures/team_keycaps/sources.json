@@ -1,0 +1,86 @@
+[
+  {
+    "file": "delivery.png",
+    "source": "sand-save-1791403597701.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "1111"
+  },
+  {
+    "file": "effects.png",
+    "source": "13.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "1111"
+  },
+  {
+    "file": "native_three.png",
+    "source": "48.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0111"
+  },
+  {
+    "file": "single_outline.png",
+    "source": "65.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0100"
+  },
+  {
+    "file": "menu_1.png",
+    "source": "BitBlt_True_2560x1440_1772616263643.342_original.png",
+    "width": 2560,
+    "height": 1440,
+    "mask": "0000"
+  },
+  {
+    "file": "menu_2.png",
+    "source": "BitBlt_True_3840x2160_1772616149494.0212_original.png",
+    "width": 3840,
+    "height": 2160,
+    "mask": "0000"
+  },
+  {
+    "file": "menu_3.png",
+    "source": "Windows Graphics Capture_1920x1080_1770926085782.5728_original.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0000"
+  },
+  {
+    "file": "menu_4.png",
+    "source": "Windows Graphics Capture_1920x1080_1770926349912.0767_original.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0000"
+  },
+  {
+    "file": "menu_5.png",
+    "source": "Windows Graphics Capture_1920x1080_1773318703009.2573_original.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0000"
+  },
+  {
+    "file": "menu_6.png",
+    "source": "Windows Graphics Capture_1920x1080_1773322694115.4097_original.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0000"
+  },
+  {
+    "file": "menu_7.png",
+    "source": "Windows Graphics Capture_2560x1440_1773480868040.793_original.png",
+    "width": 2560,
+    "height": 1440,
+    "mask": "0000"
+  },
+  {
+    "file": "menu_8.png",
+    "source": "Windows Graphics Capture_3840x2160_1773481384686.2788_original.png",
+    "width": 3840,
+    "height": 2160,
+    "mask": "0000"
+  }
+]
