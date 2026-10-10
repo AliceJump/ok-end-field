@@ -14,6 +14,7 @@ class _ToEndTaskHarness:
         self.events = []
         self._now = 0.0
         self.width = 1920
+        self.height = 1080
         self.box = SimpleNamespace(bottom_right=object())
         self.lang = SimpleNamespace(
             daily_battle_mixin=SimpleNamespace(
@@ -66,6 +67,9 @@ class _ToEndTaskHarness:
 
     def active_time(self):
         return self._now
+
+    def scale_distance(self, value):
+        return value
 
     def log_info(self, *args, **kwargs):
         pass
@@ -159,6 +163,44 @@ class TestDailyBattleToEnd(unittest.TestCase):
         self.assertEqual(1, feature.events.count("mouse_delta"))
         self.assertIn(("seed", True), feature.events)
         self.assertEqual(1, feature.events.count(("click", "middle")))
+
+    def test_rotate_search_sine_path_keeps_legacy_yaw_budget(self):
+        feature = _make_impl(_ToEndTaskHarness())
+        moves = []
+        sleeps = []
+        checks = 0
+
+        feature.active_and_send_mouse_delta = lambda **kwargs: moves.append((kwargs["dx"], kwargs["dy"]))
+        feature.sleep = lambda timeout: sleeps.append(timeout)
+
+        def check():
+            nonlocal checks
+            checks += 1
+            return False
+
+        result = SearchMixin.rotate_search(
+            feature,
+            check,
+            segments=4,
+            step_ratio=0.1,
+            between_delay=0.1,
+        )
+
+        self.assertIsNone(result)
+        self.assertEqual(8, checks)
+        self.assertEqual(8, len(moves))
+        self.assertEqual(4 * int(feature.width * 0.1), sum(dx for dx, _dy in moves))
+        self.assertAlmostEqual(0.4, sum(sleeps))
+
+        cumulative_pitch = 0
+        pitch_positions = []
+        for _dx, dy in moves:
+            cumulative_pitch += dy
+            pitch_positions.append(cumulative_pitch)
+
+        self.assertEqual(0, pitch_positions[-1])
+        self.assertEqual(30, max(pitch_positions))
+        self.assertEqual(-30, min(pitch_positions))
 
     def test_to_end_restores_methods_after_task_stop(self):
         feature = _make_impl(_ToEndTaskHarness())
