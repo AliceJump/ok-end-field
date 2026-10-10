@@ -17,15 +17,36 @@ from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 
-def _edit_distance(left: str, right: str) -> int:
-    """Levenshtein 距离：插入、删除、替换一个字符的代价均为 1。"""
-    previous = list(range(len(right) + 1))
-    for i, left_char in enumerate(left, 1):
+def _edit_distance(left: str, right: str, max_distance: int | None = None) -> int | None:
+    """计算 Levenshtein 距离，插入、删除和替换一个字符的代价均为 1。
+
+    Args:
+        left: 待比较的字符串。
+        right: 待比较的另一个字符串。
+        max_distance: 允许的最大编辑距离，须为非负整数；None 表示不限制。
+
+    Returns:
+        阈值内的实际编辑距离（包含 0），超限时返回 None。
+        未设置阈值时返回完整编辑距离。
+    """
+    # 让较短的 left 对应滚动数组，将额外空间限制为 O(min(m, n))。
+    if len(left) > len(right):
+        return _edit_distance(right, left, max_distance=max_distance)
+    # 长度差是编辑距离的下界，超限时无需继续计算。
+    if max_distance is not None and len(right) - len(left) > max_distance:
+        return None
+    previous = list(range(len(left) + 1))
+    for i, right_char in enumerate(right, 1):
         current = [i]
-        for j, right_char in enumerate(right, 1):
+        for j, left_char in enumerate(left, 1):
             current.append(min(current[-1] + 1, previous[j] + 1, previous[j - 1] + (left_char != right_char)))
+        # 当前 right 前缀与 left 任意前缀的距离都超限时，可以提前结束：
+        # 后续行的最小值不会减小，因此最终距离也必然超限。
+        if max_distance is not None and min(current) > max_distance:
+            return None
         previous = current
-    return previous[-1]
+    distance = previous[-1]
+    return distance if max_distance is None or distance <= max_distance else None
 
 
 _DIGITS_ONLY_RE = re.compile(r"^\d+$")
@@ -167,6 +188,39 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
             for good in get_goods_by_outpost_name(outpost_name)
         ]
 
+        def collect_goods():
+            """采集并规范化当前帧货品；仅有界面杂项时返回空列表以继续等待。"""
+            normalized_goods = []
+            for good in self.ocr():
+                good_name = good.name.strip("|｜丨")  # 清理 OCR 将卡片边框识别成的竖线。
+                # 单字即使与“息壤”等短货名只差一个字，也不作为货品。
+                if len(good_name) < 2:
+                    continue
+                # 保留原完整货名匹配，仅为新增近似匹配放行一次字符编辑。
+                max_distance = None if any(pattern.search(good.name) for pattern in goods_patterns) else 1
+                # 不限距离的兼容路径保留原长度限制；阈值路径由编辑距离函数检查。
+                distances = (
+                    (_edit_distance(good_name, kw, max_distance=max_distance), kw)
+                    for kw in can_exchange_goods
+                    if max_distance is not None or len(good_name) >= len(kw) - 1
+                )
+                # 保留阈值内的实际距离，同距离优先长货名，无候选时返回 None。
+                best_match = min(
+                    ((distance, kw) for distance, kw in distances if distance is not None),
+                    key=lambda match: (match[0], -len(match[1])),
+                    default=None,
+                )
+                if best_match is None:
+                    continue
+                standard_name = best_match[1]
+
+                if good.name != standard_name:
+                    self.log_info(f"修正 OCR 识别结果: '{good.name}' -> '{standard_name}'")
+                    good.name = standard_name
+
+                normalized_goods.append(good)
+            return normalized_goods
+
         max_attempts = 7
         skip_goods = set()
         change_button = None
@@ -192,36 +246,15 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
                 box=self.box.top_left,
                 time_out=5,
             )
-            goods = self.wait_ocr(
-                match=goods_patterns,
-                time_out=5,
-            )
+            # 标题、数量等文本不能提前结束等待，持续采集直到识别到候选货品。
+            normalized_goods = self.wait_until(collect_goods, time_out=5)
 
-            if not goods:
+            if not normalized_goods:
                 self.log_info(f"{outpost_name} 没有可兑换的货物")
                 break
 
-            normalized_goods = []
-            for good in goods:
-                good_name = good.name.strip("|｜丨")  # 清理 OCR 将卡片边框识别成的竖线。
-                # 取argmin：返回编辑距离最小的货名，同距离优先长货名，无候选时返回 None。
-                standard_name = min(
-                    (kw for kw in can_exchange_goods if len(good_name) >= max(2, len(kw) - 1)),
-                    key=lambda kw, name=good_name: (_edit_distance(name, kw), -len(kw)),
-                    default=None,
-                )
-
-                if not standard_name:
-                    self.log_info(f"未知货物: {good.name}，跳过")
-                    continue
-
-                if good.name != standard_name:
-                    self.log_info(f"修正 OCR 识别结果: '{good.name}' -> '{standard_name}'")
-                    good.name = standard_name
-
-                normalized_goods.append(good)
-
             def priority_score(name):
+                """完整货名按字面量匹配优先序列，其余优先项沿用正则匹配。"""
                 for i, pattern in enumerate(priority_list):
                     if pattern in can_exchange_goods:
                         if pattern == name:

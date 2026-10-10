@@ -1,12 +1,16 @@
 import unittest
+from copy import copy
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
+
+from ok.feature.Box import find_boxes_by_name
 
 from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask, _edit_distance
 
 
 class TestOutpostExchange(unittest.TestCase):
     def make_exchange_feature(self, ticket_numbers, goods=None):
+        """构造保留 OCR 文本预过滤行为、隔离游戏交互的据点任务。"""
         feature = object.__new__(RegionalBuildTask)
         feature._get_outpost_trade_limit = Mock(return_value=None)
         available_goods = goods if goods is not None else [SimpleNamespace(name="息壤玉葫芦")]
@@ -20,15 +24,15 @@ class TestOutpostExchange(unittest.TestCase):
         feature.log_info = Mock()
         feature.box_of_screen = Mock(return_value=object())
         feature.wait_click_ocr = Mock(return_value=True)
-        feature.wait_ocr = Mock(
-            side_effect=[
-                [],
-                [],
-                available_goods,
-                [],
-                available_goods,
-            ]
-        )
+
+        def collect_ocr(*args, match=None, **kwargs):
+            """复制原始识别框，并按调用参数执行框架的真实文本过滤。"""
+            boxes = [copy(box) for box in available_goods]
+            return boxes if match is None else find_boxes_by_name(boxes, match)
+
+        feature.wait_ocr = Mock(return_value=[])
+        feature.ocr = Mock(side_effect=collect_ocr)
+        feature.wait_until = Mock(side_effect=lambda condition, **kwargs: condition())
         feature.read_outpost_ticket_num = Mock(side_effect=ticket_numbers)
         feature.click = Mock()
         feature.wait_feature = Mock(return_value=object())
@@ -73,8 +77,11 @@ class TestOutpostExchange(unittest.TestCase):
         ]
         for left, right, expected in cases:
             with self.subTest(left=left, right=right):
-                self.assertEqual(_edit_distance(left, right), expected)
-                self.assertEqual(_edit_distance(right, left), expected)
+                for first, second in ((left, right), (right, left)):
+                    self.assertEqual(_edit_distance(first, second), expected)
+                    self.assertEqual(_edit_distance(first, second, max_distance=expected), expected)
+                    if expected > 0:
+                        self.assertIsNone(_edit_distance(first, second, max_distance=expected - 1))
 
     def test_activity_goods_choose_nearest_candidate(self):
         cases = [
@@ -110,12 +117,13 @@ class TestOutpostExchange(unittest.TestCase):
                 selected_good = feature.click.call_args_list[0].args[0]
                 self.assertEqual(selected_good.name, expected_name)
 
-    def test_matching_keeps_length_condition_without_substring_or_distance_limit(self):
+    def test_matching_keeps_length_condition_and_limits_new_fuzzy_matches(self):
+        """保留长度条件和完整货名兼容，仅限制新增近似通道的编辑次数。"""
         cases = [
             ("甲", ["甲", "乙"], None),
             ("甲乙", ["甲乙丙丁"], None),
-            ("甲乙", ["甲乙丙丁", "丙丁"], "丙丁"),
-            ("甲乙", ["丙丁戊"], "丙丁戊"),
+            ("甲乙", ["甲乙丙丁", "丙乙"], "丙乙"),
+            ("甲乙", ["丙丁戊"], None),
             ("甲乙", [], None),
             ("丁丙乙甲", ["甲乙丙丁", "丁丙乙戊"], "丁丙乙戊"),
         ]
@@ -124,6 +132,7 @@ class TestOutpostExchange(unittest.TestCase):
                 feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name=text)])
                 with (
                     patch("src.tasks.onetime.RegionalBuildTask.goods_dict", {"武陵": candidates}),
+                    patch("src.tasks.onetime.RegionalBuildTask.get_goods_by_outpost_name", return_value=candidates),
                     patch(
                         "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
                         side_effect=lambda lang, text: text,
@@ -136,6 +145,30 @@ class TestOutpostExchange(unittest.TestCase):
                 else:
                     self.assertEqual(feature.click.call_args_list[0].args[0].name, expected)
                     feature.plus_max.assert_called_once()
+
+    def test_waits_for_goods_after_title_only_and_empty_frames(self):
+        """标题和空白过渡帧不能在货品出现前结束等待。"""
+        feature = self.make_exchange_feature([1000, 999])
+        feature.ocr.side_effect = [
+            [SimpleNamespace(name=text) for text in ["选择货物", "99999", "荞愈胶囊"]],
+            [],
+            [SimpleNamespace(name="选择货物"), SimpleNamespace(name="息壤龙炮泡")],
+        ]
+
+        def poll(condition, **kwargs):
+            """以三帧上限模拟框架等待条件首次返回有效货品。"""
+            for _ in range(3):
+                result = condition()
+                if result:
+                    return result
+            return []
+
+        feature.wait_until.side_effect = poll
+        with patch("src.tasks.onetime.RegionalBuildTask.get_world_map_text", side_effect=lambda lang, text: text):
+            feature.perform_outpost_exchange("天王坪援建点")
+        self.assertEqual(feature.ocr.call_count, 3)
+        self.assertEqual(feature.click.call_args_list[0].args[0].name, "息壤龙泡泡")
+        feature.plus_max.assert_called_once()
 
     def test_equal_distances_keep_longer_candidate_first(self):
         feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name="货物甲")])
@@ -171,9 +204,9 @@ class TestOutpostExchange(unittest.TestCase):
             ("no_goods", [], [], set()),
             ("empty_ocr_text", [""], [], set()),
             ("only_card_borders", ["|｜丨"], [], set()),
-            ("no_priority_match", ["重息壤龙泡泡"], ["息壤龙泡泡"], set()),
+            ("no_priority_match", ["重息壤龙炮泡"], ["息壤龙泡泡"], set()),
             ("xiranite_is_not_heavy_xiranite", ["重息壤"], ["息壤"], set()),
-            ("all_excluded", ["息壤玉葫芦"], [], {"息壤玉葫芦"}),
+            ("all_excluded", ["息壤玉葫"], [], {"息壤玉葫芦"}),
         ]
         for label, goods, priority_list, excluded_goods in cases:
             with self.subTest(reason=label):
@@ -309,14 +342,8 @@ class TestOutpostExchange(unittest.TestCase):
         self.assertEqual(exclusion_sets["据点丙"], {"据点丙"})
 
     def test_clicked_exchange_is_excluded_even_when_popup_is_not_confirmed(self):
+        """已点击兑换但券数未下降时排除该货品，避免重复选择。"""
         feature = self.make_exchange_feature([1000, 1000, 0])
-        feature.wait_ocr.side_effect = [
-            [],
-            [],
-            [SimpleNamespace(name="息壤玉葫芦")],
-            [],
-            [SimpleNamespace(name="息壤玉葫芦")],
-        ]
         excluded_goods = set()
 
         with patch(
