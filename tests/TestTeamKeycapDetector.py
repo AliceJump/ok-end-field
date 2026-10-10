@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from ok import Box
 
-from src.image.team_keycap_detector import detect_team_keycaps, find_first_team_keycap
+from src.image.team_keycap_detector import _has_light_glyph, detect_team_keycaps, find_first_team_keycap
 from src.tasks.mixin.battle_mixin import BattleMixin
 from tests.TestCombatPresenceLifecycle import _TeamHudTask
 
@@ -138,6 +138,14 @@ class TestTeamKeycapDetector(unittest.TestCase):
         ):
             self.assertEqual(find_first_team_keycap(frame), 0)
             self.assertEqual(crop.call_count, 1)
+
+    def test_standalone_light_stroke_cannot_establish_a_keycap(self):
+        frame = np.full((1080, 1920, 3), 60, dtype=np.uint8)
+        cx, cy = 1920 - 343, 1080 - 60
+        frame[cy - 4 : cy + 5, cx] = 160
+        crop = frame[cy - 21 : cy + 21, cx - 22 : cx + 22]
+        self.assertTrue(_has_light_glyph(crop))
+        self.assertIsNone(find_first_team_keycap(frame))
 
     def test_matching_positions_skip_portraits_and_later_digits(self):
         for count in range(1, 5):

@@ -1068,6 +1068,8 @@ class BattleMixin(BaseEfTask):
             if 1 <= len(battle_team) <= 4:
                 max_count = max(max_count, len(battle_team))
             # Left portraits use slot count-1; right keys use slot 4-count.
+            # Confirm the formation boundary only: earlier missing portraits do
+            # not move slots, and must not defeat this short-circuit count probe.
             for count in range(max_count, 0, -1):
                 slot = count - 1
                 if slot in disabled_slots and count <= len(battle_team):
