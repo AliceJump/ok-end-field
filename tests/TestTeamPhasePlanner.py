@@ -13,6 +13,73 @@ from src.data.team_phase_planner import (
 
 
 class TestTeamPhasePlanner(unittest.TestCase):
+    def test_recovered_participant_restarts_canceled_burst_from_first_action(self):
+        plan = make_burst_plan(
+            "recover",
+            (
+                BurstAction("1", "A", "battle", "first", sp_gate=50, sp_cost=50),
+                BurstAction("1", "A", "battle", "second", sp_gate=50, sp_cost=50),
+            ),
+            owner_slot="1",
+            runtime_executable=True,
+        )
+        planner = TeamPhasePlanner()
+        planner.configure((plan,), preferred_slots=("1",))
+        planner.observe_sp(100)
+        planner.start_if_ready("1", "battle")
+        planner.observe_action("1", "battle")
+        self.assertEqual(planner.next_action.label, "second")
+        planner.disable_slots({"1"})
+        self.assertIsNone(planner.active_plan)
+
+        self.assertTrue(planner.restore_slots({"1"}, preferred_slots=("1",)))
+        self.assertIs(planner.active_plan, plan)
+        self.assertEqual(planner.state.phase, CombatPhase.CHARGE)
+        self.assertEqual(planner.next_action.label, "first")
+        self.assertEqual(planner.state.disabled_slots, set())
+
+    def test_recovery_does_not_reset_unrelated_active_burst(self):
+        plan = make_burst_plan(
+            "unrelated",
+            (
+                BurstAction("1", "A", "battle", "first", sp_gate=50, sp_cost=50),
+                BurstAction("1", "A", "battle", "second", sp_gate=50, sp_cost=50),
+            ),
+            owner_slot="1",
+            runtime_executable=True,
+        )
+        planner = TeamPhasePlanner()
+        planner.configure((plan,))
+        planner.observe_sp(100)
+        planner.start_if_ready("1", "battle")
+        planner.observe_action("1", "battle")
+        planner.disable_slots({"2"})
+        self.assertFalse(planner.restore_slots({"2"}))
+        self.assertIs(planner.active_plan, plan)
+        self.assertEqual(planner.state.phase, CombatPhase.BURST)
+        self.assertEqual(planner.state.action_index, 1)
+        self.assertEqual(planner.state.disabled_slots, set())
+
+    def test_burst_waits_until_every_disabled_participant_recovers(self):
+        plan = make_burst_plan(
+            "team",
+            (
+                BurstAction("1", "A", "battle", "first", sp_gate=50, sp_cost=50),
+                BurstAction("2", "B", "battle", "second", sp_gate=50, sp_cost=50),
+            ),
+            owner_slot="1",
+            runtime_executable=True,
+        )
+        planner = TeamPhasePlanner()
+        planner.configure((plan,))
+        planner.disable_slots({"1", "2"})
+        self.assertFalse(planner.restore_slots({"1"}, preferred_slots=("1",)))
+        self.assertEqual(planner.state.disabled_slots, {"2"})
+        self.assertIsNone(planner.active_plan)
+        self.assertTrue(planner.restore_slots({"2"}, preferred_slots=("1", "2")))
+        self.assertEqual(planner.state.disabled_slots, set())
+        self.assertEqual(planner.state.action_index, 0)
+
     def test_shared_sp_budget_supports_multiple_slots(self):
         actions = (
             BurstAction("1", "A", "battle", "A1", sp_gate=100, sp_cost=100, sp_refund=30),

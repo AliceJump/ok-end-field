@@ -861,6 +861,19 @@ class TestTimedCombat(unittest.TestCase):
         logic.step()
         self.assertEqual(task.keys, ["1"])
 
+    def test_disabled_slot_can_cast_again_after_portrait_recovers(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        task.detected_team[1] = "?"
+        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+            logic._refresh_team_slots(1)
+        self.assertFalse(logic._try_battle_token("2", 100))
+        self.assertEqual(task.keys, [])
+        task.detected_team[1] = "狼卫"
+        logic._refresh_team_slots(1)
+        self.assertTrue(logic._try_battle_token("2", 100))
+        self.assertEqual(task.keys, ["2"])
+
     def test_transient_unknown_slot_recovers_without_false_death_mask(self):
         task = FakeTask()
         logic = logic_for(task)
