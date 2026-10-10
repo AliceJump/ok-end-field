@@ -30,7 +30,8 @@ class SearchMixin(BaseEfTask):
             segments: 旧实现的水平分段数，继续用于定义整圈总水平位移。
             step_ratio: 旧实现每段水平位移占屏幕宽度的比例。
             steps: 单次相对鼠标移动的平滑步数。
-            delay: 相对鼠标移动每一步的间隔秒数。
+            delay: 原实现单次鼠标平滑步的等待预算；提高检测频次后按采样倍数均分，
+                保持整圈鼠标移动等待总量不变。
             between_delay: 原实现每个水平分段的等待预算；提高检测频次后会按采样倍数均分，
                 保持整圈额外等待总量不变。
             detection_multiplier: 每个原水平分段拆成多少个检测采样点，默认 2 倍频率。
@@ -50,6 +51,7 @@ class SearchMixin(BaseEfTask):
         segment_dx = max(1, int(self.width * step_ratio))
         total_dx = segment_dx * segments
         pitch_amplitude_px = 0 if pitch_amplitude <= 0 else self.scale_distance(pitch_amplitude)
+        sample_move_delay = delay / detection_multiplier if delay > 0 else 0.0
         sample_between_delay = between_delay / detection_multiplier if between_delay > 0 else 0.0
 
         previous_x = 0
@@ -74,7 +76,7 @@ class SearchMixin(BaseEfTask):
                 dy=dy,
                 activate=True,
                 steps=steps,
-                delay=delay,
+                delay=sample_move_delay,
             )
             if sample_between_delay > 0:
                 self.sleep(sample_between_delay)
