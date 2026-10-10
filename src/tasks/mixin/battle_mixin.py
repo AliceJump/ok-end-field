@@ -588,6 +588,14 @@ class BattleMixin(BaseEfTask):
         search_boxes = self._build_search_boxes(raw_boxes, frame_width=fw, frame_height=fh)
         search_boxes.sort(key=lambda b: b.x)
 
+        # Hiding the medicine panel can move portraits 13px right at 1080p.
+        # Cover both layouts within each fixed slot, with one pixel for rounding.
+        right_padding = round(14 * min(fw / 1920, fh / 1080))
+        search_boxes = [
+            Box(box.x, box.y, min(box.width + right_padding, fw - box.x), box.height, name=box.name)
+            for box in search_boxes
+        ]
+
         if not search_boxes:
             return slot_results
 
