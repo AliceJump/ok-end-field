@@ -1041,6 +1041,7 @@ class BattleMixin(BaseEfTask):
         found_skills = 0
         sequence_valid = False
         skill_checks = []
+        entry_count = 0
         boxes = self._battle_feature_boxes("skill")
         battle_team = getattr(self, "_battle_team", None) or []
         disabled_slots = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
@@ -1049,12 +1050,16 @@ class BattleMixin(BaseEfTask):
             member_count = len(battle_team)
             if not member_count and all(keycaps):
                 member_count = 4
+            elif not member_count:
+                keycap_count = sum(keycaps)
+                if 1 <= keycap_count <= 3 and keycaps == (False,) * (4 - keycap_count) + (True,) * keycap_count:
+                    entry_count = keycap_count
             if 1 <= member_count <= 4:
                 start_index = 4 - member_count
                 disabled = disabled_slots if len(battle_team) == member_count else set()
                 available = [slot for slot in range(member_count) if slot not in disabled]
                 # A single visible outline cannot distinguish a survivor from menu UI.
-                # Unknown partial teams still need digit templates to establish numbering.
+                # Unconfirmed partial teams still need digits to establish numbering.
                 # A missing first key may also be a newly shortened native team.
                 first_slot_confirmed = keycaps[start_index] or 0 in disabled
                 if (
@@ -1096,6 +1101,19 @@ class BattleMixin(BaseEfTask):
 
             if sequence_valid:
                 break
+        if not sequence_valid and entry_count:
+            # Only probe portraits when digits fail; confirmed numbering stays cheap.
+            # Unknown/dead portraits cannot establish a shorter native team.
+            portraits = self.detect_team(self.frame)
+            if (
+                len(portraits) == 4
+                and all(name != "?" for name in portraits[:entry_count])
+                and all(name == "?" for name in portraits[entry_count:])
+            ):
+                self._battle_member_count = entry_count
+                mask = "".join("1" if found else "0" for found in keycaps)
+                self.log_debug(f"队伍人数检测: {entry_count} 人，进场按键外框/文字及头像: {mask}")
+                return True
         self._battle_member_count = found_skills
         self.log_debug(f"队伍人数检测: {found_skills} 人，检查结果: {'; '.join(skill_checks)}")
         return sequence_valid and found_skills >= 1

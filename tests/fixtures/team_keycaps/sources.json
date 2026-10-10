@@ -82,5 +82,26 @@
     "width": 3840,
     "height": 2160,
     "mask": "0000"
+  },
+  {
+    "file": "native_one.png",
+    "source": "screenshot_20261010_091040.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0001"
+  },
+  {
+    "file": "native_two.png",
+    "source": "screenshot_20261010_084459.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0011"
+  },
+  {
+    "file": "native_two_dead.png",
+    "source": "screenshot_20261010_085936.png",
+    "width": 1920,
+    "height": 1080,
+    "mask": "0011"
   }
 ]

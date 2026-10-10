@@ -56,6 +56,9 @@ class _TeamHudTask:
     def _battle_feature_boxes(self, prefix):
         return self.boxes
 
+    def detect_team(self, frame=None):
+        return ["?"] * 4
+
     def find_one(self, feature, box):
         slot = int(feature.split("_")[1])
         index = self.boxes.index(box)

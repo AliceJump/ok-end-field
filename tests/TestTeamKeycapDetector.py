@@ -23,12 +23,13 @@ def load_frame(name):
 
 
 class _ImageHudTask:
-    def __init__(self, frame, team_count=0, disabled_slots=()):
+    def __init__(self, frame, team_count=0, disabled_slots=(), portraits=None):
         self.frame = frame
         self._battle_team = ["known"] * team_count
         self._battle_team_disabled_slots = set(disabled_slots)
         self._battle_member_count = team_count
         self.template_calls = []
+        self.portraits = portraits or ["?"] * 4
 
     def _battle_feature_boxes(self, prefix):
         return [Box(index * 100, 10, 20, 20) for index in range(4)]
@@ -39,6 +40,9 @@ class _ImageHudTask:
 
     def log_debug(self, message):
         pass
+
+    def detect_team(self, frame=None):
+        return self.portraits
 
 
 class TestTeamKeycapDetector(unittest.TestCase):
@@ -99,6 +103,46 @@ class TestTeamKeycapDetector(unittest.TestCase):
         self.assertTrue(BattleMixin.in_team(task))
         self.assertEqual(task._battle_member_count, 2)
         self.assertEqual(task.template_calls, [])
+
+    def test_native_partial_entry_survives_digit_match_failure(self):
+        for count, source in ((1, "native_one"), (2, "native_two"), (3, "native_three")):
+            with self.subTest(count=count):
+                portraits = ["known"] * count + ["?"] * (4 - count)
+                task = _ImageHudTask(load_frame(source), portraits=portraits)
+                self.assertTrue(BattleMixin.in_team(task))
+                self.assertEqual(task._battle_member_count, count)
+                self.assertEqual(task._battle_team, [])
+
+    def test_partial_entry_rejects_missing_extra_or_shifted_portraits(self):
+        for portraits in (
+            ["known", "?", "?", "?"],
+            ["known", "known", "known", "?"],
+            ["?", "known", "known", "?"],
+            ["?", "?", "known", "known"],
+        ):
+            with self.subTest(portraits=portraits):
+                task = _ImageHudTask(load_frame("native_two"), portraits=portraits)
+                self.assertFalse(BattleMixin.in_team(task))
+                self.assertEqual(task._battle_member_count, 0)
+                self.assertTrue(task.template_calls)
+
+    def test_confirmed_digits_skip_entry_portrait_probe(self):
+        for count, source in ((1, "native_one"), (2, "native_two"), (3, "native_three")):
+            with self.subTest(count=count):
+                task = _TeamHudTask(count, visible_slots=range(1, count + 1))
+                task._battle_team = []
+                task.frame = load_frame(source)
+                task.detect_team = lambda frame: self.fail("confirmed digits must not trigger a portrait scan")
+                self.assertTrue(BattleMixin.in_team(task))
+                self.assertEqual(task._battle_member_count, count)
+
+    def test_two_person_death_requires_existing_team_or_digit_confirmation(self):
+        task = _ImageHudTask(load_frame("native_two_dead"))
+        self.assertFalse(BattleMixin.in_team(task))
+        self.assertEqual(task._battle_member_count, 0)
+        task._battle_team = ["known", "known"]
+        self.assertTrue(BattleMixin.in_team(task))
+        self.assertEqual(task._battle_member_count, 2)
 
     def test_extra_left_keycap_rechecks_stale_short_team_size(self):
         task = _TeamHudTask(4, visible_slots=(1, 2, 3, 4))
