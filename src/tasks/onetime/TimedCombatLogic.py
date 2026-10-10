@@ -41,7 +41,6 @@ class TimedCombatLogic:
     _SP_PRESSURE_HEADROOM = 10.0
     _FAILED_CAST_RETRY_DELAY = 0.20
     _ACTION_FEEDBACK_WINDOW = 1.20
-    _DEAD_SLOT_CONFIRM_REFRESHES = 3
 
     def __init__(self, task, store=None, clock=None, wall_clock=None):
         self.task = task
@@ -88,7 +87,6 @@ class TimedCombatLogic:
         self.last_sp_probe_at = 0.0
         self.sp_pressure_threshold = 265.0
         self.battle_retry_after = {}
-        self.dead_slot_evidence = {}
         self.enemy_pause_started = None
         self._enemy_presence_confirmed = False
         self.last_action_attempt = None
@@ -562,7 +560,6 @@ class TimedCombatLogic:
         if reset_runtime:
             self.main_control.reset()
             self.disabled_slots.clear()
-            self.dead_slot_evidence.clear()
             self.battle_retry_after.clear()
             self.forced_battle_token = None
             self.free_battle_once.clear()
@@ -606,9 +603,6 @@ class TimedCombatLogic:
             self.forced_main_control_until = 0.0
         self.battle_retry_after = {
             token: value for token, value in self.battle_retry_after.items() if token in available_tokens
-        }
-        self.dead_slot_evidence = {
-            token: value for token, value in self.dead_slot_evidence.items() if token in available_tokens
         }
 
         known_team = [name for name in team if name != "?"]
@@ -732,13 +726,14 @@ class TimedCombatLogic:
         restored = {
             str(index)
             for index, (expected, current) in enumerate(zip(self.team, detected, strict=True), 1)
-            if str(index) in self.disabled_slots and expected != "?" and current == expected
+            if str(index) in self.disabled_slots
+            and expected != "?"
+            and current == expected
+            and index - 1 not in getattr(self.task, "_squad_dead_slots", set())
         }
         if not restored:
             return
         self.disabled_slots.difference_update(restored)
-        for token in restored:
-            self.dead_slot_evidence.pop(token, None)
         self._sync_task_team_slots()
         preferred_slots = tuple(token for token in self.ult_order if self._slot_available(token))
         if self.phase_planner.restore_slots(restored, preferred_slots=preferred_slots):
@@ -759,58 +754,42 @@ class TimedCombatLogic:
             member_count=len(self.team),
         )
         detected = list(detected)[: len(self.team)]
-        if not stable or len(detected) != len(self.team) or all(member == "?" for member in detected):
-            return
+        if stable and len(detected) == len(self.team) and any(member != "?" for member in detected):
+            mismatches = [
+                (index + 1, expected, current)
+                for index, (expected, current) in enumerate(zip(self.team, detected, strict=True))
+                if expected != "?" and current != "?" and current != expected
+            ]
+            if mismatches:
+                self.task.log_debug(f"时间排轴忽略槽位刷新，已知角色位置不匹配: {mismatches}")
+                self._disable_dead_slots()
+                return
 
-        mismatches = [
-            (index + 1, expected, current)
-            for index, (expected, current) in enumerate(zip(self.team, detected))
-            if expected != "?" and current != "?" and current != expected
-        ]
-        if mismatches:
-            self.task.log_debug(f"时间排轴忽略槽位刷新，已知角色位置不匹配: {mismatches}")
-            return
+            self._restore_team_slots(detected)
+            filled_slots = [
+                (str(index + 1), current)
+                for index, (expected, current) in enumerate(zip(self.team, detected, strict=True))
+                if expected == "?" and current != "?"
+            ]
+            if filled_slots:
+                completed = list(self.team)
+                for token, name in filled_slots:
+                    completed[int(token) - 1] = name
+                self._configure_team(completed, reset_runtime=False, filled_slots=filled_slots)
+                self._restore_team_slots(completed)
+        # Explicit, temporally confirmed death evidence works even when every
+        # portrait is unknown. Missing identity alone never disables a slot.
+        self._disable_dead_slots()
 
-        self._restore_team_slots(detected)
-
-        filled_slots = [
-            (str(index + 1), current)
-            for index, (expected, current) in enumerate(zip(self.team, detected))
-            if expected == "?" and current != "?"
-        ]
-        if filled_slots:
-            completed = list(self.team)
-            for token, name in filled_slots:
-                completed[int(token) - 1] = name
-                self.dead_slot_evidence.pop(token, None)
-            self._configure_team(completed, reset_runtime=False, filled_slots=filled_slots)
-
-        candidates = set()
-        for index, (expected, current) in enumerate(zip(self.team, detected), 1):
-            token = str(index)
-            if expected == "?" or token in self.disabled_slots:
-                continue
-            if current == expected:
-                self.dead_slot_evidence.pop(token, None)
-                continue
-            if current == "?":
-                count = self.dead_slot_evidence.get(token, 0) + 1
-                self.dead_slot_evidence[token] = count
-                if count >= self._DEAD_SLOT_CONFIRM_REFRESHES:
-                    candidates.add(token)
-                else:
-                    self.task.log_debug(
-                        f"时间排轴槽位 {token}:{expected} 暂时未识别，"
-                        f"死亡确认 {count}/{self._DEAD_SLOT_CONFIRM_REFRESHES}"
-                    )
-
+    def _disable_dead_slots(self):
+        candidates = {
+            str(index + 1) for index in getattr(self.task, "_squad_dead_slots", set()) if 0 <= index < len(self.team)
+        }
         newly_disabled = candidates - self.disabled_slots
         if not newly_disabled:
             return
 
         self.disabled_slots.update(newly_disabled)
-        for token in newly_disabled:
-            self.dead_slot_evidence.pop(token, None)
         self._sync_task_team_slots()
 
         if self.pending is not None and self.pending[1] in newly_disabled:
@@ -834,9 +813,7 @@ class TimedCombatLogic:
 
         self._refresh_sp_threshold()
         details = [f"{token}:{self.team[int(token) - 1]}" for token in sorted(newly_disabled, key=int)]
-        self.task.log_info(
-            f"时间排轴屏蔽失效槽位 {details}，已跨 {self._DEAD_SLOT_CONFIRM_REFRESHES} 次刷新确认，保留原始槽位编号"
-        )
+        self.task.log_info(f"时间排轴屏蔽死亡槽位 {details}，死亡外观稳定确认，保留原始槽位编号")
 
     def _detect_team(self, deadline):
         member_count = getattr(self.task, "_battle_member_count", None)
@@ -853,6 +830,7 @@ class TimedCombatLogic:
             team = list(team)[:member_count]
         if stable and 1 <= len(team) <= 4 and any(member != "?" for member in team):
             self._configure_team(team, reset_runtime=True)
+            self._disable_dead_slots()
 
     def _observe_battle(self):
         if self.plan is None or self.cursor != 0:

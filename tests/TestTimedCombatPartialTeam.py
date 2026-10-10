@@ -11,6 +11,7 @@ class _PartialTeamTask:
         self._battle_member_count = member_count
         self._battle_team = None
         self._battle_team_disabled_slots = set()
+        self._squad_dead_slots = set()
         self.messages = []
 
     def detect_team_stable(self, **_kwargs):
@@ -28,6 +29,35 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         task = _PartialTeamTask(detected_team, member_count)
         logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: 0.0)
         return task, logic
+
+    def test_long_identity_failure_never_means_death(self):
+        task, logic = self._logic(["佩丽卡", "艾维文娜", "梨诺", "?"], member_count=3)
+        logic._detect_team(1)
+        task.detected_team = ["?", "艾维文娜", "梨诺", "?"]
+        for _ in range(12):
+            logic._refresh_team_slots(1)
+        self.assertEqual(logic.disabled_slots, set())
+        self.assertEqual(logic.team, ["佩丽卡", "艾维文娜", "梨诺"])
+
+    def test_all_unknown_identities_still_process_confirmed_deaths(self):
+        task, logic = self._logic(["佩丽卡", "狼卫", "陈千语", "管理员"])
+        logic._detect_team(1)
+        task._squad_dead_slots = {0, 1, 2, 3}
+        task.detect_team_stable = lambda **kwargs: (["?"] * 4, False)
+        logic._refresh_team_slots(1)
+        self.assertEqual(logic.disabled_slots, {"1", "2", "3", "4"})
+        self.assertEqual(task._battle_member_count, 4)
+
+    def test_initially_unknown_dead_identity_can_be_filled_and_restored(self):
+        task, logic = self._logic(["佩丽卡", "?", "梨诺", "?"], member_count=3)
+        task._squad_dead_slots = {1}
+        logic._detect_team(1)
+        self.assertEqual(logic.disabled_slots, {"2"})
+        task._squad_dead_slots = set()
+        task.detected_team = ["佩丽卡", "艾维文娜", "梨诺", "?"]
+        logic._refresh_team_slots(1)
+        self.assertEqual(logic.disabled_slots, set())
+        self.assertTrue(logic._slot_available("2"))
 
     def test_native_short_teams_use_left_aligned_portraits_and_actual_slot_numbers(self):
         portraits = ["佩丽卡", "艾维文娜", "梨诺", "?"]
@@ -72,8 +102,9 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         task, logic = self._logic(["佩丽卡", "艾维文娜", "梨诺", "?"], member_count=3)
         logic._detect_team(1)
         task.detected_team = ["?", "艾维文娜", "梨诺", "?"]
+        task._squad_dead_slots = {0}
         task._battle_member_count = 0
-        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+        for _ in range(3):
             logic._refresh_team_slots(1)
 
         self.assertEqual(logic.team, ["佩丽卡", "艾维文娜", "梨诺"])
@@ -124,10 +155,9 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         task, logic = self._logic(partial)
         logic._detect_team(1)
 
-        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES + 2):
+        for _ in range(5):
             logic._refresh_team_slots(1)
 
-        self.assertNotIn("3", logic.dead_slot_evidence)
         self.assertNotIn("3", logic.disabled_slots)
         self.assertIn(2, task._battle_team_disabled_slots)
 
@@ -140,8 +170,6 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         logic._refresh_team_slots(1)
 
         self.assertEqual(logic.team, ["佩丽卡", "狼卫", "陈千语", "管理员"])
-        self.assertEqual(logic.dead_slot_evidence.get("2"), 1)
-        self.assertNotIn("3", logic.dead_slot_evidence)
         self.assertEqual(logic.disabled_slots, set())
 
     def test_disabled_portrait_recovers_in_original_slot_without_resetting_cooldowns(self):
@@ -155,13 +183,15 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         logic.cursor = 1
         order = list(logic.order)
         task.detected_team[1] = "?"
-        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+        task._squad_dead_slots = {1}
+        for _ in range(3):
             logic._refresh_team_slots(1)
         self.assertFalse(logic._slot_available("2"))
         self.assertEqual(task._battle_team_disabled_slots, {1})
         self.assertEqual(logic.assume_success_sp_threshold, 15)
 
         task.detected_team = original
+        task._squad_dead_slots = set()
         logic._refresh_team_slots(1)
         self.assertTrue(logic._slot_available("2"))
         self.assertEqual(logic.disabled_slots, set())
@@ -173,7 +203,6 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         self.assertEqual(logic.cooldowns["sentinel"], 12.5)
         self.assertEqual(logic.state_until["1"], 9.0)
         self.assertEqual(logic.assume_success_sp_threshold, 105)
-        self.assertNotIn("2", logic.dead_slot_evidence)
         self.assertTrue(any("恢复失效槽位" in message for message in task.messages))
 
     def test_recovery_waits_for_stability_across_scheduler_ticks(self):
@@ -181,9 +210,11 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         task, logic = self._logic(original, member_count=3)
         logic._detect_team(1)
         task.detected_team[0] = "?"
-        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+        task._squad_dead_slots = {0}
+        for _ in range(3):
             logic._refresh_team_slots(1)
         task.detected_team = original
+        task._squad_dead_slots = set()
         task.frame = object()
         task.now = 0.0
         task.active_time = lambda: task.now
@@ -206,10 +237,12 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         task, logic = self._logic(original)
         logic._detect_team(1)
         task.detected_team = ["?", "?", "?", "管理员"]
-        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+        task._squad_dead_slots = {0, 1}
+        for _ in range(3):
             logic._refresh_team_slots(1)
         self.assertEqual(logic.disabled_slots, {"1", "2"})
         task.detected_team = ["佩丽卡", "?", "?", "管理员"]
+        task._squad_dead_slots = {1}
         logic._refresh_team_slots(1)
         self.assertEqual(logic.disabled_slots, {"2"})
         self.assertEqual(task._battle_team_disabled_slots, {1, 2})
@@ -222,7 +255,8 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         task, logic = self._logic(original)
         logic._detect_team(1)
         task.detected_team[1] = "?"
-        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+        task._squad_dead_slots = {1}
+        for _ in range(3):
             logic._refresh_team_slots(1)
         for current in ("?", "洛茜"):
             task.detected_team[1] = current
@@ -238,10 +272,12 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         logic._detect_team(1)
         for _ in range(2):
             task.detected_team[1] = "?"
-            for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+            task._squad_dead_slots = {1}
+            for _ in range(3):
                 logic._refresh_team_slots(1)
             self.assertEqual(logic.disabled_slots, {"2"})
             task.detected_team = list(original)
+            task._squad_dead_slots = set()
             logic._refresh_team_slots(1)
             self.assertEqual(logic.disabled_slots, set())
 
