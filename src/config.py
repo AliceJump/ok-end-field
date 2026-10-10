@@ -155,6 +155,7 @@ config = {
         ["src.tasks.onetime.TestStartGame", "TestStartGame"],
         ["src.tasks.test.RealtimeDetectTask", "RealtimeYoloScanTask"],
         ["src.tasks.test.RealtimeDetectTask", "RealtimeDetectTask"],
+        ["src.tasks.test.ZipLineScanDebugTask", "ZipLineScanDebugTask"],
         ["src.tasks.test.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
         ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],
