@@ -12,7 +12,8 @@ non-disabled slots at its original right-aligned positions. A fully visible unkn
 four-person layout can establish its size directly. Unknown partial layouts, single
 members, one remaining survivor, and uncertain outlines retain the original digit
 template path. An extra keycap left of a known short team also forces a template
-recheck. Hidden HUDs still clear the count; the combat exit confirmation rules are
+recheck, as does a missing first key without a known disabled first slot. Hidden
+HUDs still clear the count; the combat exit confirmation rules are
 unchanged.
 
 ## Actual `in_team` replay and timing
@@ -30,12 +31,12 @@ from a run without the full test suite running concurrently.
 
 | Profile / captures | Before (ms) | After (ms) | Change |
 |---|---:|---:|---:|
-| Cold / 41 team HUDs | 0.522 | 0.279 | 46.6% faster |
-| Known team / 41 team HUDs | 0.533 | 0.258 | 51.7% faster |
-| Cold / 133 other frames | 2.149 | 2.499 | 16.3% slower |
-| Known team / 133 other frames | 2.123 | 2.470 | 16.3% slower |
-| Cold / all 174 | 1.766 | 1.976 | 11.9% slower |
-| Known team / all 174 | 1.748 | 1.949 | 11.5% slower |
+| Cold / 41 team HUDs | 0.508 | 0.271 | 46.7% faster |
+| Known team / 41 team HUDs | 0.504 | 0.243 | 51.8% faster |
+| Cold / 133 other frames | 1.787 | 2.061 | 15.3% slower |
+| Known team / 133 other frames | 1.790 | 2.052 | 14.7% slower |
+| Cold / all 174 | 1.486 | 1.639 | 10.3% slower |
+| Known team / all 174 | 1.487 | 1.626 | 9.4% slower |
 
 The additional outline probe costs time on frames that fall back to templates.
 These results support faster HUD-positive checks, not an overall speedup across

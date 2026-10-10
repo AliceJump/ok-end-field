@@ -1055,7 +1055,13 @@ class BattleMixin(BaseEfTask):
                 available = [slot for slot in range(member_count) if slot not in disabled]
                 # A single visible outline cannot distinguish a survivor from menu UI.
                 # Unknown partial teams still need digit templates to establish numbering.
-                if not any(keycaps[:start_index]) and sum(keycaps[start_index + slot] for slot in available) >= 2:
+                # A missing first key may also be a newly shortened native team.
+                first_slot_confirmed = keycaps[start_index] or 0 in disabled
+                if (
+                    first_slot_confirmed
+                    and not any(keycaps[:start_index])
+                    and sum(keycaps[start_index + slot] for slot in available) >= 2
+                ):
                     self._battle_member_count = member_count
                     mask = "".join("1" if found else "0" for found in keycaps)
                     self.log_debug(f"队伍人数检测: {member_count} 人，按键外框/文字: {mask}")

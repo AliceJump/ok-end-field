@@ -87,7 +87,8 @@ class TestTeamKeycapDetector(unittest.TestCase):
             with self.subTest(disabled=disabled):
                 frame = load_frame("effects")
                 frame[:, :1600] = 0
-                task = _ImageHudTask(frame, team_count=4, disabled_slots=disabled)
+                task = _TeamHudTask(4, visible_slots=(2, 3), disabled_slots=disabled)
+                task.frame = frame
                 self.assertTrue(BattleMixin.in_team(task))
                 self.assertEqual(task._battle_member_count, 4)
 
@@ -105,6 +106,13 @@ class TestTeamKeycapDetector(unittest.TestCase):
         task.frame = load_frame("effects")
         self.assertTrue(BattleMixin.in_team(task))
         self.assertEqual(task._battle_member_count, 4)
+
+    def test_missing_first_key_rechecks_stale_long_team_size(self):
+        task = _TeamHudTask(3, visible_slots=(1, 2, 3))
+        task._battle_team = ["known"] * 4
+        task.frame = load_frame("native_three")
+        self.assertTrue(BattleMixin.in_team(task))
+        self.assertEqual(task._battle_member_count, 3)
 
     def test_last_survivor_and_single_outline_need_digit_confirmation(self):
         task = _TeamHudTask(4, visible_slots=(4,), disabled_slots=(0, 1, 2))
