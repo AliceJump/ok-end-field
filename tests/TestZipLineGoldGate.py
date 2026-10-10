@@ -2,6 +2,9 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, call
 
+import cv2
+import numpy as np
+
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
@@ -24,6 +27,29 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub._try_click_on_zip_line = lambda *args, **kwargs: ZipLineMixin._try_click_on_zip_line(stub, *args, **kwargs)
         return stub
 
+    @staticmethod
+    def _detector_stub():
+        stub = SimpleNamespace(
+            width=1920,
+            height=1080,
+            _ZIP_LINE_TEMPLATE_THRESHOLD=ZipLineMixin._ZIP_LINE_TEMPLATE_THRESHOLD,
+            _ZIP_LINE_ELLIPSE_RX=ZipLineMixin._ZIP_LINE_ELLIPSE_RX,
+            _ZIP_LINE_ELLIPSE_RY=ZipLineMixin._ZIP_LINE_ELLIPSE_RY,
+        )
+        stub.resolution_scale = Mock(return_value=1.0)
+        stub.screen_center = Mock(return_value=(960, 540))
+        stub._zip_line_icon_template = lambda: ZipLineMixin._zip_line_icon_template(stub)
+        stub._zip_line_ellipse_geometry = lambda: ZipLineMixin._zip_line_ellipse_geometry(stub)
+        stub._zip_line_ellipse_radius = lambda x, y: ZipLineMixin._zip_line_ellipse_radius(stub, x, y)
+        stub._zip_line_has_gold_ring = lambda mask, x, y: ZipLineMixin._zip_line_has_gold_ring(stub, mask, x, y)
+        stub._zip_line_hsv_mask = ZipLineMixin._zip_line_hsv_mask
+        return stub
+
+    @staticmethod
+    def _hsv_bgr(hue, saturation=255, value=255):
+        pixel = np.asarray([[[hue, saturation, value]]], dtype=np.uint8)
+        return cv2.cvtColor(pixel, cv2.COLOR_HSV2BGR)[0, 0]
+
     def test_distance_pattern_rejects_longer_numeric_distance(self):
         pattern = ZipLineMixin._zip_line_distance_pattern(108)
 
@@ -31,7 +57,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertIsNone(pattern.search("1080m"))
         self.assertIsNone(pattern.search("2108m"))
 
-    def test_alignment_uses_generic_hsv_ocr_processors(self):
+    def test_ocr_fallback_preserves_original_processors(self):
         gold_processor = object()
         white_processor = object()
         stub = SimpleNamespace(
@@ -40,7 +66,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             align_ocr_or_find_target_to_center=Mock(return_value=True),
         )
 
-        result = ZipLineMixin._align_zip_line_distance(stub, 108, need_scroll=True)
+        result = ZipLineMixin._align_zip_line_distance_ocr(stub, 108, need_scroll=True)
 
         self.assertTrue(result)
         stub.make_hsv_isolator.assert_has_calls([call(hR.GOLD_TEXT), call(hR.WHITE)])
@@ -50,6 +76,200 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertTrue(kwargs["need_scroll"])
         self.assertEqual(kwargs["tolerance"], 50)
         self.assertTrue(kwargs["raise_if_fail"])
+
+    def test_ocr_fallback_checks_shared_deadline_between_chunks(self):
+        gold_processor = object()
+        white_processor = object()
+        stub = SimpleNamespace(
+            _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
+            make_hsv_isolator=Mock(side_effect=[gold_processor, white_processor]),
+            align_ocr_or_find_target_to_center=Mock(return_value=False),
+            active_time=Mock(side_effect=[0.0, 20.0]),
+            _zip_line_alignment_failed=lambda raise_if_fail: ZipLineMixin._zip_line_alignment_failed(raise_if_fail),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance_ocr(
+            stub,
+            108,
+            max_time=10,
+            raise_if_fail=False,
+            deadline=20.0,
+            max_iterations=17,
+        )
+
+        self.assertFalse(result)
+        stub.align_ocr_or_find_target_to_center.assert_called_once()
+        self.assertEqual(stub.align_ocr_or_find_target_to_center.call_args.kwargs["max_time"], 1)
+        self.assertFalse(stub.align_ocr_or_find_target_to_center.call_args.kwargs["raise_if_fail"])
+
+    def test_icon_detector_ignores_blue_and_red_and_prefers_white_before_yellow(self):
+        stub = self._detector_stub()
+        frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
+        template = ZipLineMixin._zip_line_icon_template(stub)
+        mask = template > 0
+
+        def paste_icon(x, y, color):
+            roi = frame[y : y + template.shape[0], x : x + template.shape[1]]
+            roi[mask] = color
+
+        paste_icon(780, 500, (255, 255, 255))
+        paste_icon(1080, 500, self._hsv_bgr(30))
+        paste_icon(700, 620, self._hsv_bgr(110))
+        paste_icon(1180, 620, self._hsv_bgr(0))
+
+        candidates = ZipLineMixin._detect_zip_line_icon_candidates(stub, frame)
+
+        self.assertEqual([candidate["state"] for candidate in candidates], ["white", "gold"])
+        self.assertTrue(all(candidate["radius"] <= 1.0 for candidate in candidates))
+
+    def test_ellipse_radius_uses_screen_center_and_expected_edge(self):
+        stub = self._detector_stub()
+
+        self.assertAlmostEqual(ZipLineMixin._zip_line_ellipse_radius(stub, 960, 540), 0.0)
+        self.assertAlmostEqual(ZipLineMixin._zip_line_ellipse_radius(stub, 1680, 540), 1.0)
+        self.assertGreater(ZipLineMixin._zip_line_ellipse_radius(stub, 1681, 540), 1.0)
+
+    def test_template_target_checks_white_before_gold(self):
+        white = {"state": "white"}
+        gold = {"state": "gold"}
+        target = SimpleNamespace(x=0, y=0, width=10, height=10)
+        white_processor = object()
+        stub = SimpleNamespace(
+            _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
+            _detect_zip_line_icon_candidates=Mock(return_value=[white, gold]),
+            _zip_line_distance_box=Mock(side_effect=lambda candidate: candidate["state"]),
+            make_hsv_isolator=Mock(return_value=white_processor),
+            ocr=Mock(return_value=[target]),
+        )
+
+        candidate, matched_target = ZipLineMixin._find_zip_line_template_target(stub, 108, frame="frame")
+
+        self.assertIs(candidate, white)
+        self.assertIs(matched_target, target)
+        self.assertEqual(stub.ocr.call_args.kwargs["box"], "white")
+        stub.make_hsv_isolator.assert_called_once_with(hR.WHITE)
+
+    def test_outer_half_uses_faster_centering_profile(self):
+        stub = SimpleNamespace(
+            _ZIP_LINE_INNER_RADIUS=ZipLineMixin._ZIP_LINE_INNER_RADIUS,
+            _ZIP_LINE_OUTER_MAX_BOOST=ZipLineMixin._ZIP_LINE_OUTER_MAX_BOOST,
+        )
+
+        inner = ZipLineMixin._zip_line_move_profile(stub, 0.5)
+        outer = ZipLineMixin._zip_line_move_profile(stub, 1.0)
+
+        self.assertEqual(inner["max_step"], 120)
+        self.assertEqual(inner["min_step"], 20)
+        self.assertEqual(outer["max_step"], 210)
+        self.assertEqual(outer["min_step"], 35)
+        self.assertEqual(outer["slow_radius"], inner["slow_radius"])
+
+    def test_template_alignment_falls_back_after_three_consecutive_misses(self):
+        stub = SimpleNamespace(
+            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
+            scale_distance=Mock(return_value=50),
+            next_frame=Mock(return_value="frame"),
+            _find_zip_line_template_target=Mock(return_value=None),
+            log_info=Mock(),
+            _align_zip_line_distance_ocr=Mock(return_value="fallback"),
+            sleep=Mock(),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance(stub, 108)
+
+        self.assertEqual(result, "fallback")
+        self.assertEqual(stub._find_zip_line_template_target.call_count, 3)
+        stub._align_zip_line_distance_ocr.assert_called_once_with(
+            108,
+            need_scroll=None,
+            tolerance=50,
+            max_time=100,
+            raise_if_fail=True,
+            deadline=None,
+            max_iterations=None,
+        )
+
+    def test_template_alignment_shares_retry_deadline_and_remaining_attempt_budget(self):
+        stub = SimpleNamespace(
+            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
+            scale_distance=Mock(return_value=50),
+            active_time=Mock(return_value=0.0),
+            next_frame=Mock(return_value="frame"),
+            _find_zip_line_template_target=Mock(return_value=None),
+            log_info=Mock(),
+            _align_zip_line_distance_ocr=Mock(return_value="fallback"),
+            sleep=Mock(),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance(stub, 108, max_time=10, deadline=20.0)
+
+        self.assertEqual(result, "fallback")
+        self.assertEqual(stub._find_zip_line_template_target.call_count, 3)
+        stub._align_zip_line_distance_ocr.assert_called_once_with(
+            108,
+            need_scroll=None,
+            tolerance=50,
+            max_time=10,
+            raise_if_fail=True,
+            deadline=20.0,
+            max_iterations=17,
+        )
+
+    def test_template_alignment_does_not_start_after_retry_deadline(self):
+        stub = SimpleNamespace(
+            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
+            scale_distance=Mock(return_value=50),
+            active_time=Mock(return_value=20.0),
+            next_frame=Mock(),
+            _find_zip_line_template_target=Mock(),
+            _align_zip_line_distance_ocr=Mock(),
+            _zip_line_alignment_failed=lambda raise_if_fail: ZipLineMixin._zip_line_alignment_failed(raise_if_fail),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance(
+            stub,
+            108,
+            max_time=10,
+            raise_if_fail=False,
+            deadline=20.0,
+        )
+
+        self.assertFalse(result)
+        stub.next_frame.assert_not_called()
+        stub._align_zip_line_distance_ocr.assert_not_called()
+
+    def test_template_hit_resets_consecutive_miss_counter(self):
+        candidate = {
+            "x": 230,
+            "y": 585,
+            "width": 20,
+            "height": 30,
+            "center_x": 240,
+            "center_y": 600,
+            "radius": 1.0,
+        }
+        target = SimpleNamespace(x=230, y=636, width=30, height=14)
+        profile = {"max_step": 210, "min_step": 35, "slow_radius": 350, "deadzone": 8}
+        stub = SimpleNamespace(
+            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
+            scale_distance=Mock(return_value=50),
+            next_frame=Mock(return_value="frame"),
+            _find_zip_line_template_target=Mock(
+                side_effect=[None, None, (candidate, target), None, None, None]
+            ),
+            screen_center=Mock(return_value=(960, 540)),
+            _zip_line_move_profile=Mock(return_value=profile),
+            move_to_target_once=Mock(),
+            log_info=Mock(),
+            _align_zip_line_distance_ocr=Mock(return_value="fallback"),
+            sleep=Mock(),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance(stub, 108)
+
+        self.assertEqual(result, "fallback")
+        self.assertEqual(stub._find_zip_line_template_target.call_count, 6)
+        stub.move_to_target_once.assert_called_once()
 
     def test_gold_center_check_uses_fifty_pixel_tolerance(self):
         processor = object()
@@ -156,6 +376,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(retry_kwargs["tolerance"], 50)
         self.assertEqual(retry_kwargs["max_time"], 10)
         self.assertFalse(retry_kwargs["raise_if_fail"])
+        self.assertEqual(retry_kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_not_called()
 
     def test_gate_realign_failure_falls_back_without_raising_alignment_error(self):
@@ -173,6 +394,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(stub._align_zip_line_distance.call_count, 2)
         retry_kwargs = stub._align_zip_line_distance.call_args_list[1].kwargs
         self.assertFalse(retry_kwargs["raise_if_fail"])
+        self.assertEqual(retry_kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_called_once_with()
 
     def test_gate_retry_exhaustion_falls_back_to_direct_click_and_e(self):
@@ -189,6 +411,8 @@ class TestZipLineGoldGate(unittest.TestCase):
 
         self.assertEqual(stub._try_click_on_zip_line.call_count, 3)
         self.assertEqual(stub._align_zip_line_distance.call_count, 3)
+        for retry_call in stub._align_zip_line_distance.call_args_list[1:]:
+            self.assertEqual(retry_call.kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_called_once_with()
 
     def test_interaction_failure_does_not_use_unlocked_legacy_fallback(self):
