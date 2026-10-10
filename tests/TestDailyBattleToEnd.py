@@ -170,7 +170,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
         sleeps = []
         checks = 0
 
-        feature.active_and_send_mouse_delta = lambda **kwargs: moves.append((kwargs["dx"], kwargs["dy"]))
+        feature.active_and_send_mouse_delta = lambda **kwargs: moves.append(kwargs)
         feature.sleep = lambda timeout: sleeps.append(timeout)
 
         def check():
@@ -189,13 +189,14 @@ class TestDailyBattleToEnd(unittest.TestCase):
         self.assertIsNone(result)
         self.assertEqual(8, checks)
         self.assertEqual(8, len(moves))
-        self.assertEqual(4 * int(feature.width * 0.1), sum(dx for dx, _dy in moves))
+        self.assertEqual(4 * int(feature.width * 0.1), sum(move["dx"] for move in moves))
         self.assertAlmostEqual(0.4, sum(sleeps))
+        self.assertAlmostEqual(4 * 2 * 0.005, sum(move["delay"] * move["steps"] for move in moves))
 
         cumulative_pitch = 0
         pitch_positions = []
-        for _dx, dy in moves:
-            cumulative_pitch += dy
+        for move in moves:
+            cumulative_pitch += move["dy"]
             pitch_positions.append(cumulative_pitch)
 
         self.assertEqual(0, pitch_positions[-1])
