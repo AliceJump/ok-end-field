@@ -1,0 +1,38 @@
+[
+  {
+    "file": "shifted_4k.png",
+    "source": "f88b4522-Windows_Graphics_Capture_3840x2160_1769076859997.6775_original.png",
+    "width": 3840,
+    "height": 2160,
+    "crop": [
+      0,
+      1840,
+      1000,
+      124
+    ]
+  },
+  {
+    "file": "normal_2k.png",
+    "source": "screenshot_20260911_171323.png",
+    "width": 2560,
+    "height": 1440,
+    "crop": [
+      0,
+      1227,
+      667,
+      83
+    ]
+  },
+  {
+    "file": "native_two.png",
+    "source": "screenshot_20261010_084459.png",
+    "width": 1920,
+    "height": 1080,
+    "crop": [
+      0,
+      920,
+      500,
+      62
+    ]
+  }
+]

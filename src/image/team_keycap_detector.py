@@ -90,3 +90,22 @@ def detect_team_keycaps(frame: np.ndarray | None) -> tuple[bool, ...]:
             if not found[index] and crop is not None:
                 found[index] = _has_light_glyph(crop)
     return tuple(bool(slot) for slot in found)
+
+
+def find_first_team_keycap(frame: np.ndarray | None) -> int | None:
+    """Read physical slots left to right, stopping at the first keycap outline.
+
+    A standalone light stroke cannot establish HUD presence. Glyph repair stays
+    in the full-mask probe, where other outlines provide the needed context.
+    """
+    if frame is None or frame.ndim != 3 or frame.shape[2] != 3 or frame.dtype != np.uint8:
+        return None
+    height, width = frame.shape[:2]
+    if not height or not width:
+        return None
+    scale = min(height / 1080, width / 1920)
+    for index, offset in enumerate(_RIGHT_OFFSETS):
+        crop = _crop_keycap(frame, offset, scale)
+        if crop is not None and _has_outline(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)):
+            return index
+    return None
