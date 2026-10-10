@@ -2852,3 +2852,18 @@ msgstr ""
 
 msgid "自动技能列表"
 msgstr "자동 스킬 목록"
+
+msgid "紫晶质瓶"
+msgstr "자수정 병"
+
+msgid "紫晶零件"
+msgstr "자수정 부품"
+
+msgid "息壤"
+msgstr "식양"
+
+msgid "赤铜零件"
+msgstr "적동 부품"
+
+msgid "分离芯"
+msgstr "분리 필터"

@@ -2840,3 +2840,18 @@ msgstr ""
 
 msgid "自动技能列表"
 msgstr "自動スキルリスト"
+
+msgid "紫晶质瓶"
+msgstr "紫晶製ボトル"
+
+msgid "紫晶零件"
+msgstr "紫晶部品"
+
+msgid "息壤"
+msgstr "息壌"
+
+msgid "赤铜零件"
+msgstr "赤銅部品"
+
+msgid "分离芯"
+msgstr "分離コア"

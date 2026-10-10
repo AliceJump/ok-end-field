@@ -166,11 +166,13 @@ class TestOutpostExchange(unittest.TestCase):
                 self.assertEqual(feature.click.call_args_list[0].args[0].name, preferred)
 
     def test_empty_selection_does_not_exchange_goods(self):
+        """验证没有符合条件的货品时不选择货品或提交兑换。"""
         cases = [
             ("no_goods", [], [], set()),
             ("empty_ocr_text", [""], [], set()),
             ("only_card_borders", ["|｜丨"], [], set()),
             ("no_priority_match", ["重息壤龙泡泡"], ["息壤龙泡泡"], set()),
+            ("xiranite_is_not_heavy_xiranite", ["重息壤"], ["息壤"], set()),
             ("all_excluded", ["息壤玉葫芦"], [], {"息壤玉葫芦"}),
         ]
         for label, goods, priority_list, excluded_goods in cases:
