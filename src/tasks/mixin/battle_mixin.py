@@ -1153,6 +1153,7 @@ class BattleMixin(BaseEfTask):
         if callable(observer) and found:
             if hud is not None and hud.count_candidate and hud.count_candidate != self._battle_member_count:
                 self._battle_member_count = 0
+                self._squad_hud_state.member_count = 0
                 return False
             self._squad_hud_state.member_count = self._battle_member_count
         return found

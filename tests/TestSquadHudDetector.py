@@ -222,6 +222,22 @@ class _LeftEntryHarness:
 
 
 class TestSquadHudEntry(unittest.TestCase):
+    def test_conflicting_right_count_is_not_latched_and_left_can_confirm_next_frame(self):
+        task = _LeftEntryHarness(fixture_frame("two_alive"))
+
+        def conflicting_keys(candidate):
+            candidate._battle_member_count = 3
+            return True
+
+        with patch.object(BattleMixin, "_detect_team_from_keys", conflicting_keys):
+            self.assertFalse(task.in_team())
+            self.assertEqual(task._battle_member_count, 0)
+            self.assertEqual(task._squad_hud_state.member_count, 0)
+            task.now = .1
+            task.frame = task.frame.copy()
+            self.assertTrue(task.in_team())
+            self.assertEqual(task._battle_member_count, 2)
+
     def test_count_confirms_from_left_without_right_keys_or_known_identity(self):
         cases = [("two_alive", 2), ("two_dead", 2), ("three_alive", 3), ("four_two_markers", 4)]
         for name, count in cases:
