@@ -57,6 +57,16 @@ def _has_light_glyph(crop: np.ndarray) -> bool:
     return False
 
 
+def _crop_keycap(frame: np.ndarray, offset: float, scale: float) -> np.ndarray | None:
+    height, width = frame.shape[:2]
+    cx, cy = width - offset * scale, height - 60 * scale
+    x1, y1 = round(cx - 22 * scale), round(cy - 21 * scale)
+    x2, y2 = round(cx + 22 * scale), round(cy + 21 * scale)
+    if not (0 <= x1 < x2 <= width and 0 <= y1 < y2 <= height):
+        return None
+    return cv2.resize(frame[y1:y2, x1:x2], (44, 42), interpolation=cv2.INTER_AREA)
+
+
 def detect_team_keycaps(frame: np.ndarray | None) -> tuple[bool, ...]:
     """Return four physical slots, left to right; this does not identify digits.
 
@@ -72,12 +82,7 @@ def detect_team_keycaps(frame: np.ndarray | None) -> tuple[bool, ...]:
     crops = []
     found = []
     for offset in _RIGHT_OFFSETS:
-        cx, cy = width - offset * scale, height - 60 * scale
-        x1, y1 = round(cx - 22 * scale), round(cy - 21 * scale)
-        x2, y2 = round(cx + 22 * scale), round(cy + 21 * scale)
-        crop = None
-        if 0 <= x1 < x2 <= width and 0 <= y1 < y2 <= height:
-            crop = cv2.resize(frame[y1:y2, x1:x2], (44, 42), interpolation=cv2.INTER_AREA)
+        crop = _crop_keycap(frame, offset, scale)
         crops.append(crop)
         found.append(crop is not None and _has_outline(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)))
     if sum(found) >= 2:
