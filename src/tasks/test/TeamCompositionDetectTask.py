@@ -40,6 +40,15 @@ class TeamCompositionDetectTask(BattleMixin):
                     f"{name}({score:.2f})" if score >= min_score else self.tr("未知({score:.2f})").format(score=score)
                     for name, score in team_with_scores
                 )
+                dead_slots = getattr(self, "_squad_dead_slots", set())
+                health = getattr(self, "_battle_hp_fractions", (None,) * 4)
+                status_text = " | ".join(
+                    f"{index + 1}:死亡 HP=0"
+                    if index in dead_slots
+                    else (f"{index + 1}:HP≈{fraction:.0%}" if fraction is not None else f"{index + 1}:HP未知")
+                    for index, fraction in enumerate(health)
+                )
+                self.log_debug(f"左侧槽位状态: {status_text}")
                 self.log_info(self.tr("编队判定[{count}]: {team}").format(count=detect_count, team=team_text))
                 self.sleep(interval)
         finally:
