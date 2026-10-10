@@ -60,7 +60,7 @@ from src.data.FeatureList import FeatureList as fL
 from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.image.hsv_config import HSVRange as hR
 from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
-from src.image.team_keycap_detector import detect_team_keycaps
+from src.image.team_keycap_detector import find_first_team_keycap
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
 # ── 编队识别：模块级常量与工具函数 ─────────────────────────────────────────
@@ -548,11 +548,13 @@ class BattleMixin(BaseEfTask):
 
         return raw_boxes, valid_features
 
-    def _match_team_slots(self, frame, search_boxes, valid_features) -> list[tuple[int, str, float]]:
+    def _match_team_slots(self, frame, search_boxes, valid_features, slot_indices=None) -> list[tuple[int, str, float]]:
         """为每个槽位匹配最高分且未被其他槽位使用的角色模板。"""
         matches = []
         used_features: set[str] = set()
         for slot_idx, slot_box in enumerate(search_boxes[:4]):
+            if slot_indices is not None and slot_idx not in slot_indices:
+                continue
             best_score = 0.0
             best_feature = None
             for feature_name in valid_features:
@@ -571,7 +573,7 @@ class BattleMixin(BaseEfTask):
 
         return matches
 
-    def _detect_team_core(self, frame=None) -> list[tuple[str, float, str]]:
+    def _detect_team_core(self, frame=None, slot_indices=None) -> list[tuple[str, float, str]]:
         """编队识别核心逻辑：返回四个槽位的 (en_name, score, feature_name)。"""
         if frame is None:
             frame = self.frame
@@ -589,7 +591,8 @@ class BattleMixin(BaseEfTask):
         if not search_boxes:
             return slot_results
 
-        for slot_idx, feature_name, score in self._match_team_slots(frame, search_boxes, valid_features):
+        matches = self._match_team_slots(frame, search_boxes, valid_features, slot_indices=slot_indices)
+        for slot_idx, feature_name, score in matches:
             en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
             en_name = en_name.replace("battle_icon_", "")
             slot_results[slot_idx] = (en_name, score, feature_name)
@@ -619,6 +622,11 @@ class BattleMixin(BaseEfTask):
         name_map = _load_char_name_map()
 
         return [(name_map.get(en, en), score) for en, score, _ in slot_results]
+
+    def detect_team_slot(self, slot: int, frame=None) -> str:
+        """Match one fixed left-aligned portrait slot without scanning other slots."""
+        en_name, _, _ = self._detect_team_core(frame, slot_indices=(slot,))[slot]
+        return _load_char_name_map().get(en_name, en_name)
 
     # ── 切人图标：判定当前是第几个角色 ──────────────────────────────────────
 
@@ -1034,89 +1042,52 @@ class BattleMixin(BaseEfTask):
         return self.get_skill_bar_count() >= required_yellow and self.in_team() and not self.ocr_lv()
 
     def in_team(self):
-        """
-        判断当前是否处于队伍状态。
-        """
-
-        found_skills = 0
-        sequence_valid = False
-        skill_checks = []
-        entry_count = 0
+        """Cross-check the first right-aligned keycap and digit 1; resolve conflicts by portraits."""
         boxes = self._battle_feature_boxes("skill")
+        if len(boxes) != 4:
+            self._battle_member_count = 0
+            return False
+
+        first_keycap = find_first_team_keycap(getattr(self, "frame", None))
+        keycap_count = 4 - first_keycap if first_keycap is not None else 0
+        digit_count = 0
+        for index, box in enumerate(boxes):
+            if self.find_one("skill_1", box=box) is not None:
+                digit_count = 4 - index
+                break
+
+        if keycap_count and keycap_count == digit_count:
+            self._battle_member_count = keycap_count
+            self.log_debug(f"队伍人数检测: {keycap_count} 人，首个按键与数字1位置一致")
+            return True
+
+        max_count = max(keycap_count, digit_count)
         battle_team = getattr(self, "_battle_team", None) or []
         disabled_slots = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
-        if len(boxes) == 4:
-            keycaps = detect_team_keycaps(getattr(self, "frame", None))
-            member_count = len(battle_team)
-            if not member_count and all(keycaps):
-                member_count = 4
-            elif not member_count:
-                keycap_count = sum(keycaps)
-                if 1 <= keycap_count <= 3 and keycaps == (False,) * (4 - keycap_count) + (True,) * keycap_count:
-                    entry_count = keycap_count
-            if 1 <= member_count <= 4:
-                start_index = 4 - member_count
-                disabled = disabled_slots if len(battle_team) == member_count else set()
-                available = [slot for slot in range(member_count) if slot not in disabled]
-                # A single visible outline cannot distinguish a survivor from menu UI.
-                # Unconfirmed partial teams still need digits to establish numbering.
-                # A missing first key may also be a newly shortened native team.
-                first_slot_confirmed = keycaps[start_index] or 0 in disabled
-                if (
-                    first_slot_confirmed
-                    and not any(keycaps[:start_index])
-                    and sum(keycaps[start_index + slot] for slot in available) >= 2
-                ):
+        if max_count:
+            if 1 <= len(battle_team) <= 4:
+                max_count = max(max_count, len(battle_team))
+            # Left portraits use slot count-1; right keys use slot 4-count.
+            for count in range(max_count, 0, -1):
+                slot = count - 1
+                if slot in disabled_slots and count <= len(battle_team):
+                    # A confirmed dead slot is still occupied in the original formation.
+                    continue
+                name = self.detect_team_slot(slot, frame=self.frame)
+                if name != "?":
+                    member_count = count
+                    if len(battle_team) > count and all(
+                        index in disabled_slots for index in range(count, len(battle_team))
+                    ):
+                        member_count = len(battle_team)
                     self._battle_member_count = member_count
-                    mask = "".join("1" if found else "0" for found in keycaps)
-                    self.log_debug(f"队伍人数检测: {member_count} 人，按键外框/文字: {mask}")
+                    self.log_debug(
+                        f"队伍人数检测: {member_count} 人，头像槽位{slot + 1}确认（按键={keycap_count}, 数字1={digit_count}）"
+                    )
                     return True
-        for start_index in range(len(boxes)):
-            member_count = len(boxes) - start_index
-            disabled = disabled_slots if len(battle_team) == member_count else set()
-            available = [slot for slot in range(member_count) if slot not in disabled]
-            required_matches = min(2, len(available))
-            if not required_matches:
-                continue
-
-            matched_skills = 0
-            for slot in available:
-                skill_number = slot + 1
-                box_index = start_index + slot + 1
-                box = boxes[box_index - 1]
-                result = self.find_one(f"skill_{skill_number}", box=box)
-                match_position = f"({result.x},{result.y})" if result is not None else "-"
-                match_score = f"{result.confidence:.3f}" if result is not None else "-"
-                skill_checks.append(
-                    f"skill_{skill_number}->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
-                    f"{'命中' if result is not None else '未命中'}@{match_position}, score={match_score}"
-                )
-                if result is not None:
-                    matched_skills += 1
-                    if matched_skills >= required_matches:
-                        # 按原始编号确认右锚定队伍；一号位倒地不改变其余技能/终结技的位置。
-                        found_skills = member_count
-                        sequence_valid = True
-                        break
-
-            if sequence_valid:
-                break
-        if not sequence_valid and entry_count:
-            # Only probe portraits when digits fail; confirmed numbering stays cheap.
-            # Unknown/dead portraits cannot establish a shorter native team.
-            portraits = self.detect_team(self.frame)
-            if (
-                len(portraits) == 4
-                and all(name != "?" for name in portraits[:entry_count])
-                and all(name == "?" for name in portraits[entry_count:])
-            ):
-                self._battle_member_count = entry_count
-                mask = "".join("1" if found else "0" for found in keycaps)
-                self.log_debug(f"队伍人数检测: {entry_count} 人，进场按键外框/文字及头像: {mask}")
-                return True
-        self._battle_member_count = found_skills
-        self.log_debug(f"队伍人数检测: {found_skills} 人，检查结果: {'; '.join(skill_checks)}")
-        return sequence_valid and found_skills >= 1
+        self._battle_member_count = 0
+        self.log_debug(f"队伍人数检测: 未确认（按键={keycap_count}, 数字1={digit_count}）")
+        return False
 
     def _battle_feature_boxes(self, prefix: str):
         """按模板初始位置的 x 坐标返回四个独立搜索框。"""

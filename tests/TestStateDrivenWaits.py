@@ -577,7 +577,7 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertEqual(task.click_kwargs, [{}])
         self.assertEqual(task.stable_waits, 1)
 
-    def test_in_team_falls_back_to_later_skill_template(self):
+    def test_in_team_rejects_missing_physical_slot_even_with_digit_hits(self):
         boxes = [Box(index * 100, 10, 20, 20) for index in range(1, 4)]
 
         class StubTask:
@@ -598,11 +598,10 @@ class TestStateDrivenWaits(unittest.TestCase):
                 self.last_log = message
 
         task = StubTask()
-        self.assertTrue(BattleMixin.in_team(task))
-        self.assertEqual(task._battle_member_count, 3)
-        self.assertIn("skill_3->框3", task.last_log)
+        self.assertFalse(BattleMixin.in_team(task))
+        self.assertEqual(task._battle_member_count, 0)
 
-    def test_in_team_requires_two_skill_matches(self):
+    def test_in_team_rejects_two_boxes_instead_of_four_fixed_positions(self):
         boxes = [Box(index * 100, 10, 20, 20) for index in range(1, 3)]
 
         class StubTask:
@@ -628,6 +627,7 @@ class TestStateDrivenWaits(unittest.TestCase):
 
         class StubTask:
             _battle_member_count = 0
+            frame = None
 
             def _battle_feature_boxes(self, prefix):
                 return boxes
@@ -639,6 +639,9 @@ class TestStateDrivenWaits(unittest.TestCase):
 
             def log_debug(self, message):
                 self.last_log = message
+
+            def detect_team_slot(self, slot, frame=None):
+                return "known" if slot == 0 else "?"
 
         task = StubTask()
         self.assertTrue(BattleMixin.in_team(task))

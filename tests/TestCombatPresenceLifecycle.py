@@ -1,6 +1,9 @@
+import json
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
+import cv2
 import numpy as np
 from ok import Box
 
@@ -52,12 +55,25 @@ class _TeamHudTask:
         self._battle_member_count = 0
         self._battle_team = ["known"] * member_count
         self._battle_team_disabled_slots = set(disabled_slots)
+        root = Path(__file__).parent / "fixtures/team_keycaps"
+        name = {1: "native_one", 2: "native_two", 3: "native_three", 4: "effects"}[member_count]
+        info = next(
+            s for s in json.loads((root / "sources.json").read_text(encoding="utf-8")) if s["file"] == f"{name}.png"
+        )
+        strip = cv2.imread(str(root / info["file"]))
+        self.frame = np.zeros((info["height"], info["width"], 3), dtype=np.uint8)
+        self.frame[-strip.shape[0] :, -strip.shape[1] :] = strip
 
     def _battle_feature_boxes(self, prefix):
         return self.boxes
 
     def detect_team(self, frame=None):
-        return ["?"] * 4
+        return [
+            "known" if slot not in self._battle_team_disabled_slots else "?" for slot in range(self.member_count)
+        ] + ["?"] * (4 - self.member_count)
+
+    def detect_team_slot(self, slot, frame=None):
+        return self.detect_team(frame)[slot]
 
     def find_one(self, feature, box):
         slot = int(feature.split("_")[1])
