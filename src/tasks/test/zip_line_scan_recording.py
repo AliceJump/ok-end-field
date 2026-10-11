@@ -59,6 +59,7 @@ def replay_image_paths(path):  # 在运行前固定回放清单
         and item.suffix.lower() in {".png", ".jpg", ".jpeg", ".bmp", ".webp"}  # 仅图片
         and item.name != "boxed.png"  # 排除自身标注产物
         and not item.stem.endswith(("_boxed", "_crop", "_processed", "_white_gold"))  # 排除 OCR 输入副本
+        and not any(part.endswith("_replay") for part in item.relative_to(path).parts[:-1])  # 排除旧回放结果目录
     )  # 新建输出不会加入当前回放清单
 
 
