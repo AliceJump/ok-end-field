@@ -13,7 +13,7 @@ from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 from src.localization.minimap_position_mixin import MinimapPositionMixin
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta, save_grid
 from src.nav.grid_planner import PlanResult, ZipLineRouteStep
-from src.nav.nav_state import NavState
+from src.nav.nav_state import NavState, SyncReason
 from src.nav.route_follower import (
     DONE,
     FAILED,
@@ -203,6 +203,18 @@ class _FakeGridTask(GridNavigationMixin):
 
     def log_debug(self, msg):
         self.logs.append("DEBUG " + str(msg))
+
+
+def _record_sync(calls: list[int], reasons: list[str] | None = None):
+    """替身：记录静止校准的起始序号，可选记录触发原因。"""
+
+    def _wait(start_sync_seq, deadline, tick, *, reason=None):
+        calls.append(start_sync_seq)
+        if reasons is not None:
+            reasons.append(reason)
+        return True
+
+    return _wait
 
 
 class TestGridNavigationMixin(unittest.TestCase):
@@ -1126,7 +1138,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             follower,
             PlanResult(ok=True, waypoints=[start, goal]),
         )
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(calls)
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
@@ -1134,6 +1146,7 @@ class TestGridNavigationMixin(unittest.TestCase):
     def test_narrow_entry_stops_calibrates_and_aligns_before_walking(self):
         """窄道入口：先停车校准，再对准入口航点，然后才继续前进。"""
         calls = []
+        reasons = []
         confirmed = []
 
         class _NarrowFollower:
@@ -1164,12 +1177,13 @@ class TestGridNavigationMixin(unittest.TestCase):
             follower,
             PlanResult(ok=True, waypoints=[start, goal]),
         )
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(calls, reasons)
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
         self.assertEqual(confirmed, [True])
         self.assertIn(90.0, self.task.turns)
+        self.assertEqual(reasons, [SyncReason.NARROW_ENTRY.label])
 
     def test_narrow_entry_recalibrates_when_alignment_fails(self):
         """对准失败时不能标记已校准，必须重新校准并对准。"""
@@ -1209,7 +1223,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             follower,
             PlanResult(ok=True, waypoints=[start, goal]),
         )
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: sync_calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(sync_calls)
         turn_calls = {"n": 0}
 
         def turn(target, **kwargs):
@@ -1247,7 +1261,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             PlanResult(ok=True, waypoints=[start, goal]),
         )
         self.task._grid_position_is_known = lambda follower, position: True
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(calls)
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
@@ -1256,8 +1270,8 @@ class TestGridNavigationMixin(unittest.TestCase):
         calls = []
         self.task.position_trusted = False
 
-        def sync(start_seq, deadline, tick):
-            calls.append(start_seq)
+        def sync(start_sync_seq, deadline, tick, *, reason=None):
+            calls.append(start_sync_seq)
             self.task.position_trusted = True
             return True
 
@@ -1292,7 +1306,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             PlanResult(ok=True, waypoints=[start, goal]),
         )
         self.task._grid_position_is_known = lambda follower, position: False
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(calls)
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])

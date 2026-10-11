@@ -42,6 +42,8 @@ __all__ = [
     "NavSession",
     "NavState",
     "NavTick",
+    "SyncReason",
+    "SyncWait",
 ]
 
 
@@ -76,6 +78,54 @@ class NavState(StrEnum):
     WALK = WALK
     WAIT = WAIT
     FAILED = FAILED
+
+
+class SyncReason(StrEnum):
+    """为什么发起这一次静止校准。
+
+    静止校准是导航里唯一的"主动停车点"，触发它的原因有六种。把原因显式带进
+    等待函数，日志与状态提示才回答得了"为什么又停下来校准"。
+    """
+
+    #: 重锚后绝对坐标不可信，必须先校准再规划。
+    TRUST = "trust"
+    #: 定位服务通过 ``sync_needed`` 主动请求。
+    SYNC_NEEDED = "sync_needed"
+    #: 走过指定数量的航点后的周期校准。
+    WAYPOINT_INTERVAL = "waypoint_interval"
+    #: 偏航后原地校准，消除定位偏差再重新规划。
+    OFF_ROUTE = "off_route"
+    #: 已回到走过的已知格，继续原目标前先校准。
+    BACKTRACK_DONE = "backtrack_done"
+    #: 进入一格宽通路前，避免带着偏差蹭墙。
+    NARROW_ENTRY = "narrow_entry"
+
+    @property
+    def label(self) -> str:
+        """显示文案：日志与状态提示用，枚举值本身保持稳定以便检索。"""
+        return _SYNC_REASON_LABELS[self]
+
+
+_SYNC_REASON_LABELS: dict[SyncReason, str] = {
+    SyncReason.TRUST: "定位重新校准",
+    SyncReason.SYNC_NEEDED: "定位服务请求",
+    SyncReason.WAYPOINT_INTERVAL: "航点间隔",
+    SyncReason.OFF_ROUTE: "偏航后原地校准",
+    SyncReason.BACKTRACK_DONE: "回到已知格后校准",
+    SyncReason.NARROW_ENTRY: "窄道入口前",
+}
+
+
+@dataclass(frozen=True)
+class SyncWait:
+    """一次静止校准等待的结果。
+
+    ``synced`` 为 True 表示发生了真实重锚或当前估计已与 WS 对齐；
+    ``timed_out`` 为 True 表示本次导航已经超时，调用方必须立刻结束。
+    """
+
+    synced: bool
+    timed_out: bool
 
 
 @dataclass(frozen=True)

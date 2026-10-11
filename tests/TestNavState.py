@@ -2,7 +2,13 @@
 
 import unittest
 
-from src.nav.nav_state import GridRouteRequest, NavSession, NavState, NavTick
+from src.nav.nav_state import (
+    GridRouteRequest,
+    NavSession,
+    NavState,
+    NavTick,
+    SyncReason,
+)
 from src.nav.route_follower import (
     DONE,
     FAILED,
@@ -54,6 +60,19 @@ class TestNavState(unittest.TestCase):
         for state in gate_states:
             with self.subTest(state=state):
                 self.assertNotIn(state.value, actions)
+
+
+class TestSyncReason(unittest.TestCase):
+    """校准原因必须在日志里互相区分。"""
+
+    def test_every_reason_has_a_non_empty_label(self):
+        for reason in SyncReason:
+            with self.subTest(reason=reason):
+                self.assertTrue(reason.label.strip())
+
+    def test_labels_are_unique(self):
+        labels = [reason.label for reason in SyncReason]
+        self.assertEqual(len(set(labels)), len(labels))
 
 
 class TestNavSession(unittest.TestCase):

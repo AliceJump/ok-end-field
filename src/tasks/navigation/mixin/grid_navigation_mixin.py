@@ -79,7 +79,14 @@ from src.data import map_mark_query, user_map_mark_store
 from src.data.FeatureList import FeatureList as fL
 from src.nav.grid_io import GRID_SUFFIX, DenseGrid, load_grid
 from src.nav.grid_planner import PlanResult
-from src.nav.nav_state import GridRouteRequest, NavSession, NavState, NavTick
+from src.nav.nav_state import (
+    GridRouteRequest,
+    NavSession,
+    NavState,
+    NavTick,
+    SyncReason,
+    SyncWait,
+)
 from src.nav.route_follower import (
     DONE,
     FAILED,
@@ -586,6 +593,25 @@ class GridNavigationMixin(RuntimeStateMixin):
         """执行状态处理器；返回值直接作为主循环的终止结果。"""
         return getattr(self, _GRID_NAV_HANDLERS[state])(ctx)
 
+    def _grid_nav_sync(self, ctx: NavTick, reason: SyncReason) -> SyncWait:
+        """停车等一次静止校准，并判定本次导航是否已经超时。
+
+        六个状态、七个调用点原来各自重复同样三件事：传同一组参数调
+        :meth:`_wait_for_minimap_sync`、检查导航超时、再决定失败退避。集中到这里后
+        调用点只关心 ``wait.synced`` 与 ``wait.timed_out``，"为什么校准"由 ``reason``
+        一路带进状态提示和超时告警。
+        """
+        synced = self._wait_for_minimap_sync(
+            ctx.sync_seq,
+            ctx.deadline,
+            ctx.tick,
+            reason=reason.label,
+        )
+        return SyncWait(
+            synced=synced,
+            timed_out=self._grid_navigation_timed_out(ctx.deadline, ctx.limit),
+        )
+
     def _grid_nav_pending_zip_step(self):
         """跟随器当前待执行的滑索段；跟随器没有这个能力时返回 None。"""
         current_step_getter = getattr(
@@ -641,14 +667,10 @@ class GridNavigationMixin(RuntimeStateMixin):
         session = ctx.session
         self._wait_for_grid_position(f"等待定位重新校准: {ctx.pose.get('trust_reason') or 'untrusted'}")
         if ctx.pose.get("rest") and self.active_time() >= session.next_sync_retry_at:
-            synced = self._wait_for_minimap_sync(
-                ctx.sync_seq,
-                session.deadline,
-                session.tick,
-            )
-            if self._grid_navigation_timed_out(session.deadline, session.limit):
+            wait = self._grid_nav_sync(ctx, SyncReason.TRUST)
+            if wait.timed_out:
                 return False
-            if not synced:
+            if not wait.synced:
                 session.next_sync_retry_at = self.active_time() + 30.0
         self.sleep(ctx.tick)
         return None
@@ -665,12 +687,12 @@ class GridNavigationMixin(RuntimeStateMixin):
         这是主动停车点；校准失败同样退避 30 秒，避免每拍都请求一次。
         """
         session = ctx.session
-        synced = self._wait_for_minimap_sync(ctx.sync_seq, session.deadline, session.tick)
-        if self._grid_navigation_timed_out(session.deadline, session.limit):
+        wait = self._grid_nav_sync(ctx, SyncReason.SYNC_NEEDED)
+        if wait.timed_out:
             return False
-        if synced:
+        if wait.synced:
             session.waypoints_since_calibration = 0
-        if not synced:
+        if not wait.synced:
             session.next_sync_retry_at = self.active_time() + 30.0
         return None
 
@@ -804,15 +826,11 @@ class GridNavigationMixin(RuntimeStateMixin):
         if calibration_interval > 0 and arrived >= calibration_interval:
             # 航点间隔校准是主动停车点；WS 周期约 5 秒，等待函数会在
             # 停车期间持续采样，直到完成真实重锚或确认已对齐。
-            synced = self._wait_for_minimap_sync(
-                ctx.sync_seq,
-                session.deadline,
-                session.tick,
-            )
-            if self._grid_navigation_timed_out(session.deadline, session.limit):
+            wait = self._grid_nav_sync(ctx, SyncReason.WAYPOINT_INTERVAL)
+            if wait.timed_out:
                 return False
             session.waypoints_since_calibration = 0
-            if not synced:
+            if not wait.synced:
                 self.log_warning("到达航点后的静止校准未完成，继续导航")
         self.log_info(
             f"到达航点 {step.arrived_waypoint_index + 1}/"
@@ -842,14 +860,10 @@ class GridNavigationMixin(RuntimeStateMixin):
             # 人仍站在已知 free 格：优先原地静止校准，消除定位偏差后
             # 再从可信位置重新规划。
             session.recovery_goal = None
-            synced = self._wait_for_minimap_sync(
-                ctx.sync_seq,
-                session.deadline,
-                session.tick,
-            )
-            if self._grid_navigation_timed_out(session.deadline, session.limit):
+            wait = self._grid_nav_sync(ctx, SyncReason.OFF_ROUTE)
+            if wait.timed_out:
                 return False
-            if not synced:
+            if not wait.synced:
                 self.log_warning("偏航后的静止校准未完成，继续重规划")
         elif recovery_target is not None:
             # 已偏离已知区域：先回到本次实际走过的格，不能直接相信
@@ -859,14 +873,10 @@ class GridNavigationMixin(RuntimeStateMixin):
         else:
             session.recovery_goal = None
             self.log_warning("当前位置不在已知 free 格，但没有已走过的已知格可返回；先原地校准后重新规划")
-            synced = self._wait_for_minimap_sync(
-                ctx.sync_seq,
-                session.deadline,
-                session.tick,
-            )
-            if self._grid_navigation_timed_out(session.deadline, session.limit):
+            wait = self._grid_nav_sync(ctx, SyncReason.OFF_ROUTE)
+            if wait.timed_out:
                 return False
-            if not synced:
+            if not wait.synced:
                 self.log_warning("偏航后的静止校准未完成，继续重规划")
         if self._grid_navigation_timed_out(session.deadline, session.limit):
             return False
@@ -900,16 +910,12 @@ class GridNavigationMixin(RuntimeStateMixin):
         step = ctx.step
         self._set_grid_walking(False)
         if session.recovery_goal is not None:
-            synced = self._wait_for_minimap_sync(
-                ctx.sync_seq,
-                session.deadline,
-                session.tick,
-            )
-            if self._grid_navigation_timed_out(session.deadline, session.limit):
+            wait = self._grid_nav_sync(ctx, SyncReason.BACKTRACK_DONE)
+            if wait.timed_out:
                 return False
             session.recovery_goal = None
             self._grid_nav_follower = None
-            if synced:
+            if wait.synced:
                 self.log_info("已返回最近走过的已知格并完成校准，继续原目标")
             else:
                 self.log_warning("返回已知格后校准未完成，继续原目标")
@@ -948,16 +954,11 @@ class GridNavigationMixin(RuntimeStateMixin):
         一格宽通路没有横向余量，带着累积定位误差进去会蹭墙。校准或对准任一没成功都
         不标记已校准，下一拍重新走完整个流程；连续失败到上限才放弃，防止卡死。
         """
-        session = ctx.session
         step = ctx.step
         self._set_grid_walking(False)
         self.info_set("网格导航", "窄道入口停车校准")
-        synced = self._wait_for_minimap_sync(
-            ctx.sync_seq,
-            session.deadline,
-            session.tick,
-        )
-        if self._grid_navigation_timed_out(session.deadline, session.limit):
+        wait = self._grid_nav_sync(ctx, SyncReason.NARROW_ENTRY)
+        if wait.timed_out:
             return False
         aligned_ok = True
         entry_bearing = step.target_bearing
@@ -976,7 +977,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                     f"实测={aligned.get('heading')}，误差={aligned.get('error')}"
                 )
         follower = self._grid_nav_follower
-        if synced and aligned_ok:
+        if wait.synced and aligned_ok:
             if follower is not None:
                 follower.confirm_narrow_calibration()
             self.log_info("窄道入口前已完成静止校准并对准航点")
@@ -990,7 +991,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                 notify=True,
             )
         else:
-            reason = "静止校准未完成" if not synced else "对准未到位"
+            reason = "静止校准未完成" if not wait.synced else "对准未到位"
             self.log_warning(f"窄道入口{reason}，将重新校准（第 {attempts} 次）")
         return None
 
@@ -2237,16 +2238,21 @@ class GridNavigationMixin(RuntimeStateMixin):
         start_sync_seq: int,
         deadline: float,
         tick: float,
+        *,
+        reason: str | None = None,
     ) -> bool:
         """停车采样，直到定位服务完成一次静止校准。
 
         返回 True 包含两种情况：发生了真实重锚（``sync_seq`` 增加），或当前估计
         已与 WS 对齐（``sync_checked``）。超时返回 False，并记录静止判定诊断。
+
+        ``reason`` 是发起这次校准的原因（见 :class:`src.nav.nav_state.SyncReason`），
+        只用于状态提示与超时告警，不参与判定。
         """
         self._set_grid_walking(False)
         if self._grid_nav_follower is not None:
             self._grid_nav_follower.pause()
-        self.info_set("网格导航", "等待静止定位校准")
+        self.info_set("网格导航", f"等待静止定位校准（{reason}）" if reason else "等待静止定位校准")
         started = self.active_time()
         # WS 真值约每 5 秒推送一次，至少覆盖一个完整推送周期再判定失败。
         timeout = min(8.0, max(0.0, deadline - started))
@@ -2264,8 +2270,9 @@ class GridNavigationMixin(RuntimeStateMixin):
                 return True
             self.sleep(tick)
         diagnostic = self.pose_rest_diag() or {}
+        prefix = f"导航中静止定位校准超时（{reason}）：" if reason else "导航中静止定位校准超时："
         self.log_warning(
-            "导航中静止定位校准超时："
+            f"{prefix}"
             f"reason={diagnostic.get('reason')} "
             f"speed={diagnostic.get('map_speed_m_s')} "
             f"ws_moved={diagnostic.get('ws_moved_m')}"
