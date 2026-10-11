@@ -607,8 +607,7 @@ class BattleMixin(BaseEfTask):
         visible_slots = {
             index
             for index in range(min(4, len(search_boxes)))
-            if (slot_indices is None or index in slot_indices)
-            and (hud is None or not hud.slots[index].death_visible)
+            if (slot_indices is None or index in slot_indices) and (hud is None or not hud.slots[index].death_visible)
         }
         matches = self._match_team_slots(frame, search_boxes, valid_features, slot_indices=visible_slots)
         for slot_idx, feature_name, score in matches:

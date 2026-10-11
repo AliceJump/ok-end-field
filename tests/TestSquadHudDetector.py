@@ -233,7 +233,7 @@ class TestSquadHudEntry(unittest.TestCase):
             self.assertFalse(task.in_team())
             self.assertEqual(task._battle_member_count, 0)
             self.assertEqual(task._squad_hud_state.member_count, 0)
-            task.now = .1
+            task.now = 0.1
             task.frame = task.frame.copy()
             self.assertTrue(task.in_team())
             self.assertEqual(task._battle_member_count, 2)
