@@ -35,6 +35,7 @@ from src.tasks.navigation.mixin.grid_navigation_mixin import (
     CONFIG_GRID_FILE,
     CONFIG_GRID_USE_SHARED_ZIP_LINES,
     GridNavigationMixin,
+    StuckRecovery,
 )
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
@@ -1079,6 +1080,37 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIn("space", self.task.pressed_keys)
         self.assertFalse(self.task.w_down)
         self.assertTrue(self.task.turns)
+
+    def test_stuck_recovery_sequence_repeats_last_step(self):
+        """动作序列是显式数据：用完之后重复最后一步，不会越界也不会回到第一步。"""
+        steps = [self.task._grid_stuck_recovery_step(attempt, 5)[0] for attempt in (1, 2, 3, 4, 5)]
+        self.assertEqual(
+            steps,
+            [
+                StuckRecovery.BACK,
+                StuckRecovery.BACK_SIDE,
+                StuckRecovery.AIM_JUMP,
+                StuckRecovery.AIM_JUMP,
+                StuckRecovery.AIM_JUMP,
+            ],
+        )
+        self.assertEqual(self.task._grid_stuck_recovery_step(4, 5)[1], "脱困尝试 4/5")
+
+    def test_stuck_recovery_logs_configured_total(self):
+        """把「卡住脱困次数」调大后，日志要跟着写实际的第几次/共几次。"""
+        self.task._choose_grid_strafe_side = lambda position, heading: "d"
+
+        self.task._recover_grid_stuck(
+            position=(0.0, 0.0),
+            heading=0.0,
+            target_bearing=90.0,
+            frame=object(),
+            attempt=4,
+            deadline=self.task.active_time() + 10.0,
+            max_attempts=5,
+        )
+
+        self.assertIn("脱困尝试 4/5：对准目标后按住 W + Space 跳跃", self.task.logs)
 
     def test_stuck_recovery_chooses_open_strafe_side(self):
         cells = np.full((21, 21), CELL_FREE, dtype=np.uint8)

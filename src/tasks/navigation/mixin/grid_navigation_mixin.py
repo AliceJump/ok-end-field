@@ -31,6 +31,7 @@
 from __future__ import annotations
 
 import math
+from enum import StrEnum
 from pathlib import Path
 
 from src.core.global_config_store import get_global_config
@@ -208,6 +209,25 @@ _GRID_NAV_TAIL_STATES = frozenset(
         NavState.WAIT,
         NavState.FAILED,
     }
+)
+
+
+class StuckRecovery(StrEnum):
+    """卡住脱困的一步动作。"""
+
+    #: 按 ``S`` 后退。
+    BACK = "back"
+    #: 按 ``S`` 加一侧横移，绕开卡住的墙角。
+    BACK_SIDE = "back_side"
+    #: 对准目标后按住 ``W`` 加 ``Space`` 跳过去。
+    AIM_JUMP = "aim_jump"
+
+
+#: 卡住脱困的动作序列：按尝试次数依次使用，尝试次数超出序列长度时重复最后一步。
+_GRID_STUCK_RECOVERY: tuple[StuckRecovery, ...] = (
+    StuckRecovery.BACK,
+    StuckRecovery.BACK_SIDE,
+    StuckRecovery.AIM_JUMP,
 )
 
 
@@ -942,6 +962,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             frame=ctx.frame,
             attempt=session.recoveries,
             deadline=session.deadline,
+            max_attempts=max_recoveries,
         )
         if self._grid_navigation_timed_out(session.deadline, session.limit):
             return False
@@ -2111,25 +2132,32 @@ class GridNavigationMixin(RuntimeStateMixin):
         frame,
         attempt: int,
         deadline: float | None = None,
+        max_attempts: int | None = None,
     ) -> None:
-        """三段式脱困：后退、侧向绕开、对准目标后跳跃。"""
+        """按 :data:`_GRID_STUCK_RECOVERY` 的序列脱困：后退、侧向绕开、对准后跳跃。
+
+        ``max_attempts`` 只用于把"第几次/共几次"写对；尝试次数超出序列长度时重复
+        最后一步，所以把「卡住脱困次数」调大不会越界。
+        """
         duration = self._grid_recovery_duration(deadline)
         if duration is None:
             return
-        if attempt <= 1:
-            self.log_info("脱困尝试 1/3：按 S 后退")
+        total = len(_GRID_STUCK_RECOVERY) if max_attempts is None else max(1, int(max_attempts))
+        step, label = self._grid_stuck_recovery_step(attempt, total)
+        if step is StuckRecovery.BACK:
+            self.log_info(f"{label}：按 S 后退")
             self.press_key("s", down_time=duration)
             return
-        if attempt == 2:
+        if step is StuckRecovery.BACK_SIDE:
             side = self._choose_grid_strafe_side(position, heading)
             side_name = "A 左移" if side == "a" else "D 右移"
-            self.log_info(f"脱困尝试 2/3：按 S + {side_name}")
+            self.log_info(f"{label}：按 S + {side_name}")
             duration = self._grid_recovery_duration(deadline)
             if duration is not None:
                 self._hold_grid_keys(("s", side), duration)
             return
 
-        self.log_info("脱困尝试 3/3：对准目标后按住 W + Space 跳跃")
+        self.log_info(f"{label}：对准目标后按住 W + Space 跳跃")
         if target_bearing is not None:
             self.pose_turn_to_bearing(
                 target_bearing,
@@ -2155,6 +2183,16 @@ class GridNavigationMixin(RuntimeStateMixin):
             self.press_key("space", down_time=duration)
         finally:
             self._set_grid_walking(False)
+
+    @staticmethod
+    def _grid_stuck_recovery_step(attempt: int, total: int) -> tuple[StuckRecovery, str]:
+        """返回第 ``attempt`` 次脱困该做哪一步，以及"第几次/共几次"的提示文案。
+
+        下标夹在序列范围内：尝试次数超出序列长度时重复最后一步（对准后跳远），而不是
+        越界或悄悄回到第一步。
+        """
+        index = min(max(1, int(attempt)), len(_GRID_STUCK_RECOVERY)) - 1
+        return _GRID_STUCK_RECOVERY[index], f"脱困尝试 {int(attempt)}/{int(total)}"
 
     def _grid_recovery_duration(
         self,
