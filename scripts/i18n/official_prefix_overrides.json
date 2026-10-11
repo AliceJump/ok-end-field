@@ -1,0 +1,56 @@
+{
+  "world_map": {
+    "干员养成": {
+      "prefixes": [
+        "协议空间"
+      ],
+      "keys": [
+        "k_8c63385b",
+        "k_216c7def",
+        "k_c18b3249",
+        "k_d4f9d913"
+      ]
+    },
+    "武器养成": {
+      "prefixes": [
+        "协议空间"
+      ],
+      "keys": [
+        "k_3e316505",
+        "k_0903c052"
+      ]
+    },
+    "危境再现": {
+      "prefixes": [
+        "危境再现"
+      ],
+      "keys": [
+        "k_0d158460",
+        "k_4e0048f0",
+        "k_5af845da",
+        "k_de7be865",
+        "k_fadfef4b",
+        "k_alaikeliusi"
+      ]
+    },
+    "能量淤积点": {
+      "prefixes": [
+        "重度能量淤积点"
+      ],
+      "keys": [
+        "k_90252af0",
+        "k_dff480f9",
+        "k_ba83829f",
+        "k_2b92fbc9",
+        "k_2181d9cd",
+        "k_93e2bdac",
+        "k_ece5ec1b",
+        "k_50917f2a",
+        "k_zangjiangu",
+        "k_yinglongguan",
+        "k_beibujinqu",
+        "k_xuesonglin"
+      ]
+    }
+  }
+}

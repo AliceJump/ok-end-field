@@ -2563,7 +2563,7 @@ msgid "转交运送委托"
 msgstr "運送委託移管"
 
 msgid "地区建设"
-msgstr "エリア建設"
+msgstr "地域建設"
 
 msgid "造装备"
 msgstr "装備製作"

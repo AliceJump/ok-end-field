@@ -18,10 +18,79 @@ except ImportError:
     polib = None
 
 
+class _JsonValuePatcher:
+    def __init__(self, original: str):
+        self.original = original
+        self.decoder = json.JSONDecoder()
+        self.replacements = []
+
+    def skip_space(self, pos):
+        while pos < len(self.original) and self.original[pos].isspace():
+            pos += 1
+        return pos
+
+    def next_value(self, cursor, wanted):
+        cursor = self.skip_space(self.scan(cursor, wanted))
+        return cursor + 1 if self.original[cursor] == "," else cursor
+
+    def scan_object(self, pos, current, wanted):
+        if not isinstance(wanted, dict) or current.keys() != wanted.keys():
+            raise ValueError("Changed JSON object structure")
+        cursor = pos + 1
+        for key in current:
+            parsed_key, cursor = self.decoder.raw_decode(self.original, self.skip_space(cursor))
+            cursor = self.skip_space(cursor)
+            if parsed_key != key or self.original[cursor] != ":":
+                raise ValueError("Unexpected JSON key")
+            cursor = self.next_value(cursor + 1, wanted[key])
+
+    def scan_array(self, pos, current, wanted):
+        if not isinstance(wanted, list) or len(current) != len(wanted):
+            raise ValueError("Changed JSON array structure")
+        cursor = pos + 1
+        for value in wanted:
+            cursor = self.next_value(cursor, value)
+
+    def scan(self, pos, wanted):
+        pos = self.skip_space(pos)
+        current, end = self.decoder.raw_decode(self.original, pos)
+        if isinstance(current, dict):
+            self.scan_object(pos, current, wanted)
+        elif isinstance(current, list):
+            self.scan_array(pos, current, wanted)
+        elif isinstance(wanted, (dict, list)):
+            raise ValueError("Changed JSON value structure")
+        elif current != wanted:
+            self.replacements.append((pos, end, json.dumps(wanted, ensure_ascii=False)))
+        return end
+
+
+def _patch_json_values(original: str, data) -> str | None:
+    """结构不变时按值的位置替换，保留不相关的缩进、逗号与转义写法。"""
+    patcher = _JsonValuePatcher(original)
+    try:
+        if original[patcher.skip_space(patcher.scan(0, data)) :]:
+            return None
+    except (ValueError, IndexError):
+        return None  # JSON5 或新增节点仍使用完整序列化。
+    for start, end, value in sorted(patcher.replacements, reverse=True):
+        original = original[:start] + value + original[end:]
+    return original if json.loads(original) == data else None
+
+
 def write_json(path: Path, data) -> None:
+    if path.exists():
+        original = path.read_bytes().decode("utf-8")
+        if json5.loads(original) == data:
+            return
+        patched = _patch_json_values(original, data)
+        if patched is not None:
+            path.write_bytes(patched.encode("utf-8"))
+            return
     path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
 
 
@@ -66,8 +135,63 @@ def build_official(merged: dict, zh_of) -> dict:
     return official
 
 
+_MSGSTR_PATTERN = re.compile(r'^msgstr "[^\r\n]*"(?:\r?\n"[^\r\n]*")*', re.MULTILINE)
+
+
+def _replace_po_block(block: str, wanted: dict, seen: set, wrapwidth: int) -> str:
+    if not re.search(r"^msgid ", block, re.MULTILINE):
+        return block
+    entries = polib.pofile(block)
+    for entry in entries:
+        key = entry.msgctxt, entry.msgid, entry.msgid_plural
+        desired = wanted.get(key)
+        if desired is None:
+            continue
+        seen.add(key)
+        if entry.msgstr == desired.msgstr:
+            continue
+        if len(entries) != 1 or entry.msgid_plural:
+            raise ValueError(f"Cannot safely replace translation: {key!r}")
+        rendered = polib.POEntry(msgid=entry.msgid, msgstr=desired.msgstr).__unicode__(wrapwidth=wrapwidth)
+        replacement = _MSGSTR_PATTERN.search(rendered).group()
+        if "\r\n" in block:
+            replacement = replacement.replace("\n", "\r\n")
+        block, count = _MSGSTR_PATTERN.subn(lambda match, replacement=replacement: replacement, block)
+        if count != 1:
+            raise ValueError(f"Expected one msgstr: {key!r}")
+    return block
+
+
+def save_po_translations(po_path: Path, po) -> None:
+    """只替换变化条目的 msgstr，保留其他条目、注释、顺序与换行布局。"""
+    original = po_path.read_bytes().decode("utf-8")
+    parts = re.split(r"(\r?\n[ \t]*\r?\n)", original)
+    wanted = {(entry.msgctxt, entry.msgid, entry.msgid_plural): entry for entry in po if not entry.obsolete}
+    seen = set()
+    for i in range(0, len(parts), 2):
+        parts[i] = _replace_po_block(parts[i], wanted, seen, po.wrapwidth)
+    updated = "".join(parts)
+    for key, entry in wanted.items():
+        if key not in seen:
+            updated = updated.rstrip("\r\n") + "\n\n" + entry.__unicode__(wrapwidth=po.wrapwidth)
+    encoded = updated.encode("utf-8")
+    if encoded != original.encode("utf-8"):
+        with po_path.open("wb") as handle:
+            handle.write(encoded)
+    mo_path = po_path.with_suffix(".mo")
+    compiled = po.to_binary()
+    if not mo_path.exists() or mo_path.read_bytes() != compiled:
+        with mo_path.open("wb") as handle:
+            handle.write(compiled)
+
+
 def sync_po_entries(
-    official: dict, locales: tuple, i18n_dir: Path, quiet: bool = False, create_missing: bool = True
+    official: dict,
+    locales: tuple,
+    i18n_dir: Path,
+    quiet: bool = False,
+    create_missing: bool = True,
+    dry_run: bool = False,
 ) -> tuple[dict, list]:
     """把官方译名同步进 i18n/*/LC_MESSAGES/ok.po 并编译 .mo。
 
@@ -111,9 +235,9 @@ def sync_po_entries(
                 entry.msgstr = new
                 stats += 1
         if stats:
-            po.save(str(po_path))
-            po.save_as_mofile(str(po_path).replace(".po", ".mo"))
-            print(f"  [po] {loc}: {stats} entries updated")
+            if not dry_run:
+                save_po_translations(po_path, po)
+            print(f"  [po] {loc}: {stats} entries {'would update' if dry_run else 'updated'}")
         elif not quiet:
             print(f"  [po] {loc}: no changes")
         all_stats[loc] = stats

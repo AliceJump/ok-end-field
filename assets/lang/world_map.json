@@ -1145,7 +1145,7 @@
       "pattern": "Beförderungen"
     },
     "fr_FR": {
-      "pattern": "Promotions"
+      "pattern": "(?i)Promotions"
     },
     "id_ID": {
       "pattern": "Promosi"
@@ -1453,7 +1453,7 @@
       "pattern": "Fertigkeitsverbesserung"
     },
     "fr_FR": {
-      "pattern": "Amélioration des compétences"
+      "pattern": "(?i)Amélioration des compétences"
     },
     "id_ID": {
       "pattern": "Kenaikan Skill"
