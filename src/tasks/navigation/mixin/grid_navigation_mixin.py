@@ -231,6 +231,19 @@ _GRID_STUCK_RECOVERY: tuple[StuckRecovery, ...] = (
 )
 
 
+class ZipLineBoardAttempt(StrEnum):
+    """一次"按「登上滑索架」并用 ``fL.esc`` 确认"的结果。"""
+
+    #: 确认已站上滑索架（``fL.esc`` 已消失）。
+    BOARDED = "boarded"
+    #: 没找到「登上滑索架」按钮。
+    BUTTON_MISSING = "button_missing"
+    #: 点了按钮但无法确认是否登上（``fL.esc`` 判定超时）。
+    UNCONFIRMED = "unconfirmed"
+    #: 确认没登上（``fL.esc`` 仍在），可以重新对准后重试。
+    NOT_BOARDED = "not_boarded"
+
+
 class GridNavigationMixin(RuntimeStateMixin):
     """在 ``*.grid.npz`` 上规划并驱动角色前往世界坐标 ``(x, z)``。
 
@@ -1855,6 +1868,9 @@ class GridNavigationMixin(RuntimeStateMixin):
     ) -> bool:
         """执行一次规划出的滑索移动。
 
+        三个阶段：校验与准备分段数据 → 登上滑索架（已在架上则跳过，见
+        :meth:`_grid_zip_line_enter_rack`）→ 交给 ``zip_line_list_go`` 依次乘坐。
+
         具体对齐与交互复用任务已有的 ``ZipLineMixin.zip_line_list_go``，避免在导航
         层复制 OCR 和按键流程。没有混入滑索能力的任务会明确失败，而不是把滑索
         航点误当成普通步行目标。
@@ -1900,35 +1916,12 @@ class GridNavigationMixin(RuntimeStateMixin):
                 self.log_info("当前已在滑索架上，跳过登上操作，直接对准下一目标")
             else:
                 switch_walk_mode = not self._grid_nav_zip_line_walk_mode
-                if not board(
-                    direct_wait=5.0,
-                    total_time_out=30.0,
+                if not self._grid_zip_line_enter_rack(
+                    route_step,
+                    board,
                     switch_walk_mode=switch_walk_mode,
                 ):
-                    self.log_warning("未找到「登上滑索架」按钮", notify=True)
                     return False
-                esc_visible = self._wait_grid_zip_line_esc_clear()
-                if esc_visible is None:
-                    return False
-                if esc_visible:
-                    self.log_warning(
-                        "点击登上滑索后仍检测到 fL.esc，判定未登上滑索，重新对正后重试",
-                        notify=True,
-                    )
-                    if not self._reaim_grid_zip_line_for_boarding(route_step):
-                        return False
-                    if not board(
-                        direct_wait=5.0,
-                        total_time_out=30.0,
-                        switch_walk_mode=switch_walk_mode,
-                    ):
-                        self.log_warning("重新对正后仍未找到「登上滑索架」按钮", notify=True)
-                        return False
-                    esc_visible = self._wait_grid_zip_line_esc_clear()
-                    if esc_visible is None or esc_visible:
-                        self.log_warning("重新对正后仍检测到 fL.esc，登上滑索失败", notify=True)
-                        return False
-                self.log_info("fL.esc 不存在，已成功登上滑索")
             self._restore_grid_zip_line_run_mode()
             execute(
                 distances,
@@ -1946,6 +1939,57 @@ class GridNavigationMixin(RuntimeStateMixin):
             self.log_warning(f"滑索执行失败: {exc}", notify=True)
             return False
         return True
+
+    def _grid_zip_line_attempt_board(self, board, *, switch_walk_mode) -> ZipLineBoardAttempt:
+        """按一次「登上滑索架」并用 ``fL.esc`` 确认结果。
+
+        只做动作与判定、不写日志：同一个动作在首轮与"重新对正后重试"轮要落到不同的
+        告警文案上，措辞由调用方 :meth:`_grid_zip_line_enter_rack` 决定。``board``
+        由调用方保证可调用。
+        """
+        if not board(
+            direct_wait=5.0,
+            total_time_out=30.0,
+            switch_walk_mode=switch_walk_mode,
+        ):
+            return ZipLineBoardAttempt.BUTTON_MISSING
+        esc_visible = self._wait_grid_zip_line_esc_clear()
+        if esc_visible is None:
+            return ZipLineBoardAttempt.UNCONFIRMED
+        if esc_visible:
+            return ZipLineBoardAttempt.NOT_BOARDED
+        return ZipLineBoardAttempt.BOARDED
+
+    def _grid_zip_line_enter_rack(self, route_step, board, *, switch_walk_mode) -> bool:
+        """登上滑索架；确认没登上时重新对准一次再试，仍失败才放弃。
+
+        重试策略只由 :class:`ZipLineBoardAttempt` 的结果决定：找不到按钮或无法确认
+        都不重试（重对准也解决不了），只有"确认没登上"才值得重新对正一次。
+        """
+        attempt = self._grid_zip_line_attempt_board(board, switch_walk_mode=switch_walk_mode)
+        if attempt is ZipLineBoardAttempt.BOARDED:
+            self.log_info("fL.esc 不存在，已成功登上滑索")
+            return True
+        if attempt is ZipLineBoardAttempt.BUTTON_MISSING:
+            self.log_warning("未找到「登上滑索架」按钮", notify=True)
+            return False
+        if attempt is ZipLineBoardAttempt.UNCONFIRMED:
+            return False
+        self.log_warning(
+            "点击登上滑索后仍检测到 fL.esc，判定未登上滑索，重新对正后重试",
+            notify=True,
+        )
+        if not self._reaim_grid_zip_line_for_boarding(route_step):
+            return False
+        attempt = self._grid_zip_line_attempt_board(board, switch_walk_mode=switch_walk_mode)
+        if attempt is ZipLineBoardAttempt.BOARDED:
+            self.log_info("fL.esc 不存在，已成功登上滑索")
+            return True
+        if attempt is ZipLineBoardAttempt.BUTTON_MISSING:
+            self.log_warning("重新对正后仍未找到「登上滑索架」按钮", notify=True)
+            return False
+        self.log_warning("重新对正后仍检测到 fL.esc，登上滑索失败", notify=True)
+        return False
 
     def _grid_heading_min_score(self) -> float:
         """朝向质量阈值属于共享定位服务，网格任务只读取，不另存一份。"""

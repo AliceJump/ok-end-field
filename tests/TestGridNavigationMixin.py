@@ -454,6 +454,62 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.assertEqual(calls, ["board", "board"])
 
+    def test_enter_rack_does_not_retry_when_button_missing(self):
+        """找不到「登上滑索架」按钮时不重试：重新对准解决不了按钮不存在。"""
+        self.task.board_zip_line = lambda **kwargs: False
+        reaim_calls = []
+        self.task._reaim_grid_zip_line_for_boarding = lambda route_step: reaim_calls.append(route_step) or True
+
+        self.assertFalse(self.task._grid_zip_line_enter_rack(object(), self.task.board_zip_line, switch_walk_mode=True))
+
+        self.assertEqual(reaim_calls, [])
+        self.assertTrue(any("未找到「登上滑索架」按钮" in line for line in self.task.logs))
+
+    def test_enter_rack_does_not_retry_when_board_unconfirmed(self):
+        """点了按钮但 fL.esc 判定超时：无法确认就不重试，直接失败。"""
+        self.task.board_zip_line = lambda **kwargs: True
+        self.task._wait_grid_zip_line_esc_clear = lambda: None
+        reaim_calls = []
+        self.task._reaim_grid_zip_line_for_boarding = lambda route_step: reaim_calls.append(route_step) or True
+
+        self.assertFalse(self.task._grid_zip_line_enter_rack(object(), self.task.board_zip_line, switch_walk_mode=True))
+
+        self.assertEqual(reaim_calls, [])
+        self.assertFalse(any("仍然检测到" in line for line in self.task.logs))
+
+    def test_enter_rack_reaims_once_when_not_boarded(self):
+        """确认没登上（esc 仍在）才重新对准；第二次成功后不再重试。"""
+        board_calls = []
+        self.task.board_zip_line = lambda **kwargs: board_calls.append(kwargs) or True
+        esc_results = iter([True, False])
+        self.task._wait_grid_zip_line_esc_clear = lambda: next(esc_results)
+        reaim_calls = []
+        self.task._reaim_grid_zip_line_for_boarding = lambda route_step: reaim_calls.append(route_step) or True
+
+        self.assertTrue(self.task._grid_zip_line_enter_rack(object(), self.task.board_zip_line, switch_walk_mode=True))
+
+        self.assertEqual(len(board_calls), 2)
+        self.assertEqual(len(reaim_calls), 1)
+        self.assertTrue(any("已成功登上滑索" in line for line in self.task.logs))
+
+    def test_enter_rack_reports_retry_specific_failures(self):
+        """重试轮失败要用"重新对正后…"的文案，与首轮区分开。"""
+        self.task.board_zip_line = lambda **kwargs: True
+        self.task._reaim_grid_zip_line_for_boarding = lambda route_step: True
+
+        esc_results = iter([True, True])
+        self.task._wait_grid_zip_line_esc_clear = lambda: next(esc_results)
+        self.assertFalse(self.task._grid_zip_line_enter_rack(object(), self.task.board_zip_line, switch_walk_mode=True))
+        self.assertTrue(any("重新对正后仍检测到 fL.esc，登上滑索失败" in line for line in self.task.logs))
+
+        self.task.logs.clear()
+        board_results = iter([True, False])
+        self.task.board_zip_line = lambda **kwargs: next(board_results)
+        esc_results = iter([True])
+        self.task._wait_grid_zip_line_esc_clear = lambda: next(esc_results)
+        self.assertFalse(self.task._grid_zip_line_enter_rack(object(), self.task.board_zip_line, switch_walk_mode=True))
+        self.assertTrue(any("重新对正后仍未找到「登上滑索架」按钮" in line for line in self.task.logs))
+
     def test_navigation_executes_zip_line_action_before_walking_to_exit(self):
         calls = []
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
