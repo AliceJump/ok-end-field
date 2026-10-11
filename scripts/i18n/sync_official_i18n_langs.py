@@ -25,6 +25,7 @@ from _lang_sync_common import (
     sync_po_entries,
     write_json,
 )
+from _official_prefix_sync import load_prefix_overrides, sync_prefix_overrides
 
 ROOT = Path(__file__).resolve().parents[2]
 LANG_DIR = ROOT / "assets" / "lang"
@@ -422,6 +423,7 @@ def main() -> int:
 
     index, raw_texts = load_official(args.i18n_dir)
     contextual_index = build_contextual_pattern_index(raw_texts)
+    prefix_overrides = load_prefix_overrides(ROOT)
     print(f"官方语言表加载完成: {len(raw_texts)} 语言")
 
     json_stats = {}
@@ -430,8 +432,11 @@ def main() -> int:
 
     for path in sorted(LANG_DIR.glob("*.json")):
         data = json5.loads(path.read_text(encoding="utf-8"))
+        key_rules = prefix_overrides.get(path.stem, {})
         stats = 0
         for key, node in data.items():
+            if key in key_rules:
+                continue  # 仅指定 key 用中文前缀标题反查，不回退独立地名或物品名。
             if not isinstance(node, dict):
                 continue
             anchors = node_values(node)
@@ -553,6 +558,11 @@ def main() -> int:
         if stats and not args.dry:
             write_json(path, data)
         json_stats[path.name] = stats
+
+    prefixed_touched = sync_prefix_overrides(raw_texts, LANG_DIR, prefix_overrides, args.dry, write_json)
+    all_touched.extend(prefixed_touched)
+    for fname, *_ in prefixed_touched:
+        json_stats[fname] = json_stats.get(fname, 0) + 1
 
     print("\n=== assets/lang/*.json 补齐统计 ===")
     total = 0
