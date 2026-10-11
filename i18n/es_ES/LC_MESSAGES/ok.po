@@ -2787,7 +2787,7 @@ msgid "转交运送委托"
 msgstr "Transferir encargos de entrega"
 
 msgid "地区建设"
-msgstr "Operaciones regionales"
+msgstr "Desarrollo regional"
 
 msgid "造装备"
 msgstr "Fabricar Equipo"

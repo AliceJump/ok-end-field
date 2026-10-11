@@ -2706,7 +2706,7 @@ msgid "转交运送委托"
 msgstr "Transfer Delivery Commission"
 
 msgid "地区建设"
-msgstr "Regional Operations"
+msgstr "Regional Development"
 
 msgid "造装备"
 msgstr "Craft Equipment"

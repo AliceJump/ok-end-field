@@ -1261,6 +1261,30 @@
     },
     "es_ES": {
       "string": "Signo"
+    },
+    "pt_BR": {
+      "string": "Sinal"
+    },
+    "de_DE": {
+      "string": "Zeichen"
+    },
+    "fr_FR": {
+      "string": "Signe"
+    },
+    "id_ID": {
+      "string": "Tanda"
+    },
+    "it_IT": {
+      "string": "Segno"
+    },
+    "ru_RU": {
+      "string": "Знак"
+    },
+    "th_TH": {
+      "string": "สัญญะ"
+    },
+    "vi_VN": {
+      "string": "Dấu Ấn"
     }
   },
   "STACK_HUNTING_ARROW": {
@@ -1274,13 +1298,37 @@
       "string": "Hunting Arrow"
     },
     "ja_JP": {
-      "string": "狩矢"
+      "string": "猟矢"
     },
     "ko_KR": {
       "string": "사냥 화살"
     },
     "es_ES": {
       "string": "Flecha de caza"
+    },
+    "pt_BR": {
+      "string": "Flecha de Caça"
+    },
+    "de_DE": {
+      "string": "Jagdpfeil"
+    },
+    "fr_FR": {
+      "string": "Flèche de chasse"
+    },
+    "id_ID": {
+      "string": "Panah Berburu"
+    },
+    "it_IT": {
+      "string": "Freccia da caccia"
+    },
+    "ru_RU": {
+      "string": "Охотничья стрела"
+    },
+    "th_TH": {
+      "string": "ลูกศร​ล่า​เหยื่อ"
+    },
+    "vi_VN": {
+      "string": "Mũi Tên Săn"
     }
   },
   "STACK_SHRED": {
