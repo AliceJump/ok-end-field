@@ -667,6 +667,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             for end in full_cycle_targets:
                 self._set_delivery_stage(f"完整循环测试：{test_location} → {end}")
                 try:
+                    if not parse_int_sequence(self.get_zip_line_config_value(end)):
+                        all_routes_passed = False
+                        self.log_info(f"测试目标({end})滑索配置为空，继续下一条路线")
+                        continue
                     if not self.task_to_transfer_point():
                         all_routes_passed = False
                         self.log_info(f"测试目标({end})传送失败，继续下一条路线")
@@ -756,7 +760,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 account_log_suffix=self.tr("自动送货"),
                 allow_multi_account=allow_multi,
             ):
-                self._run_single_delivery_cycle()
+                result = self._run_single_delivery_cycle()
+                if self.config.get(self.CFG_TEST_TARGET) == self.TEST_FULL_CYCLE and result is False:
+                    self._set_delivery_stage("完整循环测试：未全部通过")
+                    self._delivery_fail("完整循环测试已结束，存在未通过的路线，详见日志")
 
         except Exception as e:
             self.handle_task_exception(e, "DeliveryTask_Exception")

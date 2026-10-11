@@ -22,9 +22,22 @@ class TestDeliveryFullCycle(unittest.TestCase):
         task.to_storage_point_and_back_zip_line = Mock(return_value=True)
         task.on_zip_line_start = Mock()
         task.zip_line_scroll_enabled = Mock(return_value=False)
+        task.get_zip_line_config_value = Mock(return_value="36")
         task.wait_click_ocr = Mock()
         task.sleep = Mock()
         return task
+
+    @staticmethod
+    def _prepare_run(task):
+        task._init_topmost_mixin()
+        task.start_topmost_monitor = Mock()
+        task.stop_topmost_monitor = Mock()
+        task._ensure_delivery_area_config = Mock()
+        task.iter_multi_account_context = Mock(return_value=[(1, 1)])
+        task.tr = lambda text: text
+        task.mark_task_failure = Mock()
+        task.handle_task_exception = Mock()
+        task._delivery_failure_recorded = False
 
     def test_each_npc_route_runs_once_without_reboarding(self):
         task = self._task()
@@ -57,6 +70,64 @@ class TestDeliveryFullCycle(unittest.TestCase):
         self.assertEqual(task.task_to_transfer_point.call_count, 3)
         self.assertEqual(task.to_storage_point_and_back_zip_line.call_count, 2)
         self.assertEqual([args.args[0] for args in task.on_zip_line_start.call_args_list], ["裴令容", "阿禾"])
+
+    def test_empty_npc_route_is_not_a_pass_and_continues(self):
+        for empty_config in (None, "", " ,， ", []):
+            with self.subTest(config=empty_config):
+                task = self._task()
+                task.get_zip_line_config_value.side_effect = [empty_config, "36", "48"]
+
+                self.assertFalse(task._run_single_delivery_cycle())
+
+                self.assertEqual(task.task_to_transfer_point.call_count, 2)
+                self.assertEqual(task.to_storage_point_and_back_zip_line.call_count, 2)
+                self.assertEqual([args.args[0] for args in task.on_zip_line_start.call_args_list], ["裴令容", "阿禾"])
+
+    def test_all_empty_npc_routes_cannot_pass(self):
+        task = self._task()
+        task.get_zip_line_config_value.return_value = ""
+
+        self.assertFalse(task._run_single_delivery_cycle())
+
+        task.task_to_transfer_point.assert_not_called()
+        task.on_zip_line_start.assert_not_called()
+
+    def test_invalid_npc_route_continues_with_next_route(self):
+        task = self._task()
+        task.get_zip_line_config_value.side_effect = ["invalid", "36", "48"]
+
+        self.assertFalse(task._run_single_delivery_cycle())
+
+        self.assertEqual(task.task_to_transfer_point.call_count, 2)
+        self.assertEqual([args.args[0] for args in task.on_zip_line_start.call_args_list], ["裴令容", "阿禾"])
+
+    def test_run_records_failure_only_after_all_routes_have_been_tested(self):
+        task = self._task()
+        self._prepare_run(task)
+        task.on_zip_line_start.side_effect = [RuntimeError("route failed"), None, None]
+        events = Mock()
+        events.attach_mock(task.on_zip_line_start, "npc")
+        events.attach_mock(task.mark_task_failure, "failure")
+
+        task.run()
+
+        self.assertTrue(task._delivery_failure_recorded)
+        self.assertFalse(task._delivery_failure_requires_abort)
+        self.assertEqual([args.args[0] for args in task.on_zip_line_start.call_args_list], ["赵昭", "裴令容", "阿禾"])
+        task.mark_task_failure.assert_called_once()
+        self.assertEqual(events.mock_calls[-1][0], "failure")
+        self.assertEqual(task._delivery_stage, "完整循环测试：未全部通过")
+        task.handle_task_exception.assert_not_called()
+
+    def test_run_does_not_report_successful_full_cycle_as_failure(self):
+        task = self._task()
+        self._prepare_run(task)
+
+        task.run()
+
+        task.mark_task_failure.assert_not_called()
+        self.assertFalse(task._delivery_failure_recorded)
+        task.handle_task_exception.assert_not_called()
 
     def test_failed_outbound_skips_current_route_and_continues(self):
         task = self._task()
