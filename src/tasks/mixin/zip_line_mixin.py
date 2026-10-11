@@ -328,7 +328,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     f"accepted_delta={len(candidates) - candidate_count_before}"
                 )
 
-        # 相同距离同时存在时先检查白色，再检查黄色/金黄色；同色优先转动更少的目标。
+        # 保持候选输出稳定；实际目标选择会在 OCR 前按离屏幕中心的距离重新排序。
         candidates.sort(key=lambda item: (0 if item["state"] == "white" else 1, item["radius"], -item["score"]))
         if callable(log_info):
             summary = ", ".join(
@@ -353,12 +353,20 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return self.box_of_screen(left / self.width, top / self.height, right / self.width, bottom / self.height)
 
     def _find_zip_line_template_target(self, zip_line, frame):
-        """先定位合格图标，再只 OCR 对应图标正下方的目标距离。"""
+        """优先检查更靠近屏幕中心的候选，并在局部分色 OCR 漏检时逐级放宽。"""
         pattern = self._zip_line_distance_pattern(zip_line)
         candidates = self._detect_zip_line_icon_candidates(frame)
+        candidates = sorted(
+            candidates,
+            key=lambda item: (
+                float(item.get("radius", float("inf"))),
+                -float(item.get("score", 0.0)),
+            ),
+        )
         log_info = getattr(self, "log_info", None)
         if callable(log_info):
             log_info(f"[zipline-template] target={zip_line} candidate_count={len(candidates)}")
+        combined_range = tuple(hR.WHITE) + tuple(hR.GOLD_TEXT)
         for index, candidate in enumerate(candidates):
             hsv_range = hR.WHITE if candidate["state"] == "white" else hR.GOLD_TEXT
             distance_box = self._zip_line_distance_box(candidate)
@@ -366,7 +374,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 log_info(
                     f"[zipline-template] target={zip_line} try={index + 1}/{len(candidates)} "
                     f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f}) "
-                    f"r={candidate['radius']:.2f} score={candidate['score']:.3f} "
+                    f"r={candidate.get('radius', float('inf')):.2f} score={candidate.get('score', 0.0):.3f} "
                     f"distance_box=({distance_box.x},{distance_box.y},{distance_box.width},{distance_box.height}) "
                     f"processor={'WHITE' if candidate['state'] == 'white' else 'GOLD_TEXT'}"
                 )
@@ -377,6 +385,34 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 frame_processor=self.make_hsv_isolator(hsv_range),
                 log=True,
             )
+            if not result:
+                if callable(log_info):
+                    log_info(
+                        f"[zipline-template] target={zip_line} local_ocr=miss "
+                        f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f}) "
+                        "fallback=white+gold"
+                    )
+                result = self.ocr(
+                    match=pattern,
+                    box=distance_box,
+                    frame=frame,
+                    frame_processor=self.make_hsv_isolator(combined_range),
+                    log=True,
+                )
+            if not result:
+                if callable(log_info):
+                    log_info(
+                        f"[zipline-template] target={zip_line} local_ocr=miss "
+                        f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f}) "
+                        "fallback=raw"
+                    )
+                result = self.ocr(
+                    match=pattern,
+                    box=distance_box,
+                    frame=frame,
+                    frame_processor=None,
+                    log=True,
+                )
             if result:
                 target = result[0] if isinstance(result, list) else result
                 if callable(log_info):
@@ -385,11 +421,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                         f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f})"
                     )
                 return candidate, target
-            if callable(log_info):
-                log_info(
-                    f"[zipline-template] target={zip_line} local_ocr=miss "
-                    f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f})"
-                )
         if callable(log_info):
             log_info(f"[zipline-template] target={zip_line} no_candidate_with_matching_distance")
         return None
