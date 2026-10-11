@@ -425,6 +425,8 @@ class NavigationMixin(SearchMixin):
         tolerance=TOLERANCE,
         ocr_frame_processor_list=None,
         allow_random_move=True,
+        deadline=None,
+        max_iterations=None,
     ):
         """将OCR识别或图像特征检测的目标对准屏幕中心（自动移动视角/鼠标）
 
@@ -448,6 +450,9 @@ class NavigationMixin(SearchMixin):
             once_time: 每次循环最小耗时(秒)，保证操作频率
             tolerance: 目标中心与屏幕中心的容忍偏差(像素)，默认50，偏差在范围内判定成功
             ocr_frame_processor_list: OCR帧处理函数列表(可用于色彩隔离等预处理)
+            allow_random_move: False 时未识别到目标不会执行随机视角搜索。
+            deadline: 可选的 active_time 绝对截止时间，达到后按原失败语义结束。
+            max_iterations: 可选的底层循环次数上限；默认仍使用 max_time * 2。
 
         Returns:
             tuple[int,int] | bool: 成功对中返回对中前的目标中心坐标 (x, y)，失败返回 False(当raise_if_fail=False时)
@@ -474,7 +479,12 @@ class NavigationMixin(SearchMixin):
         success = False
         random_move_count = 0
         move_count = 0
-        for _ in range(max_time * 2):
+        iteration_limit = max_time * 2
+        if max_iterations is not None:
+            iteration_limit = min(iteration_limit, max(0, int(max_iterations)))
+        for _ in range(iteration_limit):
+            if deadline is not None and self.active_time() >= deadline:
+                break
             start_action_time = self.active_time()
             if need_scroll:
                 self.do_scroll(1, 400)
@@ -483,6 +493,8 @@ class NavigationMixin(SearchMixin):
                 start_time = self.active_time()
                 result = None
                 while self.active_time() - start_time < 0.15:
+                    if deadline is not None and self.active_time() >= deadline:
+                        break
                     frame = self.next_frame()
                     if not isinstance(ocr_frame_processor_list, list):
                         ocr_frame_processor_list = [ocr_frame_processor_list]
@@ -507,6 +519,8 @@ class NavigationMixin(SearchMixin):
                 start_time = self.active_time()
                 result = None
                 while True:
+                    if deadline is not None and self.active_time() >= deadline:
+                        break
                     if self.active_time() - start_time >= 1:
                         break
                     frame = self.next_frame()
@@ -519,6 +533,8 @@ class NavigationMixin(SearchMixin):
                         )
                     else:
                         for feature_name in ocr_match_or_feature_name_list:
+                            if deadline is not None and self.active_time() >= deadline:
+                                break
                             if self.active_time() - start_time >= 1:
                                 break
 
