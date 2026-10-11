@@ -1,12 +1,24 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, patch
 
 import cv2
 import numpy as np
 
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.test.zip_line_scan_recording import (
+    ZipLineFrameDetector,
+    ZipLineScanRecorder,
+    draw_scan_candidates,
+    read_scan_image,
+    replay_image_paths,
+)
+from src.tasks.test.ZipLineReplayDebugTask import ZipLineReplayDebugTask
+from src.tasks.test.ZipLineScanDebugTask import ZipLineScanDebugTask
 
 
 class TestZipLineGoldGate(unittest.TestCase):
@@ -254,9 +266,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
             scale_distance=Mock(return_value=50),
             next_frame=Mock(return_value="frame"),
-            _find_zip_line_template_target=Mock(
-                side_effect=[None, None, (candidate, target), None, None, None]
-            ),
+            _find_zip_line_template_target=Mock(side_effect=[None, None, (candidate, target), None, None, None]),
             screen_center=Mock(return_value=(960, 540)),
             _zip_line_move_profile=Mock(return_value=profile),
             move_to_target_once=Mock(),
@@ -450,6 +460,125 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(stub.click.call_count, 2)
         self.assertEqual(stub.send_key.call_count, 2)
+
+
+class TestZipLineScanRecording(unittest.TestCase):
+    @staticmethod
+    def frame_with_icon(width=1920, height=1080):
+        frame = np.zeros((height, width, 3), dtype=np.uint8)
+        detector = ZipLineFrameDetector(frame, [])
+        template = detector._zip_line_icon_template()
+        th, tw = template.shape
+        x, y = width // 2, height // 2
+        frame[y : y + th, x : x + tw] = cv2.cvtColor(template, cv2.COLOR_GRAY2BGR)
+        return frame
+
+    def test_frame_geometry_uses_image_dimensions_without_device(self):
+        frame = self.frame_with_icon(2560, 1440)
+        detector = ZipLineFrameDetector(frame, [])
+        candidate = detector._detect_zip_line_icon_candidates(frame)[0]
+        box = detector._zip_line_distance_box(candidate)
+        self.assertEqual(detector._zip_line_ellipse_geometry(), (1280, 720, 960, 540))
+        self.assertLessEqual(abs(box.center()[0] - candidate["center_x"]), 2)
+        self.assertGreater(box.y, candidate["center_y"])
+
+    def test_unicode_output_preserves_every_frame_and_does_not_mutate_input(self):
+        with tempfile.TemporaryDirectory() as root:
+            task = SimpleNamespace(ocr=Mock(return_value=[]))
+            recorder = ZipLineScanRecorder(task, Path(root) / "滑索记录", "live")
+            blank = np.zeros((1080, 1920, 3), dtype=np.uint8)
+            hit = self.frame_with_icon()
+            hit[-25:, 110:180] = 255
+            original = hit.copy()
+            self.assertEqual(recorder.record(blank, 1), [])
+            candidates = recorder.record(hit, 2)
+            self.assertEqual(len(candidates), 1)
+            np.testing.assert_array_equal(hit, original)
+            for index in (1, 2):
+                folder = recorder.directory / f"{index:06d}"
+                self.assertTrue((folder / "boxed.png").is_file())
+                data = json.loads((folder / "result.json").read_text(encoding="utf-8"))
+                self.assertEqual(data["scan_index"], index)
+                self.assertEqual(len(data["candidates"]), index - 1)
+                self.assertEqual(read_scan_image(folder / "original.png").shape, hit.shape)
+            self.assertEqual(task.ocr.call_count, 3)
+            self.assertEqual(set(candidates[0]["ocr"]), {"pr", "white_gold", "raw"})
+            saved = read_scan_image(recorder.directory / "000002" / "original.png")
+            self.assertFalse(saved[-25:, 110:180].any())
+            self.assertEqual(
+                replay_image_paths(recorder.directory),
+                [recorder.directory / "000001/original.png", recorder.directory / "000002/original.png"],
+            )
+
+    def test_ocr_failure_still_saves_evidence_and_propagates(self):
+        with tempfile.TemporaryDirectory() as root:
+            task = SimpleNamespace(ocr=Mock(side_effect=RuntimeError("OCR unavailable")))
+            recorder = ZipLineScanRecorder(task, root, "replay")
+            with self.assertRaisesRegex(RuntimeError, "OCR unavailable"):
+                recorder.record(self.frame_with_icon(), 1)
+            folder = recorder.directory / "000001"
+            self.assertTrue((folder / "original.png").is_file())
+            self.assertTrue((folder / "boxed.png").is_file())
+            data = json.loads((folder / "result.json").read_text(encoding="utf-8"))
+            self.assertIn("OCR unavailable", data["error"])
+            self.assertEqual(len(data["candidates"]), 1)
+
+    def test_zero_hits_clear_previous_overlay(self):
+        task = SimpleNamespace(clear_box=Mock(), draw_boxes=Mock())
+        draw_scan_candidates(task, [])
+        task.clear_box.assert_called_once()
+        self.assertTrue(all(args.args[1] == [] for args in task.draw_boxes.call_args_list))
+
+    def test_live_run_records_each_fresh_frame_before_manual_stop(self):
+        stub = SimpleNamespace(
+            config={"保存目录": "unused"},
+            tr=lambda s: s,
+            log_info=Mock(),
+            clear_box=Mock(),
+            draw_boxes=Mock(),
+            next_frame=Mock(side_effect=[np.zeros((10, 10, 3)), np.ones((10, 10, 3))]),
+            sleep=Mock(side_effect=[None, RuntimeError("manual stop")]),
+        )
+        with patch("src.tasks.test.ZipLineScanDebugTask.ZipLineScanRecorder") as recorder_class:
+            recorder = recorder_class.return_value
+            recorder.record.return_value = []
+            with self.assertRaisesRegex(RuntimeError, "manual stop"):
+                ZipLineScanDebugTask.run.__wrapped__(stub)
+            self.assertEqual(stub.next_frame.call_count, 2)
+            self.assertEqual([item.args[1] for item in recorder.record.call_args_list], [1, 2])
+            self.assertFalse(
+                np.array_equal(recorder.record.call_args_list[0].args[0], recorder.record.call_args_list[1].args[0])
+            )
+            self.assertGreaterEqual(stub.clear_box.call_count, 3)
+
+    def test_replay_runs_without_capturing_game_frame(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / "截图.png"
+            cv2.imencode(".png", np.zeros((108, 192, 3), dtype=np.uint8))[1].tofile(path)
+            stub = SimpleNamespace(
+                config={"截图路径": str(path), "保存目录": str(Path(root) / "output")},
+                tr=lambda s: s,
+                log_info=Mock(),
+                sleep=Mock(),
+                clear_box=Mock(),
+                next_frame=Mock(),
+            )
+            ZipLineReplayDebugTask.run.__wrapped__(stub)
+            stub.next_frame.assert_not_called()
+            stub.clear_box.assert_called_once()
+            self.assertEqual(len(list((Path(root) / "output").rglob("result.json"))), 1)
+
+    def test_task_constructors_register_offline_and_live_modes(self):
+        executor = SimpleNamespace(scene=None, debug=True, pause_start=None)
+        app = SimpleNamespace(tr=lambda s: s)
+        with patch("src.core.BaseEfTask.Controller"), patch("src.core.BaseEfTask.get_global_config", return_value={}):
+            live = ZipLineScanDebugTask(executor, app)
+            replay = ZipLineReplayDebugTask(executor, app)
+        self.assertTrue(replay.visible)
+        self.assertFalse(replay.needs_frame)
+        self.assertIn("扫描间隔(秒)", live.default_config)
+        self.assertNotIn("扫描间隔(秒)", replay.default_config)
+        self.assertIn("截图路径", replay.default_config)
 
 
 if __name__ == "__main__":
