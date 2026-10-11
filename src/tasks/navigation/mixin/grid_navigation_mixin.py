@@ -52,6 +52,8 @@ from src.core.GridNavConfig import (
     CONFIG_GRID_MOVING_TURN_MAX_DEG,
     CONFIG_GRID_MOVING_TURN_MAX_START_DEG,
     CONFIG_GRID_MOVING_TURN_MIN_DISTANCE,
+    CONFIG_GRID_NARROW_CALIBRATION,
+    CONFIG_GRID_NARROW_STOP_RADIUS,
     CONFIG_GRID_RECOVERY_TIME,
     CONFIG_GRID_RISK_COST,
     CONFIG_GRID_SHORTCUT_RADIUS,
@@ -80,6 +82,7 @@ from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
     DONE,
     FAILED,
+    NARROW_CALIBRATE,
     REPLAN,
     STUCK,
     TURN,
@@ -107,6 +110,7 @@ GRID_ZIP_LINE_WS_STOP_DISTANCE_M = 0.6
 GRID_ZIP_LINE_PROMPT_POLL_S = 0.1
 GRID_ZIP_LINE_LOCAL_SEARCH_STEP_S = 0.15
 GRID_ZIP_LINE_APPROACH_MAX_ATTEMPTS = 3
+GRID_NARROW_CALIBRATION_MAX_ATTEMPTS = 3
 GRID_SPRINT_MIN_SEGMENT_METERS = 15.0
 
 __all__ = [
@@ -707,6 +711,54 @@ class GridNavigationMixin(RuntimeStateMixin):
                         return False
                     self._grid_nav_follower = None
                     continue
+                if step.action == NARROW_CALIBRATE:
+                    # 一格宽通路：进入前先停车等一次静止校准，消除累积定位误差，
+                    # 校准后对准入口航点再走，避免带着偏差蹭墙。
+                    self._set_grid_walking(False)
+                    self.info_set("网格导航", "窄道入口停车校准")
+                    synced = self._wait_for_minimap_sync(
+                        int(state.get("sync_seq") or 0),
+                        deadline,
+                        tick,
+                    )
+                    if self._grid_navigation_timed_out(deadline, limit):
+                        return False
+                    aligned_ok = True
+                    entry_bearing = step.target_bearing
+                    if entry_bearing is not None:
+                        aligned = self.pose_turn_to_bearing(
+                            entry_bearing,
+                            tolerance=self._grid_turn_tolerance(),
+                            max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
+                            frame=frame,
+                            min_score=min_score,
+                        )
+                        aligned_ok = bool(aligned.get("ok"))
+                        if not aligned_ok:
+                            self.log_warning(
+                                f"窄道入口对准未到位：目标={entry_bearing:.1f}°，"
+                                f"实测={aligned.get('heading')}，误差={aligned.get('error')}"
+                            )
+                    follower = self._grid_nav_follower
+                    if synced and aligned_ok:
+                        if follower is not None:
+                            follower.confirm_narrow_calibration()
+                        self.log_info("窄道入口前已完成静止校准并对准航点")
+                        continue
+                    # 校准或对准任一没成功都不标记已校准，下一拍重新走完整个流程，
+                    # 避免带着偏差进窄道；连续失败到上限才放弃，防止卡死。
+                    attempts = follower.narrow_calibration_failed() if follower is not None else 0
+                    if attempts >= GRID_NARROW_CALIBRATION_MAX_ATTEMPTS:
+                        if follower is not None:
+                            follower.confirm_narrow_calibration()
+                        self.log_warning(
+                            f"窄道入口校准/对准连续 {attempts} 次未成功，按当前状态继续",
+                            notify=True,
+                        )
+                    else:
+                        reason = "静止校准未完成" if not synced else "对准未到位"
+                        self.log_warning(f"窄道入口{reason}，将重新校准（第 {attempts} 次）")
+                    continue
                 if step.action == TURN:
                     if self._grid_cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True) and not self._should_turn_grid_in_place(
                         step
@@ -1146,6 +1198,8 @@ class GridNavigationMixin(RuntimeStateMixin):
             frontier_penalty=max(0.0, self._grid_cfg_float(CONFIG_GRID_FRONTIER_PENALTY, 1.0)),
             waypoint_tolerance=max(0.0, self._grid_cfg_float(CONFIG_GRID_WAYPOINT_TOLERANCE, 2.0)),
             max_expand=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_EXPAND, 400_000)),
+            narrow_calibration=self._grid_cfg_bool(CONFIG_GRID_NARROW_CALIBRATION, True),
+            narrow_stop_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_NARROW_STOP_RADIUS, 3.0)),
         )
 
     def _grid_heading_tolerance(self) -> float:

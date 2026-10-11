@@ -15,6 +15,7 @@ from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta, save_g
 from src.nav.grid_planner import PlanResult, ZipLineRouteStep
 from src.nav.route_follower import (
     DONE,
+    NARROW_CALIBRATE,
     REPLAN,
     WALK,
     ZIP_LINE,
@@ -1124,6 +1125,100 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
+
+    def test_narrow_entry_stops_calibrates_and_aligns_before_walking(self):
+        """窄道入口：先停车校准，再对准入口航点，然后才继续前进。"""
+        calls = []
+        confirmed = []
+
+        class _NarrowFollower:
+            def __init__(self):
+                self.count = 0
+
+            def pause(self):
+                pass
+
+            def update(self, position, heading, now):
+                self.count += 1
+                if self.count == 1:
+                    return FollowerStep(
+                        NARROW_CALIBRATE,
+                        waypoint=(2.5, 0.5),
+                        target_bearing=90.0,
+                        distance_to_waypoint=1.0,
+                        distance_to_goal=4.0,
+                    )
+                return FollowerStep(DONE, distance_to_goal=0.0)
+
+            def confirm_narrow_calibration(self):
+                confirmed.append(True)
+                return True
+
+        follower = _NarrowFollower()
+        self.task._create_grid_route = lambda start, goal, **kwargs: (
+            follower,
+            PlanResult(ok=True, waypoints=[start, goal]),
+        )
+        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+        self.assertEqual(calls, [0])
+        self.assertEqual(confirmed, [True])
+        self.assertIn(90.0, self.task.turns)
+
+    def test_narrow_entry_recalibrates_when_alignment_fails(self):
+        """对准失败时不能标记已校准，必须重新校准并对准。"""
+        sync_calls = []
+        confirmed = []
+
+        class _NarrowFollower:
+            def __init__(self):
+                self.count = 0
+                self.failures = 0
+
+            def pause(self):
+                pass
+
+            def update(self, position, heading, now):
+                self.count += 1
+                if self.count <= 2:
+                    return FollowerStep(
+                        NARROW_CALIBRATE,
+                        waypoint=(2.5, 0.5),
+                        target_bearing=90.0,
+                        distance_to_waypoint=1.0,
+                        distance_to_goal=4.0,
+                    )
+                return FollowerStep(DONE, distance_to_goal=0.0)
+
+            def confirm_narrow_calibration(self):
+                confirmed.append(True)
+                return True
+
+            def narrow_calibration_failed(self):
+                self.failures += 1
+                return self.failures
+
+        follower = _NarrowFollower()
+        self.task._create_grid_route = lambda start, goal, **kwargs: (
+            follower,
+            PlanResult(ok=True, waypoints=[start, goal]),
+        )
+        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: sync_calls.append(start_seq) or True
+        turn_calls = {"n": 0}
+
+        def turn(target, **kwargs):
+            turn_calls["n"] += 1
+            self.task.turns.append(float(target))
+            if turn_calls["n"] == 1:
+                return {"ok": False, "heading": 0.0, "error": 90.0}
+            return {"ok": True, "heading": float(target), "error": 0.0}
+
+        self.task.pose_turn_to_bearing = turn
+
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+        self.assertEqual(len(sync_calls), 2)  # 对准失败后重新校准了一次
+        self.assertEqual(confirmed, [True])  # 只在两次都成功后确认
 
     def test_known_cell_off_route_calibrates_before_replan(self):
         calls = []

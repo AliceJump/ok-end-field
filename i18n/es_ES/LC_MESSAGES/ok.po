@@ -3465,3 +3465,12 @@ msgid "关键帧优化位置作为局部关键帧视觉锚定链校正软锚点�
 msgstr ""
 "Peso de la posición optimizada del fotograma clave como ancla suave para "
 "la corrección de cadena de anclaje visual local."
+
+msgid "规划航点进入宽度只有一格的通路前，先停车等一次静止校准，校准完成后对准入口航点再继续走；关闭后行为与旧版一致"
+msgstr ""
+"Antes de que un punto de ruta entre en un pasillo de una celda de ancho, detente "
+"y espera una calibración en reposo; después alinea el punto de entrada y continúa. "
+"Al desactivarlo se recupera el comportamiento anterior."
+
+msgid "距窄道入口航点多近时触发停车校准（米）"
+msgstr "Distancia al punto de entrada del pasillo a la que se activa la calibración con parada (metros)."

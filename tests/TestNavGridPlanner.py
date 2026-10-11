@@ -181,6 +181,68 @@ class TestSafetyMargin(unittest.TestCase):
         )
 
 
+class TestCorridorCentering(unittest.TestCase):
+    """验证饱和边距居中：窄走廊从正中穿过，且开阔区域不会被拉去绕路。"""
+
+    @staticmethod
+    def _corridor(width: int) -> DenseGrid:
+        return _grid(["#" * 22] + ["#" + "o" * 20 + "#"] * width + ["#" * 22])
+
+    def test_margin_centers_narrow_corridor(self):
+        for width in (3, 5):
+            with self.subTest(width=width):
+                grid = self._corridor(width)
+                res = GridPlanner(grid, margin=3, wall_penalty=1.0).plan_cells((1, 1), (width, 20))
+                self.assertTrue(res.ok, res)
+                centre_row = (width + 1) // 2
+                middle = {i for i, j in res.cells if 10 <= j <= 12}
+                self.assertEqual(middle, {centre_row})
+
+    def test_margin_centering_can_be_disabled(self):
+        width = 9
+        grid = self._corridor(width)
+        res = GridPlanner(grid, margin=0, wall_penalty=1.0).plan_cells((1, 1), (width, 20))
+        middle = {i for i, j in res.cells if 10 <= j <= 12}
+        self.assertNotEqual(middle, {(width + 1) // 2})
+
+    def test_saturated_margin_bounds_shift_in_open_area(self):
+        """开阔区域里边距只会把路线拉到离墙 margin 格，不会一路拐到场地中央。"""
+        width = 800
+        grid = _grid(["#" * (width + 2)] + ["#" + "o" * width + "#"] * 40 + ["#" * (width + 2)])
+        res = GridPlanner(grid, margin=3, wall_penalty=1.0).plan_cells((2, 2), (2, width - 1))
+        self.assertTrue(res.ok, res)
+        # 起点离墙 2 格 < margin=3，最多上移到离墙 3 格，远达不到房间中心（20 行）
+        self.assertLessEqual(max(i for i, _ in res.cells), 3)
+
+
+class TestNarrowPassage(unittest.TestCase):
+    """验证一格宽通路的识别与入口航点保留。"""
+
+    _GAP = (
+        "#########",
+        "#ooooooo#",
+        "####o####",
+        "#ooooooo#",
+        "#ooooooo#",
+        "#########",
+    )
+
+    def test_narrow_entry_waypoint_is_kept_and_flagged(self):
+        grid = _grid(self._GAP)
+        res = GridPlanner(grid, margin=3, wall_penalty=1.0).plan_cells((1, 1), (4, 7))
+        self.assertTrue(res.ok, res)
+        self.assertEqual(len(res.narrow_entries), 1)
+        entry = res.waypoints[res.narrow_entries[0]]
+        self.assertEqual(grid.index_of_world(*entry), (2, 4))
+
+    def test_open_area_has_no_narrow_entry(self):
+        grid = _grid(["ooooo", "ooooo", "ooooo"])
+        planner = GridPlanner(grid)
+        self.assertFalse(planner.is_narrow_corridor(1, 2))
+        res = planner.plan_cells((1, 0), (1, 4))
+        self.assertEqual(res.narrow_entries, ())
+
+
 class TestWaypoints(unittest.TestCase):
     """覆盖航点简化与替代线安全性。"""
 

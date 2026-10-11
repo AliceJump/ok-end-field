@@ -37,6 +37,7 @@ WAIT = "wait"
 TURN = "turn"
 WALK = "walk"
 ZIP_LINE = "zip_line"
+NARROW_CALIBRATE = "narrow_calibrate"
 STUCK = "stuck"
 REPLAN = "replan"
 DONE = "done"
@@ -107,6 +108,8 @@ class FollowerConfig:
     max_expand: int = 400_000
     off_route_radius: float = 6.0
     off_route_hold_s: float = 1.5
+    narrow_calibration: bool = True
+    narrow_stop_radius: float = 3.0
     zip_line_cost_factor: float = DEFAULT_ZIP_LINE_COST_FACTOR
     zip_line_boarding_cost: float = DEFAULT_ZIP_LINE_BOARDING_COST
     zip_line_access_radius: int = DEFAULT_ZIP_LINE_ACCESS_RADIUS
@@ -172,6 +175,8 @@ class GridRouteFollower:
         self._move_start_pos: tuple[float, float] | None = None
         self._route_start: tuple[float, float] | None = None
         self._off_route_since: float | None = None
+        self._narrow_calibrated: set[int] = set()
+        self._narrow_attempts: dict[int, int] = {}
 
     def pause(self) -> None:
         """暂停跟随状态；外层停止控制输入时应调用，避免把停走误判为卡住。"""
@@ -197,6 +202,8 @@ class GridRouteFollower:
         )
         self.waypoint_index = 0
         self._zip_line_index = 0
+        self._narrow_calibrated = set()
+        self._narrow_attempts = {}
         self._reset_motion()
         self._off_route_since = None
         if self.plan_result.ok:
@@ -236,6 +243,21 @@ class GridRouteFollower:
                 heading_error=None,
                 target_bearing=None,
                 waypoint_distance=goal_distance,
+            )
+
+        narrow_hold = self._pending_narrow_hold(pos)
+        if narrow_hold is not None:
+            entry = waypoints[narrow_hold]
+            entry_bearing = bearing_to_point(pos[0], pos[1], entry[0], entry[1])
+            self._reset_motion()
+            return self._step(
+                NARROW_CALIBRATE,
+                entry,
+                target_bearing=entry_bearing,
+                heading_error=None,
+                waypoint_distance=distance_xz(pos, entry),
+                goal_distance=goal_distance,
+                reason="窄道入口前需停车校准并对准航点",
             )
 
         arrived_index = None
@@ -351,6 +373,49 @@ class GridRouteFollower:
             shortcut_distance=shortcut_distance,
         )
 
+    def _pending_narrow_hold(self, position: tuple[float, float]) -> int | None:
+        """返回当前是否需要为一个窄道入口停车校准，并给出入口航点下标。
+
+        只有当前目标航点本身是「一格宽通路」的入口、且角色已经接近到
+        ``narrow_stop_radius`` 以内、且尚未校准过时才触发，保证是在进入窄道之前停车。
+        """
+        if not self.config.narrow_calibration or self.plan_result is None:
+            return None
+        entries = self.plan_result.narrow_entries
+        index = self.waypoint_index
+        if index not in entries or index in self._narrow_calibrated:
+            return None
+        waypoints = self.plan_result.waypoints
+        if index >= len(waypoints):
+            return None
+        # 已经踏进窄道内部就来不及"进入前"停车了，不再触发，避免在窄道中间停住。
+        if self.planner.is_narrow_corridor(*self.grid.index_of_world(position[0], position[1])):
+            return None
+        radius = max(0.0, float(self.config.narrow_stop_radius))
+        if distance_xz(position, waypoints[index]) > radius:
+            return None
+        return index
+
+    def confirm_narrow_calibration(self) -> bool:
+        """确认当前窄道入口的停车校准已完成，之后不再对同一入口重复停车。"""
+        if self.plan_result is None:
+            return False
+        index = self.waypoint_index
+        if index not in self.plan_result.narrow_entries:
+            return False
+        self._narrow_calibrated.add(index)
+        self._reset_motion()
+        self._off_route_since = None
+        return True
+
+    def narrow_calibration_failed(self) -> int:
+        """记录当前窄道入口的一次校准/对准失败，返回该入口累计失败次数。"""
+        if self.plan_result is None:
+            return 0
+        index = self.waypoint_index
+        self._narrow_attempts[index] = self._narrow_attempts.get(index, 0) + 1
+        return self._narrow_attempts[index]
+
     def _skip_nearby_segments(self, position: tuple[float, float]) -> tuple[tuple[int, ...], float | None]:
         """当前位置已经靠近后续航段时，跳过这些已无必要返回的航点。"""
         radius = max(0.0, float(self.config.shortcut_radius))
@@ -360,7 +425,12 @@ class GridRouteFollower:
         skipped: list[int] = []
         nearest = None
         limit = self._waypoint_limit(len(waypoints))
+        # 未校准的窄道入口必须保留为目标，不能作为捷径被跳过去。
+        pending_entries = [index for index in self.plan_result.narrow_entries if index not in self._narrow_calibrated]
+        hold = min((index for index in pending_entries if index >= self.waypoint_index), default=None)
         while self.waypoint_index < limit:
+            if hold is not None and self.waypoint_index >= hold:
+                break
             start = waypoints[self.waypoint_index]
             end = waypoints[self.waypoint_index + 1]
             distance, _ratio = point_segment_distance(position, start, end)

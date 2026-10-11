@@ -34,6 +34,7 @@
 
 from __future__ import annotations
 
+import bisect
 import heapq
 import itertools
 import math
@@ -118,6 +119,8 @@ class PlanResult:
     notes: list[str] = field(default_factory=list)
     #: 路线中按顺序执行的滑索步骤。
     zip_line_steps: list[ZipLineRouteStep] = field(default_factory=list)
+    #: 需要先停车校准、对准后再进入的窄道入口航点下标（宽度只有一格的通路）
+    narrow_entries: tuple[int, ...] = ()
 
     def __repr__(self) -> str:
         if not self.ok:
@@ -370,7 +373,7 @@ class GridPlanner:
             )
 
         cells, via_edge_ids, cost = search
-        waypoints, zip_line_steps = self._route_with_zip_lines(cells, via_edge_ids)
+        waypoints, zip_line_steps, narrow_entries = self._route_with_zip_lines(cells, via_edge_ids)
         risk = 0
         for index, (i, j) in enumerate(cells):
             if index > 0 and via_edge_ids[index - 1] >= 0:
@@ -385,6 +388,7 @@ class GridPlanner:
             cost=cost,
             risk_cells=risk,
             zip_line_steps=zip_line_steps,
+            narrow_entries=narrow_entries,
             expanded=self._expanded,
             start_cell=start_cell,
             goal_cell=goal_cell,
@@ -553,6 +557,7 @@ class GridPlanner:
             goal_cell=base.goal_cell,
             notes=notes,
             zip_line_steps=[prefix, *shifted_zip_steps],
+            narrow_entries=tuple(index + 1 for index in base.narrow_entries),
         )
 
     def _zip_line_shortest_paths(
@@ -693,12 +698,14 @@ class GridPlanner:
             "directed_edges": len(self._zip_edges_by_id),
         }
 
-    def _route_with_zip_lines(self, cells, via_edge_ids) -> tuple[list, list[ZipLineRouteStep]]:
+    def _route_with_zip_lines(self, cells, via_edge_ids) -> tuple[list, list[ZipLineRouteStep], tuple[int, ...]]:
         """按滑索转移切段做视线简化，并保留每一步的航点边界。"""
         if not via_edge_ids or all(edge_id < 0 for edge_id in via_edge_ids):
+            simplified = self._simplify(cells)
             return (
-                [self.grid.world_of_index(i, j) for i, j in self._simplify(cells)],
+                [self.grid.world_of_index(i, j) for i, j in simplified],
                 [],
+                self._narrow_entry_waypoints(simplified),
             )
 
         segments: list[list[tuple[int, int]]] = []
@@ -747,7 +754,7 @@ class GridPlanner:
                     chain=edge.steps,
                 )
             )
-        return waypoints, zip_line_steps
+        return waypoints, zip_line_steps, self._narrow_entry_waypoints(flat_cells)
 
     # ------------------------------------------------------------------ #
     # 内部
@@ -761,6 +768,25 @@ class GridPlanner:
     def passable(self, i: int, j: int) -> bool:
         """``_passable`` 的公开包装，供航点跟随器复用同一通行语义。"""
         return self._passable(i, j)
+
+    def is_narrow_corridor(self, i: int, j: int) -> bool:
+        """该可行走格是否属于「宽度只有一格」的通路。
+
+        判据是**正对的两侧**都被阻挡格夹住（东西或南北），此时可行走带在垂直方向上
+        只剩这一格，角色必须贴着格中心线通过。开放区域的边缘只挡一侧，不会命中。
+
+        只认轴向夹壁：本规划器禁止斜穿墙角，一格宽的斜向通路实际不可通行，
+        而把斜向也计入会在普通门口误判入口前一格。
+        """
+        if self.grid.state(i, j) != CELL_FREE:
+            return False
+
+        # 只有界内阻挡格才算夹壁：界外是保守的不可通行，不代表两侧真有墙，
+        # 否则开阔地图的角落会被误判成一格宽通路。
+        def blocked(a: int, b: int) -> bool:
+            return self.grid.in_bounds(a, b) and self.grid.state(a, b) == CELL_BLOCKED
+
+        return (blocked(i, j - 1) and blocked(i, j + 1)) or (blocked(i - 1, j) and blocked(i + 1, j))
 
     def line_clear(self, a, b) -> bool:
         """``_line_clear`` 的公开包装：两格之间可否安全直连。"""
@@ -1049,6 +1075,50 @@ class GridPlanner:
         via_edge_ids.reverse()
         return path, via_edge_ids
 
+    def _narrow_entry_cells(self, cells) -> list[tuple[int, tuple[int, int]]]:
+        """返回 ``cells`` 中每个「一格宽通路入口」的下标与该格。"""
+        entries: list[tuple[int, tuple[int, int]]] = []
+        previous_narrow = False
+        for index, cell in enumerate(cells):
+            narrow = self.is_narrow_corridor(*cell)
+            if narrow and not previous_narrow and index > 0:
+                entries.append((index, cell))
+            previous_narrow = narrow
+        return entries
+
+    def _narrow_entry_waypoints(self, cells) -> tuple[int, ...]:
+        """把窄道入口映射成 *航点* 下标：前一航点在宽处、当前航点已进入窄道。"""
+        entries = []
+        for index in range(1, len(cells)):
+            if self.is_narrow_corridor(*cells[index]) and not self.is_narrow_corridor(*cells[index - 1]):
+                entries.append(index)
+        return tuple(entries)
+
+    def _insert_narrow_anchors(self, cells, simplified) -> list:
+        """把窄道入口前后两格强制保留为航点。
+
+        视线简化可能把 1 格宽通路的入口整段压掉，让执行层无法判断从哪一格进窄道，
+        也就无法在进入前停车校准。这里把入口前最后一格与入口格补回简化结果，
+        不影响既有顺序（仍严格是 ``cells`` 的子序列）。
+        """
+        anchors: list[tuple[int, int]] = []
+        for index, cell in self._narrow_entry_cells(cells):
+            anchors.append(cells[index - 1])
+            anchors.append(cell)
+        if not anchors:
+            return list(simplified)
+        order = {cell: index for index, cell in enumerate(cells)}
+        out = list(simplified)
+        positions = [order[cell] for cell in out]
+        for anchor in anchors:
+            anchor_index = order[anchor]
+            if anchor_index in positions:
+                continue
+            position = bisect.bisect_left(positions, anchor_index)
+            out.insert(position, anchor)
+            positions.insert(position, anchor_index)
+        return out
+
     def _simplify(self, cells) -> list:
         """视线简化：把能直连的连续格合并成航点，减少无谓的拐点。
 
@@ -1079,7 +1149,7 @@ class GridPlanner:
                 out.append(cells[idx - 1])
                 anchor = idx - 1
         out.append(cells[-1])
-        return self._rdp_simplify(out, cells)
+        return self._insert_narrow_anchors(cells, self._rdp_simplify(out, cells))
 
     def _fast_line(self, a, b) -> tuple[bool, float]:
         """一次走线同时给出"能否直连"和"沿线步进代价"。

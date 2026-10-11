@@ -3350,3 +3350,12 @@ msgid "关键帧优化位置作为局部关键帧视觉锚定链校正软锚点�
 msgstr ""
 "Weight of the keyframe optimized position as a soft anchor for the local "
 "keyframe visual anchor chain correction."
+
+msgid "规划航点进入宽度只有一格的通路前，先停车等一次静止校准，校准完成后对准入口航点再继续走；关闭后行为与旧版一致"
+msgstr ""
+"Before a planned waypoint enters a one-cell-wide passage, stop and wait for a "
+"stationary calibration, then align to the entry waypoint before continuing. "
+"Disabling this restores the previous behavior."
+
+msgid "距窄道入口航点多近时触发停车校准（米）"
+msgstr "How close to a narrow-passage entry waypoint triggers the stop-and-calibrate (meters)."

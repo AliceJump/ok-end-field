@@ -8,6 +8,7 @@ from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta
 from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
     DONE,
+    NARROW_CALIBRATE,
     REPLAN,
     STUCK,
     TURN,
@@ -213,6 +214,82 @@ class TestGridRouteFollower(unittest.TestCase):
 
         self.assertEqual(step.arrived_waypoint_index, 1)
         self.assertEqual(step.waypoint, (4.0, 0.0))
+
+
+class TestNarrowPassageCalibration(unittest.TestCase):
+    """一格宽通路入口必须先在进入前停车校准，再对准航点前进。"""
+
+    def _follower(self) -> GridRouteFollower:
+        follower = GridRouteFollower(
+            _line_grid(),
+            FollowerConfig(
+                arrive_radius=0.5,
+                goal_radius=0.5,
+                narrow_calibration=True,
+                narrow_stop_radius=3.0,
+            ),
+        )
+        follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(0, 0), (0, 5)],
+            waypoints=[(0.5, 0.5), (0.5, 5.5)],
+            narrow_entries=(0,),
+        )
+        return follower
+
+    def test_stops_to_calibrate_before_entering_narrow_passage(self):
+        step = self._follower().update((0.5, 2.8), 180.0, now=0.0)
+        self.assertEqual(step.action, NARROW_CALIBRATE)
+        self.assertAlmostEqual(step.target_bearing, 180.0)
+
+    def test_confirmation_suppresses_repeat_calibration(self):
+        follower = self._follower()
+        self.assertEqual(follower.update((0.5, 2.8), 180.0, now=0.0).action, NARROW_CALIBRATE)
+        self.assertTrue(follower.confirm_narrow_calibration())
+        step = follower.update((0.5, 2.8), 180.0, now=0.2)
+        self.assertNotEqual(step.action, NARROW_CALIBRATE)
+
+    def test_far_from_entry_keeps_walking(self):
+        step = self._follower().update((0.5, 4.5), 180.0, now=0.0)
+        self.assertNotEqual(step.action, NARROW_CALIBRATE)
+
+    def test_disabled_calibration_never_triggers(self):
+        follower = self._follower()
+        follower.config = FollowerConfig(
+            arrive_radius=0.5,
+            goal_radius=0.5,
+            narrow_calibration=False,
+        )
+        step = follower.update((0.5, 2.8), 180.0, now=0.0)
+        self.assertNotEqual(step.action, NARROW_CALIBRATE)
+
+    def test_uncalibrated_entry_is_not_shortcut_away(self):
+        follower = GridRouteFollower(
+            _line_grid(),
+            FollowerConfig(arrive_radius=0.5, goal_radius=0.5, shortcut_radius=1.0),
+        )
+        follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(0, 0), (0, 5), (0, 10)],
+            waypoints=[(0.5, 0.5), (0.5, 5.5), (0.5, 10.5)],
+            narrow_entries=(1,),
+        )
+        follower.waypoint_index = 1
+        step = follower.update((0.5, 9.5), 180.0, now=0.0)
+        self.assertEqual(follower.waypoint_index, 1)
+        self.assertEqual(step.waypoint, (0.5, 5.5))
+
+    def test_failed_calibration_can_be_retried(self):
+        follower = self._follower()
+        self.assertEqual(follower.narrow_calibration_failed(), 1)
+        self.assertEqual(follower.narrow_calibration_failed(), 2)
+        # 未确认前仍会继续触发窄道校准
+        self.assertEqual(follower.update((0.5, 2.8), 180.0, now=0.0).action, NARROW_CALIBRATE)
+        self.assertTrue(follower.confirm_narrow_calibration())
+        self.assertNotEqual(
+            follower.update((0.5, 2.8), 180.0, now=0.2).action,
+            NARROW_CALIBRATE,
+        )
 
 
 class TestZipLineRouteFollower(unittest.TestCase):
