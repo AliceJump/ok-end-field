@@ -258,7 +258,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
         )
 
-        with self.assertRaises(ZipLineReplanRequired):
+        with self.assertRaises(ZipLineReplanRequired) as raised:
             DeliveryTask._wait_zip_line_motion(
                 stub,
                 target_position=(0.0, 0.0),
@@ -267,6 +267,10 @@ class TestFindZipLineBoardButton(unittest.TestCase):
                 near_distance=3.0,
                 stable_seconds=0.3,
             )
+        self.assertEqual(
+            str(raised.exception),
+            "到达了非目标滑索架：WS=(50.00, 50.00)，距起点=56.57m，距目标=70.71m",
+        )
 
     def test_wait_zip_line_motion_replans_when_stopped_without_template(self):
         clock = {"t": 0.0}
@@ -279,7 +283,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
         )
 
-        with self.assertRaises(ZipLineReplanRequired):
+        with self.assertRaises(ZipLineReplanRequired) as raised:
             DeliveryTask._wait_zip_line_motion(
                 stub,
                 target_position=(0.0, 0.0),
@@ -288,6 +292,10 @@ class TestFindZipLineBoardButton(unittest.TestCase):
                 near_distance=3.0,
                 stable_seconds=0.3,
             )
+        self.assertEqual(
+            str(raised.exception),
+            "滑索结束在非目标滑索架：WS=(50.00, 50.00)，距起点=56.57m，距目标=70.71m",
+        )
 
     def test_wait_zip_line_motion_keeps_waiting_at_target_without_template(self):
         """停稳在目标附近但到达模板还没出现：继续等模板，既不重试也不重规划。"""
