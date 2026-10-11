@@ -3811,7 +3811,7 @@
       "pattern": "北部禁區"
     },
     "en_US": {
-      "pattern": "North Wuling Exclusion Zone"
+      "pattern": "North Wuling EZ"
     },
     "ja_JP": {
       "pattern": "北部封鎖区域"
@@ -3820,7 +3820,7 @@
       "pattern": "북쪽 금지 구역"
     },
     "es_ES": {
-      "pattern": "Zona de exclusión norte de Wuling"
+      "pattern": "ZE norte de Wuling"
     },
     "pt_BR": {
       "pattern": "Zona de Exclusão do Norte de Wuling"
@@ -3829,19 +3829,19 @@
       "pattern": "Sperrzone Nord-Wuling"
     },
     "fr_FR": {
-      "pattern": "Zone d'exclusion du nord de Wuling"
+      "pattern": "ZE du nord de Wuling"
     },
     "id_ID": {
-      "pattern": "Zona Eksklusi Wuling Utara"
+      "pattern": "ZE Wuling Utara"
     },
     "it_IT": {
       "pattern": "Area interdetta di Wuling Nord"
     },
     "ru_RU": {
-      "pattern": "Зона отчуждения северного Улина"
+      "pattern": "ЗО северного Улина"
     },
     "th_TH": {
-      "pattern": "เขต​พิเศษ​อู่​หลิง​เหนือ"
+      "pattern": "เขต​ EZ อู่​หลิง​ทางเหนือ"
     },
     "vi_VN": {
       "pattern": "Khu Cấm Bắc Võ Lăng"

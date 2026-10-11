@@ -286,6 +286,30 @@ def _strip_richtext(text: str) -> str:
     return _RICHTEXT_TAG.sub("", text)
 
 
+def build_contextual_pattern_index(raw_texts: dict) -> dict[str, list[str]]:
+    """索引「前缀·核心名称」的核心锚点，供已有 OCR 子串验证语境。"""
+    result = {}
+    for key, text in raw_texts.get("zh_CN", {}).items():
+        if not isinstance(text, str):
+            continue
+        match = re.fullmatch(r".+[·・:：]\s*([^·・:：]+)", _strip_richtext(text).strip())
+        if match:
+            result.setdefault(_norm(match[1]), []).append(key)
+    return result
+
+
+def is_contextual_pattern(pattern: str, anchor: str, lang: str, contextual_index: dict, raw_texts: dict) -> bool:
+    """保留同一中文复合条目中仍有效的名称后缀，避免用地区全称覆盖关卡缩写。"""
+    normalized = _norm(pattern)
+    if not normalized:
+        return False
+    table = raw_texts.get(lang, {})
+    return any(
+        isinstance(value := table.get(key), str) and _norm(_strip_richtext(value)).endswith(normalized)
+        for key in contextual_index.get(_norm(anchor), [])
+    )
+
+
 def rank_keys_for_node(ranked: list, raw_texts: dict, node: dict) -> list:
     """同名词条用已有各语言文本确定语境，不依赖解包字典的键顺序。"""
     scores = []
@@ -397,6 +421,7 @@ def main() -> int:
     args = ap.parse_args()
 
     index, raw_texts = load_official(args.i18n_dir)
+    contextual_index = build_contextual_pattern_index(raw_texts)
     print(f"官方语言表加载完成: {len(raw_texts)} 语言")
 
     json_stats = {}
@@ -497,6 +522,12 @@ def main() -> int:
                     # 覆盖已有值（string 或普通 pattern）
                     for kind in ("string", "pattern"):
                         if isinstance(cur.get(kind), str) and cur[kind] != val:
+                            if (
+                                kind == "pattern"
+                                and len(anchors) == 1
+                                and is_contextual_pattern(cur[kind], anchors[0][1], lang, contextual_index, raw_texts)
+                            ):
+                                continue
                             cur[kind] = val
                             stats += 1
                             all_touched.append((path.name, key, zh, lang, val))

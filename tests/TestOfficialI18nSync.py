@@ -124,6 +124,47 @@ class SemanticWriteTests(unittest.TestCase):
 
 
 class FullSyncTests(unittest.TestCase):
+    def test_valid_stage_suffix_is_preserved_while_wrong_and_display_text_are_updated(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            official = root / "official"
+            official.mkdir()
+            tables = {
+                "CN": {"area": "北部禁区", "stage": "能量淤积点·北部禁区", "other": "其他·南部禁区"},
+                "EN": {
+                    "area": "North Wuling Exclusion Zone",
+                    "stage": "Energy Alluvium: North Wuling EZ",
+                    "other": "Other: Wrong suffix",
+                },
+            }
+            for code, table in tables.items():
+                (official / f"{code}.json").write_text(json.dumps(table, ensure_ascii=False), encoding="utf-8")
+            lang_dir = root / "lang"
+            lang_dir.mkdir()
+            data = {
+                "stage": {"zh_CN": {"pattern": "北部禁区"}, "en_US": {"pattern": "North Wuling EZ"}},
+                "wrong": {"zh_CN": {"pattern": "北部禁区"}, "en_US": {"pattern": "Wrong suffix"}},
+                "display": {"zh_CN": {"string": "北部禁区"}, "en_US": {"string": "North Wuling EZ"}},
+            }
+            path = lang_dir / "test.json"
+            path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            with (
+                patch.object(sync, "LANG_DIR", lang_dir),
+                patch.object(sync, "PO_DIR", root / "i18n"),
+                patch.object(sync, "OFFICIAL_TO_REPO", {"CN": "zh_CN", "EN": "en_US"}),
+                patch.object(sync, "REPO_LANGS", ("zh_CN", "en_US")),
+                patch.object(sync, "PO_LANGS", ("en_US",)),
+                patch("sys.argv", ["sync", "--i18n-dir", str(official)]),
+            ):
+                self.assertEqual(sync.main(), 0)
+                result = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual(result["stage"]["en_US"]["pattern"], "North Wuling EZ")
+                self.assertEqual(result["wrong"]["en_US"]["pattern"], "North Wuling Exclusion Zone")
+                self.assertEqual(result["display"]["en_US"]["string"], "North Wuling Exclusion Zone")
+                before = path.read_bytes(), path.stat().st_mtime_ns
+                self.assertEqual(sync.main(), 0)
+                self.assertEqual((path.read_bytes(), path.stat().st_mtime_ns), before)
+
     def test_ui_uses_its_own_context_and_repeated_sync_does_not_write(self):
         for ui_values in (("Collect", "収集"), ("Custom GUI text", "取る")):
             with self.subTest(ui_values=ui_values), tempfile.TemporaryDirectory() as temp:
