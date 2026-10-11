@@ -481,9 +481,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         deadline=None,
         max_iterations=None,
     ):
-        """保留原始全局 OCR 对中；有重试截止时间时按小段执行并共享剩余尝试预算。"""
+        """保留原始全局 OCR 对中，并在单次 helper 调用中共享截止时间与迭代预算。"""
 
-        def align_once(helper_max_time, helper_raise_if_fail):
+        def align_once(helper_max_time, helper_raise_if_fail, helper_deadline=None, helper_max_iterations=None):
             return self.align_ocr_or_find_target_to_center(
                 self._zip_line_distance_pattern(zip_line),
                 is_num=True,
@@ -495,19 +495,25 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 tolerance=tolerance,
                 max_time=helper_max_time,
                 raise_if_fail=helper_raise_if_fail,
+                deadline=helper_deadline,
+                max_iterations=helper_max_iterations,
             )
 
         if deadline is None and max_iterations is None:
             return align_once(max_time, raise_if_fail)
 
         remaining_iterations = max_time * 2 if max_iterations is None else max(0, int(max_iterations))
-        while remaining_iterations >= 2:
-            if deadline is not None and self.active_time() >= deadline:
-                return self._zip_line_alignment_failed(raise_if_fail)
-            result = align_once(1, False)
-            if result:
-                return result
-            remaining_iterations -= 2
+        if remaining_iterations <= 0 or (deadline is not None and self.active_time() >= deadline):
+            return self._zip_line_alignment_failed(raise_if_fail)
+
+        result = align_once(
+            1,
+            False,
+            helper_deadline=deadline,
+            helper_max_iterations=remaining_iterations,
+        )
+        if result:
+            return result
         return self._zip_line_alignment_failed(raise_if_fail)
 
     def _align_zip_line_distance(
