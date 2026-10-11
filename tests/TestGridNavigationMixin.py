@@ -13,10 +13,15 @@ from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 from src.localization.minimap_position_mixin import MinimapPositionMixin
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta, save_grid
 from src.nav.grid_planner import PlanResult, ZipLineRouteStep
+from src.nav.nav_state import NavState
 from src.nav.route_follower import (
     DONE,
+    FAILED,
     NARROW_CALIBRATE,
     REPLAN,
+    STUCK,
+    TURN,
+    WAIT,
     WALK,
     ZIP_LINE,
     FollowerConfig,
@@ -1470,6 +1475,37 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIn("世界位移=(8.000, 2.500)", line)
         self.assertIn("朝向=91.5", line)
         self.assertIn("校准序号=7", line)
+
+
+class TestGridNavigationStateTable(unittest.TestCase):
+    """状态机的结构约束：每个状态都必须有处理器，动作表必须覆盖跟随器动作。"""
+
+    def test_every_state_has_a_handler(self):
+        from src.tasks.navigation.mixin import grid_navigation_mixin as module
+
+        for state in NavState:
+            with self.subTest(state=state):
+                handler_name = module._GRID_NAV_HANDLERS.get(state)
+                self.assertIsNotNone(handler_name, f"{state} 未登记处理器")
+                self.assertTrue(
+                    callable(getattr(GridNavigationMixin, handler_name, None)),
+                    f"{state} 的处理器 {handler_name} 不存在",
+                )
+
+    def test_action_table_covers_every_follower_action(self):
+        from src.tasks.navigation.mixin import grid_navigation_mixin as module
+
+        for action in (DONE, FAILED, NARROW_CALIBRATE, STUCK, TURN, WAIT, WALK):
+            with self.subTest(action=action):
+                self.assertIn(action, module._GRID_NAV_ACTION_STATES)
+
+    def test_tail_states_are_the_action_states_without_early_returns(self):
+        from src.tasks.navigation.mixin import grid_navigation_mixin as module
+
+        self.assertEqual(
+            module._GRID_NAV_TAIL_STATES,
+            frozenset(module._GRID_NAV_ACTION_STATES.values()) - {NavState.REPLAN, NavState.ZIP_LINE},
+        )
 
 
 if __name__ == "__main__":
