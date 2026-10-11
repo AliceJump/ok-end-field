@@ -258,7 +258,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
         )
 
-        with self.assertRaises(ZipLineReplanRequired):
+        with self.assertRaises(ZipLineReplanRequired) as raised:
             DeliveryTask._wait_zip_line_motion(
                 stub,
                 target_position=(0.0, 0.0),
@@ -267,6 +267,10 @@ class TestFindZipLineBoardButton(unittest.TestCase):
                 near_distance=3.0,
                 stable_seconds=0.3,
             )
+        self.assertEqual(
+            str(raised.exception),
+            "到达了非目标滑索架：WS=(50.00, 50.00)，距起点=56.57m，距目标=70.71m",
+        )
 
     def test_wait_zip_line_motion_replans_when_stopped_without_template(self):
         clock = {"t": 0.0}
@@ -279,7 +283,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
         )
 
-        with self.assertRaises(ZipLineReplanRequired):
+        with self.assertRaises(ZipLineReplanRequired) as raised:
             DeliveryTask._wait_zip_line_motion(
                 stub,
                 target_position=(0.0, 0.0),
@@ -288,6 +292,78 @@ class TestFindZipLineBoardButton(unittest.TestCase):
                 near_distance=3.0,
                 stable_seconds=0.3,
             )
+        self.assertEqual(
+            str(raised.exception),
+            "滑索结束在非目标滑索架：WS=(50.00, 50.00)，距起点=56.57m，距目标=70.71m",
+        )
+
+    def test_wait_zip_line_motion_keeps_waiting_at_target_without_template(self):
+        """停稳在目标附近但到达模板还没出现：继续等模板，既不重试也不重规划。"""
+        events = []
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: False,
+            _zip_line_ws_position=lambda frame=None: (0.5, 0.0),
+            log_info=lambda msg: events.append(msg),
+            log_warning=lambda msg: events.append("WARN " + msg),
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertFalse(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(10.0, 0.0),
+                timeout=1.0,
+                near_distance=3.0,
+                stable_seconds=0.2,
+            )
+        )
+        self.assertFalse(any("准备重试" in message for message in events))
+
+    def test_wait_zip_line_motion_retries_when_stopped_at_start_without_template(self):
+        """模板没出现、WS 又停在起点：属于"未触发"，交给外层重试而不是重规划。"""
+        events = []
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: False,
+            _zip_line_ws_position=lambda frame=None: (10.0, 10.0),
+            log_info=lambda msg: events.append(msg),
+            log_warning=lambda msg: events.append("WARN " + msg),
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertFalse(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(10.0, 10.0),
+                timeout=2.0,
+                near_distance=3.0,
+                stable_seconds=0.2,
+                start_grace_seconds=0.0,
+            )
+        )
+        self.assertTrue(any("WS 已在起点附近停稳但未触发滑索" in message for message in events))
+
+    def test_wait_zip_line_motion_requires_target_position(self):
+        """没有目标坐标时直接失败：不读帧、不轮询、不记录移动日志。"""
+        frames = []
+        stub = SimpleNamespace(
+            active_time=lambda: 0.0,
+            next_frame=lambda: frames.append("frame"),
+            _zip_line_on_rack_visible=lambda frame: True,
+            _zip_line_ws_position=lambda frame=None: (0.0, 0.0),
+            log_info=lambda msg: None,
+            sleep=lambda seconds: None,
+        )
+
+        self.assertFalse(DeliveryTask._wait_zip_line_motion(stub, target_position=None))
+        self.assertEqual(frames, [])
 
     def test_template_match_prefers_visual_feature(self):
         box = _FakeBox()

@@ -223,10 +223,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     ):
         """按目标模板和原始 WS 坐标判断滑索状态。
 
-        - 模板不存在：正在滑索间移动，继续等待。
-        - 模板存在且 WS 到达目标附近：进入下一段。
-        - 模板存在且 WS 仍在起点附近：返回失败，交给外层重试。
-        - 停稳后既不在起点也不在目标附近：到达错误滑索架，重新规划。
+        一次轮询的判定结果：
+
+        - ``MOVING``：模板不存在，正在滑索间移动，继续等待；
+        - ``ARRIVED``：模板存在且 WS 到达目标附近，进入下一段；
+        - ``WAITING_TEMPLATE``：已停稳在目标附近但到达模板还没出现，继续等模板；
+        - ``NOT_TRIGGERED``：已停稳且 WS 仍在起点附近，没触发滑索，返回失败交给外层重试；
+        - ``WRONG_RACK``：停稳后既不在起点也不在目标附近，落到了别的滑索架，重新规划。
 
         调用方负责点击并发送一次 E；本方法只轮询状态，不重复发送按键。
         """
@@ -266,34 +269,28 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 self.log_info(f"已到达下一滑索附近且到达模板存在：WS 距离={target_distance:.2f}m")
                 return True
 
-            if on_rack and self.active_time() - last_position_changed_at >= stable_seconds:
-                if start_distance is not None and start_distance <= threshold:
-                    if self.active_time() - start < start_grace_seconds:
-                        self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
-                        continue
-                    self.log_info(f"到达模板存在且 WS 仍在起点附近：距离={start_distance:.2f}m，准备重试")
-                    return False
-                raise ZipLineReplanRequired(
-                    "到达了非目标滑索架："
-                    f"WS=({current_position[0]:.2f}, {current_position[1]:.2f})，"
-                    f"距起点={start_distance if start_distance is None else round(start_distance, 2)}m，"
-                    f"距目标={target_distance:.2f}m",
-                    current_position=current_position,
-                )
-
             if self.active_time() - last_position_changed_at >= stable_seconds:
-                if target_distance <= threshold:
+                # 已经停稳，按"停在哪、模板在不在"区分。这里原来写成 on_rack 的两个分支，
+                # 两段"停稳后判定"几乎逐字重复，只有模板在时的日志级别与措辞不同。
+                if not on_rack and target_distance <= threshold:
+                    # 停在目标附近但到达模板还没出现：继续等模板，既不算到达也不算失败。
                     self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
                     continue
                 if start_distance is not None and start_distance <= threshold:
+                    # 仍停在起点附近：没触发滑索。刚上索的一小段时间先继续等，避免 WS
+                    # 还没走完一个推送周期就判定失败。
                     if self.active_time() - start < start_grace_seconds:
                         self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
                         continue
-                    self.log_warning("WS 已在起点附近停稳但未触发滑索，准备重试")
+                    if on_rack:
+                        self.log_info(f"到达模板存在且 WS 仍在起点附近：距离={start_distance:.2f}m，准备重试")
+                    else:
+                        self.log_warning("WS 已在起点附近停稳但未触发滑索，准备重试")
                     return False
+                # 停稳后既不在起点也不在目标附近：落到了别的滑索架，必须重新规划。
                 raise ZipLineReplanRequired(
-                    "滑索结束在非目标滑索架："
-                    f"WS=({current_position[0]:.2f}, {current_position[1]:.2f})，"
+                    ("到达了非目标滑索架：" if on_rack else "滑索结束在非目标滑索架：")
+                    + f"WS=({current_position[0]:.2f}, {current_position[1]:.2f})，"
                     f"距起点={start_distance if start_distance is None else round(start_distance, 2)}m，"
                     f"距目标={target_distance:.2f}m",
                     current_position=current_position,
