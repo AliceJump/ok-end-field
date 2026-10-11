@@ -198,7 +198,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             max_time=100,
             raise_if_fail=True,
             deadline=None,
-            max_iterations=None,
+            max_iterations=197,
         )
 
     def test_template_alignment_shares_retry_deadline_and_remaining_attempt_budget(self):
