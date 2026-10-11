@@ -452,7 +452,7 @@ class NavigationMixin(SearchMixin):
             ocr_frame_processor_list: OCR帧处理函数列表(可用于色彩隔离等预处理)
             allow_random_move: False 时未识别到目标不会执行随机视角搜索。
             deadline: 可选的 active_time 绝对截止时间，达到后按原失败语义结束。
-            max_iterations: 可选的底层循环次数上限；默认仍使用 max_time * 2。
+            max_iterations: 可选的底层循环次数上限；传入时覆盖 max_time * 2 的循环预算。
 
         Returns:
             tuple[int,int] | bool: 成功对中返回对中前的目标中心坐标 (x, y)，失败返回 False(当raise_if_fail=False时)
@@ -479,9 +479,7 @@ class NavigationMixin(SearchMixin):
         success = False
         random_move_count = 0
         move_count = 0
-        iteration_limit = max_time * 2
-        if max_iterations is not None:
-            iteration_limit = min(iteration_limit, max(0, int(max_iterations)))
+        iteration_limit = max_time * 2 if max_iterations is None else max(0, int(max_iterations))
         for _ in range(iteration_limit):
             if deadline is not None and self.active_time() >= deadline:
                 break
