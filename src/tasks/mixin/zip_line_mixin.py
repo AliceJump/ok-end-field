@@ -328,7 +328,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     f"accepted_delta={len(candidates) - candidate_count_before}"
                 )
 
-        # 保持候选输出稳定；实际目标选择会在 OCR 前按离屏幕中心的距离重新排序。
+        # 白色候选优先于黄色/金黄色；同色候选优先转动更少、匹配更高的目标。
         candidates.sort(key=lambda item: (0 if item["state"] == "white" else 1, item["radius"], -item["score"]))
         if callable(log_info):
             summary = ", ".join(
@@ -353,16 +353,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return self.box_of_screen(left / self.width, top / self.height, right / self.width, bottom / self.height)
 
     def _find_zip_line_template_target(self, zip_line, frame):
-        """优先检查更靠近屏幕中心的候选，并在局部分色 OCR 漏检时逐级放宽。"""
+        """保持白色候选优先，并在局部分色 OCR 漏检时逐级放宽。"""
         pattern = self._zip_line_distance_pattern(zip_line)
         candidates = self._detect_zip_line_icon_candidates(frame)
-        candidates = sorted(
-            candidates,
-            key=lambda item: (
-                float(item.get("radius", float("inf"))),
-                -float(item.get("score", 0.0)),
-            ),
-        )
         log_info = getattr(self, "log_info", None)
         if callable(log_info):
             log_info(f"[zipline-template] target={zip_line} candidate_count={len(candidates)}")
