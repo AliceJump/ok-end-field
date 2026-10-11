@@ -31,6 +31,7 @@
 from __future__ import annotations
 
 import math
+from enum import StrEnum
 from pathlib import Path
 
 from src.core.global_config_store import get_global_config
@@ -79,6 +80,14 @@ from src.data import map_mark_query, user_map_mark_store
 from src.data.FeatureList import FeatureList as fL
 from src.nav.grid_io import GRID_SUFFIX, DenseGrid, load_grid
 from src.nav.grid_planner import PlanResult
+from src.nav.nav_state import (
+    GridRouteRequest,
+    NavSession,
+    NavState,
+    NavTick,
+    SyncReason,
+    SyncWait,
+)
 from src.nav.route_follower import (
     DONE,
     FAILED,
@@ -147,6 +156,79 @@ __all__ = [
     "CONFIG_GRID_ZOOM",
     "GridNavigationMixin",
 ]
+
+
+#: 状态 → 处理器方法名。每个 :class:`NavState` 都必须在这里登记，主循环按状态取方法；
+#: 新增状态却忘了登记时，``tests.TestGridNavigationMixin`` 里的完备性用例会直接失败。
+_GRID_NAV_HANDLERS: dict[NavState, str] = {
+    NavState.WAIT_POSE: "_grid_nav_state_wait_pose",
+    NavState.WAIT_ANCHOR: "_grid_nav_state_wait_anchor",
+    NavState.WAIT_TRUST: "_grid_nav_state_wait_trust",
+    NavState.WAIT_ODOM: "_grid_nav_state_wait_odom",
+    NavState.CALIBRATE: "_grid_nav_state_calibrate",
+    NavState.WAIT_HEADING: "_grid_nav_state_wait_heading",
+    NavState.PLAN: "_grid_nav_state_plan",
+    NavState.ZIP_LINE_APPROACH: "_grid_nav_state_zip_line_approach",
+    NavState.WAYPOINT_ARRIVED: "_grid_nav_state_waypoint_arrived",
+    NavState.STOP_REACHED: "_grid_nav_state_stop_reached",
+    NavState.REPLAN: "_grid_nav_state_replan",
+    NavState.ZIP_LINE: "_grid_nav_state_zip_line",
+    NavState.DONE: "_grid_nav_state_done",
+    NavState.STUCK: "_grid_nav_state_stuck",
+    NavState.NARROW_CALIBRATE: "_grid_nav_state_narrow_calibrate",
+    NavState.TURN: "_grid_nav_state_turn",
+    NavState.WALK: "_grid_nav_state_walk",
+    NavState.WAIT: "_grid_nav_state_wait",
+    NavState.FAILED: "_grid_nav_state_failed",
+}
+
+#: 跟随器动作 → 状态。只有走过定位闸门之后才会用到，``REPLAN`` 与 ``ZIP_LINE``
+#: 的优先级更高，因此在这里由 :meth:`GridNavigationMixin._grid_nav_action_state`
+#: 先判，再看这张表。
+_GRID_NAV_ACTION_STATES: dict[str, NavState] = {
+    REPLAN: NavState.REPLAN,
+    ZIP_LINE: NavState.ZIP_LINE,
+    DONE: NavState.DONE,
+    STUCK: NavState.STUCK,
+    NARROW_CALIBRATE: NavState.NARROW_CALIBRATE,
+    TURN: NavState.TURN,
+    WALK: NavState.WALK,
+    WAIT: NavState.WAIT,
+    FAILED: NavState.FAILED,
+}
+
+#: 需要先记"目标距离进展"和状态提示的状态：对应旧主循环里"到达航点"分支之后、
+#: 动作分支之前的那段共享代码。滑索接近、重规划、滑索、到达航点都在它之前。
+_GRID_NAV_TAIL_STATES = frozenset(
+    {
+        NavState.DONE,
+        NavState.STUCK,
+        NavState.NARROW_CALIBRATE,
+        NavState.TURN,
+        NavState.WALK,
+        NavState.WAIT,
+        NavState.FAILED,
+    }
+)
+
+
+class StuckRecovery(StrEnum):
+    """卡住脱困的一步动作。"""
+
+    #: 按 ``S`` 后退。
+    BACK = "back"
+    #: 按 ``S`` 加一侧横移，绕开卡住的墙角。
+    BACK_SIDE = "back_side"
+    #: 对准目标后按住 ``W`` 加 ``Space`` 跳过去。
+    AIM_JUMP = "aim_jump"
+
+
+#: 卡住脱困的动作序列：按尝试次数依次使用，尝试次数超出序列长度时重复最后一步。
+_GRID_STUCK_RECOVERY: tuple[StuckRecovery, ...] = (
+    StuckRecovery.BACK,
+    StuckRecovery.BACK_SIDE,
+    StuckRecovery.AIM_JUMP,
+)
 
 
 class GridNavigationMixin(RuntimeStateMixin):
@@ -343,16 +425,28 @@ class GridNavigationMixin(RuntimeStateMixin):
     ) -> bool:
         """规划并执行到世界坐标 ``(x, z)`` 的路线。
 
-        只有融合定位进入最终 ``goal_radius`` 才返回 True。任何退出路径都会松开
-        ``W``。循环内按以下优先级处理：
+        每一拍只做三件事：
 
-        - 坐标未锚定、定位不可信、没有有效里程计样本时停车等待；
-        - 累计移动或到达航点触发周期校准时停车等待静止校准；
-        - 偏航时根据当前位置决定原地校准或返回最近走过的已知格；
-        - 卡住时按后退、侧移、跳跃的顺序脱困；
-        - 其余动作交给 ``GridRouteFollower`` 产生。
+        1. :meth:`_grid_nav_poll` 取这一拍的输入快照（帧、融合定位、朝向质量）；
+        2. :meth:`_grid_nav_advance` 判定状态并执行它 —— 先过定位就绪闸门，再规划，
+           最后把 ``GridRouteFollower`` 的动作映射成状态；
+        3. 处理器返回 ``True``/``False`` 就结束本次导航，返回 ``None`` 就进入下一拍。
+
+        状态表见 :class:`src.nav.nav_state.NavState`，状态到处理器的映射见
+        :data:`_GRID_NAV_HANDLERS`；每拍的会话状态收在
+        :class:`src.nav.nav_state.NavSession` 里，不再散成局部变量。
+
+        只有融合定位进入最终 ``goal_radius``（或 ``stop_distance``）才返回 True。
+        任何退出路径都会松开 ``W`` 并恢复滑索运行模式。
         """
-        goal = (float(goal_xz[0]), float(goal_xz[1]))
+        request = GridRouteRequest(
+            goal=(float(goal_xz[0]), float(goal_xz[1])),
+            map_id=str(map_id or ""),
+            grid_path=grid_path,
+            grid_dir=grid_dir,
+            zoom=zoom,
+            stop_distance=None if stop_distance is None else float(stop_distance),
+        )
         limit = self._grid_cfg_float(CONFIG_GRID_TIMEOUT, 180.0) if timeout is None else float(timeout)
         limit = max(1.0, limit)
         tick = max(0.05, self._grid_cfg_float(CONFIG_GRID_TICK, 0.2))
@@ -360,449 +454,616 @@ class GridNavigationMixin(RuntimeStateMixin):
         if position_service is None:
             return False
         self._refresh_grid_zip_lines()
-        started_at = self.active_time()
-        deadline = started_at + limit
-        best_goal_distance = math.inf
-        recovery_attempts = 0
-        replans = 0
-        had_plan = False
-        current_map = str(map_id or "")
-        next_sync_retry_at = 0.0
-        waypoints_since_calibration = 0
-        recovery_goal: tuple[float, float] | None = None
-        # 本次导航实际走过的已知格。只用于偏航后寻找安全返回点；每次 WS 重锚后
-        # 清空，因为历史坐标可能带着重锚前的定位误差。
-        visited_cells: dict[tuple[int, int], tuple[float, float]] = {}
-        last_sync_seq = 0
-
+        session = NavSession(
+            request=request,
+            deadline=self.active_time() + limit,
+            limit=limit,
+            tick=tick,
+        )
         self._reset_grid_navigation_run_state()
 
         try:
-            while not self._grid_navigation_timed_out(deadline, limit):
-                frame = self.next_frame()
-                state = self.world_pose(
-                    frame=frame,
-                    max_age=self._grid_position_max_age(tick),
-                )
-                if state is None:
-                    self._wait_for_grid_position("等待运行时定位状态")
-                    self.sleep(tick)
-                    continue
-                x = state.get("x")
-                z = state.get("z")
-                actual_map = str(state.get("map_id") or current_map or "")
-                self._log_grid_navigation_debug(state, map_id=actual_map, tag="导航")
-                sync_seq = int(state.get("sync_seq") or 0)
-                if sync_seq != last_sync_seq:
-                    # 真实静校准会整体平移世界坐标，旧的历史格不再是可靠的返回目标。
-                    visited_cells.clear()
-                    last_sync_seq = sync_seq
-                if x is None or z is None:
-                    self._wait_for_grid_position("等待融合坐标锚定")
-                    self.sleep(tick)
-                    continue
-                if not state.get("position_trusted", True):
-                    # 重锚后里程计“有位移样本”不等于绝对坐标可信。必须先停车，
-                    # 等 WS 静校准恢复 position_trusted，再允许重新规划。
-                    self._wait_for_grid_position(f"等待定位重新校准: {state.get('trust_reason') or 'untrusted'}")
-                    if state.get("rest") and self.active_time() >= next_sync_retry_at:
-                        synced = self._wait_for_minimap_sync(
-                            sync_seq,
-                            deadline,
-                            tick,
-                        )
-                        if self._grid_navigation_timed_out(deadline, limit):
-                            return False
-                        if not synced:
-                            next_sync_retry_at = self.active_time() + 30.0
-                    self.sleep(tick)
-                    continue
-                if not state.get("odom_ok"):
-                    self._wait_for_grid_position(f"等待有效位移样本: {state.get('odom_reason')}")
-                    self.sleep(tick)
-                    continue
-                if state.get("sync_needed") and self.active_time() >= next_sync_retry_at:
-                    synced = self._wait_for_minimap_sync(
-                        int(state.get("sync_seq") or 0),
-                        deadline,
-                        tick,
-                    )
-                    if self._grid_navigation_timed_out(deadline, limit):
-                        return False
-                    if synced:
-                        waypoints_since_calibration = 0
-                    if not synced:
-                        next_sync_retry_at = self.active_time() + 30.0
-                    continue
-                heading = state.get("heading")
-                heading_score = state.get("heading_score")
-                min_score = self._grid_heading_min_score()
-                if heading_score is None or float(heading_score) < min_score:
-                    heading = None
-                if heading is None:
-                    self._wait_for_grid_position(f"等待可靠朝向: score={heading_score}")
-                    self.sleep(tick)
-                    continue
-                if stop_distance is not None:
-                    distance_to_goal = math.hypot(
-                        float(x) - goal[0],
-                        float(z) - goal[1],
-                    )
-                    if distance_to_goal <= max(0.0, float(stop_distance)):
-                        self._set_grid_walking(False)
-                        self.log_info(f"进入终点接近范围（距目标 {distance_to_goal:.2f}m），停止网格导航")
-                        return True
-
-                if self._grid_nav_follower is None or actual_map != self._grid_nav_map_id:
-                    map_changed = self._grid_nav_follower is not None and actual_map != self._grid_nav_map_id
-                    if had_plan:
-                        if replans >= self._grid_cfg_int(CONFIG_GRID_MAX_REPLANS, 8):
-                            self.log_warning("导航重规划次数已达上限", notify=True)
-                            return False
-                        replans += 1
-                    if map_changed:
-                        self.log_info(f"地图已切换 {self._grid_nav_map_id!r} -> {actual_map!r}，重新规划")
-                        visited_cells.clear()
-                        recovery_goal = None
-                    route_goal = recovery_goal if recovery_goal is not None else goal
-                    route_start = self._resolve_grid_replan_start(
-                        actual_map,
-                        (float(x), float(z)),
-                    )
-                    follower, result = self._create_grid_route(
-                        route_start,
-                        route_goal,
-                        map_id=actual_map,
-                        grid_path=grid_path,
-                        grid_dir=grid_dir,
-                        zoom=zoom,
-                        time_budget_s=max(0.0, deadline - self.active_time()),
-                        required_zip_line_start_id=self._grid_nav_skip_board_node_id,
-                    )
-                    had_plan = True
-                    if self._grid_navigation_timed_out(deadline, limit):
-                        return False
-                    if follower is None or not result.ok:
-                        self._log_grid_plan_failure(result, "导航规划失败")
-                        return False
-                    self._grid_nav_follower = follower
-                    self._record_grid_visited_cell(
-                        follower,
-                        (float(x), float(z)),
-                        visited_cells,
-                    )
-                    self._grid_nav_map_id = actual_map
-                    self._log_grid_plan(result)
-
-                self._record_grid_visited_cell(
-                    self._grid_nav_follower,
-                    (float(x), float(z)),
-                    visited_cells,
-                )
-                step = self._grid_nav_follower.update(
-                    (float(x), float(z)),
-                    float(heading),
-                    self.active_time(),
-                )
-                if step.skipped_waypoints:
-                    skipped = ", ".join(str(index + 1) for index in step.skipped_waypoints)
-                    self.log_info(
-                        f"路径点捷径：当前位置距下一段 {step.shortcut_distance:.2f}m，"
-                        f"跳过航点 {skipped}，直接前往航点 {step.waypoint_index + 1}"
-                    )
-                current_zip_step_getter = getattr(
-                    self._grid_nav_follower,
-                    "_current_zip_line_step",
-                    None,
-                )
-                pending_zip_step = current_zip_step_getter() if callable(current_zip_step_getter) else None
-                if pending_zip_step is not None:
-                    zip_entry_id = str(pending_zip_step.step.entry.node_id)
-                    zip_entry_distance = self._grid_zip_line_entry_distance(
-                        pending_zip_step,
-                        (float(x), float(z)),
-                    )
-                    approach_active = self._grid_nav_zip_line_approach_entry_id == zip_entry_id
-                    skip_board = self._grid_nav_skip_board_node_id == zip_entry_id
-                    if approach_active and zip_entry_distance > GRID_ZIP_LINE_APPROACH_DISTANCE_M:
-                        self._grid_nav_zip_line_approach_entry_id = None
-                        self._grid_nav_zip_line_approach_started_at = None
-                        approach_active = False
-                    if (
-                        not skip_board
-                        and step.action in (WALK, TURN, WAIT, ZIP_LINE)
-                        and (zip_entry_distance <= GRID_ZIP_LINE_APPROACH_DISTANCE_M or approach_active)
-                    ):
-                        approach_result = self._approach_grid_zip_line_for_boarding(
-                            route_step=pending_zip_step,
-                            frame=frame,
-                            min_score=min_score,
-                            deadline=deadline,
-                            tick=tick,
-                        )
-                        if approach_result is True:
-                            self._set_grid_walking(False)
-                            zip_result = self._handle_grid_zip_line_route_step(
-                                pending_zip_step,
-                                already_on_rack=True,
-                            )
-                            if zip_result == "failed":
-                                return False
-                            if zip_result == "replan":
-                                recovery_goal = None
-                            else:
-                                waypoints_since_calibration += 1
-                            if self._grid_navigation_timed_out(deadline, limit):
-                                return False
-                            continue
-                        if approach_result is False:
-                            return False
-                        self.sleep(tick)
-                        continue
-                if step.action == REPLAN:
-                    self._set_grid_walking(False)
-                    self._grid_nav_follower.pause()
-                    self.log_warning(f"路径偏离，重新规划：{step.reason}")
-                    current_known = self._grid_position_is_known(
-                        self._grid_nav_follower,
-                        (float(x), float(z)),
-                    )
-                    recovery_target = None
-                    if not current_known:
-                        recovery_target = self._nearest_visited_grid_cell(
-                            (float(x), float(z)),
-                            visited_cells,
-                        )
-                    self._grid_nav_follower = None
-                    if current_known:
-                        # 人仍站在已知 free 格：优先原地静止校准，消除定位偏差后
-                        # 再从可信位置重新规划。
-                        recovery_goal = None
-                        synced = self._wait_for_minimap_sync(
-                            int(state.get("sync_seq") or 0),
-                            deadline,
-                            tick,
-                        )
-                        if self._grid_navigation_timed_out(deadline, limit):
-                            return False
-                        if not synced:
-                            self.log_warning("偏航后的静止校准未完成，继续重规划")
-                    elif recovery_target is not None:
-                        # 已偏离已知区域：先回到本次实际走过的格，不能直接相信
-                        # 当前坐标去规划一条可能穿墙的新路线。
-                        recovery_goal = recovery_target
-                        self.log_info("当前位置不在已知 free 格，先导航回最近走过的已知格再校准")
-                    else:
-                        recovery_goal = None
-                        self.log_warning("当前位置不在已知 free 格，但没有已走过的已知格可返回；先原地校准后重新规划")
-                        synced = self._wait_for_minimap_sync(
-                            int(state.get("sync_seq") or 0),
-                            deadline,
-                            tick,
-                        )
-                        if self._grid_navigation_timed_out(deadline, limit):
-                            return False
-                        if not synced:
-                            self.log_warning("偏航后的静止校准未完成，继续重规划")
-                    if self._grid_navigation_timed_out(deadline, limit):
-                        return False
-                    continue
-                if step.action == ZIP_LINE:
-                    self._set_grid_walking(False)
-                    route_entry_id = step.zip_line_step.step.entry.node_id
-                    skip_board = self._grid_nav_skip_board_node_id == route_entry_id
-                    self._grid_nav_skip_board_node_id = None
-                    zip_result = self._handle_grid_zip_line_route_step(
-                        step.zip_line_step,
-                        already_on_rack=skip_board,
-                    )
-                    if zip_result == "failed":
-                        return False
-                    if zip_result == "replan":
-                        recovery_goal = None
-                    else:
-                        waypoints_since_calibration += 1
-                    if self._grid_navigation_timed_out(deadline, limit):
-                        return False
-                    continue
-                if step.arrived_waypoint_index is not None:
-                    waypoints_since_calibration += 1
-                    calibration_interval = max(
-                        0,
-                        self._grid_cfg_int(CONFIG_GRID_CALIBRATION_WAYPOINTS, 5),
-                    )
-                    if calibration_interval > 0 and waypoints_since_calibration >= calibration_interval:
-                        # 航点间隔校准是主动停车点；WS 周期约 5 秒，等待函数会
-                        # 在停车期间持续采样，直到完成真实重锚或确认已对齐。
-                        synced = self._wait_for_minimap_sync(
-                            int(state.get("sync_seq") or 0),
-                            deadline,
-                            tick,
-                        )
-                        if self._grid_navigation_timed_out(deadline, limit):
-                            return False
-                        waypoints_since_calibration = 0
-                        if not synced:
-                            self.log_warning("到达航点后的静止校准未完成，继续导航")
-                    self.log_info(
-                        f"到达航点 {step.arrived_waypoint_index + 1}/"
-                        f"{step.waypoint_count}，累计未校准航点={waypoints_since_calibration}"
-                    )
-                    continue
-                if step.distance_to_goal is not None:
-                    if step.distance_to_goal + 0.5 < best_goal_distance:
-                        best_goal_distance = step.distance_to_goal
-                        replans = 0
-                        recovery_attempts = 0
-                    info_key = (
-                        step.action,
-                        step.waypoint_index,
-                        round(step.distance_to_goal, 0),
-                    )
-                    now = self.active_time()
-                    if info_key != self._grid_nav_last_info_key or now - self._grid_nav_last_info_at >= 5.0:
-                        self.info_set(
-                            "网格导航",
-                            f"{step.action} | 目标距离={step.distance_to_goal:.2f}m | "
-                            f"航点={step.waypoint_index + 1}/{step.waypoint_count}",
-                        )
-                        self._grid_nav_last_info_key = info_key
-                        self._grid_nav_last_info_at = now
-
-                if step.action == DONE:
-                    self._set_grid_walking(False)
-                    if recovery_goal is not None:
-                        synced = self._wait_for_minimap_sync(
-                            int(state.get("sync_seq") or 0),
-                            deadline,
-                            tick,
-                        )
-                        if self._grid_navigation_timed_out(deadline, limit):
-                            return False
-                        recovery_goal = None
-                        self._grid_nav_follower = None
-                        if synced:
-                            self.log_info("已返回最近走过的已知格并完成校准，继续原目标")
-                        else:
-                            self.log_warning("返回已知格后校准未完成，继续原目标")
-                        continue
-                    distance_text = f"{step.distance_to_goal:.2f}m" if step.distance_to_goal is not None else "未知"
-                    self.log_info(f"已到达目标（距目标 {distance_text}）", notify=True)
-                    return True
-                if step.action == STUCK:
-                    self._set_grid_walking(False)
-                    if recovery_attempts >= self._grid_cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3):
-                        self.log_warning(f"导航卡住: {step.reason}", notify=True)
-                        return False
-                    recovery_attempts += 1
-                    self.log_warning(
-                        f"导航卡住，尝试脱困 {recovery_attempts}/"
-                        f"{self._grid_cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3)}：{step.reason}"
-                    )
-                    self._recover_grid_stuck(
-                        position=(float(x), float(z)),
-                        heading=float(heading),
-                        target_bearing=step.target_bearing,
-                        frame=frame,
-                        attempt=recovery_attempts,
-                        deadline=deadline,
-                    )
-                    if self._grid_navigation_timed_out(deadline, limit):
-                        return False
-                    self._grid_nav_follower = None
-                    continue
-                if step.action == NARROW_CALIBRATE:
-                    # 一格宽通路：进入前先停车等一次静止校准，消除累积定位误差，
-                    # 校准后对准入口航点再走，避免带着偏差蹭墙。
-                    self._set_grid_walking(False)
-                    self.info_set("网格导航", "窄道入口停车校准")
-                    synced = self._wait_for_minimap_sync(
-                        int(state.get("sync_seq") or 0),
-                        deadline,
-                        tick,
-                    )
-                    if self._grid_navigation_timed_out(deadline, limit):
-                        return False
-                    aligned_ok = True
-                    entry_bearing = step.target_bearing
-                    if entry_bearing is not None:
-                        aligned = self.pose_turn_to_bearing(
-                            entry_bearing,
-                            tolerance=self._grid_turn_tolerance(),
-                            max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
-                            frame=frame,
-                            min_score=min_score,
-                        )
-                        aligned_ok = bool(aligned.get("ok"))
-                        if not aligned_ok:
-                            self.log_warning(
-                                f"窄道入口对准未到位：目标={entry_bearing:.1f}°，"
-                                f"实测={aligned.get('heading')}，误差={aligned.get('error')}"
-                            )
-                    follower = self._grid_nav_follower
-                    if synced and aligned_ok:
-                        if follower is not None:
-                            follower.confirm_narrow_calibration()
-                        self.log_info("窄道入口前已完成静止校准并对准航点")
-                        continue
-                    # 校准或对准任一没成功都不标记已校准，下一拍重新走完整个流程，
-                    # 避免带着偏差进窄道；连续失败到上限才放弃，防止卡死。
-                    attempts = follower.narrow_calibration_failed() if follower is not None else 0
-                    if attempts >= GRID_NARROW_CALIBRATION_MAX_ATTEMPTS:
-                        if follower is not None:
-                            follower.confirm_narrow_calibration()
-                        self.log_warning(
-                            f"窄道入口校准/对准连续 {attempts} 次未成功，按当前状态继续",
-                            notify=True,
-                        )
-                    else:
-                        reason = "静止校准未完成" if not synced else "对准未到位"
-                        self.log_warning(f"窄道入口{reason}，将重新校准（第 {attempts} 次）")
-                    continue
-                if step.action == TURN:
-                    if self._grid_cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True) and not self._should_turn_grid_in_place(
-                        step
-                    ):
-                        self._turn_grid_while_moving(step)
-                    else:
-                        self._set_grid_walking(False)
-                        turn = self.pose_turn_to_bearing(
-                            step.target_bearing,
-                            tolerance=self._grid_turn_tolerance(),
-                            max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
-                            frame=frame,
-                            min_score=min_score,
-                        )
-                        if not turn.get("ok"):
-                            self.log_warning(
-                                f"转向未到位：目标={step.target_bearing:.1f}°，"
-                                f"实测={turn.get('heading')}，误差={turn.get('error')}"
-                            )
-                    if self._grid_navigation_timed_out(deadline, limit):
-                        return False
-                    self.sleep(tick)
-                    continue
-                if step.action == WALK:
-                    if self._grid_nav_skip_board_node_id is not None:
-                        # A* 已选择从当前滑索架下索步行；若之后再次进入滑索，
-                        # 必须重新执行登索，不能沿用本次“已在上索点”的状态。
-                        self._grid_nav_skip_board_node_id = None
-                        self.log_info("已从滑索架下索步行，后续滑索将重新登索")
-                    self._set_grid_walking(True)
-                    self._maybe_start_grid_sprint(step)
-                elif step.action == WAIT:
-                    self._set_grid_walking(False)
-                elif step.action == FAILED:
-                    self._set_grid_walking(False)
-                    self.log_warning(f"导航执行失败: {step.reason}", notify=True)
-                    return False
-
-                self.sleep(tick)
-
+            while not self._grid_navigation_timed_out(session.deadline, session.limit):
+                ctx = self._grid_nav_poll(session)
+                outcome = self._grid_nav_advance(ctx)
+                if outcome is not None:
+                    return outcome
             return False
         finally:
             self._set_grid_walking(False)
             self._restore_grid_zip_line_run_mode()
+
+    # ------------------------------------------------------------------ #
+    # 状态机：取快照、判定、派发
+    # ------------------------------------------------------------------ #
+    def _grid_nav_poll(self, session: NavSession) -> NavTick:
+        """取这一拍的输入快照：帧、定位、朝向，以及重锚带来的历史格失效。
+
+        顺序与旧主循环一致：定位缺失时不记调试日志、也不读坐标；有定位时先记调试
+        日志，再按校准序号决定要不要清空走过的已知格。朝向质量阈值留到
+        :meth:`_grid_nav_classify` 里判，因为这属于"能不能走"的闸门。
+        """
+        frame = self.next_frame()
+        pose = self.world_pose(
+            frame=frame,
+            max_age=self._grid_position_max_age(session.tick),
+        )
+        if pose is None:
+            return NavTick(
+                session=session,
+                frame=frame,
+                pose=None,
+                x=None,
+                z=None,
+                map_id=session.request.map_id,
+                sync_seq=session.last_sync_seq,
+                heading=None,
+                heading_score=None,
+            )
+        map_id = str(pose.get("map_id") or session.request.map_id or "")
+        self._log_grid_navigation_debug(pose, map_id=map_id, tag="导航")
+        sync_seq = int(pose.get("sync_seq") or 0)
+        session.note_sync(sync_seq)
+        return NavTick(
+            session=session,
+            frame=frame,
+            pose=pose,
+            x=pose.get("x"),
+            z=pose.get("z"),
+            map_id=map_id,
+            sync_seq=sync_seq,
+            heading=pose.get("heading"),
+            heading_score=pose.get("heading_score"),
+        )
+
+    def _grid_nav_advance(self, ctx: NavTick) -> bool | None:
+        """判定并执行这一拍：定位闸门优先，其次规划，最后路线跟随。
+
+        返回 ``True``/``False`` 表示本次导航结束，``None`` 表示继续下一拍。
+        """
+        gate = self._grid_nav_classify(ctx)
+        if gate is not None:
+            return self._grid_nav_state_call(gate, ctx)
+        return self._grid_nav_follow(ctx)
+
+    def _grid_nav_classify(self, ctx: NavTick) -> NavState | None:
+        """定位就绪闸门：按固定优先级返回这一拍应当先处理的状态。
+
+        返回 ``None`` 表示位置与朝向都可用，可以进入规划与跟随阶段。判定顺序与旧主
+        循环的 if 链逐条对应：无定位 -> 未锚定 -> 不可信 -> 无位移样本 -> 需校准
+        -> 朝向不可用 -> 已进入终点接近范围。
+        """
+        session = ctx.session
+        if ctx.pose is None:
+            return NavState.WAIT_POSE
+        if ctx.x is None or ctx.z is None:
+            return NavState.WAIT_ANCHOR
+        if not ctx.pose.get("position_trusted", True):
+            return NavState.WAIT_TRUST
+        if not ctx.pose.get("odom_ok"):
+            return NavState.WAIT_ODOM
+        if ctx.pose.get("sync_needed") and self.active_time() >= session.next_sync_retry_at:
+            return NavState.CALIBRATE
+        ctx.min_score = self._grid_heading_min_score()
+        if ctx.heading_score is None or float(ctx.heading_score) < ctx.min_score:
+            ctx.heading = None
+        if ctx.heading is None:
+            return NavState.WAIT_HEADING
+        if session.stop_distance is not None:
+            distance_to_goal = math.hypot(
+                float(ctx.x) - session.goal[0],
+                float(ctx.z) - session.goal[1],
+            )
+            if distance_to_goal <= max(0.0, float(session.stop_distance)):
+                return NavState.STOP_REACHED
+        return None
+
+    def _grid_nav_follow(self, ctx: NavTick) -> bool | None:
+        """跟随阶段：没有可用路线就先规划，否则取跟随器动作并派发。"""
+        if self._grid_nav_follower is None or ctx.map_id != self._grid_nav_map_id:
+            return self._grid_nav_state_call(NavState.PLAN, ctx)
+        return self._grid_nav_run_follow(ctx)
+
+    def _grid_nav_run_follow(self, ctx: NavTick) -> bool | None:
+        """记录走过的已知格、取跟随器动作，然后派发到对应状态。
+
+        旧主循环在这一步之后先处理滑索接近，再按动作分支；这里保留同样的顺序。
+        """
+        session = ctx.session
+        self._record_grid_visited_cell(
+            self._grid_nav_follower,
+            ctx.position,
+            session.visited_cells,
+        )
+        ctx.step = self._grid_nav_follower.update(
+            ctx.position,
+            float(ctx.heading),
+            self.active_time(),
+        )
+        if ctx.step.skipped_waypoints:
+            skipped = ", ".join(str(index + 1) for index in ctx.step.skipped_waypoints)
+            self.log_info(
+                f"路径点捷径：当前位置距下一段 {ctx.step.shortcut_distance:.2f}m，"
+                f"跳过航点 {skipped}，直接前往航点 {ctx.step.waypoint_index + 1}"
+            )
+        ctx.pending_zip_step = self._grid_nav_pending_zip_step()
+        if ctx.pending_zip_step is not None:
+            return self._grid_nav_state_call(NavState.ZIP_LINE_APPROACH, ctx)
+        return self._grid_nav_run_action(ctx)
+
+    def _grid_nav_run_action(self, ctx: NavTick) -> bool | None:
+        """普通动作派发：把跟随器动作映射成状态，先记进展再执行。"""
+        state = self._grid_nav_action_state(ctx)
+        if state in _GRID_NAV_TAIL_STATES:
+            self._grid_nav_note_step(ctx)
+        return self._grid_nav_state_call(state, ctx)
+
+    def _grid_nav_action_state(self, ctx: NavTick) -> NavState:
+        """动作 → 状态的优先级映射，顺序与旧主循环的 if 链一致。"""
+        step = ctx.step
+        if step.action == REPLAN:
+            return NavState.REPLAN
+        if step.action == ZIP_LINE:
+            return NavState.ZIP_LINE
+        if step.arrived_waypoint_index is not None:
+            return NavState.WAYPOINT_ARRIVED
+        return _GRID_NAV_ACTION_STATES.get(step.action, NavState.FAILED)
+
+    def _grid_nav_state_call(self, state: NavState, ctx: NavTick) -> bool | None:
+        """执行状态处理器；返回值直接作为主循环的终止结果。"""
+        return getattr(self, _GRID_NAV_HANDLERS[state])(ctx)
+
+    def _grid_nav_sync(self, ctx: NavTick, reason: SyncReason) -> SyncWait:
+        """停车等一次静止校准，并判定本次导航是否已经超时。
+
+        六个状态、七个调用点原来各自重复同样三件事：传同一组参数调
+        :meth:`_wait_for_minimap_sync`、检查导航超时、再决定失败退避。集中到这里后
+        调用点只关心 ``wait.synced`` 与 ``wait.timed_out``，"为什么校准"由 ``reason``
+        一路带进状态提示和超时告警。
+        """
+        synced = self._wait_for_minimap_sync(
+            ctx.sync_seq,
+            ctx.deadline,
+            ctx.tick,
+            reason=reason.label,
+        )
+        return SyncWait(
+            synced=synced,
+            timed_out=self._grid_navigation_timed_out(ctx.deadline, ctx.limit),
+        )
+
+    def _grid_nav_pending_zip_step(self):
+        """跟随器当前待执行的滑索段；跟随器没有这个能力时返回 None。"""
+        current_step_getter = getattr(
+            self._grid_nav_follower,
+            "_current_zip_line_step",
+            None,
+        )
+        return current_step_getter() if callable(current_step_getter) else None
+
+    def _grid_nav_note_step(self, ctx: NavTick) -> None:
+        """记录目标距离刷新的进展，并按 5 秒节流更新状态提示。"""
+        session = ctx.session
+        step = ctx.step
+        if step.distance_to_goal is None:
+            return
+        session.note_progress(step.distance_to_goal)
+        info_key = (
+            step.action,
+            step.waypoint_index,
+            round(step.distance_to_goal, 0),
+        )
+        now = self.active_time()
+        if info_key != self._grid_nav_last_info_key or now - self._grid_nav_last_info_at >= 5.0:
+            self.info_set(
+                "网格导航",
+                f"{step.action} | 目标距离={step.distance_to_goal:.2f}m | "
+                f"航点={step.waypoint_index + 1}/{step.waypoint_count}",
+            )
+            self._grid_nav_last_info_key = info_key
+            self._grid_nav_last_info_at = now
+
+    # ------------------------------------------------------------------ #
+    # 状态处理器：定位就绪闸门
+    # ------------------------------------------------------------------ #
+    def _grid_nav_state_wait_pose(self, ctx: NavTick) -> bool | None:
+        """还没有运行时定位状态：停车等下一拍。"""
+        self._wait_for_grid_position("等待运行时定位状态")
+        self.sleep(ctx.tick)
+        return None
+
+    def _grid_nav_state_wait_anchor(self, ctx: NavTick) -> bool | None:
+        """融合坐标尚未锚定：停车等下一拍。"""
+        self._wait_for_grid_position("等待融合坐标锚定")
+        self.sleep(ctx.tick)
+        return None
+
+    def _grid_nav_state_wait_trust(self, ctx: NavTick) -> bool | None:
+        """重锚后绝对坐标不可信：停车，并在静止时请求一次静态校准。
+
+        里程计"有位移样本"不等于绝对坐标可信。必须先停车等 WS 静校准恢复
+        ``position_trusted``，再允许重新规划；校准失败退避 30 秒。
+        """
+        session = ctx.session
+        self._wait_for_grid_position(f"等待定位重新校准: {ctx.pose.get('trust_reason') or 'untrusted'}")
+        if ctx.pose.get("rest") and self.active_time() >= session.next_sync_retry_at:
+            wait = self._grid_nav_sync(ctx, SyncReason.TRUST)
+            if wait.timed_out:
+                return False
+            if not wait.synced:
+                session.next_sync_retry_at = self.active_time() + 30.0
+        self.sleep(ctx.tick)
+        return None
+
+    def _grid_nav_state_wait_odom(self, ctx: NavTick) -> bool | None:
+        """这一拍没有有效位移样本：停车等下一拍。"""
+        self._wait_for_grid_position(f"等待有效位移样本: {ctx.pose.get('odom_reason')}")
+        self.sleep(ctx.tick)
+        return None
+
+    def _grid_nav_state_calibrate(self, ctx: NavTick) -> bool | None:
+        """定位服务请求静态校准：停车等一次真实重锚。
+
+        这是主动停车点；校准失败同样退避 30 秒，避免每拍都请求一次。
+        """
+        session = ctx.session
+        wait = self._grid_nav_sync(ctx, SyncReason.SYNC_NEEDED)
+        if wait.timed_out:
+            return False
+        if wait.synced:
+            session.waypoints_since_calibration = 0
+        if not wait.synced:
+            session.next_sync_retry_at = self.active_time() + 30.0
+        return None
+
+    def _grid_nav_state_wait_heading(self, ctx: NavTick) -> bool | None:
+        """朝向不可用或质量不足：停车等下一拍。"""
+        self._wait_for_grid_position(f"等待可靠朝向: score={ctx.heading_score}")
+        self.sleep(ctx.tick)
+        return None
+
+    def _grid_nav_state_stop_reached(self, ctx: NavTick) -> bool | None:
+        """已进入终点接近范围：停车并按成功结束本次导航。"""
+        session = ctx.session
+        distance_to_goal = math.hypot(
+            float(ctx.x) - session.goal[0],
+            float(ctx.z) - session.goal[1],
+        )
+        self._set_grid_walking(False)
+        self.log_info(f"进入终点接近范围（距目标 {distance_to_goal:.2f}m），停止网格导航")
+        return True
+
+    # ------------------------------------------------------------------ #
+    # 状态处理器：路线与执行
+    # ------------------------------------------------------------------ #
+    def _grid_nav_state_plan(self, ctx: NavTick) -> bool | None:
+        """规划路线（首次、换图或偏航后重规划），成功后同一拍继续跟随。"""
+        session = ctx.session
+        map_changed = self._grid_nav_follower is not None and ctx.map_id != self._grid_nav_map_id
+        if session.had_plan:
+            if session.replans >= self._grid_cfg_int(CONFIG_GRID_MAX_REPLANS, 8):
+                self.log_warning("导航重规划次数已达上限", notify=True)
+                return False
+            session.replans += 1
+        if map_changed:
+            self.log_info(f"地图已切换 {self._grid_nav_map_id!r} -> {ctx.map_id!r}，重新规划")
+            session.visited_cells.clear()
+            session.recovery_goal = None
+        route_goal = session.recovery_goal if session.recovery_goal is not None else session.goal
+        route_start = self._resolve_grid_replan_start(
+            ctx.map_id,
+            ctx.position,
+        )
+        follower, result = self._create_grid_route(
+            route_start,
+            route_goal,
+            map_id=ctx.map_id,
+            grid_path=session.request.grid_path,
+            grid_dir=session.request.grid_dir,
+            zoom=session.request.zoom,
+            time_budget_s=max(0.0, session.deadline - self.active_time()),
+            required_zip_line_start_id=self._grid_nav_skip_board_node_id,
+        )
+        session.had_plan = True
+        if self._grid_navigation_timed_out(session.deadline, session.limit):
+            return False
+        if follower is None or not result.ok:
+            self._log_grid_plan_failure(result, "导航规划失败")
+            return False
+        self._grid_nav_follower = follower
+        self._record_grid_visited_cell(
+            follower,
+            ctx.position,
+            session.visited_cells,
+        )
+        self._grid_nav_map_id = ctx.map_id
+        self._log_grid_plan(result)
+        # 旧主循环规划成功后不换拍：同一拍接着取跟随器动作并派发。
+        return self._grid_nav_run_follow(ctx)
+
+    def _grid_nav_state_zip_line_approach(self, ctx: NavTick) -> bool | None:
+        """走向滑索入口：先接近到入口再登索，然后交给滑索执行。
+
+        与旧主循环一致：已经明确要从滑索架下索步行、动作不是行走/转向/等待/滑索、
+        或还没接近到入口时，直接落回普通动作派发。
+        """
+        session = ctx.session
+        step = ctx.step
+        route_step = ctx.pending_zip_step
+        zip_entry_id = str(route_step.step.entry.node_id)
+        zip_entry_distance = self._grid_zip_line_entry_distance(
+            route_step,
+            ctx.position,
+        )
+        approach_active = self._grid_nav_zip_line_approach_entry_id == zip_entry_id
+        skip_board = self._grid_nav_skip_board_node_id == zip_entry_id
+        if approach_active and zip_entry_distance > GRID_ZIP_LINE_APPROACH_DISTANCE_M:
+            self._grid_nav_zip_line_approach_entry_id = None
+            self._grid_nav_zip_line_approach_started_at = None
+            approach_active = False
+        if (
+            not skip_board
+            and step.action in (WALK, TURN, WAIT, ZIP_LINE)
+            and (zip_entry_distance <= GRID_ZIP_LINE_APPROACH_DISTANCE_M or approach_active)
+        ):
+            approach_result = self._approach_grid_zip_line_for_boarding(
+                route_step=route_step,
+                frame=ctx.frame,
+                min_score=ctx.min_score,
+                deadline=session.deadline,
+                tick=session.tick,
+            )
+            if approach_result is True:
+                self._set_grid_walking(False)
+                zip_result = self._handle_grid_zip_line_route_step(
+                    route_step,
+                    already_on_rack=True,
+                )
+                if zip_result == "failed":
+                    return False
+                if zip_result == "replan":
+                    session.recovery_goal = None
+                else:
+                    session.note_waypoint_arrival()
+                if self._grid_navigation_timed_out(session.deadline, session.limit):
+                    return False
+                return None
+            if approach_result is False:
+                return False
+            self.sleep(session.tick)
+            return None
+        return self._grid_nav_run_action(ctx)
+
+    def _grid_nav_state_waypoint_arrived(self, ctx: NavTick) -> bool | None:
+        """到达一个航点：累计未校准航点数，必要时主动停车校准。"""
+        session = ctx.session
+        step = ctx.step
+        arrived = session.note_waypoint_arrival()
+        calibration_interval = max(
+            0,
+            self._grid_cfg_int(CONFIG_GRID_CALIBRATION_WAYPOINTS, 5),
+        )
+        if calibration_interval > 0 and arrived >= calibration_interval:
+            # 航点间隔校准是主动停车点；WS 周期约 5 秒，等待函数会在
+            # 停车期间持续采样，直到完成真实重锚或确认已对齐。
+            wait = self._grid_nav_sync(ctx, SyncReason.WAYPOINT_INTERVAL)
+            if wait.timed_out:
+                return False
+            session.waypoints_since_calibration = 0
+            if not wait.synced:
+                self.log_warning("到达航点后的静止校准未完成，继续导航")
+        self.log_info(
+            f"到达航点 {step.arrived_waypoint_index + 1}/"
+            f"{step.waypoint_count}，累计未校准航点={session.waypoints_since_calibration}"
+        )
+        return None
+
+    def _grid_nav_state_replan(self, ctx: NavTick) -> bool | None:
+        """偏航或路径失效：停车，按需校准或回退，然后重新规划。"""
+        session = ctx.session
+        step = ctx.step
+        self._set_grid_walking(False)
+        self._grid_nav_follower.pause()
+        self.log_warning(f"路径偏离，重新规划：{step.reason}")
+        current_known = self._grid_position_is_known(
+            self._grid_nav_follower,
+            ctx.position,
+        )
+        recovery_target = None
+        if not current_known:
+            recovery_target = self._nearest_visited_grid_cell(
+                ctx.position,
+                session.visited_cells,
+            )
+        self._grid_nav_follower = None
+        if current_known:
+            # 人仍站在已知 free 格：优先原地静止校准，消除定位偏差后
+            # 再从可信位置重新规划。
+            session.recovery_goal = None
+            wait = self._grid_nav_sync(ctx, SyncReason.OFF_ROUTE)
+            if wait.timed_out:
+                return False
+            if not wait.synced:
+                self.log_warning("偏航后的静止校准未完成，继续重规划")
+        elif recovery_target is not None:
+            # 已偏离已知区域：先回到本次实际走过的格，不能直接相信
+            # 当前坐标去规划一条可能穿墙的新路线。
+            session.recovery_goal = recovery_target
+            self.log_info("当前位置不在已知 free 格，先导航回最近走过的已知格再校准")
+        else:
+            session.recovery_goal = None
+            self.log_warning("当前位置不在已知 free 格，但没有已走过的已知格可返回；先原地校准后重新规划")
+            wait = self._grid_nav_sync(ctx, SyncReason.OFF_ROUTE)
+            if wait.timed_out:
+                return False
+            if not wait.synced:
+                self.log_warning("偏航后的静止校准未完成，继续重规划")
+        if self._grid_navigation_timed_out(session.deadline, session.limit):
+            return False
+        return None
+
+    def _grid_nav_state_zip_line(self, ctx: NavTick) -> bool | None:
+        """执行规划出的滑索段。"""
+        session = ctx.session
+        step = ctx.step
+        self._set_grid_walking(False)
+        route_entry_id = step.zip_line_step.step.entry.node_id
+        skip_board = self._grid_nav_skip_board_node_id == route_entry_id
+        self._grid_nav_skip_board_node_id = None
+        zip_result = self._handle_grid_zip_line_route_step(
+            step.zip_line_step,
+            already_on_rack=skip_board,
+        )
+        if zip_result == "failed":
+            return False
+        if zip_result == "replan":
+            session.recovery_goal = None
+        else:
+            session.note_waypoint_arrival()
+        if self._grid_navigation_timed_out(session.deadline, session.limit):
+            return False
+        return None
+
+    def _grid_nav_state_done(self, ctx: NavTick) -> bool | None:
+        """跟随器报告到达：还在回退目标上就先校准，否则成功结束。"""
+        session = ctx.session
+        step = ctx.step
+        self._set_grid_walking(False)
+        if session.recovery_goal is not None:
+            wait = self._grid_nav_sync(ctx, SyncReason.BACKTRACK_DONE)
+            if wait.timed_out:
+                return False
+            session.recovery_goal = None
+            self._grid_nav_follower = None
+            if wait.synced:
+                self.log_info("已返回最近走过的已知格并完成校准，继续原目标")
+            else:
+                self.log_warning("返回已知格后校准未完成，继续原目标")
+            return None
+        distance_text = f"{step.distance_to_goal:.2f}m" if step.distance_to_goal is not None else "未知"
+        self.log_info(f"已到达目标（距目标 {distance_text}）", notify=True)
+        return True
+
+    def _grid_nav_state_stuck(self, ctx: NavTick) -> bool | None:
+        """卡住：按后退、侧移、对准后跳跃的顺序脱困，用完额度就放弃。"""
+        session = ctx.session
+        step = ctx.step
+        self._set_grid_walking(False)
+        max_recoveries = self._grid_cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3)
+        if session.recoveries >= max_recoveries:
+            self.log_warning(f"导航卡住: {step.reason}", notify=True)
+            return False
+        session.recoveries += 1
+        self.log_warning(f"导航卡住，尝试脱困 {session.recoveries}/{max_recoveries}：{step.reason}")
+        self._recover_grid_stuck(
+            position=ctx.position,
+            heading=float(ctx.heading),
+            target_bearing=step.target_bearing,
+            frame=ctx.frame,
+            attempt=session.recoveries,
+            deadline=session.deadline,
+            max_attempts=max_recoveries,
+        )
+        if self._grid_navigation_timed_out(session.deadline, session.limit):
+            return False
+        self._grid_nav_follower = None
+        return None
+
+    def _grid_nav_state_narrow_calibrate(self, ctx: NavTick) -> bool | None:
+        """窄道入口：先停车做一次静止校准，再对准入口航点。
+
+        一格宽通路没有横向余量，带着累积定位误差进去会蹭墙。校准或对准任一没成功都
+        不标记已校准，下一拍重新走完整个流程；连续失败到上限才放弃，防止卡死。
+        """
+        step = ctx.step
+        self._set_grid_walking(False)
+        self.info_set("网格导航", "窄道入口停车校准")
+        wait = self._grid_nav_sync(ctx, SyncReason.NARROW_ENTRY)
+        if wait.timed_out:
+            return False
+        aligned_ok = True
+        entry_bearing = step.target_bearing
+        if entry_bearing is not None:
+            aligned = self.pose_turn_to_bearing(
+                entry_bearing,
+                tolerance=self._grid_turn_tolerance(),
+                max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
+                frame=ctx.frame,
+                min_score=ctx.min_score,
+            )
+            aligned_ok = bool(aligned.get("ok"))
+            if not aligned_ok:
+                self.log_warning(
+                    f"窄道入口对准未到位：目标={entry_bearing:.1f}°，"
+                    f"实测={aligned.get('heading')}，误差={aligned.get('error')}"
+                )
+        follower = self._grid_nav_follower
+        if wait.synced and aligned_ok:
+            if follower is not None:
+                follower.confirm_narrow_calibration()
+            self.log_info("窄道入口前已完成静止校准并对准航点")
+            return None
+        attempts = follower.narrow_calibration_failed() if follower is not None else 0
+        if attempts >= GRID_NARROW_CALIBRATION_MAX_ATTEMPTS:
+            if follower is not None:
+                follower.confirm_narrow_calibration()
+            self.log_warning(
+                f"窄道入口校准/对准连续 {attempts} 次未成功，按当前状态继续",
+                notify=True,
+            )
+        else:
+            reason = "静止校准未完成" if not wait.synced else "对准未到位"
+            self.log_warning(f"窄道入口{reason}，将重新校准（第 {attempts} 次）")
+        return None
+
+    def _grid_nav_state_turn(self, ctx: NavTick) -> bool | None:
+        """转向：大角度或接近航点时停车转，否则边走边转。"""
+        session = ctx.session
+        step = ctx.step
+        if self._grid_cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True) and not self._should_turn_grid_in_place(step):
+            self._turn_grid_while_moving(step)
+        else:
+            self._set_grid_walking(False)
+            turn = self.pose_turn_to_bearing(
+                step.target_bearing,
+                tolerance=self._grid_turn_tolerance(),
+                max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
+                frame=ctx.frame,
+                min_score=ctx.min_score,
+            )
+            if not turn.get("ok"):
+                self.log_warning(
+                    f"转向未到位：目标={step.target_bearing:.1f}°，实测={turn.get('heading')}，误差={turn.get('error')}"
+                )
+        if self._grid_navigation_timed_out(session.deadline, session.limit):
+            return False
+        self.sleep(session.tick)
+        return None
+
+    def _grid_nav_state_walk(self, ctx: NavTick) -> bool | None:
+        """按住 ``W`` 前进；长航段在按住 ``W`` 时顺带按一次冲刺。"""
+        session = ctx.session
+        if self._grid_nav_skip_board_node_id is not None:
+            # A* 已选择从当前滑索架下索步行；若之后再次进入滑索，
+            # 必须重新执行登索，不能沿用本次“已在上索点”的状态。
+            self._grid_nav_skip_board_node_id = None
+            self.log_info("已从滑索架下索步行，后续滑索将重新登索")
+        self._set_grid_walking(True)
+        self._maybe_start_grid_sprint(ctx.step)
+        self.sleep(session.tick)
+        return None
+
+    def _grid_nav_state_wait(self, ctx: NavTick) -> bool | None:
+        """跟随器判定等待状态稳定：松开 ``W`` 等下一拍。"""
+        self._set_grid_walking(False)
+        self.sleep(ctx.tick)
+        return None
+
+    def _grid_nav_state_failed(self, ctx: NavTick) -> bool | None:
+        """执行失败：松开 ``W`` 并按失败结束本次导航。"""
+        self._set_grid_walking(False)
+        self.log_warning(f"导航执行失败: {ctx.step.reason}", notify=True)
+        return False
 
     @staticmethod
     def _nearest_grid_zip_line_node_info(
@@ -1871,25 +2132,32 @@ class GridNavigationMixin(RuntimeStateMixin):
         frame,
         attempt: int,
         deadline: float | None = None,
+        max_attempts: int | None = None,
     ) -> None:
-        """三段式脱困：后退、侧向绕开、对准目标后跳跃。"""
+        """按 :data:`_GRID_STUCK_RECOVERY` 的序列脱困：后退、侧向绕开、对准后跳跃。
+
+        ``max_attempts`` 只用于把"第几次/共几次"写对；尝试次数超出序列长度时重复
+        最后一步，所以把「卡住脱困次数」调大不会越界。
+        """
         duration = self._grid_recovery_duration(deadline)
         if duration is None:
             return
-        if attempt <= 1:
-            self.log_info("脱困尝试 1/3：按 S 后退")
+        total = len(_GRID_STUCK_RECOVERY) if max_attempts is None else max(1, int(max_attempts))
+        step, label = self._grid_stuck_recovery_step(attempt, total)
+        if step is StuckRecovery.BACK:
+            self.log_info(f"{label}：按 S 后退")
             self.press_key("s", down_time=duration)
             return
-        if attempt == 2:
+        if step is StuckRecovery.BACK_SIDE:
             side = self._choose_grid_strafe_side(position, heading)
             side_name = "A 左移" if side == "a" else "D 右移"
-            self.log_info(f"脱困尝试 2/3：按 S + {side_name}")
+            self.log_info(f"{label}：按 S + {side_name}")
             duration = self._grid_recovery_duration(deadline)
             if duration is not None:
                 self._hold_grid_keys(("s", side), duration)
             return
 
-        self.log_info("脱困尝试 3/3：对准目标后按住 W + Space 跳跃")
+        self.log_info(f"{label}：对准目标后按住 W + Space 跳跃")
         if target_bearing is not None:
             self.pose_turn_to_bearing(
                 target_bearing,
@@ -1915,6 +2183,16 @@ class GridNavigationMixin(RuntimeStateMixin):
             self.press_key("space", down_time=duration)
         finally:
             self._set_grid_walking(False)
+
+    @staticmethod
+    def _grid_stuck_recovery_step(attempt: int, total: int) -> tuple[StuckRecovery, str]:
+        """返回第 ``attempt`` 次脱困该做哪一步，以及"第几次/共几次"的提示文案。
+
+        下标夹在序列范围内：尝试次数超出序列长度时重复最后一步（对准后跳远），而不是
+        越界或悄悄回到第一步。
+        """
+        index = min(max(1, int(attempt)), len(_GRID_STUCK_RECOVERY)) - 1
+        return _GRID_STUCK_RECOVERY[index], f"脱困尝试 {int(attempt)}/{int(total)}"
 
     def _grid_recovery_duration(
         self,
@@ -1998,16 +2276,21 @@ class GridNavigationMixin(RuntimeStateMixin):
         start_sync_seq: int,
         deadline: float,
         tick: float,
+        *,
+        reason: str | None = None,
     ) -> bool:
         """停车采样，直到定位服务完成一次静止校准。
 
         返回 True 包含两种情况：发生了真实重锚（``sync_seq`` 增加），或当前估计
         已与 WS 对齐（``sync_checked``）。超时返回 False，并记录静止判定诊断。
+
+        ``reason`` 是发起这次校准的原因（见 :class:`src.nav.nav_state.SyncReason`），
+        只用于状态提示与超时告警，不参与判定。
         """
         self._set_grid_walking(False)
         if self._grid_nav_follower is not None:
             self._grid_nav_follower.pause()
-        self.info_set("网格导航", "等待静止定位校准")
+        self.info_set("网格导航", f"等待静止定位校准（{reason}）" if reason else "等待静止定位校准")
         started = self.active_time()
         # WS 真值约每 5 秒推送一次，至少覆盖一个完整推送周期再判定失败。
         timeout = min(8.0, max(0.0, deadline - started))
@@ -2025,8 +2308,9 @@ class GridNavigationMixin(RuntimeStateMixin):
                 return True
             self.sleep(tick)
         diagnostic = self.pose_rest_diag() or {}
+        prefix = f"导航中静止定位校准超时（{reason}）：" if reason else "导航中静止定位校准超时："
         self.log_warning(
-            "导航中静止定位校准超时："
+            f"{prefix}"
             f"reason={diagnostic.get('reason')} "
             f"speed={diagnostic.get('map_speed_m_s')} "
             f"ws_moved={diagnostic.get('ws_moved_m')}"

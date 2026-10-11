@@ -13,10 +13,15 @@ from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 from src.localization.minimap_position_mixin import MinimapPositionMixin
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta, save_grid
 from src.nav.grid_planner import PlanResult, ZipLineRouteStep
+from src.nav.nav_state import NavState, SyncReason
 from src.nav.route_follower import (
     DONE,
+    FAILED,
     NARROW_CALIBRATE,
     REPLAN,
+    STUCK,
+    TURN,
+    WAIT,
     WALK,
     ZIP_LINE,
     FollowerConfig,
@@ -30,6 +35,7 @@ from src.tasks.navigation.mixin.grid_navigation_mixin import (
     CONFIG_GRID_FILE,
     CONFIG_GRID_USE_SHARED_ZIP_LINES,
     GridNavigationMixin,
+    StuckRecovery,
 )
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
@@ -198,6 +204,18 @@ class _FakeGridTask(GridNavigationMixin):
 
     def log_debug(self, msg):
         self.logs.append("DEBUG " + str(msg))
+
+
+def _record_sync(calls: list[int], reasons: list[str] | None = None):
+    """替身：记录静止校准的起始序号，可选记录触发原因。"""
+
+    def _wait(start_sync_seq, deadline, tick, *, reason=None):
+        calls.append(start_sync_seq)
+        if reasons is not None:
+            reasons.append(reason)
+        return True
+
+    return _wait
 
 
 class TestGridNavigationMixin(unittest.TestCase):
@@ -1063,6 +1081,37 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertFalse(self.task.w_down)
         self.assertTrue(self.task.turns)
 
+    def test_stuck_recovery_sequence_repeats_last_step(self):
+        """动作序列是显式数据：用完之后重复最后一步，不会越界也不会回到第一步。"""
+        steps = [self.task._grid_stuck_recovery_step(attempt, 5)[0] for attempt in (1, 2, 3, 4, 5)]
+        self.assertEqual(
+            steps,
+            [
+                StuckRecovery.BACK,
+                StuckRecovery.BACK_SIDE,
+                StuckRecovery.AIM_JUMP,
+                StuckRecovery.AIM_JUMP,
+                StuckRecovery.AIM_JUMP,
+            ],
+        )
+        self.assertEqual(self.task._grid_stuck_recovery_step(4, 5)[1], "脱困尝试 4/5")
+
+    def test_stuck_recovery_logs_configured_total(self):
+        """把「卡住脱困次数」调大后，日志要跟着写实际的第几次/共几次。"""
+        self.task._choose_grid_strafe_side = lambda position, heading: "d"
+
+        self.task._recover_grid_stuck(
+            position=(0.0, 0.0),
+            heading=0.0,
+            target_bearing=90.0,
+            frame=object(),
+            attempt=4,
+            deadline=self.task.active_time() + 10.0,
+            max_attempts=5,
+        )
+
+        self.assertIn("脱困尝试 4/5：对准目标后按住 W + Space 跳跃", self.task.logs)
+
     def test_stuck_recovery_chooses_open_strafe_side(self):
         cells = np.full((21, 21), CELL_FREE, dtype=np.uint8)
         cells[:, :10] = CELL_BLOCKED
@@ -1121,7 +1170,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             follower,
             PlanResult(ok=True, waypoints=[start, goal]),
         )
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(calls)
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
@@ -1129,6 +1178,7 @@ class TestGridNavigationMixin(unittest.TestCase):
     def test_narrow_entry_stops_calibrates_and_aligns_before_walking(self):
         """窄道入口：先停车校准，再对准入口航点，然后才继续前进。"""
         calls = []
+        reasons = []
         confirmed = []
 
         class _NarrowFollower:
@@ -1159,12 +1209,13 @@ class TestGridNavigationMixin(unittest.TestCase):
             follower,
             PlanResult(ok=True, waypoints=[start, goal]),
         )
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(calls, reasons)
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
         self.assertEqual(confirmed, [True])
         self.assertIn(90.0, self.task.turns)
+        self.assertEqual(reasons, [SyncReason.NARROW_ENTRY.label])
 
     def test_narrow_entry_recalibrates_when_alignment_fails(self):
         """对准失败时不能标记已校准，必须重新校准并对准。"""
@@ -1204,7 +1255,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             follower,
             PlanResult(ok=True, waypoints=[start, goal]),
         )
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: sync_calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(sync_calls)
         turn_calls = {"n": 0}
 
         def turn(target, **kwargs):
@@ -1242,7 +1293,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             PlanResult(ok=True, waypoints=[start, goal]),
         )
         self.task._grid_position_is_known = lambda follower, position: True
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(calls)
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
@@ -1251,8 +1302,8 @@ class TestGridNavigationMixin(unittest.TestCase):
         calls = []
         self.task.position_trusted = False
 
-        def sync(start_seq, deadline, tick):
-            calls.append(start_seq)
+        def sync(start_sync_seq, deadline, tick, *, reason=None):
+            calls.append(start_sync_seq)
             self.task.position_trusted = True
             return True
 
@@ -1287,7 +1338,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             PlanResult(ok=True, waypoints=[start, goal]),
         )
         self.task._grid_position_is_known = lambda follower, position: False
-        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = _record_sync(calls)
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
@@ -1470,6 +1521,37 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIn("世界位移=(8.000, 2.500)", line)
         self.assertIn("朝向=91.5", line)
         self.assertIn("校准序号=7", line)
+
+
+class TestGridNavigationStateTable(unittest.TestCase):
+    """状态机的结构约束：每个状态都必须有处理器，动作表必须覆盖跟随器动作。"""
+
+    def test_every_state_has_a_handler(self):
+        from src.tasks.navigation.mixin import grid_navigation_mixin as module
+
+        for state in NavState:
+            with self.subTest(state=state):
+                handler_name = module._GRID_NAV_HANDLERS.get(state)
+                self.assertIsNotNone(handler_name, f"{state} 未登记处理器")
+                self.assertTrue(
+                    callable(getattr(GridNavigationMixin, handler_name, None)),
+                    f"{state} 的处理器 {handler_name} 不存在",
+                )
+
+    def test_action_table_covers_every_follower_action(self):
+        from src.tasks.navigation.mixin import grid_navigation_mixin as module
+
+        for action in (DONE, FAILED, NARROW_CALIBRATE, STUCK, TURN, WAIT, WALK):
+            with self.subTest(action=action):
+                self.assertIn(action, module._GRID_NAV_ACTION_STATES)
+
+    def test_tail_states_are_the_action_states_without_early_returns(self):
+        from src.tasks.navigation.mixin import grid_navigation_mixin as module
+
+        self.assertEqual(
+            module._GRID_NAV_TAIL_STATES,
+            frozenset(module._GRID_NAV_ACTION_STATES.values()) - {NavState.REPLAN, NavState.ZIP_LINE},
+        )
 
 
 if __name__ == "__main__":
