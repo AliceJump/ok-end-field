@@ -17,7 +17,7 @@ class TestZipLineTargetSelection(unittest.TestCase):
             "center_y": 540,
         }
 
-    def test_nearer_gold_candidate_is_checked_before_farther_white_candidate(self):
+    def test_white_candidate_is_checked_before_nearer_gold_candidate(self):
         white = self._candidate("white", 1.0, 0.95)
         gold = self._candidate("gold", 0.5, 0.80)
         target = SimpleNamespace(x=0, y=0, width=10, height=10)
@@ -32,10 +32,10 @@ class TestZipLineTargetSelection(unittest.TestCase):
 
         candidate, matched_target = ZipLineMixin._find_zip_line_template_target(stub, 106, frame="frame")
 
-        self.assertIs(candidate, gold)
+        self.assertIs(candidate, white)
         self.assertIs(matched_target, target)
-        self.assertEqual(stub.ocr.call_args.kwargs["box"], "gold")
-        stub.make_hsv_isolator.assert_called_once_with(hR.GOLD_TEXT)
+        self.assertEqual(stub.ocr.call_args.kwargs["box"], "white")
+        stub.make_hsv_isolator.assert_called_once_with(hR.WHITE)
 
     def test_local_ocr_retries_white_gold_union_after_state_filter_miss(self):
         candidate = self._candidate("white", 0.4, 0.82)
