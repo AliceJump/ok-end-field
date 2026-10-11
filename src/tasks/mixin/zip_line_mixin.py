@@ -545,7 +545,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 misses += 1
                 if misses >= self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
                     self.log_info(f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，回退原始OCR对中")
-                    remaining_iterations = iteration_budget - used_iterations if deadline is not None else None
+                    remaining_iterations = iteration_budget - used_iterations
                     return self._align_zip_line_distance_ocr(
                         zip_line,
                         need_scroll=need_scroll,
@@ -576,7 +576,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.sleep(0.01)
 
         self.log_info(f"滑索{zip_line}模板对中未在限制内收敛，回退原始OCR对中")
-        remaining_iterations = iteration_budget - used_iterations if deadline is not None else None
+        remaining_iterations = iteration_budget - used_iterations
         return self._align_zip_line_distance_ocr(
             zip_line,
             need_scroll=need_scroll,
