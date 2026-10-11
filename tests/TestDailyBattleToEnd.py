@@ -166,6 +166,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
 
     def test_rotate_search_sine_path_keeps_legacy_yaw_budget(self):
         feature = _make_impl(_ToEndTaskHarness())
+        feature._executor = SimpleNamespace(method=SimpleNamespace(width=1920, height=1080))
         moves = []
         sleeps = []
         checks = 0
