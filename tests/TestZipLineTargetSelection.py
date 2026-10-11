@@ -37,6 +37,22 @@ class TestZipLineTargetSelection(unittest.TestCase):
         self.assertEqual(stub.ocr.call_args.kwargs["box"], "white")
         stub.make_hsv_isolator.assert_called_once_with(hR.WHITE)
 
+    def test_distance_box_uses_narrow_40px_half_width_at_1080p(self):
+        stub = SimpleNamespace(
+            width=1920,
+            height=1080,
+            scale_distance=lambda value: value,
+            box_of_screen=lambda left, top, right, bottom: (left, top, right, bottom),
+        )
+        candidate = {"center_x": 960, "center_y": 540}
+
+        left, top, right, bottom = ZipLineMixin._zip_line_distance_box(stub, candidate)
+
+        self.assertAlmostEqual(left, 920 / 1920)
+        self.assertAlmostEqual(right, 1000 / 1920)
+        self.assertAlmostEqual(top, 568 / 1080)
+        self.assertAlmostEqual(bottom, 598 / 1080)
+
     def test_local_ocr_retries_white_gold_union_after_state_filter_miss(self):
         candidate = self._candidate("white", 0.4, 0.82)
         target = SimpleNamespace(x=0, y=0, width=10, height=10)
