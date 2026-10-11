@@ -144,6 +144,8 @@ class FullSyncTests(unittest.TestCase):
             data = {
                 "stage": {"zh_CN": {"pattern": "北部禁区"}, "en_US": {"pattern": "North Wuling EZ"}},
                 "wrong": {"zh_CN": {"pattern": "北部禁区"}, "en_US": {"pattern": "Wrong suffix"}},
+                "short": {"zh_CN": {"pattern": "北部禁区"}, "en_US": {"pattern": "Z"}},
+                "end_word": {"zh_CN": {"pattern": "北部禁区"}, "en_US": {"pattern": "EZ"}},
                 "display": {"zh_CN": {"string": "北部禁区"}, "en_US": {"string": "North Wuling EZ"}},
             }
             path = lang_dir / "test.json"
@@ -160,10 +162,13 @@ class FullSyncTests(unittest.TestCase):
                 result = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(result["stage"]["en_US"]["pattern"], "North Wuling EZ")
                 self.assertEqual(result["wrong"]["en_US"]["pattern"], "North Wuling Exclusion Zone")
+                self.assertEqual(result["short"]["en_US"]["pattern"], "North Wuling Exclusion Zone")
+                self.assertEqual(result["end_word"]["en_US"]["pattern"], "North Wuling Exclusion Zone")
                 self.assertEqual(result["display"]["en_US"]["string"], "North Wuling Exclusion Zone")
                 before = path.read_bytes(), path.stat().st_mtime_ns
                 self.assertEqual(sync.main(), 0)
-                self.assertEqual((path.read_bytes(), path.stat().st_mtime_ns), before)
+                actual = path.read_bytes(), path.stat().st_mtime_ns
+                self.assertEqual(actual, before)
 
     def test_ui_uses_its_own_context_and_repeated_sync_does_not_write(self):
         for ui_values in (("Collect", "収集"), ("Custom GUI text", "取る")):

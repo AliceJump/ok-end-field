@@ -18,52 +18,62 @@ except ImportError:
     polib = None
 
 
-def _patch_json_values(original: str, data) -> str | None:
-    """结构不变时按值的位置替换，保留不相关的缩进、逗号与转义写法。"""
-    decoder = json.JSONDecoder()
-    replacements = []
+class _JsonValuePatcher:
+    def __init__(self, original: str):
+        self.original = original
+        self.decoder = json.JSONDecoder()
+        self.replacements = []
 
-    def skip_space(pos):
-        while pos < len(original) and original[pos].isspace():
+    def skip_space(self, pos):
+        while pos < len(self.original) and self.original[pos].isspace():
             pos += 1
         return pos
 
-    def scan(pos, wanted):
-        pos = skip_space(pos)
-        current, end = decoder.raw_decode(original, pos)
+    def next_value(self, cursor, wanted):
+        cursor = self.skip_space(self.scan(cursor, wanted))
+        return cursor + 1 if self.original[cursor] == "," else cursor
+
+    def scan_object(self, pos, current, wanted):
+        if not isinstance(wanted, dict) or current.keys() != wanted.keys():
+            raise ValueError("Changed JSON object structure")
+        cursor = pos + 1
+        for key in current:
+            parsed_key, cursor = self.decoder.raw_decode(self.original, self.skip_space(cursor))
+            cursor = self.skip_space(cursor)
+            if parsed_key != key or self.original[cursor] != ":":
+                raise ValueError("Unexpected JSON key")
+            cursor = self.next_value(cursor + 1, wanted[key])
+
+    def scan_array(self, pos, current, wanted):
+        if not isinstance(wanted, list) or len(current) != len(wanted):
+            raise ValueError("Changed JSON array structure")
+        cursor = pos + 1
+        for value in wanted:
+            cursor = self.next_value(cursor, value)
+
+    def scan(self, pos, wanted):
+        pos = self.skip_space(pos)
+        current, end = self.decoder.raw_decode(self.original, pos)
         if isinstance(current, dict):
-            if not isinstance(wanted, dict) or current.keys() != wanted.keys():
-                raise ValueError("Changed JSON object structure")
-            cursor = pos + 1
-            for key in current:
-                cursor = skip_space(cursor)
-                parsed_key, cursor = decoder.raw_decode(original, cursor)
-                if parsed_key != key or original[skip_space(cursor)] != ":":
-                    raise ValueError("Unexpected JSON key")
-                cursor = scan(skip_space(cursor) + 1, wanted[key])
-                cursor = skip_space(cursor)
-                if original[cursor] == ",":
-                    cursor += 1
+            self.scan_object(pos, current, wanted)
         elif isinstance(current, list):
-            if not isinstance(wanted, list) or len(current) != len(wanted):
-                raise ValueError("Changed JSON array structure")
-            cursor = pos + 1
-            for value in wanted:
-                cursor = skip_space(scan(cursor, value))
-                if original[cursor] == ",":
-                    cursor += 1
+            self.scan_array(pos, current, wanted)
         elif isinstance(wanted, (dict, list)):
             raise ValueError("Changed JSON value structure")
         elif current != wanted:
-            replacements.append((pos, end, json.dumps(wanted, ensure_ascii=False)))
+            self.replacements.append((pos, end, json.dumps(wanted, ensure_ascii=False)))
         return end
 
+
+def _patch_json_values(original: str, data) -> str | None:
+    """结构不变时按值的位置替换，保留不相关的缩进、逗号与转义写法。"""
+    patcher = _JsonValuePatcher(original)
     try:
-        if original[skip_space(scan(0, data)) :]:
+        if original[patcher.skip_space(patcher.scan(0, data)) :]:
             return None
     except (ValueError, IndexError):
         return None  # JSON5 或新增节点仍使用完整序列化。
-    for start, end, value in sorted(replacements, reverse=True):
+    for start, end, value in sorted(patcher.replacements, reverse=True):
         original = original[:start] + value + original[end:]
     return original if json.loads(original) == data else None
 
@@ -125,46 +135,54 @@ def build_official(merged: dict, zh_of) -> dict:
     return official
 
 
+_MSGSTR_PATTERN = re.compile(r'^msgstr "[^\r\n]*"(?:\r?\n"[^\r\n]*")*', re.MULTILINE)
+
+
+def _replace_po_block(block: str, wanted: dict, seen: set, wrapwidth: int) -> str:
+    if not re.search(r"^msgid ", block, re.MULTILINE):
+        return block
+    entries = polib.pofile(block)
+    for entry in entries:
+        key = entry.msgctxt, entry.msgid, entry.msgid_plural
+        desired = wanted.get(key)
+        if desired is None:
+            continue
+        seen.add(key)
+        if entry.msgstr == desired.msgstr:
+            continue
+        if len(entries) != 1 or entry.msgid_plural:
+            raise ValueError(f"Cannot safely replace translation: {key!r}")
+        rendered = polib.POEntry(msgid=entry.msgid, msgstr=desired.msgstr).__unicode__(wrapwidth=wrapwidth)
+        replacement = _MSGSTR_PATTERN.search(rendered).group()
+        if "\r\n" in block:
+            replacement = replacement.replace("\n", "\r\n")
+        block, count = _MSGSTR_PATTERN.subn(lambda match, replacement=replacement: replacement, block)
+        if count != 1:
+            raise ValueError(f"Expected one msgstr: {key!r}")
+    return block
+
+
 def save_po_translations(po_path: Path, po) -> None:
     """只替换变化条目的 msgstr，保留其他条目、注释、顺序与换行布局。"""
     original = po_path.read_bytes().decode("utf-8")
     parts = re.split(r"(\r?\n[ \t]*\r?\n)", original)
     wanted = {(entry.msgctxt, entry.msgid, entry.msgid_plural): entry for entry in po if not entry.obsolete}
     seen = set()
-    msgstr_pattern = re.compile(r'^msgstr "[^\r\n]*"(?:\r?\n"[^\r\n]*")*', re.MULTILINE)
     for i in range(0, len(parts), 2):
-        block = parts[i]
-        if not re.search(r"^msgid ", block, re.MULTILINE):
-            continue
-        entries = polib.pofile(block)
-        for entry in entries:
-            key = entry.msgctxt, entry.msgid, entry.msgid_plural
-            desired = wanted.get(key)
-            if desired is None:
-                continue
-            seen.add(key)
-            if entry.msgstr == desired.msgstr:
-                continue
-            if len(entries) != 1 or entry.msgid_plural:
-                raise ValueError(f"Cannot safely replace translation in {po_path}: {key!r}")
-            rendered = polib.POEntry(msgid=entry.msgid, msgstr=desired.msgstr).__unicode__(wrapwidth=po.wrapwidth)
-            replacement = msgstr_pattern.search(rendered).group()
-            if "\r\n" in block:
-                replacement = replacement.replace("\n", "\r\n")
-            parts[i], count = msgstr_pattern.subn(lambda match, replacement=replacement: replacement, block)
-            if count != 1:
-                raise ValueError(f"Expected one msgstr in {po_path}: {key!r}")
+        parts[i] = _replace_po_block(parts[i], wanted, seen, po.wrapwidth)
     updated = "".join(parts)
     for key, entry in wanted.items():
         if key not in seen:
             updated = updated.rstrip("\r\n") + "\n\n" + entry.__unicode__(wrapwidth=po.wrapwidth)
     encoded = updated.encode("utf-8")
     if encoded != original.encode("utf-8"):
-        po_path.write_bytes(encoded)
+        with po_path.open("wb") as handle:
+            handle.write(encoded)
     mo_path = po_path.with_suffix(".mo")
     compiled = po.to_binary()
     if not mo_path.exists() or mo_path.read_bytes() != compiled:
-        mo_path.write_bytes(compiled)
+        with mo_path.open("wb") as handle:
+            handle.write(compiled)
 
 
 def sync_po_entries(

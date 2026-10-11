@@ -25,7 +25,7 @@ from _lang_sync_common import (
     sync_po_entries,
     write_json,
 )
-from _official_prefix_sync import load_prefix_overrides, sync_prefix_overrides
+from _official_prefix_sync import core_title, load_prefix_overrides, sync_prefix_overrides
 
 ROOT = Path(__file__).resolve().parents[2]
 LANG_DIR = ROOT / "assets" / "lang"
@@ -293,9 +293,9 @@ def build_contextual_pattern_index(raw_texts: dict) -> dict[str, list[str]]:
     for key, text in raw_texts.get("zh_CN", {}).items():
         if not isinstance(text, str):
             continue
-        match = re.fullmatch(r".+[·・:：]\s*([^·・:：]+)", _strip_richtext(text).strip())
-        if match:
-            result.setdefault(_norm(match[1]), []).append(key)
+        parts = re.split(r"[·・:：]", _strip_richtext(text).strip())
+        if len(parts) > 1 and parts[0] and parts[-1].strip():
+            result.setdefault(_norm(parts[-1]), []).append(key)
     return result
 
 
@@ -306,7 +306,7 @@ def is_contextual_pattern(pattern: str, anchor: str, lang: str, contextual_index
         return False
     table = raw_texts.get(lang, {})
     return any(
-        isinstance(value := table.get(key), str) and _norm(_strip_richtext(value)).endswith(normalized)
+        isinstance(value := table.get(key), str) and _norm(core_title(value) or "") == normalized
         for key in contextual_index.get(_norm(anchor), [])
     )
 
@@ -327,6 +327,21 @@ def rank_keys_for_node(ranked: list, raw_texts: dict, node: dict) -> list:
     return sorted(scores, key=lambda item: -item[1])
 
 
+def _best_translations(table: dict, ranked: list) -> set[str]:
+    candidates = []
+    best_votes = None
+    for key, votes in ranked:
+        value = table.get(key)
+        if not isinstance(value, str) or not value.strip():
+            continue
+        if best_votes is not None and votes < best_votes:
+            break
+        best_votes = votes
+        candidates.append(value.strip())
+    plain = {value for value in candidates if not _RICHTEXT_TAG.search(value)}
+    return (plain or {_strip_richtext(value).strip() for value in candidates}) - {""}
+
+
 def official_vals_multi(raw_texts: dict, ranked: list, node: dict | None = None) -> dict:
     """合并多个候选官方 key 的项目语言值。
 
@@ -342,18 +357,7 @@ def official_vals_multi(raw_texts: dict, ranked: list, node: dict | None = None)
         table = raw_texts.get(lang)
         if not table:
             continue
-        candidates = []
-        best_votes = None
-        for key, votes in ranked:
-            v = table.get(key)
-            if isinstance(v, str) and v.strip():
-                if best_votes is not None and votes < best_votes:
-                    break
-                best_votes = votes
-                candidates.append(v.strip())
-        plain = {v for v in candidates if not _RICHTEXT_TAG.search(v)}
-        options = plain or {_strip_richtext(v).strip() for v in candidates}
-        options.discard("")
+        options = _best_translations(table, ranked)
         sub = (node or {}).get(lang, {})
         current = sub.get("string", sub.get("pattern")) if isinstance(sub, dict) else None
         if current in options:

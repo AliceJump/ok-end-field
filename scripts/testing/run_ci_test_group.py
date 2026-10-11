@@ -188,6 +188,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         (
             "TestCheckLang.py",
             "TestOfficialI18nSync.py",
+            "TestOfficialPrefixSync.py",
             "TestPoLocaleConsistency.py",
             "TestReleaseRequirements.py",
         ),

@@ -46,6 +46,13 @@ class OfficialPrefixSyncTests(unittest.TestCase):
         del self.tables["zh_CN"]["normal"]
         self.assertEqual(build_prefixed_nodes(self.tables, self.data, self.rules), self.data)
 
+    def test_partial_core_or_prefix_match_is_replaced_by_complete_name(self):
+        for pattern in ("Z", "EZ", "Energy", "energy", "north"):
+            with self.subTest(pattern=pattern):
+                self.data["north"]["en_US"]["pattern"] = pattern
+                result = build_prefixed_nodes(self.tables, self.data, self.rules)
+                self.assertEqual(result["north"]["en_US"]["pattern"], "North Wuling EZ")
+
     def test_case_variant_adds_matching_flag_without_rewriting_core_text(self):
         for key in ("normal", "severe"):
             self.tables["en_US"][key] = self.tables["en_US"][key].lower()
@@ -96,11 +103,13 @@ class OfficialPrefixSyncTests(unittest.TestCase):
             overrides = {"world_map": self.rules}
             before = path.read_bytes(), path.stat().st_mtime_ns
             self.assertTrue(sync_prefix_overrides(self.tables, root, overrides, True, write_json))
-            self.assertEqual((path.read_bytes(), path.stat().st_mtime_ns), before)
+            actual = path.read_bytes(), path.stat().st_mtime_ns
+            self.assertEqual(actual, before)
             self.assertTrue(sync_prefix_overrides(self.tables, root, overrides, False, write_json))
             before = path.read_bytes(), path.stat().st_mtime_ns
             self.assertEqual(sync_prefix_overrides(self.tables, root, overrides, False, write_json), [])
-            self.assertEqual((path.read_bytes(), path.stat().st_mtime_ns), before)
+            actual = path.read_bytes(), path.stat().st_mtime_ns
+            self.assertEqual(actual, before)
             self.assertEqual(list(root.iterdir()), [path])
 
     def test_config_keys_belong_to_declared_chinese_categories(self):
@@ -109,7 +118,7 @@ class OfficialPrefixSyncTests(unittest.TestCase):
         data = json.loads((root / "assets/lang/world_map.json").read_text(encoding="utf-8"))
         rules = load_prefix_overrides(root)["world_map"]
         self.assertEqual(len(rules), 24)
-        self.assertEqual(rules["k_beibujinqu"], ("能量淤积点", "重度能量淤积点"))
+        self.assertEqual(rules["k_beibujinqu"], ("重度能量淤积点",))
         for category, spec in config["world_map"].items():
             for key in spec["keys"]:
                 self.assertIn(data[key]["zh_CN"]["pattern"], stages_dict[category])
@@ -134,7 +143,8 @@ class OfficialPrefixSyncTests(unittest.TestCase):
                 patch("sys.argv", ["sync", "--i18n-dir", str(official)]),
             ):
                 self.assertEqual(sync.main(), 0)
-                self.assertEqual((path.read_bytes(), path.stat().st_mtime_ns), before)
+                actual = path.read_bytes(), path.stat().st_mtime_ns
+                self.assertEqual(actual, before)
 
 
 if __name__ == "__main__":
