@@ -340,10 +340,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return candidates
 
     def _zip_line_distance_box(self, candidate):
-        """按图标下方约 39px 构造距离 OCR 区域；1080p 横向半宽 40px。"""
+        """按图标下方约 39px 构造距离 OCR 区域；1080p 横向半宽 45px。"""
         center_x = candidate["center_x"]
         center_y = candidate["center_y"]
-        half_width = self.scale_distance(40)
+        half_width = self.scale_distance(45)
         top_offset = self.scale_distance(28)
         bottom_offset = self.scale_distance(58)
         left = max(0, int(round(center_x - half_width)))
