@@ -535,6 +535,53 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(stub.click.call_count, 2)
         self.assertEqual(stub.send_key.call_count, 2)
 
+    def test_test_route_completes_segments_without_dismount_or_target_search(self):
+        stub = self._stub()
+        stub._align_zip_line_distance = Mock(return_value=True)
+        stub._try_click_on_zip_line = Mock(return_value=(True, None))
+        stub.ocr.return_value = [SimpleNamespace(name="move")]
+        stub.log_info = Mock()
+        stub.wait_ocr = Mock(return_value=True)
+        stub.ensure_main = Mock()
+        stub.align_ocr_or_find_target_to_center = Mock()
+        stub.strafe_search = Mock()
+
+        ZipLineMixin.zip_line_list_go(
+            stub, [108, 36], target=("blue_marker", "feature"), need_v=True, stay_on_zip_line=True
+        )
+
+        self.assertEqual(stub._align_zip_line_distance.call_count, 2)
+        self.assertEqual(stub._try_click_on_zip_line.call_count, 2)
+        stub.click.assert_not_called()
+        stub.wait_ocr.assert_not_called()
+        stub.ensure_main.assert_not_called()
+        stub.align_ocr_or_find_target_to_center.assert_not_called()
+        stub.strafe_search.assert_not_called()
+
+    def test_default_route_still_dismounts_at_end(self):
+        stub = self._stub()
+        stub._align_zip_line_distance = Mock(return_value=True)
+        stub._try_click_on_zip_line = Mock(return_value=(True, None))
+        stub.ocr.return_value = [SimpleNamespace(name="move")]
+        stub.log_info = Mock()
+        stub.wait_ocr = Mock(return_value=True)
+        stub.ensure_main = Mock()
+
+        ZipLineMixin.zip_line_list_go(stub, [108])
+
+        stub.click.assert_called_once_with(key="right", after_sleep=2)
+        stub.ensure_main.assert_called_once_with()
+
+    def test_on_start_forwards_stay_on_zip_line_to_route(self):
+        stub = self._stub()
+        stub.ocr.return_value = [SimpleNamespace(name="move")]
+        stub.get_zip_line_config_value = Mock(return_value="108,36")
+        stub.zip_line_list_go = Mock()
+
+        ZipLineMixin.on_zip_line_start(stub, "npc", need_v=False, stay_on_zip_line=True)
+
+        stub.zip_line_list_go.assert_called_once_with([108, 36], None, None, need_v=False, stay_on_zip_line=True)
+
 
 class TestZipLineScanRecording(unittest.TestCase):
     @staticmethod
