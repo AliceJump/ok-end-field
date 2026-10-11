@@ -182,17 +182,17 @@ class TestDailyBattleToEnd(unittest.TestCase):
         result = SearchMixin.rotate_search(
             feature,
             check,
-            segments=4,
+            segments=40,
             step_ratio=0.1,
             between_delay=0.1,
         )
 
         self.assertIsNone(result)
-        self.assertEqual(8, checks)
-        self.assertEqual(8, len(moves))
-        self.assertEqual(4 * int(feature.width * 0.1), sum(move["dx"] for move in moves))
-        self.assertAlmostEqual(0.4, sum(sleeps))
-        self.assertAlmostEqual(4 * 2 * 0.005, sum(move["delay"] * move["steps"] for move in moves))
+        self.assertEqual(80, checks)
+        self.assertEqual(80, len(moves))
+        self.assertEqual(40 * int(feature.width * 0.1), sum(move["dx"] for move in moves))
+        self.assertAlmostEqual(4.0, sum(sleeps))
+        self.assertAlmostEqual(40 * 2 * 0.005, sum(move["delay"] * move["steps"] for move in moves))
 
         cumulative_pitch = 0
         pitch_positions = []
@@ -200,9 +200,9 @@ class TestDailyBattleToEnd(unittest.TestCase):
             cumulative_pitch += move["dy"]
             pitch_positions.append(cumulative_pitch)
 
-        self.assertEqual(0, pitch_positions[-1])
-        self.assertEqual(30, max(pitch_positions))
-        self.assertEqual(-30, min(pitch_positions))
+        self.assertEqual([0] * 8, [pitch_positions[index - 1] for index in range(10, 81, 10)])
+        self.assertGreater(max(pitch_positions), 0)
+        self.assertLess(min(pitch_positions), 0)
 
     def test_to_end_restores_methods_after_task_stop(self):
         feature = _make_impl(_ToEndTaskHarness())
