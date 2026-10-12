@@ -1,0 +1,320 @@
+"""Integrate EndAxis plans with ``TimedCombatLogic`` at runtime.
+
+The fixed-rotation bridge remains available for legacy mode. When timing mode is
+active and ``EndAxis排轴`` is configured, this patch instead keeps EndAxis
+absolute timestamps as a plan clock and lets the existing timing scheduler
+validate SP, cooldowns, handoff windows, deaths, enemy presence and action
+feedback before an action is committed.
+"""
+
+from __future__ import annotations
+
+from src.data.endaxis_timeline import (
+    EndAxisAction,
+    EndAxisScenario,
+    EndAxisTimelineError,
+    parse_endaxis_rotation_spec,
+    parse_endaxis_scenarios,
+    select_endaxis_scenario,
+)
+
+KEY_TIMING_ENDAXIS = "EndAxis排轴"
+_PATCH_INSTALLED = False
+_EPSILON = 1e-6
+
+
+def _scenario_from_config(raw) -> EndAxisScenario | None:
+    """Parse a dedicated timed-mode field as raw share code or prefixed spec."""
+    value = str(raw or "").strip()
+    if not value:
+        return None
+    parsed = parse_endaxis_rotation_spec(value)
+    if parsed is None:
+        selector, code = None, value
+    else:
+        selector, code = parsed
+    return select_endaxis_scenario(parse_endaxis_scenarios(code), selector)
+
+
+def _plan_active(logic) -> bool:
+    scenario = getattr(logic, "_endaxis_scenario", None)
+    cursor = int(getattr(logic, "_endaxis_cursor", 0))
+    return scenario is not None and cursor < len(scenario.actions)
+
+
+def _next_action(logic) -> EndAxisAction | None:
+    if not _plan_active(logic):
+        return None
+    return logic._endaxis_scenario.actions[logic._endaxis_cursor]
+
+
+def _plan_elapsed(logic, now=None) -> float:
+    """Return EndAxis plan time, excluding periods frozen on a due action."""
+    if getattr(logic, "_endaxis_frozen", False):
+        return float(getattr(logic, "_endaxis_frozen_elapsed", 0.0))
+    now = logic._clock() if now is None else float(now)
+    anchor_time = float(getattr(logic, "_endaxis_clock_wall", now))
+    anchor_elapsed = float(getattr(logic, "_endaxis_clock_elapsed", 0.0))
+    return max(0.0, anchor_elapsed + max(0.0, now - anchor_time))
+
+
+def _sync_due_action(logic, now=None) -> EndAxisAction | None:
+    """Freeze the plan clock exactly when the next action becomes due."""
+    action = _next_action(logic)
+    if action is None:
+        return None
+    now = logic._clock() if now is None else float(now)
+    not_before = float(getattr(logic, "_endaxis_not_before", now))
+    if now + _EPSILON < not_before:
+        return None
+    if getattr(logic, "_endaxis_frozen", False):
+        return action
+    if _plan_elapsed(logic, now) + _EPSILON < action.start_seconds:
+        return None
+
+    logic._endaxis_frozen = True
+    logic._endaxis_frozen_elapsed = action.start_seconds
+    logic._endaxis_frozen_wall = now
+    label = action.name or action.action_id or f"{action.kind}:{action.slot}"
+    logic.task.log_info(
+        f"EndAxis 时间轴到点: {action.start_seconds:.3f}s {label}，冻结计划时钟直到动作确认"
+    )
+    return action
+
+
+def _commit_action(logic, expected_index: int, *, outcome: str = "confirmed") -> bool:
+    """Advance one due EndAxis action and resume the plan clock from its due time."""
+    if not _plan_active(logic) or logic._endaxis_cursor != expected_index:
+        return False
+    action = _next_action(logic)
+    if action is None:
+        return False
+
+    now = logic._clock()
+    logic._endaxis_cursor += 1
+    logic._endaxis_attempt_index = None
+    logic._endaxis_frozen = False
+    logic._endaxis_clock_elapsed = action.start_seconds
+    logic._endaxis_clock_wall = now
+    logic._endaxis_frozen_elapsed = action.start_seconds
+    logic._endaxis_frozen_wall = None
+    logic.task.log_info(
+        f"EndAxis 动作已{outcome}: {action.kind}:{action.slot} @ {action.start_seconds:.3f}s；"
+        f"进度 {logic._endaxis_cursor}/{len(logic._endaxis_scenario.actions)}"
+    )
+    if not _plan_active(logic):
+        logic.task.log_info("EndAxis 时间轴执行完成，恢复技能时间排轴的原生动态规划")
+    return True
+
+
+def _try_endaxis_ultimate(logic, action: EndAxisAction) -> bool:
+    """Attempt exactly the planned ultimate using existing timed-runtime gates."""
+    token = str(action.slot)
+    if not logic._slot_available(token):
+        return False
+    profiles = logic.store.profiles(logic.team[int(token) - 1], "ult")
+    if not logic._ready(profiles, slot=token, kind="ult"):
+        return False
+    if not logic.task._find_battle_ult("ult_" + token):
+        return False
+
+    expected_index = logic._endaxis_cursor
+    started = logic._clock()
+    logic._arm_action_feedback()
+    if not logic.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
+        return False
+
+    logic._note_action_attempt("ult", token)
+    ended = logic._clock()
+    logic._observe_bonus("ult", token)
+    logic._observe_phase_action(token, "ult")
+    logic._set_cooldowns(profiles, started)
+    logic._activate_state(token, logic.ult_state_specs.get(token), "终结技", started)
+    logic.main_control.record_cast(token, "ult", profiles, started, recovered_at=ended)
+    logic._after_ultimate_mechanic(token, ended)
+    logic._clear_active(ended)
+    _commit_action(logic, expected_index)
+    logic.task.log_info(f"EndAxis: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s")
+    logic.main_control.update(force=True)
+    return True
+
+
+def _step_endaxis(logic) -> None:
+    """Run one timed-combat frame while an EndAxis plan still has actions."""
+    now = logic._clock()
+    if logic._probe_action_feedback() is not None:
+        return
+    logic._confirm_battle(now)
+    if logic.main_control.update():
+        return
+    if not logic.team:
+        logic._hold(True)
+        return
+
+    action = _sync_due_action(logic, now)
+    if action is None:
+        logic._hold(True)
+        return
+
+    # A high-cost battle skill may already be awaiting SP-delta confirmation.
+    if getattr(logic, "_endaxis_attempt_index", None) is not None:
+        logic._hold(True)
+        return
+
+    if action.kind == "skill":
+        sp = logic._sample_sp()
+        expected_index = logic._endaxis_cursor
+        logic._endaxis_attempt_index = expected_index
+        attempted = logic._try_battle_token(str(action.slot), sp, advance_cursor=False)
+        if not attempted:
+            logic._endaxis_attempt_index = None
+        return
+
+    if action.kind == "ultimate":
+        _try_endaxis_ultimate(logic, action)
+        return
+
+    logic.task.log_warning(f"EndAxis 时间排轴不支持动作类型 {action.kind!r}")
+
+
+def _install_config_entry() -> None:
+    """Expose a timed-mode-only EndAxis input without sharing legacy parents."""
+    from src.core.BattleConfig import (
+        BATTLE_CONFIG_DESCRIPTION,
+        BATTLE_CONFIG_TYPE,
+        DEFAULT_BATTLE_CONFIG,
+        KEY_TIMING_ROTATION,
+    )
+
+    DEFAULT_BATTLE_CONFIG.setdefault(KEY_TIMING_ENDAXIS, "")
+    BATTLE_CONFIG_TYPE.setdefault(KEY_TIMING_ENDAXIS, {})
+    BATTLE_CONFIG_DESCRIPTION.setdefault(
+        KEY_TIMING_ENDAXIS,
+        "可直接粘贴 EndAxis 数据码。多场景可写 endaxis[场景ID或名称]:<数据码>。\n"
+        "配置后由技能时间排轴直接执行绝对时间计划：动作到点后冻结计划时钟，"
+        "等待实时技力、冷却、动作衔接、角色存活和敌人状态允许；确认释放后才推进。",
+    )
+    true_children = BATTLE_CONFIG_TYPE[KEY_TIMING_ROTATION].setdefault("sub_configs", {}).setdefault(True, [])
+    if KEY_TIMING_ENDAXIS not in true_children:
+        true_children.append(KEY_TIMING_ENDAXIS)
+
+
+def install_endaxis_timed_combat_patch() -> None:
+    """Install EndAxis as an optional authoritative plan source for timed combat."""
+    global _PATCH_INSTALLED
+    if _PATCH_INSTALLED:
+        return
+
+    _install_config_entry()
+
+    from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
+
+    original_run = TimedCombatLogic.run
+    original_step = TimedCombatLogic.step
+    original_enemy_paused = TimedCombatLogic._enemy_operation_paused
+    original_accept_battle = TimedCombatLogic._accept_battle_skill
+    original_cancel_unstarted = TimedCombatLogic._cancel_unstarted_action
+    original_confirm_battle = TimedCombatLogic._confirm_battle
+    original_configure_team = TimedCombatLogic._configure_team
+
+    def run_with_endaxis(self, start_sleep=None, no_battle=False, deadline=None):
+        self._endaxis_scenario = None
+        self._endaxis_cursor = 0
+        self._endaxis_attempt_index = None
+        self._endaxis_frozen = False
+        self._endaxis_frozen_elapsed = 0.0
+        self._endaxis_frozen_wall = None
+        try:
+            raw = self.task.get_battle_config(KEY_TIMING_ENDAXIS, "")
+        except Exception:
+            raw = ""
+
+        if str(raw or "").strip():
+            try:
+                self._endaxis_scenario = _scenario_from_config(raw)
+            except EndAxisTimelineError as exc:
+                self.task.log_warning(f"EndAxis 时间排轴配置无效: {exc}；停止本轮技能时间排轴")
+                return False
+
+        now = self.task.active_time()
+        self._endaxis_not_before = now + max(0.0, float(start_sleep or 0.0))
+        self._endaxis_clock_elapsed = 0.0
+        self._endaxis_clock_wall = self._endaxis_not_before
+        if self._endaxis_scenario is not None:
+            label = self._endaxis_scenario.name or self._endaxis_scenario.scenario_id or "未命名场景"
+            self.task.log_info(
+                f"EndAxis 时间排轴接管计划层: {label}，{len(self._endaxis_scenario.actions)} 个动作；"
+                "原生实时监测与动作确认继续生效"
+            )
+        return original_run(self, start_sleep=start_sleep, no_battle=no_battle, deadline=deadline)
+
+    def step_with_endaxis(self):
+        if _plan_active(self):
+            return _step_endaxis(self)
+        return original_step(self)
+
+    def enemy_paused_with_endaxis(self):
+        result = original_enemy_paused(self)
+        if _plan_active(self):
+            _sync_due_action(self, self._clock())
+        return result
+
+    def accept_battle_with_endaxis(self, token, advance_cursor=True):
+        expected_index = getattr(self, "_endaxis_attempt_index", None)
+        result = original_accept_battle(self, token, advance_cursor=advance_cursor)
+        action = _next_action(self)
+        if (
+            expected_index is not None
+            and action is not None
+            and action.kind == "skill"
+            and str(action.slot) == str(token)
+        ):
+            _commit_action(self, expected_index)
+        return result
+
+    def cancel_unstarted_with_endaxis(self, kind, token, now):
+        result = original_cancel_unstarted(self, kind, token, now)
+        action = _next_action(self)
+        if (
+            getattr(self, "_endaxis_attempt_index", None) is not None
+            and kind == "battle"
+            and action is not None
+            and action.kind == "skill"
+            and str(action.slot) == str(token)
+        ):
+            self._endaxis_attempt_index = None
+        return result
+
+    def confirm_battle_with_endaxis(self, now):
+        expected_index = getattr(self, "_endaxis_attempt_index", None)
+        pending_before = self.pending
+        result = original_confirm_battle(self, now)
+        if (
+            expected_index is not None
+            and pending_before is not None
+            and self.pending is None
+            and getattr(self, "_endaxis_attempt_index", None) == expected_index
+        ):
+            # Confirmation timed out or failed. A successful confirmation commits
+            # inside _accept_battle_skill and therefore already clears this marker.
+            self._endaxis_attempt_index = None
+        return result
+
+    def configure_team_with_endaxis(self, *args, **kwargs):
+        result = original_configure_team(self, *args, **kwargs)
+        if result and _plan_active(self):
+            # EndAxis is authoritative for planned battle/ultimate selection.
+            # Keep skill timing/mechanics data, but do not let the native burst
+            # reservation policy veto an imported user-authored action.
+            self.phase_planner.active_plan = None
+            self.plan = None
+        return result
+
+    TimedCombatLogic.run = run_with_endaxis
+    TimedCombatLogic.step = step_with_endaxis
+    TimedCombatLogic._enemy_operation_paused = enemy_paused_with_endaxis
+    TimedCombatLogic._accept_battle_skill = accept_battle_with_endaxis
+    TimedCombatLogic._cancel_unstarted_action = cancel_unstarted_with_endaxis
+    TimedCombatLogic._confirm_battle = confirm_battle_with_endaxis
+    TimedCombatLogic._configure_team = configure_team_with_endaxis
+    _PATCH_INSTALLED = True
