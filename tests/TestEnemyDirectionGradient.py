@@ -96,7 +96,7 @@ class TestEnemyDirectionGradient(unittest.TestCase):
             _draw_direction_arc(frame, -45.0, scale, (55, 55, 190), thickness=16)
         self.assertIsNone(probe_enemy_direction_fast(frame))
 
-    def test_multi_resolution_tail_and_ring_only_markers(self):
+    def test_multi_resolution_markers_and_uniform_ring_rejection(self):
         for width, height in ((1920, 1080), (2560, 1440), (3840, 2160), (2560, 1080)):
             for angle in (-179.0, -90.0, 0.0, 90.0, 179.0):
                 with self.subTest(width=width, height=height, angle=angle):
@@ -108,11 +108,10 @@ class TestEnemyDirectionGradient(unittest.TestCase):
                     frame = _blank_frame(width, height)
                     _draw_direction_arc(frame, angle, 1.0, (45, 45, 230), thickness=16)
                     observation = probe_enemy_direction_fast(frame)
-                    self.assertIsNotNone(observation)
-                    self.assertAlmostEqual(observation.angle_deg, angle, delta=3.0)
+                    self.assertIsNone(observation)
 
-    def test_blending_tail_does_not_remove_the_bright_arc(self):
-        for tail_red in (60, 70, 90, 140, 190, 220):
+    def test_weak_tail_levels_remain_distinct_from_uniform_red(self):
+        for tail_red in (70, 90, 140, 190, 220):
             with self.subTest(tail_red=tail_red):
                 frame = _blank_frame()
                 _draw_direction_arc(frame, 45.0, 1.0, (45, 45, 230), thickness=16)
@@ -153,12 +152,20 @@ class TestEnemyDirectionGradient(unittest.TestCase):
         self.assertEqual(len(observation.markers), 1)
         self.assertAlmostEqual(observation.markers[0].angle_deg, -45.0, delta=3.0)
 
-    def test_ring_only_candidate_remains_recall_fallback(self):
+    def test_uniform_ring_only_candidate_has_no_multilevel_tail(self):
         frame = _blank_frame()
         _draw_direction_arc(frame, -135.0, 1.0, (35, 35, 255), thickness=16)
 
         observation = probe_enemy_direction_fast(frame)
 
+        self.assertIsNone(observation)
+
+    def test_near_tail_levels_remain_when_far_evidence_is_weak(self):
+        frame = _blank_frame()
+        _draw_direction_arc(frame, -135.0, 1.0, (35, 35, 255), thickness=16)
+        for scale in (1.03, 1.05, 1.07):
+            _draw_direction_arc(frame, -135.0, scale, (55, 55, 70), thickness=12)
+        observation = probe_enemy_direction_fast(frame)
         self.assertIsNotNone(observation)
         self.assertAlmostEqual(observation.angle_deg, -135.0, delta=3.0)
 

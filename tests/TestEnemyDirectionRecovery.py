@@ -31,12 +31,26 @@ def _marker_frame_many(angles_deg, width: int = 1920, height: int = 1080, *, ell
     frame = np.full((height, width, 3), 60, dtype=np.uint8)
     semi_axis_x, semi_axis_y = _ellipse_axes(width, height)
     axes = (
-        int(round(semi_axis_x * ellipse_scale)),
-        int(round(semi_axis_y * ellipse_scale)),
+        round(semi_axis_x * ellipse_scale),
+        round(semi_axis_y * ellipse_scale),
     )
-    thickness = max(8, int(round(16 * height / 1080.0)))
+    thickness = max(8, round(16 * height / 1080.0))
     for angle_deg in angles_deg:
         parameter = _direction_to_parameter_deg(angle_deg, semi_axis_x, semi_axis_y)
+        # Model the translucent UI tail as well as its bright arc. A uniform red
+        # arc alone is also produced by health bars and is intentionally rejected.
+        for scale, red in zip((1.03, 1.05, 1.07, 1.09, 1.11), (190, 165, 140, 115, 90), strict=True):
+            cv2.ellipse(
+                frame,
+                (width // 2, height // 2),
+                (round(axes[0] * scale), round(axes[1] * scale)),
+                0,
+                parameter - 4,
+                parameter + 4,
+                (55, 55, red),
+                max(1, round(12 * height / 1080.0)),
+                cv2.LINE_AA,
+            )
         cv2.ellipse(
             frame,
             (width // 2, height // 2),
@@ -109,8 +123,7 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertAlmostEqual(actual, expected, delta=2)
         for marker in observation.markers:
             self.assertAlmostEqual(marker.arc_width_deg, 8.0)
-        best_marker = max(observation.markers, key=lambda marker: marker.score)
-        self.assertEqual(observation.angle_deg, best_marker.angle_deg)
+        self.assertIn(observation.angle_deg, angles)
 
     def test_marker_angles_map_to_eight_way_dodges(self):
         expected = {

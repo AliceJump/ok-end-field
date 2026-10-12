@@ -34,6 +34,12 @@ _MARKER_MIN_RING_RED = 40.0
 _MARKER_MIN_ARC_SUPPORT = 2.0 / 3.0
 _MARKER_OUTER_RIDGE_SCALES = (1.04, 1.06, 1.08)
 _MARKER_FAR_SCALES = (0.90, 1.13, 1.15)
+_MARKER_PROFILE_SCALES = tuple(0.94 + 0.005 * index for index in range(25))
+# The fitted annulus occupies 0.98..1.02 within the 0.94..1.06 profile.
+_MARKER_PROFILE_RING_BINS = (8, 17)
+_MARKER_MIN_EDGE_RISE_RATIO = 0.25
+_MARKER_TAIL_MAX_PEAK_RATIO = 0.95
+_MARKER_MIN_TAIL_LEVELS = 3
 
 
 @dataclass(frozen=True)
@@ -144,7 +150,11 @@ def _candidate_radial_red(
         (
             np.linspace(*_ELLIPSE_ANNULUS_SCALE, _ELLIPSE_RADIAL_SAMPLES, dtype=np.float32),
             np.asarray(
-                _GRADIENT_INNER_SCALES + _GRADIENT_OUTER_SCALES + _MARKER_OUTER_RIDGE_SCALES + _MARKER_FAR_SCALES,
+                _GRADIENT_INNER_SCALES
+                + _GRADIENT_OUTER_SCALES
+                + _MARKER_OUTER_RIDGE_SCALES
+                + _MARKER_FAR_SCALES
+                + _MARKER_PROFILE_SCALES,
                 dtype=np.float32,
             ),
         )
@@ -267,8 +277,9 @@ def _verified_markers(
     A real marker has a bright edge at the ellipse, a quiet inward side, and a
     dimmer outward tail. Red scenery can have an outward gradient without that
     localized edge. Test the ridge across most of the arc rather than letting a
-    few bright pixels validate an unrelated effect. Occluded tails may still use
-    ring score, but rejected shapes must never re-enter through fallback.
+    few bright pixels validate an unrelated effect. Require the bright edge to
+    rise sharply and continue into several weaker outward red levels. Weak far
+    tails may use ring score, but uniform red bars cannot re-enter via fallback.
     """
     red = _candidate_radial_red(frame, sample, markers)
     ring_end = _ELLIPSE_RADIAL_SAMPLES
@@ -286,12 +297,33 @@ def _verified_markers(
         ring_mean * _MARKER_INNER_MAX_RATIO,
     )
     ridge = ring - np.maximum(inner_peak, outer_peak)
-    localized = ring >= np.max(red[:, ring_end:], axis=1)
+    profile_start = ridge_end + len(_MARKER_FAR_SCALES)
+    localized = ring >= np.max(red[:, ring_end:profile_start], axis=1)
+    profile = red[:, profile_start:]
+    # Mean across the angular strip before measuring the rise: unrelated edges
+    # crossing different radii at each angle must not act like one fitted arc.
+    mean_profile = np.mean(profile, axis=2)
+    start_bin, end_bin = _MARKER_PROFILE_RING_BINS
+    sharp = np.max(np.diff(mean_profile[:, :end_bin], axis=1), axis=1) >= (ring_mean * _MARKER_MIN_EDGE_RISE_RATIO)
+    # Anchor to the outermost equal peak, so a thin antialiased bright plateau
+    # does not consume the first few tail samples. Multiple intermediate levels
+    # separate a fading translucent tail from a flat bar ending at background.
+    peak_region = profile[:, start_bin:end_bin]
+    peak = np.max(peak_region, axis=1)
+    peak_index = end_bin - 1 - np.argmax(peak_region[:, ::-1], axis=1)
+    tail_index = peak_index[:, None, :] + np.arange(1, 6)[None, :, None]
+    tails = np.take_along_axis(profile, tail_index, axis=1)
+    levels = np.count_nonzero(
+        (tails >= _GRADIENT_MIN_SAMPLE_RED) & (tails < peak[:, None, :] * _MARKER_TAIL_MAX_PEAK_RATIO),
+        axis=1,
+    )
     required = int(np.ceil(ring.shape[1] * _MARKER_MIN_ARC_SUPPORT))
     shape = (
         quiet
+        & sharp
         & (ring_mean >= _MARKER_MIN_RING_RED)
         & (np.count_nonzero((ridge >= _MARKER_MIN_RIDGE_RED) & localized, axis=1) >= required)
+        & (np.count_nonzero(levels >= _MARKER_MIN_TAIL_LEVELS, axis=1) >= required)
     )
     if not np.any(shape):
         return (), None
@@ -313,8 +345,9 @@ def probe_enemy_direction_fast(frame: np.ndarray | None) -> EnemyDirectionObserv
     The hot path first samples only nine radial points for each of 720 ellipse
     angles. Candidate strips are sampled together to verify a localized bright
     edge and quiet inward side before looking for the outward translucent tail.
-    The strongest tail-supported marker wins when one exists. If tails are
-    obscured, only shape-verified arcs remain eligible for ring-score fallback.
+    A sharp edge followed by weaker outward red levels excludes uniform red
+    bars. The strongest far-tail-supported marker wins when one exists; weak far
+    tails fall back to ring score only after the near-tail shape is verified.
 
     Marker arcs are modeled as a fixed eight-degree primitive. A run that reaches
     the fixed merged-marker threshold is interpreted as two overlapping

@@ -96,5 +96,51 @@
     "y": 252,
     "angles": [],
     "selected_angle": null
+  },
+  {
+    "file": "red_clothing.png",
+    "source": "ok_templates/65.png",
+    "sha256_source": "a9f8a99e736dd4d160e4fbed32f771dcb5bfcf0a2d8ca0d7e85c276197537f62",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "enemy_health_bars.png",
+    "source": "ok_templates/screenshot_20261003_033711.png",
+    "sha256_source": "c0d8485a76a877c35ce3ee7fdb8c9f5eb7c1099436e6af575f2f3165552432ff",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "near_tail_only.png",
+    "source": "ok_templates/screenshot_20261007_102126.png",
+    "sha256_source": "4f2a4ad15aa8853ac0c234b6ba6200a1b63932c40452dfd07abb10c5067e196b",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [
+      -174.538162214521
+    ],
+    "selected_angle": -174.538162214521
+  },
+  {
+    "file": "menu_red_edges.png",
+    "source": "ok_templates/Windows Graphics Capture_1920x1080_1773207750738.2725_original.png",
+    "sha256_source": "b54fa741f40c39b4303b63f363195a04e341a1f790e0fa34d6066863a900ba97",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
   }
 ]
