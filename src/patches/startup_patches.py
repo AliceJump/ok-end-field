@@ -14,7 +14,10 @@ def install_startup_patches():
     from src.patches.config_transfer_patch import install_config_transfer_patch
     from src.patches.dynamic_config_patch import install_dynamic_config_patch
     from src.patches.endaxis_rotation_patch import install_endaxis_rotation_patch
-    from src.patches.endaxis_timed_combat_patch import install_endaxis_timed_combat_patch
+    from src.patches.endaxis_timed_combat_patch import (
+        install_endaxis_timed_combat_patch,
+        install_endaxis_timed_config,
+    )
     from src.patches.enemy_direction_recovery_patch import install_enemy_direction_recovery_patch
     from src.patches.log_upload_patch import install_log_upload_patch
     from src.patches.no_frame_task_patch import install_no_frame_task_patch
@@ -31,6 +34,10 @@ def install_startup_patches():
 
     install_no_frame_task_patch()
     install_cascade_dropdown_patch()
+    # BattleMixin imports global_config_store, which constructs the global battle
+    # ConfigOption immediately. Register the timed EndAxis field before that
+    # import so global/task defaults and UI share the same key set.
+    install_endaxis_timed_config()
     install_endaxis_rotation_patch()
     install_enemy_direction_recovery_patch()
     install_timed_enemy_absence_stability_patch()
