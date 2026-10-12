@@ -37,25 +37,47 @@ def _scenario_from_config(raw) -> EndAxisScenario | None:
 
 
 def _plan_active(logic) -> bool:
+    """Whether an imported EndAxis scenario still owns the plan lane."""
     scenario = getattr(logic, "_endaxis_scenario", None)
     cursor = int(getattr(logic, "_endaxis_cursor", 0))
     return scenario is not None and cursor < len(scenario.actions)
 
 
 def _next_action(logic) -> EndAxisAction | None:
+    """Return the current EndAxis action without changing the cursor."""
     if not _plan_active(logic):
         return None
     return logic._endaxis_scenario.actions[logic._endaxis_cursor]
 
 
 def _plan_elapsed(logic, now=None) -> float:
-    """Return EndAxis plan time, excluding periods frozen on a due action."""
+    """Return EndAxis plan time, excluding periods frozen before an action starts."""
     if getattr(logic, "_endaxis_frozen", False):
         return float(getattr(logic, "_endaxis_frozen_elapsed", 0.0))
     now = logic._clock() if now is None else float(now)
     anchor_time = float(getattr(logic, "_endaxis_clock_wall", now))
     anchor_elapsed = float(getattr(logic, "_endaxis_clock_elapsed", 0.0))
     return max(0.0, anchor_elapsed + max(0.0, now - anchor_time))
+
+
+def _freeze_at_action(logic, action: EndAxisAction, now=None) -> None:
+    """Roll the plan clock back to a due action after a failed/unstarted attempt."""
+    now = logic._clock() if now is None else float(now)
+    logic._endaxis_frozen = True
+    logic._endaxis_frozen_elapsed = action.start_seconds
+    logic._endaxis_frozen_wall = now
+    logic._endaxis_clock_elapsed = action.start_seconds
+    logic._endaxis_clock_wall = now
+
+
+def _resume_action_clock(logic, action: EndAxisAction, now=None) -> None:
+    """Resume plan time from the due timestamp once an action attempt actually starts."""
+    now = logic._clock() if now is None else float(now)
+    logic._endaxis_frozen = False
+    logic._endaxis_clock_elapsed = action.start_seconds
+    logic._endaxis_clock_wall = now
+    logic._endaxis_frozen_elapsed = action.start_seconds
+    logic._endaxis_frozen_wall = None
 
 
 def _sync_due_action(logic, now=None) -> EndAxisAction | None:
@@ -72,18 +94,16 @@ def _sync_due_action(logic, now=None) -> EndAxisAction | None:
     if _plan_elapsed(logic, now) + _EPSILON < action.start_seconds:
         return None
 
-    logic._endaxis_frozen = True
-    logic._endaxis_frozen_elapsed = action.start_seconds
-    logic._endaxis_frozen_wall = now
+    _freeze_at_action(logic, action, now)
     label = action.name or action.action_id or f"{action.kind}:{action.slot}"
     logic.task.log_info(
-        f"EndAxis 时间轴到点: {action.start_seconds:.3f}s {label}，冻结计划时钟直到动作确认"
+        f"EndAxis 时间轴到点: {action.start_seconds:.3f}s {label}，冻结计划时钟直到动作可开始"
     )
     return action
 
 
 def _commit_action(logic, expected_index: int, *, outcome: str = "confirmed") -> bool:
-    """Advance one due EndAxis action and resume the plan clock from its due time."""
+    """Advance one confirmed EndAxis action without double-counting its execution time."""
     if not _plan_active(logic) or logic._endaxis_cursor != expected_index:
         return False
     action = _next_action(logic)
@@ -91,13 +111,14 @@ def _commit_action(logic, expected_index: int, *, outcome: str = "confirmed") ->
         return False
 
     now = logic._clock()
+    # Direct commits from a still-frozen state (mainly defensive/tests) resume at
+    # the due point now. Normal runtime attempts already resumed when the input
+    # was sent, so their animation/confirmation time remains part of plan time.
+    if getattr(logic, "_endaxis_frozen", False):
+        _resume_action_clock(logic, action, now)
+
     logic._endaxis_cursor += 1
     logic._endaxis_attempt_index = None
-    logic._endaxis_frozen = False
-    logic._endaxis_clock_elapsed = action.start_seconds
-    logic._endaxis_clock_wall = now
-    logic._endaxis_frozen_elapsed = action.start_seconds
-    logic._endaxis_frozen_wall = None
     logic.task.log_info(
         f"EndAxis 动作已{outcome}: {action.kind}:{action.slot} @ {action.start_seconds:.3f}s；"
         f"进度 {logic._endaxis_cursor}/{len(logic._endaxis_scenario.actions)}"
@@ -122,7 +143,9 @@ def _try_endaxis_ultimate(logic, action: EndAxisAction) -> bool:
     expected_index = logic._endaxis_cursor
     started = logic._clock()
     logic._arm_action_feedback()
+    _resume_action_clock(logic, action, started)
     if not logic.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
+        _freeze_at_action(logic, action, logic._clock())
         return False
 
     logic._note_action_attempt("ult", token)
@@ -166,9 +189,11 @@ def _step_endaxis(logic) -> None:
         sp = logic._sample_sp()
         expected_index = logic._endaxis_cursor
         logic._endaxis_attempt_index = expected_index
+        _resume_action_clock(logic, action, logic._clock())
         attempted = logic._try_battle_token(str(action.slot), sp, advance_cursor=False)
         if not attempted:
             logic._endaxis_attempt_index = None
+            _freeze_at_action(logic, action, logic._clock())
         return
 
     if action.kind == "ultimate":
@@ -192,8 +217,8 @@ def _install_config_entry() -> None:
     BATTLE_CONFIG_DESCRIPTION.setdefault(
         KEY_TIMING_ENDAXIS,
         "可直接粘贴 EndAxis 数据码。多场景可写 endaxis[场景ID或名称]:<数据码>。\n"
-        "配置后由技能时间排轴直接执行绝对时间计划：动作到点后冻结计划时钟，"
-        "等待实时技力、冷却、动作衔接、角色存活和敌人状态允许；确认释放后才推进。",
+        "配置后由技能时间排轴直接执行绝对时间计划：动作到点且尚不能开始时冻结计划时钟；"
+        "实际尝试开始后时钟继续流逝，但只有确认成功才推进到下一动作。",
     )
     true_children = BATTLE_CONFIG_TYPE[KEY_TIMING_ROTATION].setdefault("sub_configs", {}).setdefault(True, [])
     if KEY_TIMING_ENDAXIS not in true_children:
@@ -219,6 +244,7 @@ def install_endaxis_timed_combat_patch() -> None:
     original_configure_team = TimedCombatLogic._configure_team
 
     def run_with_endaxis(self, start_sleep=None, no_battle=False, deadline=None):
+        """Load the optional EndAxis plan before entering the native timed loop."""
         self._endaxis_scenario = None
         self._endaxis_cursor = 0
         self._endaxis_attempt_index = None
@@ -251,17 +277,20 @@ def install_endaxis_timed_combat_patch() -> None:
         return original_run(self, start_sleep=start_sleep, no_battle=no_battle, deadline=deadline)
 
     def step_with_endaxis(self):
+        """Use EndAxis as the plan lane only while imported actions remain."""
         if _plan_active(self):
             return _step_endaxis(self)
         return original_step(self)
 
     def enemy_paused_with_endaxis(self):
+        """Let the plan reach/freeze at due time while enemy scheduling is paused."""
         result = original_enemy_paused(self)
         if _plan_active(self):
             _sync_due_action(self, self._clock())
         return result
 
     def accept_battle_with_endaxis(self, token, advance_cursor=True):
+        """Commit an imported battle action only after native success handling."""
         expected_index = getattr(self, "_endaxis_attempt_index", None)
         result = original_accept_battle(self, token, advance_cursor=advance_cursor)
         action = _next_action(self)
@@ -275,8 +304,9 @@ def install_endaxis_timed_combat_patch() -> None:
         return result
 
     def cancel_unstarted_with_endaxis(self, kind, token, now):
-        result = original_cancel_unstarted(self, kind, token, now)
+        """Keep the due EndAxis cursor when native feedback cancels an attempt."""
         action = _next_action(self)
+        result = original_cancel_unstarted(self, kind, token, now)
         if (
             getattr(self, "_endaxis_attempt_index", None) is not None
             and kind == "battle"
@@ -285,10 +315,13 @@ def install_endaxis_timed_combat_patch() -> None:
             and str(action.slot) == str(token)
         ):
             self._endaxis_attempt_index = None
+            _freeze_at_action(self, action, now)
         return result
 
     def confirm_battle_with_endaxis(self, now):
+        """Roll plan time back to due when SP-delta confirmation times out."""
         expected_index = getattr(self, "_endaxis_attempt_index", None)
+        action = _next_action(self)
         pending_before = self.pending
         result = original_confirm_battle(self, now)
         if (
@@ -297,17 +330,17 @@ def install_endaxis_timed_combat_patch() -> None:
             and self.pending is None
             and getattr(self, "_endaxis_attempt_index", None) == expected_index
         ):
-            # Confirmation timed out or failed. A successful confirmation commits
-            # inside _accept_battle_skill and therefore already clears this marker.
+            # Successful confirmation commits inside _accept_battle_skill and
+            # clears the marker. Reaching this branch therefore means failure.
             self._endaxis_attempt_index = None
+            if action is not None:
+                _freeze_at_action(self, action, now)
         return result
 
     def configure_team_with_endaxis(self, *args, **kwargs):
+        """Keep native timing/mechanics data but disable its strategic plan veto."""
         result = original_configure_team(self, *args, **kwargs)
         if result and _plan_active(self):
-            # EndAxis is authoritative for planned battle/ultimate selection.
-            # Keep skill timing/mechanics data, but do not let the native burst
-            # reservation policy veto an imported user-authored action.
             self.phase_planner.active_plan = None
             self.plan = None
         return result
