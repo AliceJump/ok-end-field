@@ -64,4 +64,4 @@ Use one of these outcomes instead of a generic "violates SRP" label:
 - **Split prerequisite/follow-up** — concerns have distinct behavior/risk and should be independently reviewed or merged.
 - **Defer historical cleanup** — coupling predates the PR and is not materially worsened here.
 
-When CodeRabbit is involved, also read `../ok-script-pr-review/SKILL.md` for triggering, waiting, replying, and resolving review threads.
+When CodeRabbit is involved, also read `../ok-script-pr-review/SKILL.md` for triggering, waiting, deciding whether to reply, and checking thread state without resolving threads.
