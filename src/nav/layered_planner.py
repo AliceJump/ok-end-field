@@ -71,8 +71,18 @@ class LayeredRoute:
     reason: str = ""
     #: 层内行走段，按顺序
     segments: tuple[LayeredSegment, ...] = ()
-    #: 段与段之间乘坐的连接（``segments[i]`` -> ``links[i]`` -> ``segments[i+1]``）
+    #: 路线用到的全部连接（扁平视图，只用于日志与统计）
     links: tuple[TierLink, ...] = ()
+    #: **第一段之前**要跨的连接。起点本身就压在某个连接端点上时会出现：那段"步行"长度为
+    #: 零被丢掉，于是连接的跨越落在所有分段之前。不带走这一段就等于漏执行一次跨层。
+    prefix: tuple[TierLink, ...] = ()
+    #: **与 segments 对齐**：``transitions[i]`` 是走完第 i 段之后要跨的那些连接。
+    #:
+    #: 为什么不能直接用扁平的 ``links[i]`` 对应第 i 段：层图上的路径是一串"步行边 + 连接边"
+    #: 交替的链，而连续的同一层步行会被**合并成一段**。于是两段之间可能夹着**多条**连接
+    #: （例如 tips_7 -> tips_6 -> tips_7 这种来回），扁平表的长度就不等于段数。
+    #: 真实数据上第一次跑就踩到了：2 段配 3 条连接，按 ``links[段号]`` 取会取错。
+    transitions: tuple[tuple[TierLink, ...], ...] = ()
     cost: float = math.inf
     #: 起终点解析结果，便于调用方回报"我在第几层"
     start_key: LayerKey | None = None
@@ -103,6 +113,8 @@ class LayeredRoute:
             "tiers": self.tiers,
             "segments": len(self.segments),
             "links": len(self.links),
+            "transitions": [len(group) for group in self.transitions],
+            "prefix": len(self.prefix),
             "cost": None if not self.ok else round(self.cost, 2),
             "reason": self.reason,
         }
@@ -326,8 +338,11 @@ class LayeredPlanner:
             other_index = 2 * node.link_index + (2 if node.side == "from" else 1)
             if not nodes[other_index].cells:
                 continue
-            if node.side == "from" or link.bidirectional:
-                adjacency[index].append((other_index, ("link", node.link_index)))
+            # 方向必须随边一起记：同一个双向连接，反向跨越时执行方位是反的
+            # （_cross_layered_link 按 source.center -> target.center 算方位与距离）。
+            forward = node.side == "from"
+            if forward or link.bidirectional:
+                adjacency[index].append((other_index, ("link", node.link_index, forward)))
         return adjacency
 
     def _dijkstra(self, nodes, adjacency, goal_index, time_budget_s):
@@ -411,12 +426,26 @@ class LayeredPlanner:
 
         segments: list[LayeredSegment] = []
         links: list[TierLink] = []
+        transitions: list[tuple[TierLink, ...]] = []
         notes: list[str] = []
+        pending: list[TierLink] = []
+        prefix: list[TierLink] = []
+
+        def oriented(edge) -> TierLink:
+            """按这条边实际的跨越方向取连接（反向跨越要取 reversed 的方位）。"""
+            link = self.layered.links[edge[1]]
+            forward = edge[2] if len(edge) > 2 else True
+            return link if forward else link.reversed
+
         run_start: int | None = None
         run_end: int | None = None
 
         def flush() -> bool:
-            """把一段连续的同层行走落成单个分段；跳过没有实际行走的（同一节点）。"""
+            """把一段连续的同层行走落成单个分段；跳过没有实际行走的（同一节点）。
+
+            同时把"这段之前攒下的连接"登记成上一段的跨层动作——``pending`` 里的连接正是
+            从上一段终点走到这一段起点途中乘坐的。
+            """
             nonlocal run_start, run_end
             if run_start is None or run_end is None:
                 return True
@@ -439,6 +468,13 @@ class LayeredPlanner:
                 # 重复层——代价不受影响，但不该出现在结果里。
                 run_start = run_end = None
                 return True
+            if segments:
+                # 上一段与本段之间的连接（含跨多层时不走路的连续跨越）
+                transitions.append(tuple(pending))
+            else:
+                # 还没有任何分段：这些连接在第一段之前，单独记成 prefix
+                prefix.extend(pending)
+            pending.clear()
             segments.append(
                 LayeredSegment(
                     nodes[run_start].key,
@@ -454,7 +490,9 @@ class LayeredPlanner:
             if edge[0] == "link":
                 if not flush():
                     return LayeredRoute(False, notes[-1], start_key=start_key, goal_key=goal_key, notes=notes)
-                links.append(self.layered.links[edge[1]])
+                link = oriented(edge)
+                links.append(link)
+                pending.append(link)
                 continue
             _kind, a, b = edge
             if run_start is None or nodes[run_start].key != nodes[a].key:
@@ -469,8 +507,10 @@ class LayeredPlanner:
             return LayeredRoute(
                 True,
                 segments=(),
-                links=(),
-                cost=0.0,
+                links=tuple(links),
+                prefix=tuple(prefix) or tuple(pending),
+                transitions=(),
+                cost=float(sum(link.cost for link in links)),
                 start_key=start_key,
                 goal_key=goal_key,
                 notes=notes,
@@ -482,6 +522,10 @@ class LayeredPlanner:
             True,
             segments=tuple(segments),
             links=tuple(links),
+            prefix=tuple(prefix),
+            # 每段一个槽位；末尾那段之后若还有连接（落点即目标），记在最后一个槽位里，
+            # 由任务层判定"跨完就结束"。
+            transitions=tuple(transitions) + (tuple(pending),) * (len(segments) - len(transitions)),
             cost=float(total),
             start_key=start_key,
             goal_key=goal_key,

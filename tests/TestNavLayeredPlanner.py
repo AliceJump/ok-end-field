@@ -183,6 +183,82 @@ class TestCrossLayer(unittest.TestCase):
         self.assertAlmostEqual(route.cost, 2.0 + 1.0 + 1.0)
 
 
+class TestLinkOrientationAndPrefix(unittest.TestCase):
+    """连接的**方向**与**落在第一段之前**的连接都必须被正确记录。
+
+    两个都是在真实数据上第一次跑才暴露的：起点恰好压在某个连接端点上时，那段"步行"长度
+    为零被丢掉，跨越就落在所有分段之前；而同一个双向连接反向跨越时，执行用的方位是反的。
+    """
+
+    def _two_layers(self):
+        # 主图 1x4、分层 lv1 1x4；一条双向 stairs 把主图 (0,0) 与 lv1 (0,0) 连起来
+        main = _grid(["oooo"], tier="")
+        upper = _grid(["oooo"], tier="lv1", origin=(10.0, 0.0, 0.0))
+        layers = {layer_key("map02", ""): main, layer_key("map02", "lv1"): upper}
+        links = [
+            _Link.build("s1", "", _rect(0.0, 0.0, 1.0, 1.0), "lv1", _rect(10.0, 0.0, 11.0, 1.0)),
+        ]
+        return layers, links
+
+    def test_reverse_traversal_is_oriented_from_actual_travel_direction(self):
+        """从分层回主图时，连接必须按"实际走的方向"记录（不是原图里的 from->to）。"""
+        layers, links = self._two_layers()
+        planner = _planner(layers, links)
+        route = planner.plan([(0, 3)], [(0, 0)], start_tier="lv1", goal_tier="")
+        self.assertTrue(route.ok, route.reason)
+        crossed = [link for group in route.transitions for link in group] + list(route.prefix)
+        self.assertTrue(crossed, "应当有一次跨层")
+        for link in crossed:
+            self.assertEqual(link.source.map_name, "map02")
+            # 原始连接是 主图(0,0) -> lv1(10,0)；反向走时 source 应当在 lv1 一侧
+            self.assertEqual(
+                link.source.key,
+                layer_key("map02", "lv1"),
+                "反向跨越没有把方向倒过来",
+            )
+            self.assertEqual(link.target.key, layer_key("map02", ""))
+
+    def test_forward_traversal_keeps_the_original_orientation(self):
+        layers, links = self._two_layers()
+        planner = _planner(layers, links)
+        route = planner.plan([(0, 0)], [(0, 3)], start_tier="", goal_tier="lv1")
+        self.assertTrue(route.ok, route.reason)
+        crossed = [link for group in route.transitions for link in group] + list(route.prefix)
+        for link in crossed:
+            self.assertEqual(link.source.key, layer_key("map02", ""))
+            self.assertEqual(link.target.key, layer_key("map02", "lv1"))
+
+    def test_start_on_a_link_endpoint_records_a_prefix(self):
+        """起点就压在连接端点上：那条跨越必须记在 prefix 里，否则整条路线漏一次跨层。"""
+        layers, links = self._two_layers()
+        planner = _planner(layers, links)
+        # 起点取主图上连接端点那一格 (0,0)，终点在 lv1 深处
+        route = planner.plan([(0, 0)], [(0, 3)], start_tier="", goal_tier="lv1")
+        self.assertTrue(route.ok, route.reason)
+        all_crossed = len(route.prefix) + sum(len(group) for group in route.transitions)
+        self.assertEqual(
+            all_crossed,
+            len(route.links),
+            "每条连接都必须落在 prefix 或某个分段的 transitions 里，不能丢",
+        )
+
+    def test_every_link_is_accounted_for(self):
+        """不变量：跨过的连接总数 == 扁平表长度（每条连接的归属不重不漏）。"""
+        layers, links = self._two_layers()
+        planner = _planner(layers, links)
+        for start_tier, goal_tier, start, goal in (
+            ("", "lv1", [(0, 0)], [(0, 2)]),
+            ("lv1", "", [(0, 2)], [(0, 0)]),
+            ("", "lv1", [(0, 3)], [(0, 1)]),
+        ):
+            with self.subTest(start=start, goal=goal):
+                route = planner.plan(start, goal, start_tier=start_tier, goal_tier=goal_tier)
+                if not route.ok:
+                    continue
+                counted = len(route.prefix) + sum(len(group) for group in route.transitions)
+                self.assertEqual(counted, len(route.links))
+
+
 class TestRegionPassThrough(unittest.TestCase):
     """连接端点区域不能被当成"免费传送"：同层两格都要合并成一段并重算代价。"""
 

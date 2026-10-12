@@ -124,6 +124,8 @@ class _FakeGridTask(GridNavigationMixin):
         return {
             "x": self.x,
             "z": self.z,
+            # 分层导航只看 Y 判层级，所以夹具必须能给出高度
+            "y": getattr(self, "y", None),
             "heading": self.heading,
             "heading_score": 0.9,
             "anchor_set": True,

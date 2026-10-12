@@ -227,6 +227,35 @@ class GridRouteFollower:
             self._advance_initial_waypoints((float(start[0]), float(start[1])))
         return self.plan_result
 
+    def adopt(
+        self,
+        plan_result: PlanResult,
+        *,
+        goal: tuple[float, float],
+        start: tuple[float, float],
+    ) -> PlanResult:
+        """直接采用一份**已经算好**的 :class:`PlanResult`，不重新规划。
+
+        分层导航按分段驱动时用得上：每段的路线由 :class:`~src.nav.layered_planner.LayeredPlanner`
+        算好（它在层图上组合，还会缓存），跟随器只负责把这一段走完。逐段各建一个跟随器、
+        用本方法装配，状态机（TURN/WALK/WAIT/STUCK/DONE）就完全不用改——换段 = 换跟随器。
+
+        与 :meth:`plan` 的唯一区别是不调用 planner：其余（航点进度、卡住窗口、偏航计时、
+        窄道记录）逐项重置成同一状态，保证换段后的行为与"就在这里重新规划"一致。
+        """
+        self.goal = (float(goal[0]), float(goal[1]))
+        self._route_start = (float(start[0]), float(start[1]))
+        self.plan_result = plan_result
+        self.waypoint_index = 0
+        self._zip_line_index = 0
+        self._narrow_calibrated = set()
+        self._narrow_attempts = {}
+        self._reset_motion()
+        self._off_route_since = None
+        if plan_result.ok:
+            self._advance_initial_waypoints((float(start[0]), float(start[1])))
+        return plan_result
+
     def update(
         self,
         position: tuple[float, float],

@@ -539,9 +539,14 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         if coordinate is None:
             self.log_warning(f"缺少{label}坐标，无法使用网格导航")
             return False
+        # 目标的高度（y）决定它在地图的哪一层，分层导航需要它；早先这里把 y 丢掉了。
         goal = (float(coordinate[0]), float(coordinate[2]))
-        self.log_info(f"网格导航前往{label}: ({goal[0]:.2f}, {goal[1]:.2f})")
-        if not self.navigate_grid_to(goal, stop_distance=stop_distance):
+        goal_y = float(coordinate[1]) if len(coordinate) > 2 and coordinate[1] is not None else None
+        self.log_info(
+            f"网格导航前往{label}: ({goal[0]:.2f}, {goal[1]:.2f})"
+            + (f"，高度={goal_y:.1f}" if goal_y is not None else "")
+        )
+        if not self.navigate_grid_to(goal, stop_distance=stop_distance, goal_y=goal_y):
             self.log_warning(f"网格导航未能到达{label}")
             return False
         return True

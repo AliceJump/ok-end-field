@@ -79,7 +79,9 @@ from src.core.NavConfig import NAV_CONFIG_NAME
 from src.data import map_mark_query, user_map_mark_store
 from src.data.FeatureList import FeatureList as fL
 from src.nav.grid_io import GRID_SUFFIX, DenseGrid, load_grid
-from src.nav.grid_planner import PlanResult
+from src.nav.grid_planner import GridPlanner, PlanResult
+from src.nav.layered_map import LayeredMap, TierLink, layer_key, load_layered_map, resolve_tier_by_height
+from src.nav.layered_planner import LayeredPlanner, LayeredRoute
 from src.nav.nav_state import (
     GridRouteRequest,
     NavSession,
@@ -315,6 +317,13 @@ class GridNavigationMixin(RuntimeStateMixin):
             tuple[str, tuple[float, float, float], tuple[float, float, float]]
         ] = set()
         self._grid_nav_skip_board_node_id: str | None = None
+        #: 分层地图缓存：键 (目录, 地图, zoom) -> LayeredMap；False 表示确认没有分层数据。
+        #: 网格是子模块里的静态数据，同一次会话内不必反复读 npz。
+        self._grid_nav_layered_cache: dict[tuple[str, str, str], LayeredMap | bool] = {}
+        #: 分层规划器缓存；键取 LayeredMap 的对象身份，值持有它的层内分段缓存。
+        self._grid_nav_layered_planner_cache: dict[int, LayeredPlanner] = {}
+        #: 本次分层路线依据的 LayeredMap；换段时按它取当前层的网格。
+        self._grid_nav_layered_active: LayeredMap | None = None
 
     def _reset_grid_navigation_run_state(self) -> None:
         """重置只对本次 ``navigate_grid_to`` 有效的运行状态。"""
@@ -325,6 +334,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_zip_line_approach_started_at = None
         self._grid_nav_zip_line_approach_attempts = 0
         self._grid_nav_skip_board_node_id = None
+        self._grid_nav_layered_active = None
         self._set_grid_walking(False)
 
     def pause(self) -> None:
@@ -462,8 +472,12 @@ class GridNavigationMixin(RuntimeStateMixin):
         grid_dir: str | None = None,
         zoom: str | None = None,
         stop_distance: float | None = None,
+        goal_y: float | None = None,
     ) -> bool:
-        """规划并执行到世界坐标 ``(x, z)`` 的路线。
+        """规划并执行到世界坐标 ``(x, z)`` 的路线；``goal_y`` 给定时按三维目标导航。
+
+        ``goal_y`` 是**分层导航的必需输入**：目标在第几层由它的高度决定（只看 Y，不看
+        ``levelId``）。不给就按大地图处理——单层地图本来就只需要平面坐标，行为不变。
 
         每一拍只做三件事：
 
@@ -481,6 +495,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         """
         request = GridRouteRequest(
             goal=(float(goal_xz[0]), float(goal_xz[1])),
+            goal_y=None if goal_y is None else float(goal_y),
             map_id=str(map_id or ""),
             grid_path=grid_path,
             grid_dir=grid_dir,
@@ -794,6 +809,15 @@ class GridNavigationMixin(RuntimeStateMixin):
             ctx.map_id,
             ctx.position,
         )
+        session.route = None
+        layered_taken, layered_ok = self._try_layered_route_on_plan(ctx, route_start, route_goal)
+        if layered_taken:
+            session.had_plan = True
+            if not layered_ok:
+                return False
+            if self._grid_navigation_timed_out(session.deadline, session.limit):
+                return False
+            return self._grid_nav_run_follow(ctx)
         follower, result = self._create_grid_route(
             route_start,
             route_goal,
@@ -969,6 +993,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         session = ctx.session
         step = ctx.step
         self._set_grid_walking(False)
+        if session.layered and session.segment_index + 1 < len(session.route.segments):
+            # 这一段走完了，但整条分层路线还没完：跨过连接、切到下一段。
+            return self._advance_layered_segment(ctx)
         if session.recovery_goal is not None:
             wait = self._grid_nav_sync(ctx, SyncReason.BACKTRACK_DONE)
             if wait.timed_out:
@@ -1302,6 +1329,327 @@ class GridNavigationMixin(RuntimeStateMixin):
         if len(links) == len(zip_lines.links):
             return zip_lines
         return ZipLineGraph(zip_lines.nodes, links)
+
+    # ------------------------------------------------------------------ #
+    # 分层导航：层判定、分层规划、按分段驱动
+    # ------------------------------------------------------------------ #
+    def _grid_layered_map(
+        self,
+        map_id: str,
+        *,
+        grid_dir: str | None = None,
+        zoom: str | None = None,
+    ) -> LayeredMap | None:
+        """为当前地图装配分层地图；**没有分层数据时返回 None**（调用方走原来的单层路径）。
+
+        只有满足"确实有分层"（存在带 ``tier`` 的网格或存在 ``links.json``）才返回，
+        否则返回 None——单层地图（实测 base01/map01 就没有分层）的行为因此与分层功能
+        上线前逐字一致。
+        """
+        directory = str(
+            (
+                self._grid_config_get(CONFIG_GRID_DIR, DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR])
+                if grid_dir is None
+                else grid_dir
+            )
+            or ""
+        ).strip()
+        map_id = str(map_id or "").strip()
+        if not directory or not map_id:
+            return None
+        requested_zoom = str((self._grid_config_get(CONFIG_GRID_ZOOM, "") if zoom is None else zoom) or "").strip()
+        cache_key = (directory, map_id, requested_zoom)
+        if cache_key in self._grid_nav_layered_cache:
+            cached = self._grid_nav_layered_cache[cache_key]
+            return cached or None
+        try:
+            layered = load_layered_map(directory, map_id, zoom=requested_zoom)
+        except (OSError, TypeError, ValueError) as exc:
+            self.log_warning(f"分层网格加载失败，按单层导航处理 {directory}: {exc}")
+            self._grid_nav_layered_cache[cache_key] = False
+            return None
+        # 至少要有一层网格才谈得上分层导航：只有 links 没有网格时无从落脚。
+        relevant = bool(layered.layers) and (any(tier for _map, tier in layered.layers) or bool(layered.links))
+        self._grid_nav_layered_cache[cache_key] = layered if relevant else False
+        if relevant:
+            summary = layered.summary()
+            self.log_info(
+                f"分层地图就绪：层={len(layered.layers)} 连接={summary['links']} "
+                f"目录={'有' if layered.catalog_loaded else '无'}"
+            )
+        return layered if relevant else None
+
+    def _grid_tier_for_point(
+        self,
+        layered: LayeredMap,
+        map_id: str,
+        position: tuple[float, float, float] | None,
+        *,
+        label: str,
+    ) -> tuple[str | None, str]:
+        """把三维坐标解析到层；返回 ``(tier, 说明)``，``tier is None`` 表示**判不出来**。
+
+        **只看 Y**：``levelId`` 来自 WS 消息，既可能缺失也可能与实际不符；``floor_regions``
+        的 Y 区间是用户在编辑器里逐处标定并落到网格文件里的，可自证。
+
+        命中多层（``ambiguous``）时**不挑**：那正是会把角色送错层的场景，返回 None 让调用方
+        明确失败，而不是赌一把。
+        """
+        if position is None:
+            return "", f"{label}没有三维坐标，按大地图处理"
+        result = resolve_tier_by_height(
+            layered,
+            map_name=str(map_id or "").strip(),
+            x=position[0],
+            y=position[1],
+            z=position[2],
+        )
+        if result["status"] == "ambiguous":
+            return None, (
+                f"{label}的 Y 同时落在多层的高度区间里（{result['matched']}），无法唯一确定层级；"
+                "请在编辑器里把这些层重叠区的高度区间分开"
+            )
+        tier = result["tier"]
+        shown = tier or "大地图"
+        if result["reason"] == "no_region_covers":
+            note = f"{label}没有落在任何已标定的高度区间，按大地图处理（Y={position[1]:.1f}）"
+        elif result["reason"] == "no_floor_regions_mapped":
+            note = f"{label}所在地图还没标过高度区间，按大地图处理"
+        else:
+            note = f"{label}判定在 {shown}（Y={position[1]:.1f}）"
+        return tier, note
+
+    def _plan_layered_route(
+        self,
+        ctx: NavTick,
+        layered: LayeredMap,
+        *,
+        start_xz: tuple[float, float],
+        goal_xz: tuple[float, float],
+    ) -> tuple[LayeredRoute | None, str]:
+        """按分层地图规划；返回 ``(路线, 说明)``。路线为 None 时说明里是原因。"""
+        session = ctx.session
+        start_y = (ctx.pose or {}).get("y")
+        start_pos = None
+        if start_y is not None:
+            try:
+                start_pos = (float(start_xz[0]), float(start_y), float(start_xz[1]))
+            except (TypeError, ValueError):
+                start_pos = None
+        start_tier, start_note = self._grid_tier_for_point(layered, ctx.map_id, start_pos, label="起点")
+        if start_tier is None:
+            return None, start_note
+        goal_pos = None
+        if session.goal_y is not None:
+            try:
+                goal_pos = (float(goal_xz[0]), float(session.goal_y), float(goal_xz[1]))
+            except (TypeError, ValueError):
+                goal_pos = None
+        goal_tier, goal_note = self._grid_tier_for_point(layered, ctx.map_id, goal_pos, label="终点")
+        if goal_tier is None:
+            return None, goal_note
+        session.start_tier = start_tier
+        session.goal_tier = goal_tier
+        self.log_info(f"分层导航：{start_note}；{goal_note}")
+        # 同层：交回原来的单层路径（含用户滑索）。分层只负责"**确实要换层**"的那部分，
+        # 同层行为因此与分层功能上线前逐字一致，也不会与滑索的代价模型互相干扰。
+        if start_tier == goal_tier:
+            return None, ""
+        start_grid = layered.layers.get(layer_key(ctx.map_id, start_tier))
+        goal_grid = layered.layers.get(layer_key(ctx.map_id, goal_tier))
+        if start_grid is None or goal_grid is None:
+            return None, (f"起点或终点所在的层没有网格文件（{start_tier or '大地图'} / {goal_tier or '大地图'}）")
+        planner = self._grid_nav_layered_planner(layered)
+        route = planner.plan(
+            (start_grid.index_of_world(*start_xz),),
+            (goal_grid.index_of_world(*goal_xz),),
+            start_tier=start_tier,
+            goal_tier=goal_tier,
+            time_budget_s=max(0.0, session.deadline - self.active_time()),
+        )
+        if not route.ok:
+            return None, route.reason or "分层路线不可达"
+        return route, ""
+
+    def _grid_nav_layered_planner(self, layered: LayeredMap) -> LayeredPlanner:
+        """按当前 ``Nav Config`` 装配分层规划器（带缓存，层内分段结果可复用）。
+
+        每层的层内搜索都注入与路线跟随器**同一套策略参数**——少一项就会让分段代价与
+        跟随器实际怎么走口径分叉，层图上的最短路也就不再是真实最优。
+        """
+        planner = self._grid_nav_layered_planner_cache.get(id(layered))
+        if planner is not None:
+            return planner
+        config = self._grid_follower_config()
+        planner = LayeredPlanner(
+            layered,
+            planner_factory=lambda grid: GridPlanner(
+                grid,
+                risk_cost=config.risk_cost,
+                diagonal=True,
+                allow_unknown=config.allow_unknown,
+                margin=config.margin,
+                wall_penalty=config.wall_penalty,
+                frontier_margin=config.frontier_margin,
+                frontier_penalty=config.frontier_penalty,
+                waypoint_tolerance=config.waypoint_tolerance,
+                max_expand=config.max_expand,
+            ),
+        )
+        self._grid_nav_layered_planner_cache[id(layered)] = planner
+        return planner
+
+    def _activate_layered_segment(self, ctx: NavTick, *, reason: str = "") -> bool:
+        """把跟随器切到当前分段；返回是否装配成功。
+
+        这是分层导航的关键简化：**换段 = 换跟随器**。每段自带一张层网格与一份已算好的
+        路线（``GridRouteFollower.adopt``），所以 TURN/WALK/WAIT/STUCK 那一整套状态机一行
+        都不用改——它们始终只面对"当前这一段"。
+        """
+        session = ctx.session
+        route = session.route
+        if route is None or not route.segments:
+            return False
+        index = min(max(0, session.segment_index), len(route.segments) - 1)
+        segment = route.segments[index]
+        layered = self._grid_nav_layered_active
+        grid = layered.layers.get(segment.key) if layered is not None else None
+        if grid is None:
+            self.log_warning(f"分层分段的层没有网格：{segment.key}")
+            return False
+        follower = GridRouteFollower(
+            grid,
+            self._grid_follower_config(),
+            zip_lines=self._grid_zip_lines_for_map(ctx.map_id),
+        )
+        waypoints = segment.plan.waypoints
+        segment_goal = tuple(waypoints[-1]) if waypoints else ctx.position
+        follower.adopt(segment.plan, goal=segment_goal, start=ctx.position)
+        self._grid_nav_follower = follower
+        self._grid_nav_map_id = ctx.map_id
+        tail = f"（{reason}）" if reason else ""
+        self.log_info(
+            f"分层导航：第 {index + 1}/{len(route.segments)} 段，层={segment.tier or '大地图'}，"
+            f"航点={len(waypoints)}，代价={segment.cost:.1f}{tail}"
+        )
+        return True
+
+    def _advance_layered_segment(self, ctx: NavTick) -> bool | None:
+        """一段走完：跨过连接、切到下一段。返回主循环的终止结果（``None`` = 继续）。"""
+        session = ctx.session
+        route = session.route
+        index = session.segment_index
+        # 用 transitions 而不是扁平的 links：两段之间可能夹着多条连接（跨多层不走路时），
+        # 扁平表的长度与段数不对应，按段号取会取错。
+        group = route.transitions[index] if 0 <= index < len(route.transitions) else ()
+        for link in group:
+            if self._cross_layered_link(ctx, link) is False:
+                return False
+        session.segment_index = index + 1
+        if session.segment_index >= len(route.segments):
+            # 这次跨层之后没有分段了：连接的落点就是终点（终点恰好压在连接端点上时会出现）。
+            # 不特判的话会把最后一段重新激活一遍，导航永远走不完。
+            self.log_info("分层导航：跨层落点即目标，本次路线完成", notify=True)
+            return True
+        kinds = "/".join(link.kind for link in group) or "连接"
+        if not self._activate_layered_segment(ctx, reason=f"经 {kinds} 跨层"):
+            return False
+        if self._grid_navigation_timed_out(session.deadline, session.limit):
+            return False
+        return None
+
+    def _cross_layered_link(self, ctx: NavTick, link: TierLink) -> bool | None:
+        """执行一次跨层连接；``False`` 表示失败（调用方结束本次导航）。
+
+        - ``stairs`` / ``elevator`` / ``portal`` / ``door`` / ``other``：**走过去**。两端平面
+          距离通常只有一两格（实测相邻），换层由游戏里的楼梯/门完成，所以这里只切换分段，
+          物理过渡交给下一段的行走。
+        - ``rope``：**滑索机制，不能走**。复用任务已有的滑索执行（登索 + 对准目标方位），
+          与用户滑索架同一套流程。
+        """
+        if link.kind != "rope":
+            self.log_info(f"跨层：经 {link.kind} 从 {link.source.tier or '大地图'} 到 {link.target.tier or '大地图'}")
+            return True
+        execute = getattr(self, "zip_line_list_go", None)
+        board = getattr(self, "board_zip_line", None)
+        if not callable(execute) or not callable(board):
+            self.log_warning("跨层连接是绳索，但当前任务未接入滑索执行能力", notify=True)
+            return False
+        start = link.source.center
+        end = link.target.center
+        distance = math.hypot(end[0] - start[0], end[1] - start[1])
+        bearing = bearing_to_point(start[0], start[1], end[0], end[1])
+        self.log_info(f"跨层：乘坐绳索 {distance:.1f}m，方位 {bearing:.1f}°")
+        self._set_grid_walking(False)
+        if not self._grid_zip_line_enter_rack(None, board, switch_walk_mode=not self._grid_nav_zip_line_walk_mode):
+            return False
+        try:
+            execute(
+                [max(1, round(distance))],
+                need_scroll=False,
+                need_v=False,
+                distance_tolerance=[max(2, round(distance * 0.1))],
+                target_bearing=[bearing],
+                target_positions=[end],
+            )
+        except Exception as exc:
+            self.log_warning(f"跨层绳索执行失败: {exc}", notify=True)
+            return False
+        return True
+
+    def _try_layered_route_on_plan(
+        self,
+        ctx: NavTick,
+        start_xz: tuple[float, float],
+        goal_xz: tuple[float, float],
+    ) -> tuple[bool, bool]:
+        """规划时先试分层路线；返回 ``(是否已接管, 是否成功)``。
+
+        - ``(False, _)``：**不用分层**——这张图没有分层数据，或者起终点本来就同层。
+          调用方继续走原来的单层路径（含用户滑索），行为与分层功能上线前一致。
+        - ``(True, True)``：分层路线已装配好、第一段已激活，调用方直接进入跟随。
+        - ``(True, False)``：**确实需要跨层但走不通**（判定不出层、层图不可达……）。
+          这时**不退回单层**：单层路线会无视层级，可能给出一条"物理上过不去"的路线，
+          比明确失败更糟。原因已经记进日志，调用方按失败结束本次导航。
+        """
+        layered = self._grid_layered_map(
+            ctx.map_id,
+            grid_dir=ctx.session.request.grid_dir,
+            zoom=ctx.session.request.zoom,
+        )
+        if layered is None:
+            return False, False
+        if layered is not self._grid_nav_layered_active:
+            self._grid_nav_layered_active = layered
+            # 换了地图/数据：旧的层内分段缓存不再适用
+            self._grid_nav_layered_planner_cache.pop(id(layered), None)
+        route, reason = self._plan_layered_route(
+            ctx,
+            layered,
+            start_xz=start_xz,
+            goal_xz=goal_xz,
+        )
+        if route is None:
+            if not reason:
+                # 起终点同层：交回单层路径
+                return False, False
+            self.log_warning(f"分层导航不可用：{reason}", notify=True)
+            return True, False
+        ctx.session.route = route
+        ctx.session.segment_index = 0
+        # 第一段之前可能还有连接要跨：起点本身就压在某个连接端点上时，那段"步行"长度为零
+        # 被规划器丢掉，跨越就落在所有分段之前。漏执行它等于少跳一层。
+        for link in route.prefix:
+            self.log_info(f"分层导航：起手先跨 {link.kind}（起点已在连接端点上）")
+            if self._cross_layered_link(ctx, link) is False:
+                return True, False
+        if not self._activate_layered_segment(ctx, reason="起始段"):
+            return True, False
+        self.log_info(
+            f"分层路线：{len(route.segments)} 段 / {len(route.links)} 次跨层，"
+            f"代价={route.cost:.1f}，层序={[tier or '大地图' for tier in route.tiers]}"
+        )
+        return True, True
 
     def _create_grid_route(
         self,

@@ -139,6 +139,9 @@ class GridRouteRequest:
     """一次 ``navigate_grid_to`` 调用里跨拍不变的参数。"""
 
     goal: tuple[float, float]
+    #: 目标的**高度**。分层地图里"终点在第几层"由它判定（只看 Y，不看 levelId）；
+    #: 为 None 表示调用方只知道平面坐标，层判定会兜底到大地图。
+    goal_y: float | None = None
     map_id: str = ""
     grid_path: str | None = None
     grid_dir: str | None = None
@@ -177,6 +180,14 @@ class NavSession:
     recovery_goal: tuple[float, float] | None = None
     #: 本次导航实际走过的已知格，仅用于偏航后寻找安全返回点。
     visited_cells: dict[tuple[int, int], tuple[float, float]] = field(default_factory=dict)
+    #: 分层路线（:class:`~src.nav.layered_planner.LayeredRoute`）；None 表示本次走的是
+    #: 原来的单层路径。有它时 ``_grid_nav_follower`` 始终指向**当前分段**的跟随器。
+    route: Any = None
+    #: 当前正在走第几段。
+    segment_index: int = 0
+    #: 起终点解析出来的层，只用于日志与状态提示。
+    start_tier: str = ""
+    goal_tier: str = ""
 
     @property
     def goal(self) -> tuple[float, float]:
@@ -187,6 +198,16 @@ class NavSession:
     def stop_distance(self) -> float | None:
         """提前结束的接近距离；None 表示必须走到 ``goal_radius``。"""
         return self.request.stop_distance
+
+    @property
+    def goal_y(self) -> float | None:
+        """目标高度；调用方只给了平面坐标时为 None。"""
+        return self.request.goal_y
+
+    @property
+    def layered(self) -> bool:
+        """本次导航是否在走分层路线。"""
+        return self.route is not None
 
     def note_progress(self, distance_to_goal: float) -> bool:
         """目标距离明显刷新时归还重规划与脱困额度，返回是否有进展。"""

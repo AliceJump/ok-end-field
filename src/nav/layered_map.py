@@ -458,7 +458,12 @@ def load_layered_map(
     root = Path(layer_dir)
     layers = discover_layers(root, map_name, zoom=zoom, tiers=tiers)
     catalog = load_catalog(root / "catalog.json")
-    links = tuple(load_links(root / "links.json"))
+    # 只留**本图**的连接：links.json 是一份全局表，可能含别的地图的连接。不过滤的话
+    # 一张没有分层、也没有本图连接的普通地图会被判定成"有分层数据"，进而走进分层路径。
+    name = str(map_name or "").strip()
+    links = tuple(
+        link for link in load_links(root / "links.json") if link.source.map_name == name or link.target.map_name == name
+    )
     return LayeredMap(
         layers=layers,
         links=links,
