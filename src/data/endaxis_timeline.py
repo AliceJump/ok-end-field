@@ -2,9 +2,9 @@
 
 The importer intentionally keeps EndAxis parsing separate from combat execution.
 Current legacy rotation compatibility maps only the action kinds MaaEnd also
-consumes today: ``skill`` / ``battleSkill`` and ``ultimate``.  Other EndAxis
-action kinds stay available to a future richer timeline executor instead of
-being guessed into the wrong OKEF semantics.
+consumes today: ``skill`` / ``battleSkill`` and ``ultimate``. Other EndAxis
+action kinds are ignored by this bridge rather than guessed into the wrong OKEF
+semantics; the structured action model can be extended by a richer executor.
 """
 
 from __future__ import annotations
@@ -13,13 +13,14 @@ import base64
 import gzip
 import io
 import json
+import math
 import re
 from dataclasses import dataclass
 
 TIMELINE_FRAME_BASE = 300
 TIMELINE_FPS = 60.0
 _MAX_PLAIN_SIZE = 5 << 20
-_ENDAXIS_SPEC_RE = re.compile(r"^endaxis(?:\[([^\]]+)\])?:(.+)$", re.IGNORECASE | re.DOTALL)
+_ENDAXIS_SPEC_RE = re.compile(r"^endaxis(?:\[([^\]]+)\])?:(.*)$", re.IGNORECASE | re.DOTALL)
 
 
 class EndAxisTimelineError(ValueError):
@@ -55,7 +56,7 @@ def parse_endaxis_rotation_spec(raw: str) -> tuple[str | None, str] | None:
     """Parse ``endaxis:<code>`` or ``endaxis[scenario]:<code>``.
 
     The optional selector matches either the EndAxis scenario id or its exact
-    display name.  Returning ``None`` means the value is an ordinary OKEF
+    display name. Returning ``None`` means the value is an ordinary OKEF
     rotation string and must be handled by the existing parser unchanged.
     """
     if not isinstance(raw, str):
@@ -110,9 +111,13 @@ def _normalize_action(raw: dict, slot: int) -> EndAxisAction | None:
         return None
 
     try:
-        start_frame = int(raw.get("startTime", TIMELINE_FRAME_BASE))
-        duration_frames = max(0, int(raw.get("duration", 0)))
-    except (TypeError, ValueError) as exc:
+        raw_start = raw.get("startTime", TIMELINE_FRAME_BASE)
+        raw_duration = raw.get("duration", 0)
+        if not math.isfinite(float(raw_start)) or not math.isfinite(float(raw_duration)):
+            raise ValueError("non-finite timing value")
+        start_frame = int(raw_start)
+        duration_frames = max(0, int(raw_duration))
+    except (TypeError, ValueError, OverflowError) as exc:
         raise EndAxisTimelineError(f"EndAxis 动作时间字段非法: {raw!r}") from exc
 
     return EndAxisAction(
@@ -198,8 +203,8 @@ def endaxis_scenario_to_rotation_tokens(scenario: EndAxisScenario) -> list[str]:
     """Approximate one EndAxis scenario with the existing sequential token DSL.
 
     EndAxis timestamps are absolute timeline positions, while the legacy OKEF
-    DSL is sequential.  This bridge therefore preserves start-time *gaps* as
-    ``sleep_N`` tokens.  It is format compatibility, not a claim of frame-exact
+    DSL is sequential. This bridge therefore preserves start-time *gaps* as
+    ``sleep_N`` tokens. It is format compatibility, not a claim of frame-exact
     execution; the richer timed scheduler can later consume ``EndAxisAction``
     directly without changing the decoder.
     """
