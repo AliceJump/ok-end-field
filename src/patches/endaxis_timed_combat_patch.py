@@ -103,6 +103,7 @@ def _commit_action(logic, expected_index: int, *, outcome: str = "confirmed") ->
         f"进度 {logic._endaxis_cursor}/{len(logic._endaxis_scenario.actions)}"
     )
     if not _plan_active(logic):
+        logic._endaxis_completed = True
         logic.task.log_info("EndAxis 时间轴执行完成，恢复技能时间排轴的原生动态规划")
     return True
 
@@ -224,6 +225,7 @@ def install_endaxis_timed_combat_patch() -> None:
         self._endaxis_frozen = False
         self._endaxis_frozen_elapsed = 0.0
         self._endaxis_frozen_wall = None
+        self._endaxis_completed = False
         try:
             raw = self.task.get_battle_config(KEY_TIMING_ENDAXIS, "")
         except Exception:
