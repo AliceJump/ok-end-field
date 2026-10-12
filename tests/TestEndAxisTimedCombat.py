@@ -1,7 +1,9 @@
 import unittest
 
+import numpy as np
+
 from src.core.BattleConfig import BATTLE_CONFIG_TYPE, DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
-from src.data.combat_observation import ActionBlockReason
+from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.endaxis_timeline import EndAxisAction, EndAxisScenario
 from src.data.skill_timing import load_skill_timings
 from src.patches.endaxis_timed_combat_patch import (
@@ -13,6 +15,7 @@ from src.patches.endaxis_timed_combat_patch import (
     install_endaxis_timed_config,
 )
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
+from src.tasks.mixin.battle_mixin import BattleMixin, ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
 
 
 class _ClockLogic:
@@ -130,13 +133,52 @@ class TestEndAxisPlanClock(unittest.TestCase):
         self.assertAlmostEqual(_plan_elapsed(logic), 3.0)
 
 
+class _RecoveringRuntimeTask(_RuntimeTask):
+    use_ult = BattleMixin.use_ult
+    _has_detected_team_member = BattleMixin._has_detected_team_member
+    _is_detected_team_frame_matched = BattleMixin._is_detected_team_frame_matched
+    _log_detected_team_member_result = BattleMixin._log_detected_team_member_result
+    arm_combat_action_feedback_probe = BattleMixin.arm_combat_action_feedback_probe
+    reset_combat_action_feedback_probe = BattleMixin.reset_combat_action_feedback_probe
+    probe_combat_action_block_reason = BattleMixin.probe_combat_action_block_reason
+
+    def __init__(self, release_mode):
+        super().__init__()
+        self.release_mode = release_mode
+        self.refreshes = 0
+        self.frame = np.zeros((10, 10, 3), dtype=np.uint8)
+        self.feedback_seen = []
+
+    def get_battle_config(self, _key, _default):
+        return self.release_mode
+
+    def send_key_down(self, token):
+        self.keys.append(("down", token))
+
+    def send_key_up(self, token):
+        self.keys.append(("up", token))
+
+    def next_frame(self):
+        self.refreshes += 1
+        self.now += 0.05
+        return self.frame
+
+    def detect_team(self, _frame):
+        return ["?"] if self.refreshes <= 2 else list(self._battle_team)
+
+    def _read_combat_too_far_text_band(self):
+        visible = 1 <= self.refreshes <= 2
+        self.feedback_seen.append(visible)
+        return (0.5, 0.5, 0.5, 0.5) if visible else None
+
+
 class TestEndAxisTimedRuntime(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         install_endaxis_timed_combat_patch()
 
-    def _logic(self, kind="skill"):
-        task = _RuntimeTask()
+    def _logic(self, kind="skill", task=None):
+        task = task if task is not None else _RuntimeTask()
         logic = TimedCombatLogic(
             task,
             load_skill_timings(),
@@ -202,6 +244,43 @@ class TestEndAxisTimedRuntime(unittest.TestCase):
         self.assertTrue(logic._endaxis_frozen)
         self.assertAlmostEqual(_plan_elapsed(logic), 0.0)
         self.assertIsNone(logic.pending)
+
+    def test_unconfirmed_frames_and_enemy_pause_preserve_running_attempt_clock(self):
+        task, logic = self._logic()
+        logic.step()
+        for now in (0.05, 0.1):
+            task.now = now
+            logic.step()
+            self.assertIsNotNone(logic.pending)
+            self.assertFalse(logic._endaxis_frozen)
+            self.assertAlmostEqual(_plan_elapsed(logic), now)
+        task.now = 0.15
+        task.probe_enemy_presence = lambda: EnemyPresence.ABSENT
+        self.assertTrue(logic._enemy_operation_paused())
+        self.assertFalse(logic._endaxis_frozen)
+        self.assertAlmostEqual(_plan_elapsed(logic), 0.15)
+        task.now = 0.2
+        task.sp = 190.0
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+        self.assertEqual(logic._endaxis_cursor, 1)
+        self.assertAlmostEqual(_plan_elapsed(logic), 0.2)
+
+    def test_ultimate_wait_retains_transient_block_after_prompt_disappears(self):
+        for release_mode in (ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD):
+            with self.subTest(release_mode=release_mode):
+                task, logic = self._logic("ultimate", _RecoveringRuntimeTask(release_mode))
+                logic.step()
+                self.assertGreaterEqual(task.refreshes, 4)
+                self.assertEqual(task.feedback_seen[:3], [False, True, True])
+                self.assertIsNone(task._read_combat_too_far_text_band())
+                self.assertEqual(logic._endaxis_cursor, 0)
+                self.assertIsNone(logic._endaxis_attempt_index)
+                self.assertTrue(logic._endaxis_frozen)
+                self.assertAlmostEqual(_plan_elapsed(logic), 0.0)
+                self.assertFalse(task._combat_action_feedback_armed)
+                self.assertIsNone(task._combat_action_wait_block_reason)
+                self.assertIsNone(logic.last_action_attempt)
 
     def test_blocked_ultimate_does_not_commit_and_refreezes_due_action(self):
         task, logic = self._logic("ultimate")

@@ -888,6 +888,13 @@ class BattleMixin(BaseEfTask):
                 matched_count = 0
                 continue
 
+            # Preserve transient input rejection while ultimate HUD recovery
+            # owns frame polling; the scheduler consumes it after this wait.
+            if getattr(self, "_combat_action_feedback_armed", False):
+                reason = self.probe_combat_action_block_reason()
+                if reason is not None:
+                    self._combat_action_wait_block_reason = reason
+
             team = self.detect_team(frame)[:member_count]
             self.log_info(f"当前队伍角色: {team}")
 
@@ -927,6 +934,8 @@ class BattleMixin(BaseEfTask):
 
     def reset_combat_action_feedback_probe(self):
         """Drop all temporal state for the top-center action-feedback detector."""
+        self._combat_action_feedback_armed = False
+        self._combat_action_wait_block_reason = None
         self._combat_too_far_band_streak = 0
         self._combat_too_far_band_signature = None
         self._combat_too_far_band_last_seen_at = None
@@ -943,6 +952,7 @@ class BattleMixin(BaseEfTask):
         stale_visible = self._read_combat_too_far_text_band() is not None
         self.reset_combat_action_feedback_probe()
         self._combat_too_far_wait_for_clear = stale_visible
+        self._combat_action_feedback_armed = True
 
     def probe_combat_action_block_reason(self) -> ActionBlockReason | None:
         """Detect a newly appeared fixed white top-center failure band.
@@ -951,6 +961,10 @@ class BattleMixin(BaseEfTask):
         width, white-pixel geometry, and two consecutive stable frames. A band
         already visible when the action was armed is ignored until it clears.
         """
+        retained = getattr(self, "_combat_action_wait_block_reason", None)
+        if retained is not None:
+            return retained
+
         signature = self._read_combat_too_far_text_band()
         now = self.active_time()
 

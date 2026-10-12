@@ -90,6 +90,8 @@ def _sync_due_action(logic, now=None) -> EndAxisAction | None:
     not_before = float(getattr(logic, "_endaxis_not_before", now))
     if now + _EPSILON < not_before:
         return None
+    if getattr(logic, "_endaxis_attempt_index", None) is not None:
+        return action
     if getattr(logic, "_endaxis_frozen", False):
         return action
     if _plan_elapsed(logic, now) + _EPSILON < action.start_seconds:
