@@ -76,10 +76,17 @@ class TestZipLineMotionCache(unittest.TestCase):
         self.assertIsNone(hint)
 
     def test_alignment_applies_initial_move_once_and_reports_total_motion(self):
+        candidate = {
+            "x": 100,
+            "y": 100,
+            "width": 20,
+            "height": 20,
+        }
         target = SimpleNamespace(x=100, y=100, width=20, height=20)
 
         def fake_align(zip_line, **kwargs):
-            kwargs["ocr_target_mover"](target)
+            detected = kwargs["ocr_target_detector"]("frame-before-prefeed")
+            kwargs["ocr_target_mover"](detected)
             return (960, 540)
 
         stub = SimpleNamespace(
@@ -90,8 +97,9 @@ class TestZipLineMotionCache(unittest.TestCase):
             _move_to_zip_line_target=Mock(return_value=(40, 20)),
             _zip_line_distance_pattern=Mock(return_value="pattern"),
             make_hsv_isolator=Mock(side_effect=lambda value: value),
-            _find_zip_line_template_target=Mock(return_value=(None, None)),
+            _find_zip_line_template_target=Mock(return_value=(candidate, target)),
             active_and_send_mouse_delta=Mock(return_value=True),
+            next_frame=Mock(return_value="frame-after-prefeed"),
             log_info=Mock(),
             sleep=Mock(),
         )
@@ -107,7 +115,9 @@ class TestZipLineMotionCache(unittest.TestCase):
 
         self.assertEqual(result, (960, 540))
         stub.active_and_send_mouse_delta.assert_called_once_with(dx=160, dy=80, activate=True, steps=5)
-        stub._move_to_zip_line_target.assert_called_once_with(target)
+        stub.next_frame.assert_called_once_with()
+        stub._find_zip_line_template_target.assert_called_once_with(108, "frame-after-prefeed")
+        stub._move_to_zip_line_target.assert_called_once()
         learned.assert_called_once_with(200, 100)
 
     def test_fallback_result_does_not_record_incomplete_motion_history(self):
@@ -134,6 +144,7 @@ class TestZipLineMotionCache(unittest.TestCase):
             ocr=Mock(return_value=[fallback_target]),
             active_time=Mock(return_value=0),
             active_and_send_mouse_delta=Mock(return_value=True),
+            next_frame=Mock(return_value="fresh-after-prefeed"),
             log_info=Mock(),
             sleep=Mock(),
         )
