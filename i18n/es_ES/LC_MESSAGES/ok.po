@@ -3163,3 +3163,33 @@ msgstr "Configura la ruta de capturas."
 
 msgid "截图路径中没有可回放图片。"
 msgstr "No hay imágenes para reproducir en la ruta indicada."
+
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号列表每行填写一个手机号；若一行包含逗号，只使用逗号前的账号内容。切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
+msgstr ""
+"Configura los parámetros por cuenta y tarea. Selecciona una cuenta y después"
+" una tarea para mostrar sus controles. Introduce un teléfono por línea; solo"
+" se utiliza el contenido anterior a la primera coma. El cambio de cuenta "
+"compara los tres primeros y los cuatro últimos dígitos visibles; si hay "
+"duplicados, usa la marca Reciente y la cuenta activa antes del cambio para "
+"identificar el destino."
+
+msgid "每行一个手机号；逗号后内容忽略"
+msgstr "Un teléfono por línea; se ignora el contenido posterior a la coma"
+
+msgid "；账号名（手机号）是唯一ID，账号名变化会新建ID"
+msgstr ""
+"; el nombre de cuenta (teléfono) es su ID único; cambiarlo crea un ID nuevo"
+
+msgid "；若输入包含逗号，只保存逗号前的账号内容"
+msgstr ""
+"; si hay una coma, solo se guarda el contenido de cuenta anterior a ella"
+
+msgid ""
+"账号列表，每行一个手机号。\n"
+"若一行包含逗号，只使用逗号前的账号内容，逗号后内容会直接忽略。\n"
+"切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
+msgstr ""
+"Lista de cuentas, un teléfono por línea.\n"
+"Solo se utiliza el contenido anterior a la primera coma; se ignora el resto.\n"
+"El cambio compara los tres primeros y los cuatro últimos dígitos visibles; si hay duplicados, usa la marca Reciente y la cuenta activa antes del cambio para identificar el destino."
