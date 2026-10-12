@@ -27,6 +27,14 @@ _GRADIENT_MIN_SAMPLE_RED = 3.0
 _GRADIENT_MIN_SUPPORT_SAMPLES = 3
 _GRADIENT_MIN_EVIDENCE = 6.0
 
+_MARKER_INNER_MAX_RED = 5.0
+_MARKER_INNER_MAX_RATIO = 0.12
+_MARKER_MIN_RIDGE_RED = 6.0
+_MARKER_MIN_RING_RED = 40.0
+_MARKER_MIN_ARC_SUPPORT = 2.0 / 3.0
+_MARKER_OUTER_RIDGE_SCALES = (1.04, 1.06, 1.08)
+_MARKER_FAR_SCALES = (0.90, 1.13, 1.15)
+
 
 @dataclass(frozen=True)
 class EnemyDirectionMarker:
@@ -119,52 +127,46 @@ def _red_profile(frame: np.ndarray, sample: _EllipseSample) -> np.ndarray:
     return np.max(weighted, axis=0)
 
 
-def _sample_radial_red(
+def _candidate_radial_red(
     frame: np.ndarray,
     sample: _EllipseSample,
-    center_parameter_deg: float,
-    scales: tuple[float, ...],
+    markers: tuple[EnemyDirectionMarker, ...],
 ) -> np.ndarray:
-    """Sample a narrow angular strip at fixed ellipse-radius scales."""
+    """Sample all candidate strips together; return candidate/radius/angle red."""
     height, width = frame.shape[:2]
     cx = width / 2.0
     cy = height / 2.0
-    half_bins = max(1, int(round(_GRADIENT_HALF_ARC_DEG / _DIRECTION_BIN_DEG)))
+    half_bins = max(1, round(_GRADIENT_HALF_ARC_DEG / _DIRECTION_BIN_DEG))
     offsets = np.arange(-half_bins, half_bins + 1, dtype=np.float32) * _DIRECTION_BIN_DEG
-    parameters = np.deg2rad((center_parameter_deg + offsets) % 360.0)
-    radial = np.asarray(scales, dtype=np.float32)[:, None]
-    xs = np.rint(cx + radial * sample.semi_axis_x * np.cos(parameters)[None, :]).astype(np.int32)
-    ys = np.rint(cy + radial * sample.semi_axis_y * np.sin(parameters)[None, :]).astype(np.int32)
+    centers = np.asarray([marker.parameter_angle_deg for marker in markers], dtype=np.float32)
+    parameters = np.deg2rad((centers[:, None] + offsets[None, :]) % 360.0)
+    scales = np.concatenate(
+        (
+            np.linspace(*_ELLIPSE_ANNULUS_SCALE, _ELLIPSE_RADIAL_SAMPLES, dtype=np.float32),
+            np.asarray(
+                _GRADIENT_INNER_SCALES + _GRADIENT_OUTER_SCALES + _MARKER_OUTER_RIDGE_SCALES + _MARKER_FAR_SCALES,
+                dtype=np.float32,
+            ),
+        )
+    )
+    radial = scales[None, :, None]
+    xs = np.rint(cx + radial * sample.semi_axis_x * np.cos(parameters)[:, None, :]).astype(np.int32)
+    ys = np.rint(cy + radial * sample.semi_axis_y * np.sin(parameters)[:, None, :]).astype(np.int32)
     np.clip(xs, 0, max(0, width - 1), out=xs)
     np.clip(ys, 0, max(0, height - 1), out=ys)
-    weighted = _weighted_red_chroma(frame[ys, xs])
-    return np.mean(weighted, axis=1)
+    return _weighted_red_chroma(frame[ys, xs])
 
 
 def _outward_gradient_evidence(
-    frame: np.ndarray,
-    sample: _EllipseSample,
-    center_parameter_deg: float,
-) -> float:
-    """Return one-sided outward red-tail evidence for a ring candidate.
-
-    Real enemy markers have a sharp bright arc at the fitted ellipse and a
-    translucent red tail that continues away from screen center. Scene effects
-    that merely cross the thin annulus tend to have similar red energy on the
-    inner side, so subtracting the inner radial baseline makes them weak.
-    """
-    inner = _sample_radial_red(frame, sample, center_parameter_deg, _GRADIENT_INNER_SCALES)
-    outer = _sample_radial_red(frame, sample, center_parameter_deg, _GRADIENT_OUTER_SCALES)
-    baseline = float(np.mean(inner))
-    adjusted = np.maximum(outer - baseline, 0.0)
-    support = int(np.count_nonzero(adjusted >= _GRADIENT_MIN_SAMPLE_RED))
-    if support < _GRADIENT_MIN_SUPPORT_SAMPLES:
-        return 0.0
-
-    near_evidence = float(np.mean(adjusted[:3]))
-    if near_evidence < _GRADIENT_MIN_EVIDENCE:
-        return 0.0
-    return near_evidence
+    inner: np.ndarray,
+    outer: np.ndarray,
+) -> np.ndarray:
+    """Return each candidate's one-sided tail evidence from shared radial samples."""
+    baseline = np.mean(inner, axis=(1, 2))
+    adjusted = np.maximum(np.mean(outer, axis=2) - baseline[:, None], 0.0)
+    support = np.count_nonzero(adjusted >= _GRADIENT_MIN_SAMPLE_RED, axis=1)
+    evidence = np.mean(adjusted[:, :3], axis=1)
+    return np.where((support >= _GRADIENT_MIN_SUPPORT_SAMPLES) & (evidence >= _GRADIENT_MIN_EVIDENCE), evidence, 0.0)
 
 
 def _circular_smooth(profile: np.ndarray) -> np.ndarray:
@@ -198,8 +200,8 @@ def _circular_runs(mask: np.ndarray) -> list[tuple[int, int]]:
 
 
 def _window_score(profile: np.ndarray, center_parameter_deg: float) -> float:
-    half_bins = max(1, int(round((_MARKER_ARC_WIDTH_DEG / _DIRECTION_BIN_DEG) / 2.0)))
-    center_bin = int(round((center_parameter_deg % 360.0) / _DIRECTION_BIN_DEG)) % _DIRECTION_BINS
+    half_bins = max(1, round((_MARKER_ARC_WIDTH_DEG / _DIRECTION_BIN_DEG) / 2.0))
+    center_bin = round((center_parameter_deg % 360.0) / _DIRECTION_BIN_DEG) % _DIRECTION_BINS
     offsets = np.arange(-half_bins, half_bins + 1, dtype=np.int32)
     indices = (center_bin + offsets) % _DIRECTION_BINS
     return float(np.mean(profile[indices]))
@@ -255,27 +257,53 @@ def _marker_candidates(profile: np.ndarray, sample: _EllipseSample) -> tuple[Ene
     return tuple(markers)
 
 
-def _gradient_verified_markers(
+def _verified_markers(
     frame: np.ndarray,
     sample: _EllipseSample,
     markers: tuple[EnemyDirectionMarker, ...],
 ) -> tuple[tuple[EnemyDirectionMarker, ...], EnemyDirectionMarker | None]:
-    """Prefer candidates whose red arc continues into the expected outward tail.
+    """Require a fitted bright arc before using tail evidence or ring-only fallback.
 
-    The thin annulus remains the fast first-stage detector. Only its candidates
-    pay for this small second-stage radial probe. If every tail is obscured, keep
-    the original ring-only candidates as a recall-preserving fallback.
+    A real marker has a bright edge at the ellipse, a quiet inward side, and a
+    dimmer outward tail. Red scenery can have an outward gradient without that
+    localized edge. Test the ridge across most of the arc rather than letting a
+    few bright pixels validate an unrelated effect. Occluded tails may still use
+    ring score, but rejected shapes must never re-enter through fallback.
     """
-    evidence = tuple(
-        (marker, _outward_gradient_evidence(frame, sample, marker.parameter_angle_deg))
-        for marker in markers
+    red = _candidate_radial_red(frame, sample, markers)
+    ring_end = _ELLIPSE_RADIAL_SAMPLES
+    inner_end = ring_end + len(_GRADIENT_INNER_SCALES)
+    outer_end = inner_end + len(_GRADIENT_OUTER_SCALES)
+    ridge_end = outer_end + len(_MARKER_OUTER_RIDGE_SCALES)
+    ring = np.max(red[:, :ring_end], axis=1)
+    inner = red[:, ring_end:inner_end]
+    outer = red[:, inner_end:outer_end]
+    inner_peak = np.max(inner, axis=1)
+    outer_peak = np.max(red[:, outer_end:ridge_end], axis=1)
+    ring_mean = np.mean(ring, axis=1)
+    quiet = np.mean(inner_peak, axis=1) <= np.maximum(
+        _MARKER_INNER_MAX_RED,
+        ring_mean * _MARKER_INNER_MAX_RATIO,
     )
-    verified = tuple((marker, score) for marker, score in evidence if score > 0.0)
-    if not verified:
-        return markers, None
+    ridge = ring - np.maximum(inner_peak, outer_peak)
+    localized = ring >= np.max(red[:, ring_end:], axis=1)
+    required = int(np.ceil(ring.shape[1] * _MARKER_MIN_ARC_SUPPORT))
+    shape = (
+        quiet
+        & (ring_mean >= _MARKER_MIN_RING_RED)
+        & (np.count_nonzero((ridge >= _MARKER_MIN_RIDGE_RED) & localized, axis=1) >= required)
+    )
+    if not np.any(shape):
+        return (), None
 
-    filtered = tuple(marker for marker, _score in verified)
-    best = max(verified, key=lambda item: (item[1], item[0].score))[0]
+    evidence = _outward_gradient_evidence(inner, outer)
+    verified = shape & (evidence > 0.0)
+    keep = verified if np.any(verified) else shape
+    filtered = tuple(marker for marker, accepted in zip(markers, keep, strict=True) if accepted)
+    if not np.any(verified):
+        return filtered, None
+    best_index = max(np.flatnonzero(verified), key=lambda i: (evidence[i], markers[i].score))
+    best = markers[best_index]
     return filtered, best
 
 
@@ -283,11 +311,10 @@ def probe_enemy_direction_fast(frame: np.ndarray | None) -> EnemyDirectionObserv
     """Return the strongest red off-screen marker from a fitted ellipse region.
 
     The hot path first samples only nine radial points for each of 720 ellipse
-    angles. Ring candidates then receive a tiny outward radial probe that looks
-    for the marker's one-sided translucent red tail. When at least one candidate
-    has that signature, ring-only effect candidates are discarded and the
-    strongest outward-gradient candidate defines the direction. If all tails are
-    obscured, the original annulus result remains as a recall-preserving fallback.
+    angles. Candidate strips are sampled together to verify a localized bright
+    edge and quiet inward side before looking for the outward translucent tail.
+    The strongest tail-supported marker wins when one exists. If tails are
+    obscured, only shape-verified arcs remain eligible for ring-score fallback.
 
     Marker arcs are modeled as a fixed eight-degree primitive. A run that reaches
     the fixed merged-marker threshold is interpreted as two overlapping
@@ -303,6 +330,8 @@ def probe_enemy_direction_fast(frame: np.ndarray | None) -> EnemyDirectionObserv
     if not markers:
         return None
 
-    markers, gradient_best = _gradient_verified_markers(frame, sample, markers)
+    markers, gradient_best = _verified_markers(frame, sample, markers)
+    if not markers:
+        return None
     best = gradient_best or max(markers, key=lambda marker: marker.score)
     return EnemyDirectionObservation(angle_deg=best.angle_deg, score=best.score, markers=markers)
