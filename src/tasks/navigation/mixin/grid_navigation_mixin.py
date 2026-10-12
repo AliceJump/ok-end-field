@@ -1618,6 +1618,14 @@ class GridNavigationMixin(RuntimeStateMixin):
           物理过渡交给下一段的行走。
         - ``rope``：**滑索机制，不能走**。复用任务已有的滑索执行（登索 + 对准目标方位），
           与用户滑索架同一套流程。
+
+        **关于距离：连接端点里没有 Y，所以这里只能算水平距离。** ``links.json`` 的 ``rect``
+        只有 ``x0/z0/x1/z1``（编辑器侧同样如此），端点的实际高度**不在数据里**；两层的高度
+        关系只能从各自的 ``floor_regions`` 区间**推断**（例如 tips_7 的 y[249,251] 与 tips_6
+        的 y[239,241] 推出落差 ∈ [8,12]m），而那是区间不是点，拿来定价或对准都不可靠。
+        所以这条距离只用于"直接对准"模式下无关紧要的位置，**若用户把滑索目标选择方式改成
+        OCR，它会拿这个水平距离去匹配游戏显示的距离**——近垂直的连接（实测 map02 那条 rope
+        水平只差 1.5m）在那里大概匹配不上。要修得先给端点加 Y（属于 links 的 schema 变更）。
         """
         if link.kind != "rope":
             self.log_info(f"跨层：经 {link.kind} 从 {link.source.tier or '大地图'} 到 {link.target.tier or '大地图'}")
@@ -1629,6 +1637,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             return False
         start = link.source.center
         end = link.target.center
+        # 只有水平距离可算：端点里没有 Y（见方法说明）
         distance = math.hypot(end[0] - start[0], end[1] - start[1])
         bearing = bearing_to_point(start[0], start[1], end[0], end[1])
         self.log_info(f"跨层：乘坐绳索 {distance:.1f}m，方位 {bearing:.1f}°")
