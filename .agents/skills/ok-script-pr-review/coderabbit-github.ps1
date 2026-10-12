@@ -75,7 +75,10 @@ function Get-CrHeadArrival {
     $suites = Get-CrJson "repos/$Repo/commits/$Sha/check-suites?per_page=100"
     $times += @($suites.check_suites | ForEach-Object { ConvertTo-CrTime $_.created_at })
     $commit = Get-CrJson "repos/$Repo/commits/$Sha"
-    return Get-CodeRabbitHeadArrival -ObservedTimes $times -CommitTime (ConvertTo-CrTime $commit.commit.committer.date)
+    return [pscustomobject]@{
+        at = Get-CodeRabbitHeadArrival -ObservedTimes $times -CommitTime (ConvertTo-CrTime $commit.commit.committer.date)
+        observed = @($times | Where-Object { $null -ne $_ }).Count -gt 0
+    }
 }
 
 function New-CrIssueComment {

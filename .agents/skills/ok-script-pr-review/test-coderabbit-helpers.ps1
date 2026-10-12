@@ -162,6 +162,9 @@ Assert-Equal (TOutcome @($finding, $ourReply)) 'AWAITING_PEER_REPLY' 'we replied
 Assert-Equal (TOutcome @($finding, $ourReply, (Peer '`@AliceJump`，感谢修复。`save()` 现在仅对 EPERM 重试 3 次。测试和 CI 结果以你报告的结果为准。'))) 'ACCEPTED' 'the peer confirmed the fix'
 Assert-Equal (TOutcome @($finding, $ourReply, (Peer '`@AliceJump`，已核对当前代码。此问题已修复。'))) 'ACCEPTED' 'the peer verified the current code'
 Assert-Equal (TOutcome @($finding, $ourReply, (Peer '`@AliceJump`，你说得对。我撤回这条意见。'))) 'WITHDRAWN' 'the peer withdrew the finding'
+foreach ($keptFinding in @('我不会撤回这条意见。', '此意见不能撤回。', "I won't withdraw this finding.", 'I will not withdraw this finding.', 'This finding cannot be withdrawn.', 'I will not be withdrawing this finding.')) {
+    Assert-Equal (TOutcome @($finding, $ourReply, (Peer $keptFinding))) 'NEEDS_REVIEW' 'a negated withdrawal still requires review'
+}
 Assert-Equal (TOutcome @($finding, $ourReply, (Peer '`@AliceJump`，收到。子仓 PR `#11` 尚未合并，先保持此线程开放。'))) 'KEPT_OPEN' 'the peer keeps it open'
 Assert-Equal (TOutcome @($finding, $ourReply, (Peer '`@AliceJump`，`stableRect` 修复了原先的问题。但 `publishStatus` 尚未比较实际序列化的矩形。请让状态比较序列化后的矩形。'))) 'FOLLOW_UP' 'the peer accepted part of it and asked for more'
 Assert-Equal (TOutcome @($finding, $ourReply, (Peer '### Rate Limit Exceeded'))) 'RATE_LIMITED' 'the peer was rate limited'

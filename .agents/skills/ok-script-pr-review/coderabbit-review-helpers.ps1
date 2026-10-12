@@ -327,6 +327,7 @@ function Get-CrThreadPeerOutcome {
         if ($text -match '(?i)thanks for confirming the fix|已确认|感谢修复|问题已修复') { return 'ACCEPTED_OPEN' }
         return 'NEEDS_REVIEW'
     }
+    if ($text -match "(?i)(?:不|不会|不能|无法|并不|拒绝)\s*撤回|(?:not|won['’]?t|will not|don['’]?t|do not|cannot|can['’]?t)\s+(?:be\s+)?withdraw") { return 'NEEDS_REVIEW' }
     if ($text -match '(?i)撤回|withdraw|(?:评论|意见|建议|问题|这条|该条)[^。]{0,10}不适用') { return 'WITHDRAWN' }
     if ($text -match '(?i)(?:线程|讨论|评论|问题|意见)[^。；，]{0,16}保持[^。；，]{0,8}(?:开放|打开|未解决)|保持[^。；，]{0,8}(?:线程|讨论|评论|问题|意见)[^。；，]{0,8}(?:开放|打开|未解决)|(?:thread|finding|conversation)[^.]{0,24}(?:remain(?:s)?|left|open)|(?:keep|leave)[^.]{0,24}(?:thread|finding|conversation)[^.]{0,12}open') { return 'KEPT_OPEN' }
     if ($text -match $unverified) { return 'NEEDS_REVIEW' }

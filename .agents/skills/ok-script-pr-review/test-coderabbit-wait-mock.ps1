@@ -23,7 +23,7 @@ function New-World {
         head = $Head; state = 'open'; draft = $false; nextId = 1000
         statuses = @{}; reviews = New-Object System.Collections.ArrayList; comments = New-Object System.Collections.ArrayList
         posts = New-Object System.Collections.ArrayList; events = New-Object System.Collections.ArrayList
-        onPost = $null; arrival = @{}; failPost = $null
+        onPost = $null; arrival = @{}; failPost = $null; suiteReads = 0
     }
     $global:W.arrival[$Head] = $t0
 }
@@ -104,7 +104,11 @@ function global:gh {
             $list = if ($w.statuses.ContainsKey($Matches[1])) { @($w.statuses[$Matches[1]]) } else { @() }
             return (ConvertTo-Pages $list)
         }
-        "^$r/commits/([0-9a-f]{40})/check-suites" { return (@{ check_suites = @(@{ created_at = (Stamp $w.arrival[$Matches[1]]) }) } | ConvertTo-Json -Compress -Depth 5) }
+        "^$r/commits/([0-9a-f]{40})/check-suites" {
+            $w.suiteReads++
+            $suites = if ($w.arrival.ContainsKey($Matches[1])) { @(@{ created_at = (Stamp $w.arrival[$Matches[1]]) }) } else { @() }
+            return (@{ check_suites = $suites } | ConvertTo-Json -Compress -Depth 5)
+        }
         "^$r/commits/([0-9a-f]{40})$" { return (@{ commit = @{ committer = @{ date = (Stamp $global:CodeRabbitFakeClock.Now.AddDays(-1)) } } } | ConvertTo-Json -Compress -Depth 5) }
     }
     throw "Unexpected gh call: $joined"
@@ -204,6 +208,17 @@ Test-Case 'manual review: quota query, one trigger, then the review' {
     Assert-True ($r.exit -eq 0 -and $r.result.state -eq 'REVIEWED') "got $($r.result.state) $($r.result.detail)"
     Assert-True ((Posts '@coderabbitai review').Count -eq 1) 'exactly one review trigger'
     Assert-True ($global:W.posts[0].body -eq '@coderabbitai rate limit') 'quota query must come first'
+}
+
+Test-Case 'commit-time fallback is refreshed until an observed head arrival exists' {
+    New-World
+    $global:W.arrival.Remove($headA)
+    Add-Comment '@coderabbitai review' 'alice' 'User' $t0.AddSeconds(-10) | Out-Null
+    At 20 { $global:W.arrival[$headA] = $t0 }
+    $r = Invoke-Wait @{ NoTrigger = $true }
+    Assert-True ($r.result.state -eq 'NO_SIGNAL') "old-head trigger must be discarded: $($r.result.state)"
+    Assert-True ($global:W.suiteReads -eq 3) "fallback is re-read, then observed arrival is cached: $($global:W.suiteReads) reads"
+    Assert-True ($global:W.posts.Count -eq 0) 'read-only wait must not post'
 }
 
 Test-Case 'thread-reply review on the head does not count as a review' {

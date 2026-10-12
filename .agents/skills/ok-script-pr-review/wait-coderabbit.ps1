@@ -77,11 +77,16 @@ function Get-Snapshot {
     $pr = Get-CrPr $Repo $PrNumber
     if ($pr.head -ne $Head) { return [pscustomobject]@{ headChanged = $true; head = $pr.head; pr = $pr } }
     $statuses = @(Get-CrStatuses $Repo $Head)
-    if ($null -eq $Arrival) { $Arrival = Get-CrHeadArrival $Repo $Head $statuses }
+    $arrivalObserved = $null -ne $Arrival
+    if ($null -eq $Arrival) {
+        $arrivalInfo = Get-CrHeadArrival $Repo $Head $statuses
+        $Arrival = $arrivalInfo.at
+        $arrivalObserved = $arrivalInfo.observed
+    }
     return [pscustomobject]@{
         headChanged = $false; head = $Head; prState = $pr.state; draft = $pr.draft
         statuses = $statuses; reviews = @(Get-CrReviews $Repo $PrNumber); comments = @(Get-CrIssueComments $Repo $PrNumber)
-        headArrivedAt = $Arrival; ledger = Read-Ledger $Head
+        headArrivedAt = $Arrival; arrivalObserved = $arrivalObserved; ledger = Read-Ledger $Head
     }
 }
 
@@ -140,7 +145,8 @@ try {
                 $restart = $true
                 continue
             }
-            $arrival = $snapshot.headArrivedAt
+            # Commit time can predate the push; re-query until GitHub observes this head.
+            if ($snapshot.arrivalObserved) { $arrival = $snapshot.headArrivedAt }
             $info = Get-CodeRabbitHeadState $snapshot
             Write-Transition $head $info
             if ($info.state -ne 'COMPLETED_UNCONFIRMED') { $unconfirmedSince = $null }
@@ -206,7 +212,7 @@ try {
                     # 5xx, timeouts and network errors may still have created the comment: keep the ledger.
                     $entry.status = 'uncertain'; $entry.error = $message
                     Update-Ledger $head $entry
-                    $check = Find-SentTrigger $head $arrival
+                    $check = Find-SentTrigger $head $fresh.headArrivedAt
                     if ($check.head -ne $head) {
                         if ($StopOnHeadChange) { Complete-Wait 'HEAD_CHANGED' $check.head -Extra @{ previousHead = $head } }
                         Write-Host '[wait] HEAD_CHANGED while confirming an uncertain trigger; old session discarded'

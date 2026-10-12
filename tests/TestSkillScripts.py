@@ -228,7 +228,8 @@ class Demo:
             for suite in suites:
                 with self.subTest(shell=shell, suite=suite):
                     result = subprocess.run(
-                        [shell, "-NoProfile", "-NonInteractive", "-File", str(REVIEW_SKILL / suite)],
+                        [shell, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                         "-File", str(REVIEW_SKILL / suite)],
                         cwd=ROOT,
                         capture_output=True,
                         text=True,
