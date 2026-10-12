@@ -1,0 +1,478 @@
+{
+  "capturedOn": "2026-10-01",
+  "cases": [
+    {
+      "repo": "AliceJump/ok-end-field",
+      "pr": 331,
+      "head": "fda93dcad9ce60a21d2696ce528eff00944ef53d",
+      "threadId": "PRRT_kwDOQ98tDs6fn3RX",
+      "url": "https://github.com/AliceJump/ok-end-field/pull/331#discussion_r3942555747",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "coderabbitai[bot]",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🩺 Stability & Availability_ | _🟡 Minor_ | _⚡ Quick win_",
+          "created": "2026-09-05T23:53:54Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "已在 fda93dca 修复：AccountConfigTab.py L89/L495 与 GlobalConfigTab.py L26/L60/L99 五处均改为 `QTimer.singleShot(msec, self, callback)`，为延迟回调绑定 tab 的 QObject context，tab 销毁后回调不再执行。",
+          "created": "2026-09-06T00:51:38Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "`@AliceJump`，已确认。五处 `QTimer.singleShot` 调用现在绑定 tab 的 `QObject` context。该修复可阻止 tab 销毁后的延迟回调执行。\n\n---\n\n<!-- This is an auto-generated comment: tweet message by coderabbit.ai -->\n\nIf you found this review helpful, would you consider giving us a shout-out on [X](https://twitter.com/intent/tweet?related=CodeRabbitAI&text=%40coderabbitai%20%E5%8F%91%E7%8E%B0%E5%B9%B6%E4%BF%AE%E5%A4%8D%20Qt%20%E5%BB%B6%E8%BF%9F%E5%9B%9E%E8%B0%83%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E9%9A%90%E6%82%A3%EF%BC%9A%E4%B8%BA%205%20%E5%A4%84%20QTimer.singleShot%20%E7%BB%91%E5%AE%9A%20QObject%20context%EF%BC%8C%E9%81%BF%E5%85%8D%20tab%20%E9%94%80%E6%AF%81%E5%90%8E%E8%AE%BF%E9%97%AE%E6%97%A0%E6%95%88%20QWidget%E3%80%82%E5%80%BC%E5%BE%97%E4%B8%80%E8%AF%95%EF%BC%81%F0%9F%9B%A1%EF%B8%8F%E2%9C%A8&url=https%3A%2F%2Fgithub.com%2FAliceJump%2Fok-end-field%2Fpull%2F331%23discussion_r3942434386)?\n\nThank you for using CodeRabbit!\n\n<!-- end of auto-generated comment: tweet message by coderabbit.ai -->\n\n\n\n`@AliceJump` Thanks for confirming the fix. I couldn't resolve this review thread on the repository platform, so it remains open. Please retry or resolve it manually.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-06T00:59:02Z"
+        }
+      ],
+      "expectedOutcome": "ACCEPTED_OPEN",
+      "expectedAction": "NONE"
+    },
+    {
+      "repo": "AliceJump/ok-end-field",
+      "pr": 335,
+      "head": "09d8aff253d0529bb0428317afb3f05a35ecb5d3",
+      "threadId": "PRRT_kwDOQ98tDs6foNcN",
+      "url": "https://github.com/AliceJump/ok-end-field/pull/335#discussion_r3942591323",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "coderabbitai[bot]",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🎯 Functional Correctness_ | _🟠 Major_ | _⚡ Quick win_",
+          "created": "2026-09-06T01:08:11Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "已采纳：规则 6 已限定为代码提交走 PR，tag 等其他 ref 按各自 ruleset（修复提交 09d8aff）。",
+          "created": "2026-09-06T01:18:39Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "`@AliceJump`，已确认。规则 6 现在仅要求 `master` 的代码提交通过 PR，并明确 tag 和其他 ref 遵循各自的 ruleset。部署流程允许的注解 tag 推送不再与此规则冲突。\n\n🐇 ✅\n\n`@AliceJump` Thanks for confirming the fix. I couldn't resolve this review thread on the repository platform, so it remains open. Please retry or resolve it manually.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-06T01:19:10Z"
+        }
+      ],
+      "expectedOutcome": "ACCEPTED_OPEN",
+      "expectedAction": "NONE"
+    },
+    {
+      "repo": "AliceJump/ok-end-field",
+      "pr": 358,
+      "head": "89551c4652f8b0aa7dd4869d3445c27af5ffb00c",
+      "threadId": "PRRT_kwDOQ98tDs6hX_I2",
+      "url": "https://github.com/AliceJump/ok-end-field/pull/358#discussion_r3987027471",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "AliceJump",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🗄️ Data Integrity & Integration_ | _🟠 Major_ | _⚡ Quick win_",
+          "created": "2026-09-11T07:21:09Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "账号任务实际需要窗口未被遮挡，前面的持续置顶的窗口需要暂停一次，等待账号login_flow完成，此项先搁置",
+          "created": "2026-09-11T07:53:06Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "`@AliceJump`，了解。此问题依赖于 `login_flow()` 期间暂停并在完成后恢复 Topmost 监测的生命周期设计。\n\n在该机制完成前，`login_flow()` 的失败分支仍可能导致旧账号任务继续执行，因此此线程保持打开。需要时，我可以创建一个后续 GitHub issue 来跟踪该项工作。\n\n---\n\n<details>\n<summary>✏️ Learnings added</summary>\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-end-field PR: 358\nFile: src/tasks/mixin/login_mixin.py:66-66\nTimestamp: 2026-09-11T07:53:25.168Z\nLearning: 在 `src/tasks/mixin/login_mixin.py` 的 `LoginMixin.login_flow()` 执行期间，账号任务需要游戏窗口不被遮挡。因此，持续运行的 `TopmostMixin` 窗口置顶监测必须在登录流程开始时暂停，并在登录流程完成后恢复。\n```\n\n> Note: Learnings are effective only in the context of similar code segments. To apply general coding guidelines, please configure [review instructions](https://docs.coderabbit.ai/guides/review-instructions). You can manage existing learnings in the [app](https://app.coderabbit.ai/learnings).\n\n</details>\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-11T07:53:31Z"
+        }
+      ],
+      "expectedOutcome": "KEPT_OPEN",
+      "expectedAction": "REVIEW"
+    },
+    {
+      "repo": "AliceJump/ok-end-field",
+      "pr": 405,
+      "head": "86e0c82ba62e19a851f80e112403d89a2c93b611",
+      "threadId": "PRRT_kwDOQ98tDs6liCgr",
+      "url": "https://github.com/AliceJump/ok-end-field/pull/405#discussion_r4094494698",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "AliceJump",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🎯 Functional Correctness_ | _🟡 Minor_ | _⚡ Quick win_",
+          "created": "2026-09-24T10:04:56Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "This thread was resolved in conversation only — no code change was made. Please implement the actual fix as a commit on this branch: @coderabbitai resolve",
+          "created": "2026-09-24T14:01:52Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "<details>\n<summary>🧩 Analysis chain</summary>\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nset -euo pipefail\nast-grep outline src/data/skill_rotation.py --items all\nast-grep outline src/tasks/onetime/AutoCombatLogic.py --items all --match 'run|generate_damage_rotation|generate_skill_sequence'\nsed -n '1,115p' src/data/skill_rotation.py\nrg -n -C5 'KEY_DAMAGE_ROTATION|generate_damage_rotation|generate_skill_sequence' src/tasks/onetime/AutoCombatLogic.py\nrg -n -C4 'KEY_SKILL_ALLOWLIST: \\(|KEY_DAMAGE_ROTATION: \\(' src/core/BattleConfig.py\n```\n\nLength of output: 9421\n\n---\n\n</details>\n\n`@AliceJump`, you’re right: resolving the conversation did not change the code. The current `AutoCombatLogic.run` selects damage sorting or enhancement-chain filtering, but `src/core/BattleConfig.py` does not explain that choice. The current `src/data/skill_rotation.py` docstring no longer claims that the behaviors are combined, so it does not need that specific edit.\n\nI cannot commit directly. I’ll request the code-change workflow to update the PR branch. I’ll leave this thread open until the fix is verified.\n\n\n\n- Update both configuration descriptions to state that damage sorting and enhancement-chain filtering are mutually exclusive.\n- Leave `src/data/skill_rotation.py` unchanged unless the coding workflow finds a remaining incorrect claim.\n- Verify the resulting diff before resolving this thread.\n\n<!-- <requirement>\n[requirement damage_rotation_1/2]\nIn `src/core/BattleConfig.py`, revise `KEY_SKILL_ALLOWLIST` and `KEY_DAMAGE_ROTATION` descriptions. State that enabling damage sorting does not apply enhancement-chain filtering, and disabling damage sorting uses enhancement-chain filtering.\n</requirement> -->\n\n<!-- <requirement>\n[requirement damage_rotation_2/2]\nCheck `src/data/skill_rotation.py` for any remaining claim that both behaviors run together. The current module docstring makes no such claim; avoid an unnecessary edit. Verify the final diff against both selection paths in `src/tasks/onetime/AutoCombatLogic.py`.\n</requirement> -->\n\n</plan_code_changes_format>\n\n---\n\nFailed to start Coding Agent task. Please try again.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-24T14:03:19Z"
+        }
+      ],
+      "expectedOutcome": "KEPT_OPEN",
+      "expectedAction": "REVIEW"
+    },
+    {
+      "repo": "AliceJump/ok-end-field",
+      "pr": 405,
+      "head": "86e0c82ba62e19a851f80e112403d89a2c93b611",
+      "threadId": "PRRT_kwDOQ98tDs6mOoSr",
+      "url": "https://github.com/AliceJump/ok-end-field/pull/405#discussion_r4110561394",
+      "isResolved": false,
+      "resolvedBy": null,
+      "comments": [
+        {
+          "login": "github-advanced-security",
+          "type": "Bot",
+          "body": "## SonarCloud / Agentic workflows should not be vulnerable to path injection attacks",
+          "created": "2026-09-26T07:18:26Z"
+        }
+      ],
+      "expectedOutcome": "NEEDS_REVIEW",
+      "expectedAction": "REVIEW"
+    },
+    {
+      "repo": "AliceJump/ok-end-field",
+      "pr": 425,
+      "head": "3bae76a3fb4a15dbb1d3266da08fcaa0cf145d9c",
+      "threadId": "PRRT_kwDOQ98tDs6n0-9b",
+      "url": "https://github.com/AliceJump/ok-end-field/pull/425#discussion_r4152478788",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "coderabbitai[bot]",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🎯 Functional Correctness_ | _🟡 Minor_ | _⚡ Quick win_",
+          "created": "2026-10-01T06:25:31Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "危险态检查其实只应该在click为左键点击的时候才调用。其他比如说右键中键点击都是不需要的。",
+          "created": "2026-10-01T06:28:13Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "`@AliceJump`，感谢澄清。危险态检查只适用于左键点击，右键和中键点击不需要。\n\n我之前要求在跳过中键点击时保留危险态检查，这不符合预期行为。撤回该建议，无需在此分支补充 `find_danger()`、`kill_game()` 或相关异常处理。\n\n---\n\n<details>\n<summary>✏️ Learnings added</summary>\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-end-field PR: 425\nFile: src/tasks/mixin/navigation_detection_scope.py:113-120\nTimestamp: 2026-10-01T06:30:26.860Z\nLearning: 在 AliceJump/ok-end-field 中，src/core/base_mixin/runtime_mixin.py 的 click 危险态检查按设计仅适用于左键点击，右键和中键点击不需要。审查 src/tasks/mixin/navigation_detection_scope.py 的中键拦截逻辑时，不应要求跳过中键点击的分支执行 find_danger()、kill_game() 或相关危险态异常处理。\n```\n\n> Note: Learnings are effective only in the context of similar code segments. To apply general coding guidelines, please configure [review instructions](https://docs.coderabbit.ai/guides/review-instructions). You can manage existing learnings in the [app](https://app.coderabbit.ai/learnings).\n\n</details>\n\n\n\n✅ Review thread resolved.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-10-01T06:30:34Z"
+        }
+      ],
+      "expectedOutcome": "WITHDRAWN",
+      "expectedAction": "NONE"
+    },
+    {
+      "repo": "AliceJump/ok-script-toolkit",
+      "pr": 17,
+      "head": "52673c3b4473bc4d74ea5e136cc92016f70eb09b",
+      "threadId": "PRRT_kwDOUOBQIc6mjlAS",
+      "url": "https://github.com/AliceJump/ok-script-toolkit/pull/17#discussion_r4119196690",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "coderabbitai[bot]",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🗄️ Data Integrity & Integration_ | _🟠 Major_ | _⚡ Quick win_",
+          "created": "2026-09-28T06:11:13Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "已确认依赖，暂缓解析。主仓 gitlink 已更新到子仓 PR #11 的最新提交 50b06b1，当前子仓 PR 仍未合并。按双仓顺序先合并 #11，再把主仓 gitlink 更新到子仓 main 可达的提交并重跑 CI；完成前保持此线程开放。",
+          "created": "2026-09-28T06:28:51Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "`@AliceJump`，收到。子仓 PR `#11` 尚未合并，先保持此线程开放。合并 `#11` 后，请将主仓 gitlink 更新到子仓 `main` 可达的提交，并重跑 CI。\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-28T06:29:06Z"
+        }
+      ],
+      "expectedOutcome": "KEPT_OPEN",
+      "expectedAction": "REVIEW"
+    },
+    {
+      "repo": "AliceJump/ok-script-toolkit",
+      "pr": 18,
+      "head": "2cff566adb63b1fbef8af18c6183d0815a641aea",
+      "threadId": "PRRT_kwDOUOBQIc6nB1gI",
+      "url": "https://github.com/AliceJump/ok-script-toolkit/pull/18#discussion_r4131615637",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "AliceJump",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🗄️ Data Integrity & Integration_ | _🟠 Major_ | _🏗️ Heavy lift_",
+          "created": "2026-09-29T08:49:23Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "@coderabbitai If the image file is still there after a failed delete, the previous boxes.json is written back before deleteImage returns false. Fixed in b5ba3db.",
+          "created": "2026-09-29T09:07:16Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "<details>\n<summary>🧩 Analysis chain</summary>\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nset -e\ngit rev-parse --short HEAD\ngit show -s --format='%h %s' b5ba3db 2>&1 || true\nast-grep outline src/templateAssetData.ts --match 'deleteImage|removeImageEntry|save' --view expanded\nast-grep outline src/boxResourceStore.ts --match 'captureAuthoring|restoreAuthoring|removeImageBoxes' --view expanded\nrg -n -C 12 'deleteImage\\(|captureAuthoring\\(|restoreAuthoring\\(|removeImageBoxes\\(' src/templateAssetData.ts src/boxResourceStore.ts scripts/test_save_to_assets.js | head -240\n```\n\nLength of output: 9377\n\n---\n\n</details>\n\n`@AliceJump`, I can now verify commit `b5ba3db`. If `fs.unlinkSync()` fails and the image remains, `deleteImage()` attempts to restore the previous `boxes.json`. My earlier statement that I could not verify the commit was premature.\n\nThe original finding also covers later failures. If `save()` fails after `fs.unlinkSync()` succeeds, `deleteImage()` returns `false`, but the image is gone and the catch block does not restore it. I’ll keep this finding open for that case.\n\n---\n\n<details>\n<summary>🧠 Learnings used</summary>\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-script-toolkit\n\nTimestamp: 2026-09-28T21:30:51.655Z\nLearning: In `src/boxResourceStore.ts`, a missing authoring `boxes.json` is treated as an empty catalog. If an existing authoring `boxes.json` cannot be read, authoring writes and runtime publishing must stop rather than replace its contents.\n```\n\n</details>\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-29T09:07:55Z"
+        }
+      ],
+      "expectedOutcome": "KEPT_OPEN",
+      "expectedAction": "REVIEW"
+    },
+    {
+      "repo": "AliceJump/ok-script-toolkit",
+      "pr": 18,
+      "head": "2cff566adb63b1fbef8af18c6183d0815a641aea",
+      "threadId": "PRRT_kwDOUOBQIc6m2QRe",
+      "url": "https://github.com/AliceJump/ok-script-toolkit/pull/18#discussion_r4126777599",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "coderabbitai[bot]",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🎯 Functional Correctness_ | _🟡 Minor_ | _⚡ Quick win_",
+          "created": "2026-09-28T20:21:56Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "@coderabbitai The path label now has for=\"generatePath\".",
+          "created": "2026-09-28T20:35:52Z"
+        }
+      ],
+      "expectedOutcome": "RESOLVED_SILENT",
+      "expectedAction": "NONE"
+    },
+    {
+      "repo": "AliceJump/ok-script-toolkit",
+      "pr": 21,
+      "head": "84b65865acf0e3fb1ca2c4c428d0a4835785f866",
+      "threadId": "PRRT_kwDOUOBQIc6naHHY",
+      "url": "https://github.com/AliceJump/ok-script-toolkit/pull/21#discussion_r4142048204",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "coderabbitai[bot]",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🎯 Functional Correctness_ | _🟡 Minor_ | _⚡ Quick win_",
+          "created": "2026-09-30T06:22:54Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "什么意思详细描述",
+          "created": "2026-09-30T06:27:34Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "<details>\n<summary>🧩 Analysis chain</summary>\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nast-grep outline src/templateAssetData.ts --match 'TemplateAssetData|importImageFile' --view expanded\nrg -n -C12 'importImageFile\\s*\\(' src/templateAssetData.ts src/cocoAnnotationData.ts\nrg -n -C5 'importFile|dropTemp|importBtn|assetMode' media/templateAssetPanel/app.js\n```\n\nLength of output: 4911\n\n---\n\n</details>\n\n`@AliceJump`，我指的是：**框面板仍允许导入图片，但导入方法现在把图片记录保存到 `boxes.json`，而不是默认的 `coco_annotations.json`。** 我刚核实了这条调用链。\n\n### 1. 这次修改改变了导入方法使用的数据对象\n\n原来，控制器使用传入的模板数据对象：\n\n```ts\nthis.data = data; // 默认处理 coco_annotations.json\n```\n\n现在，框模式使用独立的数据对象：\n\n```ts\nthis.sourceData = data;\nif (boxes) {\n  this.data = new TemplateAssetData(data.root, AUTHORING_FILE_NAME);\n}\n```\n\n这里的 `AUTHORING_FILE_NAME` 是 `boxes.json`。所以，框模式下调用 `this.data.save()`，保存的是框源文件。\n\n### 2. 图片导入入口没有随之调整\n\n前端在框模式下仍允许这两个操作：\n\n- 点击“导入”，发送 `importFile`。\n- 拖入临时截图，发送 `dropTemp`。\n\n宿主端的两个处理方法都调用：\n\n```ts\nthis.data.importImageFile(...)\n```\n\n我检查了 `TemplateAssetData.importImageFile()`。这个方法会：\n\n1. 把图片复制到模板目录。\n2. 读取图片尺寸。\n3. 调用 `this.addImageEntry()`，添加 COCO 图片记录。\n4. 调用 `this.save()`，保存当前标注文件。\n\n因此，**从框面板导入图片，会向 `boxes.json` 的 `images` 数组添加记录；这条调用本身不会向 `coco_annotations.json` 添加记录。**\n\n### 3. 实际表现是什么\n\n例如，你在框面板导入 `example.png`，但还没有画框：\n\n| 对象 | 这次导入的结果 |\n|---|---|\n| 模板目录 | 新增图片文件 |\n| `boxes.json` | 新增图片记录，保存框源文件 |\n| `coco_annotations.json` | 这条导入调用不更新它 |\n\n普通截图入口则调用 `TemplateAssetData.addImageToCoco()`。所以，框面板里的“截图”和“导入／拖入临时截图”目前走了不同的图片登记路径。\n\n### 4. 为什么我提出这个意见\n\n我原评论默认了一个职责划分：**图片导入由模板数据对象负责；框数据对象负责框标注。** 如果这是预期设计，导入和拖放应改用 `this.sourceData`，同时保留框面板刷新。\n\n但需要澄清：**`boxes.json` 采用 COCO 格式，本来就允许有 `images` 数组。写入图片记录本身不代表文件损坏，也不一定是功能错误。** 我的原评论没有充分说明这个前提。\n\n如果你的设计就是“框面板可以独立导入图片，并把图片登记到框源 COCO”，那么当前写入目标可以是合理的，不需要仅为了避免 `images` 记录而禁止导入。需要确认的是：这种独立登记是否符合预期，以及为什么它与普通截图入口不同。\n\n所以，这条意见的核心是**确认图片导入的数据归属**，不是说“框源 COCO 不能包含图片记录”。\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-30T06:28:23Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "他们是共享图源。共享图源的话是不是应该都写一遍？还是说没必要，因为真正你在图上画框的时候，它会自动注册。",
+          "created": "2026-09-30T06:32:11Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "<details>\n<summary>🧩 Analysis chain</summary>\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nast-grep outline src/cocoAnnotationData.ts --match 'CocoAnnotationData' --view expanded\nast-grep outline src/annotationPanel.ts --match 'AnnotationController' --view expanded\nrg -n -C8 'listImages\\s*\\(|addImageEntry\\s*\\(|ensureImageEntry\\s*\\(|registerImage\\s*\\(|replaceAnnotationsForImage\\s*\\(' src/cocoAnnotationData.ts src/annotationPanel.ts\nrg -n -C10 'saveAnnotations\\s*\\(|private.*save|addImageEntry\\s*\\(|ensureImage' src/annotationPanel.ts\n```\n\nLength of output: 6919\n\n---\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nsed -n '277,324p' src/cocoAnnotationData.ts\nsed -n '335,391p' src/cocoAnnotationData.ts\nsed -n '271,296p' src/annotationPanel.ts\n```\n\nLength of output: 5200\n\n---\n\n</details>\n\n`@AliceJump`，**没必要在导入时把两个 COCO 文件都写一遍。你的理解是对的：首次保存画框结果时，代码会自动登记图片。** 谢谢你澄清共享图源的设计。\n\n我核实了当前实现：\n\n- `CocoAnnotationData.listImages()` 直接扫描模板目录。图片不需要先登记到 COCO 的 `images` 数组，两个面板也能列出图片。\n- `AnnotationController.persistAnnotations()` 调用 `setAnnotationsForImage()`。\n- `setAnnotationsForImage()` 读取图片尺寸，再调用 `ensureSwapImage()`。如果当前 COCO 文件没有图片记录，该方法就补上记录。\n- 随后的 `save()` 把图片记录和标注一起保存到当前 COCO 文件。\n\n因此，可以采用这个流程：\n\n| 操作 | `coco_annotations.json` | `boxes.json` |\n|---|---|---|\n| 从模板面板导入图片 | 登记图片 | 不必同步写入 |\n| 从框面板导入图片 | 不必同步写入 | 登记图片 |\n| 首次保存模板标注 | 自动补登记，并保存模板标注 | 不变 |\n| 首次保存框标注 | 不变 | 自动补登记，并保存框标注 |\n\n**共享的是磁盘上的图片文件，不是两份 COCO 的图片记录或 `image_id`。** 每份 COCO 只需维护自身标注引用的图片记录。自动补登记的前提是图片尺寸可解析；否则代码会拒绝保存。\n\n所以，框面板导入图片时向 `boxes.json` 写入图片记录并没有问题。截图入口与导入入口的登记目标不同，也不因此构成功能错误。**我撤回原先要求禁止导入或改用 `this.sourceData` 的意见。**\n\n---\n\n<details>\n<summary>✏️ Learnings added</summary>\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-script-toolkit PR: 21\nFile: src/templateAssetPanel.ts:86-86\nTimestamp: 2026-09-30T06:32:51.110Z\nLearning: AliceJump/ok-script-toolkit 的模板面板与框面板共享模板目录中的磁盘图片，但分别使用 coco_annotations.json 和 boxes.json 保存独立的 COCO 标注。src/cocoAnnotationData.ts 中 CocoAnnotationData.listImages() 直接扫描图片目录，不依赖 COCO images 数组；setAnnotationsForImage() 在图片尺寸可解析时通过 ensureSwapImage() 自动补登记图片。因此，导入图片不需要同步写入两份 COCO 文件，框面板向 boxes.json 登记图片本身不是功能错误。\n```\n\n> Note: Learnings are effective only in the context of similar code segments. To apply general coding guidelines, please configure [review instructions](https://docs.coderabbit.ai/guides/review-instructions). You can manage existing learnings in the [app](https://app.coderabbit.ai/learnings).\n\n</details>\n\n\n\n✅ Review thread resolved.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-30T06:32:58Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "那其实应该改不必登记啊，导入只是导入，不必登记，完全不要登记。",
+          "created": "2026-09-30T06:34:43Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "`@AliceJump`，明白。**导入只复制图片，不登记 COCO 图片记录，也不保存 COCO 文件。** 谢谢你明确这个要求。\n\n根据前面已核实的实现，以及已有的共享图源说明，两个面板直接扫描图片目录。首次保存标注时，数据层会自动补登记图片。因此，导入时可以完全取消登记。\n\n\n\n- 修改 `importImageFile()`：保留图片复制和返回结果，移除导入时的图片登记及 COCO 保存。\n- 检查文件导入和临时截图拖入入口，确保两个面板都采用这个行为。\n- 补充回归测试：导入不修改任何 COCO 文件；首次保存标注仍能自动登记图片。\n\n<!-- <requirement>\n[requirement import_without_registration_1/2]\n检查 src/templateAssetData.ts 和 src/cocoAnnotationData.ts 中 importImageFile() 的实现及调用方。导入只操作图片文件，不调用 addImageEntry() 或 save()，不创建或修改 coco_annotations.json 和 boxes.json。保留现有文件复制校验、错误处理和返回值，并确保导入后当前图库仍能刷新。不要移除 setAnnotationsForImage() 首次保存标注时的自动登记逻辑。\n\n```shell\nast-grep outline src/templateAssetData.ts --match 'TemplateAssetData|importImageFile' --view expanded\nast-grep outline src/cocoAnnotationData.ts --match 'CocoAnnotationData|importImageFile' --view expanded\nrg -n -C5 --type ts '\\bimportImageFile\\s*\\(' .\n```\n</requirement> -->\n\n<!-- <requirement>\n[requirement import_without_registration_2/2]\n补充回归测试，覆盖模板面板和框面板的图片导入及临时截图拖入：\n1. 图片成功复制，并可从目录扫描结果中列出。\n2. COCO 文件不存在时，导入不创建文件。\n3. COCO 文件已存在时，导入不改变文件内容。\n4. 首次保存有效标注时，只在对应 COCO 文件中补登记图片并保存标注。\n检查 scripts/test_box_resource.js 的现有测试结构，再选择合适的位置添加测试。\n</requirement> -->\n\n原评论要求禁止框面板导入或改用 `this.sourceData`，仍然不适用。这里要改的是**导入方法本身不登记图片**。\n\n---\n\n<details>\n<summary>✏️ Learnings added</summary>\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-script-toolkit PR: 21\nFile: src/templateAssetPanel.ts:86-86\nTimestamp: 2026-09-30T06:35:10.911Z\nLearning: AliceJump/ok-script-toolkit 的图片导入设计要求：导入只复制磁盘图片，不向 coco_annotations.json 或 boxes.json 登记图片记录，也不创建或保存这两个 COCO 文件。此要求适用于 src/templateAssetPanel.ts 中通过 importImageFile() 执行的文件导入和临时截图拖入。两个面板通过扫描共享图片目录列出图片；COCO 图片记录应在首次保存标注时由数据层自动补登记。\n```\n\n> Note: Learnings are effective only in the context of similar code segments. To apply general coding guidelines, please configure [review instructions](https://docs.coderabbit.ai/guides/review-instructions). You can manage existing learnings in the [app](https://app.coderabbit.ai/learnings).\n\n</details>\n\n\n\n---\n\n<details>\n<summary>🧠 Learnings used</summary>\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-script-toolkit PR: 21\nFile: src/templateAssetPanel.ts:86-86\nTimestamp: 2026-09-30T06:32:54.694Z\nLearning: AliceJump/ok-script-toolkit 的模板面板与框面板共享模板目录中的磁盘图片，但分别使用 coco_annotations.json 和 boxes.json 保存独立的 COCO 标注。src/cocoAnnotationData.ts 中 CocoAnnotationData.listImages() 直接扫描图片目录，不依赖 COCO images 数组；setAnnotationsForImage() 在图片尺寸可解析时通过 ensureSwapImage() 自动补登记图片。因此，导入图片不需要同步写入两份 COCO 文件，框面板向 boxes.json 登记图片本身不是功能错误。\n```\n\n</details>\n\n---\n\nFailed to start Coding Agent task. Please try again.\n\n\n\n✅ Review thread resolved.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-30T06:35:19Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "查一下子仓库测的pr是不是也是这样的？",
+          "created": "2026-09-30T06:35:59Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "<details>\n<summary>🧩 Analysis chain</summary>\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nset -euo pipefail\ngh pr view 16 --repo AliceJump/ok-script-toolkit-jetbrains --json title,url,state,headRefOid,baseRefOid,body\ngh api --paginate repos/AliceJump/ok-script-toolkit-jetbrains/pulls/16/files --jq '.[] | {filename,status,patch}'\n```\n\nLength of output: 144247\n\n---\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nset -euo pipefail\nrepo=AliceJump/ok-script-toolkit-jetbrains\nref=af60acd8248bd8fe17629483e5ff0b0599f6b868\ntmp=$(mktemp -d)\nfor file in \\\nsrc/main/kotlin/com/alicejump/okscripttoolkit/ui/TemplateAssetToolWindowFactory.kt \\\nsrc/test/kotlin/com/alicejump/okscripttoolkit/core/TemplateAssetDataServiceCocoTest.kt; do\n  name=\"${file##*/}\"\n  gh api \"repos/$repo/contents/$file?ref=$ref\" --jq .content | base64 --decode > \"$tmp/$name\"\n  echo \"=== $file ===\"\n  ast-grep outline \"$tmp/$name\" --match 'import|Import|drop|Drop|capture|Capture|screenshot|Screenshot' --view expanded || true\n  rg -n -C12 'importImages\\s*\\(|registerImageAndSave\\s*\\(|fun .*([Ii]mport|[Dd]rop)|COCO|cocoFile' \"$tmp/$name\" | head -350\ndone\ngh api \"repos/$repo/git/trees/$ref?recursive=1\" --jq '.tree[] | select(.type == \"blob\" and (.path | test(\"(?i)(import|drag|drop|coco).*test|test.*(import|drag|drop|coco)\"))) | .path'\n```\n\nLength of output: 30546\n\n---\n\n</details>\n\n`@AliceJump`，查了子仓库 [JetBrains PR `#16`](https://github.com/AliceJump/ok-script-toolkit-jetbrains/pull/16)，当前提交是 `af60acd`。\n\n**子仓库也仍然在导入时登记图片，尚未符合你要求的“导入只复制，不登记”。** 我按你前面明确的要求和已有共享图源说明做了核查。\n\n### 1. 文件导入和临时截图拖入都会登记\n\n`src/main/kotlin/com/alicejump/okscripttoolkit/ui/TemplateAssetToolWindowFactory.kt` 中：\n\n- Line 669：文件导入调用 `data.importImages(...)`。\n- Line 782：临时截图拖入也调用 `data.importImages(...)`。\n\n`data` 在模板模式下处理 `coco_annotations.json`，在框模式下处理 `boxes.json`。\n\n共用方法 `CocoAnnotationData.importImages()` 仍执行：\n\n```kotlin\nval (w, h) = readImageHeaderSize(targetFile) ?: (0 to 0)\nupdated.addImage(targetName, w, h)\n```\n\n全部复制完成后，它调用 `writeCoco(updated)`。因此，**从哪个面板导入，就登记并保存哪个面板的 COCO 文件。** 如果 COCO 保存失败，它还会删除刚复制的图片，回滚导入。\n\n### 2. 首次保存标注已经支持自动登记\n\n`CocoAnnotationData.saveAnnotationEdits()` 会检查图片记录。记录不存在时，它使用本次编辑提供的有效图片尺寸调用 `updated.addImage(...)`，随后保存图片记录和标注。\n\n`listImages()` 也直接扫描图片目录。\n\n所以，**子仓库同样不需要在导入时预先登记图片，也不需要同步写两份 COCO 文件。**\n\n### 3. 现有测试仍要求导入登记\n\n`src/test/kotlin/com/alicejump/okscripttoolkit/core/TemplateAssetDataServiceCocoTest.kt` 中有两个明确的旧行为测试：\n\n| 测试位置 | 当前断言 |\n|---|---|\n| Line 392 | COCO 写入失败时，导入失败，并删除已复制图片 |\n| Line 407 | 导入成功后，重新加载 COCO，能找到图片记录及尺寸 |\n\n这说明不仅实现还保留登记行为，**测试也仍在验证这个行为**。PR 描述中的“426 项测试通过”不能证明它符合你刚明确的新要求。\n\n**结论：子仓库的 `importImages()` 和这两个导入测试也需要调整。** 文件导入和临时截图拖入应只复制图片；首次保存标注时的自动登记应保留。\n\n另外，普通截图按钮走的是独立的 `registerImageAndSave()`，目前也会登记。我把它与“临时截图拖入”分开说明，避免混淆。本次只检查代码和测试断言，没有运行测试，也没有修改文件。\n\n---\n\n<details>\n<summary>🧠 Learnings used</summary>\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-script-toolkit PR: 21\nFile: src/templateAssetPanel.ts:86-86\nTimestamp: 2026-09-30T06:35:13.667Z\nLearning: AliceJump/ok-script-toolkit 的图片导入设计要求：导入只复制磁盘图片，不向 coco_annotations.json 或 boxes.json 登记图片记录，也不创建或保存这两个 COCO 文件。此要求适用于 src/templateAssetPanel.ts 中通过 importImageFile() 执行的文件导入和临时截图拖入。两个面板通过扫描共享图片目录列出图片；COCO 图片记录应在首次保存标注时由数据层自动补登记。\n```\n\n---\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-script-toolkit PR: 21\nFile: src/templateAssetPanel.ts:86-86\nTimestamp: 2026-09-30T06:32:54.694Z\nLearning: AliceJump/ok-script-toolkit 的模板面板与框面板共享模板目录中的磁盘图片，但分别使用 coco_annotations.json 和 boxes.json 保存独立的 COCO 标注。src/cocoAnnotationData.ts 中 CocoAnnotationData.listImages() 直接扫描图片目录，不依赖 COCO images 数组；setAnnotationsForImage() 在图片尺寸可解析时通过 ensureSwapImage() 自动补登记图片。因此，导入图片不需要同步写入两份 COCO 文件，框面板向 boxes.json 登记图片本身不是功能错误。\n```\n\n</details>\n\n\n\n✅ Review thread resolved.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-30T06:36:47Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "就此修改直接向这两个分支提交commit。",
+          "created": "2026-09-30T07:39:34Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "`@AliceJump`，我会把这次修改交给编码工作流，目标是更新主仓库 PR `#21` 和 JetBrains 子仓库 PR `#16` 的现有分支，不新建 PR。**我不能在检查环境直接提交 commit。** 是否成功提交，以编码工作流的实际结果为准。\n\n修改范围沿用你已明确的要求：导入和截图只保存图片，不登记 COCO；首次保存标注时再自动登记。\n\n\n\n- 修改两个仓库的图片导入和截图流程。\n- 更新回归测试，验证图片获取不创建或修改 COCO 文件。\n- 保留首次保存标注时的自动登记。\n- 将修改交付到两个现有 PR 分支，并按既定合并顺序处理子模块指针。\n\n<!-- <requirement>\n[requirement image_only_vscode_1/3]\n修改 AliceJump/ok-script-toolkit PR `#21` 当前分支。\n检查 src/templateAssetData.ts、src/cocoAnnotationData.ts 和 src/templateAssetPanel.ts。\n让 importImageFile() 只复制图片，保留复制校验、错误处理和返回值。\n文件导入和临时截图拖入均不得创建或修改 coco_annotations.json 或 boxes.json。\n按照已有截图要求，让 AssetGalleryController.handleScreenshot() 和 TemplateAssetData.addScreenshot() 只保存图片并刷新图库，不调用 COCO 登记或保存。\n保留 AnnotationController.persistAnnotations() 和 CocoAnnotationData.setAnnotationsForImage() 在首次保存有效标注时自动登记图片的逻辑。\n同步修正描述截图会登记 COCO 的过时注释。\n</requirement> -->\n\n<!-- <requirement>\n[requirement image_only_jetbrains_2/3]\n修改 AliceJump/ok-script-toolkit-jetbrains PR `#16` 当前分支。\n先核实当前实现，避免重复修改已经完成的部分。\n让 CocoAnnotationData.importImages() 只复制图片，不调用 updated.addImage() 或 writeCoco()。\n移除仅由 COCO 保存失败触发的导入回滚，保留图片复制失败时必要的错误处理。\n检查 TemplateAssetToolWindowFactory.kt 中的文件导入、临时截图拖入和普通截图路径，使图片获取不登记或保存 COCO。\n保留 CocoAnnotationData.saveAnnotationEdits() 的首次保存标注自动登记逻辑。\n</requirement> -->\n\n<!-- <requirement>\n[requirement regression_and_delivery_3/3]\n更新两个仓库的回归测试。\n覆盖模板模式与框模式，验证：\n1. 导入或截图成功后，图片可由目录扫描列出。\n2. COCO 文件不存在时，图片获取不创建 COCO 文件。\n3. COCO 文件存在时，图片获取不改变 COCO 文件内容。\n4. COCO 文件不可写或损坏时，不因 COCO 状态阻止单纯的图片导入。\n5. 首次保存有效标注时，只在对应 COCO 文件登记图片并保存标注。\n更新 JetBrains 的旧测试，不再要求导入后存在 COCO 图片记录，也不再要求因 COCO 写入失败而删除导入图片。\n\n由编码工作流运行相关测试和构建，并报告实际结果。\n交付目标为 PR `#21` 和 PR `#16` 的现有分支，不创建新 PR。\n遵守既定子模块合并顺序：PR `#16` 合并后，再将主仓库 jetbrains/ 指针更新为子仓库 main 可达的合并提交。不要提前改为未合并的分支提交。\n</requirement> -->\n\n---\n\n<details>\n<summary>🧠 Learnings used</summary>\n\n```\nLearnt from: AliceJump\nURL: https://github.com/AliceJump/ok-script-toolkit/pull/21\n\nTimestamp: 2026-09-30T07:37:36.325Z\nLearning: In AliceJump/ok-script-toolkit, screenshot acquisition must not register COCO images. AssetGalleryController.handleScreenshot() in src/templateAssetPanel.ts must save the captured image and refresh the asset list without calling TemplateAssetData.addImageToCoco(). TemplateAssetData.addScreenshot() in src/templateAssetData.ts must also remain image-only. Missing COCO image entries must be registered during annotation persistence, through AnnotationController.persistAnnotations() in src/annotationPanel.ts and CocoAnnotationData.setAnnotationsForImage() in src/cocoAnnotationData.ts.\n```\n\n---\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-script-toolkit PR: 21\nFile: src/templateAssetPanel.ts:86-86\nTimestamp: 2026-09-30T06:35:13.667Z\nLearning: AliceJump/ok-script-toolkit 的图片导入设计要求：导入只复制磁盘图片，不向 coco_annotations.json 或 boxes.json 登记图片记录，也不创建或保存这两个 COCO 文件。此要求适用于 src/templateAssetPanel.ts 中通过 importImageFile() 执行的文件导入和临时截图拖入。两个面板通过扫描共享图片目录列出图片；COCO 图片记录应在首次保存标注时由数据层自动补登记。\n```\n\n---\n\n```\nLearnt from: AliceJump\nRepo: AliceJump/ok-script-toolkit PR: 21\nFile: src/templateAssetPanel.ts:86-86\nTimestamp: 2026-09-30T06:32:54.694Z\nLearning: AliceJump/ok-script-toolkit 的模板面板与框面板共享模板目录中的磁盘图片，但分别使用 coco_annotations.json 和 boxes.json 保存独立的 COCO 标注。src/cocoAnnotationData.ts 中 CocoAnnotationData.listImages() 直接扫描图片目录，不依赖 COCO images 数组；setAnnotationsForImage() 在图片尺寸可解析时通过 ensureSwapImage() 自动补登记图片。因此，导入图片不需要同步写入两份 COCO 文件，框面板向 boxes.json 登记图片本身不是功能错误。\n```\n\n</details>\n\n---\n\nFailed to start Coding Agent task. Please try again.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-30T07:40:09Z"
+        }
+      ],
+      "expectedOutcome": "NEEDS_REVIEW",
+      "expectedAction": "REVIEW"
+    },
+    {
+      "repo": "AliceJump/ok-script-toolkit",
+      "pr": 22,
+      "head": "efc4ff9f3fc15d4236c7c58131ddb555b1917457",
+      "threadId": "PRRT_kwDOUOBQIc6nydQx",
+      "url": "https://github.com/AliceJump/ok-script-toolkit/pull/22#discussion_r4151415289",
+      "isResolved": false,
+      "resolvedBy": null,
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🎯 Functional Correctness_ | _🟠 Major_ | _🏗️ Heavy lift_",
+          "created": "2026-10-01T03:03:00Z"
+        }
+      ],
+      "expectedOutcome": "AWAITING_DETECTION",
+      "expectedAction": "WAIT_PEER"
+    },
+    {
+      "repo": "AliceJump/ok-script-toolkit-jetbrains",
+      "pr": 13,
+      "head": "709331afa44679ec97c2a79c831380b0c68035b0",
+      "threadId": "PRRT_kwDOUOBS3c6m4Z0E",
+      "url": "https://github.com/AliceJump/ok-script-toolkit-jetbrains/pull/13#discussion_r4127642048",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "coderabbitai[bot]",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🗄️ Data Integrity & Integration_ | _🟠 Major_ | _⚡ Quick win_",
+          "created": "2026-09-28T22:19:20Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "@coderabbitai isStorableRect uses the same bounds as readRect. replaceAuthoringImages and addBox return rect before writing when a box is outside the image, and OK shows annotation.rectInvalid. Fixed in 0686c0a.",
+          "created": "2026-09-28T22:29:12Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "<details>\n<summary>🧩 Analysis chain</summary>\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nset -e\ngit rev-parse --short HEAD\nast-grep outline src/main/kotlin/com/alicejump/okscripttoolkit/core/BoxResource.kt --match 'isStorableRect|replaceAuthoringImages|readRect' || true\nast-grep outline src/main/kotlin/com/alicejump/okscripttoolkit/core/BoxCatalogService.kt --match 'addBox|commitImageEdits' || true\nast-grep outline src/main/kotlin/com/alicejump/okscripttoolkit/ui/AnnotationDialog.kt --match 'doOKAction|save|commit' || true\nrg -n -C5 'isStorableRect|fun readRect|fun replaceAuthoringImages|fun addBox|annotation\\.rectInvalid|commitImageEdits|\\\"rect\\\"' src/main/kotlin/com/alicejump/okscripttoolkit/core/BoxResource.kt src/main/kotlin/com/alicejump/okscripttoolkit/core/BoxCatalogService.kt src/main/kotlin/com/alicejump/okscripttoolkit/ui/AnnotationDialog.kt src/test/kotlin/com/alicejump/okscripttoolkit/core/BoxResourceTest.kt || true\n```\n\nLength of output: 22622\n\n---\n\n🏁 Script executed:\n\n```shell\n#!/bin/bash\nset -e\nsed -n '258,281p' src/main/kotlin/com/alicejump/okscripttoolkit/core/BoxResource.kt\nsed -n '90,112p' src/main/kotlin/com/alicejump/okscripttoolkit/core/BoxCatalogService.kt\nsed -n '400,440p' src/main/kotlin/com/alicejump/okscripttoolkit/ui/AnnotationDialog.kt\n```\n\nLength of output: 4020\n\n---\n\n</details>\n\n`@AliceJump`，已核对 `0686c0a`。`isStorableRect` 与 `readRect` 使用相同的矩形约束。两个写入路径都会在写入前拒绝无效矩形；OK 会显示 `annotation.rectInvalid`，并保持对话框打开。感谢修复。\n\n---\n\n<!-- This is an auto-generated comment: tweet message by coderabbit.ai -->\n\nIf you found this review helpful, would you consider giving us a shout-out on [X](https://twitter.com/intent/tweet?related=CodeRabbitAI&text=%E6%96%B0%E5%A2%9E%E7%9F%A9%E5%BD%A2%E8%BE%B9%E7%95%8C%E6%A0%A1%E9%AA%8C%EF%BC%8C%E7%A1%AE%E4%BF%9D%E8%B6%8A%E7%95%8C%E6%A0%87%E6%B3%A8%E4%B8%8D%E4%BC%9A%E7%A0%B4%E5%9D%8F%20%60boxes.json%60%EF%BC%8C%E5%B9%B6%E8%AE%A9%E7%94%A8%E6%88%B7%E8%83%BD%E6%94%B6%E5%88%B0%E6%98%8E%E7%A1%AE%E9%94%99%E8%AF%AF%E6%8F%90%E7%A4%BA%E3%80%82%E8%AF%95%E8%AF%95%20%40coderabbitai%20%F0%9F%9B%A1%EF%B8%8F&url=https%3A%2F%2Fgithub.com%2FAliceJump%2Fok-script-toolkit-jetbrains%2Fpull%2F13%23discussion_r4127567552)?\n\nThank you for using CodeRabbit!\n\n<!-- end of auto-generated comment: tweet message by coderabbit.ai -->\n\n\n\n✅ Review thread resolved.\n\n_You are interacting with an AI system._\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-28T22:29:52Z"
+        }
+      ],
+      "expectedOutcome": "ACCEPTED",
+      "expectedAction": "NONE"
+    },
+    {
+      "repo": "AliceJump/ok-script-toolkit-jetbrains",
+      "pr": 13,
+      "head": "709331afa44679ec97c2a79c831380b0c68035b0",
+      "threadId": "PRRT_kwDOUOBS3c6m1BfW",
+      "url": "https://github.com/AliceJump/ok-script-toolkit-jetbrains/pull/13#discussion_r4126786312",
+      "isResolved": true,
+      "resolvedBy": {
+        "login": "AliceJump",
+        "__typename": "User"
+      },
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🎯 Functional Correctness_ | _🟠 Major_ | _⚡ Quick win_",
+          "created": "2026-09-28T19:19:41Z"
+        },
+        {
+          "login": "AliceJump",
+          "type": "User",
+          "body": "@coderabbitai The visibility buttons, checkboxes, and names can take keyboard focus. The name is a button that selects the box.",
+          "created": "2026-09-28T20:36:26Z"
+        },
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "### Rate Limit Exceeded\n\n`@AliceJump` have exceeded the limit for the number of chat messages per hour. Please wait **35 minutes and 12 seconds** before sending another message.\n\n<!-- This is an auto-generated reply by CodeRabbit -->",
+          "created": "2026-09-28T20:36:53Z"
+        }
+      ],
+      "expectedOutcome": "RATE_LIMITED",
+      "expectedAction": "NONE"
+    },
+    {
+      "repo": "AliceJump/ok-script-toolkit-jetbrains",
+      "pr": 17,
+      "head": "4df0cee9ef460d026e4a303a4f2aa552a97d6045",
+      "threadId": "PRRT_kwDOUOBS3c6nydY7",
+      "url": "https://github.com/AliceJump/ok-script-toolkit-jetbrains/pull/17#discussion_r4151416131",
+      "isResolved": false,
+      "resolvedBy": null,
+      "comments": [
+        {
+          "login": "coderabbitai",
+          "type": "Bot",
+          "body": "_🎯 Functional Correctness_ | _🟡 Minor_ | _⚡ Quick win_",
+          "created": "2026-10-01T03:03:12Z"
+        }
+      ],
+      "expectedOutcome": "AWAITING_DETECTION",
+      "expectedAction": "WAIT_PEER"
+    }
+  ]
+}

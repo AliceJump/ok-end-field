@@ -1,5 +1,6 @@
 import ast
 import importlib.util
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -9,9 +10,7 @@ from pathlib import Path
 import polib
 
 ROOT = Path(__file__).resolve().parent.parent
-WAIT_CODERABBIT = ROOT / ".agents/skills/ok-script-pr-review/wait-coderabbit.ps1"
-WAIT_CODERABBIT_HELPERS = ROOT / ".agents/skills/ok-script-pr-review/wait-coderabbit-helpers.ps1"
-WAIT_CODERABBIT_RATE_LIMIT = ROOT / ".agents/skills/ok-script-pr-review/wait-coderabbit-rate-limit.ps1"
+REVIEW_SKILL = ROOT / ".agents/skills/ok-script-pr-review"
 RUN_TESTS = ROOT / "scripts/testing/run_tests.ps1"
 
 
@@ -201,70 +200,45 @@ class Demo:
             I18N_HELPER.check_i18n(temp_dir)
 
     def test_non_ascii_powershell_scripts_have_utf8_bom(self):
-        non_ascii_paths = set()
-        for path in (WAIT_CODERABBIT, WAIT_CODERABBIT_HELPERS, WAIT_CODERABBIT_RATE_LIMIT, RUN_TESTS):
+        for path in (*REVIEW_SKILL.glob("*.ps1"), RUN_TESTS):
             with self.subTest(path=path.relative_to(ROOT)):
                 data = path.read_bytes()
                 text = data.decode("utf-8-sig")
                 if any(ord(char) > 127 for char in text):
-                    non_ascii_paths.add(path)
                     self.assertTrue(data.startswith(b"\xef\xbb\xbf"))
 
-        self.assertEqual(non_ascii_paths, {WAIT_CODERABBIT, WAIT_CODERABBIT_RATE_LIMIT, RUN_TESTS})
+    def test_review_scripts_have_no_thread_or_review_dismissal_mutations(self):
+        for path in REVIEW_SKILL.glob("*.ps1"):
+            with self.subTest(path=path.name):
+                script = path.read_text(encoding="utf-8-sig")
+                for forbidden in ("resolveReviewThread", "unresolveReviewThread", "/dismissals"):
+                    self.assertNotIn(forbidden, script)
 
-    def test_wait_coderabbit_has_no_review_dismissal_mutation(self):
-        script = WAIT_CODERABBIT.read_text(encoding="utf-8-sig")
-
-        self.assertNotIn("DismissChangesRequested", script)
-        self.assertNotIn("/dismissals", script)
-        self.assertNotRegex(script, r'"-X"\s*,\s*"(?:POST|PUT|PATCH|DELETE)"')
-        self.assertNotIn('"pr", "comment"', script)
-        self.assertIn("Get-ChangesRequestedReviews", script)
-        self.assertIn("exit 3", script)
-
-    def test_wait_coderabbit_helpers_match_force_push_and_enforce_cutoff(self):
-        command = """
-. '.agents/skills/ok-script-pr-review/wait-coderabbit-helpers.ps1'
-$event = Select-ForcePushEvent -SinceCommit 'abcdef0' -EventLines @(
-    "abcdef0123456789`t1234567890abcdef`t2026-09-01T12:00:00Z"
-)
-if ($event.BeforeCommit -ne 'abcdef0123456789') { throw 'wrong force-push event' }
-if (-not (Test-TimestampAfterCutoff -Timestamp '2026-09-01T12:00:01Z' -Cutoff $event.CreatedAt)) { throw 'new timestamp rejected' }
-if (Test-TimestampAfterCutoff -Timestamp '2026-09-01T12:00:00Z' -Cutoff $event.CreatedAt) { throw 'equal timestamp accepted' }
-if (Test-TimestampAfterCutoff -Timestamp '2026-09-01T11:59:59Z' -Cutoff $event.CreatedAt) { throw 'old timestamp accepted' }
-$review = [pscustomobject]@{ commit_id = 'head123'; submitted_at = '2026-09-01T12:00:01Z' }
-$status = [pscustomobject]@{ sha = 'head123'; state = 'success'; created_at = '2026-09-01T12:00:01Z' }
-if (-not (Test-ReviewCoversHead -Review $review -HeadSha 'head123' -Cutoff $event.CreatedAt)) { throw 'current review rejected' }
-if (Test-ReviewCoversHead -Review $review -HeadSha 'other456' -Cutoff $event.CreatedAt) { throw 'stale review accepted' }
-if (-not (Test-StatusCompletesHead -Status $status -HeadSha 'head123' -Cutoff $event.CreatedAt)) { throw 'current status rejected' }
-if (Test-StatusCompletesHead -Status $status -HeadSha 'other456' -Cutoff $event.CreatedAt) { throw 'stale status accepted' }
-$status.state = 'pending'
-if (Test-StatusCompletesHead -Status $status -HeadSha 'head123' -Cutoff $event.CreatedAt) { throw 'pending status accepted' }
-try {
-    Select-ForcePushEvent -SinceCommit 'deadbee' -EventLines @() | Out-Null
-    throw 'missing event did not fail closed'
-} catch {
-    if ($_.Exception.Message -notlike 'No HeadRefForcePushedEvent*') { throw }
-}
-try {
-    ConvertTo-UtcCutoff '2026-09-01T12:00:00' | Out-Null
-    throw 'offset-free time accepted'
-} catch {
-    if ($_.Exception.Message -notlike '-SinceTime must include*') { throw }
-}
-exit 0
-"""
-        result = subprocess.run(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
+    def test_coderabbit_powershell_suites(self):
+        shells = [shutil.which(name) for name in ("powershell.exe", "pwsh")]
+        shells = [shell for shell in shells if shell]
+        if not shells:
+            self.skipTest("PowerShell is unavailable")
+        suites = (
+            "test-coderabbit-helpers.ps1",
+            "test-coderabbit-wait-mock.ps1",
+            "test-review-threads-mock.ps1",
         )
-
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for shell in shells:
+            for suite in suites:
+                with self.subTest(shell=shell, suite=suite):
+                    result = subprocess.run(
+                        [shell, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                         "-File", str(REVIEW_SKILL / suite)],
+                        cwd=ROOT,
+                        capture_output=True,
+                        text=True,
+                        encoding="utf-8",
+                        errors="replace",
+                        timeout=120,
+                        check=False,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":
