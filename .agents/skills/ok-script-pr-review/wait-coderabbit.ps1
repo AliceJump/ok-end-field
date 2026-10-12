@@ -1,253 +1,234 @@
-﻿param(
-    [Parameter(Mandatory = $true)][int]$PrNumber,
-    [string]$Repo = "AliceJump/ok-end-field",
-    [ValidateRange(1, 2147483647)][int]$IntervalSeconds = 20,
-    [ValidateRange(1, 2147483647)][int]$TimeoutSeconds = 900,
-    [string]$SinceCommit = "",
-    [string]$SinceTime = "",
-    # 等到「可合并」状态：CodeRabbit status=success 且不存在 CHANGES_REQUESTED。
-    # 不加此开关时沿用旧行为：status=success 或出现覆盖 head 的评审条目即返回。
-    [switch]$WaitMergeReady,
-    # 结束时列出本轮新增的 CodeRabbit 顶层（非回复）评审意见，避免人工按时间戳过滤漏看
-    [switch]$ListNewComments
+<#
+Drives one PR to a CodeRabbit review that covers its current head.
+
+Every poll re-reads the PR head. A review session belongs to exactly one head SHA: when the head
+changes, all waits, quota answers and trigger bookkeeping of the old session are dropped and the new
+head is judged from scratch. Only a CodeRabbit review record for the head (or CodeRabbit's summary
+coverage marker plus a completed status) ends in REVIEWED; statuses and replies are signals only.
+
+`@coderabbitai review` is posted at most once per head, and only after wait-coderabbit-rate-limit.ps1
+returned AVAILABLE and a fresh re-check shows: PR open, head unchanged, no covering review, no review
+in progress, and no earlier trigger for this head (remote comment or local ledger).
+Last stdout line is a JSON result; see $CodeRabbitExitCodes in coderabbit-review-helpers.ps1.
+#>
+param(
+    [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')][string]$Repo,
+    [Parameter(Mandatory = $true)][ValidateRange(1, 2147483647)][int]$PrNumber,
+    [ValidatePattern('^([0-9a-fA-F]{40})?$')][string]$ExpectedHead = '',
+    [ValidateRange(60, 86400)][int]$TimeoutSeconds = 7200,
+    [ValidateRange(0, 3600)][int]$AutoWaitSeconds = 300,
+    [ValidateRange(60, 7200)][int]$ReviewWaitSeconds = 1800,
+    [ValidateRange(0, 3600)][int]$UnconfirmedGraceSeconds = 180,
+    [ValidateRange(5, 300)][int]$PollSeconds = 30,
+    [ValidateRange(0, 86400)][int]$MaxQuotaWaitSeconds = 3600,
+    [string]$StateDir = '',
+    [switch]$NoTrigger,
+    [switch]$StopOnHeadChange
 )
 
-# wait-coderabbit.ps1 — 轮询等待 CodeRabbit 完成对最新 commit 的 review。
-#
-# 用法：
-#   .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber 223
-#   .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber 223 -SinceCommit <旧sha>
-#   .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber 223 -SinceTime 2026-09-01T12:34:56Z
-#   .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber 223 -WaitMergeReady -ListNewComments
-#
-# 退出码：
-#   0 = 完成（输出评审摘要；WaitMergeReady 时表示已可合并）
-#   1 = 超时仍未等到（可重跑；pending 长期不动时提示重新触发）
-#   2 = 异常（API 失败、认证错误等）
-#   3 = 评审完成但仍有 CHANGES_REQUESTED（会列出阻塞评审，不自动 dismiss）
-#
-# 判断依据（普通等待两者取其一；WaitMergeReady 要求 status success 后再检查阻塞评审）：
-#   1. CodeRabbit 在 head commit 上的 commit status 变为 success
-#      （增量评审无新意见时不发布新条目，只翻 status）
-#   2. reviews 列表出现 commit_id 等于当前 headRefOid 的新条目
-#
-# 编码注意：gh 输出是 UTF-8（评审 body 含中文），PowerShell 默认按系统 ANSI(GBK)
-# 解码会把 JSON 弄坏导致 ConvertFrom-Json 报错；因此除强制 UTF-8 外，
-# 所有结构化读取一律走服务端 --jq 输出 TSV，PowerShell 只按行拆字段。
-# 引号注意：Windows PowerShell 5.1 向原生程序传参会剥掉内嵌双引号（PS 7.3+ 已修复），
-# 因此 --jq 过滤器一律不写字符串字面量，字符串经环境变量传给 gojq 的 $ENV.*；
-# null 字段直接交给 @tsv（渲染为空字段），不再用 "" 兜底。
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
+. (Join-Path $PSScriptRoot 'coderabbit-review-helpers.ps1')
+. (Join-Path $PSScriptRoot 'coderabbit-github.ps1')
+if (-not $StateDir) {
+    $StateDir = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'ok-script-pr-review\coderabbit-triggers'
+}
 
-$ErrorActionPreference = "Stop"
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$env:CR_LOGIN = 'coderabbitai[bot]'
-$env:CR_BOT = 'Bot'
-$env:CR_CONTEXT = 'CodeRabbit'
-$env:CR_BLOCKING = 'CHANGES_REQUESTED'
-. (Join-Path $PSScriptRoot "wait-coderabbit-helpers.ps1")
+function Complete-Wait {
+    param([string]$State, [string]$Head, [object]$Info = $null, [hashtable]$Extra = @{})
+    $result = @{ script = 'wait'; repo = $Repo; pr = $PrNumber; head = $Head; state = $State }
+    if ($Info) { $result.evidence = $Info.evidence; $result.detail = $Info.detail }
+    foreach ($key in $Extra.Keys) { $result[$key] = $Extra[$key] }
+    Write-Output (ConvertTo-CrResultJson $result)
+    exit $CodeRabbitExitCodes[$State]
+}
 
-function Invoke-GhChecked {
-    param([string[]]$GhArgs)
-    $output = gh @GhArgs 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "gh 命令失败 (exit $LASTEXITCODE): gh $($GhArgs -join ' ')`n$output"
+function Read-Ledger {
+    param([string]$Head)
+    $path = Get-CrLedgerPath $StateDir $Repo $PrNumber $Head
+    if (-not (Test-Path -LiteralPath $path)) { return $null }
+    $entry = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+    $entry | Add-Member -NotePropertyName path -NotePropertyValue $path -Force
+    return $entry
+}
+
+function Write-Ledger {
+    param([string]$Head, [hashtable]$Entry)
+    New-Item -ItemType Directory -Force -Path $StateDir | Out-Null
+    $path = Get-CrLedgerPath $StateDir $Repo $PrNumber $Head
+    $Entry.head = $Head; $Entry.repo = $Repo; $Entry.pr = $PrNumber
+    # CreateNew makes a concurrent second writer fail instead of sending a second trigger.
+    $stream = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write)
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes(($Entry | ConvertTo-Json -Compress))
+        $stream.Write($bytes, 0, $bytes.Length)
+    } finally { $stream.Dispose() }
+}
+
+function Update-Ledger {
+    param([string]$Head, [hashtable]$Entry)
+    $path = Get-CrLedgerPath $StateDir $Repo $PrNumber $Head
+    $Entry.head = $Head; $Entry.repo = $Repo; $Entry.pr = $PrNumber
+    [IO.File]::WriteAllText($path, ($Entry | ConvertTo-Json -Compress), [Text.Encoding]::UTF8)
+}
+
+function Get-Snapshot {
+    param([string]$Head, [object]$Arrival)
+    $pr = Get-CrPr $Repo $PrNumber
+    if ($pr.head -ne $Head) { return [pscustomobject]@{ headChanged = $true; head = $pr.head; pr = $pr } }
+    $statuses = @(Get-CrStatuses $Repo $Head)
+    if ($null -eq $Arrival) { $Arrival = Get-CrHeadArrival $Repo $Head $statuses }
+    return [pscustomobject]@{
+        headChanged = $false; head = $Head; prState = $pr.state; draft = $pr.draft
+        statuses = $statuses; reviews = @(Get-CrReviews $Repo $PrNumber); comments = @(Get-CrIssueComments $Repo $PrNumber)
+        headArrivedAt = $Arrival; ledger = Read-Ledger $Head
     }
-    return ($output | Out-String).Trim()
 }
 
-function Get-HeadSha {
-    $h = Invoke-GhChecked @("pr", "view", $PrNumber, "--repo", $Repo, "--json", "headRefOid", "--jq", ".headRefOid")
-    if ($h -is [array]) { $h = $h[0] }
-    return ([string]$h).Trim()
+function Wait-WithinDeadline {
+    param([double]$Seconds)
+    $remaining = ($globalDeadline - (Get-CrNow)).TotalSeconds
+    Wait-CrSeconds ([Math]::Max(0, [Math]::Min($Seconds, $remaining)))
 }
 
-function Get-LatestReview {
-    param([string]$CommitSha = "")
-    # 最新一条 CodeRabbit review；服务端过滤并输出 TSV（id|state|commit_id|submitted_at）
-    $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/reviews", "--jq",
-        '.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT) | [.id, .state, .commit_id, .submitted_at] | @tsv')
-    if (-not $out) { return $null }
-    $latest = $null
-    foreach ($ln in ($out -split "`n")) {
-        $f = $ln.Trim() -split "`t"
-        if ($f.Count -lt 4 -or -not $f[3]) { continue }
-        if ($CommitSha -and $f[2] -ne $CommitSha) { continue }
-        if ($null -eq $latest -or [datetime]$f[3] -gt [datetime]$latest.submitted_at) {
-            $latest = [pscustomobject]@{ id = $f[0]; state = $f[1]; commit_id = $f[2]; submitted_at = $f[3] }
-        }
+# After an uncertain send: look for the trigger comment, re-reading the head before each look.
+function Find-SentTrigger {
+    param([string]$Head, [object]$Arrival)
+    for ($attempt = 0; $attempt -lt 3 -and (Get-CrNow) -lt $globalDeadline; $attempt++) {
+        Wait-WithinDeadline $PollSeconds
+        $pr = Get-CrPr $Repo $PrNumber
+        if ($pr.head -ne $Head) { return [pscustomobject]@{ comment = $null; head = $pr.head } }
+        $found = @(Get-CrIssueComments $Repo $PrNumber | Where-Object {
+            -not (Test-CodeRabbitAuthor $_.login $_.type) -and (Test-CodeRabbitReviewCommand $_.body) -and $_.created -ge $Arrival
+        } | Sort-Object created) | Select-Object -Last 1
+        if ($found) { return [pscustomobject]@{ comment = $found; head = $Head } }
     }
-    return $latest
+    return [pscustomobject]@{ comment = $null; head = $Head }
 }
 
-function Get-CodeRabbitStatus {
-    # 返回 head 上最新 CodeRabbit commit status 的 state/description/created_at；无则 $null
-    $tsv = Invoke-GhChecked @("api", "repos/$Repo/commits/$headSha/status", "--jq",
-        '. as $combined | [.statuses[] | select(.context == $ENV.CR_CONTEXT)] | sort_by(.created_at) | reverse | .[0] | if . then [$combined.sha, .state, .description, .created_at] | @tsv else empty end')
-    if (-not $tsv) { return $null }
-    $first = ($tsv -split "`n")[0].Trim() -split "`t"
-    if ($first.Count -lt 4) { return $null }
-    return [pscustomobject]@{ sha = $first[0]; state = $first[1]; description = $first[2]; created_at = $first[3] }
+function Write-Transition {
+    param([string]$Head, [object]$Info)
+    $key = "$Head|$($Info.state)|$($Info.evidence)"
+    if ($key -eq $script:LastTransition) { return }
+    $script:LastTransition = $key
+    Write-Host "[wait] $Repo#$PrNumber head=$($Head.Substring(0, 7)) state=$($Info.state) $($Info.evidence) $($Info.detail)".TrimEnd()
 }
-
-function Get-ForcePushEvent {
-    param([string]$Commit)
-    $repoParts = $Repo -split "/", 2
-    if ($repoParts.Count -ne 2 -or -not $repoParts[0] -or -not $repoParts[1]) {
-        throw "Invalid -Repo value: $Repo"
-    }
-    $query = 'query($owner:String!, $name:String!, $number:Int!, $endCursor:String) { repository(owner:$owner, name:$name) { pullRequest(number:$number) { timelineItems(first:100, after:$endCursor, itemTypes:[HEAD_REF_FORCE_PUSHED_EVENT]) { nodes { ... on HeadRefForcePushedEvent { beforeCommit { oid } afterCommit { oid } createdAt } } pageInfo { hasNextPage endCursor } } } } }'
-    $out = Invoke-GhChecked @(
-        "api", "graphql", "--paginate",
-        "-f", "query=$query",
-        "-f", "owner=$($repoParts[0])",
-        "-f", "name=$($repoParts[1])",
-        "-F", "number=$PrNumber",
-        "--jq", '.data.repository.pullRequest.timelineItems.nodes[] | [(.beforeCommit.oid), (.afterCommit.oid), .createdAt] | @tsv'
-    )
-    # 注意：不能写成 $lines = if (...) { @(...) } else { @() }——PowerShell 会把分支里
-    # 的空数组展开成 $null，随后 Select-ForcePushEvent 的 [string[]] 参数绑定会直接
-    # 报 "Cannot bind argument to parameter 'EventLines' because it is null"，
-    # 掩盖掉本该给出的 "pass -SinceTime explicitly" 提示。
-    $lines = @()
-    if ($out) { $lines = @($out -split "`n") }
-    return Select-ForcePushEvent -SinceCommit $Commit -EventLines $lines
-}
-
-function Get-ChangesRequestedReviews {
-    $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/reviews", "--jq",
-        '.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT and .state == $ENV.CR_BLOCKING) | [.id, .state, .commit_id, .submitted_at] | @tsv')
-    if (-not $out) { return @() }
-    $items = @()
-    foreach ($ln in ($out -split "`n")) {
-        $f = $ln.Trim() -split "`t"
-        if ($f.Count -lt 4) { continue }
-        $items += [pscustomobject]@{ id = $f[0]; state = $f[1]; commit_id = $f[2]; submitted_at = $f[3] }
-    }
-    return $items
-}
-
-function Get-NewTopLevelComments {
-    # 列出 id 大于基线的 CodeRabbit 顶层评审意见（id|path|line）
-    param([long]$BaselineId)
-    $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/comments", "--jq",
-        '.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT and .in_reply_to_id == null) | [.id, .path, (.line // .original_line // 0)] | @tsv')
-    if (-not $out) { return @() }
-    $items = @()
-    foreach ($ln in ($out -split "`n")) {
-        $f = $ln.Trim() -split "`t"
-        if ($f.Count -lt 3) { continue }
-        if ([long]$f[0] -gt $BaselineId) { $items += [pscustomobject]@{ id = [long]$f[0]; path = $f[1]; line = $f[2] } }
-    }
-    return $items
-}
-
-function Get-MaxCommentId {
-    $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/comments", "--jq",
-        '[.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT) | .id] | max // 0')
-    if (-not $out) { return 0 }
-    return [long](([string]$out | Select-Object -Last 1).Trim())
-}
-
-function Get-ReviewSummary {
-    param([object]$Review)
-    if (-not $Review) { return "" }
-    $cid = if ($Review.commit_id) { $Review.commit_id.Substring(0, [Math]::Min(7, $Review.commit_id.Length)) } else { "?" }
-    return "[$($Review.state)] $($Review.submitted_at) commit=$cid"
-}
-
-$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 
 try {
-    if ($SinceCommit -and $SinceTime) {
-        throw "-SinceCommit and -SinceTime cannot be used together"
+    $globalDeadline = (Get-CrNow).AddSeconds($TimeoutSeconds)
+    $initial = Get-CrPr $Repo $PrNumber
+    $head = $initial.head
+    if ($ExpectedHead -and $head -ne $ExpectedHead.ToLowerInvariant()) {
+        Complete-Wait 'HEAD_CHANGED' $head -Extra @{ expectedHead = $ExpectedHead.ToLowerInvariant() }
     }
-    $headSha = Get-HeadSha
-    $cutoff = $null
-    if ($SinceTime) {
-        $cutoff = ConvertTo-UtcCutoff $SinceTime
-        Write-Host "仅接受晚于显式截止时间 $($cutoff.ToString('o')) 的当前 head 结果"
-    } elseif ($SinceCommit) {
-        $forcePushEvent = Get-ForcePushEvent -Commit $SinceCommit
-        $cutoff = $forcePushEvent.CreatedAt
-        Write-Host "匹配 force-push: $($forcePushEvent.BeforeCommit.Substring(0,7)) -> $($forcePushEvent.AfterCommit.Substring(0, [Math]::Min(7, $forcePushEvent.AfterCommit.Length))) at $($cutoff.ToString('o'))"
-    }
-    $baselineMaxId = Get-MaxCommentId
-    $mode = if ($WaitMergeReady) { "等待可合并(status=success 且非CHANGES_REQUESTED)" } else { "等待评审完成" }
-    Write-Host "PR #$PrNumber 目标 $($headSha.Substring(0,7))（$mode），间隔 ${IntervalSeconds}s，超时 ${TimeoutSeconds}s ..."
 
-    $pendingSince = $null
-    $stallHinted = $false
-    $noEntryPolls = 0
+    while ($true) {
+        # New session: nothing from an earlier head survives this point.
+        $sessionStart = Get-CrNow
+        $arrival = $null
+        $unconfirmedSince = $null
+        $restart = $false
+        Write-Host "[wait] session for $Repo#$PrNumber head=$head; waiting deadline: $(Format-CrDisplayTime $globalDeadline) (local time; maximum wait $TimeoutSeconds seconds; not a review completion estimate)"
 
-    while ((Get-Date) -lt $deadline) {
-        # head 可能中途被 push，每次轮询刷新
-        $fresh = Get-HeadSha
-        if ($fresh -and $fresh -ne $headSha) {
-            Write-Host "head 已更新: $($headSha.Substring(0,7)) -> $($fresh.Substring(0,7))"
-            $headSha = $fresh
-            $pendingSince = $null
-            $noEntryPolls = 0
-            if ($ListNewComments) { $baselineMaxId = Get-MaxCommentId }
-        }
-
-        $status = Get-CodeRabbitStatus
-        $latest = Get-LatestReview -CommitSha $headSha
-        $entryCoversHead = Test-ReviewCoversHead -Review $latest -HeadSha $headSha -Cutoff $cutoff
-        $statusDone = Test-StatusCompletesHead -Status $status -HeadSha $headSha -Cutoff $cutoff
-        $completionSignal = if ($WaitMergeReady) { $statusDone } else { $statusDone -or $entryCoversHead }
-
-        if (-not $completionSignal) {
-            $statusState = if ($status) { $status.state } else { "none" }
-            $statusDescription = if ($status) { $status.description } else { "" }
-            if ($statusState -eq "pending" -and -not $pendingSince) { $pendingSince = Get-Date }
-            if ($statusState -ne "pending") { $pendingSince = $null; $stallHinted = $false }
-            if ($pendingSince -and ((Get-Date) - $pendingSince).TotalMinutes -ge 5 -and -not $stallHinted) {
-                Write-Host "提示: status 持续 pending 超过 5 分钟，可能限流；可在 PR 里重新评论 '@coderabbitai review' 后重跑本脚本"
-                $stallHinted = $true
+        while (-not $restart) {
+            if ((Get-CrNow) -ge $globalDeadline) { Complete-Wait 'TIMEOUT' $head -Extra @{ detail = 'overall timeout' } }
+            $snapshot = Get-Snapshot $head $arrival
+            if ($snapshot.headChanged) {
+                Write-Host "[wait] HEAD_CHANGED $($head.Substring(0, 7)) -> $($snapshot.head.Substring(0, 7)); old session discarded"
+                if ($StopOnHeadChange) { Complete-Wait 'HEAD_CHANGED' $snapshot.head -Extra @{ previousHead = $head } }
+                $head = $snapshot.head
+                $restart = $true
+                continue
             }
-            Write-Host "等待中... status=$statusState desc='$statusDescription'；最新评审 $(Get-ReviewSummary $latest)"
-            Start-Sleep -Seconds $IntervalSeconds
-            continue
-        }
+            $arrival = $snapshot.headArrivedAt
+            $info = Get-CodeRabbitHeadState $snapshot
+            Write-Transition $head $info
+            if ($info.state -ne 'COMPLETED_UNCONFIRMED') { $unconfirmedSince = $null }
 
-        # ---- status 已 success（或无 status），判定完成条件 ----
-        if (-not $entryCoversHead) {
-            # 无新条目：增量评审无意见的正常情况；再观察两个轮询周期确认不会出现
-            $noEntryPolls++
-            if ($noEntryPolls -lt 2) { Start-Sleep -Seconds $IntervalSeconds; continue }
-            Write-Host "OK: status=success 且本次未发布新评审条目（无新的 actionable comments）"
-        }
-
-        Write-Host "最终评审状态: $(Get-ReviewSummary $latest)"
-
-        if ($ListNewComments) {
-            $newOnes = Get-NewTopLevelComments -BaselineId $baselineMaxId
-            if ($newOnes.Count -eq 0) {
-                Write-Host "本轮新增顶层评审意见: 0 条"
-            } else {
-                Write-Host "本轮新增顶层评审意见: $($newOnes.Count) 条"
-                foreach ($c in $newOnes) { Write-Host "  #$($c.id) $($c.path):$($c.line)" }
-            }
-        }
-
-        if ($WaitMergeReady) {
-            $blockingReviews = @(Get-ChangesRequestedReviews)
-            if ($blockingReviews.Count -gt 0) {
-                Write-Host "阻塞: 仍有 $($blockingReviews.Count) 条 CHANGES_REQUESTED 评审；脚本不会自动 dismiss："
-                foreach ($review in $blockingReviews) {
-                    $reviewCommit = if ($review.commit_id) { $review.commit_id.Substring(0, [Math]::Min(7, $review.commit_id.Length)) } else { "?" }
-                    Write-Host "  review #$($review.id) state=$($review.state) commit=$reviewCommit submitted=$($review.submitted_at)"
+            $state = $info.state
+            if ($state -in @('REVIEWED', 'CLOSED', 'DRAFT', 'SKIPPED', 'REVIEW_FAILED', 'TRIGGER_RATE_LIMITED')) {
+                Complete-Wait $state $head $info
+            } elseif ($state -eq 'COMPLETED_UNCONFIRMED') {
+                if ($null -eq $unconfirmedSince) { $unconfirmedSince = Get-CrNow }
+                if (((Get-CrNow) - $unconfirmedSince).TotalSeconds -ge $UnconfirmedGraceSeconds) { Complete-Wait 'UNCONFIRMED' $head $info }
+            } elseif ($state -eq 'AWAITING_AUTO') {
+                if (((Get-CrNow) - $sessionStart).TotalSeconds -ge $AutoWaitSeconds) { Complete-Wait 'NO_SIGNAL' $head $info }
+            } elseif ($state -eq 'TRIGGERED') {
+                $since = if ($info.since) { $info.since } else { $sessionStart }
+                if (((Get-CrNow) - $since).TotalSeconds -ge $ReviewWaitSeconds) { Complete-Wait 'TRIGGER_EXHAUSTED' $head $info }
+            } elseif ($state -in @('MANUAL_REQUIRED', 'RATE_LIMITED')) {
+                if ($NoTrigger) { Complete-Wait 'TRIGGER_REQUIRED' $head $info -Extra @{ reason = $state } }
+                $quotaArgs = @{
+                    Repo = $Repo; PrNumber = $PrNumber; ExpectedHead = $head
+                    MaxWaitSeconds = [int][Math]::Max(0, [Math]::Min($MaxQuotaWaitSeconds, ($globalDeadline - (Get-CrNow)).TotalSeconds))
                 }
-                exit 3
-            }
-        }
-        exit 0
-    }
+                $quotaLines = @(& (Join-Path $PSScriptRoot 'wait-coderabbit-rate-limit.ps1') @quotaArgs)
+                $quotaExit = $LASTEXITCODE
+                if ($quotaLines.Count -eq 0) { throw 'wait-coderabbit-rate-limit.ps1 produced no result' }
+                $quota = [string]$quotaLines[-1] | ConvertFrom-Json
+                if ($quota.state -eq 'HEAD_CHANGED') {
+                    if ($StopOnHeadChange) { Complete-Wait 'HEAD_CHANGED' $quota.actualHead -Extra @{ previousHead = $head } }
+                    Write-Host '[wait] HEAD_CHANGED during quota wait; old session discarded'
+                    $head = $quota.actualHead
+                    $restart = $true
+                    continue
+                }
+                if ($quota.state -in @('CLOSED', 'DRAFT')) { Complete-Wait $quota.state $head -Extra @{ quota = $quota } }
+                if ($quota.state -eq 'ERROR') { Complete-Wait 'ERROR' $head $info -Extra @{ error = $quota.error; quota = $quota } }
+                if ($quota.state -ne 'AVAILABLE' -or $quotaExit -ne 0) { Complete-Wait 'RATE_LIMITED' $head $info -Extra @{ quota = $quota } }
 
-    Write-Host "超时: ${TimeoutSeconds}s 内未等到覆盖 $($headSha.Substring(0,7)) 的评审完成。"
-    exit 1
-}
-catch {
-    Write-Host "错误: $($_.Exception.Message)"
-    exit 2
+                # Re-check everything the quota wait may have outdated before the single trigger.
+                $fresh = Get-Snapshot $head $arrival
+                if ($fresh.headChanged) {
+                    if ($StopOnHeadChange) { Complete-Wait 'HEAD_CHANGED' $fresh.head -Extra @{ previousHead = $head } }
+                    Write-Host '[wait] HEAD_CHANGED before trigger; old session discarded'
+                    $head = $fresh.head
+                    $restart = $true
+                    continue
+                }
+                $freshInfo = Get-CodeRabbitHeadState $fresh
+                if ($freshInfo.state -notin @('MANUAL_REQUIRED', 'RATE_LIMITED') -or $fresh.ledger) {
+                    Write-Host "[wait] state became $($freshInfo.state) during quota wait; no trigger sent"
+                    continue
+                }
+                $entry = @{ recordedAt = (Get-CrNow).ToString('o'); reason = $freshInfo.state; quotaReplyId = $quota.replyId }
+                Write-Ledger $head $entry
+                try {
+                    $posted = New-CrIssueComment $Repo $PrNumber '@coderabbitai review'
+                } catch {
+                    $message = $_.Exception.Message
+                    $ledgerPath = Get-CrLedgerPath $StateDir $Repo $PrNumber $head
+                    # Only an explicit 4xx rejection proves nothing was created; then this head may retry later.
+                    if ($message -match 'HTTP 4\d\d') {
+                        Remove-Item -LiteralPath $ledgerPath -Force -ErrorAction SilentlyContinue
+                        throw
+                    }
+                    # 5xx, timeouts and network errors may still have created the comment: keep the ledger.
+                    $entry.status = 'uncertain'; $entry.error = $message
+                    Update-Ledger $head $entry
+                    $check = Find-SentTrigger $head $arrival
+                    if ($check.head -ne $head) {
+                        if ($StopOnHeadChange) { Complete-Wait 'HEAD_CHANGED' $check.head -Extra @{ previousHead = $head } }
+                        Write-Host '[wait] HEAD_CHANGED while confirming an uncertain trigger; old session discarded'
+                        $head = $check.head
+                        $restart = $true
+                        continue
+                    }
+                    if (-not $check.comment) {
+                        throw "Trigger send failed with an uncertain result ($message). The ledger $ledgerPath still blocks this head; check the PR for the comment before removing it."
+                    }
+                    $posted = $check.comment
+                    $entry.status = 'confirmed-after-error'
+                }
+                $entry.commentId = $posted.id; $entry.url = $posted.url; $entry.postedAt = (Get-CrNow).ToString('o')
+                Update-Ledger $head $entry
+                Write-Host "[wait] sent the single review trigger for head $($head.Substring(0, 7)): $($posted.url)"
+                continue
+            }
+            Wait-WithinDeadline $PollSeconds
+        }
+    }
+} catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    Complete-Wait 'ERROR' $(if ($head) { $head } else { '' }) -Extra @{ error = $_.Exception.Message }
 }
