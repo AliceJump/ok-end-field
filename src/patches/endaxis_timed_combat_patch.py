@@ -131,7 +131,7 @@ def _commit_action(logic, expected_index: int, *, outcome: str = "confirmed") ->
 
 
 def _try_endaxis_ultimate(logic, action: EndAxisAction) -> bool:
-    """Attempt exactly the planned ultimate using existing timed-runtime gates."""
+    """Attempt a planned ultimate and commit only after clean native feedback."""
     token = str(action.slot)
     if not logic._slot_available(token):
         return False
@@ -143,23 +143,36 @@ def _try_endaxis_ultimate(logic, action: EndAxisAction) -> bool:
 
     expected_index = logic._endaxis_cursor
     started = logic._clock()
+    logic._endaxis_attempt_index = expected_index
     logic._arm_action_feedback()
     _resume_action_clock(logic, action, started)
     if not logic.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
+        logic._endaxis_attempt_index = None
+        logic._clear_action_attempt_feedback()
         _freeze_at_action(logic, action, logic._clock())
         return False
 
     logic._note_action_attempt("ult", token)
-    ended = logic._clock()
+    recovered_at = logic._clock()
+    # use_ult() is a strong success signal, but keep the imported cursor pending
+    # until the same short negative-feedback confirmation used by low-cost battle
+    # casts has observed clean frames. A block calls _cancel_unstarted_action(),
+    # whose EndAxis wrapper clears the attempt and rolls the plan clock back.
+    if logic._wait_assumed_success_feedback():
+        return True
+    logic._clear_action_attempt_feedback()
+
     logic._observe_bonus("ult", token)
     logic._observe_phase_action(token, "ult")
     logic._set_cooldowns(profiles, started)
     logic._activate_state(token, logic.ult_state_specs.get(token), "终结技", started)
-    logic.main_control.record_cast(token, "ult", profiles, started, recovered_at=ended)
-    logic._after_ultimate_mechanic(token, ended)
-    logic._clear_active(ended)
+    logic.main_control.record_cast(token, "ult", profiles, started, recovered_at=recovered_at)
+    logic._after_ultimate_mechanic(token, recovered_at)
+    logic._clear_active(recovered_at)
     _commit_action(logic, expected_index)
-    logic.task.log_info(f"EndAxis: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s")
+    logic.task.log_info(
+        f"EndAxis: 终结技 {token} 动画结束并通过动作反馈确认，HUD 动画锁 {recovered_at - started:.2f}s"
+    )
     logic.main_control.update(force=True)
     return True
 
@@ -181,7 +194,8 @@ def _step_endaxis(logic) -> None:
         logic._hold(True)
         return
 
-    # A high-cost battle skill may already be awaiting SP-delta confirmation.
+    # A high-cost battle skill or ultimate confirmation may still own this due
+    # action. Do not issue another input until that attempt commits or rolls back.
     if getattr(logic, "_endaxis_attempt_index", None) is not None:
         logic._hold(True)
         return
@@ -313,13 +327,13 @@ def install_endaxis_timed_combat_patch() -> None:
         """Keep the due EndAxis cursor when native feedback cancels an attempt."""
         action = _next_action(self)
         result = original_cancel_unstarted(self, kind, token, now)
-        if (
-            getattr(self, "_endaxis_attempt_index", None) is not None
-            and kind == "battle"
-            and action is not None
-            and action.kind == "skill"
-            and str(action.slot) == str(token)
-        ):
+        expected_index = getattr(self, "_endaxis_attempt_index", None)
+        if expected_index is None or action is None or str(action.slot) != str(token):
+            return result
+
+        matching_battle = kind == "battle" and action.kind == "skill"
+        matching_ult = kind == "ult" and action.kind == "ultimate"
+        if matching_battle or matching_ult:
             self._endaxis_attempt_index = None
             _freeze_at_action(self, action, now)
         return result
