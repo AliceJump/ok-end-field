@@ -572,27 +572,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         motion_total_dx = 0
         motion_total_dy = 0
-        if initial_move is not None:
-            try:
-                prefeed_dx = int(initial_move[0])
-                prefeed_dy = int(initial_move[1])
-            except (TypeError, ValueError, IndexError, OverflowError):
-                prefeed_dx = 0
-                prefeed_dy = 0
-            if prefeed_dx or prefeed_dy:
-                if self.active_and_send_mouse_delta(
-                    dx=prefeed_dx,
-                    dy=prefeed_dy,
-                    activate=True,
-                    steps=5,
-                ):
-                    motion_total_dx += prefeed_dx
-                    motion_total_dy += prefeed_dy
-                    self.log_info(
-                        f"[zipline-motion-cache] target={zip_line} prefeed "
-                        f"move=({prefeed_dx},{prefeed_dy})"
-                    )
-                    self.sleep(0.01)
+        prefeed_move = initial_move
 
         def move_and_track(target):
             nonlocal motion_total_dx, motion_total_dy
@@ -607,7 +587,31 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         processors = [self.make_hsv_isolator(hR.GOLD_TEXT), self.make_hsv_isolator(hR.WHITE)]
 
         def detect_target(frame):
-            nonlocal misses, history_complete
+            nonlocal misses, history_complete, prefeed_move, motion_total_dx, motion_total_dy
+            if prefeed_move is not None:
+                try:
+                    prefeed_dx = int(prefeed_move[0])
+                    prefeed_dy = int(prefeed_move[1])
+                except (TypeError, ValueError, IndexError, OverflowError):
+                    prefeed_dx = 0
+                    prefeed_dy = 0
+                prefeed_move = None
+                if prefeed_dx or prefeed_dy:
+                    if self.active_and_send_mouse_delta(
+                        dx=prefeed_dx,
+                        dy=prefeed_dy,
+                        activate=True,
+                        steps=5,
+                    ):
+                        motion_total_dx += prefeed_dx
+                        motion_total_dy += prefeed_dy
+                        self.log_info(
+                            f"[zipline-motion-cache] target={zip_line} prefeed "
+                            f"move=({prefeed_dx},{prefeed_dy})"
+                        )
+                        self.sleep(0.01)
+                        frame = self.next_frame()
+
             matched = self._find_zip_line_template_target(zip_line, frame)
             if matched is None:
                 misses += 1
