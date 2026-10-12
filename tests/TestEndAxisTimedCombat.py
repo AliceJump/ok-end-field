@@ -1,12 +1,15 @@
 import unittest
 
+from src.core.BattleConfig import BATTLE_CONFIG_TYPE, DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
 from src.data.endaxis_timeline import EndAxisAction, EndAxisScenario
 from src.data.skill_timing import load_skill_timings
 from src.patches.endaxis_timed_combat_patch import (
+    KEY_TIMING_ENDAXIS,
     _commit_action,
     _plan_elapsed,
     _sync_due_action,
     install_endaxis_timed_combat_patch,
+    install_endaxis_timed_config,
 )
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
@@ -62,6 +65,13 @@ class _RuntimeTask:
 
 
 class TestEndAxisPlanClock(unittest.TestCase):
+    def test_timed_config_is_registered_under_timing_mode(self):
+        install_endaxis_timed_config()
+        self.assertEqual(DEFAULT_BATTLE_CONFIG[KEY_TIMING_ENDAXIS], "")
+        self.assertIn(KEY_TIMING_ENDAXIS, BATTLE_CONFIG_TYPE)
+        self.assertIn(KEY_TIMING_ENDAXIS, BATTLE_CONFIG_TYPE[KEY_TIMING_ROTATION]["sub_configs"][True])
+        self.assertNotIn(KEY_TIMING_ENDAXIS, BATTLE_CONFIG_TYPE[KEY_TIMING_ROTATION]["sub_configs"][False])
+
     def test_due_action_freezes_clock_until_commit(self):
         logic = _ClockLogic(
             [
