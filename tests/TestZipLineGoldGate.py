@@ -200,6 +200,8 @@ class TestZipLineGoldGate(unittest.TestCase):
             ocr=Mock(return_value=[]), log_info=Mock(), do_scroll=Mock(),
             _move_to_zip_line_target=Mock(return_value=(40, 20)), move_to_target_once=Mock(),
             active_and_send_mouse_delta=Mock(),
+            _read_zip_line_arrow_angle=Mock(return_value=(30.0, 0.9)),
+            _wait_zip_line_prefeed_settled=Mock(return_value=True),
         )
         stub.sleep = lambda duration: now.__setitem__(0, now[0] + duration)
         stub.align_ocr_or_find_target_to_center = lambda *args, **kwargs: NavigationMixin.align_ocr_or_find_target_to_center(stub, *args, **kwargs)

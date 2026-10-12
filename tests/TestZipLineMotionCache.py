@@ -299,8 +299,9 @@ class TestZipLineMotionCache(unittest.TestCase):
         self.assertFalse(ZipLineMixin._wait_zip_line_prefeed_settled(stub, (30.0, 0.9), -600))
         self.assertGreaterEqual(stub.active_time(), stub._ZIP_LINE_ARROW_SETTLE_TIMEOUT)
 
-    def test_prefeed_wait_runs_before_visual_detection(self):
+    def _assert_prefeed_wait_runs_before_visual_detection(self, settled):
         events = []
+        post_prefeed_frame = object()
         stub = SimpleNamespace(
             _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
             _ZIP_LINE_ARROW_SETTLE_DELAY=0.08,
@@ -310,8 +311,8 @@ class TestZipLineMotionCache(unittest.TestCase):
             make_hsv_isolator=Mock(side_effect=lambda value: value),
             _read_zip_line_arrow_angle=Mock(side_effect=lambda: events.append("read") or (30.0, 0.9)),
             active_and_send_mouse_delta=Mock(side_effect=lambda **kwargs: events.append("send") or True),
-            _wait_zip_line_prefeed_settled=Mock(side_effect=lambda *args: events.append("settle") or True),
-            next_frame=Mock(side_effect=lambda: events.append("frame") or object()),
+            _wait_zip_line_prefeed_settled=Mock(side_effect=lambda *args: events.append("settle") or settled),
+            next_frame=Mock(side_effect=lambda: events.append("frame") or post_prefeed_frame),
             _find_zip_line_template_target=Mock(side_effect=lambda *args: events.append("detect") or None),
             log_info=Mock(),
         )
@@ -323,7 +324,13 @@ class TestZipLineMotionCache(unittest.TestCase):
         stub._align_zip_line_distance_ocr = Mock(side_effect=align_ocr)
         self.assertTrue(ZipLineMixin._align_zip_line_distance(stub, 108, initial_move=(600, 100)))
         self.assertEqual(events[:5], ["read", "send", "settle", "frame", "detect"])
+        self.assertIs(stub._find_zip_line_template_target.call_args_list[0].args[1], post_prefeed_frame)
         stub._wait_zip_line_prefeed_settled.assert_called_once_with((30.0, 0.9), 600)
+
+    def test_prefeed_wait_runs_before_visual_detection(self):
+        for settled in (True, False):
+            with self.subTest(settled=settled):
+                self._assert_prefeed_wait_runs_before_visual_detection(settled)
 
     def _route_stub(self, readings):
         stub = self._yaw_stub(readings)
