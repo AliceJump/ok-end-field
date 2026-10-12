@@ -125,7 +125,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     def zip_line_scroll_enabled(self):
         return self.get_zip_line_config_value(ZIP_LINE_SCROLL_KEY, False)
 
-    def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True):
+    def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True, stay_on_zip_line=False):
         """进入滑索后，根据配置对齐并滑行至送货点
 
         Args:
@@ -133,6 +133,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             need_scroll: 是否需要滚动
             target: 目标信息，包含名称和类型(例如：("登上滑索架", "ocr"))
             need_v: 是否需要按V键追踪
+            stay_on_zip_line: 路线结束后留在滑索上，供下一段路线继续测试
         Raises:
             Exception: 滑索超时时抛出异常
         """
@@ -149,7 +150,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 raise Exception("滑索超时，强制退出")
         zip_line_list_str = self.get_zip_line_config_value(delivery_to)
         zip_line_list = parse_int_sequence(zip_line_list_str)
-        self.zip_line_list_go(zip_line_list, need_scroll, target, need_v=need_v)
+        self.zip_line_list_go(zip_line_list, need_scroll, target, need_v=need_v, stay_on_zip_line=stay_on_zip_line)
 
     @staticmethod
     def _zip_line_distance_pattern(zip_line):
@@ -623,7 +624,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 return True
         return False
 
-    def zip_line_list_go(self, zip_line_list, need_scroll=None, target=None, need_v=False):
+    def zip_line_list_go(self, zip_line_list, need_scroll=None, target=None, need_v=False, stay_on_zip_line=False):
         """按顺序对齐滑索并执行滑行
 
         Args:
@@ -631,6 +632,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             need_scroll: 是否需要滚动
             target: 目标信息，包含名称和类型(例如：("登上滑索架", "ocr"))
             need_v: 是否需要按V键追踪
+            stay_on_zip_line: 到达后不下滑索、不对齐导航目标
 
         """
         for zip_line in zip_line_list:
@@ -696,6 +698,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     break
                 if self.active_time() - start > 240:
                     raise Exception("滑索超时，强制退出")
+        if stay_on_zip_line:
+            self.log_info("滑索路线结束，留在滑索上继续测试")
+            return
         if need_v:
             self.click(key="right", after_sleep=2)
         if target:
