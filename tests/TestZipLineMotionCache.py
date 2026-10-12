@@ -273,6 +273,55 @@ class TestZipLineMotionCache(unittest.TestCase):
         self.assertEqual(result, (None, False))
         stub._send_zip_line_yaw_delta.assert_not_called()
 
+    def test_cached_turn_is_verified_before_learning(self):
+        stub = self._yaw_stub([(120.0, 0.9), (91.0, 0.9)])
+        with patch("src.tasks.mixin.zip_line_mixin.load_zip_line_segment_anchor", return_value=90.0), patch(
+            "src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(350, 3)
+        ), patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True) as record:
+            result = ZipLineMixin._normalize_zip_line_segment_yaw(stub, "route", 1)
+
+        self.assertEqual(result, (90.0, True))
+        stub._send_zip_line_yaw_delta.assert_called_once_with(350)
+        self.assertEqual(stub._read_zip_line_arrow_angle.call_count, 2)
+        record.assert_called_once_with(1920, 1080, 120.0, 90.0, 350)
+
+    def test_invalid_reading_after_cached_or_calibrated_turn_rolls_back(self):
+        for hint in (None, (350, 3)):
+            for reading in (None, (90.0, 0.4), (120.0, 0.9)):
+                with self.subTest(hint=hint, reading=reading):
+                    stub = self._yaw_stub([(120.0, 0.9), reading])
+                    with patch("src.tasks.mixin.zip_line_mixin.load_zip_line_segment_anchor", return_value=90.0), patch(
+                        "src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=hint
+                    ), patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion") as record:
+                        result = ZipLineMixin._normalize_zip_line_segment_yaw(stub, "route", 1)
+
+                    self.assertEqual(result, (90.0, False))
+                    moves = [call.args[0] for call in stub._send_zip_line_yaw_delta.call_args_list]
+                    self.assertEqual(len(moves), 2)
+                    self.assertEqual(sum(moves), 0)
+                    record.assert_not_called()
+
+    def test_multi_step_turn_rolls_back_the_entire_input_on_failure(self):
+        stub = self._yaw_stub([(150.0, 0.9), (120.0, 0.9), None])
+        with patch("src.tasks.mixin.zip_line_mixin.load_zip_line_segment_anchor", return_value=90.0), patch(
+            "src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None
+        ), patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion") as record:
+            result = ZipLineMixin._normalize_zip_line_segment_yaw(stub, "route", 1)
+
+        self.assertEqual(result, (90.0, False))
+        self.assertEqual([call.args[0] for call in stub._send_zip_line_yaw_delta.call_args_list], [361, 361, -722])
+        record.assert_not_called()
+
+    def test_yaw_wrap_uses_shortest_turn_across_zero(self):
+        stub = self._yaw_stub([(355.0, 0.9), (5.0, 0.9)])
+        with patch("src.tasks.mixin.zip_line_mixin.load_zip_line_segment_anchor", return_value=5.0), patch(
+            "src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None
+        ), patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True):
+            result = ZipLineMixin._normalize_zip_line_segment_yaw(stub, "route", 1)
+
+        self.assertEqual(result, (5.0, True))
+        stub._send_zip_line_yaw_delta.assert_called_once_with(-120)
+
 
 if __name__ == "__main__":
     unittest.main()

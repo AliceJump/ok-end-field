@@ -30,7 +30,6 @@ from src.tasks.mixin.zip_line_yaw_cache import (
     record_zip_line_segment_anchor,
 )
 
-
 _ZIP_LINE_ICON_TEMPLATE_ROWS = (
     "....................",
     "...############.....",
@@ -92,10 +91,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         说明文本通过 self.tr() 走 ok 的 gettext i18n（msgid 写入 ok.po，编译成 ok.mo 生效）。
         由 InstructionsMixin 延迟构建并追加到任务原有说明之后，使用滑索的任务无需在 __init__ 里显式调用。
         """
+        # 键名从滑索配置数据动态读取，不硬编码；显示时经 self.tr() 跟随 UI 语言翻译
         start_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if k.startswith("通向")]
         target_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if not k.startswith("通向")]
         gather_keys_raw = ZIP_LINE_GATHER_KEYS
 
+        # 例子动态取第一个送货目标及其配置值（查配置用原始键名，显示用翻译后键名）
         example_key_raw = target_keys_raw[0] if target_keys_raw else (start_keys_raw[0] if start_keys_raw else "")
         example_raw = str(self.zip_line_config.get(example_key_raw, "") or "").strip()
         example_seq = " → ".join(f"{n}m" for n in example_raw.split(",") if str(n).strip())
@@ -354,6 +355,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     f"accepted_delta={len(candidates) - candidate_count_before}"
                 )
 
+        # 白色候选优先于黄色/金黄色；同色候选优先转动更少、匹配更高的目标。
         candidates.sort(key=lambda item: (0 if item["state"] == "white" else 1, item["radius"], -item["score"]))
         if callable(log_info):
             summary = ", ".join(
@@ -479,8 +481,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             (nx * width_radius, ny * width_radius),
             **{key: max(1, round(value * width_scale)) for key, value in profile.items()},
         )
-        if dx or dy:
-            self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005)
+        if (dx or dy) and not self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005):
+            return 0, 0
         return dx, dy
 
     def _zip_line_target_is_gold_and_centered(self, zip_line, frame=None, tolerance=50):
@@ -597,12 +599,17 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     prefeed_dy = 0
                 prefeed_move = None
                 if prefeed_dx or prefeed_dy:
-                    if self.active_and_send_mouse_delta(
-                        dx=prefeed_dx,
-                        dy=prefeed_dy,
-                        activate=True,
-                        steps=5,
-                    ):
+                    try:
+                        sent = self.active_and_send_mouse_delta(
+                            dx=prefeed_dx,
+                            dy=prefeed_dy,
+                            activate=True,
+                            steps=5,
+                        )
+                    except Exception as e:
+                        sent = False
+                        self.log_info(f"[zipline-motion-cache] prefeed failed: {e}")
+                    if sent:
                         motion_total_dx += prefeed_dx
                         motion_total_dy += prefeed_dy
                         self.log_info(
@@ -688,7 +695,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         self.click(after_sleep=0.1)
         for _ in range(max_attempts):
-            self.send_key("e")
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True, None
         return False, "interaction"
@@ -698,7 +705,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         stop_match, stop_box = self._zip_line_stop_state()
         for _ in range(max_attempts):
             self.click(after_sleep=0.1)
-            self.send_key("e")
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True
         return False
@@ -737,6 +744,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return angle % 360.0, score
 
     def _send_zip_line_yaw_delta(self, dx):
+        """Send one horizontal turn and report rejected input without blocking alignment."""
         try:
             return bool(
                 self.active_and_send_mouse_delta(
@@ -850,7 +858,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 -self._ZIP_LINE_ARROW_MAX_STEP_DEGREES,
                 min(self._ZIP_LINE_ARROW_MAX_STEP_DEGREES, desired_delta),
             )
-            move_dx = int(round(step_degrees / self._ZIP_LINE_ARROW_YAW_PER_MOUSE))
+            move_dx = round(step_degrees / self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
             if move_dx == 0 or not self._send_zip_line_yaw_delta(move_dx):
                 break
 
@@ -1000,7 +1008,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             start = self.active_time()
             while True:
                 self.next_frame()
-                self.send_key("e")
+                self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
                 self.sleep(0.1)
                 result = self.ocr(
                     match=[
@@ -1043,7 +1051,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     ),
                     passes=1,
                     duration=0.1,
-                    keys=("s", "w", "a", "d"),
+                    keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
                 )
                 if result:
                     self.press_key("v", after_sleep=1)

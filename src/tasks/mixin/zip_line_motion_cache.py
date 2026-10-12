@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import os
+from contextlib import suppress
 from pathlib import Path
 from threading import RLock
 
@@ -64,10 +65,8 @@ def _write_cache(payload: dict) -> bool:
         temp_path.replace(path)
         return True
     except (OSError, ValueError, TypeError):
-        try:
+        with suppress(OSError):
             temp_path.unlink(missing_ok=True)
-        except OSError:
-            pass
         return False
 
 
@@ -124,8 +123,8 @@ def load_zip_line_segment_motion(route_fingerprint: str | None, segment_index):
     if samples <= 0 or mean_dx is None or mean_dy is None:
         return None
 
-    move_dx = int(round(mean_dx))
-    move_dy = int(round(mean_dy))
+    move_dx = round(mean_dx)
+    move_dy = round(mean_dy)
     if move_dx == 0 and move_dy == 0:
         return None
     return move_dx, move_dy, samples

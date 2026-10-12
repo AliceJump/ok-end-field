@@ -37,6 +37,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             ocr=Mock(),
         )
         stub._zip_line_stop_state = lambda: ZipLineMixin._zip_line_stop_state(stub)
+        stub._zip_line_motion_route_fingerprint = lambda *args, **kwargs: ZipLineMixin._zip_line_motion_route_fingerprint(stub, *args, **kwargs)
         stub._try_click_on_zip_line = lambda *args, **kwargs: ZipLineMixin._try_click_on_zip_line(stub, *args, **kwargs)
         return stub
 
@@ -194,7 +195,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
             make_hsv_isolator=Mock(side_effect=lambda value: value),
             ocr=Mock(return_value=[]), log_info=Mock(), do_scroll=Mock(),
-            _move_to_zip_line_target=Mock(), move_to_target_once=Mock(),
+            _move_to_zip_line_target=Mock(return_value=(40, 20)), move_to_target_once=Mock(),
             active_and_send_mouse_delta=Mock(),
         )
         stub.sleep = lambda duration: now.__setitem__(0, now[0] + duration)
@@ -308,6 +309,63 @@ class TestZipLineGoldGate(unittest.TestCase):
                 kwargs = stub.align_ocr_or_find_target_to_center.call_args.kwargs
                 self.assertIs(kwargs["ocr_target_mover"], stub._move_to_zip_line_target if kind == "ocr" else None)
 
+    def test_history_runs_after_scroll_once_and_detects_a_fresh_frame(self):
+        stub = self._alignment_stub()
+        events = []
+        stub.do_scroll.side_effect = lambda *args: events.append("scroll")
+        stub.next_frame.side_effect = lambda: events.append("frame") or len(events)
+        stub.active_and_send_mouse_delta.side_effect = lambda **kwargs: events.append("prefeed") or True
+        targets = iter([self._matched_icon(1400, 800), self._matched_icon()])
+        stub._find_zip_line_template_target.side_effect = lambda *args: events.append("detect") or next(targets)
+        learned = Mock()
+
+        result = ZipLineMixin._align_zip_line_distance(
+            stub, 108, need_scroll=True, max_time=2, initial_move=(160, 80), on_success_motion=learned
+        )
+
+        self.assertEqual(result, (960, 540))
+        self.assertEqual(events, ["scroll", "frame", "prefeed", "frame", "detect", "scroll", "frame", "detect"])
+        self.assertEqual(stub._find_zip_line_template_target.call_args_list[0].args[1], 4)
+        stub.active_and_send_mouse_delta.assert_called_once_with(dx=160, dy=80, activate=True, steps=5)
+        learned.assert_called_once_with(200, 100)
+
+    def test_rejected_or_failed_prefeed_continues_visual_alignment(self):
+        for outcome in (False, OSError("input unavailable")):
+            with self.subTest(outcome=outcome):
+                stub = self._alignment_stub()
+                stub._find_zip_line_template_target.side_effect = [self._matched_icon(1400, 800), self._matched_icon()]
+                if isinstance(outcome, Exception):
+                    stub.active_and_send_mouse_delta.side_effect = outcome
+                else:
+                    stub.active_and_send_mouse_delta.return_value = outcome
+                learned = Mock()
+
+                result = ZipLineMixin._align_zip_line_distance(
+                    stub, 108, max_time=2, initial_move=(160, 80), on_success_motion=learned
+                )
+
+                self.assertEqual(result, (960, 540))
+                stub.active_and_send_mouse_delta.assert_called_once()
+                learned.assert_called_once_with(40, 20)
+
+    def test_history_is_not_reapplied_during_gate_retry(self):
+        stub = self._stub()
+        stub.width, stub.height = 1920, 1080
+        stub._normalize_zip_line_segment_yaw = Mock(return_value=(90.0, True))
+        stub._align_zip_line_distance = Mock(return_value=True)
+        stub._try_click_on_zip_line = Mock(side_effect=[(False, "gate"), (True, None)])
+        stub.log_info = Mock()
+        stub.ocr.return_value = [SimpleNamespace(name="move")]
+        with patch("src.tasks.mixin.zip_line_mixin.load_zip_line_segment_motion", return_value=(160, 80, 2)) as load:
+            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
+
+        load.assert_called_once()
+        calls = stub._align_zip_line_distance.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(calls[0].kwargs["initial_move"], (160, 80))
+        self.assertNotIn("initial_move", calls[1].kwargs)
+        self.assertNotIn("on_success_motion", calls[1].kwargs)
+
     def _motion_stub(self, width=1920, height=1080):
         stub = self._detector_stub()
         stub.width, stub.height = width, height
@@ -345,6 +403,12 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertLessEqual(speeds[-1], 210)
         # No jump at the extra acceleration threshold.
         self.assertLessEqual(abs(self._motion_at(stub, 0, 0.5001)[1] - self._motion_at(stub, 0, 0.5)[1]), 1)
+
+    def test_rejected_visual_mouse_input_does_not_report_motion(self):
+        stub = self._motion_stub()
+        stub.active_and_send_mouse_delta.return_value = False
+        self.assertEqual(self._motion_at(stub, 0.6, 0.6), (0, 0))
+        stub.active_and_send_mouse_delta.assert_called_once()
 
     def test_motion_scales_with_width_at_different_resolutions(self):
         baseline = self._motion_at(self._motion_stub(), 0.6, -0.6)
@@ -580,7 +644,9 @@ class TestZipLineGoldGate(unittest.TestCase):
 
         ZipLineMixin.on_zip_line_start(stub, "npc", need_v=False, stay_on_zip_line=True)
 
-        stub.zip_line_list_go.assert_called_once_with([108, 36], None, None, need_v=False, stay_on_zip_line=True)
+        stub.zip_line_list_go.assert_called_once_with(
+            [108, 36], None, None, need_v=False, stay_on_zip_line=True, config_key="npc"
+        )
 
 
 class TestZipLineScanRecording(unittest.TestCase):

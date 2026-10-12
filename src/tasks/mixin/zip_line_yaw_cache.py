@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import os
+from contextlib import suppress
 from pathlib import Path
 from threading import RLock
 
@@ -39,10 +40,8 @@ def _write_cache(payload: dict) -> bool:
         temp_path.replace(path)
         return True
     except (OSError, ValueError, TypeError):
-        try:
+        with suppress(OSError):
             temp_path.unlink(missing_ok=True)
-        except OSError:
-            pass
         return False
 
 
@@ -84,8 +83,8 @@ def _yaw_bucket(yaw) -> int | None:
     normalized = _normalize_yaw(yaw)
     if normalized is None:
         return None
-    bucket_count = int(round(360.0 / _YAW_BUCKET_DEGREES))
-    return int(round(normalized / _YAW_BUCKET_DEGREES)) % bucket_count
+    bucket_count = round(360.0 / _YAW_BUCKET_DEGREES)
+    return round(normalized / _YAW_BUCKET_DEGREES) % bucket_count
 
 
 def _anchor_key(route_fingerprint, segment_index, width, height) -> str | None:
@@ -172,7 +171,7 @@ def load_arrow_turn_motion(width, height, start_yaw, target_yaw):
     mean_dx = _finite_number(entry.get("mean_dx"))
     if samples <= 0 or mean_dx is None:
         return None
-    move_dx = int(round(mean_dx))
+    move_dx = round(mean_dx)
     if move_dx == 0:
         return None
     return move_dx, samples
