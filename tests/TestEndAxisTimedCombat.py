@@ -134,7 +134,7 @@ class TestEndAxisTimedRuntime(unittest.TestCase):
         self.assertEqual(task.keys, ["1"])
         self.assertEqual(logic._endaxis_cursor, 0)
         self.assertEqual(logic._endaxis_attempt_index, 0)
-        self.assertTrue(logic._endaxis_frozen)
+        self.assertFalse(logic._endaxis_frozen)
         self.assertIsNotNone(logic.pending)
 
         task.now = 0.1
@@ -145,21 +145,25 @@ class TestEndAxisTimedRuntime(unittest.TestCase):
         self.assertIsNone(logic._endaxis_attempt_index)
         self.assertFalse(logic._endaxis_frozen)
         self.assertIsNone(logic.pending)
+        self.assertAlmostEqual(_plan_elapsed(logic), 0.1)
 
-    def test_cancelled_battle_attempt_keeps_due_action_unconsumed(self):
-        _task, logic = self._logic()
-        logic._endaxis_frozen = True
-        logic._endaxis_frozen_elapsed = 0.0
+    def test_cancelled_battle_attempt_keeps_due_action_unconsumed_and_refreezes_clock(self):
+        task, logic = self._logic()
+        task.now = 0.25
+        logic._endaxis_frozen = False
+        logic._endaxis_clock_elapsed = 0.0
+        logic._endaxis_clock_wall = 0.0
         logic._endaxis_attempt_index = 0
         logic.pending = (300.0, "1", 100.0)
         logic.active_slot = "1"
         logic.active_kind = "battle"
 
-        logic._cancel_unstarted_action("battle", "1", 0.0)
+        logic._cancel_unstarted_action("battle", "1", task.now)
 
         self.assertEqual(logic._endaxis_cursor, 0)
         self.assertIsNone(logic._endaxis_attempt_index)
         self.assertTrue(logic._endaxis_frozen)
+        self.assertAlmostEqual(_plan_elapsed(logic), 0.0)
         self.assertIsNone(logic.pending)
 
 
