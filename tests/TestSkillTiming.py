@@ -795,7 +795,8 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 100
         logic.step()
         self.assertEqual(task.keys, ["e", "ult_1"])
-        self.assertEqual(task.now, 102)
+        self.assertGreater(task.now, 102)
+        self.assertLess(task.now, 103)
         self.assertEqual(logic.active, ())
         self.assertTrue(any("HUD 动画锁 2.00s" in message for message in task.messages))
 

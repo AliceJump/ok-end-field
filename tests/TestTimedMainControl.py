@@ -223,7 +223,8 @@ class TestTimedMainControl(unittest.TestCase):
         task.auto_switch_ults = {"1"}
         logic.ult_order = ["1"]
         logic.step()
-        self.assertEqual(logic.forced_main_control_until, task.now + 7.0)
+        self.assertEqual(logic.forced_main_control_until, 9.0)
+        self.assertGreater(task.now, 2.0)  # Feedback confirmation does not extend the HUD-based window.
         self.assertEqual(logic.main_control.preferred_until("1"), logic.forced_main_control_until)
         task.now = 8.0
         task.current = 1

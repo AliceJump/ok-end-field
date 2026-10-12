@@ -397,6 +397,33 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertFalse(logic.release_burst.bonuses)
         self.assertFalse(logic.cooldowns)
 
+    def test_blocked_ultimate_feedback_does_not_commit_release_or_control_windows(self):
+        task, logic = self.make_logic()
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+        self.assertTrue(logic._use_timed_ultimate("1", logic.store.profiles("安塔尔", "ult"), burst_selected=True))
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertFalse(logic.release_burst.bonuses)
+        self.assertFalse(logic.release_burst.last_confirmed)
+        self.assertFalse(logic.cooldowns)
+        self.assertFalse(logic.main_control.windows)
+        self.assertIsNone(logic.last_action_attempt)
+
+    def test_clean_ultimate_confirms_release_after_fresh_feedback_frames(self):
+        task, logic = self.make_logic()
+        events = []
+        task.probe_combat_action_block_reason = lambda: events.append("probe")
+        original_confirm = logic.release_burst.confirm
+
+        def confirm(*args):
+            events.append("confirm")
+            return original_confirm(*args)
+
+        with patch.object(logic.release_burst, "confirm", side_effect=confirm):
+            self.assertTrue(logic._use_timed_ultimate("1", logic.store.profiles("安塔尔", "ult"), burst_selected=True))
+        self.assertEqual(events[:3], ["probe", "probe", "confirm"])
+        self.assertEqual(logic.release_burst.last_confirmed[("1", "ult")], 0.0)
+        self.assertIsNone(logic.last_action_attempt)
+
     def test_unavailable_hud_or_dead_beneficiary_cannot_promote_support(self):
         task, logic = self.make_logic()
         task.sp = 0
