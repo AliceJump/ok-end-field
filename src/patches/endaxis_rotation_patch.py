@@ -44,11 +44,12 @@ def install_endaxis_rotation_patch() -> None:
         try:
             converted = endaxis_spec_to_rotation_tokens(raw_config)
         except EndAxisTimelineError as exc:
-            self.log_info(f"EndAxis 排轴导入失败: {exc}；回退原排轴解析")
-            return original(self, raw_config)
+            self.log_info(f"EndAxis 排轴配置无效: {exc}；本轮固定排轴禁用")
+            return []
 
         if converted is None:
-            return original(self, raw_config)
+            self.log_info("EndAxis 排轴配置格式无效；本轮固定排轴禁用")
+            return []
 
         scenario, tokens = converted
         label = scenario.name or scenario.scenario_id or "未命名场景"
