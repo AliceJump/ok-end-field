@@ -199,6 +199,27 @@ _NAV_TASK_KEY_ALIASES = {
     },
 }
 _MINIMAP_POSITION_TASK_CONFIG_NAME = "MinimapPositionTask"
+#: 允许把「小地图定位」参数交给定位所有者的来源任务：小地图调试任务，排除所有者本身。
+#:
+#: 为什么需要白名单：所有者只有一个槽位，来源一多，"哪个任务先 ``load_config`` 谁的值生效"
+#: 就由加载顺序决定，而加载顺序不该是可观察行为。历史上确实带过这些键的是
+#: ``MinimapRealtimePosition`` / ``MinimapDisplacementCalibration``（后者已改名为
+#: ``MinimapScaleCapture``）与 ``MinimapNavigateToPoint``（通过当年还带定位参数的网格导航
+#: Mixin 间接拿到，``e496b602`` 之后该 Mixin 不再合并）。
+#:
+#: 这里按"整个小地图调试任务族"取，而不是只列考古出来的那三个：名称清单是从 git 历史推的，
+#: 漏一个的后果是用户旧配置被静默丢弃，而多一个只是允许一次本来也不会发生的搬运。
+MINIMAP_LEGACY_SOURCE_TASKS = frozenset(
+    {
+        "MinimapDisplacementCalibration",
+        "MinimapNavigateToPoint",
+        "MinimapPositionRecorder",
+        "MinimapRealtimePosition",
+        "MinimapRegionCheck",
+        "MinimapScaleCapture",
+        "MinimapTurnToHeading",
+    }
+)
 _ZIP_LINE_ACCOUNT_MIGRATION_MARKER = "zip_line_account_overrides_v1"
 _NAV_LEGACY_BACKUP_MARKER = "nav_legacy_task_config_backup_v1"
 _ZIP_LINE_KEY_MIGRATIONS = {
@@ -612,9 +633,15 @@ def migrate_task_minimap_values_to_owner(task) -> None:
     网格任务只消费定位结果，WS 等待、位移提交和校准距离等参数属于定位任务。
     本函数必须在框架 Config 校验删除旧键之前执行；若定位任务已经实例化，也同步
     更新其内存配置，避免迁移要等下次启动才生效。
+
+    只有 :data:`MINIMAP_LEGACY_SOURCE_TASKS` 里的任务会被当作来源：所有者只有一个
+    槽位，来源越多结果越依赖"哪个任务先 ``load_config``"，而这种事不该由加载顺序决定。
+    每个键的落点都会写日志，冲突时也说明为什么没有采用本次的值。
     """
     task_class_name = type(task).__name__
     if task_class_name == _MINIMAP_POSITION_TASK_CONFIG_NAME:
+        return
+    if task_class_name not in MINIMAP_LEGACY_SOURCE_TASKS:
         return
 
     config_file = config_path(f"{task_class_name}.json")
@@ -630,6 +657,9 @@ def migrate_task_minimap_values_to_owner(task) -> None:
     }
     if not candidates:
         return
+
+    logger = getattr(task, "log_info", None)
+    warn = getattr(task, "log_warning", None)
 
     loaded_owner = None
     executor = getattr(task, "_executor", None)
@@ -654,6 +684,11 @@ def migrate_task_minimap_values_to_owner(task) -> None:
         memory_value = owner_config.get(key, default_value) if owner_config is not None else default_value
         if file_value != default_value or memory_value != default_value:
             authoritative = memory_value if memory_value != default_value else file_value
+            if callable(warn):
+                warn(
+                    f"「{_MINIMAP_POSITION_TASK_CONFIG_NAME}」已有定位参数 {key}={authoritative!r}，"
+                    f"不采用「{task_class_name}」的 {value!r}；要改请直接改定位任务的配置"
+                )
             if owner_data.get(key) != authoritative:
                 owner_data[key] = authoritative
                 modified = True
@@ -662,6 +697,8 @@ def migrate_task_minimap_values_to_owner(task) -> None:
         modified = True
         if owner_config is not None:
             owner_config[key] = value
+        if callable(logger):
+            logger(f"已迁移定位参数 {key}: {value!r}（{task_class_name} -> {_MINIMAP_POSITION_TASK_CONFIG_NAME}）")
     if modified:
         write_json_file(owner_config_file, owner_data)
 

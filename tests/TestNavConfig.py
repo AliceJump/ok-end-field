@@ -11,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from typing import ClassVar
 from unittest.mock import patch
 
 from ok.util import config as config_module
@@ -19,9 +20,23 @@ from ok.util.file import read_json_file, write_json_file
 from src.core import global_config_store
 from src.core.GridNavConfig import (
     CONFIG_GRID_DIR,
+    CONFIG_GRID_FRONTIER_MARGIN,
+    CONFIG_GRID_FRONTIER_PENALTY,
+    CONFIG_GRID_GOAL_RADIUS,
+    CONFIG_GRID_MARGIN,
     CONFIG_GRID_MAX_EXPAND,
+    CONFIG_GRID_NARROW_CALIBRATION,
+    CONFIG_GRID_NARROW_STOP_RADIUS,
+    CONFIG_GRID_RISK_COST,
+    CONFIG_GRID_SHORTCUT_RADIUS,
+    CONFIG_GRID_STUCK_DISTANCE,
+    CONFIG_GRID_STUCK_WINDOW,
     CONFIG_GRID_TIMEOUT,
     CONFIG_GRID_USE_ZIP_LINES,
+    CONFIG_GRID_WALL_PENALTY,
+    CONFIG_GRID_WAYPOINT_RADIUS,
+    CONFIG_GRID_WAYPOINT_TOLERANCE,
+    DEFAULT_GRID_NAV_CONFIG,
 )
 from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
@@ -541,6 +556,167 @@ class TestNavConfigMigration(unittest.TestCase):
             owner_data = read_json_file(os.path.join(tmp, "configs", "MinimapPositionTask.json"))
             self.assertEqual(owner.config["位移提交阈值(像素)"], 4.0)
             self.assertEqual(owner_data["位移提交阈值(像素)"], 4.0)
+
+    def test_only_known_legacy_sources_are_migrated(self):
+        """来源白名单：只有历史上真的有过这些键的任务会被搬，其余一律不动。
+
+        否则所有者只有一个槽位，"谁先 ``load_config`` 谁的值生效"，结果由加载顺序决定。
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "DeliveryTask.json": {"位移提交阈值(像素)": 9.0},
+                    "MinimapPositionTask.json": {},
+                },
+            )
+            source = type("DeliveryTask", (), {})()
+            owner = type("MinimapPositionTask", (), {})()
+            owner.config = {}
+            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+
+            with patch.object(
+                global_config_store,
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
+            ):
+                global_config_store.migrate_task_minimap_values_to_owner(source)
+
+            owner_data = read_json_file(os.path.join(tmp, "configs", "MinimapPositionTask.json"))
+            self.assertEqual(owner_data, {})
+            self.assertEqual(owner.config, {})
+            self.assertNotIn("DeliveryTask", global_config_store.MINIMAP_LEGACY_SOURCE_TASKS)
+
+    def test_whitelist_covers_the_minimap_debug_tasks(self):
+        """白名单是"小地图调试任务族（减所有者）"：只靠考古出的三个名字会漏掉来源。"""
+        from src.core.global_config_store import MINIMAP_LEGACY_SOURCE_TASKS
+
+        expected = {
+            "MinimapNavigateToPoint",
+            "MinimapPositionRecorder",
+            "MinimapRealtimePosition",
+            "MinimapRegionCheck",
+            "MinimapScaleCapture",
+            "MinimapTurnToHeading",
+            # 改名前（MinimapScaleCapture 之前）的旧类名：旧安装的配置文件仍以此为名。
+            "MinimapDisplacementCalibration",
+        }
+        self.assertEqual(set(MINIMAP_LEGACY_SOURCE_TASKS), expected)
+        self.assertNotIn("MinimapPositionTask", MINIMAP_LEGACY_SOURCE_TASKS)
+
+    def test_whitelist_excludes_unrelated_tasks(self):
+        """送货 / 战斗 / 日常这些任务从未有过定位键，也不能来抢所有者那一个槽位。"""
+        from src.core.global_config_store import MINIMAP_LEGACY_SOURCE_TASKS
+
+        for name in ("DeliveryTask", "DailyDeliveryTask", "BattleTask", "DailyTask", "ItemNavigatorTask"):
+            self.assertNotIn(name, MINIMAP_LEGACY_SOURCE_TASKS)
+
+    def test_conflicting_source_value_is_logged_not_silently_dropped(self):
+        """冲突时写日志：用户能看出"我改的值为什么没生效"，而不是被静默丢弃。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "MinimapNavigateToPoint.json": {"位移提交阈值(像素)": 9.0},
+                    "MinimapPositionTask.json": {"位移提交阈值(像素)": 4.0},
+                },
+            )
+            source = type("MinimapNavigateToPoint", (), {})()
+            warnings: list[str] = []
+            source.log_warning = warnings.append
+            owner = type("MinimapPositionTask", (), {})()
+            owner.config = {"位移提交阈值(像素)": 4.0}
+            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+
+            with patch.object(
+                global_config_store,
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
+            ):
+                global_config_store.migrate_task_minimap_values_to_owner(source)
+
+            line = next(text for text in warnings if "位移提交阈值(像素)" in text)
+            self.assertIn("MinimapPositionTask", line)
+            self.assertIn("9.0", line)
+            self.assertIn("MinimapNavigateToPoint", line)
+
+    def test_accepted_source_value_is_logged(self):
+        """采用旧值时也要留痕，否则用户不知道自己的旧配置被搬去了哪里。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "MinimapNavigateToPoint.json": {"位移提交阈值(像素)": 9.0},
+                    "MinimapPositionTask.json": {},
+                },
+            )
+            source = type("MinimapNavigateToPoint", (), {})()
+            infos: list[str] = []
+            source.log_info = infos.append
+            owner = type("MinimapPositionTask", (), {})()
+            owner.config = {}
+            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+
+            with patch.object(
+                global_config_store,
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
+            ):
+                global_config_store.migrate_task_minimap_values_to_owner(source)
+
+            line = next(text for text in infos if "位移提交阈值(像素)" in text)
+            self.assertIn("MinimapNavigateToPoint", line)
+            self.assertIn("MinimapPositionTask", line)
+            self.assertIn("9.0", line)
+
+
+class TestFollowerDefaultsMatchGlobalConfig(unittest.TestCase):
+    """``FollowerConfig`` 的库默认值必须与全局 ``Nav Config`` 的默认值一致。
+
+    应用侧每一项都显式从 ``Nav Config`` 取值，所以两者不一致时不会有功能故障——只会
+    让"读库默认值"的人对实际行为产生错误预期（``离墙安全边距`` 就在这里漂过 1 vs 3）。
+    """
+
+    #: ``FollowerConfig`` 字段 -> 全局配置键。``allow_unknown`` 不在表内：库默认给
+    #: 宽松的 True，产品侧默认保守的 False，是刻意的差异，不是漂移。
+    _FIELDS: ClassVar[dict[str, str]] = {
+        "arrive_radius": CONFIG_GRID_WAYPOINT_RADIUS,
+        "goal_radius": CONFIG_GRID_GOAL_RADIUS,
+        "stuck_window_s": CONFIG_GRID_STUCK_WINDOW,
+        "stuck_min_distance": CONFIG_GRID_STUCK_DISTANCE,
+        "risk_cost": CONFIG_GRID_RISK_COST,
+        "shortcut_radius": CONFIG_GRID_SHORTCUT_RADIUS,
+        "margin": CONFIG_GRID_MARGIN,
+        "wall_penalty": CONFIG_GRID_WALL_PENALTY,
+        "frontier_margin": CONFIG_GRID_FRONTIER_MARGIN,
+        "frontier_penalty": CONFIG_GRID_FRONTIER_PENALTY,
+        "waypoint_tolerance": CONFIG_GRID_WAYPOINT_TOLERANCE,
+        "max_expand": CONFIG_GRID_MAX_EXPAND,
+        "narrow_calibration": CONFIG_GRID_NARROW_CALIBRATION,
+        "narrow_stop_radius": CONFIG_GRID_NARROW_STOP_RADIUS,
+    }
+
+    def test_library_defaults_equal_configured_defaults(self):
+        from dataclasses import fields
+
+        from src.nav.route_follower import FollowerConfig
+
+        defaults = {field.name: field.default for field in fields(FollowerConfig)}
+        for name, key in self._FIELDS.items():
+            with self.subTest(field=name, key=key):
+                self.assertEqual(defaults[name], DEFAULT_GRID_NAV_CONFIG[key])
+
+    def test_mapping_covers_every_shared_key(self):
+        """字段表不能漏：新增了同名参数却忘了登记，这条会失败。"""
+        from dataclasses import fields
+
+        from src.nav.route_follower import FollowerConfig
+
+        names = {field.name for field in fields(FollowerConfig)}
+        self.assertTrue(set(self._FIELDS) <= names)
+        # 表里的键必须真的存在于全局配置，避免写错中文键名后静默跳过
+        for key in self._FIELDS.values():
+            self.assertIn(key, DEFAULT_GRID_NAV_CONFIG)
 
 
 if __name__ == "__main__":

@@ -423,6 +423,78 @@ class TestCommitShiftGate(unittest.TestCase):
         od.reset_position()
         self.assertEqual(od.position_px(), (0.0, 0.0))
 
+    def test_reset_position_moves_anchor_so_pending_cannot_come_back(self):
+        """清零之后位置必须留得住：旧锚帧会让同一段位移被重新测出来、又填回待提交量。
+
+        回归：静止重锚把位置钉在 WS 坐标上，隔一拍就被"锚帧 -> 当前帧"的位移弹回去。
+        """
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 2, 0))
+        task, od = self._make([f0, f1, f1], commit_min_shift_px=5.0)
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 0.5
+        od.sample(frame=f1)
+        pending = od.position_px()
+        self.assertAlmostEqual(pending[0], -2.0, delta=0.8)
+
+        od.reset_position()
+        self.assertEqual(od.position_px(), (0.0, 0.0))
+
+        # 人没动（内容仍是 f1）：位置必须留在 0，而不是回到刚才那 2px
+        task._t = 0.7
+        od.sample(frame=f1)
+        self.assertAlmostEqual(od.position_px()[0], 0.0, delta=0.5)
+        self.assertAlmostEqual(od.position_px()[1], 0.0, delta=0.5)
+
+    def test_reset_position_still_tracks_motion_afterwards(self):
+        """换锚不是冻结：之后的真实位移仍从重锚那一帧算起。"""
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 2, 0))
+        f2 = _bgr(_shifted(base, 8, 0))
+        task, od = self._make([f0, f1, f2], commit_min_shift_px=5.0)
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 0.5
+        od.sample(frame=f1)
+        od.reset_position()
+
+        task._t = 1.0
+        result = od.sample(frame=f2)
+
+        # 相对重锚帧（f1）的 6px，而不是相对最初锚帧（f0）的 8px
+        self.assertEqual(result["reason"], "ok", result)
+        self.assertAlmostEqual(od.position_px()[0], -6.0, delta=0.8)
+
+    def test_reset_position_before_any_sample_leaves_no_anchor(self):
+        """还没采过样就没有可用的新锚帧：退回清空，由下一拍按 anchor_init 重建。"""
+        _task, od = self._make([_bgr(_texture(200, 200))], commit_min_shift_px=5.0)
+
+        od.reset_position()
+
+        self.assertIsNone(od.last_result())
+        result = od.sample(now=0.0)
+        self.assertEqual(result["reason"], "anchor_init")
+        self.assertEqual(od.position_px(), (0.0, 0.0))
+
+    def test_reset_position_drops_the_stale_rest_sample(self):
+        """换锚后旧样本不能再当作"当前速度"：is_rest 必须等下一拍新测量，否则会误判静止。"""
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 2, 0))
+        task, od = self._make([f0, f1], commit_min_shift_px=5.0)
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 0.5
+        od.sample(frame=f1)
+        self.assertIsNotNone(od.last_sample())
+
+        od.reset_position()
+
+        self.assertIsNone(od.last_sample())
+
 
 class TestDecompose(unittest.TestCase):
     """验证朝向坐标约定和位移分解。"""

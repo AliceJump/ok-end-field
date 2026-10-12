@@ -90,6 +90,11 @@ class FollowerConfig:
     距离均为世界米。``arrive_radius`` 控制中间航点切换，``goal_radius`` 控制最终到达；
     ``off_route_radius`` 与 ``off_route_hold_s`` 同时满足才判定偏航，用于过滤定位抖动。
     其余墙距、未知格风险和航点合并参数会原样传给 :class:`GridPlanner`。
+
+    这些默认值是**本模块单独使用时的取值**，与全局 ``Nav Config`` 里的默认保持一致
+    （``margin`` 曾在这里留成 1、在配置里是 3，属于历史手调留下的漂移，已对齐）。
+    应用侧不依赖它们：``GridNavigationMixin._grid_follower_config`` 每一项都显式从
+    ``Nav Config`` 取值，所以改配置不需要动这里。
     """
 
     arrive_radius: float = 1.0
@@ -100,7 +105,7 @@ class FollowerConfig:
     shortcut_radius: float = 1.0
     risk_cost: float = 5.0
     allow_unknown: bool = True
-    margin: int = 1
+    margin: int = 3
     wall_penalty: float = 1.0
     frontier_margin: int = 2
     frontier_penalty: float = 1.0
@@ -131,6 +136,10 @@ class FollowerStep:
     distance_to_goal: float | None = None
     waypoint_index: int = 0
     waypoint_count: int = 0
+    #: 本段的"值不值得冲刺"判据（米）：``waypoint_index > 0`` 时是上一个航点到当前航点的
+    #: **规划**长度，首航点退回到到当前航点的剩余距离。调用方据此决定长航段要不要冲刺，
+    #: 不需要再去读 ``plan_result.waypoints``。
+    leg_distance_m: float = 0.0
     arrived_waypoint_index: int | None = None
     skipped_waypoints: tuple[int, ...] = ()
     shortcut_distance: float | None = None
@@ -182,6 +191,14 @@ class GridRouteFollower:
         """暂停跟随状态；外层停止控制输入时应调用，避免把停走误判为卡住。"""
         self._reset_motion()
         self._off_route_since = None
+
+    def zip_line_stats(self) -> dict[str, int]:
+        """返回滑索图接入网格后的统计（节点 / 连接 / 可映射节点 / 有效有向边）。
+
+        转发 :meth:`~src.nav.grid_planner.GridPlanner.zip_line_stats`：任务层要回答
+        "读到了滑索却没走滑索"时用得到，不必再去拿跟随器内部的 planner。
+        """
+        return self.planner.zip_line_stats()
 
     def plan(
         self,
@@ -269,7 +286,7 @@ class GridRouteFollower:
             arrived_index = self.waypoint_index
             self.waypoint_index += 1
 
-        zip_line_step = self._current_zip_line_step()
+        zip_line_step = self.current_zip_line_step()
         if zip_line_step is not None:
             entry_index = zip_line_step.entry_waypoint_index
             if self.waypoint_index > entry_index:
@@ -443,8 +460,12 @@ class GridRouteFollower:
             self.waypoint_index += 1
         return tuple(skipped), nearest
 
-    def _current_zip_line_step(self) -> ZipLineRouteStep | None:
-        """返回下一项待执行的滑索步骤。"""
+    def current_zip_line_step(self) -> ZipLineRouteStep | None:
+        """返回下一项待执行的滑索步骤；没有待执行项时返回 ``None``。
+
+        任务层用它判断"这一拍是不是该走 :class:`NavState.ZIP_LINE_APPROACH`"，
+        不需要知道跟随器内部用 ``_zip_line_index`` 记进度。
+        """
         if self.plan_result is None:
             return None
         steps = self.plan_result.zip_line_steps
@@ -454,7 +475,7 @@ class GridRouteFollower:
 
     def _waypoint_limit(self, waypoint_count: int) -> int:
         """普通行走不得越过下一步滑索的上索航点。"""
-        zip_line_step = self._current_zip_line_step()
+        zip_line_step = self.current_zip_line_step()
         if zip_line_step is None:
             return max(0, waypoint_count - 1)
         return min(max(0, waypoint_count - 1), zip_line_step.entry_waypoint_index)
@@ -550,7 +571,7 @@ class GridRouteFollower:
 
     def complete_zip_line(self) -> bool:
         """滑索执行成功后推进到下索后的连续行走段。"""
-        step = self._current_zip_line_step()
+        step = self.current_zip_line_step()
         if step is None:
             return False
         self.waypoint_index = min(
@@ -589,6 +610,22 @@ class GridRouteFollower:
             return False
         return float(now) - self._move_started_at >= self.config.stuck_window_s
 
+    def _leg_distance_m(self, waypoint_distance: float | None) -> float:
+        """本段的"值不值得冲刺"判据（米）。
+
+        ``waypoint_index > 0`` 时是上一个航点到当前航点的**规划**长度，不随接近航点变小；
+        首航点（或索引已越界）没有"上一段"，退回到到当前航点的剩余距离——与该方法搬进
+        跟随器之前任务层的取值一致，避免长首段不再触发冲刺。
+        """
+        result = self.plan_result
+        waypoints = result.waypoints if result is not None else []
+        index = int(self.waypoint_index)
+        if 0 < index < len(waypoints):
+            return distance_xz(waypoints[index - 1], waypoints[index])
+        if waypoint_distance is None:
+            return 0.0
+        return abs(float(waypoint_distance))
+
     def _reset_motion(self) -> None:
         """清空卡住窗口；不修改航点索引或偏航状态。"""
         self._move_started_at = None
@@ -621,6 +658,7 @@ class GridRouteFollower:
             distance_to_goal=goal_distance,
             waypoint_index=self.waypoint_index,
             waypoint_count=count,
+            leg_distance_m=self._leg_distance_m(waypoint_distance),
             arrived_waypoint_index=arrived_waypoint_index,
             skipped_waypoints=skipped_waypoints,
             shortcut_distance=shortcut_distance,

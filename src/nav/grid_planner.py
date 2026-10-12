@@ -15,8 +15,9 @@
 ``PlanResult`` 会返回路径、世界坐标航点、总代价、未知格数量和失败诊断。调用方应先看
 ``ok`` 与 ``reason``；触顶、策略性不可达和真实不连通是不同问题，不应只按“失败”处理。
 
-当精确搜索因 ``max_expand`` 触顶时，:meth:`GridPlanner.plan_cells` 可按 ``risk_cost``
-自动加权重搜。加权只改变节点扩展顺序，不改变通行与禁斜穿规则，因此降级路线仍不会
+当精确搜索因 ``max_expand`` 触顶时，:meth:`GridPlanner.plan_cells` 会自动加权重搜一次
+（权重见 :meth:`GridPlanner._retry_heuristic_weight`：至少不比首次搜索更没有信息）。
+加权只改变节点扩展顺序，不改变通行与禁斜穿规则，因此降级路线仍不会
 穿墙；代价最优性不再保证，并会在 ``notes`` 中明确记录。
 
 用法::
@@ -62,6 +63,7 @@ __all__ = [
     "DEFAULT_ZIP_LINE_ACCESS_RADIUS",
     "DEFAULT_ZIP_LINE_BOARDING_COST",
     "DEFAULT_ZIP_LINE_COST_FACTOR",
+    "DEFAULT_ZIP_LINE_START_MAX_CANDIDATES",
     "GridPlanner",
     "PlanResult",
     "ZipLineRouteStep",
@@ -79,6 +81,13 @@ DEFAULT_ZIP_LINE_COST_FACTOR = 0.2
 DEFAULT_ZIP_LINE_BOARDING_COST = 2.0
 #: 滑索点不在可行走格时，允许在多少格内寻找最近落脚点。
 DEFAULT_ZIP_LINE_ACCESS_RADIUS = 8
+#: 当前滑索节点未映射到网格时，最多尝试多少个可映射落点续接。
+#:
+#: 每个候选都要跑一次完整 A*：在 ``map02`` 这种 520 万格的图上，单次要扩展十几万节点、
+#: 临时数组几十 MB、耗时 1~2 秒。候选数不设上限时，"当前滑索架不可下索"这一条支路能把
+#: 整轮导航的时间预算吃光。候选按「滑索代价 + 剩余距离下界」排序后取前若干个；被截掉的
+#: 情况会写进 ``PlanResult.notes``，不要让它看起来像"所有可行落点都试过了"。
+DEFAULT_ZIP_LINE_START_MAX_CANDIDATES = 4
 _SQRT2 = math.sqrt(2.0)
 
 
@@ -189,6 +198,7 @@ class GridPlanner:
         zip_line_cost_factor: float = DEFAULT_ZIP_LINE_COST_FACTOR,
         zip_line_boarding_cost: float = DEFAULT_ZIP_LINE_BOARDING_COST,
         zip_line_access_radius: int = DEFAULT_ZIP_LINE_ACCESS_RADIUS,
+        zip_line_start_max_candidates: int = DEFAULT_ZIP_LINE_START_MAX_CANDIDATES,
     ):
         """
         Args:
@@ -205,13 +215,18 @@ class GridPlanner:
             max_expand: 扩展节点数上限，防止在超大图上失控。触顶时
                 :meth:`plan_cells` 会给出与"真的没通路"不同的理由。
             heuristic_weight: A* 启发式的放大系数（``f = g + w·h``）。``1.0`` 是最优搜索；
-                大于 1 会更快但代价不再最优（上界 w 倍）。
+                大于 1 会更快但代价不再最优（上界 w 倍）。加载了滑索时实际生效的是 ``w``
+                再乘 :attr:`_heuristic_scale`，两者的关系见 :meth:`_retry_heuristic_weight`。
             adaptive_weight: :meth:`plan_cells` 里 ``heuristic_weight`` 那次搜索触顶时，
-                是否自动按 ``risk_cost`` 加权重搜一次（见类文档"大图触顶后的降级搜索"）。
+                是否自动加权重搜一次（权重见 :meth:`_retry_heuristic_weight`）。
             zip_lines: 用户滑索图。只使用与当前网格 ``meta.map_name`` 相同的节点。
             zip_line_cost_factor: 滑索按三维距离换算为等价步行距离的系数。
             zip_line_boarding_cost: 每次滑索转移的固定等价步行距离。
             zip_line_access_radius: 滑索点落在阻挡/未知格时寻找最近可通行落点的格数上限。
+            zip_line_start_max_candidates: 当前滑索节点未映射到网格时，最多尝试多少个
+                可映射落点续接；``0`` 或负数按 :data:`DEFAULT_ZIP_LINE_START_MAX_CANDIDATES`
+                处理。每个候选都是一次完整 A*，见该常量的说明。和
+                ``zip_line_access_radius`` 一样，这是算法层的旋钮，不进全局导航配置。
         """
         self.grid = grid
         self.risk_cost = float(risk_cost)
@@ -235,6 +250,7 @@ class GridPlanner:
         self.zip_line_cost_factor = max(0.0, float(zip_line_cost_factor))
         self.zip_line_boarding_cost = max(0.0, float(zip_line_boarding_cost))
         self.zip_line_access_radius = max(0, int(zip_line_access_radius))
+        self.zip_line_start_max_candidates = max(1, int(zip_line_start_max_candidates))
         self.zip_lines = (
             zip_lines.for_map(grid.meta.map_name) if isinstance(zip_lines, ZipLineGraph) and zip_lines else None
         )
@@ -321,18 +337,19 @@ class GridPlanner:
         if search is None:
             first_expanded, first_cap = self._expanded, self._cap_exceeded
             if self._weighted_retry_allowed():
+                retry_weight = self._retry_heuristic_weight()
                 search = self._astar(
                     start_cell,
                     goal_cell,
-                    self.risk_cost,
+                    retry_weight,
                     deadline=deadline,
                     force_zip_start=force_zip_start,
                 )
                 if search is not None:
                     notes.append(
                         f"精确搜索触顶（扩展 {first_expanded} 格）后改用加权启发 "
-                        f"w={self.risk_cost:g} 重搜成功：路线仍不穿墙、不切角，"
-                        f"但代价不再保证最优（上界约 {self.risk_cost:g} 倍）"
+                        f"w={retry_weight:g}{self._heuristic_scale_note(retry_weight)} 重搜成功："
+                        f"路线仍不穿墙、不切角，但代价不再保证最优"
                     )
                 else:
                     # 加权重搜也没找到：以首次精确搜索的结论为准——它才是"要不要调大
@@ -350,6 +367,12 @@ class GridPlanner:
                     f"搜索规模超限：扩展节点超过 max_expand={self.max_expand} 仍未找到通路，"
                     "可能是目标确实不可达，或网格过大/未探索部分太多；可调大 max_expand"
                 )
+                if self._heuristic_scale < 1.0:
+                    reason += (
+                        f"。另注：本次已加载滑索，启发式缩放为 {self._heuristic_scale:g}"
+                        "——滑索让行程单价明显变低，为保持代价估计仍是下界，搜索会退得更接近"
+                        "均匀代价搜索，扩展节点数比没有滑索时明显偏多，不一定是这张图的问题"
+                    )
             elif not self.allow_unknown:
                 reason = (
                     f"找不到通路（起点可达区域已穷尽，共 {self._expanded} 格）："
@@ -439,10 +462,16 @@ class GridPlanner:
             False,
             "当前滑索节点无法通过滑索连接到可映射节点",
         )
-        # 估算只用于遍历顺序；必须比较完整路线代价，否则可能先到最近的
+        # 估算只用于排序与截断；命中的候选之间仍比较完整路线代价，否则可能先到最近的
         # 可映射节点，再从该节点沿原滑索返回当前节点。
+        ordered = sorted(candidates)
+        max_candidates = max(1, int(self.zip_line_start_max_candidates))
+        truncated = len(ordered) > max_candidates
+        if truncated:
+            ordered = ordered[:max_candidates]
+        source_cell = self.grid.index_of_world(source_node.x, source_node.z)
         best_result = None
-        for _estimate, target_id, target_cell in sorted(candidates):
+        for _estimate, target_id, target_cell in ordered:
             remaining = None if deadline is None else max(0.0, deadline - time.monotonic())
             if deadline is not None and remaining <= 0:
                 if best_result is not None:
@@ -461,7 +490,6 @@ class GridPlanner:
             if not prefix_steps:
                 continue
 
-            source_cell = self.grid.index_of_world(source_node.x, source_node.z)
             candidate_result = self._candidate_plan_from_mapped_target(
                 source_node=source_node,
                 source_cell=source_cell,
@@ -473,6 +501,15 @@ class GridPlanner:
             )
             if best_result is None or candidate_result.cost < best_result.cost - 1e-9:
                 best_result = candidate_result
+        # 截断说明要同时挂在成功与失败两种结果上：失败时它才是"为什么没试到那个落点"
+        # 的答案，只挂在成功路径等于把最需要它的场景漏掉。
+        if truncated:
+            note = (
+                f"当前滑索架有 {len(candidates)} 个可映射落点，按「滑索代价 + 剩余距离下界」"
+                f"只尝试了前 {max_candidates} 个；若这条路仍不通，请改用别的滑索架下索"
+                f"（上限由 GridPlanner 的 zip_line_start_max_candidates 控制）"
+            )
+            (best_result if best_result is not None else last_failure).notes.append(note)
         if best_result is not None:
             return best_result
         return last_failure
@@ -687,15 +724,38 @@ class GridPlanner:
 
         self._zip_edges_by_id = edges_by_id
         self._zip_edges_by_padded = {padded: tuple(edges) for padded, edges in edges_by_padded.items()}
+        # 滑索边的单价是 zip_line_cost_factor（默认 0.2）乘距离、再加固定上索代价，比步行便宜
+        # 得多；octile 启发只有在整体乘上这个系数之后才仍是**代价下界**。代价是搜索会退得
+        # 更接近均匀代价搜索：实测同一张 520 万格图上 535m 路线扩展数 10.7 万 -> 34.7 万，
+        # 950m 路线会顶到默认 max_expand。不这么做的话启发式会高估"滑索能省多少"，A* 反而
+        # 会漏掉真正更省的那条滑索路线——这个系数是刻意付的。
+        # （关于上界的说明：octile 最多比欧氏距离大 8.23%，所以极端的"纯滑索"路线下 h 最多
+        #   高估真实代价约 8%，属于 ε-可采纳范围；实测与 Dijkstra 基准比未出现次优路线。）
         self._heuristic_scale = min(1.0, self.zip_line_cost_factor) if self._zip_edges_by_padded else 1.0
 
-    def zip_line_stats(self) -> dict[str, int]:
-        """返回滑索图接入网格后的统计，便于定位“加载了但没使用”。"""
+    def _heuristic_scale_note(self, weight: float) -> str:
+        """把"这次重搜的实际力度"写成日志片段；没有滑索边时返回空串。
+
+        加载滑索后启发式整体乘过 ``_heuristic_scale``，所以只报 ``w`` 会让人以为重搜比
+        实际更激进；这里把乘完的有效权重一并给出。
+        """
+        if self._heuristic_scale >= 1.0:
+            return ""
+        return f"（滑索缩放 {self._heuristic_scale:g}，有效权重 {weight * self._heuristic_scale:g}）"
+
+    def zip_line_stats(self) -> dict[str, float]:
+        """返回滑索图接入网格后的统计，便于定位"加载了但没使用"或"为什么变慢"。
+
+        ``heuristic_scale`` 是加载滑索后启发式的缩放系数：它为 1 表示启发式仍按 octile
+        计（搜索最紧），小于 1 表示为了让代价估计仍是下界而整体缩过——扩展节点数会随之
+        明显上升。排查"搜索规模超限"时先看这一项。
+        """
         return {
             "nodes": len(self.zip_lines.nodes) if self.zip_lines is not None else 0,
             "links": len(self.zip_lines.links) if self.zip_lines is not None else 0,
             "mapped_nodes": self._zip_line_mapped_node_count,
             "directed_edges": len(self._zip_edges_by_id),
+            "heuristic_scale": float(self._heuristic_scale),
         }
 
     def _route_with_zip_lines(self, cells, via_edge_ids) -> tuple[list, list[ZipLineRouteStep], tuple[int, ...]]:
@@ -882,20 +942,33 @@ class GridPlanner:
         base = (di + dj) + (_SQRT2 - 2.0) * min(di, dj) if diagonal else float(di + dj)
         return base * weight * scale
 
-    def _weighted_retry_allowed(self) -> bool:
-        """触顶失败后是否值得按 ``risk_cost`` 加权重搜一次。
+    def _retry_heuristic_weight(self) -> float:
+        """触顶后加权重搜使用的启发式权重。
 
-        只在"精确搜索确实因为规模触顶"、"允许走未知格"、"风险代价真的大于 1"、
-        且"当前权重还没到 risk_cost"时才重搜：其余情况重搜要么结论相同（真不可达），
-        要么等于没加权（w 已经是 1 或已超过 risk_cost）。
+        首次搜索用的是 ``heuristic_weight``；加载了滑索时启发式还要乘
+        :attr:`_heuristic_scale`（滑索把行程单价压到 ``zip_line_cost_factor``，
+        不缩放就不是代价下界了），所以两次搜索的**有效**权重分别是
+        ``heuristic_weight * scale`` 与 ``本函数返回值 * scale``。
+
+        重搜的权重取 ``max(risk_cost, 1/scale)``：只看 ``risk_cost`` 会低估重搜的实际
+        力度——``risk_cost=1.5`` 配 0.2 的缩放，有效权重只有 0.3，重搜几乎等于把同一轮
+        搜索再跑一遍，白花一次 ``max_expand``。下限 ``1/scale`` 让重搜至少回到"无滑索时
+        的 octile 启发"这一档力度，也就是默认配置下本来就会走到的那一档。
+        """
+        return max(self.risk_cost, 1.0 / max(1e-9, self._heuristic_scale))
+
+    def _weighted_retry_allowed(self) -> bool:
+        """触顶失败后是否值得加权重搜一次。
+
+        只在"精确搜索确实因为规模触顶"、"允许走未知格"、且"重搜的有效权重真的比首次
+        更高"时才重搜：其余情况重搜要么结论相同（真不可达），要么等于没加权。
         """
         return (
             self._cap_exceeded
             and not self._timed_out
             and self.adaptive_weight
             and self.allow_unknown
-            and self.risk_cost > 1.0
-            and self.heuristic_weight < self.risk_cost
+            and self.heuristic_weight < self._retry_heuristic_weight()
         )
 
     def _search_tables(self):

@@ -573,7 +573,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             def pause(self):
                 pass
 
-            def _current_zip_line_step(self):
+            def current_zip_line_step(self):
                 return None if self.completed else route_step
 
             def update(self, position, heading, now):
@@ -630,7 +630,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             def pause(self):
                 pass
 
-            def _current_zip_line_step(self):
+            def current_zip_line_step(self):
                 return None if self.completed else route_step
 
             def update(self, position, heading, now):
@@ -987,12 +987,12 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(any("已到达目标" in msg for msg in self.task.logs))
 
     def test_long_waypoint_segment_starts_sprint_once_per_w_hold(self):
-        self.task._grid_nav_follower = SimpleNamespace(plan_result=SimpleNamespace(waypoints=[(0.0, 0.0), (20.0, 0.0)]))
         step = FollowerStep(
             WALK,
             waypoint=(20.0, 0.0),
             distance_to_waypoint=20.0,
             waypoint_index=1,
+            leg_distance_m=20.0,
         )
         self.task._set_grid_walking(True)
 
@@ -1009,12 +1009,12 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertEqual(self.task.pressed_keys, ["shift", "shift"])
 
     def test_short_waypoint_segment_does_not_start_sprint(self):
-        self.task._grid_nav_follower = SimpleNamespace(plan_result=SimpleNamespace(waypoints=[(0.0, 0.0), (10.0, 0.0)]))
         step = FollowerStep(
             WALK,
             waypoint=(10.0, 0.0),
             distance_to_waypoint=10.0,
             waypoint_index=1,
+            leg_distance_m=10.0,
         )
         self.task._set_grid_walking(True)
 
@@ -1022,6 +1022,31 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.assertEqual(self.task.pressed_keys, [])
         self.assertFalse(self.task._grid_nav_sprint_active)
+
+    def test_pause_releases_held_w(self):
+        """暂停必须立刻松开 ``W``：框架的暂停不会替任务释放长按键。"""
+        self.task._set_grid_walking(True)
+        self.assertTrue(self.task.w_down)
+
+        self.task.pause()
+
+        self.assertFalse(self.task.w_down)
+        self.assertFalse(self.task._grid_nav_w_held)
+
+    def test_pause_without_held_w_sends_no_key_events(self):
+        """没按住 ``W`` 时暂停不应产生多余的按键事件。"""
+        self.task.pause()
+
+        self.assertEqual(self.task.key_up_events, [])
+
+    def test_production_tasks_get_the_release_on_pause(self):
+        """送货与调试任务共用这一份 ``pause``，不靠各自覆写。"""
+        from src.tasks.navigation.MinimapNavigateToPoint import MinimapNavigateToPoint
+        from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
+        from src.tasks.onetime.DeliveryTask import DeliveryTask
+
+        self.assertIs(DeliveryTask.pause, GridNavigationMixin.pause)
+        self.assertIs(MinimapNavigateToPoint.pause, GridNavigationMixin.pause)
 
     def test_waiting_for_position_releases_w_and_pauses_follower(self):
         paused = []

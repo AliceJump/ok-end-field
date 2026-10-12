@@ -479,10 +479,32 @@ class MinimapOdometry:
             self._arm_anchor(frame, None)
 
     def reset_position(self):
-        """只清零累计位移，保留当前锚帧。"""
+        """清零累计位移，并**把锚帧挪到最近一帧**（对外位置归零后要留得住）。
+
+        只清零不换锚是自相矛盾的：对外位置是 ``_pos_px + _pending_px``，而 ``_pending_px``
+        是相位相关直接测出来的“锚帧 -> 当前帧”位移（见 :meth:`_sample_impl` 的位移门）。
+        锚帧不动的话，下一拍会用同一张旧锚帧重新测出同一段位移、又填回 ``_pending_px``：
+        调用方（静止重锚）刚把位置钉在 WS 坐标上，隔一拍就被弹回去最多一个提交阈值的偏移，
+        并且这份偏移还会算进下一次的 ``sync_residual``，让漂移诊断跟着偏大。
+
+        新锚帧用最近一次采样过的灰度（``_last_gray``）：调用方
+        :class:`~src.localization.minimap_position_fusion.MinimapPositionFusion` 都是在本拍
+        ``sample()`` 之后才走到这里，所以它等价于“用当前帧重新锚定”，却不像“清空锚帧”那样
+        白丢一拍位移。只有从未采样过（``_last_gray is None``）时才退回清空锚帧，由下一拍按
+        ``anchor_init`` 重建。``_last_gray`` 与锚帧一样只被整体替换、不被就地修改，可以安全共享。
+        """
         self._pos_px = np.zeros(2, dtype=np.float64)
         # 待提交量也清零：调用方（静止重锚）要的是"位置正好等于锚点"，留着它位置会立刻跳一下
         self._pending_px = np.zeros(2, dtype=np.float64)
+        # 换锚了：上一拍的样本是相对旧锚帧测的，不能再当作“当前速度”交给 is_rest 判定
+        # （与 _arm_anchor 的处置一致）。
+        self._last = None
+        if self._last_gray is None:
+            self._anchor_gray = None
+            self._anchor_t = None
+            return
+        self._anchor_gray = self._last_gray
+        self._anchor_t = self._now()
 
     def _arm_anchor(self, frame: np.ndarray, now: float | None):
         gray = self._crop_gray(frame)

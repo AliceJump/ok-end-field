@@ -215,6 +215,44 @@ class TestGridRouteFollower(unittest.TestCase):
         self.assertEqual(step.arrived_waypoint_index, 1)
         self.assertEqual(step.waypoint, (4.0, 0.0))
 
+    def test_step_reports_planned_leg_length_not_remaining_distance(self):
+        """``leg_distance_m`` 是这一段**规划**的长度，不随接近航点而变小。
+
+        任务层据此决定长航段要不要冲刺；如果它报的是剩余距离，冲刺就会在快到航点时
+        被反复判定，和"这一段值不值得冲刺"完全不是一回事。
+        """
+        self.follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(0, 0), (0, 2), (0, 6)],
+            waypoints=[(0.0, 0.0), (2.0, 0.0), (6.0, 0.0)],
+        )
+        self.follower.waypoint_index = 2
+
+        far = self.follower.update((2.0, 0.0), heading=90.0, now=0.0)
+        near = self.follower.update((5.8, 0.0), heading=90.0, now=0.5)
+
+        self.assertAlmostEqual(far.leg_distance_m, 4.0)
+        self.assertAlmostEqual(near.leg_distance_m, 4.0)
+        self.assertLess(near.distance_to_waypoint, far.distance_to_waypoint)
+
+    def test_first_waypoint_falls_back_to_remaining_distance(self):
+        """首航点没有"上一段"，退回剩余距离——与搬迁前任务层的取值一致。
+
+        如果这里报 0，长首段就再也不会触发冲刺了，属于悄悄改行为。
+        """
+        self.follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(0, 0), (0, 6)],
+            waypoints=[(4.0, 0.0), (6.0, 0.0)],
+        )
+        self.follower.waypoint_index = 0
+
+        step = self.follower.update((1.0, 0.0), heading=90.0, now=0.0)
+
+        self.assertEqual(step.waypoint_index, 0)
+        self.assertAlmostEqual(step.leg_distance_m, 3.0)
+        self.assertAlmostEqual(step.leg_distance_m, step.distance_to_waypoint)
+
 
 class TestNarrowPassageCalibration(unittest.TestCase):
     """一格宽通路入口必须先在进入前停车校准，再对准航点前进。"""

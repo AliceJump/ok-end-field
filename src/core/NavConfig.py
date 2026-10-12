@@ -175,9 +175,11 @@ NAV_CONFIG_DESCRIPTION: dict[str, str] = {
         f"（地图系像素 -> 世界系米；世界_z 与地图_y 符号相反）。"
         for name, width in NAV_RESOLUTION_TIERS
     },
-    NAV_MAP_ID_KEY: "可选。留空时使用实时位置流里的 mapId 加载导航网格。",
-    NAV_PLAN_ONLY_KEY: "开启后只输出规划结果和路径日志，不按 W、不转鼠标。",
-    NAV_WAIT_POSITION_TIMEOUT_KEY: "规划或导航开始前，等待融合坐标锚定的最长时间。",
+    NAV_MAP_ID_KEY: "可选。留空时使用实时位置流里的 mapId 加载导航网格。送货流程读取当前地图，不受此项影响。",
+    NAV_PLAN_ONLY_KEY: "只调试用：开启后「小地图网格导航」任务只输出规划结果和路径日志，"
+    "不按 W、不转鼠标。**仅对该调试任务生效**；日常任务与自动送货不受影响。",
+    NAV_WAIT_POSITION_TIMEOUT_KEY: "只调试用：「小地图网格导航」任务开始前等待融合坐标锚定的最长时间。"
+    "**仅对该调试任务生效**；导航与送货流程的等待由各自的超时控制。",
     **GRID_NAV_CONFIG_DESCRIPTION,
 }
 

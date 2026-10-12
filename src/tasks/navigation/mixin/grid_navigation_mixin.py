@@ -327,6 +327,20 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_skip_board_node_id = None
         self._set_grid_walking(False)
 
+    def pause(self) -> None:
+        """暂停时立刻松开 ``W``：框架的暂停本身不会替任务释放按键。
+
+        网格导航靠长按 ``W`` 前进（见 :meth:`_set_grid_walking`），暂停又不释放的话，
+        用户点暂停后角色会一直走到下一次 ``unpause`` 被主循环纠正——期间可能已经走进
+        水里、摔下平台或跑进战斗。脱困与滑索接近用的是 ``_hold_grid_keys``，它在
+        ``finally`` 里自己放键，不受暂停影响。
+        """
+        if getattr(self, "_grid_nav_w_held", False):
+            self._set_grid_walking(False)
+        parent = getattr(super(), "pause", None)
+        if callable(parent):
+            parent()
+
     def load_grid_for_map(
         self,
         map_id: str = "",
@@ -649,7 +663,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         """跟随器当前待执行的滑索段；跟随器没有这个能力时返回 None。"""
         current_step_getter = getattr(
             self._grid_nav_follower,
-            "_current_zip_line_step",
+            "current_zip_line_step",
             None,
         )
         return current_step_getter() if callable(current_step_getter) else None
@@ -1306,11 +1320,19 @@ class GridNavigationMixin(RuntimeStateMixin):
             zip_lines=zip_lines,
         )
         if zip_lines:
-            stats = follower.planner.zip_line_stats()
+            stats = follower.zip_line_stats()
             self.log_info(
                 f"滑索接入网格：原始节点={stats['nodes']}，可映射节点={stats['mapped_nodes']}，"
                 f"有效有向边={stats['directed_edges']}"
             )
+            scale = float(stats.get("heuristic_scale", 1.0))
+            if scale < 1.0:
+                # 这一项直接决定规划耗时：滑索越便宜，A* 就越接近均匀代价搜索。
+                # 用户报"规划很慢/搜索规模超限"时，先看这行就知道是不是滑索带来的。
+                self.log_info(
+                    f"滑索启发式缩放={scale:g}：滑索单价低于步行，A* 会退得更接近均匀代价搜索，"
+                    "扩展节点数比没有滑索时明显偏多（路径仍然有效）"
+                )
             if stats["directed_edges"] == 0:
                 self.log_warning(
                     "已读取用户滑索，但没有任何滑索端点能在当前网格附近映射为上下索点；本次只能使用普通网格路线"
@@ -1457,23 +1479,46 @@ class GridNavigationMixin(RuntimeStateMixin):
         )
 
     def _grid_follower_config(self) -> FollowerConfig:
+        """把全局 ``Nav Config`` 的规划/行走参数装成 :class:`FollowerConfig`。
+
+        兜底值统一从 :data:`DEFAULT_GRID_NAV_CONFIG` 取，不再逐项重复字面量：这些兜底
+        只在"全局配置里连这个键都没有"时才会用到，重复写死只会让它们和真实默认值悄悄
+        分叉（``离墙安全边距`` 就在这里漂过一次 1 vs 3）。
+        """
+        defaults = DEFAULT_GRID_NAV_CONFIG
         return FollowerConfig(
-            arrive_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_WAYPOINT_RADIUS, 1.0)),
-            goal_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_GOAL_RADIUS, 2.0)),
+            arrive_radius=max(
+                0.0, self._grid_cfg_float(CONFIG_GRID_WAYPOINT_RADIUS, defaults[CONFIG_GRID_WAYPOINT_RADIUS])
+            ),
+            goal_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_GOAL_RADIUS, defaults[CONFIG_GRID_GOAL_RADIUS])),
             heading_tolerance=self._grid_heading_tolerance(),
-            stuck_window_s=max(0.1, self._grid_cfg_float(CONFIG_GRID_STUCK_WINDOW, 2.5)),
-            stuck_min_distance=max(0.0, self._grid_cfg_float(CONFIG_GRID_STUCK_DISTANCE, 0.35)),
-            risk_cost=max(0.1, self._grid_cfg_float(CONFIG_GRID_RISK_COST, 5.0)),
-            shortcut_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_SHORTCUT_RADIUS, 1.0)),
+            stuck_window_s=max(0.1, self._grid_cfg_float(CONFIG_GRID_STUCK_WINDOW, defaults[CONFIG_GRID_STUCK_WINDOW])),
+            stuck_min_distance=max(
+                0.0, self._grid_cfg_float(CONFIG_GRID_STUCK_DISTANCE, defaults[CONFIG_GRID_STUCK_DISTANCE])
+            ),
+            risk_cost=max(0.1, self._grid_cfg_float(CONFIG_GRID_RISK_COST, defaults[CONFIG_GRID_RISK_COST])),
+            shortcut_radius=max(
+                0.0, self._grid_cfg_float(CONFIG_GRID_SHORTCUT_RADIUS, defaults[CONFIG_GRID_SHORTCUT_RADIUS])
+            ),
             allow_unknown=self.allow_grid_unknown(),
-            margin=max(0, self._grid_cfg_int(CONFIG_GRID_MARGIN, 1)),
-            wall_penalty=max(0.0, self._grid_cfg_float(CONFIG_GRID_WALL_PENALTY, 1.0)),
-            frontier_margin=max(0, self._grid_cfg_int(CONFIG_GRID_FRONTIER_MARGIN, 2)),
-            frontier_penalty=max(0.0, self._grid_cfg_float(CONFIG_GRID_FRONTIER_PENALTY, 1.0)),
-            waypoint_tolerance=max(0.0, self._grid_cfg_float(CONFIG_GRID_WAYPOINT_TOLERANCE, 2.0)),
-            max_expand=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_EXPAND, 400_000)),
-            narrow_calibration=self._grid_cfg_bool(CONFIG_GRID_NARROW_CALIBRATION, True),
-            narrow_stop_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_NARROW_STOP_RADIUS, 3.0)),
+            margin=max(0, self._grid_cfg_int(CONFIG_GRID_MARGIN, defaults[CONFIG_GRID_MARGIN])),
+            wall_penalty=max(0.0, self._grid_cfg_float(CONFIG_GRID_WALL_PENALTY, defaults[CONFIG_GRID_WALL_PENALTY])),
+            frontier_margin=max(
+                0, self._grid_cfg_int(CONFIG_GRID_FRONTIER_MARGIN, defaults[CONFIG_GRID_FRONTIER_MARGIN])
+            ),
+            frontier_penalty=max(
+                0.0, self._grid_cfg_float(CONFIG_GRID_FRONTIER_PENALTY, defaults[CONFIG_GRID_FRONTIER_PENALTY])
+            ),
+            waypoint_tolerance=max(
+                0.0, self._grid_cfg_float(CONFIG_GRID_WAYPOINT_TOLERANCE, defaults[CONFIG_GRID_WAYPOINT_TOLERANCE])
+            ),
+            max_expand=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_EXPAND, defaults[CONFIG_GRID_MAX_EXPAND])),
+            narrow_calibration=self._grid_cfg_bool(
+                CONFIG_GRID_NARROW_CALIBRATION, defaults[CONFIG_GRID_NARROW_CALIBRATION]
+            ),
+            narrow_stop_radius=max(
+                0.0, self._grid_cfg_float(CONFIG_GRID_NARROW_STOP_RADIUS, defaults[CONFIG_GRID_NARROW_STOP_RADIUS])
+            ),
         )
 
     def _grid_heading_tolerance(self) -> float:
@@ -2005,8 +2050,8 @@ class GridNavigationMixin(RuntimeStateMixin):
             f"滑索={len(result.zip_line_steps)}"
         )
         if not result.zip_line_steps and self._grid_nav_follower is not None:
-            planner = getattr(self._grid_nav_follower, "planner", None)
-            stats = planner.zip_line_stats() if planner is not None else {}
+            stats_getter = getattr(self._grid_nav_follower, "zip_line_stats", None)
+            stats = stats_getter() if callable(stats_getter) else {}
             if stats.get("directed_edges", 0) > 0:
                 self.log_info(
                     f"本次路线未采用滑索：已接入 {stats['directed_edges']} 条有向边，"
@@ -2040,28 +2085,15 @@ class GridNavigationMixin(RuntimeStateMixin):
         """当前是否允许穿越未知格（用任务配置，不是库默认）。"""
         return self._grid_cfg_bool(CONFIG_GRID_ALLOW_UNKNOWN, False)
 
-    def _grid_waypoint_leg_distance(self, step: FollowerStep) -> float:
-        """返回当前航段的规划长度；优先使用前后航点坐标而不是剩余距离。"""
-        follower = self._grid_nav_follower
-        plan_result = getattr(follower, "plan_result", None)
-        waypoints = getattr(plan_result, "waypoints", None) or []
-        index = int(step.waypoint_index or 0)
-        if 0 < index < len(waypoints):
-            previous = waypoints[index - 1]
-            current = waypoints[index]
-            return math.hypot(
-                float(current[0]) - float(previous[0]),
-                float(current[1]) - float(previous[1]),
-            )
-        if step.distance_to_waypoint is None:
-            return 0.0
-        return abs(float(step.distance_to_waypoint))
-
     def _maybe_start_grid_sprint(self, step: FollowerStep) -> None:
-        """长航段保持 W 时按一次 shift 进入冲刺，避免每拍重复切换。"""
+        """长航段保持 W 时按一次 shift 进入冲刺，避免每拍重复切换。
+
+        航段长度由跟随器在 :class:`FollowerStep` 里给出（``leg_distance_m``），
+        这里不再去读 ``plan_result.waypoints``——跟随器的航点索引只有它自己维护得对。
+        """
         if self._grid_nav_sprint_active or not self._grid_nav_w_held:
             return
-        leg_distance = self._grid_waypoint_leg_distance(step)
+        leg_distance = float(step.leg_distance_m or 0.0)
         if leg_distance <= GRID_SPRINT_MIN_SEGMENT_METERS:
             return
         self.press_key("shift", after_sleep=0.05)

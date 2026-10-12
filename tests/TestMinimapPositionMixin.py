@@ -18,7 +18,7 @@ from unittest.mock import Mock, patch
 import cv2
 import numpy as np
 
-from src.core.NavConfig import DEFAULT_NAV_CONFIG, NAV_YAW_PER_PIXEL_KEY
+from src.core.NavConfig import DEFAULT_NAV_CONFIG, NAV_SCALE_CONSTANT_KEY, NAV_YAW_PER_PIXEL_KEY
 from src.localization.minimap_heading_mixin import CONFIG_YAW_PER_PIXEL
 from src.localization.minimap_position_mixin import (
     MinimapPositionMixin,
@@ -461,6 +461,38 @@ class TestMinimapPositionMixin(unittest.TestCase):
 
         self.assertGreater(state["distance_since_sync"], 0.5)
         self.assertTrue(state["sync_needed"])
+
+    def test_static_resync_does_not_let_pending_displacement_come_back(self):
+        """静止重锚后坐标必须留在 WS 值上：待提交的那点位移不能再被旧锚帧测回来。
+
+        回归：重锚只清了累计积分、没换锚帧，于是下一拍用同一张旧锚帧重新测出同一段位移，
+        把刚对齐到 WS 的坐标又推开（这里是 0.3m，比例尺越大推得越多），并且这份偏移还会
+        算进下一次的 sync_residual，让漂移诊断跟着偏大。
+        """
+        # 640px 宽下把比例尺压到 0.1 m/px，让"走 3px"既低于提交阈值、又能落进静止阈值
+        self.task.nav_config[NAV_SCALE_CONSTANT_KEY] = 64.0
+        self.task.config["位移提交阈值(像素)"] = 5.0
+        self.task.start_minimap_position()
+        self.task.tick(self.frame)  # 建锚帧
+        first = self.task.tick(self.frame, ws=(100.0, 200.0))
+        self.assertTrue(first["just_synced"])
+        sync_seq = first["sync_seq"]
+
+        # 走 3px：小于提交阈值 -> 只进待提交量，位置先跟着走
+        walked = self.task.tick(_frame_at(3), dt=0.5)
+        self.assertLess(walked["x"], 100.0)
+        self.assertAlmostEqual(walked["dmap_px"][0], -3.0, delta=1.0)
+
+        # 站着不动（内容不变）+ WS 不动 -> 再次静止校准，位置回到 WS
+        again = self.task.tick(_frame_at(3), dt=2.0, ws=(100.0, 200.0))
+        self.assertGreater(again["sync_seq"], sync_seq)
+        self.assertAlmostEqual(again["x"], 100.0, delta=1e-6)
+        self.assertAlmostEqual(again["z"], 200.0, delta=1e-6)
+
+        # 继续站着不动：位置必须留在 WS 上，不能被那 3px 推回去
+        still = self.task.tick(_frame_at(3), dt=2.0)
+        self.assertAlmostEqual(still["x"], 100.0, delta=1e-6)
+        self.assertAlmostEqual(still["z"], 200.0, delta=1e-6)
 
 
 if __name__ == "__main__":

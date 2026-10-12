@@ -301,6 +301,8 @@ class TestZipLinePlanning(unittest.TestCase):
                 "links": 1,
                 "mapped_nodes": 2,
                 "directed_edges": 2,
+                # 滑索单价低于步行，octile 启发必须整体缩成代价下界；这一项直接决定搜索量
+                "heuristic_scale": 0.2,
             },
         )
         self.assertEqual(len(result.zip_line_steps), 1)
@@ -500,6 +502,107 @@ class TestZipLinePlanning(unittest.TestCase):
             [("source", "relay"), ("relay", "final")],
         )
 
+    def _many_target_unmapped_start_case(self):
+        """未映射起点连到 3 个可映射落点；目标在最远那个落点旁边。
+
+        网格按 ``###o###o###o###o`` 排布，三个落点各自是孤立的可行走格，
+        所以"选哪个落点"完全由候选排序决定，网格本身不会替它们兜底。
+        """
+        grid = _grid(["###o###o###o###o"])
+        source = ZipLineNode("source", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        nodes = [source]
+        links = []
+        for index, x in enumerate((3.5, 7.5, 11.5), start=1):
+            nodes.append(ZipLineNode(f"t{index}", "test", "lv1", "滑索架", x, 0.0, 0.5))
+            links.append(ZipLineLink("source", f"t{index}", distance_m=x - 0.5, max_range_m=80.0))
+        return grid, ZipLineGraph(nodes, links)
+
+    @staticmethod
+    def _count_plan_cells(planner):
+        """包一层 ``plan_cells`` 计数：未映射起点的续接是**逐个候选**递归调用它的。"""
+        calls = []
+        original = planner.plan_cells
+
+        def counting(start, goal, **kwargs):
+            calls.append(start)
+            return original(start, goal, **kwargs)
+
+        planner.plan_cells = counting
+        return calls
+
+    def test_unmapped_start_searches_every_candidate_by_default(self):
+        grid, graph = self._many_target_unmapped_start_case()
+        planner = GridPlanner(grid, zip_lines=graph, zip_line_access_radius=0)
+        calls = self._count_plan_cells(planner)
+
+        result = planner.plan_cells((0, 0), (0, 11), required_zip_line_start_id="source")
+
+        self.assertTrue(result.ok, result)
+        # 首个是外层调用，其余是逐个候选的续接搜索；3 个候选都在默认上限之内。
+        self.assertEqual(len(calls) - 1, 3)
+        self.assertEqual(result.waypoints[0], (0.5, 0.5))  # 未映射起点本身
+        self.assertFalse(any("只尝试了前" in note for note in result.notes))
+
+    def test_unmapped_start_caps_candidate_searches_and_says_so(self):
+        """候选上限生效：不再为每个落点各跑一次完整 A*，并在 notes 里说明被截断。"""
+        grid, graph = self._many_target_unmapped_start_case()
+        planner = GridPlanner(
+            grid,
+            zip_lines=graph,
+            zip_line_access_radius=0,
+            zip_line_start_max_candidates=1,
+        )
+        calls = self._count_plan_cells(planner)
+
+        result = planner.plan_cells((0, 0), (0, 11), required_zip_line_start_id="source")
+
+        self.assertEqual(len(calls) - 1, 1)
+        self.assertTrue(any("只尝试了前 1 个" in note for note in result.notes), result.notes)
+
+    def test_unmapped_start_full_candidate_set_avoids_the_return_detour(self):
+        """候选够多时选中最省的那条；把上限压到 1 会退化成"先出去再原路滑回来"。
+
+        这是候选上限的代价，写出来是为了让"调大上限"这件事有明确依据：被截断时
+        选中的落点可能不是最省的那个，代价要靠 notes 里的提示才知道去调。
+        """
+        grid, graph = self._many_target_unmapped_start_case()
+        wide = GridPlanner(
+            grid,
+            zip_lines=graph,
+            zip_line_access_radius=0,
+            zip_line_start_max_candidates=3,
+        ).plan_cells((0, 0), (0, 11), required_zip_line_start_id="source")
+        narrow = GridPlanner(
+            grid,
+            zip_lines=graph,
+            zip_line_access_radius=0,
+            zip_line_start_max_candidates=1,
+        ).plan_cells((0, 0), (0, 11), required_zip_line_start_id="source")
+
+        self.assertTrue(wide.ok, wide)
+        self.assertEqual(
+            [(step.entry.node_id, step.exit.node_id) for step in wide.zip_line_steps[0].steps],
+            [("source", "t3")],
+        )
+        self.assertTrue(narrow.ok, narrow)
+        self.assertLess(wide.cost, narrow.cost)
+        self.assertIn("source", [step.entry.node_id for step in narrow.zip_line_steps[0].steps])
+
+    def test_unmapped_start_does_not_exceed_the_configured_cap(self):
+        """上限就是上限：候选再多也只会跑这么多次续接搜索。"""
+        grid, graph = self._many_target_unmapped_start_case()
+        planner = GridPlanner(
+            grid,
+            zip_lines=graph,
+            zip_line_access_radius=0,
+            zip_line_start_max_candidates=2,
+        )
+        calls = self._count_plan_cells(planner)
+
+        planner.plan_cells((0, 0), (0, 11), required_zip_line_start_id="source")
+
+        self.assertEqual(len(calls) - 1, 2)
+
     def test_unmapped_intermediate_zipline_is_traversed_as_chain(self):
         width = 61
         cells = np.full((1, width), CELL_BLOCKED, dtype=np.uint8)
@@ -680,6 +783,103 @@ class TestAdaptiveWeight(unittest.TestCase):
         for (ai, aj), (bi, bj) in zip(res.cells, res.cells[1:], strict=False):
             if ai != bi and aj != bj:
                 self.assertTrue(planner._corner_ok(ai, aj, bi - ai, bj - aj), (ai, aj, bi, bj))
+
+    def test_retry_weight_is_never_weaker_than_the_first_search(self):
+        """重搜必须真的比首次搜索更有信息，否则只是把同一轮搜索再跑一遍。"""
+        without_zip = GridPlanner(self._open_unknown(), risk_cost=5.0)
+        # 无滑索：缩放为 1，重搜权重就是 risk_cost
+        self.assertEqual(without_zip._heuristic_scale, 1.0)
+        self.assertEqual(without_zip._retry_heuristic_weight(), 5.0)
+
+        # 有滑索：缩放 0.2 会把启发式整体压低，重搜权重必须把这一档补回来
+        grid, graph = self._zip_pair()
+        planner = GridPlanner(grid, zip_lines=graph, risk_cost=1.5)
+        self.assertEqual(planner._heuristic_scale, 0.2)
+        self.assertGreater(planner._heuristic_scale * planner._retry_heuristic_weight(), planner._heuristic_scale)
+
+    def test_retry_stays_enabled_when_zip_scale_deflates_the_heuristic(self):
+        """risk_cost 很小但缩放很低时仍要重搜：值得重搜的理由是启发式被压低，不是 risk_cost 大小。"""
+        grid, graph = self._zip_pair()
+        planner = GridPlanner(grid, zip_lines=graph, risk_cost=0.5, max_expand=4)
+        planner._cap_exceeded = True
+        planner._timed_out = False
+
+        self.assertTrue(planner._weighted_retry_allowed())
+        self.assertGreater(planner._retry_heuristic_weight(), planner.heuristic_weight)
+
+    def test_cap_reason_explains_the_zip_heuristic_scale(self):
+        """触顶诊断要说清"是不是滑索把搜索放大了"，否则用户只会一味调大 max_expand。"""
+        grid, graph = self._open_unknown_with_zip()
+        with_zip = GridPlanner(
+            grid,
+            zip_lines=graph,
+            risk_cost=5.0,
+            max_expand=50,
+            adaptive_weight=False,
+        ).plan_cells((0, 0), (19, 19))
+        self.assertFalse(with_zip.ok)
+        self.assertTrue(with_zip.cap_exceeded)
+        self.assertIn("滑索", with_zip.reason)
+
+        without_zip = GridPlanner(
+            self._open_unknown(),
+            risk_cost=5.0,
+            max_expand=50,
+            adaptive_weight=False,
+        ).plan_cells((0, 0), (19, 19))
+        self.assertFalse(without_zip.ok)
+        self.assertNotIn("滑索", without_zip.reason)
+
+    def test_degradation_note_reports_effective_weight_instead_of_a_bound(self):
+        """降级说明报实际有效权重，不再断言一个代码无法保证的最优性上界。
+
+        用全可行走的大格 + 一条滑索：首次搜索（有效权重 0.2）近似均匀代价，要铺开整张图；
+        重搜（有效权重 1.0）只用几十格。预算卡在中间就能稳定触发"触顶后重搜成功"。
+        """
+        grid, graph = self._free_grid_with_zip()
+        res = GridPlanner(grid, zip_lines=graph, max_expand=500).plan_cells((0, 0), (59, 59))
+
+        self.assertTrue(res.ok, res)
+        note = next(text for text in res.notes if "加权" in text)
+        self.assertIn("有效权重", note)
+        self.assertNotIn("上界", note)
+
+    @staticmethod
+    def _open_unknown_with_zip():
+        """全未知格的大片区域 + 一条滑索：搜索量由未知格撑起来，缩放由滑索给。"""
+        grid = TestAdaptiveWeight._open_unknown()
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 9.5, 0.0, 9.5)
+        graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink("a", "b", distance_m=12.0, max_range_m=80.0)],
+        )
+        return grid, graph
+
+    @staticmethod
+    def _free_grid_with_zip():
+        """60x60 全可行走 + 一条滑索：无未知格干扰，能把两次搜索的扩展量拉开。"""
+        size = 60
+        grid = _grid(["o" * size] * size)
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 10.5, 0.0, 10.5)
+        graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink("a", "b", distance_m=14.0, max_range_m=80.0)],
+        )
+        return grid, graph
+
+    @staticmethod
+    def _zip_pair():
+        """``o#o``：两端可行走、中间阻挡，靠一条滑索连通。"""
+        grid = _grid(["o#o"])
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.2, 0.0, 0.2)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 2.2, 0.0, 0.2)
+        graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink("a", "b", distance_m=2.0, max_range_m=80.0)],
+        )
+        return grid, graph
 
 
 if __name__ == "__main__":

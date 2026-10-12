@@ -16,6 +16,7 @@
 from ok import TriggerTask
 
 from src.core.BaseEfTask import BaseEfTask
+from src.core.global_config_store import MINIMAP_LEGACY_SOURCE_TASKS
 from src.icons import Icons
 from src.localization.minimap_position_mixin import MinimapPositionMixin
 
@@ -51,6 +52,9 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
 
         真值来源与分辨率标定由 ``global_config_store`` 在任务 Config 构造前处理；
         这里只合并仍属于任务侧的 WS 等待、校准距离和里程计提交参数。
+
+        来源限定在 :data:`MINIMAP_LEGACY_SOURCE_TASKS`：所有者只有一个槽位，来源越多
+        结果越依赖"哪个任务先被实例化"。每次采用都会写日志。
         """
         executor = getattr(self, "_executor", None)
         if executor is None or not hasattr(executor, "get_all_tasks"):
@@ -59,6 +63,8 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         for task in executor.get_all_tasks():
             if task is self or not getattr(task, "config", None):
                 continue
+            if type(task).__name__ not in MINIMAP_LEGACY_SOURCE_TASKS:
+                continue
             for key, default in defaults.items():
                 old_value = task.config.get(key)
                 if old_value is None or old_value == default:
@@ -66,7 +72,7 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
                 if self.config.get(key) != default:
                     continue
                 self.config[key] = old_value
-                self.log_info(f"已迁移定位配置 {key}: {old_value!r}")
+                self.log_info(f"已迁移定位配置 {key}: {old_value!r}（来源 {type(task).__name__}）")
 
     def run(self):
         """采样一拍定位并发布节流后的状态；本任务不结束自身。"""

@@ -117,11 +117,6 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
         self.log_warning(f"等待定位超过 {timeout:.1f}s，无法规划", notify=True)
         return False
 
-    def pause(self):
-        """暂停时立即松开 ``W``，避免角色继续移动。"""
-        self._set_grid_walking(False)
-        return super().pause()
-
     def on_destroy(self):
         try:
             self._set_grid_walking(False)

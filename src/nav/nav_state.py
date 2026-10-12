@@ -48,12 +48,18 @@ __all__ = [
 
 
 class NavState(StrEnum):
-    """``navigate_grid_to`` 每一拍的状态，声明顺序即判定优先级。
+    """``navigate_grid_to`` 每一拍的状态。
 
     前六个是定位就绪闸门：位置还不可信，只停车等待或发起静止校准。后面是路线与执行
     阶段，其中 ``WALK``/``TURN``/``WAIT``/``NARROW_CALIBRATE``/``ZIP_LINE``/
     ``STUCK``/``REPLAN``/``DONE``/``FAILED`` 与 :mod:`src.nav.route_follower`
     的动作常量同值，方便把跟随器输出直接映射成状态。
+
+    **这里的声明顺序不代表判定优先级。** 优先级实际分三段写在任务层：
+    :meth:`~src.tasks.navigation.mixin.grid_navigation_mixin.GridNavigationMixin._grid_nav_classify`
+    （闸门）、``_grid_nav_follow``（规划 / 滑索接近）、``_grid_nav_action_state``
+    （跟随器动作），表格见 ``docs/dev/网格导航.md`` §7.1。前六个闸门确实按声明顺序
+    判定，执行类则按"跟随器动作 → 状态"的映射走，与枚举顺序无关。
     """
 
     # --- 定位就绪闸门：先停车，直到可以信任位置 ---
