@@ -95,6 +95,28 @@ class TestSequenceParser(unittest.TestCase):
         self.assertIsNone(parse_endaxis_rotation_spec("1,2,e,ult_3"))
         self.assertIsNone(endaxis_spec_to_rotation_tokens("1,2,e,ult_3"))
 
+    def test_endaxis_empty_code_is_rejected(self):
+        with self.assertRaises(EndAxisTimelineError):
+            parse_endaxis_rotation_spec("endaxis:")
+
+    def test_endaxis_non_finite_timing_is_rejected(self):
+        code = _endaxis_share_code(
+            {
+                "scenarioList": [
+                    {
+                        "id": "bad-time",
+                        "data": {
+                            "tracks": [
+                                {"actions": [{"type": "skill", "startTime": float("inf"), "duration": 1}]}
+                            ]
+                        },
+                    }
+                ]
+            }
+        )
+        with self.assertRaises(EndAxisTimelineError):
+            parse_endaxis_scenarios(code)
+
     def test_endaxis_selector_failure_is_explicit(self):
         code = _endaxis_share_code({"scenarioList": []})
         with self.assertRaises(EndAxisTimelineError):
