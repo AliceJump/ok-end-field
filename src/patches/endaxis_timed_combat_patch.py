@@ -236,7 +236,7 @@ def install_endaxis_timed_combat_patch() -> None:
                 self.task.log_warning(f"EndAxis 时间排轴配置无效: {exc}；停止本轮技能时间排轴")
                 return False
 
-        now = self.task.active_time()
+        now = self._clock()
         self._endaxis_not_before = now + max(0.0, float(start_sleep or 0.0))
         self._endaxis_clock_elapsed = 0.0
         self._endaxis_clock_wall = self._endaxis_not_before
