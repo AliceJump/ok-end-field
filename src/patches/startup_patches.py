@@ -14,6 +14,7 @@ def install_startup_patches():
     from src.patches.config_transfer_patch import install_config_transfer_patch
     from src.patches.dynamic_config_patch import install_dynamic_config_patch
     from src.patches.endaxis_rotation_patch import install_endaxis_rotation_patch
+    from src.patches.endaxis_timed_combat_patch import install_endaxis_timed_combat_patch
     from src.patches.enemy_direction_recovery_patch import install_enemy_direction_recovery_patch
     from src.patches.log_upload_patch import install_log_upload_patch
     from src.patches.no_frame_task_patch import install_no_frame_task_patch
@@ -34,6 +35,7 @@ def install_startup_patches():
     install_enemy_direction_recovery_patch()
     install_timed_enemy_absence_stability_patch()
     install_combat_decision_trace_patch()
+    install_endaxis_timed_combat_patch()
     install_config_transfer_patch()
     install_conditional_rotation_patch()
     install_dynamic_config_patch()
