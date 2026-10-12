@@ -3026,3 +3026,44 @@ msgstr "Cuprium Part"
 
 msgid "分离芯"
 msgstr "Separator Core"
+
+msgid "滑索扫描实测"
+msgstr "Live Zipline Scan"
+
+msgid "逐轮保存原图、带框图、候选 JSON 和三路数字 OCR 输入，复用滑索检测，不执行游戏交互。"
+msgstr ""
+"Save each scan’s original image, annotated image, candidate JSON and three "
+"distance OCR inputs using the zipline detector, without game interaction."
+
+msgid "保存目录"
+msgstr "Save Directory"
+
+msgid "每轮检测及存图完成后的等待秒数。"
+msgstr "Seconds to wait after each scan and image save."
+
+msgid "每次运行创建独立子目录，逐轮保留零命中及 OCR 漏检样本。"
+msgstr ""
+"Create a separate folder per run and retain every scan, including zero hits "
+"and OCR misses."
+
+msgid "滑索截图回放"
+msgstr "Zipline Screenshot Replay"
+
+msgid "读取单张截图或截图目录，按原图尺寸检测滑索和距离，保存原图、带框图及检测信息。"
+msgstr ""
+"Read a screenshot or folder, detect ziplines and distances at the original "
+"size, and save original images, annotations and detection data."
+
+msgid "截图路径"
+msgstr "Screenshot Path"
+
+msgid "待检测图片或目录的完整路径；目录递归读取原图，排除带框图和 OCR 裁剪图。"
+msgstr ""
+"Full path to an image or folder; folders are scanned recursively, excluding "
+"annotations and OCR crops."
+
+msgid "请设置截图路径。"
+msgstr "Set the screenshot path."
+
+msgid "截图路径中没有可回放图片。"
+msgstr "No replayable images were found at the screenshot path."

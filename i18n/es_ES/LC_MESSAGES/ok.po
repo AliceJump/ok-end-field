@@ -3122,3 +3122,44 @@ msgstr "Pieza de cuprio"
 
 msgid "分离芯"
 msgstr "Núcleo separador"
+
+msgid "滑索扫描实测"
+msgstr "Escaneo de tirolinas en vivo"
+
+msgid "逐轮保存原图、带框图、候选 JSON 和三路数字 OCR 输入，复用滑索检测，不执行游戏交互。"
+msgstr ""
+"Guarda la imagen original, la imagen anotada, los candidatos JSON y tres "
+"entradas OCR de distancia en cada escaneo, sin interactuar con el juego."
+
+msgid "保存目录"
+msgstr "Carpeta de guardado"
+
+msgid "每轮检测及存图完成后的等待秒数。"
+msgstr "Segundos de espera tras cada escaneo y guardado."
+
+msgid "每次运行创建独立子目录，逐轮保留零命中及 OCR 漏检样本。"
+msgstr ""
+"Crea una carpeta por ejecución y conserva todos los escaneos, incluso sin "
+"detecciones o con fallos de OCR."
+
+msgid "滑索截图回放"
+msgstr "Reproducción de capturas de tirolinas"
+
+msgid "读取单张截图或截图目录，按原图尺寸检测滑索和距离，保存原图、带框图及检测信息。"
+msgstr ""
+"Lee una captura o carpeta, detecta tirolinas y distancias al tamaño original"
+" y guarda las imágenes, anotaciones y datos."
+
+msgid "截图路径"
+msgstr "Ruta de capturas"
+
+msgid "待检测图片或目录的完整路径；目录递归读取原图，排除带框图和 OCR 裁剪图。"
+msgstr ""
+"Ruta completa de una imagen o carpeta; la lectura recursiva excluye las "
+"anotaciones y recortes OCR."
+
+msgid "请设置截图路径。"
+msgstr "Configura la ruta de capturas."
+
+msgid "截图路径中没有可回放图片。"
+msgstr "No hay imágenes para reproducir en la ruta indicada."
