@@ -119,6 +119,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
     "enemy-direction": (
         "Enemy direction recovery",
         (
+            "TestEnemyDirectionGradient.py",
             "TestEnemyDirectionRawCapture.py",
             "TestEnemyDirectionRecovery.py",
             "TestMouseRotationCalibration.py",

@@ -1,0 +1,146 @@
+[
+  {
+    "file": "billboard.png",
+    "source": "screenshots/20261009_051952_DailyTask_FailTask_⭐收信用_original.png",
+    "sha256_source": "624bee7ceff3c067924c7bca50b2a0ff94d74f0d94d9e41b363c77f9072a454e",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "enemy_model.png",
+    "source": "screenshots/20261011_044053_DailyBattleMixin_battleSpace_Exception_危境预演_D96钢_original.png",
+    "sha256_source": "9a91e004b12810d158bd40e7d579d27088f8a8f8e2839206a55241ceb2930b7f",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "cherry_blossoms.png",
+    "source": "screenshots/20261012_050220_fail_⭐自动送货_original.png",
+    "sha256_source": "db856f1bbd007af3bac18e250b3c20c818abe925da827800bba32a936593f3c8",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "ring_only_effect.png",
+    "source": "ok_templates/screenshot_20261005_210231.png",
+    "sha256_source": "d7d4536141a8270c118afbed79f1882924ab79f19c35d84631cf9e12ad54cd23",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "overlapping.png",
+    "source": "ok_templates/screenshot_20261005_210248.png",
+    "sha256_source": "537a8b2b9201f275133d4b9e2d921e1e331f8c6093a83d79df62b0f781a730a9",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [
+      161.73700580082058,
+      169.75520382035438,
+      178.7683919323567
+    ],
+    "selected_angle": 161.73700580082058
+  },
+  {
+    "file": "bright_tail.png",
+    "source": "ok_templates/screenshot_20261006_024317.png",
+    "sha256_source": "b34228586445b2946416b25e9f4f23263c911c0c5684b92e09b51c2a06e7f53a",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [
+      141.82695641638122,
+      164.8256770528827
+    ],
+    "selected_angle": 141.82695641638122
+  },
+  {
+    "file": "weak_tail.png",
+    "source": "ok_templates/screenshot_20261006_024331.png",
+    "sha256_source": "4a58f469b58990a02f690581d4ca6671dddec39c035356c05e3f1b00a957abf8",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [
+      23.04501570948921,
+      51.3548358165791
+    ],
+    "selected_angle": 23.04501570948921
+  },
+  {
+    "file": "floor_effect.png",
+    "source": "ok_templates/screenshot_20261010_151614.png",
+    "sha256_source": "74bd173166b0c85d035b4c9e9e3315a73e21c6090cb7177680274258843910ee",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "red_clothing.png",
+    "source": "ok_templates/65.png",
+    "sha256_source": "a9f8a99e736dd4d160e4fbed32f771dcb5bfcf0a2d8ca0d7e85c276197537f62",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "enemy_health_bars.png",
+    "source": "ok_templates/screenshot_20261003_033711.png",
+    "sha256_source": "c0d8485a76a877c35ce3ee7fdb8c9f5eb7c1099436e6af575f2f3165552432ff",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  },
+  {
+    "file": "near_tail_only.png",
+    "source": "ok_templates/screenshot_20261007_102126.png",
+    "sha256_source": "4f2a4ad15aa8853ac0c234b6ba6200a1b63932c40452dfd07abb10c5067e196b",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [
+      -174.538162214521
+    ],
+    "selected_angle": -174.538162214521
+  },
+  {
+    "file": "menu_red_edges.png",
+    "source": "ok_templates/Windows Graphics Capture_1920x1080_1773207750738.2725_original.png",
+    "sha256_source": "b54fa741f40c39b4303b63f363195a04e341a1f790e0fa34d6066863a900ba97",
+    "width": 1920,
+    "height": 1080,
+    "x": 552,
+    "y": 252,
+    "angles": [],
+    "selected_angle": null
+  }
+]
