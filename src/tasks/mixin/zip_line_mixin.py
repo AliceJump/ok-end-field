@@ -157,7 +157,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         Args:
             delivery_to: 送货目标名称（用于获取配置中的滑索距离序列）
             need_scroll: 是否需要滚动
-            target: 目标信息，包含名称和类型(例如：("登上滑索架", "ocr"))
+            target: 目标信息，包含名称和类型(例如：(\"登上滑索架\", \"ocr\"))
             need_v: 是否需要按V键追踪
             stay_on_zip_line: 路线结束后留在滑索上，供下一段路线继续测试
         Raises:
@@ -497,7 +497,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         )
         if not result:
             return False
-
         screen_center_x, screen_center_y = self.screen_center()
         scaled_tolerance = self.scale_distance(tolerance)
         numeric_y_offset = int(self.height * ((525 - 486) / 1080))
@@ -591,6 +590,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     prefeed_dy = 0
                 prefeed_move = None
                 if prefeed_dx or prefeed_dy:
+                    start_reading = self._read_zip_line_arrow_angle() if prefeed_dx else None
                     try:
                         sent = self.active_and_send_mouse_delta(
                             dx=prefeed_dx,
@@ -606,7 +606,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                             f"[zipline-motion-cache] target={zip_line} prefeed "
                             f"move=({prefeed_dx},{prefeed_dy})"
                         )
-                        self.sleep(0.01)
+                        if prefeed_dx:
+                            self._wait_zip_line_prefeed_settled(start_reading, prefeed_dx)
+                        else:
+                            self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
                         frame = self.next_frame()
 
             matched = self._find_zip_line_template_target(zip_line, frame)
@@ -753,6 +756,53 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
         self.log_info("[zipline-yaw] arrow did not settle; history disabled")
         return None
+
+    def _wait_zip_line_prefeed_settled(self, start_reading, prefeed_dx):
+        """Wait until replayed horizontal motion starts and then the arrow settles again."""
+        expected_yaw_delta = abs(float(prefeed_dx) * self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+        if expected_yaw_delta < 1.0:
+            self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
+            return True
+        if start_reading is None or start_reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
+            self.log_info("[zipline-motion-cache] prefeed settle skipped: unreliable starting yaw")
+            self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
+            return False
+
+        start_yaw = start_reading[0]
+        deadline = self.active_time() + self._ZIP_LINE_ARROW_SETTLE_TIMEOUT
+        movement_started = False
+        previous_yaw = None
+        stable_samples = 0
+        while self.active_time() < deadline:
+            reading = self._read_zip_line_arrow_angle()
+            if reading is None or reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
+                self.log_info("[zipline-motion-cache] prefeed settle lost reliable yaw; visual alignment continues")
+                return False
+            if self.active_time() >= deadline:
+                break
+            yaw, _score = reading
+            if not movement_started:
+                if abs(self._zip_line_angle_delta(yaw, start_yaw)) < 1.0:
+                    self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
+                    continue
+                movement_started = True
+                previous_yaw = yaw
+                stable_samples = 1
+            else:
+                if abs(self._zip_line_angle_delta(yaw, previous_yaw)) <= self._ZIP_LINE_ARROW_STABLE_TOLERANCE:
+                    stable_samples += 1
+                else:
+                    stable_samples = 1
+                previous_yaw = yaw
+                if stable_samples >= self._ZIP_LINE_ARROW_STABLE_SAMPLES:
+                    self.log_info(
+                        f"[zipline-motion-cache] prefeed settled start_yaw={start_yaw:.1f} final_yaw={yaw:.1f}"
+                    )
+                    return True
+            self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
+
+        self.log_info("[zipline-motion-cache] prefeed settle timeout; visual alignment continues")
+        return False
 
     def _send_zip_line_yaw_delta(self, dx):
         """Send one horizontal turn and report rejected input without blocking alignment."""
