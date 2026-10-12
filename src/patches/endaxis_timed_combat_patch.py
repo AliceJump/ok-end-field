@@ -164,6 +164,9 @@ def _try_endaxis_ultimate(logic, action: EndAxisAction) -> bool:
         return True
     logic._clear_action_attempt_feedback()
 
+    release_burst = getattr(logic, "release_burst", None)
+    if release_burst is not None:
+        release_burst.confirm(token, "ult", started)
     logic._observe_bonus("ult", token)
     logic._observe_phase_action(token, "ult")
     logic._set_cooldowns(profiles, started)

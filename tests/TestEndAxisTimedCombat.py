@@ -1,4 +1,6 @@
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import numpy as np
 
@@ -302,6 +304,24 @@ class TestEndAxisTimedRuntime(unittest.TestCase):
         self.assertIsNone(logic._endaxis_attempt_index)
         self.assertFalse(logic._endaxis_frozen)
         self.assertGreater(_plan_elapsed(logic), 0.0)
+
+    def test_optional_release_model_only_receives_confirmed_ultimate_start(self):
+        for blocked in (False, True):
+            with self.subTest(blocked=blocked):
+                task, logic = self._logic("ultimate")
+                task.now = 0.25
+                if blocked:
+                    task.block_reason = ActionBlockReason.TOO_FAR
+                release = SimpleNamespace(confirm=Mock())
+                logic.release_burst = release
+                logic.step()
+                if blocked:
+                    release.confirm.assert_not_called()
+                    self.assertEqual(logic._endaxis_cursor, 0)
+                else:
+                    release.confirm.assert_called_once_with("1", "ult", 0.25)
+                    self.assertGreater(task.now, 0.25)
+                    self.assertEqual(logic._endaxis_cursor, 1)
 
 
 if __name__ == "__main__":
