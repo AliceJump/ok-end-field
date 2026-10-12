@@ -24,12 +24,12 @@
       "长息装甲",
       "长息护手·壹型",
       "长息辅助臂",
-      null
+      "长息辅助臂"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
-    "evidence_level": 1,
-    "note": "官方仅推荐 3 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+    "source": "EndSync 社区汇总",
+    "evidence_level": 2,
+    "note": "长息 14/16，同四件 8/16"
   }
 }

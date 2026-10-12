@@ -18,17 +18,18 @@
     "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
   },
   "equipment": {
-    "set_main": "50式应龙装备组",
-    "set_off": "长息装备组",
+    "set_main": "长息装备组",
+    "set_off": null,
     "pieces": [
-      "50式应龙轻甲",
-      "50式应龙护手",
-      "50式应龙短刃",
-      "长息加固板"
+      "点剑轻装甲",
+      "长息护手·壹型",
+      "长息辅助臂",
+      "长息辅助臂"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "新浪全干员装备适配一图流（毕业列）",
-    "evidence_level": 2
+    "source": "EndSync 社区汇总 + TapTap",
+    "evidence_level": 2,
+    "note": "EndSync 长息 1/1；TapTap 一图流为 3 长息 + 1 散件"
   }
 }

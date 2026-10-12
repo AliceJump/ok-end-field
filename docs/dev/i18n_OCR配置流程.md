@@ -133,6 +133,10 @@ matcher = get_lang_module_value(
 - `src/data/world_map_utils.py`：`get_world_map_matcher`、`get_world_map_text`、`is_world_map_text`。
 - `src/data/characters_utils.py`：`get_localized_name_by_canonical`、`get_contact_list_with_feature_list`。
 
+`scripts/i18n/official_prefix_overrides.json` 按语言模块、关卡类别分组，显式列出适用的 key 和中文前缀。只有配置的 key 按“前缀·该 key 的中文核心名”查找完整官方标题，其他 key 不受影响。当前干员/武器养成使用“协议空间”，能量淤积点使用普通和重度两个前缀，危境再现使用“危境再现”；危境预演仍走图片识别，未配置前缀。
+
+同步以中文完整标题精确查找官方文本键，再通过同一个键读取其他语言，不用英文反查。已有 OCR 核心名称能匹配这些官方标题时保持原值；需修正或补齐时从对应标题提取核心名称，保留官方缩写。完整标题或某语言的前缀变体缺失时保留已有资源，不回退到独立地名或物品名。选关继续通过现有 `get_world_map_matcher` 读取，中文名称及配置键保持不变。
+
 ## 5. OCR 混淆补丁
 
 配置文件：

@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 
@@ -57,6 +58,50 @@ class CharacterMechanic:
         if self.generic_cycle_safe:
             return None
         return f"{self.name}:{self.archetype}"
+
+
+class MainControlMode(Enum):
+    AVOID = "avoid"
+    PREFER = "prefer"
+
+
+@dataclass(frozen=True)
+class MainControlPolicy:
+    mode: MainControlMode
+    seconds: float | None = None
+    switches_automatically: bool = False
+
+
+@lru_cache(maxsize=1)
+def load_main_control_policies() -> dict[tuple[str, str], MainControlPolicy]:
+    """Read explicit casting/stance and enhanced-attack semantics from snapshots.
+
+    Native timelines supply the occupancy duration at runtime. Merely having a
+    long timeline or a field buff does not make a character unsuitable to control.
+    """
+    result = {}
+    for path in _SKILLS_DIR.glob("*.json"):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        name = str(payload.get("name") or path.stem)
+        for skill_type, kind in (("战技", "battle"), ("终结技", "ult")):
+            skill = _skill(payload, skill_type)
+            if not skill:
+                continue
+            description = skill.get("description") or ""
+            if any(text in description for text in ("进入持续施法状态", "进入演唱姿态", "进入高歌姿态")):
+                result[name, kind] = MainControlPolicy(MainControlMode.AVOID)
+            elif re.search(r"普通攻击(?:会)?得到强化", description):
+                seconds = _last_stat(skill, "持续时间（秒）")
+                if seconds is not None and seconds > 0:
+                    result[name, kind] = MainControlPolicy(
+                        MainControlMode.PREFER,
+                        seconds,
+                        bool(re.search(r"切换(?:至|为)主控(?:干员|角色)", description)),
+                    )
+    return result
 
 
 def _number(text: str | None) -> float | None:
@@ -437,3 +482,4 @@ def mechanic_blockers(team: list[str]) -> tuple[CharacterMechanic, ...]:
 
 def clear_mechanics_cache() -> None:
     load_character_mechanics.cache_clear()
+    load_main_control_policies.cache_clear()

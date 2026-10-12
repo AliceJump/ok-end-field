@@ -3,10 +3,8 @@
 逻辑（按用户要求）：
 - 加载 assets/data/i18n_texts/{CN,TC,EN,JP,KR,MX,...}.json 官方语言表；
 - 建立「官方语言 -> {文本: [key, ...]}」反查索引（含全角罗马数字/括号归一化）；
-- 对 assets/lang/*.json 每个节点：用节点**任意已有语言值**（string 或纯文本 pattern）
-  反查官方 key（跳过含正则元字符的 pattern）；
-- 多个候选 key 按「与已有语言值匹配票数」投票选最可信 key；
-- 命中后把该 key 的**全部项目语言**官方值拷贝补齐缺失语言键（**不覆盖已有**）；
+- 对 assets/lang/*.json 每个节点：用简中锚点反查官方 key；
+- 命中后补齐缺失语言并更新普通文本，保留已有的强正则；
 - 同步官方译名进 i18n/*/LC_MESSAGES/ok.po 并编译 .mo（复用 _lang_sync_common）；
 - 幂等：无变化不写入；支持 --dry 预览。
 """
@@ -22,9 +20,12 @@ import json5
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _lang_sync_common import (
     norm_zh_name,
+    normalize_value,
+    polib,
     sync_po_entries,
     write_json,
 )
+from _official_prefix_sync import core_title, load_prefix_overrides, sync_prefix_overrides
 
 ROOT = Path(__file__).resolve().parents[2]
 LANG_DIR = ROOT / "assets" / "lang"
@@ -150,12 +151,12 @@ def _norm(text: str) -> str:
     return t.strip()
 
 
-def load_official() -> tuple[dict[str, dict[str, list[str]]], dict[str, dict[str, str]]]:
+def load_official(i18n_dir: Path = I18N_DIR) -> tuple[dict[str, dict[str, list[str]]], dict[str, dict[str, str]]]:
     """加载官方语言表，返回 {项目语言键: {文本: [key,...]}}（反查索引）。"""
     index = {}
     raw_texts = {}
     for official, repo in OFFICIAL_TO_REPO.items():
-        path = I18N_DIR / f"{official}.json"
+        path = i18n_dir / f"{official}.json"
         if not path.exists():
             continue
         table = json.loads(path.read_text(encoding="utf-8"))
@@ -252,7 +253,7 @@ def pick_keys(anchors, index) -> list:
         if not rev:
             continue
         keys = rev.get(text) or rev.get(_norm(text)) or []
-        if not keys and is_pattern:
+        if not keys and is_pattern and _WEAK_REGEX_META.search(text):
             # 普通 pattern：允许正则完整匹配官方词条
             try:
                 rx = re.compile(text)
@@ -286,11 +287,66 @@ def _strip_richtext(text: str) -> str:
     return _RICHTEXT_TAG.sub("", text)
 
 
-def official_vals_multi(raw_texts: dict, ranked: list) -> dict:
+def build_contextual_pattern_index(raw_texts: dict) -> dict[str, list[str]]:
+    """索引「前缀·核心名称」的核心锚点，供已有 OCR 子串验证语境。"""
+    result = {}
+    for key, text in raw_texts.get("zh_CN", {}).items():
+        if not isinstance(text, str):
+            continue
+        parts = re.split(r"[·・:：]", _strip_richtext(text).strip())
+        if len(parts) > 1 and parts[0] and parts[-1].strip():
+            result.setdefault(_norm(parts[-1]), []).append(key)
+    return result
+
+
+def is_contextual_pattern(pattern: str, anchor: str, lang: str, contextual_index: dict, raw_texts: dict) -> bool:
+    """保留同一中文复合条目中仍有效的名称后缀，避免用地区全称覆盖关卡缩写。"""
+    normalized = _norm(pattern)
+    if not normalized:
+        return False
+    table = raw_texts.get(lang, {})
+    return any(
+        isinstance(value := table.get(key), str) and _norm(core_title(value) or "") == normalized
+        for key in contextual_index.get(_norm(anchor), [])
+    )
+
+
+def rank_keys_for_node(ranked: list, raw_texts: dict, node: dict) -> list:
+    """同名词条用已有各语言文本确定语境，不依赖解包字典的键顺序。"""
+    scores = []
+    for key, votes in ranked:
+        matches = 0
+        for lang, sub in node.items():
+            if lang == "zh_CN" or not isinstance(sub, dict) or is_regex_like(node, lang):
+                continue
+            current = sub.get("string", sub.get("pattern"))
+            official = raw_texts.get(lang, {}).get(key)
+            if isinstance(current, str) and isinstance(official, str):
+                matches += current.strip() == _strip_richtext(official).strip()
+        scores.append((key, votes + matches))
+    return sorted(scores, key=lambda item: -item[1])
+
+
+def _best_translations(table: dict, ranked: list) -> set[str]:
+    candidates = []
+    best_votes = None
+    for key, votes in ranked:
+        value = table.get(key)
+        if not isinstance(value, str) or not value.strip():
+            continue
+        if best_votes is not None and votes < best_votes:
+            break
+        best_votes = votes
+        candidates.append(value.strip())
+    plain = {value for value in candidates if not _RICHTEXT_TAG.search(value)}
+    return (plain or {_strip_richtext(value).strip() for value in candidates}) - {""}
+
+
+def official_vals_multi(raw_texts: dict, ranked: list, node: dict | None = None) -> dict:
     """合并多个候选官方 key 的项目语言值。
 
-    对每种语言，按票数从高到低取第一个有值的 key 的文本（可能有重复
-    key 指向不同文本，取全部去重后逐个尝试）。
+    对每种语言，优先最高票的纯文本候选。同票候选译文有歧义时，
+    保留其中已有的译文；无法确定时跳过，避免字典顺序变化引起来回改写。
 
     官方文本池中同一对象可能同时存在"带注音/富文本标签版"与"纯文本版"
     （如首墩：<p="しゅそ" padding=0>首礎</p> 与 首礎 各占一个 key）。
@@ -301,19 +357,13 @@ def official_vals_multi(raw_texts: dict, ranked: list) -> dict:
         table = raw_texts.get(lang)
         if not table:
             continue
-        fallback = None
-        for key, _ in ranked:
-            v = table.get(key)
-            if isinstance(v, str) and v.strip():
-                if _RICHTEXT_TAG.search(v):
-                    if fallback is None:
-                        fallback = _strip_richtext(v).strip()
-                    continue  # 优先找同锚点的纯文本版本
-                vals[lang] = v.strip()
-                break
-        else:
-            if fallback is not None:
-                vals[lang] = fallback
+        options = _best_translations(table, ranked)
+        sub = (node or {}).get(lang, {})
+        current = sub.get("string", sub.get("pattern")) if isinstance(sub, dict) else None
+        if current in options:
+            vals[lang] = current
+        elif len(options) == 1:
+            vals[lang] = options.pop()
     return vals
 
 
@@ -371,9 +421,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry", action="store_true", help="只预览不写入")
     ap.add_argument("--verbose", action="store_true")
+    ap.add_argument("--i18n-dir", type=Path, default=I18N_DIR, help="官方解包语言表目录")
+    ap.add_argument("--report", type=Path, help="详细变更报告路径（配合 --verbose）")
     args = ap.parse_args()
 
-    index, raw_texts = load_official()
+    index, raw_texts = load_official(args.i18n_dir)
+    contextual_index = build_contextual_pattern_index(raw_texts)
+    prefix_overrides = load_prefix_overrides(ROOT)
     print(f"官方语言表加载完成: {len(raw_texts)} 语言")
 
     json_stats = {}
@@ -382,8 +436,11 @@ def main() -> int:
 
     for path in sorted(LANG_DIR.glob("*.json")):
         data = json5.loads(path.read_text(encoding="utf-8"))
+        key_rules = prefix_overrides.get(path.stem, {})
         stats = 0
         for key, node in data.items():
+            if key in key_rules:
+                continue  # 仅指定 key 用中文前缀标题反查，不回退独立地名或物品名。
             if not isinstance(node, dict):
                 continue
             anchors = node_values(node)
@@ -413,7 +470,8 @@ def main() -> int:
                     continue
                 if not guard_anchor_official_match(a_text, ranked_b, raw_texts):
                     continue
-                ov_b = official_vals_multi(raw_texts, ranked_b)
+                ranked_b = rank_keys_for_node(ranked_b, raw_texts, node)
+                ov_b = official_vals_multi(raw_texts, ranked_b, node if len(anchors) == 1 else None)
                 if ov_b:
                     branch_ovs.append(ov_b)
                     branch_po_ovs.append(ov_b)
@@ -447,7 +505,7 @@ def main() -> int:
             if not zh:
                 # 用任意锚点语言作 fallback
                 zh = anchors[0][1]
-            # 补齐缺失语言键（不覆盖已有）
+            # 补齐缺失语言并更新普通文本，已有强正则保留。
             sub_style = None
             for kind in ("string", "pattern"):
                 z = node.get("zh_CN", {}).get(kind)
@@ -473,6 +531,12 @@ def main() -> int:
                     # 覆盖已有值（string 或普通 pattern）
                     for kind in ("string", "pattern"):
                         if isinstance(cur.get(kind), str) and cur[kind] != val:
+                            if (
+                                kind == "pattern"
+                                and len(anchors) == 1
+                                and is_contextual_pattern(cur[kind], anchors[0][1], lang, contextual_index, raw_texts)
+                            ):
+                                continue
                             cur[kind] = val
                             stats += 1
                             all_touched.append((path.name, key, zh, lang, val))
@@ -499,26 +563,59 @@ def main() -> int:
             write_json(path, data)
         json_stats[path.name] = stats
 
+    prefixed_touched = sync_prefix_overrides(raw_texts, LANG_DIR, prefix_overrides, args.dry, write_json)
+    all_touched.extend(prefixed_touched)
+    for fname, *_ in prefixed_touched:
+        json_stats[fname] = json_stats.get(fname, 0) + 1
+
     print("\n=== assets/lang/*.json 补齐统计 ===")
     total = 0
     for fname, n in sorted(json_stats.items()):
         if n:
-            print(f"  {fname}: +{n} 语言键")
+            print(f"  {fname}: {n} 个语言值更新或补齐")
             total += n
-    print(f"  合计新增 {total} 个语言键")
+    print(f"  合计 {total} 个语言值更新或补齐")
 
     # ok.po 同步（仅 UI 支持的 6 种 locale；不新增 msgid，只更新已有条目）
+    # UI 与 OCR 可能使用同一中文的不同场景译文，PO 按自己的现有译文选 key。
+    po_nodes = {}
+    if polib is not None:
+        for loc in PO_LANGS:
+            po_path = PO_DIR / loc / "LC_MESSAGES" / "ok.po"
+            if po_path.exists():
+                for entry in polib.pofile(str(po_path)):
+                    po_nodes.setdefault(entry.msgid, {})[loc] = {"string": entry.msgstr}
+    resolved_po = {}
+    for zh in po_official:
+        ranked = pick_keys([("zh_CN", zh, False)], index)
+        if not guard_anchor_official_match(zh, ranked, raw_texts):
+            continue
+        node = po_nodes.get(zh, {})
+        ranked_for_po = rank_keys_for_node(ranked, raw_texts, node)
+        variants = {tuple(raw_texts.get(loc, {}).get(key) for loc in PO_LANGS) for key, _ in ranked}
+        matched_locales = ranked_for_po[0][1] - dict(ranked)[ranked_for_po[0][0]]
+        if len(variants) > 1 and matched_locales < 2:
+            continue  # 同名 GUI 词条缺少足够语境证据，不能用游戏按钮译文覆盖项目 UI。
+        vals = official_vals_multi(raw_texts, ranked_for_po, node)
+        for loc, val in vals.items():
+            current = node.get(loc, {}).get("string")
+            if isinstance(current, str) and normalize_value(current) == normalize_value(val):
+                vals[loc] = current  # UI 大小写、空白等价，不制造纯排版变化。
+        if vals:
+            resolved_po[zh] = {loc: val for loc, val in vals.items() if loc in PO_LANGS}
+    po_official = resolved_po
     print("\n=== i18n ok.po 同步 ===")
-    if po_official and not args.dry:
-        po_stats, _po_touched = sync_po_entries(po_official, PO_LANGS, PO_DIR, create_missing=False)
+    if po_official:
+        po_stats, _po_touched = sync_po_entries(po_official, PO_LANGS, PO_DIR, create_missing=False, dry_run=args.dry)
         for loc, n in po_stats.items():
-            print(f"  {loc}: {n} entries updated")
+            print(f"  {loc}: {n} entries {'would update' if args.dry else 'updated'}")
     else:
-        print(f"  (dry 或无可同步) 候选 msgid: {len(po_official)}")
+        print("  无可同步词条")
 
     # 详细变更写文件
     if args.verbose:
-        report = ROOT / "tmp" / "ef_sync_official_report.txt"
+        report = args.report or ROOT / "tmp" / "ef_sync_official_report.txt"
+        report.parent.mkdir(parents=True, exist_ok=True)
         with open(report, "w", encoding="utf-8") as f:
             for fname, key, zh, lang, val in all_touched:
                 f.write(f"{fname}\t{key}\t{zh}\t{lang}\t{val}\n")

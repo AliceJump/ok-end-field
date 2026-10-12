@@ -2,7 +2,7 @@
 
 本模块同时服务自动送货与网格导航：
 
-- 自动送货按配置中的距离序列使用 OCR 对中；
+- 自动送货先按滑索图标模板定位候选，再做局部分色 OCR 对中；模板连续漏检时回退全屏 OCR；
 - 网格导航优先使用世界方位直接对准，误差收敛到 ±3° 后执行；
 - 两者共用「登上滑索架」模板匹配、错误落点判定和 WS 状态检查。
 
@@ -12,6 +12,10 @@
 
 import math
 import re
+from copy import copy
+
+import cv2
+import numpy as np
 
 from src.core.global_config_store import (
     ZIP_LINE_CONFIG_NAME,
@@ -26,6 +30,7 @@ from src.core.global_config_store import (
 from src.core.sequence_parser import parse_int_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
+from src.interaction.Mouse import calc_direction_step
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 
@@ -37,6 +42,43 @@ ZIP_LINE_MOTION_POLL_SECONDS = 0.2
 ZIP_LINE_MOTION_CHANGE_METERS = 0.5
 ZIP_LINE_BOARD_MOVE_DURATION_S = 0.12
 ZIP_LINE_BOARD_RECHECK_SETTLE_S = 0.25
+
+#: 滑索图标二值模板（1080p 基准），按当前分辨率缩放后用于模板匹配。
+_ZIP_LINE_ICON_TEMPLATE_ROWS = (
+    "....................",
+    "...############.....",
+    ".##.......##........",
+    ".##.......##........",
+    "...#################",
+    "...#################",
+    "..............##....",
+    "..............##....",
+    "..............##....",
+    "..............##....",
+    "..............##....",
+    "..............##....",
+    ".............###....",
+    "..........#..##.....",
+    "............##......",
+    "....................",
+    "....................",
+    "....................",
+    "........####........",
+    "........####........",
+    "........####........",
+    "........####........",
+    "........####........",
+    "........####........",
+    "........####........",
+    "........####........",
+    "........####........",
+    ".....#########......",
+    "..............######",
+    "...................#",
+)
+
+_ZIP_LINE_YELLOW_ICON_RANGES = (((15, 80, 160), (50, 255, 255)),)
+_ZIP_LINE_GOLD_RING_RANGES = (((13, 35, 160), (50, 255, 255)),)
 
 
 class ZipLineReplanRequired(Exception):
@@ -55,6 +97,13 @@ class ZipLineReplanRequired(Exception):
 
 
 class ZipLineMixin(InstructionsMixin, NavigationMixin):
+    _ZIP_LINE_TEMPLATE_THRESHOLD = 0.55
+    _ZIP_LINE_TEMPLATE_MISS_LIMIT = 3
+    _ZIP_LINE_ELLIPSE_RX = 720
+    _ZIP_LINE_ELLIPSE_RY = 405
+    _ZIP_LINE_INNER_RADIUS = 0.5
+    _ZIP_LINE_OUTER_MAX_BOOST = 1.75
+
     @property
     def zip_line_config(self):
         return get_global_config(ZIP_LINE_CONFIG_NAME)
@@ -463,7 +512,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         self.log_info("已按 F 登上滑索架")
         return True
 
-    def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True):
+    def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True, stay_on_zip_line=False):
         """进入滑索后，根据配置对齐并滑行至送货点
 
         Args:
@@ -471,6 +520,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             need_scroll: 是否需要滚动
             target: 目标信息，包含名称和类型(例如：("登上滑索架", "ocr"))
             need_v: 是否需要按V键追踪
+            stay_on_zip_line: 路线结束后留在滑索上，供下一段路线继续测试
         Raises:
             Exception: 滑索超时时抛出异常
         """
@@ -487,50 +537,602 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 raise RuntimeError("滑索超时，强制退出")
         zip_line_list_str = self.get_zip_line_config_value(delivery_to)
         zip_line_list = parse_int_sequence(zip_line_list_str)
-        self.zip_line_list_go(zip_line_list, need_scroll, target, need_v=need_v)
+        self.zip_line_list_go(
+            zip_line_list,
+            need_scroll,
+            target,
+            need_v=need_v,
+            stay_on_zip_line=stay_on_zip_line,
+        )
+
+    @staticmethod
+    def _zip_line_distance_pattern(zip_line):
+        """匹配完整距离数字，避免 108 错配到 1080m 等更长距离。"""
+        return re.compile(rf"(?<!\d){re.escape(str(zip_line))}(?!\d)")
 
     @staticmethod
     def _zip_line_distance_matcher(zip_line, distance_tolerance=None):
-        """构造距离匹配模式；容差只用于地图坐标与游戏显示距离存在偏差的场景。"""
-        if distance_tolerance is None:
-            return re.compile(rf"(?<!\d){int(zip_line)}(?!\d)")
-        center = round(float(zip_line))
-        tolerance = max(0, round(float(distance_tolerance)))
+        """构造距离匹配模式。
+
+        无容差时就是精确匹配（自动送货用）；给了容差则返回窗口内的多个模式，用于网格导航
+        ——那里的滑索距离来自地图标记的三维坐标，与游戏内显示值可能对不上。
+        """
+        tolerance = 0 if distance_tolerance is None else max(0, round(float(distance_tolerance)))
         if tolerance <= 0:
-            return re.compile(rf"(?<!\d){center}(?!\d)")
+            return re.compile(rf"(?<!\d){re.escape(str(zip_line))}(?!\d)")
+        center = round(float(zip_line))
         return [
             re.compile(rf"(?<!\d){number}(?!\d)(?:\s*m)?", re.IGNORECASE)
             for number in range(max(1, center - tolerance), center + tolerance + 1)
         ]
 
-    def _ride_zip_line_by_ocr(self, zip_line, tolerance, *, need_scroll=None):
-        """用距离 OCR 对中并点击滑行；保留自动送货的兼容路径。"""
-        self.align_ocr_or_find_target_to_center(
-            self._zip_line_distance_matcher(zip_line, tolerance),
-            is_num=True,
+    @staticmethod
+    def _zip_line_hsv_mask(hsv, ranges):
+        """把一组 HSV 范围合并成单通道掩码。"""
+        if hasattr(ranges, "value"):
+            ranges = ranges.value
+        mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
+        for lower, upper in ranges:
+            current = cv2.inRange(
+                hsv,
+                np.asarray(lower, dtype=np.uint8),
+                np.asarray(upper, dtype=np.uint8),
+            )
+            mask = cv2.bitwise_or(mask, current)
+        return mask
+
+    def _zip_line_icon_template(self):
+        """返回按当前分辨率缩放的 1080p 滑索图标二值模板。"""
+        template = np.asarray(
+            [[255 if pixel == "#" else 0 for pixel in row] for row in _ZIP_LINE_ICON_TEMPLATE_ROWS],
+            dtype=np.uint8,
+        )
+        scale = self.resolution_scale()
+        if abs(scale - 1.0) < 1e-6:
+            return template
+        width = max(1, round(template.shape[1] * scale))
+        height = max(1, round(template.shape[0] * scale))
+        return cv2.resize(template, (width, height), interpolation=cv2.INTER_NEAREST)
+
+    def _zip_line_ellipse_geometry(self):
+        """返回屏幕中心与滑索边缘提示所在椭圆的半径。"""
+        center_x, center_y = self.screen_center()
+        scale = self.resolution_scale()
+        radius_x = max(1, round(self._ZIP_LINE_ELLIPSE_RX * scale))
+        radius_y = max(1, round(self._ZIP_LINE_ELLIPSE_RY * scale))
+        return center_x, center_y, radius_x, radius_y
+
+    def _zip_line_ellipse_radius(self, x, y):
+        """返回点在滑索椭圆中的归一化半径，1.0 为椭圆边缘。"""
+        center_x, center_y, radius_x, radius_y = self._zip_line_ellipse_geometry()
+        return math.hypot((x - center_x) / radius_x, (y - center_y) / radius_y)
+
+    def _zip_line_has_gold_ring(self, gold_mask, center_x, center_y):
+        """用图标四周均有金黄色像素来识别当前锁定态，避免环境黄色误判。"""
+        scale = self.resolution_scale()
+        radius = max(1, round(22 * scale))
+        x = round(center_x)
+        y = round(center_y)
+        left = max(0, x - radius)
+        right = min(gold_mask.shape[1], x + radius)
+        top = max(0, y - radius)
+        bottom = min(gold_mask.shape[0], y + radius)
+        counts = (
+            np.count_nonzero(gold_mask[top:y, left:x]),
+            np.count_nonzero(gold_mask[top:y, x:right]),
+            np.count_nonzero(gold_mask[y:bottom, left:x]),
+            np.count_nonzero(gold_mask[y:bottom, x:right]),
+        )
+        minimum = max(4, round(8 * scale * scale))
+        return all(count >= minimum for count in counts)
+
+    def _detect_zip_line_icon_candidates(self, frame):
+        """仅在滑索椭圆内检测白色与黄色/金黄色图标，蓝色共享滑索不会进入候选。"""
+        if frame is None or getattr(frame, "ndim", 0) < 2:
+            return []
+
+        height, width = frame.shape[:2]
+        template = self._zip_line_icon_template()
+        template_height, template_width = template.shape[:2]
+        center_x, center_y, radius_x, radius_y = self._zip_line_ellipse_geometry()
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        white_mask = self._zip_line_hsv_mask(hsv, hR.WHITE)
+        yellow_mask = self._zip_line_hsv_mask(hsv, _ZIP_LINE_YELLOW_ICON_RANGES)
+        gold_mask = self._zip_line_hsv_mask(hsv, _ZIP_LINE_GOLD_RING_RANGES)
+        log_info = getattr(self, "log_info", None)
+
+        left = max(0, center_x - radius_x - template_width)
+        right = min(width, center_x + radius_x + template_width)
+        top = max(0, center_y - radius_y - template_height)
+        bottom = min(height, center_y + radius_y + template_height)
+        if right - left < template_width or bottom - top < template_height:
+            if callable(log_info):
+                log_info(
+                    f"[zipline-template] invalid-search-area frame={width}x{height} "
+                    f"roi=({left},{top})-({right},{bottom}) template={template_width}x{template_height}"
+                )
+            return []
+
+        ellipse_mask = np.zeros((bottom - top, right - left), dtype=np.uint8)
+        cv2.ellipse(
+            ellipse_mask,
+            (center_x - left, center_y - top),
+            (radius_x + template_width // 2, radius_y + template_height // 2),
+            0,
+            0,
+            360,
+            255,
+            -1,
+        )
+
+        candidates = []
+        scale = self.resolution_scale()
+        merge_distance = max(1, round(12 * scale))
+        for source_mask, source_state in ((white_mask, "white"), (yellow_mask, "gold")):
+            search_mask = cv2.bitwise_and(source_mask[top:bottom, left:right], ellipse_mask)
+            scores = cv2.matchTemplate(search_mask, template, cv2.TM_CCOEFF_NORMED)
+            best_score = float(scores.max()) if scores.size else 0.0
+            locations = np.argwhere(scores >= self._ZIP_LINE_TEMPLATE_THRESHOLD)
+            locations = sorted(locations, key=lambda pos: float(scores[pos[0], pos[1]]), reverse=True)
+            raw_hit_count = len(locations)
+            candidate_count_before = len(candidates)
+            for local_y, local_x in locations:
+                x = int(local_x + left)
+                y = int(local_y + top)
+                score = float(scores[local_y, local_x])
+                icon_center_x = x + template_width / 2
+                icon_center_y = y + template_height / 2
+                ellipse_radius = self._zip_line_ellipse_radius(icon_center_x, icon_center_y)
+                if ellipse_radius > 1.0:
+                    continue
+
+                state = source_state
+                if state == "white" and self._zip_line_has_gold_ring(gold_mask, icon_center_x, icon_center_y):
+                    state = "gold"
+
+                existing = next(
+                    (
+                        item
+                        for item in candidates
+                        if math.hypot(item["center_x"] - icon_center_x, item["center_y"] - icon_center_y)
+                        <= merge_distance
+                    ),
+                    None,
+                )
+                if existing is not None:
+                    if state == "gold":
+                        existing["state"] = "gold"
+                    if score > existing["score"]:
+                        existing.update(
+                            x=x,
+                            y=y,
+                            width=template_width,
+                            height=template_height,
+                            center_x=icon_center_x,
+                            center_y=icon_center_y,
+                            radius=ellipse_radius,
+                            score=score,
+                        )
+                    continue
+
+                candidates.append(
+                    {
+                        "x": x,
+                        "y": y,
+                        "width": template_width,
+                        "height": template_height,
+                        "center_x": icon_center_x,
+                        "center_y": icon_center_y,
+                        "radius": ellipse_radius,
+                        "state": state,
+                        "score": score,
+                    }
+                )
+                if len(candidates) >= 32:
+                    break
+
+            if callable(log_info):
+                log_info(
+                    f"[zipline-template] state={source_state} best={best_score:.3f} "
+                    f"threshold={self._ZIP_LINE_TEMPLATE_THRESHOLD:.3f} raw_hits={raw_hit_count} "
+                    f"accepted_delta={len(candidates) - candidate_count_before}"
+                )
+
+        # 白色候选优先于黄色/金黄色；同色候选优先转动更少、匹配更高的目标。
+        candidates.sort(key=lambda item: (0 if item["state"] == "white" else 1, item["radius"], -item["score"]))
+        if callable(log_info):
+            summary = ", ".join(
+                f"{item['state']}@({item['center_x']:.0f},{item['center_y']:.0f}) "
+                f"r={item['radius']:.2f} s={item['score']:.3f}"
+                for item in candidates[:12]
+            )
+            log_info(f"[zipline-template] candidates={len(candidates)} [{summary}]")
+        return candidates
+
+    def _zip_line_distance_box(self, candidate):
+        """构造图标下方的距离 OCR 区域；1080p 基准为 70×30px，随分辨率缩放。"""
+        center_x = candidate["center_x"]
+        center_y = candidate["center_y"]
+        half_width = self.scale_distance(35)
+        top_offset = self.scale_distance(28)
+        bottom_offset = self.scale_distance(58)
+        left = max(0, round(center_x - half_width))
+        right = min(self.width, round(center_x + half_width))
+        top = max(0, round(center_y + top_offset))
+        bottom = min(self.height, round(center_y + bottom_offset))
+        return self.box_of_screen(left / self.width, top / self.height, right / self.width, bottom / self.height)
+
+    def _find_zip_line_template_target(self, zip_line, frame, *, distance_tolerance=None):
+        """保持白色候选优先，并在局部分色 OCR 漏检时逐级放宽。"""
+        pattern = (
+            self._zip_line_distance_pattern(zip_line)
+            if distance_tolerance is None
+            else self._zip_line_distance_matcher(zip_line, distance_tolerance)
+        )
+        candidates = self._detect_zip_line_icon_candidates(frame)
+        log_info = getattr(self, "log_info", None)
+        if callable(log_info):
+            log_info(f"[zipline-template] target={zip_line} candidate_count={len(candidates)}")
+        combined_range = tuple(hR.WHITE) + tuple(hR.GOLD_TEXT)
+        for index, candidate in enumerate(candidates):
+            hsv_range = hR.WHITE if candidate["state"] == "white" else hR.GOLD_TEXT
+            distance_box = self._zip_line_distance_box(candidate)
+            if callable(log_info):
+                log_info(
+                    f"[zipline-template] target={zip_line} try={index + 1}/{len(candidates)} "
+                    f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f}) "
+                    f"r={candidate.get('radius', float('inf')):.2f} score={candidate.get('score', 0.0):.3f} "
+                    f"distance_box=({distance_box.x},{distance_box.y},{distance_box.width},{distance_box.height}) "
+                    f"processor={'WHITE' if candidate['state'] == 'white' else 'GOLD_TEXT'}"
+                )
+            result = self.ocr(
+                match=pattern,
+                box=distance_box,
+                frame=frame,
+                frame_processor=self.make_hsv_isolator(hsv_range),
+                log=True,
+            )
+            if not result:
+                if callable(log_info):
+                    log_info(
+                        f"[zipline-template] target={zip_line} local_ocr=miss "
+                        f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f}) "
+                        "fallback=white+gold"
+                    )
+                result = self.ocr(
+                    match=pattern,
+                    box=distance_box,
+                    frame=frame,
+                    frame_processor=self.make_hsv_isolator(combined_range),
+                    log=True,
+                )
+            if not result:
+                if callable(log_info):
+                    log_info(
+                        f"[zipline-template] target={zip_line} local_ocr=miss "
+                        f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f}) "
+                        "fallback=raw"
+                    )
+                result = self.ocr(
+                    match=pattern,
+                    box=distance_box,
+                    frame=frame,
+                    frame_processor=None,
+                    log=True,
+                )
+            if result:
+                target = result[0] if isinstance(result, list) else result
+                if callable(log_info):
+                    log_info(
+                        f"[zipline-template] target={zip_line} local_ocr=hit "
+                        f"state={candidate['state']} center=({candidate['center_x']:.0f},{candidate['center_y']:.0f})"
+                    )
+                return candidate, target
+        if callable(log_info):
+            log_info(f"[zipline-template] target={zip_line} no_candidate_with_matching_distance")
+        return None
+
+    def _zip_line_move_profile(self, ellipse_radius):
+        """椭圆内半径正常对中，外半圈随离中心程度平滑加速。"""
+        profile = {
+            "max_step": 120,
+            "min_step": 20,
+            "slow_radius": 350,
+            "deadzone": 8,
+        }
+        if ellipse_radius <= self._ZIP_LINE_INNER_RADIUS:
+            return profile
+        progress = min(1.0, (ellipse_radius - self._ZIP_LINE_INNER_RADIUS) / (1.0 - self._ZIP_LINE_INNER_RADIUS))
+        boost = 1.0 + (self._ZIP_LINE_OUTER_MAX_BOOST - 1.0) * progress
+        profile["max_step"] = round(profile["max_step"] * boost)
+        profile["min_step"] = round(profile["min_step"] * boost)
+        return profile
+
+    @staticmethod
+    def _zip_line_alignment_failed(raise_if_fail):
+        """保持通用对中 helper 的失败语义。"""
+        if raise_if_fail:
+            raise Exception("对中失败")
+        return False
+
+    def _move_to_zip_line_target(self, target):
+        """在椭圆坐标中计算方向与距离，以屏幕宽度统一缩放横纵步长。"""
+        cx, cy, rx, ry = self._zip_line_ellipse_geometry()
+        nx = (target.x + target.width // 2 - cx) / rx
+        ny = (target.y + target.height // 2 - cy) / ry
+        profile = self._zip_line_move_profile(math.hypot(nx, ny))
+        width_scale = self.width / 1920
+        width_radius = self._ZIP_LINE_ELLIPSE_RX * width_scale
+        dx, dy = calc_direction_step(
+            (0, 0),
+            (nx * width_radius, ny * width_radius),
+            **{key: max(1, round(value * width_scale)) for key, value in profile.items()},
+        )
+        if dx or dy:
+            self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005)
+        return dx, dy
+
+    def _zip_line_target_is_gold_and_centered(self, zip_line, frame=None, tolerance=50, *, distance_tolerance=None):
+        """判断目标距离是否处于黄色锁定态且位于屏幕中心附近。"""
+        result = self.ocr(
+            match=(
+                self._zip_line_distance_pattern(zip_line)
+                if distance_tolerance is None
+                else self._zip_line_distance_matcher(zip_line, distance_tolerance)
+            ),
+            frame=frame if frame is not None else self.next_frame(),
+            frame_processor=self.make_hsv_isolator(hR.GOLD_TEXT),
+        )
+        if not result:
+            return False
+
+        screen_center_x, screen_center_y = self.screen_center()
+        scaled_tolerance = self.scale_distance(tolerance)
+        numeric_y_offset = int(self.height * ((525 - 486) / 1080))
+        for target in result:
+            target_center_x = target.x + target.width // 2
+            target_center_y = target.y - numeric_y_offset + target.height // 2
+            if (
+                abs(target_center_x - screen_center_x) <= scaled_tolerance
+                and abs(target_center_y - screen_center_y) <= scaled_tolerance
+            ):
+                return True
+        return False
+
+    def _align_zip_line_distance_ocr(
+        self,
+        zip_line,
+        need_scroll=None,
+        tolerance=50,
+        max_time=100,
+        raise_if_fail=True,
+        deadline=None,
+        max_iterations=None,
+        ocr_target_detector=None,
+    ):
+        """保留原始全局 OCR 对中，并在单次 helper 调用中共享截止时间与迭代预算。"""
+
+        def align_once(helper_max_time, helper_raise_if_fail, helper_deadline=None, helper_max_iterations=None):
+            return self.align_ocr_or_find_target_to_center(
+                self._zip_line_distance_pattern(zip_line),
+                is_num=True,
+                need_scroll=need_scroll,
+                ocr_frame_processor_list=[
+                    self.make_hsv_isolator(hR.GOLD_TEXT),
+                    self.make_hsv_isolator(hR.WHITE),
+                ],
+                tolerance=tolerance,
+                max_time=helper_max_time,
+                raise_if_fail=helper_raise_if_fail,
+                deadline=helper_deadline,
+                max_iterations=helper_max_iterations,
+                ocr_target_detector=ocr_target_detector,
+                ocr_target_mover=self._move_to_zip_line_target,
+            )
+
+        if deadline is None and max_iterations is None:
+            return align_once(max_time, raise_if_fail)
+
+        remaining_iterations = max_time * 2 if max_iterations is None else max(0, int(max_iterations))
+        if remaining_iterations <= 0 or (deadline is not None and self.active_time() >= deadline):
+            return self._zip_line_alignment_failed(raise_if_fail)
+
+        result = align_once(
+            1,
+            False,
+            helper_deadline=deadline,
+            helper_max_iterations=remaining_iterations,
+        )
+        if result:
+            return result
+        return self._zip_line_alignment_failed(raise_if_fail)
+
+    def _align_zip_line_distance(
+        self,
+        zip_line,
+        need_scroll=None,
+        tolerance=50,
+        max_time=100,
+        raise_if_fail=True,
+        deadline=None,
+        *,
+        distance_tolerance=None,
+    ):
+        """每轮优先模板 OCR，连续 miss 后补充全屏 OCR，命中模板即恢复快速路径。"""
+        misses = 0
+        if max_time <= 0 or (deadline is not None and self.active_time() >= deadline):
+            return self._zip_line_alignment_failed(raise_if_fail)
+        pattern = (
+            self._zip_line_distance_pattern(zip_line)
+            if distance_tolerance is None
+            else self._zip_line_distance_matcher(zip_line, distance_tolerance)
+        )
+        processors = [self.make_hsv_isolator(hR.GOLD_TEXT), self.make_hsv_isolator(hR.WHITE)]
+
+        def detect_target(frame):
+            nonlocal misses
+            matched = self._find_zip_line_template_target(
+                zip_line,
+                frame,
+                distance_tolerance=distance_tolerance,
+            )
+            if matched is None:
+                misses += 1
+                if misses < self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
+                    return None
+                if misses == self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
+                    self.log_info(
+                        f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，本轮回退全屏OCR，后续继续尝试模板"
+                    )
+                for processor in processors:
+                    if deadline is not None and self.active_time() >= deadline:
+                        return None
+                    result = self.ocr(
+                        match=pattern,
+                        frame=frame,
+                        log=True,
+                        frame_processor=processor,
+                    )
+                    if result:
+                        target = copy(result[0])
+                        target.y -= int(self.height * ((525 - 486) / 1080))
+                        return target
+                return []
+
+            if misses >= self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
+                self.log_info(f"滑索{zip_line}恢复模板OCR快速对中")
+            misses = 0
+            candidate, ocr_target = matched
+            move_target = copy(ocr_target)
+            move_target.x = candidate["x"]
+            move_target.y = candidate["y"]
+            move_target.width = candidate["width"]
+            move_target.height = candidate["height"]
+            return move_target
+
+        return self._align_zip_line_distance_ocr(
+            zip_line,
             need_scroll=need_scroll,
-            ocr_frame_processor_list=[
-                self.make_hsv_isolator(hR.GOLD_TEXT),
-                self.make_hsv_isolator(hR.WHITE),
+            tolerance=tolerance,
+            max_time=max_time,
+            raise_if_fail=raise_if_fail,
+            deadline=deadline,
+            max_iterations=max_time * 2,
+            ocr_target_detector=detect_target,
+        )
+
+    def _zip_line_stop_state(self):
+        """滑索停稳提示的匹配项与状态栏区域。
+
+        区域直接写 ``box_of_screen`` 的字面量而不是走 :meth:`_zip_line_status_box`：两者取值
+        完全相同，但上游的测试替身只补了 ``box_of_screen``。
+        """
+        return (
+            [
+                self.lang.zip_line_mixin.k_2f4f4a2f,
+                self.lang.zip_line_mixin.k_0b1e4f35,
             ],
-            max_time=100,
+            self.box_of_screen(0.351, 0.943, 0.657, 0.981),
+        )
+
+    def _try_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2, *, distance_tolerance=None):
+        """执行一次黄色门控 + 点击 + E，返回 ``(成功, 失败原因)``。"""
+        stop_match, stop_box = self._zip_line_stop_state()
+        lock_start = self.active_time()
+        while not self._zip_line_target_is_gold_and_centered(
+            zip_line,
+            frame=self.next_frame(),
+            tolerance=50,
+            distance_tolerance=distance_tolerance,
+        ):
+            if self.active_time() - lock_start >= lock_timeout:
+                return False, "gate"
+            self.sleep(0.05)
+
+        self.click(after_sleep=0.1)
+        for _ in range(max_attempts):
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
+            if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
+                return True, None
+        return False, "interaction"
+
+    def _legacy_click_on_zip_line(self, max_attempts=5):
+        """黄色门控耗尽后的 v1.1.11 式直接点击 + E 回退。"""
+        stop_match, stop_box = self._zip_line_stop_state()
+        for _ in range(max_attempts):
+            self.click(after_sleep=0.1)
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
+            if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
+                return True
+        return False
+
+    def _ride_zip_line_by_ocr(self, zip_line, tolerance, *, need_scroll=None):
+        """用距离 OCR 对中并点击滑行；保留自动送货的兼容路径。
+
+        对中走模板 OCR（``_align_zip_line_distance``），点击走黄色门控重试，两道都不过才回退
+        直接点击 + E。网格导航传入的距离容差会一路传给对中与门控，用于吸收地图坐标与游戏
+        显示距离之间的偏差。
+        """
+        self._align_zip_line_distance(
+            zip_line,
+            need_scroll=need_scroll,
+            tolerance=50,
+            distance_tolerance=tolerance,
         )
         self.log_info(f"成功将滑索调整到{zip_line}的中心")
-        self.ensure_click_on_zip_line()
 
+        gate_retry_deadline = self.active_time() + 20
+        activated = False
+        last_reason = None
+        interaction_failed = False
+        for attempt in range(3):
+            activated, last_reason = self._try_click_on_zip_line(
+                zip_line,
+                distance_tolerance=tolerance,
+            )
+            if activated:
+                break
+            if last_reason == "gate":
+                self.log_info(f"滑索{zip_line}金色门未通过，重新对中后重试（{attempt + 1}/3）")
+            else:
+                interaction_failed = True
+                self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
+            if attempt >= 2 or self.active_time() >= gate_retry_deadline:
+                break
+            realigned = self._align_zip_line_distance(
+                zip_line,
+                need_scroll=need_scroll,
+                tolerance=50,
+                max_time=10,
+                raise_if_fail=False,
+                deadline=gate_retry_deadline,
+                distance_tolerance=tolerance,
+            )
+            if not realigned:
+                last_reason = "gate"
+                self.log_info(f"滑索{zip_line}重新对中失败，进入失败处理")
+                break
+
+        if not activated:
+            if interaction_failed:
+                self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
+                raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
+            if last_reason == "gate":
+                self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击 + E")
+                if not self._legacy_click_on_zip_line():
+                    self.log_info(f"滑索{zip_line}直接点击后 E 未生效", notify=True)
+                    raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
+            else:
+                self.log_info(f"滑索{zip_line}交互失败", notify=True)
+                raise RuntimeError(f"滑索{zip_line}交互失败")
+
+        stop_match, stop_box = self._zip_line_stop_state()
         start = self.active_time()
         while True:
             self.next_frame()
-            self.send_key("e")
+            self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
             self.sleep(0.1)
-            if self.ocr(
-                match=[
-                    self.lang.zip_line_mixin.k_2f4f4a2f,
-                    self.lang.zip_line_mixin.k_0b1e4f35,
-                ],
-                box=self._zip_line_status_box(),
-                log=True,
-            ):
+            if self.ocr(match=stop_match, box=stop_box, log=True):
                 return
             if self.active_time() - start > 240:
                 raise RuntimeError("滑索超时，强制退出")
@@ -546,6 +1148,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         target_positions=None,
         source_positions_xyz=None,
         target_positions_xyz=None,
+        stay_on_zip_line=False,
     ):
         """按顺序对齐滑索并执行滑行
 
@@ -561,6 +1164,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             target_positions: 每段滑索目标滑索架的世界坐标列表。
             source_positions_xyz: 每段滑索三维起点列表，仅用于失败时精确标记连接。
             target_positions_xyz: 每段滑索三维终点列表，仅用于失败时精确标记连接。
+            stay_on_zip_line: 路线结束后留在滑索上，供下一段路线继续测试。
 
         """
         bearings = self._normalize_values(target_bearing, scalar=True)
@@ -595,6 +1199,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 tolerance,
                 need_scroll=need_scroll,
             )
+        if stay_on_zip_line:
+            self.log_info("滑索路线结束，留在滑索上继续测试")
+            return
         if need_v:
             self.click(key="right", after_sleep=2)
         if target:
@@ -635,14 +1242,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     ocr=ocr_bool,
                     use_yolo=yolo_bool,
                     raise_if_fail=False,
+                    ocr_target_mover=self._move_to_zip_line_target if ocr_bool else None,
                 )
                 self.click(key="right")
+        stop_match, stop_box = self._zip_line_stop_state()
         if self.wait_ocr(
-            match=[
-                self.lang.zip_line_mixin.k_2f4f4a2f,
-                self.lang.zip_line_mixin.k_0b1e4f35,
-            ],
-            box=self._zip_line_status_box(),
+            match=stop_match,
+            box=stop_box,
             log=True,
             time_out=2,
         ):
@@ -650,16 +1256,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         self.log_info("滑索结束")
         self.ensure_main()
 
-    def ensure_click_on_zip_line(self, max_attempts=5):
-        for _ in range(max_attempts):
-            self.click(after_sleep=0.1)
-            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
-            if not self.ocr(
-                match=[
-                    self.lang.zip_line_mixin.k_2f4f4a2f,
-                    self.lang.zip_line_mixin.k_0b1e4f35,
-                ],
-                frame=self.next_frame(),
-                box=self._zip_line_status_box(),
-            ):
-                return True
+    def ensure_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2, *, distance_tolerance=None):
+        """兼容入口：一次黄色门控 + 点击 + E，失败由调用方决定是否重新对中。"""
+        success, _ = self._try_click_on_zip_line(
+            zip_line,
+            max_attempts=max_attempts,
+            lock_timeout=lock_timeout,
+            distance_tolerance=distance_tolerance,
+        )
+        return success

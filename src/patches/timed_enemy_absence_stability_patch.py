@@ -17,8 +17,12 @@ def _enemy_operation_paused_with_stability(logic) -> bool:
     positive PRESENT recovery or other consumers of the raw presence probe.
     """
     probe = getattr(logic.task, "probe_enemy_presence", None)
-    state = normalize_enemy_presence(probe() if callable(probe) else None)
+    if not callable(probe):
+        return False
+    state = normalize_enemy_presence(probe())
     now = logic._clock()
+    if logic._await_first_enemy(state, now):
+        return True
 
     if state == EnemyPresence.PRESENT:
         logic._enemy_absent_candidate_since = None

@@ -168,9 +168,9 @@ class TestTimingDps(unittest.TestCase):
     def test_complex_hidden_battle_quote_uses_expected_value_not_full_endpoint(self):
         quote = load_damage_quotes(["提弗洛斯", "洁尔佩塔"])["提弗洛斯"]
         self.assertGreater(quote.battle, quote.conservative)
-        self.assertLess(quote.battle, 54196.0)
-        self.assertAlmostEqual(quote.battle, (17639.3 + 54196.0) / 2, places=1)
-        self.assertAlmostEqual(quote.conservative, 17639.3, places=1)
+        self.assertLess(quote.battle, 64296.7)
+        self.assertAlmostEqual(quote.battle, (20926.7 + 64296.7) / 2, places=1)
+        self.assertAlmostEqual(quote.conservative, 20926.7, places=1)
 
     def test_loader_accepts_null_effects_in_character_snapshot(self):
         quote = load_damage_quotes(["伊冯"])["伊冯"]

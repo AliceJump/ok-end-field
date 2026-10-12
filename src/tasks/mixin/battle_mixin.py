@@ -19,6 +19,7 @@ BattleMixin
 """
 
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import ClassVar
 
@@ -61,6 +62,8 @@ from src.data.FeatureList import FeatureList as fL
 from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.image.hsv_config import HSVRange as hR
 from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
+from src.image.squad_hud_detector import SquadHudState, observe_squad_hud
+from src.image.team_keycap_detector import find_first_team_keycap
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
 # ── 编队识别：模块级常量与工具函数 ─────────────────────────────────────────
@@ -548,11 +551,13 @@ class BattleMixin(BaseEfTask):
 
         return raw_boxes, valid_features
 
-    def _match_team_slots(self, frame, search_boxes, valid_features) -> list[tuple[int, str, float]]:
+    def _match_team_slots(self, frame, search_boxes, valid_features, slot_indices=None) -> list[tuple[int, str, float]]:
         """为每个槽位匹配最高分且未被其他槽位使用的角色模板。"""
         matches = []
         used_features: set[str] = set()
         for slot_idx, slot_box in enumerate(search_boxes[:4]):
+            if slot_indices is not None and slot_idx not in slot_indices:
+                continue
             best_score = 0.0
             best_feature = None
             for feature_name in valid_features:
@@ -571,10 +576,14 @@ class BattleMixin(BaseEfTask):
 
         return matches
 
-    def _detect_team_core(self, frame=None) -> list[tuple[str, float, str]]:
+    def _detect_team_core(self, frame=None, slot_indices=None) -> list[tuple[str, float, str]]:
         """编队识别核心逻辑：返回四个槽位的 (en_name, score, feature_name)。"""
         if frame is None:
             frame = self.frame
+
+        if frame is None or getattr(frame, "size", 0) == 0:
+            return [("?", 0.0, "") for _ in range(4)]
+        hud = observe_squad_hud(frame, read_health=True)
 
         slot_results: list[tuple[str, float, str]] = [("?", 0.0, "") for _ in range(4)]
 
@@ -585,16 +594,90 @@ class BattleMixin(BaseEfTask):
         fh, fw = frame.shape[:2]
         search_boxes = self._build_search_boxes(raw_boxes, frame_width=fw, frame_height=fh)
         search_boxes.sort(key=lambda b: b.x)
+        # Hiding the medicine panel can move portraits 13px right at 1080p.
+        # Cover both layouts within each fixed slot, with one pixel for rounding.
+        right_padding = round(14 * min(fw / 1920, fh / 1080))
+        search_boxes = [
+            Box(box.x, box.y, min(box.width + right_padding, fw - box.x), box.height, name=box.name)
+            for box in search_boxes
+        ]
 
         if not search_boxes:
             return slot_results
 
-        for slot_idx, feature_name, score in self._match_team_slots(frame, search_boxes, valid_features):
+        visible_slots = {
+            index
+            for index in range(min(4, len(search_boxes)))
+            if (slot_indices is None or index in slot_indices) and (hud is None or not hud.slots[index].death_visible)
+        }
+        matches = self._match_team_slots(frame, search_boxes, valid_features, slot_indices=visible_slots)
+        for slot_idx, feature_name, score in matches:
             en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
             en_name = en_name.replace("battle_icon_", "")
             slot_results[slot_idx] = (en_name, score, feature_name)
 
+        if hud is not None:
+            hud = replace(
+                hud,
+                slots=tuple(
+                    replace(
+                        slot,
+                        occupied=slot.occupied or slot_results[index][0] != "?",
+                        uncertain=slot.uncertain and slot_results[index][0] == "?",
+                    )
+                    for index, slot in enumerate(hud.slots)
+                ),
+            )
+        self._last_squad_observation = hud
+        self._update_squad_hud(
+            hud,
+            frame,
+            names=[name for name, _, _ in slot_results],
+            read_health=True,
+            confirm_count=slot_indices is None,
+        )
+
         return slot_results
+
+    def _update_squad_hud(self, hud, frame, *, names=(), read_health=False, confirm_count=False):
+        state = getattr(self, "_squad_hud_state", None)
+        if state is None:
+            state = self._squad_hud_state = SquadHudState()
+        previous_dead = set(state.dead_slots)
+        state.update(hud, self.active_time(), frame, names, confirm_count=confirm_count)
+        self._squad_dead_slots = set(state.dead_slots)
+        if read_health and hud is not None:
+            self._battle_hp_fractions = tuple(
+                0.0 if index in state.dead_slots else (None if slot.death_visible else slot.hp_fraction)
+                for index, slot in enumerate(hud.slots)
+            )
+        else:
+            previous_hp = getattr(self, "_battle_hp_fractions", (None,) * 4)
+            self._battle_hp_fractions = tuple(
+                0.0 if index in state.dead_slots else (None if index in previous_dead else previous_hp[index])
+                for index in range(4)
+            )
+        return state
+
+    def observe_team_hud(self, *, read_health=False):
+        frame = getattr(self, "frame", None)
+        hud = observe_squad_hud(frame, read_health=read_health)
+        self._update_squad_hud(hud, frame, read_health=read_health)
+        return hud
+
+    def has_team_hud(self) -> bool | None:
+        """Cheap exit probe: occupied left slots, then portraits if structure is obscured.
+
+        It neither scans right-side keys nor changes the confirmed formation.
+        Invalid frames are unknown. Death placeholders count as visible HUD.
+        """
+        hud = self.observe_team_hud()
+        if hud is None:
+            return None
+        if hud.present:
+            return True
+        # A VFX can obscure the tiny bar endcaps while the portrait remains.
+        return any(name != "?" for name in self.detect_team())
 
     def detect_team(self, frame=None) -> list[str]:
         """从战斗帧识别当前队伍角色名（中文）。
@@ -619,6 +702,11 @@ class BattleMixin(BaseEfTask):
         name_map = _load_char_name_map()
 
         return [(name_map.get(en, en), score) for en, score, _ in slot_results]
+
+    def detect_team_slot(self, slot: int, frame=None) -> str:
+        """Match one fixed left-aligned portrait slot without scanning other slots."""
+        en_name, _, _ = self._detect_team_core(frame, slot_indices=(slot,))[slot]
+        return _load_char_name_map().get(en_name, en_name)
 
     # ── 切人图标：判定当前是第几个角色 ──────────────────────────────────────
 
@@ -645,6 +733,18 @@ class BattleMixin(BaseEfTask):
             )
         return boxes
 
+    def switch_main_control(self, slot: int) -> bool:
+        """Send a fixed F1..F4 handoff; the caller confirms it on a later frame."""
+        team = getattr(self, "_battle_team", None) or []
+        member_count = len(team) or getattr(self, "_battle_member_count", 0)
+        ignored = (getattr(self, "_battle_team_disabled_slots", set()) or set()) | (
+            getattr(self, "_squad_dead_slots", set()) or set()
+        )
+        if not 1 <= slot <= min(member_count, 4) or slot - 1 in ignored:
+            return False
+        self.send_key(f"f{slot}")
+        return True
+
     def detect_current_char_index(self, frame=None) -> int | None:
         """判定当前操作角色是编队第几个（0 起，未识别返回 None）。
 
@@ -670,6 +770,7 @@ class BattleMixin(BaseEfTask):
         interval: float = 0.2,
         confidence: int = 2,
         deadline: float | None = None,
+        member_count: int | None = None,
     ) -> tuple[list[str], bool]:
         """多帧稳定识别：连续 confidence 次识别出相同队伍才视为稳定。
 
@@ -680,12 +781,17 @@ class BattleMixin(BaseEfTask):
             interval:      每次采样间隔秒数
             confidence:    连续多少次相同结果视为稳定
             deadline:      可选截止时间戳（同 self.active_time() 单位），超时立即停止
+            member_count:  实际队伍人数；头像左对齐，只检查最左侧这些槽位
 
         Returns:
             (team, stable) 二元组
         """
         last_result: list[str] = []
         streak = 0
+        if member_count is None:
+            observed_count = getattr(self, "_battle_member_count", 0)
+            if 1 <= observed_count <= 4:
+                member_count = observed_count
 
         for i in range(max_attempts):
             if deadline is not None and self.active_time() >= deadline:
@@ -697,6 +803,8 @@ class BattleMixin(BaseEfTask):
                 continue
 
             current = self.detect_team(frame)
+            if member_count is not None:
+                current = current[:member_count]
 
             # 无效识别：空结果，或者全部都是 ?
             if not current or all(x == "?" for x in current):
@@ -732,7 +840,8 @@ class BattleMixin(BaseEfTask):
         因一个已经永久变成 "?" 的槽位每次都等到超时。
         """
         if require_four_unknown:
-            return bool(team) and len(team) == 4 and all(member == "?" for member in team)
+            member_count = len(battle_team) if battle_team else (getattr(self, "_battle_member_count", 0) or 4)
+            return bool(team) and len(team) == member_count and all(member == "?" for member in team)
         if not team or not battle_team or len(team) != len(battle_team):
             return False
         disabled = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
@@ -745,11 +854,11 @@ class BattleMixin(BaseEfTask):
         """记录队伍检测成功或超时的结果。"""
         if success:
             if require_four_unknown:
-                self.log_info(f"队伍稳定为 4 个未知角色: {team}")
+                self.log_info(f"队伍稳定为 {len(team)} 个未知角色: {team}")
             else:
                 self.log_info(f"队伍恢复确认: {team}")
         elif require_four_unknown:
-            self.log_info(f"等待队伍稳定为 4 个 '?' 超时（{time_out:.1f}秒）")
+            self.log_info(f"等待队伍头像全部暂不可见超时（{time_out:.1f}秒）")
         else:
             self.log_info(f"等待队伍恢复超时（{time_out:.1f}秒），目标队伍: {battle_team}")
 
@@ -760,7 +869,7 @@ class BattleMixin(BaseEfTask):
             等待队伍恢复为战斗开始时的完整队伍。
 
         require_four_unknown=True:
-            等待队伍连续两帧识别为 4 个 '?'。
+            等待实际队伍的所有头像连续两帧识别为 '?'，兼容 1～4 人队伍。
 
         超时返回 False。
         """
@@ -769,6 +878,7 @@ class BattleMixin(BaseEfTask):
         if not require_four_unknown and not battle_team:
             return False
 
+        member_count = len(battle_team) if battle_team else (getattr(self, "_battle_member_count", 0) or 4)
         start_time = self.active_time()
         matched_count = 0
 
@@ -779,7 +889,7 @@ class BattleMixin(BaseEfTask):
                 matched_count = 0
                 continue
 
-            team = self.detect_team(frame)
+            team = self.detect_team(frame)[:member_count]
             self.log_info(f"当前队伍角色: {team}")
 
             matched = self._is_detected_team_frame_matched(team, battle_team, require_four_unknown)
@@ -959,6 +1069,8 @@ class BattleMixin(BaseEfTask):
         # 先收集本帧全部上升沿，再做全屏闪光过滤
         confirmed = []
         for slot, region in enumerate(active_regions, start=1):
+            if slot - 1 in getattr(self, "_squad_dead_slots", set()):
+                continue
             label = str(region["label"])
             if detector.detect_ratio(frame_ratios[label], label):
                 confirmed.append((slot, region, label))
@@ -1014,57 +1126,87 @@ class BattleMixin(BaseEfTask):
         return self.get_skill_bar_count() >= required_yellow and self.in_team() and not self.ocr_lv()
 
     def in_team(self):
-        """
-        判断当前是否处于队伍状态。
-        """
+        """Entry count uses left slots first; right hints only resolve an unconfirmed entry."""
+        observer = getattr(self, "observe_team_hud", None)
+        hud = None
+        if callable(observer):
+            hud = observer()
+            state = self._squad_hud_state
+            team = getattr(self, "_battle_team", None) or []
+            if not team and not state.member_count and hud is not None:
+                if hud.count_candidate == 4:
+                    self._update_squad_hud(hud, self.frame, confirm_count=True)
+                else:
+                    # A faint last slot must not turn a four-person formation
+                    # into three. Check identities before committing a short count.
+                    self.detect_team()
+                    hud = getattr(self, "_last_squad_observation", hud)
+            count = len(team) or state.member_count
+            if hud is not None and hud.present and 1 <= count <= 4:
+                self._battle_member_count = count
+                return True
+            # An established formation must not shrink when a slot is hidden/dead.
+            if 1 <= count <= 4:
+                self._battle_member_count = count
+                return False
+        found = BattleMixin._detect_team_from_keys(self)
+        if callable(observer) and found:
+            if hud is not None and hud.count_candidate and hud.count_candidate != self._battle_member_count:
+                self._battle_member_count = 0
+                self._squad_hud_state.member_count = 0
+                return False
+            self._squad_hud_state.member_count = self._battle_member_count
+        return found
 
-        found_skills = 0
-        sequence_valid = False
-        skill_checks = []
+    def _detect_team_from_keys(self):
+        """Cross-check the first right-aligned keycap and digit 1; resolve conflicts by portraits."""
         boxes = self._battle_feature_boxes("skill")
-        for box_index, box in enumerate(boxes, start=1):
-            result = self.find_one(fL.skill_1, box=box)
-            match_position = f"({result.x},{result.y})" if result is not None else "-"
-            match_score = f"{result.confidence:.3f}" if result is not None else "-"
-            skill_checks.append(
-                f"skill_1->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
-                f"{'命中' if result is not None else '未命中'}@{match_position}, score={match_score}"
-            )
-            if result is None:
-                continue
+        if len(boxes) != 4:
+            self._battle_member_count = 0
+            return False
 
-            if box_index == len(boxes):
-                # skill_1 位于最后一个框时，表示单人队伍。
-                found_skills = 1
-                sequence_valid = True
+        first_keycap = find_first_team_keycap(getattr(self, "frame", None))
+        keycap_count = 4 - first_keycap if first_keycap is not None else 0
+        digit_count = 0
+        for index, box in enumerate(boxes):
+            if self.find_one("skill_1", box=box) is not None:
+                digit_count = 4 - index
                 break
 
-            matched_skills = 1
-            for skill_offset in range(1, len(boxes) - box_index + 1):
-                skill_number = skill_offset + 1
-                next_box = boxes[box_index + skill_offset - 1]
-                next_result = self.find_one(f"skill_{skill_number}", box=next_box)
-                next_position = f"({next_result.x},{next_result.y})" if next_result is not None else "-"
-                next_score = f"{next_result.confidence:.3f}" if next_result is not None else "-"
-                skill_checks.append(
-                    f"skill_{skill_number}->框{box_index + skill_offset}"
-                    f"({next_box.x},{next_box.y},{next_box.width},{next_box.height}) "
-                    f"{'命中' if next_result is not None else '未命中'}@{next_position}, "
-                    f"score={next_score}"
-                )
-                if next_result is not None:
-                    matched_skills += 1
-                    if matched_skills >= 2:
-                        # 起始框决定队伍人数；第二个技能模板命中后即可确认队伍状态。
-                        found_skills = len(boxes) - box_index + 1
-                        sequence_valid = True
-                        break
+        if keycap_count and keycap_count == digit_count:
+            self._battle_member_count = keycap_count
+            self.log_debug(f"队伍人数检测: {keycap_count} 人，首个按键与数字1位置一致")
+            return True
 
-            if sequence_valid:
-                break
-        self._battle_member_count = found_skills
-        self.log_debug(f"队伍人数检测: {found_skills} 人，检查结果: {'; '.join(skill_checks)}")
-        return sequence_valid and found_skills >= 1
+        max_count = max(keycap_count, digit_count)
+        battle_team = getattr(self, "_battle_team", None) or []
+        disabled_slots = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
+        if max_count:
+            if 1 <= len(battle_team) <= 4:
+                max_count = max(max_count, len(battle_team))
+            # Left portraits use slot count-1; right keys use slot 4-count.
+            # Confirm the formation boundary only: earlier missing portraits do
+            # not move slots, and must not defeat this short-circuit count probe.
+            for count in range(max_count, 0, -1):
+                slot = count - 1
+                if slot in disabled_slots and count <= len(battle_team):
+                    # A confirmed dead slot is still occupied in the original formation.
+                    continue
+                name = self.detect_team_slot(slot, frame=self.frame)
+                if name != "?":
+                    member_count = count
+                    if len(battle_team) > count and all(
+                        index in disabled_slots for index in range(count, len(battle_team))
+                    ):
+                        member_count = len(battle_team)
+                    self._battle_member_count = member_count
+                    self.log_debug(
+                        f"队伍人数检测: {member_count} 人，头像槽位{slot + 1}确认（按键={keycap_count}, 数字1={digit_count}）"
+                    )
+                    return True
+        self._battle_member_count = 0
+        self.log_debug(f"队伍人数检测: 未确认（按键={keycap_count}, 数字1={digit_count}）")
+        return False
 
     def _battle_feature_boxes(self, prefix: str):
         """按模板初始位置的 x 坐标返回四个独立搜索框。"""
@@ -1124,10 +1266,19 @@ class BattleMixin(BaseEfTask):
         member_count = int(getattr(self, "_battle_member_count", 0) or 0)
         if member_count < 1 or member_count > 4:
             return False
-        return all(bool(self._find_battle_ult(f"ult_{index}")) for index in range(1, member_count + 1))
+        live = [
+            index for index in range(1, member_count + 1) if index - 1 not in getattr(self, "_squad_dead_slots", set())
+        ]
+        return bool(live) and all(bool(self._find_battle_ult(f"ult_{index}")) for index in live)
 
     def _find_battle_ult(self, feature: str):
         """根据本次队伍人数，将终结技模板映射到实际技能框。"""
+        try:
+            slot = int(feature.rsplit("_", 1)[1]) - 1
+        except (ValueError, IndexError):
+            slot = -1
+        if slot in getattr(self, "_squad_dead_slots", set()):
+            return None
         boxes = self._battle_feature_boxes("ult")
         if len(boxes) != 4 or not self._battle_member_count:
             return self._find_battle_feature(feature)
@@ -1171,6 +1322,12 @@ class BattleMixin(BaseEfTask):
 
             if self.exit_check_count >= 2:
                 self.exit_check_count = 0
+                self._squad_hud_state = SquadHudState()
+                self._squad_dead_slots = set()
+                self._battle_hp_fractions = (None,) * 4
+                self._squad_hud_absent_since = None
+                self._battle_member_count = 0
+                self._battle_team = None
                 return True
         else:
             self.exit_check_count = 0
@@ -1186,8 +1343,7 @@ class BattleMixin(BaseEfTask):
             self.log_info("退出检查通过: 检测到结算模板 fL.b")
             return True
 
-        # 终结技释放后延迟退出检查：终结技动画期间 in_team 会返回 False，
-        # 需要等待动画结束、技能图标重新出现后再做退出判定。
+        # 终结技演出可能暂时隐藏左侧队伍 HUD，保留原来的保护窗口。
         last_ult_time = getattr(self, "_last_ult_release_time", 0)
         if last_ult_time > 0:
             elapsed = self.active_time() - last_ult_time
@@ -1195,15 +1351,25 @@ class BattleMixin(BaseEfTask):
                 self.log_debug(f"终结技释放后延迟退出检查（已过 {elapsed:.1f}s，需等待 {self.ULT_EXIT_DELAY:.1f}s）")
                 return False
 
-        # UI状态检测
-        has_lv = self.ocr_lv()
-        in_team = self.in_team()
+        # LV retains its original meaning: already outside combat, including
+        # when the squad still has visible portraits/death placeholders.
+        if self.ocr_lv():
+            self.log_info("退出检查通过: 检测到 LV")
+            self._squad_hud_absent_since = None
+            return True
 
-        if not (has_lv or not in_team):
+        present = self.has_team_hud()
+        if present is None or present:
+            self._squad_hud_absent_since = None
             return False
-
-        self.log_info(f"退出检查通过: has_lv={has_lv}, in_team={in_team},")
-
+        now = self.active_time()
+        absent_since = getattr(self, "_squad_hud_absent_since", None)
+        if absent_since is None:
+            self._squad_hud_absent_since = now
+            return False
+        if now - absent_since < 1.0:
+            return False
+        self.log_info("退出检查通过: 左侧队伍 HUD 持续消失")
         return True
 
     def ocr_lv(self):

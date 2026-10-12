@@ -212,9 +212,9 @@ class TestDependencyAwareOrdering(unittest.TestCase):
             ["提弗洛斯", "洁尔佩塔", "?", "?"],
         )
         value = entries["提弗洛斯"]["value"]
-        self.assertGreater(value, 103074.8)
-        self.assertLess(value, 129661.5)
-        self.assertAlmostEqual(value, (103074.8 + 129661.5) / 2, places=1)
+        self.assertGreater(value, 100448.3)
+        self.assertLess(value, 131990.1)
+        self.assertAlmostEqual(value, (100448.3 + 131990.1) / 2, places=1)
 
     def test_real_data_feeder_precedes_typhoeus(self):
         from src.data.character_capabilities import load_character_capabilities
@@ -517,7 +517,7 @@ class TestInitialBattleWait(unittest.TestCase):
         self.assertFalse(logic.protocol_space_detected)
 
     @patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic")
-    def test_timing_mode_receives_resolved_configured_wait(self, timed_logic):
+    def test_timing_mode_ignores_configured_initial_wait(self, timed_logic):
         from tests.TestConditionalRotation import _FakeTask
 
         task = _FakeTask(
@@ -531,13 +531,13 @@ class TestInitialBattleWait(unittest.TestCase):
 
         self.assertTrue(AutoCombatLogic(task).run())
         timed_logic.return_value.run.assert_called_once_with(
-            start_sleep=3.5,
+            start_sleep=None,
             no_battle=False,
             deadline=None,
         )
 
     @patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic")
-    def test_timing_mode_protocol_only_wait_skips_non_protocol_combat(self, timed_logic):
+    def test_timing_mode_ignores_protocol_only_initial_wait(self, timed_logic):
         from tests.TestConditionalRotation import _FakeTask
 
         task = _FakeTask(
@@ -553,7 +553,7 @@ class TestInitialBattleWait(unittest.TestCase):
 
         self.assertTrue(AutoCombatLogic(task).run())
         timed_logic.return_value.run.assert_called_once_with(
-            start_sleep=0.0,
+            start_sleep=None,
             no_battle=False,
             deadline=None,
         )

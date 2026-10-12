@@ -1,4 +1,56 @@
 {
+  "聚合工业": {
+    "item_id": "2502",
+    "type": "单手剑",
+    "rarity": 6,
+    "owner": "",
+    "acquire": "协议通行证·武器补给",
+    "release": "2026年10月15日",
+    "skills_summary": "意志提升；电磁伤害提升；迸发",
+    "base_attack": null,
+    "weapon_skills": [],
+    "recommended_operator_ids": [],
+    "recommended_matrix_ids": []
+  },
+  "唤月": {
+    "item_id": "2501",
+    "type": "单手剑",
+    "rarity": 6,
+    "owner": "",
+    "acquire": "武库交易所·限时特卖",
+    "release": "2026年11月5日",
+    "skills_summary": "意志提升；攻击提升；附术",
+    "base_attack": null,
+    "weapon_skills": [],
+    "recommended_operator_ids": [],
+    "recommended_matrix_ids": []
+  },
+  "悠久传承": {
+    "item_id": "2500",
+    "type": "双手剑",
+    "rarity": 6,
+    "owner": "",
+    "acquire": "协议通行证·武器补给",
+    "release": "2026年10月15日",
+    "skills_summary": "智识提升；寒冷伤害提升；效益",
+    "base_attack": null,
+    "weapon_skills": [],
+    "recommended_operator_ids": [],
+    "recommended_matrix_ids": []
+  },
+  "玉中身": {
+    "item_id": "2499",
+    "type": "双手剑",
+    "rarity": 6,
+    "owner": "",
+    "acquire": "武库交易所·限时特卖",
+    "release": "2026年10月15日",
+    "skills_summary": "智识提升；寒冷伤害提升；效益",
+    "base_attack": null,
+    "weapon_skills": [],
+    "recommended_operator_ids": [],
+    "recommended_matrix_ids": []
+  },
   "点心时刻": {
     "item_id": "2120",
     "type": "单手剑",
@@ -81,7 +133,9 @@
         }
       }
     ],
-    "recommended_operator_ids": [],
+    "recommended_operator_ids": [
+      "2117"
+    ],
     "recommended_matrix_ids": [
       "472"
     ]
@@ -168,7 +222,9 @@
         }
       }
     ],
-    "recommended_operator_ids": [],
+    "recommended_operator_ids": [
+      "2116"
+    ],
     "recommended_matrix_ids": [
       "474"
     ]
@@ -255,7 +311,9 @@
         }
       }
     ],
-    "recommended_operator_ids": [],
+    "recommended_operator_ids": [
+      "2116"
+    ],
     "recommended_matrix_ids": [
       "474"
     ]

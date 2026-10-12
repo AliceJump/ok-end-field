@@ -1200,6 +1200,10 @@
     "id" : 280,
     "name" : "main_char",
     "supercategory" : ""
+  }, {
+    "id" : 281,
+    "name" : "delivery_success_check",
+    "supercategory" : ""
   } ],
   "annotations" : [ {
     "id" : 1,
@@ -3160,6 +3164,13 @@
     "category_id" : 277,
     "bbox" : [ 1686, 925, 50, 48 ],
     "area" : 2400,
+    "iscrowd" : 0
+  }, {
+    "id" : 281,
+    "image_id" : 6,
+    "category_id" : 281,
+    "bbox" : [ 940, 143, 48, 37 ],
+    "area" : 1776,
     "iscrowd" : 0
   } ]
 }

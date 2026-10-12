@@ -957,6 +957,21 @@ class WorldMapModule(_LangModuleBaseT):
     k_xuesonglin: re.Pattern[str]
     """雪松林"""
 
+    amethyst_bottle: re.Pattern[str]
+    """紫晶质瓶"""
+
+    amethyst_part: re.Pattern[str]
+    """紫晶零件"""
+
+    xiranite: re.Pattern[str]
+    """息壤"""
+
+    cuprium_part: re.Pattern[str]
+    """赤铜零件"""
+
+    separator_core: re.Pattern[str]
+    """分离芯"""
+
 
 class ZipLineMixinModule(_LangModuleBaseT):
     """zip_line_mixin — OCR 语言节点（值取自 zh_CN）"""

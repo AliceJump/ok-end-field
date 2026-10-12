@@ -1,0 +1,93 @@
+[
+  {
+    "fixture": "two_alive.png",
+    "source": "screenshot_20261010_084459.png",
+    "source_width": 1920,
+    "source_height": 1080,
+    "source_sha256": "199df5c7cc9e602e2312aa55d635c5aae66ae7915a30fd2c2bab625e295583c6",
+    "canonical_crop": [
+      0,
+      900,
+      520,
+      107
+    ]
+  },
+  {
+    "fixture": "two_dead.png",
+    "source": "screenshot_20261010_085936.png",
+    "source_width": 1920,
+    "source_height": 1080,
+    "source_sha256": "14891dbcc2bde3e105723008fc795571495b3bc4c7739e24c2b7409ecb2e98ca",
+    "canonical_crop": [
+      0,
+      900,
+      520,
+      107
+    ]
+  },
+  {
+    "fixture": "four_two_markers.png",
+    "source": "screenshot_20261002_053815.png",
+    "source_width": 1920,
+    "source_height": 1080,
+    "source_sha256": "f3717f8f6e7b8135b40b784c0e17a4dcca410ca1cc94ea2e39055a8f6a173bdf",
+    "canonical_crop": [
+      0,
+      900,
+      520,
+      107
+    ]
+  },
+  {
+    "fixture": "four_one_dead.png",
+    "source": "screenshot_20261010_151614.png",
+    "source_width": 1920,
+    "source_height": 1080,
+    "source_sha256": "74bd173166b0c85d035b4c9e9e3315a73e21c6090cb7177680274258843910ee",
+    "canonical_crop": [
+      0,
+      900,
+      520,
+      107
+    ]
+  },
+  {
+    "fixture": "four_faded.png",
+    "source": "screenshot_20261010_151543.png",
+    "source_width": 1920,
+    "source_height": 1080,
+    "source_sha256": "2918c0d5345fc0b0c5e9ddf3e2c9bbade318b985b5c2acb48e4677ef44243b47",
+    "canonical_crop": [
+      0,
+      900,
+      520,
+      107
+    ]
+  },
+  {
+    "fixture": "three_alive.png",
+    "source": "48.png",
+    "source_width": 1920,
+    "source_height": 1080,
+    "source_sha256": "20fdce4b6dc0d9417c9cda7ae7a2f6d15c31aa528021d4c77e8e2c0de16da755",
+    "canonical_crop": [
+      0,
+      900,
+      520,
+      107
+    ]
+  },
+  {
+    "fixture": "four_4k.png",
+    "source": "f88b4522-Windows_Graphics_Capture_3840x2160_1769076859997.6775_original.png",
+    "source_width": 3840,
+    "source_height": 2160,
+    "source_sha256": "6f907ec085d7611081e50e5a5d0e9e6c6a46d721cae04daf06ee7888e6fe4ef0",
+    "canonical_crop": [
+      0,
+      900,
+      520,
+      107
+    ]
+  }
+]

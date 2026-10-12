@@ -24,12 +24,12 @@
       "生物辅助重甲",
       "生物辅助臂甲",
       "生物辅助接驳器·壹型",
-      null
+      "生物辅助接驳器·壹型"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "source": "官方装备页推荐 + ldcapple",
     "evidence_level": 1,
-    "note": "官方仅推荐 3 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+    "note": "官方三件补成接驳器·壹型×2，与 ldcapple 一致；EndSync 仅精选"
   }
 }

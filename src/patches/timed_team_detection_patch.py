@@ -69,6 +69,11 @@ def _observe_once(logic, channel: str, fallback, **kwargs):
         return ["?"], False
 
     team = detector(frame)
+    member_count = kwargs.get("member_count")
+    if member_count is None:
+        member_count = getattr(task, "_battle_member_count", None)
+    if member_count is not None and 1 <= member_count <= 4:
+        team = team[:member_count]
     tracker = getattr(logic, _STATE_ATTR, None)
     if tracker is None:
         tracker = _TimedTeamStability()

@@ -10,7 +10,7 @@ Use `$use-local-venv` for Python and the standard/focused test entry points. Ski
 ## Commit and PR
 
 1. Before committing, opening, updating, or restacking a PR, load `$pr-scope-responsibility` and review the proposed diff against the PR title/description. Perform this check before publishing the PR, not only after CodeRabbit comments. If the correct disposition is `Extract a boundary` or `Split prerequisite/follow-up`, restructure the change first. Do not knowingly publish a PR that is expected to fail the repository responsibility/scope review guardrails.
-2. Inspect `git status --short --branch`, working and staged diffs. Keep unrelated user changes out of the commit. Run focused verification and the standard suite when the change warrants it.
+2. Inspect `git status --short --branch`, working and staged diffs. Keep unrelated user changes out of the commit. Run focused verification and the standard suite when the change warrants it. For added, renamed, or deleted `tests/Test*.py` files, also complete the [CI responsibility group checks](../use-local-venv/SKILL.md#ci-responsibility-groups) before committing or pushing.
 3. Never commit tokens, passwords, PEM/private keys, credential exports, or secret-bearing config. Use recent commit language and a suitable prefix such as `fix:`, `feat:`, `docs:`, `refactor:`, or `ci:`.
 4. Remote `master` is locked. Fetch `origin`, branch from `origin/master`, and rebase before pushing if behind. Land code through a PR; one PR should cover one responsibility. Never push code commits directly to `master`.
 5. For a persisted task config key, value format, or owning-task change, load `$ok-config-migration` before changing defaults or running the app.

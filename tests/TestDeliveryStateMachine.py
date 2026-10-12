@@ -30,10 +30,13 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task._delivery_target_coordinate = None
         task._delivery_stage = "未开始"
         task._delivery_failure_recorded = False
+        task._delivery_cargo_in_transit = False
+        task._delivery_failure_requires_abort = False
         task.logs = []
         task.log_info = lambda message, **_kwargs: task.logs.append(("info", message))
         task.log_warning = lambda message, **_kwargs: task.logs.append(("warning", message))
         task.mark_task_failure = lambda message, **_kwargs: task.logs.append(("failure", message))
+        task.info_set = lambda key, value: task.logs.append(("stage", f"{key}={value}"))
         return task
 
     def test_arrival_mode_defaults_to_legacy(self):
@@ -114,7 +117,7 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task.board_zip_line = lambda: calls.append(("board", None)) or True
         task.zip_line_scroll_enabled = lambda: False
         task.on_zip_line_start = lambda end, **kwargs: calls.append(("ride", end, kwargs))
-        task.to_end_and_submit = lambda pattern: calls.append(("submit", pattern)) or True
+        task.to_end_and_submit = lambda pattern, **_kwargs: calls.append(("submit", pattern)) or True
 
         self.assertTrue(task._run_grid_delivery_state_machine({target_pattern: "常沄"}))
         self.assertEqual(calls[-3][0], "board")
@@ -129,7 +132,7 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task._recognize_delivery_end = lambda patterns: ("常沄", target_pattern)
         task.board_zip_line = lambda: False
         task.on_zip_line_start = lambda *args, **kwargs: self.fail("boarding failed, must not start zip line")
-        task.to_end_and_submit = lambda pattern: self.fail("boarding failed, must not submit")
+        task.to_end_and_submit = lambda pattern, **_kwargs: self.fail("boarding failed, must not submit")
 
         self.assertFalse(task._run_grid_delivery_state_machine({target_pattern: "常沄"}))
 
@@ -148,7 +151,7 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task.wait_click_ocr = lambda **_kwargs: True
         task.zip_line_scroll_enabled = lambda: False
         task.on_zip_line_start = lambda end, **kwargs: calls.append(("ride", end))
-        task.to_end_and_submit = lambda pattern: calls.append(("submit", pattern)) or False
+        task.to_end_and_submit = lambda pattern, **_kwargs: calls.append(("submit", pattern)) or False
 
         self.assertFalse(task._run_legacy_delivery_leg({first: "常沄", second: "资源"}))
         self.assertEqual(calls, [("ride", "常沄"), ("submit", first)])
@@ -161,7 +164,7 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task.to_storage_point_and_back_zip_line = lambda: True
         task.wait_ocr = lambda **_kwargs: [SimpleNamespace(name="别的目标")]
         task.wait_click_ocr = lambda **_kwargs: True
-        task.to_end_and_submit = lambda pattern: self.fail("unmatched target must not be submitted")
+        task.to_end_and_submit = lambda pattern, **_kwargs: self.fail("unmatched target must not be submitted")
 
         self.assertFalse(task._run_legacy_delivery_leg({target_pattern: "常沄"}))
 
