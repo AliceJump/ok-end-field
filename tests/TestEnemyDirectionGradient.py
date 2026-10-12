@@ -162,12 +162,16 @@ class TestEnemyDirectionGradient(unittest.TestCase):
 
     def test_near_tail_levels_remain_when_far_evidence_is_weak(self):
         frame = _blank_frame()
-        _draw_direction_arc(frame, -135.0, 1.0, (35, 35, 255), thickness=16)
-        for scale in (1.03, 1.05, 1.07):
-            _draw_direction_arc(frame, -135.0, scale, (55, 55, 70), thickness=12)
+        # Both shapes have near tails but no red at 1.09/1.11. The weaker arc's
+        # brighter near tail must not override the stronger ring-score fallback.
+        for angle, arc_red, tail_red in ((180.0, 255, 90), (45.0, 230, 140)):
+            _draw_direction_arc(frame, angle, 1.0, (35, 35, arc_red), thickness=16)
+            for scale in (1.03, 1.05, 1.07):
+                _draw_direction_arc(frame, angle, scale, (55, 55, tail_red), thickness=4)
         observation = probe_enemy_direction_fast(frame)
         self.assertIsNotNone(observation)
-        self.assertAlmostEqual(observation.angle_deg, -135.0, delta=3.0)
+        self.assertEqual(len(observation.markers), 2)
+        self.assertAlmostEqual(abs(observation.angle_deg), 180.0, delta=3.0)
 
 
 if __name__ == "__main__":

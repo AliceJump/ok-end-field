@@ -175,8 +175,13 @@ def _outward_gradient_evidence(
     baseline = np.mean(inner, axis=(1, 2))
     adjusted = np.maximum(np.mean(outer, axis=2) - baseline[:, None], 0.0)
     support = np.count_nonzero(adjusted >= _GRADIENT_MIN_SAMPLE_RED, axis=1)
+    far_support = np.any(adjusted[:, -2:] >= _GRADIENT_MIN_SAMPLE_RED, axis=1)
     evidence = np.mean(adjusted[:, :3], axis=1)
-    return np.where((support >= _GRADIENT_MIN_SUPPORT_SAMPLES) & (evidence >= _GRADIENT_MIN_EVIDENCE), evidence, 0.0)
+    return np.where(
+        (support >= _GRADIENT_MIN_SUPPORT_SAMPLES) & far_support & (evidence >= _GRADIENT_MIN_EVIDENCE),
+        evidence,
+        0.0,
+    )
 
 
 def _circular_smooth(profile: np.ndarray) -> np.ndarray:
