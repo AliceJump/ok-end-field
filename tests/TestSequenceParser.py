@@ -10,11 +10,21 @@ from src.data.endaxis_timeline import (
     parse_endaxis_rotation_spec,
     parse_endaxis_scenarios,
 )
+from src.patches.endaxis_rotation_patch import install_endaxis_rotation_patch
+from src.tasks.mixin.battle_mixin import BattleMixin
 
 
 def _endaxis_share_code(payload: dict) -> str:
     raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     return base64.urlsafe_b64encode(gzip.compress(raw)).decode("ascii").rstrip("=")
+
+
+class _RotationParserTask:
+    def __init__(self):
+        self.messages = []
+
+    def log_info(self, message, **kwargs):
+        self.messages.append(message)
 
 
 class TestSequenceParser(unittest.TestCase):
@@ -121,6 +131,13 @@ class TestSequenceParser(unittest.TestCase):
         code = _endaxis_share_code({"scenarioList": []})
         with self.assertRaises(EndAxisTimelineError):
             endaxis_spec_to_rotation_tokens(f"endaxis[missing]:{code}")
+
+    def test_installed_rotation_wrapper_keeps_invalid_endaxis_fail_closed(self):
+        install_endaxis_rotation_patch()
+        task = _RotationParserTask()
+
+        self.assertEqual(BattleMixin._parse_skill_sequence(task, "endaxis:"), [])
+        self.assertTrue(any("本轮固定排轴禁用" in message for message in task.messages))
 
 
 if __name__ == "__main__":
