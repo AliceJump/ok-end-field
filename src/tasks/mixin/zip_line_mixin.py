@@ -17,6 +17,19 @@ from src.image.hsv_config import HSVRange as hR
 from src.interaction.Mouse import calc_direction_step
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_mixin import NavigationMixin
+from src.tasks.mixin.zip_line_motion_cache import (
+    build_zip_line_route_fingerprint,
+    load_zip_line_segment_motion,
+    record_zip_line_segment_motion,
+)
+from src.tasks.mixin.zip_line_yaw_cache import (
+    build_zip_line_motion_route_fingerprint,
+    load_arrow_turn_motion,
+    load_zip_line_segment_anchor,
+    record_arrow_turn_motion,
+    record_zip_line_segment_anchor,
+)
+
 
 _ZIP_LINE_ICON_TEMPLATE_ROWS = (
     "....................",
@@ -62,6 +75,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     _ZIP_LINE_ELLIPSE_RY = 405
     _ZIP_LINE_INNER_RADIUS = 0.5
     _ZIP_LINE_OUTER_MAX_BOOST = 1.75
+    _ZIP_LINE_ARROW_MIN_SCORE = 0.60
+    _ZIP_LINE_ARROW_TOLERANCE = 3.0
+    _ZIP_LINE_ARROW_MAX_STEP_DEGREES = 30.0
+    _ZIP_LINE_ARROW_MAX_STEPS = 6
+    _ZIP_LINE_ARROW_YAW_PER_MOUSE = -0.083
+    _ZIP_LINE_ARROW_SETTLE_DELAY = 0.08
 
     @property
     def zip_line_config(self):
@@ -73,12 +92,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         说明文本通过 self.tr() 走 ok 的 gettext i18n（msgid 写入 ok.po，编译成 ok.mo 生效）。
         由 InstructionsMixin 延迟构建并追加到任务原有说明之后，使用滑索的任务无需在 __init__ 里显式调用。
         """
-        # 键名从滑索配置数据动态读取，不硬编码；显示时经 self.tr() 跟随 UI 语言翻译
         start_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if k.startswith("通向")]
         target_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if not k.startswith("通向")]
         gather_keys_raw = ZIP_LINE_GATHER_KEYS
 
-        # 例子动态取第一个送货目标及其配置值（查配置用原始键名，显示用翻译后键名）
         example_key_raw = target_keys_raw[0] if target_keys_raw else (start_keys_raw[0] if start_keys_raw else "")
         example_raw = str(self.zip_line_config.get(example_key_raw, "") or "").strip()
         example_seq = " → ".join(f"{n}m" for n in example_raw.split(",") if str(n).strip())
@@ -118,9 +135,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     def get_zip_line_config_value(self, key, default=None):
         base_value = self.zip_line_config.get(key, default)
         override = self._account_override_for(ZIP_LINE_CONFIG_NAME)
-        if key not in override:
-            return base_value
-        return self._coerce_override_value(base_value, override[key])
+        value = base_value if key not in override else self._coerce_override_value(base_value, override[key])
+        if key != ZIP_LINE_SCROLL_KEY:
+            try:
+                route_values = tuple(parse_int_sequence(value))
+            except Exception:
+                route_values = ()
+            self._pending_zip_line_motion_route = (str(key), route_values)
+        return value
 
     def zip_line_scroll_enabled(self):
         return self.get_zip_line_config_value(ZIP_LINE_SCROLL_KEY, False)
@@ -150,7 +172,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 raise Exception("滑索超时，强制退出")
         zip_line_list_str = self.get_zip_line_config_value(delivery_to)
         zip_line_list = parse_int_sequence(zip_line_list_str)
-        self.zip_line_list_go(zip_line_list, need_scroll, target, need_v=need_v, stay_on_zip_line=stay_on_zip_line)
+        self.zip_line_list_go(
+            zip_line_list, need_scroll, target, need_v=need_v,
+            stay_on_zip_line=stay_on_zip_line, config_key=delivery_to,
+        )
 
     @staticmethod
     def _zip_line_distance_pattern(zip_line):
@@ -329,7 +354,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     f"accepted_delta={len(candidates) - candidate_count_before}"
                 )
 
-        # 白色候选优先于黄色/金黄色；同色候选优先转动更少、匹配更高的目标。
         candidates.sort(key=lambda item: (0 if item["state"] == "white" else 1, item["radius"], -item["score"]))
         if callable(log_info):
             summary = ", ".join(
@@ -492,8 +516,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         deadline=None,
         max_iterations=None,
         ocr_target_detector=None,
+        ocr_target_mover=None,
     ):
-        """保留原始全局 OCR 对中，并在单次 helper 调用中共享截止时间与迭代预算。"""
+        """统一模板/全屏 OCR 对中入口，并允许调用方观察实际鼠标位移。"""
 
         def align_once(helper_max_time, helper_raise_if_fail, helper_deadline=None, helper_max_iterations=None):
             return self.align_ocr_or_find_target_to_center(
@@ -510,7 +535,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 deadline=helper_deadline,
                 max_iterations=helper_max_iterations,
                 ocr_target_detector=ocr_target_detector,
-                ocr_target_mover=self._move_to_zip_line_target,
+                ocr_target_mover=ocr_target_mover or self._move_to_zip_line_target,
             )
 
         if deadline is None and max_iterations is None:
@@ -538,28 +563,70 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         max_time=100,
         raise_if_fail=True,
         deadline=None,
+        initial_move=None,
+        on_success_motion=None,
     ):
-        """每轮优先模板 OCR，连续 miss 后补充全屏 OCR，命中模板即恢复快速路径。"""
-        misses = 0
+        """先应用历史位移，再让模板与 OCR fallback 共用同一个可观测移动闭环。"""
         if max_time <= 0 or (deadline is not None and self.active_time() >= deadline):
             return self._zip_line_alignment_failed(raise_if_fail)
+
+        motion_total_dx = 0
+        motion_total_dy = 0
+        if initial_move is not None:
+            try:
+                prefeed_dx = int(initial_move[0])
+                prefeed_dy = int(initial_move[1])
+            except (TypeError, ValueError, IndexError, OverflowError):
+                prefeed_dx = 0
+                prefeed_dy = 0
+            if prefeed_dx or prefeed_dy:
+                if self.active_and_send_mouse_delta(
+                    dx=prefeed_dx,
+                    dy=prefeed_dy,
+                    activate=True,
+                    steps=5,
+                ):
+                    motion_total_dx += prefeed_dx
+                    motion_total_dy += prefeed_dy
+                    self.log_info(
+                        f"[zipline-motion-cache] target={zip_line} prefeed "
+                        f"move=({prefeed_dx},{prefeed_dy})"
+                    )
+                    self.sleep(0.01)
+
+        def move_and_track(target):
+            nonlocal motion_total_dx, motion_total_dy
+            move_dx, move_dy = self._move_to_zip_line_target(target)
+            motion_total_dx += int(move_dx)
+            motion_total_dy += int(move_dy)
+            return move_dx, move_dy
+
+        misses = 0
+        history_complete = True
         pattern = self._zip_line_distance_pattern(zip_line)
         processors = [self.make_hsv_isolator(hR.GOLD_TEXT), self.make_hsv_isolator(hR.WHITE)]
 
         def detect_target(frame):
-            nonlocal misses
+            nonlocal misses, history_complete
             matched = self._find_zip_line_template_target(zip_line, frame)
             if matched is None:
                 misses += 1
                 if misses < self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
                     return None
+                history_complete = False
                 if misses == self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
-                    self.log_info(f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，本轮回退全屏OCR，后续继续尝试模板")
+                    self.log_info(
+                        f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，"
+                        "本轮回退全屏OCR，后续继续尝试模板"
+                    )
                 for processor in processors:
                     if deadline is not None and self.active_time() >= deadline:
                         return None
                     result = self.ocr(
-                        match=pattern, frame=frame, log=True, frame_processor=processor,
+                        match=pattern,
+                        frame=frame,
+                        log=True,
+                        frame_processor=processor,
                     )
                     if result:
                         target = copy(result[0])
@@ -578,7 +645,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             move_target.height = candidate["height"]
             return move_target
 
-        return self._align_zip_line_distance_ocr(
+        result = self._align_zip_line_distance_ocr(
             zip_line,
             need_scroll=need_scroll,
             tolerance=tolerance,
@@ -587,9 +654,17 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             deadline=deadline,
             max_iterations=max_time * 2,
             ocr_target_detector=detect_target,
+            ocr_target_mover=move_and_track,
         )
+        if result and history_complete and callable(on_success_motion) and (motion_total_dx or motion_total_dy):
+            try:
+                on_success_motion(motion_total_dx, motion_total_dy)
+            except Exception as e:
+                self.log_info(f"[zipline-motion-cache] record failed: {e}")
+        return result
 
     def _zip_line_stop_state(self):
+        """Return the OCR patterns and screen box used to detect the riding state."""
         return (
             [
                 self.lang.zip_line_mixin.k_2f4f4a2f,
@@ -609,7 +684,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         self.click(after_sleep=0.1)
         for _ in range(max_attempts):
-            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
+            self.send_key("e")
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True, None
         return False, "interaction"
@@ -619,24 +694,261 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         stop_match, stop_box = self._zip_line_stop_state()
         for _ in range(max_attempts):
             self.click(after_sleep=0.1)
-            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
+            self.send_key("e")
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True
         return False
 
-    def zip_line_list_go(self, zip_line_list, need_scroll=None, target=None, need_v=False, stay_on_zip_line=False):
-        """按顺序对齐滑索并执行滑行
+    def _zip_line_motion_route_fingerprint(self, zip_line_list, config_key=None):
+        """Resolve the exact config key + full list identity for motion reuse."""
+        route_values = tuple(int(value) for value in zip_line_list)
+        if config_key is None:
+            pending = getattr(self, "_pending_zip_line_motion_route", None)
+            if pending and pending[1] == route_values:
+                config_key = pending[0]
+        self._pending_zip_line_motion_route = None
+        return build_zip_line_route_fingerprint(config_key, route_values)
 
-        Args:
-            zip_line_list: 滑索距离列表
-            need_scroll: 是否需要滚动
-            target: 目标信息，包含名称和类型(例如：("登上滑索架", "ocr"))
-            need_v: 是否需要按V键追踪
-            stay_on_zip_line: 到达后不下滑索、不对齐导航目标
+    @staticmethod
+    def _zip_line_angle_delta(target_yaw, current_yaw):
+        """Return the shortest signed yaw delta in (-180, 180]."""
+        return (float(target_yaw) - float(current_yaw) + 180.0) % 360.0 - 180.0
 
+    def _read_zip_line_arrow_angle(self):
+        """Read the minimap arrow without low-score smoothing so stale yaw cannot pass the gate."""
+        try:
+            angle, score = self.get_arrow_angle(
+                two_stage=True,
+                benchmark_width=2560,
+                smoothing_threshold=None,
+            )
+            angle = float(angle)
+            score = 0.0 if score is None else float(score)
+        except Exception as e:
+            self.log_info(f"[zipline-yaw] read failed: {e}")
+            return None
+
+        if not math.isfinite(angle) or not math.isfinite(score):
+            return None
+        return angle % 360.0, score
+
+    def _send_zip_line_yaw_delta(self, dx):
+        try:
+            return bool(
+                self.active_and_send_mouse_delta(
+                    dx=int(dx),
+                    dy=0,
+                    activate=True,
+                    steps=1,
+                    delay=0,
+                )
+            )
+        except Exception as e:
+            self.log_info(f"[zipline-yaw] mouse move failed dx={dx}: {e}")
+            return False
+
+    def _normalize_zip_line_segment_yaw(self, route_fingerprint, segment_index):
+        """Normalize one segment to its learned entry yaw before route motion reuse.
+
+        The first reliable visit stores an anchor only. Later visits may reuse a
+        same-resolution/yaw-bucket horizontal turn, otherwise they use the existing
+        -0.083 deg/raw-unit calibration in <=30 degree verified steps. Any failed
+        verification rolls back the net horizontal input and disables history for
+        this segment so the ordinary visual aligner remains authoritative.
         """
-        for zip_line in zip_line_list:
-            self._align_zip_line_distance(zip_line, need_scroll=need_scroll, tolerance=50)
+        if not route_fingerprint:
+            return None, False
+
+        width = int(getattr(self, "width", 0) or 0)
+        height = int(getattr(self, "height", 0) or 0)
+        reading = self._read_zip_line_arrow_angle()
+        if reading is None:
+            self.log_info(
+                f"[zipline-yaw] segment={segment_index + 1} no reliable arrow reading; history disabled"
+            )
+            return None, False
+
+        current_yaw, score = reading
+        if score < self._ZIP_LINE_ARROW_MIN_SCORE:
+            self.log_info(
+                f"[zipline-yaw] segment={segment_index + 1} score={score:.3f} "
+                f"< {self._ZIP_LINE_ARROW_MIN_SCORE:.2f}; history disabled"
+            )
+            return None, False
+
+        anchor_yaw = load_zip_line_segment_anchor(
+            route_fingerprint,
+            segment_index,
+            width,
+            height,
+        )
+        if anchor_yaw is None:
+            if not record_zip_line_segment_anchor(
+                route_fingerprint,
+                segment_index,
+                width,
+                height,
+                current_yaw,
+            ):
+                self.log_info(f"[zipline-yaw] segment={segment_index + 1} anchor record failed")
+                return None, False
+            self.log_info(
+                f"[zipline-yaw] segment={segment_index + 1} size={width}x{height} "
+                f"anchor learned={current_yaw:.1f} score={score:.3f}"
+            )
+            return current_yaw, True
+
+        initial_yaw = current_yaw
+        error = abs(self._zip_line_angle_delta(anchor_yaw, current_yaw))
+        if error <= self._ZIP_LINE_ARROW_TOLERANCE:
+            self.log_info(
+                f"[zipline-yaw] segment={segment_index + 1} already aligned "
+                f"current={current_yaw:.1f} anchor={anchor_yaw:.1f} error={error:.1f}"
+            )
+            return anchor_yaw, True
+
+        total_dx = 0
+        hint = load_arrow_turn_motion(width, height, current_yaw, anchor_yaw)
+        if hint is not None:
+            hint_dx, hint_samples = hint
+            if self._send_zip_line_yaw_delta(hint_dx):
+                total_dx += hint_dx
+                self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
+                reading = self._read_zip_line_arrow_angle()
+                if reading is None or reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
+                    self._send_zip_line_yaw_delta(-total_dx)
+                    self.log_info(
+                        f"[zipline-yaw] segment={segment_index + 1} cached turn verification failed; rolled back"
+                    )
+                    return anchor_yaw, False
+                next_yaw, next_score = reading
+                next_error = abs(self._zip_line_angle_delta(anchor_yaw, next_yaw))
+                self.log_info(
+                    f"[zipline-yaw] segment={segment_index + 1} cached turn samples={hint_samples} "
+                    f"dx={hint_dx} yaw={current_yaw:.1f}->{next_yaw:.1f} "
+                    f"error={error:.1f}->{next_error:.1f}"
+                )
+                if next_error >= error - 0.5:
+                    self._send_zip_line_yaw_delta(-total_dx)
+                    self.log_info(
+                        f"[zipline-yaw] segment={segment_index + 1} cached turn did not improve; rolled back"
+                    )
+                    return anchor_yaw, False
+                current_yaw = next_yaw
+                score = next_score
+                error = next_error
+
+        for _ in range(self._ZIP_LINE_ARROW_MAX_STEPS):
+            if error <= self._ZIP_LINE_ARROW_TOLERANCE:
+                break
+            desired_delta = self._zip_line_angle_delta(anchor_yaw, current_yaw)
+            step_degrees = max(
+                -self._ZIP_LINE_ARROW_MAX_STEP_DEGREES,
+                min(self._ZIP_LINE_ARROW_MAX_STEP_DEGREES, desired_delta),
+            )
+            move_dx = int(round(step_degrees / self._ZIP_LINE_ARROW_YAW_PER_MOUSE))
+            if move_dx == 0 or not self._send_zip_line_yaw_delta(move_dx):
+                break
+
+            total_dx += move_dx
+            previous_error = error
+            self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
+            reading = self._read_zip_line_arrow_angle()
+            if reading is None or reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
+                break
+
+            next_yaw, score = reading
+            error = abs(self._zip_line_angle_delta(anchor_yaw, next_yaw))
+            self.log_info(
+                f"[zipline-yaw] segment={segment_index + 1} calibrated step dx={move_dx} "
+                f"yaw={current_yaw:.1f}->{next_yaw:.1f} error={previous_error:.1f}->{error:.1f}"
+            )
+            current_yaw = next_yaw
+            if error >= previous_error - 0.5:
+                break
+
+        if error > self._ZIP_LINE_ARROW_TOLERANCE:
+            if total_dx:
+                self._send_zip_line_yaw_delta(-total_dx)
+            self.log_info(
+                f"[zipline-yaw] segment={segment_index + 1} normalize failed "
+                f"anchor={anchor_yaw:.1f} error={error:.1f}; history disabled"
+            )
+            return anchor_yaw, False
+
+        if total_dx:
+            record_arrow_turn_motion(width, height, initial_yaw, anchor_yaw, total_dx)
+        self.log_info(
+            f"[zipline-yaw] segment={segment_index + 1} normalized "
+            f"{initial_yaw:.1f}->{current_yaw:.1f} anchor={anchor_yaw:.1f} dx={total_dx}"
+        )
+        return anchor_yaw, True
+
+    def zip_line_list_go(
+        self, zip_line_list, need_scroll=None, target=None, need_v=False, stay_on_zip_line=False, config_key=None,
+    ):
+        """按顺序对齐滑索并执行滑行；历史位移要求路线、段号、尺寸和标准 yaw 全部一致。"""
+        route_fingerprint = self._zip_line_motion_route_fingerprint(zip_line_list, config_key=config_key)
+        for segment_index, zip_line in enumerate(zip_line_list):
+            initial_move = None
+            on_success_motion = None
+            motion_route_fingerprint = None
+            anchor_yaw = None
+            yaw_ready = False
+            if route_fingerprint:
+                anchor_yaw, yaw_ready = self._normalize_zip_line_segment_yaw(
+                    route_fingerprint,
+                    segment_index,
+                )
+                if yaw_ready and anchor_yaw is not None:
+                    motion_route_fingerprint = build_zip_line_motion_route_fingerprint(
+                        route_fingerprint,
+                        self.width,
+                        self.height,
+                        anchor_yaw,
+                    )
+
+            if motion_route_fingerprint:
+                hint = load_zip_line_segment_motion(motion_route_fingerprint, segment_index)
+                if hint is not None:
+                    hint_dx, hint_dy, hint_samples = hint
+                    initial_move = (hint_dx, hint_dy)
+                    self.log_info(
+                        f"[zipline-motion-cache] segment={segment_index + 1}/{len(zip_line_list)} "
+                        f"target={zip_line} size={self.width}x{self.height} yaw={anchor_yaw:.1f} "
+                        f"samples={hint_samples} initial=({hint_dx},{hint_dy})"
+                    )
+
+                def record_motion(
+                    total_dx,
+                    total_dy,
+                    *,
+                    _segment_index=segment_index,
+                    _zip_line=zip_line,
+                    _motion_route_fingerprint=motion_route_fingerprint,
+                    _anchor_yaw=anchor_yaw,
+                ):
+                    if record_zip_line_segment_motion(
+                        _motion_route_fingerprint,
+                        _segment_index,
+                        total_dx,
+                        total_dy,
+                    ):
+                        self.log_info(
+                            f"[zipline-motion-cache] segment={_segment_index + 1}/{len(zip_line_list)} "
+                            f"target={_zip_line} size={self.width}x{self.height} yaw={_anchor_yaw:.1f} "
+                            f"learned=({total_dx},{total_dy})"
+                        )
+
+                on_success_motion = record_motion
+
+            self._align_zip_line_distance(
+                zip_line,
+                need_scroll=need_scroll,
+                tolerance=50,
+                initial_move=initial_move,
+                on_success_motion=on_success_motion,
+            )
             self.log_info(f"成功将滑索调整到{zip_line}的中心")
 
             gate_retry_start = self.active_time()
@@ -684,7 +996,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             start = self.active_time()
             while True:
                 self.next_frame()
-                self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
+                self.send_key("e")
                 self.sleep(0.1)
                 result = self.ocr(
                     match=[
@@ -727,7 +1039,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     ),
                     passes=1,
                     duration=0.1,
-                    keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
+                    keys=("s", "w", "a", "d"),
                 )
                 if result:
                     self.press_key("v", after_sleep=1)
