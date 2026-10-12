@@ -159,6 +159,12 @@ jobs:
         run: |
           python -u scripts/testing/run_ci_test_group.py --group navigation-zipline
 
+      - name: Tests · Minimap localization
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group localization-minimap
+
       - name: Tests · Vision and models
         if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
         timeout-minutes: 5
@@ -176,6 +182,12 @@ jobs:
         timeout-minutes: 5
         run: |
           python -u scripts/testing/run_ci_test_group.py --group runtime-platform
+
+      - name: Tests · Runtime state bus
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group runtime-state
 
       - name: Tests · Localization and release
         if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
