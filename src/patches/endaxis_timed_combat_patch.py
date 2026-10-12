@@ -20,6 +20,7 @@ from src.data.endaxis_timeline import (
 
 KEY_TIMING_ENDAXIS = "EndAxis排轴"
 _PATCH_INSTALLED = False
+_CONFIG_INSTALLED = False
 _EPSILON = 1e-6
 
 
@@ -203,8 +204,12 @@ def _step_endaxis(logic) -> None:
     logic.task.log_warning(f"EndAxis 时间排轴不支持动作类型 {action.kind!r}")
 
 
-def _install_config_entry() -> None:
-    """Expose a timed-mode-only EndAxis input without sharing legacy parents."""
+def install_endaxis_timed_config() -> None:
+    """Register the timed EndAxis field before BattleMixin/global config import."""
+    global _CONFIG_INSTALLED
+    if _CONFIG_INSTALLED:
+        return
+
     from src.core.BattleConfig import (
         BATTLE_CONFIG_DESCRIPTION,
         BATTLE_CONFIG_TYPE,
@@ -223,6 +228,7 @@ def _install_config_entry() -> None:
     true_children = BATTLE_CONFIG_TYPE[KEY_TIMING_ROTATION].setdefault("sub_configs", {}).setdefault(True, [])
     if KEY_TIMING_ENDAXIS not in true_children:
         true_children.append(KEY_TIMING_ENDAXIS)
+    _CONFIG_INSTALLED = True
 
 
 def install_endaxis_timed_combat_patch() -> None:
@@ -231,7 +237,7 @@ def install_endaxis_timed_combat_patch() -> None:
     if _PATCH_INSTALLED:
         return
 
-    _install_config_entry()
+    install_endaxis_timed_config()
 
     from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
