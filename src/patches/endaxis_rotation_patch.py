@@ -5,7 +5,7 @@ Syntax:
     endaxis[scenario-id-or-name]:<share-code>
 
 The patch is intentionally narrow: it only adapts the existing fixed-rotation
-parser.  Runtime execution, skill readiness, combat exit, and all ordinary OKEF
+parser. Runtime execution, skill readiness, combat exit, and all ordinary OKEF
 rotation strings continue through the original BattleMixin implementation.
 """
 
@@ -14,6 +14,10 @@ from __future__ import annotations
 from src.data.endaxis_timeline import EndAxisTimelineError, endaxis_spec_to_rotation_tokens
 
 _PATCH_INSTALLED = False
+_HELP_TEXT = (
+    "\n也可直接粘贴 EndAxis 数据码：endaxis:<数据码>；"
+    "多场景时可用 endaxis[场景ID或名称]:<数据码>。"
+)
 
 
 def install_endaxis_rotation_patch() -> None:
@@ -21,7 +25,12 @@ def install_endaxis_rotation_patch() -> None:
     if _PATCH_INSTALLED:
         return
 
+    from src.core.BattleConfig import BATTLE_CONFIG_DESCRIPTION, KEY_ROTATION_SEQUENCE
     from src.tasks.mixin.battle_mixin import BattleMixin
+
+    description = BATTLE_CONFIG_DESCRIPTION.get(KEY_ROTATION_SEQUENCE, "")
+    if _HELP_TEXT not in description:
+        BATTLE_CONFIG_DESCRIPTION[KEY_ROTATION_SEQUENCE] = description + _HELP_TEXT
 
     original = BattleMixin._parse_skill_sequence
     if getattr(original, "_endaxis_rotation_wrapped", False):
