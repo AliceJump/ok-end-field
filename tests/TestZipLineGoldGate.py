@@ -188,7 +188,8 @@ class TestZipLineGoldGate(unittest.TestCase):
     def _alignment_stub():
         now = [0.0]
         stub = SimpleNamespace(
-            width=1920, height=1080,
+            width=1920,
+            height=1080,
             _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
             scale_distance=lambda value: value,
             screen_center=lambda: (960, 540),
@@ -198,20 +199,29 @@ class TestZipLineGoldGate(unittest.TestCase):
             _find_zip_line_template_target=Mock(return_value=None),
             _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
             make_hsv_isolator=Mock(side_effect=lambda value: value),
-            ocr=Mock(return_value=[]), log_info=Mock(), do_scroll=Mock(),
-            _move_to_zip_line_target=Mock(), move_to_target_once=Mock(),
+            ocr=Mock(return_value=[]),
+            log_info=Mock(),
+            do_scroll=Mock(),
+            _move_to_zip_line_target=Mock(),
+            move_to_target_once=Mock(),
             active_and_send_mouse_delta=Mock(),
         )
         stub.sleep = lambda duration: now.__setitem__(0, now[0] + duration)
-        stub.align_ocr_or_find_target_to_center = lambda *args, **kwargs: NavigationMixin.align_ocr_or_find_target_to_center(stub, *args, **kwargs)
+        stub.align_ocr_or_find_target_to_center = lambda *args, **kwargs: (
+            NavigationMixin.align_ocr_or_find_target_to_center(stub, *args, **kwargs)
+        )
         stub._zip_line_alignment_failed = ZipLineMixin._zip_line_alignment_failed
-        stub._align_zip_line_distance_ocr = lambda *args, **kwargs: ZipLineMixin._align_zip_line_distance_ocr(stub, *args, **kwargs)
+        stub._align_zip_line_distance_ocr = lambda *args, **kwargs: ZipLineMixin._align_zip_line_distance_ocr(
+            stub, *args, **kwargs
+        )
         return stub
 
     @staticmethod
     def _matched_icon(x=960, y=540):
-        return ({"x": x - 10, "y": y - 10, "width": 20, "height": 20},
-                SimpleNamespace(x=x - 10, y=y - 10 + int(1080 * (39 / 1080)), width=20, height=20))
+        return (
+            {"x": x - 10, "y": y - 10, "width": 20, "height": 20},
+            SimpleNamespace(x=x - 10, y=y - 10 + int(1080 * (39 / 1080)), width=20, height=20),
+        )
 
     def test_template_alignment_falls_back_after_three_consecutive_misses(self):
         stub = self._alignment_stub()
@@ -239,7 +249,15 @@ class TestZipLineGoldGate(unittest.TestCase):
 
     def test_template_hit_resets_consecutive_miss_counter(self):
         stub = self._alignment_stub()
-        stub._find_zip_line_template_target.side_effect = [None, None, None, self._matched_icon(1400), None, None, self._matched_icon()]
+        stub._find_zip_line_template_target.side_effect = [
+            None,
+            None,
+            None,
+            self._matched_icon(1400),
+            None,
+            None,
+            self._matched_icon(),
+        ]
         stub.ocr.return_value = [self._matched_icon(1400)[1]]
         self.assertEqual(ZipLineMixin._align_zip_line_distance(stub, 64), (960, 540))
         self.assertEqual(stub.ocr.call_count, 1)
@@ -294,8 +312,9 @@ class TestZipLineGoldGate(unittest.TestCase):
         for result in results:
             result[0].y -= int(1080 * (39 / 1080))
         stub.find_feature = Mock(side_effect=results)
-        NavigationMixin.align_ocr_or_find_target_to_center(stub, "icon", ocr=False, max_time=1,
-                                                       ocr_target_detector=detector, ocr_target_mover=mover)
+        NavigationMixin.align_ocr_or_find_target_to_center(
+            stub, "icon", ocr=False, max_time=1, ocr_target_detector=detector, ocr_target_mover=mover
+        )
         detector.assert_not_called()
         mover.assert_not_called()
         stub.move_to_target_once.assert_called_once()

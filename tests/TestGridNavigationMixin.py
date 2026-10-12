@@ -11,7 +11,7 @@ import numpy as np
 from src.data.FeatureList import FeatureList as fL
 from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 from src.localization.minimap_position_mixin import MinimapPositionMixin
-from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta, save_grid
+from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, GRID_SUFFIX, DenseGrid, GridMeta, new_grid, save_grid
 from src.nav.grid_planner import PlanResult, ZipLineRouteStep
 from src.nav.nav_state import NavState, SyncReason
 from src.nav.route_follower import (
@@ -1633,6 +1633,58 @@ class TestGridNavigationStateTable(unittest.TestCase):
             module._GRID_NAV_TAIL_STATES,
             frozenset(module._GRID_NAV_ACTION_STATES.values()) - {NavState.REPLAN, NavState.ZIP_LINE},
         )
+
+
+class TestGridDirExcludesLayeredMeshes(unittest.TestCase):
+    """``load_grid_for_map`` 只能挑**主图**，不能把分层网格当整张地图载入。
+
+    回归：glob ``{map_id}_*`` 会同时匹配 ``{map_id}__{tier}_{zoom}``，而分层网格的
+    ``meta.map_name`` 也正是 ``map_id``——光靠 meta 校验拦不住。一旦被当主图选中，规划器
+    会把那个几十格的小矩形当整张地图（实测 tips_7 只有 94x194），起终点多半判成"界外"，
+    表现为莫名其妙的"找不到通路"，而日志里显示的是加载成功。
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        # 主图 4x4，分层网格 2x2（小得多，选错一眼能看出来）
+        save_grid(
+            self.root / f"map02_4{GRID_SUFFIX}",
+            new_grid((4, 4), map_name="map02", zoom="4"),
+        )
+        save_grid(
+            self.root / f"map02__scene_map02_lv005_layer_tips_7_4{GRID_SUFFIX}",
+            new_grid((2, 2), map_name="map02", zoom="4", tier="scene_map02_lv005_layer_tips_7"),
+        )
+        self.task = _FakeGridTask(self.root / f"map02_4{GRID_SUFFIX}")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _load(self, **kwargs):
+        # 关掉显式文件，走按目录发现的分支
+        self.task.config[CONFIG_GRID_FILE] = ""
+        return self.task.load_grid_for_map("map02", grid_dir=str(self.root), **kwargs)
+
+    def test_picks_the_main_grid_not_a_tier_mesh(self):
+        grid = self._load()
+        self.assertIsNotNone(grid)
+        self.assertEqual(grid.shape, (4, 4), "选中了分层网格（2x2）而不是主图")
+        self.assertEqual(grid.meta.tier, "", "主图的 tier 必须是空串")
+
+    def test_layered_file_alone_is_not_a_candidate(self):
+        """只有分层网格、没有主图时应当报"未找到"，而不是拿分层网格顶上。"""
+        (self.root / f"map02_4{GRID_SUFFIX}").unlink()
+        self.assertIsNone(self._load())
+
+    def test_meta_tier_is_also_rejected_when_filename_looks_plain(self):
+        """双保险：文件名不带 ``__``、但 meta 声明了 tier 的，同样不算主图。"""
+        (self.root / f"map02_4{GRID_SUFFIX}").unlink()
+        save_grid(
+            self.root / f"map02_9{GRID_SUFFIX}",
+            new_grid((3, 3), map_name="map02", zoom="9", tier="some_tier"),
+        )
+        self.assertIsNone(self._load(), "meta.tier 非空的不该被当主图")
 
 
 if __name__ == "__main__":

@@ -43,7 +43,9 @@ __all__ = [
     "GridMeta",
     "load_grid",
     "new_grid",
+    "region_contains",
     "save_grid",
+    "validate_floor_regions",
 ]
 
 #: 单值枚举：一格只有一个状态
@@ -67,6 +69,80 @@ AXIS_CONVENTION = (
 DIRS4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
 DIRS8 = (*DIRS4, (1, 1), (1, -1), (-1, 1), (-1, -1))
 
+#: 一条高度区间会涉及的字段；缺一不可
+_FLOOR_REGION_FIELDS = ("x0", "x1", "z0", "z1", "y_min", "y_max")
+
+
+def validate_floor_regions(raw) -> tuple[dict, ...]:
+    """校验并归一化 ``floor_regions``，返回元组；``None`` 归一成空元组。
+
+    规则与 nav-grid-editor 的 ``_normalize_floor_regions`` 一致——两边对同一份数据必须
+    得出同样的结论，否则我们这边"能走的层"和编辑器"标好的层"会对不上：
+
+    - 六个范围字段缺一不可、必须是有限数，且 ``x0<=x1``、``z0<=z1``、``y_min<=y_max``；
+    - ``component_id`` 可选（非空才保留）；
+    - ``cells`` 可选，每项是 ``[x0,x1,z0,z1]``，同样要求最小不大于最大。
+    """
+    if raw is None:
+        return ()
+    if not isinstance(raw, (list, tuple)):
+        raise ValueError("floor_regions 必须是数组")
+    out = []
+    for index, item in enumerate(raw):
+        if not isinstance(item, dict):
+            raise ValueError(f"floor_regions[{index}] 必须是对象")
+        try:
+            values = [float(item[name]) for name in _FLOOR_REGION_FIELDS]
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"floor_regions[{index}] 需要 {'/'.join(_FLOOR_REGION_FIELDS)}") from exc
+        if not all(math.isfinite(value) for value in values):
+            raise ValueError(f"floor_regions[{index}] 含有非有限数")
+        x0, x1, z0, z1, y_min, y_max = values
+        if x0 > x1 or z0 > z1 or y_min > y_max:
+            raise ValueError(f"floor_regions[{index}] 的最小值不能大于最大值")
+        region = dict(zip(_FLOOR_REGION_FIELDS, values, strict=True))
+        component_id = str(item.get("component_id") or "").strip()
+        if component_id:
+            region["component_id"] = component_id
+        raw_cells = item.get("cells")
+        if raw_cells is not None:
+            if not isinstance(raw_cells, (list, tuple)):
+                raise ValueError(f"floor_regions[{index}].cells 必须是数组")
+            cells = []
+            for cell in raw_cells:
+                if not isinstance(cell, (list, tuple)) or len(cell) != 4:
+                    raise ValueError(f"floor_regions[{index}].cells 每项应为 [x0,x1,z0,z1]")
+                try:
+                    cell_values = [float(value) for value in cell]
+                except (TypeError, ValueError, OverflowError) as exc:
+                    raise ValueError(f"floor_regions[{index}].cells 含有非法数字") from exc
+                if not all(math.isfinite(value) for value in cell_values):
+                    raise ValueError(f"floor_regions[{index}].cells 含有非有限数")
+                if cell_values[0] > cell_values[1] or cell_values[2] > cell_values[3]:
+                    raise ValueError(f"floor_regions[{index}].cells 的最小值不能大于最大值")
+                cells.append(cell_values)
+            if cells:
+                region["cells"] = cells
+        out.append(region)
+    return tuple(out)
+
+
+def region_contains(region: dict, x: float, y: float, z: float) -> bool:
+    """判断三维点是否落在一条高度区间内（闭区间）。
+
+    ``cells`` 非空时**先要求 X/Z 命中其中某一格**再判外框——只判外框会把两格之间的
+    空隙也算进去，那正是这些逐格矩形存在的意义。语义与 nav-grid-editor 的
+    ``_region_contains`` 逐条对应。
+    """
+    cells = region.get("cells")
+    if cells and not any(cell[0] <= x <= cell[1] and cell[2] <= z <= cell[3] for cell in cells):
+        return False
+    return (
+        region["x0"] <= x <= region["x1"]
+        and region["z0"] <= z <= region["z1"]
+        and region["y_min"] <= y <= region["y_max"]
+    )
+
 
 @dataclass
 class GridMeta:
@@ -77,14 +153,39 @@ class GridMeta:
     #: 数组下标 (0,0) 那格最小角的世界坐标
     origin: tuple[float, float, float] = (0.0, 0.0, 0.0)
     cell_size: float = 1.0
+    #: 分层 id；空串表示主图（大地图）。同一 ``map_name`` 下主图与各分层是各自独立的网格，
+    #: 相邻关系只在层内成立，跨层只能走 ``links.json`` 的显式边（见 ``docs/dev/分层导航.md``）。
+    tier: str = ""
+    #: 该层的高度区间（消歧用）：``{x0,x1,z0,z1,y_min,y_max}``，可带 ``component_id`` 与
+    #: ``cells``。**只用于**把三维坐标解析到层，不参与逐格可走判定——它是稀疏标注，
+    #: 拿它过滤会让整张图变不可走。
+    floor_regions: tuple[dict, ...] = ()
     axis_convention: str = AXIS_CONVENTION
     source: str = ""
     created: str = ""
+    #: ``floor_regions`` 非法时的原因；为空表示没出错。非法区间被丢弃而不是让加载失败。
+    floor_regions_error: str = ""
+    #: 本类不认识的 meta 键，原样保留以便回写（见 :meth:`to_dict`）
+    extra: dict | None = None
     #: 由读写层维护，调用方不用管
     magic: str = GRID_MAGIC
     schema_version: int = SCHEMA_VERSION
 
     def __post_init__(self):
+        # 归一化后再校验：调用方传 list / 带空 cells 的区间时，存下来的也是规范形状，
+        # 不必让下游各自再处理一遍。
+        #
+        # 非法区间**不让整个网格加载失败**：``floor_regions`` 是可选元数据，一段写坏的
+        # 区间只应让该层按"没有区间"处理（层判定随之退化），不该把整张网格也一起废掉。
+        # 契约见 nav-grid-editor 的 ``tests/data/floor_rule_vectors.json`` 用例
+        # 「某层区间非法时按『没有区间』处理」。原因记在 :attr:`floor_regions_error`。
+        try:
+            self.floor_regions = validate_floor_regions(self.floor_regions)
+            if not self.floor_regions_error:
+                self.floor_regions_error = ""
+        except ValueError as exc:
+            self.floor_regions = ()
+            self.floor_regions_error = str(exc)
         self.validate()
 
     def validate(self) -> None:
@@ -96,8 +197,17 @@ class GridMeta:
             raise ValueError(f"cell_size 必须为有限正数，当前 {self.cell_size!r}")
 
     def to_dict(self) -> dict:
-        """返回可直接 JSON 序列化的元数据副本。"""
-        return {f.name: getattr(self, f.name) for f in fields(self)}
+        """返回可直接 JSON 序列化的元数据副本。
+
+        先铺**未知键**再覆盖已知字段：这份 meta 是编辑器与消费方共用的，编辑器将来
+        新增的键不能因为我们只认识自己的字段就在回写时被悄悄丢掉——``floor_regions``
+        一旦丢掉，层判定会静默失效（变成"所有层都没标过高度"），而且不报错。
+        """
+        data = dict(self.extra or {})
+        data.update(
+            {f.name: getattr(self, f.name) for f in fields(self) if f.name not in ("extra", "floor_regions_error")}
+        )
+        return data
 
     def to_json(self) -> str:
         """序列化为 UTF-8 JSON；中文溯源字段不转义。"""
@@ -120,6 +230,8 @@ class GridMeta:
                 f"网格结构版本不匹配（文件 {version}，当前 {SCHEMA_VERSION}）：请用配套版本的编辑器重新导出"
             )
         meta = cls()
+        known = {f.name for f in fields(cls)} - {"extra"}
+        meta.extra = {str(key): value for key, value in data.items() if key not in known}
         try:
             meta.map_name = str(data.get("map_name") or "")
             meta.zoom = str(data.get("zoom") or "")
@@ -128,6 +240,10 @@ class GridMeta:
             raw_cell = data.get("cell_size")
             # 注意别用 `or` 兜底：cell_size=0 是非法值，要被下面的校验挡下，不能被换成 1.0
             meta.cell_size = 1.0 if raw_cell is None else float(raw_cell)
+            # tier / floor_regions 是分层地图新增的可选字段：旧文件没有，读进来就是
+            # 主图 + 无高度区间，行为与分层功能上线前完全一致。
+            meta.tier = str(data.get("tier") or "")
+            meta.floor_regions = validate_floor_regions(data.get("floor_regions"))
             meta.axis_convention = str(data.get("axis_convention") or AXIS_CONVENTION)
             meta.source = str(data.get("source") or "")
             meta.created = str(data.get("created") or "")
@@ -367,9 +483,11 @@ def new_grid(
     cell_size: float = 1.0,
     map_name: str = "",
     zoom: str = "",
+    tier: str = "",
+    floor_regions=(),
     fill: int = CELL_UNKNOWN,
 ) -> DenseGrid:
-    """建一张全 ``fill`` 的空网格。"""
+    """建一张全 ``fill`` 的空网格。``tier`` 留空即主图。"""
     if int(fill) not in _VALID_STATES:
         raise ValueError(f"fill 必须是 {sorted(_VALID_STATES)}")
     height, width = int(shape[0]), int(shape[1])
@@ -378,6 +496,8 @@ def new_grid(
         zoom=zoom,
         origin=(float(origin[0]), float(origin[1]), float(origin[2])),
         cell_size=float(cell_size),
+        tier=str(tier or ""),
+        floor_regions=floor_regions,
         source="new",
     )
     return DenseGrid(np.full((height, width), int(fill), dtype=np.uint8), meta)

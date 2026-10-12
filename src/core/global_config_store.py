@@ -24,7 +24,7 @@ from src.core.BattleConfig import (
     infer_legacy_combat_mode,
 )
 from src.core.config_migration import copy_migrated_config_keys
-from src.core.GridNavConfig import GRID_NAV_CONFIG_KEYS
+from src.core.GridNavConfig import CONFIG_GRID_DIR, GRID_NAV_CONFIG_KEYS
 from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
     NAV_CONFIG_DESCRIPTION,
@@ -222,6 +222,10 @@ MINIMAP_LEGACY_SOURCE_TASKS = frozenset(
 )
 _ZIP_LINE_ACCOUNT_MIGRATION_MARKER = "zip_line_account_overrides_v1"
 _NAV_LEGACY_BACKUP_MARKER = "nav_legacy_task_config_backup_v1"
+#: 「网格目录」的旧默认值。网格数据源已从主仓自带的 ``assets/nav`` 换成 nav-grid-editor
+#: 的产出（``assets/nav-grid-data``，子模块）；旧目录里的三张单层网格已删除，所以存量
+#: 配置里若还写着旧默认，必须一并改掉——否则导航会报"网格目录不存在"。
+_NAV_LEGACY_GRID_DIR = "assets/nav"
 _ZIP_LINE_KEY_MIGRATIONS = {
     # 历史任务配置中的固定键名，保留明确映射以确保迁移稳定。
     "通向送货点": "通向武陵城送货点",
@@ -393,6 +397,26 @@ def _migrate_legacy_zip_line_account_overrides() -> None:
     update_overrides(apply)
 
 
+def _migrate_nav_grid_dir_value() -> None:
+    """把存量「网格目录」从旧默认 ``assets/nav`` 改到当前默认。
+
+    **只在存量值仍等于旧默认时才改**：用户自己指定过目录的（自定义路径、网络盘等）
+    一律保留——把用户的选择覆盖成默认值比不改更糟。
+
+    独立于迁移标记执行（与真值 content 的兜底迁移同理）：标记可能早在旧版本就写过了，
+    挂在标记后面会让升级用户永远拿不到这次修正。
+    """
+    config_file = config_path(f"{NAV_CONFIG_NAME}.json")
+    config = read_json_file(config_file)
+    if not isinstance(config, dict):
+        return
+    new_default = DEFAULT_NAV_CONFIG.get(CONFIG_GRID_DIR)
+    if not new_default or config.get(CONFIG_GRID_DIR) != _NAV_LEGACY_GRID_DIR:
+        return
+    config[CONFIG_GRID_DIR] = new_default
+    write_json_file(config_file, config)
+
+
 def _migrate_key_names_in_file(option_name: str, migrations: dict[str, str], defaults: dict[str, Any]) -> None:
     """文件级键名迁移：旧键值复制到新键，旧键保留（回滚安全）。
 
@@ -492,6 +516,8 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     # Nav Config 的迁移标记可能已经由旧版新配置代码写入；真值 source 的
     # 兜底迁移必须独立于标记执行，否则升级用户会永久丢失 content/账号。
     if option.name == NAV_CONFIG_NAME:
+        # 网格目录换过默认值，且旧目录已随本次改动删除：存量值必须跟着改，否则导航起不来
+        _migrate_nav_grid_dir_value()
         config_file = config_path(f"{option.name}.json")
         config = read_json_file(config_file)
         if not isinstance(config, dict):

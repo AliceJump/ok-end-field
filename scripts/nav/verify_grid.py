@@ -195,25 +195,59 @@ def report_cells(cells: np.ndarray, meta: dict, rep: Report) -> None:
     _report_connectivity(cells, rep)
 
 
-def _report_connectivity(cells: np.ndarray, rep: Report) -> None:
-    """可行走 / 规划器可达 两个口径的连通性（都用规划器真实的邻域规则）。
+#: 可行走判据的**唯一来源**。所有派生量（连通块、孤点）都必须走 :func:`_walk_masks`，
+#: 禁止再内联"什么叫可走"——同一个判据内联两遍就必然漂移。
+#:
+#: 这轮踩到的正是这个：连通块统计把「节点认 Free」和「守卫只查非阻挡」混成一组用，
+#: 于是斜边能借一个"节点不算可走、但守卫放行"的未知正交格把两片并起来，块数被**低估**。
+#: 实测 base01 报 5 块（真值 8）、map02 报 11 块（真值 12），与编辑器同一处偏差。
+POLICY_NO_UNKNOWN = "no_unknown"
+POLICY_ALLOW_UNKNOWN = "allow_unknown"
 
-    关键：``neighbors`` 返回的是**非阻挡**格，也就是"可行走 ∪ 未知"都算能走
-    （未知由代价模型 ×5 加价）。所以只按"可行走"算块数会**低估** A* 的失败率：
+#: 策略 -> 显示名；与 ``GridPlanner(allow_unknown=...)`` 一一对应。
+#: 「不冒险即可达」= allow_unknown=False（产品默认）；「可行走 U 未知」= allow_unknown=True。
+POLICY_LABELS = {
+    POLICY_NO_UNKNOWN: "可行走（不冒险即可达）",
+    POLICY_ALLOW_UNKNOWN: "规划器可达（可行走∪未知）",
+}
 
-    - **可行走连通块**（不冒险即可达）：衡量"采集到的轨迹连不连续"，是数据质量问题；
-    - **规划器可达连通块**（可行走 ∪ 未知）：A* 真正能到哪；**跨这些块才必然失败**
-      （隔的是阻挡，冒险也过不去）。
 
-    两者的邻域规则一致：八连通，且斜向时两条正交邻格必须**非阻挡**
-    （与 ``grid_io.neighbors`` 禁斜穿墙角同规则）。
+def _walk_masks(cells: np.ndarray, policy: str) -> tuple[np.ndarray, np.ndarray]:
+    """按策略给出 ``(节点判据, 守卫判据)``。
+
+    **两者必须同源。** 带守卫的八连通与四连通给出相同的连通块划分，前提就是守卫用的是
+    与节点完全相同的判据：允许斜走时 ``(i+di,j)`` 与 ``(i+di,j+dj)`` 正交相邻，而它们
+    本身都算"可走"。若节点认 Free、守卫却只查"非阻挡"，斜边就能借一个未知正交格并块，
+    恒等式失效、块数偏少。
+
+    ``POLICY_NO_UNKNOWN`` 对应 ``GridPlanner(allow_unknown=False)``，也是产品默认——
+    未知格视同阻挡，斜角也不许切。
     """
-    blocked = cells == 2
-    free_mask = cells == 1
-    passable_mask = cells != 2
+    if policy == POLICY_NO_UNKNOWN:
+        mask = cells == 1
+    elif policy == POLICY_ALLOW_UNKNOWN:
+        mask = cells != 2
+    else:
+        raise ValueError(f"未知的可走策略: {policy!r}")
+    return mask, mask
+
+
+def _report_connectivity(cells: np.ndarray, rep: Report) -> None:
+    """按两档可走策略各报一次连通性，两档都对应规划器的真实行为。
+
+    - **可行走（不冒险）**：``GridPlanner(allow_unknown=False)``，也是**产品默认**。
+      衡量"采集到的轨迹连不连续"，是数据质量问题；
+    - **规划器可达（允许穿越未知格）**：``allow_unknown=True`` 时 A* 能到哪；未知格按
+      代价 ×5 加价但可通行，所以这一档往往连通得多。
+
+    两档的判据都由 :func:`_walk_masks` 给出，且**节点与守卫同源**——这是"带守卫的八连通
+    与四连通划分相同"这条恒等式的前提，也正是本工具早先与规划器报数不同的原因。
+    """
     parts: dict[str, list[int]] = {}
-    for label, mask in (("可行走（不冒险即可达）", free_mask), ("规划器可达（可行走∪未知）", passable_mask)):
-        mask_count = int(mask.sum())
+    for policy in (POLICY_NO_UNKNOWN, POLICY_ALLOW_UNKNOWN):
+        node_mask, guard_mask = _walk_masks(cells, policy)
+        label = POLICY_LABELS[policy]
+        mask_count = int(node_mask.sum())
         if mask_count == 0:
             parts[label] = []
             rep.info(f"{label}：0 块")
@@ -221,14 +255,14 @@ def _report_connectivity(cells: np.ndarray, rep: Report) -> None:
         if mask_count > 200_000:
             rep.info(f"{label}：{mask_count} 格，数量过大，跳过连通性检查")
             continue
-        sizes = _components(mask, blocked)
+        sizes = _components(node_mask, guard_mask)
         parts[label] = sizes
         rep.info(
             f"{label}：{len(sizes)} 块（大小 {sizes[:8]}{'…' if len(sizes) > 8 else ''}），"
             f"最大占比 {sizes[0] / mask_count * 100:.1f}%"
         )
 
-    reachable = parts.get("规划器可达（可行走∪未知）")
+    reachable = parts.get(f"规划器可达（{POLICY_LABELS[POLICY_ALLOW_UNKNOWN]}）")
     if reachable and len(reachable) > 1:
         rep.warn(f"规划器可达域分成 {len(reachable)} 块：跨块导航必然失败（隔的是阻挡，允许冒险也过不去）")
 
@@ -266,6 +300,35 @@ def _single_cell_facts(cells: np.ndarray) -> dict:
     - ``free_walled``：可行走格，界内八邻全是阻挡 —— 真被围住；
     - ``free_lonely``：可行走格，界内没有可行走邻居 —— 孤立（多半是邻域没标全）；
     - ``unknown_walled``：未知格，界内八邻全是阻挡 —— 被墙围死的未探明小空间（非人为）。
+
+    **与图论块数的关系（方向别读反）**：
+
+    ``free_walled`` 与 ``free_lonely`` **互斥**（后者已 ``& ~walled`` 排除，同一格不该被
+    两条提示各报一次），但两者**并集** ⊆ 图论单格块。
+
+    判据上的包含是必然的：八邻全阻挡 ⇒ 没有可行走邻居 ⇒ 必然是单格块。所以图论块数是
+    **最大**的那个，多出来的部分正是"对角有可通行格、而角上被挡"这种**我们自己造的孤立**
+    （禁斜穿规则的产物）。
+
+    推论：**块数不能当"有多少格不连通"读**，它高估孤立；判断某格是不是误点要用这里的
+    格子级事实。
+
+    **单格块的精确分解（逐例成立的恒等式）**：
+
+    ``单格块数 = 真被困数 + 孤立数 + 假孤立数``
+
+    每个单格块里的那格必然没有可行走邻居（否则块会更大），于是它要么八邻全阻挡
+    （记入 ``free_walled``）、要么只有未知/阻挡邻居（记入 ``free_lonely``）、要么
+    只靠**对角**的可行走邻居相连（两正交格被挡）——最后这类既不 walled 也不 lonely，
+    就是**假孤立**，禁斜穿规则的产物。
+
+    由此得到一个可证的等价（而不是数据巧合）：
+
+    ``单格块数 == 被困数 + 孤立数``  ⟺  ``假孤立数 == 0``
+
+    注意左边**要带上被困数**：写成"单格块数 == 孤立数"是另一回事，它额外要求被困数也为 0。
+    实测 base01 是 ``2 == 0 + 2``（无假孤立）、``o#``/``#o`` 是 ``2 != 0 + 0``（两格互为
+    对角可行走邻居，纯假孤立）——所以"相等"是数据性质，但"相等 ⟺ 无假孤立"是定理。
     """
     h, w = cells.shape
     blocked = cells == 2
@@ -293,16 +356,19 @@ def _single_cell_facts(cells: np.ndarray) -> dict:
     return {k: [tuple(int(v) for v in p) for p in ps] for k, ps in out.items()}
 
 
-def _components(mask: np.ndarray, blocked: np.ndarray) -> list[int]:
+def _components(node_mask: np.ndarray, guard_mask: np.ndarray) -> list[int]:
     """按规划器的邻域规则标连通块，返回各块大小（降序）。
 
-    规则与 ``grid_io.DenseGrid.neighbors`` 一致：八连通；斜向时两条正交邻格
-    必须非阻挡；越界视为阻挡。这样"规划器可达"那一栏就是 A* 的真实可达域。
+    八连通；斜向时两条正交邻格必须在 ``guard_mask`` 里；越界视为不可走。
+
+    ``guard_mask`` **必须与 ``node_mask`` 同源**（用 :func:`_walk_masks` 取）：两者不一致
+    时斜边会借一个"节点不算可走、守卫却放行"的正交格并块，报出的块数比规划器实际看到的
+    少。参数分开只为让这条约束看得见，不是为了支持不同取值。
     """
-    h, w = mask.shape
-    seen = np.zeros_like(mask)
+    h, w = node_mask.shape
+    seen = np.zeros_like(node_mask)
     sizes: list[int] = []
-    for start_i, start_j in np.argwhere(mask):
+    for start_i, start_j in np.argwhere(node_mask):
         if seen[start_i, start_j]:
             continue
         stack = [(int(start_i), int(start_j))]
@@ -318,10 +384,10 @@ def _components(mask: np.ndarray, blocked: np.ndarray) -> list[int]:
                     ni, nj = i + di, j + dj
                     if not (0 <= ni < h and 0 <= nj < w):
                         continue
-                    if seen[ni, nj] or not mask[ni, nj]:
+                    if seen[ni, nj] or not node_mask[ni, nj]:
                         continue
-                    if di and dj and (blocked[i + di, j] or blocked[i, j + dj]):
-                        continue  # 禁斜穿墙角，与规划器一致
+                    if di and dj and (not guard_mask[i + di, j] or not guard_mask[i, j + dj]):
+                        continue  # 禁斜穿墙角；判据与节点同源，见 _walk_masks
                     seen[ni, nj] = True
                     stack.append((ni, nj))
         sizes.append(size)

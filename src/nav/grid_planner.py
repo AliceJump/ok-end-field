@@ -25,7 +25,7 @@
     from src.nav import load_grid
     from src.nav.grid_planner import GridPlanner
 
-    grid = load_grid("assets/nav/base01_4.grid.npz")
+    grid = load_grid("assets/nav-grid-data/base01_4.grid.npz")
     planner = GridPlanner(grid, margin=2)
     result = planner.plan((-40.0, -30.0), (60.0, 68.0))
 
@@ -417,6 +417,145 @@ class GridPlanner:
             goal_cell=goal_cell,
             notes=notes,
         )
+
+    def plan_multi(
+        self,
+        start_cells,
+        goal_cells,
+        *,
+        time_budget_s: float | None = None,
+    ) -> PlanResult:
+        """在一**组**起点格与一**组**终点格之间规划，取全局最近的一对。
+
+        分层导航需要它：``links.json`` 的端点是一个**区域**（实测覆盖 2~14 格），段内
+        行走的代价取决于"从区域里哪一格进、哪一格出"。只固定一对（比如质心最近的那
+        一格）会让"层路径最优"但"段内不最优"，整体就不再是精确最优——所以这里把两端
+        都当集合，跑一次多源多目标搜索取最小值。
+
+        实现是**增量**的：复用 :meth:`_search_tables` 的扁平查表与既有通行/禁斜穿规则，
+        与 :meth:`plan_cells` 逐条一致。不触碰 ``plan_cells`` 的热路径。
+
+        代价模型里不含滑索：跨层的分段是"层内怎么走到下一个连接点"，滑索只改变同一层内
+        的走法且由 :meth:`plan_cells` 负责，两者叠加会让代价口径分叉。需要滑索时用
+        :meth:`plan_cells`。
+
+        Returns:
+            :class:`PlanResult`。``start_cell``/``goal_cell`` 是实际选中的那一对；任一端
+            集合为空、或两集合之间不可达时 ``ok=False``（**不抛异常**——这份数据里就有
+            一个从外部进不去的连通块，不可达是常态而非错误）。
+        """
+        deadline = None if time_budget_s is None else time.monotonic() + max(0.0, float(time_budget_s))
+        starts = [self._snap(cell, "起点")[0] for cell in start_cells]
+        goals = [self._snap(cell, "终点")[0] for cell in goal_cells]
+        starts = [cell for cell in starts if cell is not None]
+        goals = [(cell, cell) for cell in goals if cell is not None]
+        if not starts or not goals:
+            return PlanResult(False, "分层分段的起点或终点集合里没有可通行格")
+        goal_set = {cell for cell, _snap in goals}
+        search = self._astar_multi(starts, goal_set, deadline=deadline)
+        if search is None:
+            reason = (
+                "规划超时：本轮导航剩余时间不足以完成分段搜索"
+                if self._timed_out
+                else f"分段不可达（起点可达区域已穷尽，共 {self._expanded} 格）："
+                "两端不在同一个可行走区，或全部需要穿过阻挡"
+            )
+            if self._cap_exceeded:
+                reason = f"分段搜索规模超限：扩展节点超过 max_expand={self.max_expand}"
+            return PlanResult(False, reason, expanded=self._expanded, cap_exceeded=self._cap_exceeded)
+        cells, reached, cost = search
+        waypoints, _zip_steps, narrow_entries = self._route_with_zip_lines(cells, [-1] * max(0, len(cells) - 1))
+        risk = sum(1 for i, j in cells if self.grid.state(i, j) == CELL_UNKNOWN)
+        return PlanResult(
+            True,
+            "",
+            cells=cells,
+            waypoints=waypoints,
+            cost=cost,
+            risk_cells=risk,
+            narrow_entries=narrow_entries,
+            expanded=self._expanded,
+            start_cell=cells[0],
+            goal_cell=reached,
+        )
+
+    def _astar_multi(self, starts, goal_set, *, deadline: float | None):
+        """多源多目标 A*：一次搜索得到"任一源到任一目标"的最小代价路径。
+
+        所有源以 ``g=0`` 入堆（等价于加了一个虚拟超级源），遇第一个目标格即停——
+        因为 A* 弹出顺序保证此时该目标的 ``g`` 已是全局最小。启发式仍取到**最近目标**
+        的下界（对目标集合取 min），所以可采纳性不受影响。
+        """
+        self._expanded = 0
+        self._cap_exceeded = False
+        self._timed_out = False
+        if deadline is not None and time.monotonic() >= deadline:
+            self._timed_out = True
+            return None
+        pad_w, passable, cost_orth, cost_diag, directions = self._search_tables()
+        height, width = self.grid.shape
+        size = (height + 2) * pad_w
+
+        goal_padded = {(int(i) + 1) * pad_w + int(j) + 1 for i, j in goal_set}
+        g_score = np.full(size, math.inf, dtype=np.float64)
+        came_from = np.full(size, -1, dtype=np.int32)
+        came_via = np.full(size, -1, dtype=np.int32)
+        closed = bytearray(size)
+        counter = itertools.count()
+        open_heap = []
+        start_padded = set()
+        for cell in starts:
+            start_p = (int(cell[0]) + 1) * pad_w + int(cell[1]) + 1
+            if start_p in start_padded:
+                continue
+            start_padded.add(start_p)
+            g_score[start_p] = 0.0
+            open_heap.append((0.0, next(counter), start_p))
+        heapq.heapify(open_heap)
+
+        def heuristic_to_goals(i: int, j: int) -> float:
+            return min(self._heuristic(i, j, gi, gj, self.diagonal, 1.0, self._heuristic_scale) for gi, gj in goal_set)
+
+        expanded = 0
+        while open_heap:
+            _f, _tie, current = heapq.heappop(open_heap)
+            if closed[current]:
+                continue
+            ci, cj = divmod(current, pad_w)
+            if current in goal_padded:
+                self._expanded = expanded
+                path, _via = self._rebuild_flat(came_from, came_via, current, pad_w)
+                return path, (ci - 1, cj - 1), float(g_score[current])
+            closed[current] = 1
+            expanded += 1
+            if deadline is not None and expanded % 1024 == 0 and time.monotonic() >= deadline:
+                self._expanded = expanded
+                self._timed_out = True
+                return None
+            if expanded > self.max_expand:
+                self._expanded = expanded
+                self._cap_exceeded = True
+                return None
+
+            row = (ci - 1) * width + (cj - 1)
+            current_cost = g_score[current]
+            for offset, is_diagonal, orth_a, orth_b, cost_delta in directions:
+                neighbor = current + offset
+                if not passable[neighbor]:
+                    continue
+                if is_diagonal and (not passable[current + orth_a] or not passable[current + orth_b]):
+                    continue
+                step = cost_diag[row + cost_delta] if is_diagonal else cost_orth[row + cost_delta]
+                tentative = current_cost + step
+                if tentative < g_score[neighbor]:
+                    g_score[neighbor] = tentative
+                    came_from[neighbor] = current
+                    came_via[neighbor] = -1
+                    ni, nj = divmod(neighbor, pad_w)
+                    f = tentative + heuristic_to_goals(ni - 1, nj - 1)
+                    heapq.heappush(open_heap, (f, next(counter), neighbor))
+        self._expanded = expanded
+        return None
 
     def _plan_from_unmapped_zip_line_start(
         self,
@@ -867,6 +1006,18 @@ class GridPlanner:
         （它不知道 ``allow_unknown`` 策略）；``allow_unknown=False`` 时未知格视同
         阻挡格，也**不许切角**，所以这里必须用 :meth:`_passable` 而不是"非阻挡"，
         否则 A* 会斜着挤过未知格的角。
+
+        **这个守卫是承重的，不能删。** 它不只是"少一条边"：带守卫的八连通与四连通给出
+        **完全相同**的连通块划分。理由是——允许斜走时 ``(i,j)``、``(i+di,j)``、
+        ``(i,j+dj)`` 三格都可走，而 ``(i+di,j)`` 与 ``(i+di,j+dj)`` 本来就正交相邻，
+        所以那条斜边从来不会把两个不同的四连通块并起来。
+
+        反过来说：**去掉守卫会让连通块数偏少**，只靠一个斜角相接的两片会被并成一块，
+        而那两片之间实际走不过去。实测后果——``base01`` 8 块变 5 块、``map02`` 12 块
+        变 11 块（例如 ``map02`` 上 3 格的 ``(-501.5,-487.5)`` 与 2 格的
+        ``(-503.5,-486.5)`` 两个小块，无守卫时会被并成一个）。这种情况下**代价与可达性
+        会同时错、而且错得一致**：探针说"可达"，实际会撞墙。所以诊断用的连通块计数可以
+        安心用四连通（它连守卫都不需要），而这里的守卫必须保留。
         """
         return self._passable(i + di, j) and self._passable(i, j + dj)
 

@@ -882,5 +882,170 @@ class TestAdaptiveWeight(unittest.TestCase):
         return grid, graph
 
 
+class TestCornerGuardIsLoadBearing(unittest.TestCase):
+    """禁斜穿墙角（守卫）不能删：它决定可达性，而不只是"少一条边"。
+
+    带守卫的八连通与四连通给出**完全相同**的连通块划分；去掉守卫则只靠一个斜角相接的
+    两片会被并成一块——那两片实际走不过去，于是"代价与可达性会同时错、而且错得一致"，
+    探针说可达、角色却会撞墙。
+
+    **恒等式的前提（容易漏）**：守卫判据必须**与节点判据相同**。允许斜走时
+    ``(i+di,j)`` 与 ``(i+di,j+dj)`` 正交相邻，前提是这两格本身都算"可走"——若节点只认
+    Free、守卫却只查"非阻挡"，斜边就能借一个 Unknown 的正交格把两个 Free 片并起来，
+    恒等式随之失效。实测就是这个差异：同一张 ``map02``，判据一致时 12 块，判据不匹配时
+    11 块（``base01`` 更是 8 块对 5 块）。编辑器侧的历史实现用的正是"节点 Free、守卫
+    非阻挡"这组不匹配判据，所以它报的块数与产品默认下的规划器不一致。
+    """
+
+    @staticmethod
+    def _components(grid, *, diagonal, guard):
+        """按指定规则统计可行走连通块数。"""
+        cells = grid.cells
+        height, width = cells.shape
+        free = cells == CELL_FREE
+        seen = np.zeros((height, width), bool)
+        dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        if diagonal:
+            dirs += [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+        count = 0
+        for r0, c0 in zip(*np.nonzero(free), strict=True):
+            r0, c0 = int(r0), int(c0)
+            if seen[r0, c0]:
+                continue
+            count += 1
+            stack = [(r0, c0)]
+            seen[r0, c0] = True
+            while stack:
+                i, j = stack.pop()
+                for di, dj in dirs:
+                    ni, nj = i + di, j + dj
+                    if not (0 <= ni < height and 0 <= nj < width) or not free[ni, nj] or seen[ni, nj]:
+                        continue
+                    if di and dj and guard and not (free[i + di, j] and free[i, j + dj]):
+                        continue
+                    seen[ni, nj] = True
+                    stack.append((ni, nj))
+        return count
+
+    @staticmethod
+    def _components_with_guard_predicate(grid, *, node, guard):
+        """节点判据与守卫判据可以不同的连通块计数。
+
+        存在这个入口就是为了证明：两者不同时恒等式失效——不是数学错了，是前提没了。
+        """
+        cells = grid.cells
+        height, width = cells.shape
+
+        def mask(kind):
+            if kind == "free":
+                return cells == CELL_FREE
+            if kind == "not_blocked":
+                return cells != CELL_BLOCKED
+            raise AssertionError(kind)
+
+        node_mask = mask(node)
+        guard_mask = mask(guard)
+        seen = np.zeros((height, width), bool)
+        dirs = [
+            (1, 0),
+            (-1, 0),
+            (0, 1),
+            (0, -1),
+            (1, 1),
+            (1, -1),
+            (-1, 1),
+            (-1, -1),
+        ]
+        count = 0
+        for r0, c0 in zip(*np.nonzero(node_mask), strict=True):
+            r0, c0 = int(r0), int(c0)
+            if seen[r0, c0]:
+                continue
+            count += 1
+            stack = [(r0, c0)]
+            seen[r0, c0] = True
+            while stack:
+                i, j = stack.pop()
+                for di, dj in dirs:
+                    ni, nj = i + di, j + dj
+                    if not (0 <= ni < height and 0 <= nj < width) or not node_mask[ni, nj] or seen[ni, nj]:
+                        continue
+                    if di and dj and (not guard_mask[i + di, j] or not guard_mask[i, j + dj]):
+                        continue
+                    seen[ni, nj] = True
+                    stack.append((ni, nj))
+        return count
+
+    def test_guarded_eight_and_four_connectivity_agree(self):
+        """恒等式：允许斜走时两条正交邻格都可走，所以斜边从不并块。"""
+        grids = [
+            _grid(["o#", "#o"]),  # 只靠一个斜角相接
+            _grid(["#o#", "ooo", "#o#"]),  # 十字
+            _grid(["ooo", "o#o", "ooo"]),  # 中间挖空
+            _grid(["o#o", "###", "o#o"]),  # 四个角
+        ]
+        for grid in grids:
+            with self.subTest(shape=grid.shape):
+                four = self._components(grid, diagonal=False, guard=False)
+                guarded = self._components(grid, diagonal=True, guard=True)
+                self.assertEqual(four, guarded)
+
+    def test_identity_needs_the_guard_to_match_the_node_predicate(self):
+        """判据不匹配（节点认 Free、守卫只查非阻挡）时，恒等式失效。
+
+        这正是编辑器与规划器在 ``map02`` 上报出 11 / 12 两个数、``base01`` 上报出
+        5 / 8 的原因：编辑器允许斜边借一个 Unknown 的正交格，产品默认不允许。
+        """
+        grid = _grid(["o.", ".o"])
+        # 判据一致：Unknown 的正交格挡住斜边 -> 仍是两块
+        self.assertEqual(self._components(grid, diagonal=True, guard=True), 2)
+        # 判据不匹配：守卫只看阻挡，Unknown 放行 -> 斜边把两块并起来
+        merged = self._components_with_guard_predicate(grid, node="free", guard="not_blocked")
+        self.assertEqual(merged, 1, "不匹配的判据会把两个 Free 片并成一块")
+
+    def test_editor_style_predicate_understates_fragmentation(self):
+        """同一个网格，判据不匹配时报出的块数会更少——也就是"低估了碎片化"。"""
+        grid = _grid(["o.", ".o"])
+        strict = self._components(grid, diagonal=True, guard=True)
+        editor_style = self._components_with_guard_predicate(grid, node="free", guard="not_blocked")
+        self.assertLess(editor_style, strict)
+
+    def test_dropping_the_guard_merges_diagonal_only_neighbours(self):
+        """反证：去掉守卫后，只靠斜角相接的两片会被并成一块（块数变少）。"""
+        grid = _grid(["o#", "#o"])
+        self.assertEqual(self._components(grid, diagonal=False, guard=False), 2)
+        self.assertEqual(self._components(grid, diagonal=True, guard=True), 2)
+        self.assertEqual(self._components(grid, diagonal=True, guard=False), 1, "无守卫会并块")
+
+    def test_planner_refuses_to_squeeze_through_a_diagonal_corner(self):
+        """规划器必须拒绝斜穿墙角——否则可达性会说谎。"""
+        grid = _grid(["o#", "#o"])
+        for allow_unknown in (False, True):
+            planner = GridPlanner(grid, allow_unknown=allow_unknown)
+            result = planner.plan_cells((0, 0), (1, 1))
+            self.assertFalse(result.ok, f"allow_unknown={allow_unknown} 时不该斜穿墙角")
+
+    def test_corner_guard_is_policy_aware(self):
+        """守卫用 ``_passable``（受 allow_unknown 影响），不是"非阻挡"粗筛。
+
+        ``allow_unknown=False`` 时未知格视同阻挡，斜穿的角也不许切——这正是
+        ``DenseGrid.neighbors`` 的粗筛做不到、必须由策略层兜住的那一半。
+        """
+        grid = _grid(["o.", ".o"])
+        strict = GridPlanner(grid, allow_unknown=False)
+        loose = GridPlanner(grid, allow_unknown=True)
+        self.assertFalse(strict._corner_ok(0, 0, 1, 1), "未知格挡住的角不能切")
+        self.assertTrue(loose._corner_ok(0, 0, 1, 1), "允许穿越未知格时应可斜穿")
+
+    def test_plan_multi_honours_the_same_guard(self):
+        """新增的多源多目标搜索必须与 ``plan_cells`` 用同一条守卫。"""
+        grid = _grid(["o#", "#o"])
+        planner = GridPlanner(grid, allow_unknown=True)
+        result = planner.plan_multi([(0, 0)], [(1, 1)])
+        self.assertFalse(result.ok, "多源多目标也不能斜穿墙角")
+        # 相邻格仍然可走，确认不是"整张图都不可达"
+        self.assertTrue(planner.plan_multi([(0, 0)], [(0, 0)]).ok)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -89,7 +89,9 @@ GRID_HEADING_TOLERANCE_DEG = 4.0
 GRID_TURN_TOLERANCE_DEG = 4.0
 
 DEFAULT_GRID_NAV_CONFIG: dict[str, Any] = {
-    CONFIG_GRID_DIR: "assets/nav",
+    #: 网格由 nav-grid-editor 产出、发布在 nav-grid-data 仓库（本仓库以子模块挂在
+    #: ``assets/nav-grid-data/``）。它同时带分层网格与跨层连接 ``links.json``。
+    CONFIG_GRID_DIR: "assets/nav-grid-data",
     CONFIG_GRID_FILE: "",
     CONFIG_GRID_ZOOM: "",
     CONFIG_GRID_CALIBRATION_WAYPOINTS: 5,
@@ -128,7 +130,7 @@ DEFAULT_GRID_NAV_CONFIG: dict[str, Any] = {
 GRID_NAV_CONFIG_KEYS: tuple[str, ...] = tuple(DEFAULT_GRID_NAV_CONFIG)
 
 GRID_NAV_CONFIG_DESCRIPTION: dict[str, str] = {
-    CONFIG_GRID_DIR: "导航网格目录，默认 assets/nav",
+    CONFIG_GRID_DIR: "导航网格目录，默认 assets/nav-grid-data（nav-grid-editor 的产出，含分层网格与 links.json；该目录是 git 子模块，需 git-lfs 取实际数据）",
     CONFIG_GRID_FILE: "可选。直接指定 *.grid.npz；填写后不再按地图 id 查找",
     CONFIG_GRID_ZOOM: "可选。地图存在多个 zoom 网格时指定，例如 4",
     CONFIG_GRID_CALIBRATION_WAYPOINTS: "每经过多少个航点暂停一次，等待小地图静止自动校准；0=关闭",

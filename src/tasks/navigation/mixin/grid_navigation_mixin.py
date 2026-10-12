@@ -369,7 +369,8 @@ class GridNavigationMixin(RuntimeStateMixin):
                 return None
             return grid
 
-        directory = str(self._grid_config_get(CONFIG_GRID_DIR, "assets/nav") if grid_dir is None else grid_dir).strip()
+        default_dir = DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR]
+        directory = str(self._grid_config_get(CONFIG_GRID_DIR, default_dir) if grid_dir is None else grid_dir).strip()
         requested_zoom = str(self._grid_config_get(CONFIG_GRID_ZOOM, "") if zoom is None else zoom).strip()
         root = Path(directory)
         if not root.is_dir():
@@ -377,9 +378,18 @@ class GridNavigationMixin(RuntimeStateMixin):
             return None
 
         map_id = str(map_id or "").strip()
-        candidates = sorted(root.glob(f"{map_id}_*{GRID_SUFFIX}")) if map_id else []
+        # glob 的 ``{map_id}_*`` 会**同时匹配分层文件** ``{map_id}__{tier}_{zoom}``：它们的
+        # ``meta.map_name`` 就是 ``map_id``，光靠 meta 校验拦不住。所以这里先按文件名排除
+        # 含 ``__`` 的——与编辑器的 ``_tier_grid_meta``、以及本模块的分层发现同一条口径。
+        #
+        # 不排除的后果不是"选错就走不动"那么轻：分层网格是一个小矩形（实测 tips_7 只有
+        # 94x194），一旦被当主图选中，规划器会拿它当整张地图——起终点多半落在"界外"，
+        # 表现为莫名其妙的"找不到通路"，而且日志里显示的是加载成功。
+        candidates = (
+            sorted(path for path in root.glob(f"{map_id}_*{GRID_SUFFIX}") if "__" not in path.name) if map_id else []
+        )
         if not candidates:
-            candidates = sorted(root.glob(f"*{GRID_SUFFIX}"))
+            candidates = sorted(path for path in root.glob(f"*{GRID_SUFFIX}") if "__" not in path.name)
 
         matches: list[tuple[DenseGrid, Path]] = []
         for path in candidates:
@@ -387,6 +397,9 @@ class GridNavigationMixin(RuntimeStateMixin):
                 grid = load_grid(path)
             except (OSError, TypeError, ValueError) as exc:
                 self.log_warning(f"忽略无法读取的导航网格 {path}: {exc}")
+                continue
+            if grid.meta.tier:
+                # 双保险：文件名没带 ``__`` 但 meta 声明了 tier 的（别的工具写出的），同样不是主图
                 continue
             if map_id and not self._grid_meta_matches_map(grid, path, map_id):
                 continue

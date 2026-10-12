@@ -6,6 +6,7 @@
 """
 
 import ast
+import json
 import os
 import tempfile
 import unittest
@@ -668,6 +669,59 @@ class TestNavConfigMigration(unittest.TestCase):
             self.assertIn("MinimapNavigateToPoint", line)
             self.assertIn("MinimapPositionTask", line)
             self.assertIn("9.0", line)
+
+
+class TestGridDirValueMigration(unittest.TestCase):
+    """「网格目录」的存量值迁移：旧默认要改到新默认，用户自定义必须保留。
+
+    背景：网格数据源从主仓自带的 ``assets/nav``（三张单层网格，已删除）换成
+    nav-grid-editor 的产出 ``assets/nav-grid-data``（子模块）。存量配置里若还写着旧默认，
+    导航会直接报"网格目录不存在"——所以这次改默认值必须带上值迁移，且同一次提交发布。
+    """
+
+    def _run(self, stored):
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = Path(tmp) / "configs"
+            configs.mkdir(parents=True)
+            (configs / "Nav Config.json").write_text(
+                json.dumps({CONFIG_GRID_DIR: stored}, ensure_ascii=False), encoding="utf-8"
+            )
+            with patch.object(global_config_store, "config_path", side_effect=lambda *parts: str(configs / parts[-1])):
+                global_config_store._migrate_nav_grid_dir_value()
+            return json.loads((configs / "Nav Config.json").read_text(encoding="utf-8"))[CONFIG_GRID_DIR]
+
+    def test_old_default_is_migrated_to_the_new_one(self):
+        self.assertEqual(self._run("assets/nav"), DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR])
+
+    def test_current_value_is_left_alone(self):
+        self.assertEqual(self._run("assets/nav-grid-data"), "assets/nav-grid-data")
+
+    def test_custom_directory_is_never_overwritten(self):
+        """用户自己指定的目录一律保留——覆盖用户的选择比不改更糟。"""
+        self.assertEqual(self._run("D:/my/grids"), "D:/my/grids")
+        self.assertEqual(self._run(""), "")
+
+    def test_missing_config_file_is_a_noop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = Path(tmp) / "configs"
+            configs.mkdir(parents=True)
+            with patch.object(global_config_store, "config_path", side_effect=lambda *parts: str(configs / parts[-1])):
+                global_config_store._migrate_nav_grid_dir_value()  # 不该抛错
+            self.assertFalse((configs / "Nav Config.json").exists())
+
+    def test_migration_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = Path(tmp) / "configs"
+            configs.mkdir(parents=True)
+            (configs / "Nav Config.json").write_text(
+                json.dumps({CONFIG_GRID_DIR: "assets/nav"}, ensure_ascii=False), encoding="utf-8"
+            )
+            with patch.object(global_config_store, "config_path", side_effect=lambda *parts: str(configs / parts[-1])):
+                global_config_store._migrate_nav_grid_dir_value()
+                first = (configs / "Nav Config.json").read_text(encoding="utf-8")
+                global_config_store._migrate_nav_grid_dir_value()
+                second = (configs / "Nav Config.json").read_text(encoding="utf-8")
+            self.assertEqual(first, second)
 
 
 class TestFollowerDefaultsMatchGlobalConfig(unittest.TestCase):
