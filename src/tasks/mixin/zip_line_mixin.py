@@ -818,6 +818,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     return target_yaw, False
                 current_yaw = next_yaw
                 error = next_error
+            else:
+                # A sender exception can follow partial input. Do not learn a
+                # subsequent turn whose starting position is now uncertain.
+                return target_yaw, False
 
         for _ in range(self._ZIP_LINE_ARROW_MAX_STEPS):
             if error <= tolerance:
