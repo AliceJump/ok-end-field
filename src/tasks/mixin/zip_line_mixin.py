@@ -19,15 +19,15 @@ from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.zip_line_motion_cache import (
     build_zip_line_route_fingerprint,
+    load_nearest_zip_line_segment_motion,
     load_zip_line_segment_motion,
     record_zip_line_segment_motion,
 )
+from src.tasks.mixin.zip_line_motion_tracking import track_zip_line_mouse_motion
 from src.tasks.mixin.zip_line_yaw_cache import (
     build_zip_line_motion_route_fingerprint,
     load_arrow_turn_motion,
-    load_zip_line_segment_anchor,
     record_arrow_turn_motion,
-    record_zip_line_segment_anchor,
 )
 
 _ZIP_LINE_ICON_TEMPLATE_ROWS = (
@@ -80,6 +80,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     _ZIP_LINE_ARROW_MAX_STEPS = 6
     _ZIP_LINE_ARROW_YAW_PER_MOUSE = -0.083
     _ZIP_LINE_ARROW_SETTLE_DELAY = 0.08
+    _ZIP_LINE_ARROW_STABLE_SAMPLES = 3
+    _ZIP_LINE_ARROW_STABLE_TOLERANCE = 0.5
+    _ZIP_LINE_ARROW_SETTLE_TIMEOUT = 1.5
 
     @property
     def zip_line_config(self):
@@ -566,30 +569,19 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         raise_if_fail=True,
         deadline=None,
         initial_move=None,
-        on_success_motion=None,
     ):
         """先应用历史位移，再让模板与 OCR fallback 共用同一个可观测移动闭环。"""
         if max_time <= 0 or (deadline is not None and self.active_time() >= deadline):
             return self._zip_line_alignment_failed(raise_if_fail)
 
-        motion_total_dx = 0
-        motion_total_dy = 0
         prefeed_move = initial_move
 
-        def move_and_track(target):
-            nonlocal motion_total_dx, motion_total_dy
-            move_dx, move_dy = self._move_to_zip_line_target(target)
-            motion_total_dx += int(move_dx)
-            motion_total_dy += int(move_dy)
-            return move_dx, move_dy
-
         misses = 0
-        history_complete = True
         pattern = self._zip_line_distance_pattern(zip_line)
         processors = [self.make_hsv_isolator(hR.GOLD_TEXT), self.make_hsv_isolator(hR.WHITE)]
 
         def detect_target(frame):
-            nonlocal misses, history_complete, prefeed_move, motion_total_dx, motion_total_dy
+            nonlocal misses, prefeed_move
             if prefeed_move is not None:
                 try:
                     prefeed_dx = int(prefeed_move[0])
@@ -610,8 +602,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                         sent = False
                         self.log_info(f"[zipline-motion-cache] prefeed failed: {e}")
                     if sent:
-                        motion_total_dx += prefeed_dx
-                        motion_total_dy += prefeed_dy
                         self.log_info(
                             f"[zipline-motion-cache] target={zip_line} prefeed "
                             f"move=({prefeed_dx},{prefeed_dy})"
@@ -624,7 +614,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 misses += 1
                 if misses < self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
                     return None
-                history_complete = False
                 if misses == self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
                     self.log_info(
                         f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，"
@@ -665,13 +654,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             deadline=deadline,
             max_iterations=max_time * 2,
             ocr_target_detector=detect_target,
-            ocr_target_mover=move_and_track,
         )
-        if result and history_complete and callable(on_success_motion) and (motion_total_dx or motion_total_dy):
-            try:
-                on_success_motion(motion_total_dx, motion_total_dy)
-            except Exception as e:
-                self.log_info(f"[zipline-motion-cache] record failed: {e}")
         return result
 
     def _zip_line_stop_state(self):
@@ -743,6 +726,34 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return None
         return angle % 360.0, score
 
+    def _read_zip_line_settled_arrow_angle(self):
+        """Wait for the character arrow to finish following the camera's yaw.
+
+        TravelPoleBrain.LateTick rotates the handrail toward the camera before
+        copying its stand-point rotation to the character. A single fresh frame
+        can therefore still contain an intermediate yaw after a large turn.
+        """
+        deadline = self.active_time() + self._ZIP_LINE_ARROW_SETTLE_TIMEOUT
+        previous_yaw = None
+        stable_samples = 0
+        while self.active_time() < deadline:
+            reading = self._read_zip_line_arrow_angle()
+            if reading is None or reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
+                return None
+            if self.active_time() >= deadline:
+                break
+            yaw, _ = reading
+            if previous_yaw is not None and abs(self._zip_line_angle_delta(yaw, previous_yaw)) <= self._ZIP_LINE_ARROW_STABLE_TOLERANCE:
+                stable_samples += 1
+            else:
+                stable_samples = 1
+            if stable_samples >= self._ZIP_LINE_ARROW_STABLE_SAMPLES:
+                return reading
+            previous_yaw = yaw
+            self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
+        self.log_info("[zipline-yaw] arrow did not settle; history disabled")
+        return None
+
     def _send_zip_line_yaw_delta(self, dx):
         """Send one horizontal turn and report rejected input without blocking alignment."""
         try:
@@ -759,101 +770,59 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.log_info(f"[zipline-yaw] mouse move failed dx={dx}: {e}")
             return False
 
-    def _normalize_zip_line_segment_yaw(self, route_fingerprint, segment_index):
-        """Normalize one segment to its learned entry yaw before route motion reuse.
+    def _normalize_zip_line_segment_yaw(self, target_yaw, initial_reading=None):
+        """Turn to a reusable starting-yaw bucket, verifying fresh, settled frames.
 
-        The first reliable visit stores an anchor only. Later visits may reuse a
-        same-resolution/yaw-bucket horizontal turn, otherwise they use the existing
-        -0.083 deg/raw-unit calibration in <=30 degree verified steps. Any failed
-        verification rolls back the net horizontal input and disables history for
-        this segment so the ordinary visual aligner remains authoritative.
+        This is part of the complete segment motion; the caller observes all
+        accepted input, including cached turns and rollback, under the original yaw.
         """
-        if not route_fingerprint:
+        width, height = self.width, self.height
+        reading = initial_reading if initial_reading is not None else self._read_zip_line_settled_arrow_angle()
+        if reading is None or reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
             return None, False
-
-        width = int(getattr(self, "width", 0) or 0)
-        height = int(getattr(self, "height", 0) or 0)
-        reading = self._read_zip_line_arrow_angle()
-        if reading is None:
-            self.log_info(
-                f"[zipline-yaw] segment={segment_index + 1} no reliable arrow reading; history disabled"
-            )
-            return None, False
-
-        current_yaw, score = reading
-        if score < self._ZIP_LINE_ARROW_MIN_SCORE:
-            self.log_info(
-                f"[zipline-yaw] segment={segment_index + 1} score={score:.3f} "
-                f"< {self._ZIP_LINE_ARROW_MIN_SCORE:.2f}; history disabled"
-            )
-            return None, False
-
-        anchor_yaw = load_zip_line_segment_anchor(
-            route_fingerprint,
-            segment_index,
-            width,
-            height,
-        )
-        if anchor_yaw is None:
-            if not record_zip_line_segment_anchor(
-                route_fingerprint,
-                segment_index,
-                width,
-                height,
-                current_yaw,
-            ):
-                self.log_info(f"[zipline-yaw] segment={segment_index + 1} anchor record failed")
-                return None, False
-            self.log_info(
-                f"[zipline-yaw] segment={segment_index + 1} size={width}x{height} "
-                f"anchor learned={current_yaw:.1f} score={score:.3f}"
-            )
+        current_yaw, _score = reading
+        initial_yaw = current_yaw
+        target_yaw = float(target_yaw) % 360.0
+        # Stay inside the 5-degree history bucket rather than accepting its neighbor.
+        tolerance = min(self._ZIP_LINE_ARROW_TOLERANCE, 2.0)
+        error = abs(self._zip_line_angle_delta(target_yaw, current_yaw))
+        if error <= tolerance:
             return current_yaw, True
 
-        initial_yaw = current_yaw
-        error = abs(self._zip_line_angle_delta(anchor_yaw, current_yaw))
-        if error <= self._ZIP_LINE_ARROW_TOLERANCE:
-            self.log_info(
-                f"[zipline-yaw] segment={segment_index + 1} already aligned "
-                f"current={current_yaw:.1f} anchor={anchor_yaw:.1f} error={error:.1f}"
-            )
-            return anchor_yaw, True
-
         total_dx = 0
-        hint = load_arrow_turn_motion(width, height, current_yaw, anchor_yaw)
+        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw)
         if hint is not None:
             hint_dx, hint_samples = hint
             if self._send_zip_line_yaw_delta(hint_dx):
                 total_dx += hint_dx
                 self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
-                reading = self._read_zip_line_arrow_angle()
+                reading = self._read_zip_line_settled_arrow_angle()
                 if reading is None or reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
                     self._send_zip_line_yaw_delta(-total_dx)
                     self.log_info(
-                        f"[zipline-yaw] segment={segment_index + 1} cached turn verification failed; rolled back"
+                        "[zipline-yaw] cached turn verification failed; rolled back"
                     )
-                    return anchor_yaw, False
-                next_yaw, next_score = reading
-                next_error = abs(self._zip_line_angle_delta(anchor_yaw, next_yaw))
+                    return target_yaw, False
+                next_yaw, _next_score = reading
+                next_error = abs(self._zip_line_angle_delta(target_yaw, next_yaw))
                 self.log_info(
-                    f"[zipline-yaw] segment={segment_index + 1} cached turn samples={hint_samples} "
+                    f"[zipline-yaw] cached turn samples={hint_samples} "
                     f"dx={hint_dx} yaw={current_yaw:.1f}->{next_yaw:.1f} "
                     f"error={error:.1f}->{next_error:.1f}"
                 )
-                if next_error >= error - 0.5:
+                if next_error > tolerance and next_error >= error - 0.5:
                     self._send_zip_line_yaw_delta(-total_dx)
                     self.log_info(
-                        f"[zipline-yaw] segment={segment_index + 1} cached turn did not improve; rolled back"
+                        "[zipline-yaw] cached turn did not improve; rolled back"
                     )
-                    return anchor_yaw, False
+                    return target_yaw, False
                 current_yaw = next_yaw
-                score = next_score
                 error = next_error
 
         for _ in range(self._ZIP_LINE_ARROW_MAX_STEPS):
-            if error <= self._ZIP_LINE_ARROW_TOLERANCE:
+            if error <= tolerance:
                 break
-            desired_delta = self._zip_line_angle_delta(anchor_yaw, current_yaw)
+            desired_delta = self._zip_line_angle_delta(target_yaw, current_yaw)
             step_degrees = max(
                 -self._ZIP_LINE_ARROW_MAX_STEP_DEGREES,
                 min(self._ZIP_LINE_ARROW_MAX_STEP_DEGREES, desired_delta),
@@ -865,145 +834,122 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             total_dx += move_dx
             previous_error = error
             self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
-            reading = self._read_zip_line_arrow_angle()
+            reading = self._read_zip_line_settled_arrow_angle()
             if reading is None or reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
                 break
 
-            next_yaw, score = reading
-            error = abs(self._zip_line_angle_delta(anchor_yaw, next_yaw))
+            next_yaw, _score = reading
+            error = abs(self._zip_line_angle_delta(target_yaw, next_yaw))
             self.log_info(
-                f"[zipline-yaw] segment={segment_index + 1} calibrated step dx={move_dx} "
+                f"[zipline-yaw] calibrated step dx={move_dx} "
                 f"yaw={current_yaw:.1f}->{next_yaw:.1f} error={previous_error:.1f}->{error:.1f}"
             )
             current_yaw = next_yaw
             if error >= previous_error - 0.5:
                 break
 
-        if error > self._ZIP_LINE_ARROW_TOLERANCE:
+        if error > tolerance:
             if total_dx:
                 self._send_zip_line_yaw_delta(-total_dx)
             self.log_info(
-                f"[zipline-yaw] segment={segment_index + 1} normalize failed "
-                f"anchor={anchor_yaw:.1f} error={error:.1f}; history disabled"
+                f"[zipline-yaw] normalize failed "
+                f"target={target_yaw:.1f} error={error:.1f}; visual alignment continues"
             )
-            return anchor_yaw, False
+            return target_yaw, False
 
         if total_dx:
-            record_arrow_turn_motion(width, height, initial_yaw, anchor_yaw, total_dx)
+            record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx)
         self.log_info(
-            f"[zipline-yaw] segment={segment_index + 1} normalized "
-            f"{initial_yaw:.1f}->{current_yaw:.1f} anchor={anchor_yaw:.1f} dx={total_dx}"
+            f"[zipline-yaw] normalized "
+            f"{initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
         )
-        return anchor_yaw, True
+        return current_yaw, True
+
+    def _align_and_activate_zip_line(self, zip_line, need_scroll=None, initial_move=None):
+        """Align and activate one segment, replaying history only on the first attempt."""
+        self._align_zip_line_distance(
+            zip_line,
+            need_scroll=need_scroll,
+            tolerance=50,
+            initial_move=initial_move,
+        )
+        self.log_info(f"成功将滑索调整到{zip_line}的中心")
+
+        gate_retry_start = self.active_time()
+        gate_retry_deadline = gate_retry_start + 20
+        activated = False
+        last_reason = None
+        interaction_failed = False
+        for attempt in range(3):
+            activated, last_reason = self._try_click_on_zip_line(zip_line)
+            if activated:
+                break
+            if last_reason == "gate":
+                self.log_info(f"滑索{zip_line}金色门未通过，重新对中后重试（{attempt + 1}/3）")
+            else:
+                interaction_failed = True
+                self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
+            if attempt >= 2 or self.active_time() >= gate_retry_deadline:
+                break
+            realigned = self._align_zip_line_distance(
+                zip_line,
+                need_scroll=need_scroll,
+                tolerance=50,
+                max_time=10,
+                raise_if_fail=False,
+                deadline=gate_retry_deadline,
+            )
+            if not realigned:
+                last_reason = "gate"
+                self.log_info(f"滑索{zip_line}重新对中失败，进入失败处理")
+                break
+
+        if not activated:
+            if interaction_failed:
+                self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
+                raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
+            if last_reason == "gate":
+                self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击 + E")
+                if not self._legacy_click_on_zip_line():
+                    self.log_info(f"滑索{zip_line}直接点击后 E 未生效", notify=True)
+                    raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
+            else:
+                self.log_info(f"滑索{zip_line}交互失败", notify=True)
+                raise RuntimeError(f"滑索{zip_line}交互失败")
 
     def zip_line_list_go(
         self, zip_line_list, need_scroll=None, target=None, need_v=False, stay_on_zip_line=False, config_key=None,
     ):
-        """按顺序对齐滑索并执行滑行；历史位移要求路线、段号、尺寸和标准 yaw 全部一致。"""
+        """Reuse a matching/nearest yaw history and learn the full action under its original yaw."""
         route_fingerprint = self._zip_line_motion_route_fingerprint(zip_line_list, config_key=config_key)
         for segment_index, zip_line in enumerate(zip_line_list):
-            initial_move = None
-            on_success_motion = None
-            motion_route_fingerprint = None
-            anchor_yaw = None
-            yaw_ready = False
-            if route_fingerprint:
-                anchor_yaw, yaw_ready = self._normalize_zip_line_segment_yaw(
-                    route_fingerprint,
-                    segment_index,
-                )
-                if yaw_ready and anchor_yaw is not None:
-                    motion_route_fingerprint = build_zip_line_motion_route_fingerprint(
-                        route_fingerprint,
-                        self.width,
-                        self.height,
-                        anchor_yaw,
-                    )
+            reading = self._read_zip_line_settled_arrow_angle() if route_fingerprint else None
+            start_yaw = reading[0] if reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE else None
+            motion_key = build_zip_line_motion_route_fingerprint(
+                route_fingerprint, self.width, self.height, start_yaw
+            ) if start_yaw is not None else None
+            hint = load_zip_line_segment_motion(motion_key, segment_index) if motion_key else None
+            nearest = load_nearest_zip_line_segment_motion(
+                route_fingerprint, segment_index, self.width, self.height, start_yaw
+            ) if motion_key and hint is None else None
 
-            if motion_route_fingerprint:
-                hint = load_zip_line_segment_motion(motion_route_fingerprint, segment_index)
+            with track_zip_line_mouse_motion(self) as motion:
+                if nearest is not None:
+                    matched_yaw, _dx, _dy, _samples = nearest
+                    actual_yaw, ready = self._normalize_zip_line_segment_yaw(matched_yaw, initial_reading=reading)
+                    if ready:
+                        # Re-read the cache using the confirmed yaw, never the requested yaw alone.
+                        matched_key = build_zip_line_motion_route_fingerprint(
+                            route_fingerprint, self.width, self.height, actual_yaw
+                        )
+                        hint = load_zip_line_segment_motion(matched_key, segment_index)
+                initial_move = hint[:2] if hint is not None else None
                 if hint is not None:
-                    hint_dx, hint_dy, hint_samples = hint
-                    initial_move = (hint_dx, hint_dy)
                     self.log_info(
                         f"[zipline-motion-cache] segment={segment_index + 1}/{len(zip_line_list)} "
-                        f"target={zip_line} size={self.width}x{self.height} yaw={anchor_yaw:.1f} "
-                        f"samples={hint_samples} initial=({hint_dx},{hint_dy})"
+                        f"start_yaw={start_yaw:.1f} samples={hint[2]} prefeed={initial_move}"
                     )
-
-                def record_motion(
-                    total_dx,
-                    total_dy,
-                    *,
-                    _segment_index=segment_index,
-                    _zip_line=zip_line,
-                    _motion_route_fingerprint=motion_route_fingerprint,
-                    _anchor_yaw=anchor_yaw,
-                ):
-                    if record_zip_line_segment_motion(
-                        _motion_route_fingerprint,
-                        _segment_index,
-                        total_dx,
-                        total_dy,
-                    ):
-                        self.log_info(
-                            f"[zipline-motion-cache] segment={_segment_index + 1}/{len(zip_line_list)} "
-                            f"target={_zip_line} size={self.width}x{self.height} yaw={_anchor_yaw:.1f} "
-                            f"learned=({total_dx},{total_dy})"
-                        )
-
-                on_success_motion = record_motion
-
-            self._align_zip_line_distance(
-                zip_line,
-                need_scroll=need_scroll,
-                tolerance=50,
-                initial_move=initial_move,
-                on_success_motion=on_success_motion,
-            )
-            self.log_info(f"成功将滑索调整到{zip_line}的中心")
-
-            gate_retry_start = self.active_time()
-            gate_retry_deadline = gate_retry_start + 20
-            activated = False
-            last_reason = None
-            interaction_failed = False
-            for attempt in range(3):
-                activated, last_reason = self._try_click_on_zip_line(zip_line)
-                if activated:
-                    break
-                if last_reason == "gate":
-                    self.log_info(f"滑索{zip_line}金色门未通过，重新对中后重试（{attempt + 1}/3）")
-                else:
-                    interaction_failed = True
-                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
-                if attempt >= 2 or self.active_time() >= gate_retry_deadline:
-                    break
-                realigned = self._align_zip_line_distance(
-                    zip_line,
-                    need_scroll=need_scroll,
-                    tolerance=50,
-                    max_time=10,
-                    raise_if_fail=False,
-                    deadline=gate_retry_deadline,
-                )
-                if not realigned:
-                    last_reason = "gate"
-                    self.log_info(f"滑索{zip_line}重新对中失败，进入失败处理")
-                    break
-
-            if not activated:
-                if interaction_failed:
-                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
-                    raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
-                if last_reason == "gate":
-                    self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击 + E")
-                    if not self._legacy_click_on_zip_line():
-                        self.log_info(f"滑索{zip_line}直接点击后 E 未生效", notify=True)
-                        raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
-                else:
-                    self.log_info(f"滑索{zip_line}交互失败", notify=True)
-                    raise RuntimeError(f"滑索{zip_line}交互失败")
+                self._align_and_activate_zip_line(zip_line, need_scroll=need_scroll, initial_move=initial_move)
 
             start = self.active_time()
             while True:
@@ -1022,6 +968,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     break
                 if self.active_time() - start > 240:
                     raise Exception("滑索超时，强制退出")
+            if motion_key and motion.complete and record_zip_line_segment_motion(motion_key, segment_index, motion.dx, motion.dy):
+                self.log_info(
+                    f"[zipline-motion-cache] segment={segment_index + 1}/{len(zip_line_list)} "
+                    f"start_yaw={start_yaw:.1f} learned=({motion.dx},{motion.dy})"
+                )
         if stay_on_zip_line:
             self.log_info("滑索路线结束，留在滑索上继续测试")
             return

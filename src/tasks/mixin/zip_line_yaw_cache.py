@@ -10,13 +10,12 @@ from threading import RLock
 _CACHE_VERSION = 1
 _DEFAULT_CACHE_PATH = Path("tmp") / "zipline_yaw_cache.json"
 _CACHE_LOCK = RLock()
-_MAX_ANCHORS = 512
 _MAX_TURNS = 512
 _YAW_BUCKET_DEGREES = 5.0
 
 
 def _empty_cache() -> dict:
-    return {"version": _CACHE_VERSION, "anchors": {}, "turns": {}}
+    return {"version": _CACHE_VERSION, "turns": {}}
 
 
 def _read_cache() -> dict:
@@ -26,7 +25,7 @@ def _read_cache() -> dict:
         return _empty_cache()
     if not isinstance(payload, dict) or payload.get("version") != _CACHE_VERSION:
         return _empty_cache()
-    if not isinstance(payload.get("anchors"), dict) or not isinstance(payload.get("turns"), dict):
+    if not isinstance(payload.get("turns"), dict):
         return _empty_cache()
     return payload
 
@@ -60,14 +59,6 @@ def _normalize_yaw(value) -> float | None:
     return yaw % 360.0
 
 
-def _segment_index(value) -> int | None:
-    try:
-        index = int(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
-    return index if 0 <= index < 64 else None
-
-
 def _resolution(width, height) -> tuple[int, int] | None:
     try:
         width = int(width)
@@ -87,20 +78,11 @@ def _yaw_bucket(yaw) -> int | None:
     return round(normalized / _YAW_BUCKET_DEGREES) % bucket_count
 
 
-def _anchor_key(route_fingerprint, segment_index, width, height) -> str | None:
-    route = str(route_fingerprint or "").strip()
-    index = _segment_index(segment_index)
-    size = _resolution(width, height)
-    if not route or index is None or size is None:
-        return None
-    return json.dumps([route, index, [size[0], size[1]]], ensure_ascii=False, separators=(",", ":"))
-
-
-def build_zip_line_motion_route_fingerprint(route_fingerprint, width, height, anchor_yaw) -> str | None:
-    """Extend a route identity with exact capture size and the normalized anchor yaw bucket."""
+def build_zip_line_motion_route_fingerprint(route_fingerprint, width, height, start_yaw) -> str | None:
+    """Extend a route identity with exact capture size and the original starting-yaw bucket."""
     route = str(route_fingerprint or "").strip()
     size = _resolution(width, height)
-    yaw_bucket = _yaw_bucket(anchor_yaw)
+    yaw_bucket = _yaw_bucket(start_yaw)
     if not route or size is None or yaw_bucket is None:
         return None
     return json.dumps(
@@ -108,39 +90,6 @@ def build_zip_line_motion_route_fingerprint(route_fingerprint, width, height, an
         ensure_ascii=False,
         separators=(",", ":"),
     )
-
-
-def load_zip_line_segment_anchor(route_fingerprint, segment_index, width, height) -> float | None:
-    key = _anchor_key(route_fingerprint, segment_index, width, height)
-    if key is None:
-        return None
-    with _CACHE_LOCK:
-        entry = _read_cache()["anchors"].get(key)
-    if not isinstance(entry, dict):
-        return None
-    return _normalize_yaw(entry.get("yaw"))
-
-
-def record_zip_line_segment_anchor(route_fingerprint, segment_index, width, height, yaw) -> bool:
-    """Record the first reliable yaw for one exact route segment and resolution.
-
-    Existing anchors are deliberately stable: later observations must normalize back
-    to the original anchor instead of slowly moving the fingerprint itself.
-    """
-    key = _anchor_key(route_fingerprint, segment_index, width, height)
-    normalized = _normalize_yaw(yaw)
-    if key is None or normalized is None:
-        return False
-    with _CACHE_LOCK:
-        payload = _read_cache()
-        anchors = payload["anchors"]
-        existing = anchors.get(key)
-        if isinstance(existing, dict) and _normalize_yaw(existing.get("yaw")) is not None:
-            return True
-        anchors[key] = {"yaw": normalized}
-        while len(anchors) > _MAX_ANCHORS:
-            anchors.pop(next(iter(anchors)))
-        return _write_cache(payload)
 
 
 def _turn_key(width, height, start_yaw, target_yaw) -> str | None:

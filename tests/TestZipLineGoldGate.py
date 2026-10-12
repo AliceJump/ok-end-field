@@ -11,6 +11,7 @@ import numpy as np
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.mixin.zip_line_motion_tracking import track_zip_line_mouse_motion
 from src.tasks.test.zip_line_scan_recording import (
     ZipLineFrameDetector,
     ZipLineScanRecorder,
@@ -35,9 +36,11 @@ class TestZipLineGoldGate(unittest.TestCase):
             click=Mock(),
             send_key=Mock(),
             ocr=Mock(),
+            active_and_send_mouse_delta=Mock(return_value=True),
         )
         stub._zip_line_stop_state = lambda: ZipLineMixin._zip_line_stop_state(stub)
         stub._zip_line_motion_route_fingerprint = lambda *args, **kwargs: ZipLineMixin._zip_line_motion_route_fingerprint(stub, *args, **kwargs)
+        stub._align_and_activate_zip_line = lambda *args, **kwargs: ZipLineMixin._align_and_activate_zip_line(stub, *args, **kwargs)
         stub._try_click_on_zip_line = lambda *args, **kwargs: ZipLineMixin._try_click_on_zip_line(stub, *args, **kwargs)
         return stub
 
@@ -314,44 +317,53 @@ class TestZipLineGoldGate(unittest.TestCase):
         events = []
         stub.do_scroll.side_effect = lambda *args: events.append("scroll")
         stub.next_frame.side_effect = lambda: events.append("frame") or len(events)
-        stub.active_and_send_mouse_delta.side_effect = lambda **kwargs: events.append("prefeed") or True
+        sender = stub.active_and_send_mouse_delta
+        sender.side_effect = lambda **kwargs: events.append("prefeed" if kwargs["dx"] == 160 else "fine") or True
+        stub._move_to_zip_line_target.side_effect = lambda target: stub.active_and_send_mouse_delta(dx=40, dy=20)
         targets = iter([self._matched_icon(1400, 800), self._matched_icon()])
         stub._find_zip_line_template_target.side_effect = lambda *args: events.append("detect") or next(targets)
-        learned = Mock()
-
-        result = ZipLineMixin._align_zip_line_distance(
-            stub, 108, need_scroll=True, max_time=2, initial_move=(160, 80), on_success_motion=learned
-        )
+        with track_zip_line_mouse_motion(stub) as total:
+            result = ZipLineMixin._align_zip_line_distance(
+                stub, 108, need_scroll=True, max_time=2, initial_move=(160, 80)
+            )
 
         self.assertEqual(result, (960, 540))
-        self.assertEqual(events, ["scroll", "frame", "prefeed", "frame", "detect", "scroll", "frame", "detect"])
+        self.assertEqual(events, ["scroll", "frame", "prefeed", "frame", "detect", "fine", "scroll", "frame", "detect"])
         self.assertEqual(stub._find_zip_line_template_target.call_args_list[0].args[1], 4)
-        stub.active_and_send_mouse_delta.assert_called_once_with(dx=160, dy=80, activate=True, steps=5)
-        learned.assert_called_once_with(200, 100)
+        self.assertEqual(sender.call_args_list[0], call(dx=160, dy=80, activate=True, steps=5))
+        self.assertEqual((total.dx, total.dy, total.complete), (200, 100, True))
 
     def test_rejected_or_failed_prefeed_continues_visual_alignment(self):
         for outcome in (False, OSError("input unavailable")):
             with self.subTest(outcome=outcome):
                 stub = self._alignment_stub()
                 stub._find_zip_line_template_target.side_effect = [self._matched_icon(1400, 800), self._matched_icon()]
-                if isinstance(outcome, Exception):
-                    stub.active_and_send_mouse_delta.side_effect = outcome
-                else:
-                    stub.active_and_send_mouse_delta.return_value = outcome
-                learned = Mock()
-
-                result = ZipLineMixin._align_zip_line_distance(
-                    stub, 108, max_time=2, initial_move=(160, 80), on_success_motion=learned
-                )
+                sender = stub.active_and_send_mouse_delta
+                sender.side_effect = [outcome, True]
+                stub._move_to_zip_line_target.side_effect = lambda target: stub.active_and_send_mouse_delta(40, 20)
+                with track_zip_line_mouse_motion(stub) as total:
+                    result = ZipLineMixin._align_zip_line_distance(stub, 108, max_time=2, initial_move=(160, 80))
 
                 self.assertEqual(result, (960, 540))
-                stub.active_and_send_mouse_delta.assert_called_once()
-                learned.assert_called_once_with(40, 20)
+                self.assertEqual(sender.call_count, 2)
+                self.assertEqual((total.dx, total.dy), (40, 20))
+                self.assertEqual(total.complete, not isinstance(outcome, Exception))
+
+    def test_full_screen_fallback_and_random_search_are_observed(self):
+        stub = self._alignment_stub()
+        stub._find_zip_line_template_target.side_effect = [None, None, None, self._matched_icon()]
+        stub.active_and_send_mouse_delta.return_value = True
+        with patch("src.tasks.mixin.navigation_mixin.random.randint", return_value=25), track_zip_line_mouse_motion(stub) as total:
+            result = ZipLineMixin._align_zip_line_distance(stub, 108, max_time=5, initial_move=(100, 20))
+        self.assertEqual(result, (960, 540))
+        self.assertEqual((total.dx, total.dy, total.complete), (125, 20, True))
 
     def test_history_is_not_reapplied_during_gate_retry(self):
         stub = self._stub()
         stub.width, stub.height = 1920, 1080
         stub._normalize_zip_line_segment_yaw = Mock(return_value=(90.0, True))
+        stub._read_zip_line_settled_arrow_angle = Mock(return_value=(90.0, 0.9))
+        stub._ZIP_LINE_ARROW_MIN_SCORE = 0.60
         stub._align_zip_line_distance = Mock(return_value=True)
         stub._try_click_on_zip_line = Mock(side_effect=[(False, "gate"), (True, None)])
         stub.log_info = Mock()

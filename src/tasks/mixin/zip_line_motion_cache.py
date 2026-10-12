@@ -7,7 +7,9 @@ from contextlib import suppress
 from pathlib import Path
 from threading import RLock
 
-_CACHE_VERSION = 3
+from src.tasks.mixin.zip_line_yaw_cache import build_zip_line_motion_route_fingerprint
+
+_CACHE_VERSION = 4
 _DEFAULT_CACHE_PATH = Path("tmp") / "zipline_motion_cache.json"
 _CACHE_LOCK = RLock()
 _MAX_ROUTES = 128
@@ -39,16 +41,19 @@ def _empty_cache() -> dict:
 
 
 def _read_cache() -> dict:
-    """Read the fixed cache file and fail soft on missing/corrupt/old data."""
+    """Read current or calibrated-yaw history; fail soft on unsupported/corrupt data."""
     try:
         payload = json.loads(_DEFAULT_CACHE_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         return _empty_cache()
-    if not isinstance(payload, dict) or payload.get("version") != _CACHE_VERSION:
+    if not isinstance(payload, dict) or payload.get("version") not in (3, _CACHE_VERSION):
         return _empty_cache()
     routes = payload.get("routes")
     if not isinstance(routes, dict):
         return _empty_cache()
+    # v3 measured the suffix after yaw calibration, so each old anchor bucket is
+    # already a valid starting-yaw history. New records also include any prefix.
+    payload["version"] = _CACHE_VERSION
     return payload
 
 
@@ -90,6 +95,25 @@ def _segment_key(segment_index) -> str | None:
     return str(index)
 
 
+def _segment_motion(route, key):
+    """Validate one stored segment and return its raw displacement and sample count."""
+    if not isinstance(route, dict) or not isinstance(route.get("segments"), dict):
+        return None
+    entry = route["segments"].get(key)
+    if not isinstance(entry, dict):
+        return None
+    try:
+        samples = int(entry.get("samples", 0))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    mean_dx = _finite_number(entry.get("mean_dx"))
+    mean_dy = _finite_number(entry.get("mean_dy"))
+    if samples <= 0 or mean_dx is None or mean_dy is None:
+        return None
+    move_dx, move_dy = round(mean_dx), round(mean_dy)
+    return (move_dx, move_dy, samples) if move_dx or move_dy else None
+
+
 def load_zip_line_segment_motion(route_fingerprint: str | None, segment_index):
     """Return ``(raw_dx, raw_dy, samples)`` for one exact route segment.
 
@@ -105,29 +129,44 @@ def load_zip_line_segment_motion(route_fingerprint: str | None, segment_index):
 
     with _CACHE_LOCK:
         route = _read_cache()["routes"].get(route_fingerprint)
-    if not isinstance(route, dict):
-        return None
-    segments = route.get("segments")
-    if not isinstance(segments, dict):
-        return None
-    entry = segments.get(key)
-    if not isinstance(entry, dict):
-        return None
+    return _segment_motion(route, key)
 
-    try:
-        samples = int(entry.get("samples", 0))
-    except (TypeError, ValueError, OverflowError):
-        return None
-    mean_dx = _finite_number(entry.get("mean_dx"))
-    mean_dy = _finite_number(entry.get("mean_dy"))
-    if samples <= 0 or mean_dx is None or mean_dy is None:
-        return None
 
-    move_dx = round(mean_dx)
-    move_dy = round(mean_dy)
-    if move_dx == 0 and move_dy == 0:
+def load_nearest_zip_line_segment_motion(route_fingerprint, segment_index, width, height, start_yaw):
+    """Find the nearest valid learned yaw for the same route, segment and capture size.
+
+    Returns ``(yaw, raw_dx, raw_dy, samples)``. The caller must physically turn to
+    this yaw and verify the actual bucket before replaying the displacement.
+    """
+    fingerprint = build_zip_line_motion_route_fingerprint(route_fingerprint, width, height, start_yaw)
+    key = _segment_key(segment_index)
+    if fingerprint is None or key is None:
         return None
-    return move_dx, move_dy, samples
+    identity = json.loads(fingerprint)[:2]
+    yaw = float(start_yaw) % 360.0
+    with _CACHE_LOCK:
+        routes = _read_cache()["routes"]
+    candidates = []
+    for stored_key, route in routes.items():
+        try:
+            fields = json.loads(stored_key)
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(fields, list) or len(fields) != 3 or fields[:2] != identity:
+            continue
+        bucket = fields[2]
+        if type(bucket) is not int or not 0 <= bucket < 72:
+            continue
+        motion = _segment_motion(route, key)
+        if motion is None:
+            continue
+        target_yaw = bucket * 5.0
+        distance = abs((target_yaw - yaw + 180.0) % 360.0 - 180.0)
+        candidates.append((distance, -motion[2], target_yaw, motion))
+    if not candidates:
+        return None
+    _, _, target_yaw, motion = min(candidates)
+    return target_yaw, *motion
 
 
 def record_zip_line_segment_motion(
