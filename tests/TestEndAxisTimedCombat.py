@@ -1,6 +1,7 @@
 import unittest
 
 from src.core.BattleConfig import BATTLE_CONFIG_TYPE, DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
+from src.data.combat_observation import ActionBlockReason
 from src.data.endaxis_timeline import EndAxisAction, EndAxisScenario
 from src.data.skill_timing import load_skill_timings
 from src.patches.endaxis_timed_combat_patch import (
@@ -37,6 +38,8 @@ class _RuntimeTask:
         self.keys = []
         self.messages = []
         self.mouse = []
+        self.block_reason = None
+        self.ult_success = True
         self._battle_team = None
         self._battle_member_count = 1
         self._battle_team_disabled_slots = set()
@@ -62,6 +65,30 @@ class _RuntimeTask:
 
     def send_key(self, token):
         self.keys.append(token)
+
+    def sleep(self, seconds):
+        self.now += float(seconds)
+
+    def next_frame(self):
+        pass
+
+    def arm_combat_action_feedback_probe(self):
+        pass
+
+    def reset_combat_action_feedback_probe(self):
+        self.block_reason = None
+
+    def probe_combat_action_block_reason(self):
+        return self.block_reason
+
+    def recover_target_too_far(self):
+        return False
+
+    def _find_battle_ult(self, _key):
+        return True
+
+    def use_ult(self, ult_sequence=None, wait_for_team_recovery=True):
+        return self.ult_success
 
 
 class TestEndAxisPlanClock(unittest.TestCase):
@@ -108,7 +135,7 @@ class TestEndAxisTimedRuntime(unittest.TestCase):
     def setUpClass(cls):
         install_endaxis_timed_combat_patch()
 
-    def _logic(self):
+    def _logic(self, kind="skill"):
         task = _RuntimeTask()
         logic = TimedCombatLogic(
             task,
@@ -125,7 +152,7 @@ class TestEndAxisTimedRuntime(unittest.TestCase):
         logic._endaxis_scenario = EndAxisScenario(
             "runtime",
             "Runtime",
-            (EndAxisAction("skill", 1, 300, 30),),
+            (EndAxisAction(kind, 1, 300, 30),),
         )
         logic._endaxis_cursor = 0
         logic._endaxis_attempt_index = None
@@ -175,6 +202,27 @@ class TestEndAxisTimedRuntime(unittest.TestCase):
         self.assertTrue(logic._endaxis_frozen)
         self.assertAlmostEqual(_plan_elapsed(logic), 0.0)
         self.assertIsNone(logic.pending)
+
+    def test_blocked_ultimate_does_not_commit_and_refreezes_due_action(self):
+        task, logic = self._logic("ultimate")
+        task.block_reason = ActionBlockReason.TOO_FAR
+
+        logic.step()
+
+        self.assertEqual(logic._endaxis_cursor, 0)
+        self.assertIsNone(logic._endaxis_attempt_index)
+        self.assertTrue(logic._endaxis_frozen)
+        self.assertAlmostEqual(_plan_elapsed(logic), 0.0)
+
+    def test_clean_ultimate_feedback_commits_after_confirmation_frames(self):
+        task, logic = self._logic("ultimate")
+
+        logic.step()
+
+        self.assertEqual(logic._endaxis_cursor, 1)
+        self.assertIsNone(logic._endaxis_attempt_index)
+        self.assertFalse(logic._endaxis_frozen)
+        self.assertGreater(_plan_elapsed(logic), 0.0)
 
 
 if __name__ == "__main__":
