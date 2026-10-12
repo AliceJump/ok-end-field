@@ -14,9 +14,9 @@ from src.core.global_config_store import (
 )
 from src.core.sequence_parser import parse_int_sequence
 from src.image.hsv_config import HSVRange as hR
+from src.interaction.Mouse import calc_direction_step
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_mixin import NavigationMixin
-
 
 _ZIP_LINE_ICON_TEMPLATE_ROWS = (
     "....................",
@@ -441,6 +441,23 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             raise Exception("对中失败")
         return False
 
+    def _move_to_zip_line_target(self, target):
+        """在椭圆坐标中计算方向与距离，以屏幕宽度统一缩放横纵步长。"""
+        cx, cy, rx, ry = self._zip_line_ellipse_geometry()
+        nx = (target.x + target.width // 2 - cx) / rx
+        ny = (target.y + target.height // 2 - cy) / ry
+        profile = self._zip_line_move_profile(math.hypot(nx, ny))
+        width_scale = self.width / 1920
+        width_radius = self._ZIP_LINE_ELLIPSE_RX * width_scale
+        dx, dy = calc_direction_step(
+            (0, 0),
+            (nx * width_radius, ny * width_radius),
+            **{key: max(1, round(value * width_scale)) for key, value in profile.items()},
+        )
+        if dx or dy:
+            self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005)
+        return dx, dy
+
     def _zip_line_target_is_gold_and_centered(self, zip_line, frame=None, tolerance=50):
         """判断目标距离是否处于黄色锁定态且位于屏幕中心附近。"""
         result = self.ocr(
@@ -473,6 +490,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         raise_if_fail=True,
         deadline=None,
         max_iterations=None,
+        ocr_target_detector=None,
     ):
         """保留原始全局 OCR 对中，并在单次 helper 调用中共享截止时间与迭代预算。"""
 
@@ -490,6 +508,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 raise_if_fail=helper_raise_if_fail,
                 deadline=helper_deadline,
                 max_iterations=helper_max_iterations,
+                ocr_target_detector=ocr_target_detector,
+                ocr_target_mover=self._move_to_zip_line_target,
             )
 
         if deadline is None and max_iterations is None:
@@ -518,58 +538,45 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         raise_if_fail=True,
         deadline=None,
     ):
-        """优先用滑索图标限定 OCR 候选；连续模板 miss 后退回原始 OCR。"""
-        scaled_tolerance = self.scale_distance(tolerance)
+        """每轮优先模板 OCR，连续 miss 后补充全屏 OCR，命中模板即恢复快速路径。"""
         misses = 0
-        iteration_budget = max(0, max_time * 2)
-        used_iterations = 0
-        if iteration_budget == 0:
+        if max_time <= 0 or (deadline is not None and self.active_time() >= deadline):
             return self._zip_line_alignment_failed(raise_if_fail)
+        pattern = self._zip_line_distance_pattern(zip_line)
+        processors = [self.make_hsv_isolator(hR.GOLD_TEXT), self.make_hsv_isolator(hR.WHITE)]
 
-        for _ in range(iteration_budget):
-            if deadline is not None and self.active_time() >= deadline:
-                return self._zip_line_alignment_failed(raise_if_fail)
-            used_iterations += 1
-            if need_scroll:
-                self.do_scroll(1, 400)
-            frame = self.next_frame()
+        def detect_target(frame):
+            nonlocal misses
             matched = self._find_zip_line_template_target(zip_line, frame)
             if matched is None:
                 misses += 1
-                if misses >= self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
-                    self.log_info(f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，回退原始OCR对中")
-                    remaining_iterations = iteration_budget - used_iterations
-                    return self._align_zip_line_distance_ocr(
-                        zip_line,
-                        need_scroll=need_scroll,
-                        tolerance=tolerance,
-                        max_time=max_time,
-                        raise_if_fail=raise_if_fail,
-                        deadline=deadline,
-                        max_iterations=remaining_iterations,
+                if misses < self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
+                    return None
+                if misses == self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
+                    self.log_info(f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，本轮回退全屏OCR，后续继续尝试模板")
+                for processor in processors:
+                    if deadline is not None and self.active_time() >= deadline:
+                        return None
+                    result = self.ocr(
+                        match=pattern, frame=frame, log=True, frame_processor=processor,
                     )
-                self.sleep(0.03)
-                continue
+                    if result:
+                        target = copy(result[0])
+                        target.y -= int(self.height * ((525 - 486) / 1080))
+                        return target
+                return []
 
+            if misses >= self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
+                self.log_info(f"滑索{zip_line}恢复模板OCR快速对中")
             misses = 0
             candidate, ocr_target = matched
-            target_center = (int(round(candidate["center_x"])), int(round(candidate["center_y"])))
-            screen_center_x, screen_center_y = self.screen_center()
-            dx = target_center[0] - screen_center_x
-            dy = target_center[1] - screen_center_y
-            if abs(dx) <= scaled_tolerance and abs(dy) <= scaled_tolerance:
-                return target_center
-
             move_target = copy(ocr_target)
             move_target.x = candidate["x"]
             move_target.y = candidate["y"]
             move_target.width = candidate["width"]
             move_target.height = candidate["height"]
-            self.move_to_target_once(move_target, **self._zip_line_move_profile(candidate["radius"]))
-            self.sleep(0.01)
+            return move_target
 
-        self.log_info(f"滑索{zip_line}模板对中未在限制内收敛，回退原始OCR对中")
-        remaining_iterations = iteration_budget - used_iterations
         return self._align_zip_line_distance_ocr(
             zip_line,
             need_scroll=need_scroll,
@@ -577,7 +584,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             max_time=max_time,
             raise_if_fail=raise_if_fail,
             deadline=deadline,
-            max_iterations=remaining_iterations,
+            max_iterations=max_time * 2,
+            ocr_target_detector=detect_target,
         )
 
     def _zip_line_stop_state(self):
@@ -728,6 +736,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     ocr=ocr_bool,
                     use_yolo=yolo_bool,
                     raise_if_fail=False,
+                    ocr_target_mover=self._move_to_zip_line_target if ocr_bool else None,
                 )
                 self.click(key="right")
         if self.wait_ocr(

@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 
 from src.image.hsv_config import HSVRange as hR
+from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.test.zip_line_scan_recording import (
     ZipLineFrameDetector,
@@ -76,6 +77,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
             make_hsv_isolator=Mock(side_effect=[gold_processor, white_processor]),
             align_ocr_or_find_target_to_center=Mock(return_value=True),
+            _move_to_zip_line_target=Mock(),
         )
 
         result = ZipLineMixin._align_zip_line_distance_ocr(stub, 108, need_scroll=True)
@@ -96,6 +98,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
             make_hsv_isolator=Mock(side_effect=[gold_processor, white_processor]),
             align_ocr_or_find_target_to_center=Mock(return_value=False),
+            _move_to_zip_line_target=Mock(),
             active_time=Mock(side_effect=[0.0, 20.0]),
             _zip_line_alignment_failed=lambda raise_if_fail: ZipLineMixin._zip_line_alignment_failed(raise_if_fail),
         )
@@ -176,110 +179,181 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(outer["min_step"], 35)
         self.assertEqual(outer["slow_radius"], inner["slow_radius"])
 
+    @staticmethod
+    def _alignment_stub():
+        now = [0.0]
+        stub = SimpleNamespace(
+            width=1920, height=1080,
+            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
+            scale_distance=lambda value: value,
+            screen_center=lambda: (960, 540),
+            box_of_screen=lambda *_args: None,
+            active_time=lambda: now[0],
+            next_frame=Mock(return_value="frame"),
+            _find_zip_line_template_target=Mock(return_value=None),
+            _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
+            make_hsv_isolator=Mock(side_effect=lambda value: value),
+            ocr=Mock(return_value=[]), log_info=Mock(), do_scroll=Mock(),
+            _move_to_zip_line_target=Mock(), move_to_target_once=Mock(),
+            active_and_send_mouse_delta=Mock(),
+        )
+        stub.sleep = lambda duration: now.__setitem__(0, now[0] + duration)
+        stub.align_ocr_or_find_target_to_center = lambda *args, **kwargs: NavigationMixin.align_ocr_or_find_target_to_center(stub, *args, **kwargs)
+        stub._zip_line_alignment_failed = ZipLineMixin._zip_line_alignment_failed
+        stub._align_zip_line_distance_ocr = lambda *args, **kwargs: ZipLineMixin._align_zip_line_distance_ocr(stub, *args, **kwargs)
+        return stub
+
+    @staticmethod
+    def _matched_icon(x=960, y=540):
+        return ({"x": x - 10, "y": y - 10, "width": 20, "height": 20},
+                SimpleNamespace(x=x - 10, y=y - 10 + int(1080 * (39 / 1080)), width=20, height=20))
+
     def test_template_alignment_falls_back_after_three_consecutive_misses(self):
-        stub = SimpleNamespace(
-            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
-            scale_distance=Mock(return_value=50),
-            next_frame=Mock(return_value="frame"),
-            _find_zip_line_template_target=Mock(return_value=None),
-            log_info=Mock(),
-            _align_zip_line_distance_ocr=Mock(return_value="fallback"),
-            sleep=Mock(),
-        )
-
+        stub = self._alignment_stub()
+        target = self._matched_icon()[1]
+        stub.ocr.return_value = [target]
         result = ZipLineMixin._align_zip_line_distance(stub, 108)
-
-        self.assertEqual(result, "fallback")
+        self.assertEqual(result, (960, 540))
         self.assertEqual(stub._find_zip_line_template_target.call_count, 3)
-        stub._align_zip_line_distance_ocr.assert_called_once_with(
-            108,
-            need_scroll=None,
-            tolerance=50,
-            max_time=100,
-            raise_if_fail=True,
-            deadline=None,
-            max_iterations=197,
-        )
+        self.assertEqual(stub.ocr.call_count, 1)
+        self.assertEqual(target.y, 568)  # Full-screen coordinate correction must not mutate OCR output.
 
-    def test_template_alignment_shares_retry_deadline_and_remaining_attempt_budget(self):
-        stub = SimpleNamespace(
-            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
-            scale_distance=Mock(return_value=50),
-            active_time=Mock(return_value=0.0),
-            next_frame=Mock(return_value="frame"),
-            _find_zip_line_template_target=Mock(return_value=None),
-            log_info=Mock(),
-            _align_zip_line_distance_ocr=Mock(return_value="fallback"),
-            sleep=Mock(),
-        )
-
-        result = ZipLineMixin._align_zip_line_distance(stub, 108, max_time=10, deadline=20.0)
-
-        self.assertEqual(result, "fallback")
-        self.assertEqual(stub._find_zip_line_template_target.call_count, 3)
-        stub._align_zip_line_distance_ocr.assert_called_once_with(
-            108,
-            need_scroll=None,
-            tolerance=50,
-            max_time=10,
-            raise_if_fail=True,
-            deadline=20.0,
-            max_iterations=17,
-        )
-
-    def test_template_alignment_does_not_start_after_retry_deadline(self):
-        stub = SimpleNamespace(
-            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
-            scale_distance=Mock(return_value=50),
-            active_time=Mock(return_value=20.0),
-            next_frame=Mock(),
-            _find_zip_line_template_target=Mock(),
-            _align_zip_line_distance_ocr=Mock(),
-            _zip_line_alignment_failed=lambda raise_if_fail: ZipLineMixin._zip_line_alignment_failed(raise_if_fail),
-        )
-
-        result = ZipLineMixin._align_zip_line_distance(
-            stub,
-            108,
-            max_time=10,
-            raise_if_fail=False,
-            deadline=20.0,
-        )
-
-        self.assertFalse(result)
-        stub.next_frame.assert_not_called()
-        stub._align_zip_line_distance_ocr.assert_not_called()
+    def test_template_recovers_after_full_screen_ocr_move(self):
+        stub = self._alignment_stub()
+        stub._find_zip_line_template_target.side_effect = [None, None, None, self._matched_icon()]
+        stub.ocr.return_value = [self._matched_icon(1400, 800)[1]]
+        result = ZipLineMixin._align_zip_line_distance(stub, 64, need_scroll=True)
+        self.assertEqual(result, (960, 540))
+        self.assertEqual(stub.ocr.call_count, 1)
+        self.assertEqual(stub._find_zip_line_template_target.call_count, 4)
+        self.assertEqual(stub.do_scroll.call_count, 4)
+        stub._move_to_zip_line_target.assert_called_once()
+        moved = stub._move_to_zip_line_target.call_args.args[0]
+        self.assertEqual((moved.x + 10, moved.y + 10), (1400, 800))
+        stub.move_to_target_once.assert_not_called()
 
     def test_template_hit_resets_consecutive_miss_counter(self):
-        candidate = {
-            "x": 230,
-            "y": 585,
-            "width": 20,
-            "height": 30,
-            "center_x": 240,
-            "center_y": 600,
-            "radius": 1.0,
-        }
-        target = SimpleNamespace(x=230, y=636, width=30, height=14)
-        profile = {"max_step": 210, "min_step": 35, "slow_radius": 350, "deadzone": 8}
-        stub = SimpleNamespace(
-            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
-            scale_distance=Mock(return_value=50),
-            next_frame=Mock(return_value="frame"),
-            _find_zip_line_template_target=Mock(side_effect=[None, None, (candidate, target), None, None, None]),
-            screen_center=Mock(return_value=(960, 540)),
-            _zip_line_move_profile=Mock(return_value=profile),
-            move_to_target_once=Mock(),
-            log_info=Mock(),
-            _align_zip_line_distance_ocr=Mock(return_value="fallback"),
-            sleep=Mock(),
-        )
+        stub = self._alignment_stub()
+        stub._find_zip_line_template_target.side_effect = [None, None, None, self._matched_icon(1400), None, None, self._matched_icon()]
+        stub.ocr.return_value = [self._matched_icon(1400)[1]]
+        self.assertEqual(ZipLineMixin._align_zip_line_distance(stub, 64), (960, 540))
+        self.assertEqual(stub.ocr.call_count, 1)
+        self.assertEqual(stub._move_to_zip_line_target.call_count, 2)
 
-        result = ZipLineMixin._align_zip_line_distance(stub, 108)
+    def test_template_alignment_shares_retry_deadline_and_attempt_budget(self):
+        for kwargs, count in [({"max_time": 2}, 4), ({"max_time": 100, "deadline": 0.05}, 2)]:
+            with self.subTest(kwargs=kwargs):
+                stub = self._alignment_stub()
+                self.assertFalse(ZipLineMixin._align_zip_line_distance(stub, 108, raise_if_fail=False, **kwargs))
+                self.assertEqual(stub._find_zip_line_template_target.call_count, count)
 
-        self.assertEqual(result, "fallback")
-        self.assertEqual(stub._find_zip_line_template_target.call_count, 6)
+    def test_template_alignment_does_not_start_after_retry_deadline(self):
+        stub = self._alignment_stub()
+        self.assertFalse(ZipLineMixin._align_zip_line_distance(stub, 108, deadline=0, raise_if_fail=False))
+        stub.next_frame.assert_not_called()
+        stub.make_hsv_isolator.assert_not_called()
+
+    def test_slow_fallback_cannot_move_or_report_success_after_deadline(self):
+        stub = self._alignment_stub()
+
+        def slow_ocr(**_kwargs):
+            stub.sleep(1)
+            return [self._matched_icon()[1]]
+
+        stub.ocr.side_effect = slow_ocr
+        self.assertFalse(ZipLineMixin._align_zip_line_distance(stub, 64, deadline=0.5, raise_if_fail=False))
+        stub._move_to_zip_line_target.assert_not_called()
+        self.assertEqual(stub.ocr.call_count, 1)
+
+    def test_ocr_tracking_uses_ellipse_mover_across_misses(self):
+        stub = self._alignment_stub()
+        stub._find_zip_line_template_target.side_effect = [None, None, None, None, self._matched_icon()]
+        stub.ocr.side_effect = [[self._matched_icon(1400, 800)[1]], [], []]
+        self.assertEqual(ZipLineMixin._align_zip_line_distance(stub, 64), (960, 540))
+        self.assertEqual(stub._move_to_zip_line_target.call_count, 2)
+        stub.move_to_target_once.assert_not_called()
+        stub.active_and_send_mouse_delta.assert_not_called()
+
+    def test_standalone_full_screen_ocr_uses_ellipse_mover(self):
+        stub = self._alignment_stub()
+        stub.ocr.side_effect = [[self._matched_icon(1400, 800)[1]], [self._matched_icon()[1]]]
+        self.assertEqual(ZipLineMixin._align_zip_line_distance_ocr(stub, 108), (960, 540))
+        stub._move_to_zip_line_target.assert_called_once()
+        stub.move_to_target_once.assert_not_called()
+
+    def test_non_ocr_alignment_ignores_ocr_callbacks(self):
+        stub = self._alignment_stub()
+        results = [[self._matched_icon(1400, 800)[1]], [self._matched_icon()[1]]]
+        detector, mover = Mock(), Mock()
+        # Non-OCR targets are already at icon coordinates.
+        for result in results:
+            result[0].y -= int(1080 * (39 / 1080))
+        stub.find_feature = Mock(side_effect=results)
+        NavigationMixin.align_ocr_or_find_target_to_center(stub, "icon", ocr=False, max_time=1,
+                                                       ocr_target_detector=detector, ocr_target_mover=mover)
+        detector.assert_not_called()
+        mover.assert_not_called()
         stub.move_to_target_once.assert_called_once()
+
+    def test_zipline_arrival_target_only_uses_ellipse_mover_for_ocr(self):
+        for kind in ("ocr", "yolo", "feature"):
+            with self.subTest(kind=kind):
+                stub = self._stub()
+                stub.wait_ocr = Mock(return_value=False)
+                stub.ensure_main = Mock()
+                stub.log_info = Mock()
+                stub.align_ocr_or_find_target_to_center = Mock()
+                stub._move_to_zip_line_target = Mock()
+                ZipLineMixin.zip_line_list_go(stub, [], target=("destination", kind))
+                kwargs = stub.align_ocr_or_find_target_to_center.call_args.kwargs
+                self.assertIs(kwargs["ocr_target_mover"], stub._move_to_zip_line_target if kind == "ocr" else None)
+
+    def _motion_stub(self, width=1920, height=1080):
+        stub = self._detector_stub()
+        stub.width, stub.height = width, height
+        stub.resolution_scale.return_value = min(width / 1920, height / 1080)
+        stub.screen_center.return_value = (width // 2, height // 2)
+        stub._ZIP_LINE_INNER_RADIUS = 0.5
+        stub._ZIP_LINE_OUTER_MAX_BOOST = 1.75
+        stub._zip_line_move_profile = lambda radius: ZipLineMixin._zip_line_move_profile(stub, radius)
+        stub.active_and_send_mouse_delta = Mock()
+        return stub
+
+    @staticmethod
+    def _motion_at(stub, nx, ny):
+        cx, cy, rx, ry = stub._zip_line_ellipse_geometry()
+        target = SimpleNamespace(x=cx + nx * rx, y=cy + ny * ry, width=0, height=0)
+        return ZipLineMixin._move_to_zip_line_target(stub, target)
+
+    def test_equal_ellipse_radii_have_equal_horizontal_and_vertical_speed(self):
+        stub = self._motion_stub()
+        for radius in (0.1, 0.5, 0.75, 1, 1.5):
+            with self.subTest(radius=radius):
+                dx, _ = self._motion_at(stub, radius, 0)
+                _, dy = self._motion_at(stub, 0, radius)
+                self.assertEqual(dx, dy)
+        dx, dy = self._motion_at(stub, -0.6, 0.6)
+        self.assertEqual(-dx, dy)
+        self.assertGreater(dy, 90)
+
+    def test_speed_increases_towards_edge_and_center_does_not_move(self):
+        stub = self._motion_stub()
+        self.assertEqual(self._motion_at(stub, 0, 0), (0, 0))
+        stub.active_and_send_mouse_delta.assert_not_called()
+        speeds = [self._motion_at(stub, 0, r)[1] for r in (0.1, 0.3, 0.5, 0.75, 1)]
+        self.assertEqual(speeds, sorted(set(speeds)))
+        self.assertLessEqual(speeds[-1], 210)
+        # No jump at the extra acceleration threshold.
+        self.assertLessEqual(abs(self._motion_at(stub, 0, 0.5001)[1] - self._motion_at(stub, 0, 0.5)[1]), 1)
+
+    def test_motion_scales_with_width_at_different_resolutions(self):
+        baseline = self._motion_at(self._motion_stub(), 0.6, -0.6)
+        for width, height in ((1280, 720), (2560, 1440), (3840, 2160), (2560, 1080)):
+            with self.subTest(resolution=(width, height)):
+                actual = self._motion_at(self._motion_stub(width, height), 0.6, -0.6)
+                for expected, value in zip(baseline, actual, strict=True):
+                    self.assertAlmostEqual(value, expected * width / 1920, delta=1)
+                self.assertEqual(actual[0], -actual[1])
 
     def test_gold_center_check_uses_fifty_pixel_tolerance(self):
         processor = object()
