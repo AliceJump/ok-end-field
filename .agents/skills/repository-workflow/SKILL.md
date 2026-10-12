@@ -34,7 +34,11 @@ The left count is remote base commits missing from HEAD; rebase onto the fetched
 
 If unrelated commits are already inherited, preserve the original branch state and rebuild from `origin/master` by cherry-picking only this task's commits, or use `rebase --onto` with a verified boundary. A plain `rebase origin/master` does not remove unrelated commits that are already on the branch. Review the resulting commit list and diff, and rerun verification affected by the changed base before publishing.
 
-After publishing, use `gh pr view <number> --json baseRefName,baseRefOid,headRefOid,commits,files` to verify the GitHub PR's actual base, head, commits, and files against the local result. If the remote base advances before publication, synchronize and repeat the checks. For an authorized repair that rewrites a published branch, use `--force-with-lease` with the previously inspected remote head; if the lease fails, fetch and inspect the new commits before retrying.
+After publishing, use `gh pr view <number> --json baseRefName,baseRefOid,headRefOid` to verify the GitHub PR's actual base and head against the local result. Retrieve commits and files with `gh api --paginate --slurp repos/{owner}/{repo}/pulls/<number>/commits` and `gh api --paginate --slurp repos/{owner}/{repo}/pulls/<number>/files`, then flatten the page arrays and compare the lists against the local result. Do not rely on `gh pr view --json commits,files` for complete lists.
+
+Verify the retrieved list lengths against `commits` and `changed_files` from `gh api repos/{owner}/{repo}/pulls/<number>`. If pagination or an API limit leaves either list incomplete, stop verification and report the missing coverage rather than treating the PR scope as verified.
+
+If the remote base advances before publication, synchronize and repeat the checks. For an authorized repair that rewrites a published branch, use `--force-with-lease` with the previously inspected remote head; if the lease fails, fetch and inspect the new commits before retrying.
 
 ## Windows text handling
 
