@@ -25,7 +25,7 @@
 | `RESOLVED_SILENT` | Original reviewer resolved without another reply | `NONE` |
 | `RESOLVED_BY_OTHER` | Another or unknown account resolved without a reviewer reply | `NONE` |
 
-For resolved threads, `KEPT_OPEN`, `FOLLOW_UP`, or `NEEDS_REVIEW` conflicting with closure produce `REVIEW`; other outcomes produce `NONE`. Old wording does not override the current platform state, and closure does not prove the code is correct. Fixed CodeRabbit findings do not need proactive fix notifications, even when still open after review.
+For resolved threads, `KEPT_OPEN`, `FOLLOW_UP`, or `NEEDS_REVIEW` conflicting with closure produce `REVIEW`; other outcomes produce `NONE`. Old wording does not override the current platform state, and closure does not prove the code is correct. Committed fixes normally need no proactive notification. If you verify that a completed current-head review missed the exact fix, the skill permits an evidence-based recheck reply in the original thread. The read-only observer cannot establish this exception from thread state alone; use the skill's verification and reply rules. Confirmed acceptance with a platform closure failure still does not authorize manual closure.
 
 The original reviewer is the root comment's author, not every bot combined. CodeRabbit comment identity requires the expected login and Bot type. Only the platform's `resolvedBy` field also accepts its observed `coderabbitai[bot]` / `User` representation. Human and other-bot findings are not classified using CodeRabbit confirmation phrases.
 
