@@ -288,6 +288,43 @@ class TestZipLineMotionCache(unittest.TestCase):
         stub = self._settling_stub([(359.8, 0.9), (0.0, 0.9), (0.2, 0.9)])
         self.assertEqual(ZipLineMixin._read_zip_line_settled_arrow_angle(stub), (0.2, 0.9))
 
+    def test_prefeed_wait_ignores_stale_yaw_until_motion_starts(self):
+        readings = [(30.0, 0.9)] * 3 + [(45.0, 0.9), (60.0, 0.9), (80.0, 0.9), (80.2, 0.9), (80.1, 0.9)]
+        stub = self._settling_stub(readings)
+        self.assertTrue(ZipLineMixin._wait_zip_line_prefeed_settled(stub, (30.0, 0.9), -600))
+        self.assertEqual(stub._read_zip_line_arrow_angle.call_count, len(readings))
+
+    def test_prefeed_wait_times_out_if_motion_never_starts(self):
+        stub = self._settling_stub(cycle([(30.0, 0.9)]))
+        self.assertFalse(ZipLineMixin._wait_zip_line_prefeed_settled(stub, (30.0, 0.9), -600))
+        self.assertGreaterEqual(stub.active_time(), stub._ZIP_LINE_ARROW_SETTLE_TIMEOUT)
+
+    def test_prefeed_wait_runs_before_visual_detection(self):
+        events = []
+        stub = SimpleNamespace(
+            _ZIP_LINE_TEMPLATE_MISS_LIMIT=3,
+            _ZIP_LINE_ARROW_SETTLE_DELAY=0.08,
+            active_time=lambda: 0.0,
+            _zip_line_alignment_failed=ZipLineMixin._zip_line_alignment_failed,
+            _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
+            make_hsv_isolator=Mock(side_effect=lambda value: value),
+            _read_zip_line_arrow_angle=Mock(side_effect=lambda: events.append("read") or (30.0, 0.9)),
+            active_and_send_mouse_delta=Mock(side_effect=lambda **kwargs: events.append("send") or True),
+            _wait_zip_line_prefeed_settled=Mock(side_effect=lambda *args: events.append("settle") or True),
+            next_frame=Mock(side_effect=lambda: events.append("frame") or object()),
+            _find_zip_line_template_target=Mock(side_effect=lambda *args: events.append("detect") or None),
+            log_info=Mock(),
+        )
+
+        def align_ocr(*args, **kwargs):
+            kwargs["ocr_target_detector"](object())
+            return True
+
+        stub._align_zip_line_distance_ocr = Mock(side_effect=align_ocr)
+        self.assertTrue(ZipLineMixin._align_zip_line_distance(stub, 108, initial_move=(600, 100)))
+        self.assertEqual(events[:5], ["read", "send", "settle", "frame", "detect"])
+        stub._wait_zip_line_prefeed_settled.assert_called_once_with((30.0, 0.9), 600)
+
     def _route_stub(self, readings):
         stub = self._yaw_stub(readings)
         stub.lang = SimpleNamespace(zip_line_mixin=SimpleNamespace(k_2f4f4a2f="move", k_0b1e4f35="leave"))
