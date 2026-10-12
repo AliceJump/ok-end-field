@@ -1223,6 +1223,9 @@ class TimedCombatLogic:
             return False
         self._note_action_attempt("ult", token)
         ended = self._clock()
+        if self._wait_assumed_success_feedback():
+            return True
+        self._clear_action_attempt_feedback()
         self._ult_action_seconds[token] = max(0, ended - started)
         if self.release_burst is not None:
             self.release_burst.confirm(token, "ult", started)
