@@ -12,6 +12,7 @@
 """
 
 import json
+import math
 import tempfile
 import unittest
 from pathlib import Path
@@ -44,6 +45,24 @@ class _LayeredTask(_FakeGridTask):
         return str(self._grid_dir)
 
 
+class _HeadingWalkingTask(_LayeredTask):
+    """按**朝向**移动的测试任务。
+
+    基类的 ``sleep`` 无条件 ``x += 1.0``，只能模拟"一直向东走"。分层路线经常要往回走
+    （跨层之后目标可能在另一侧），几何就不自洽了——跑完整主循环时会出现"朝目标反方向
+    一直走然后判偏航"的假失败。这里改成沿当前罗盘方位前进，几何才和真实一致。
+    """
+
+    def sleep(self, seconds):
+        self.t += max(0.0, float(seconds))
+        if not self.w_down:
+            return
+        step = 0.5
+        radians = math.radians(float(self.heading))
+        self.x += math.sin(radians) * step
+        self.z += math.cos(radians) * step
+
+
 class LayeredNavigationWiringTest(unittest.TestCase):
     """分层导航的接线：三维目标 → 层判定 → 分层规划 → 分段跟随。"""
 
@@ -54,14 +73,16 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         main = new_grid((1, 12), map_name="test", zoom="4")
         main.cells = _row(12)
         save_grid(self.root / f"test_4{GRID_SUFFIX}", main)
-        # 分层 lv1：另一条 4 格的走廊，世界坐标错开到 x∈[10,14)，高度 100..110
+        # 分层 lv1：另一条 4 格的走廊。**与主图共用同一原点**——连接的两端必须落在同一处
+        # X/Z（只差一层），这是数据模型的约定：实测 7 条连接两端水平距离全是 1.0~2.5m。
+        # 早先这里把 lv1 错开到 x=10，等于让"楼梯"连接相隔 13m 的两个点，夹具违背了模型。
         tier = new_grid(
             (1, 4),
-            origin=(10.0, 0.0, 0.0),
+            origin=(0.0, 0.0, 0.0),
             map_name="test",
             zoom="4",
             tier="lv1",
-            floor_regions=[{"x0": 10.0, "x1": 14.0, "z0": 0.0, "z1": 1.0, "y_min": 100.0, "y_max": 110.0}],
+            floor_regions=[{"x0": 0.0, "x1": 4.0, "z0": 0.0, "z1": 1.0, "y_min": 100.0, "y_max": 110.0}],
         )
         tier.cells = _row(4)
         save_grid(self.root / f"test__lv1_4{GRID_SUFFIX}", tier)
@@ -72,11 +93,12 @@ class LayeredNavigationWiringTest(unittest.TestCase):
                     "links": [
                         {
                             "id": "link1",
+                            # 两端落在**同一个 X/Z**：这就是"只差一层"的连接
                             "from": {
                                 "map": "test",
                                 "tier": "lv1",
                                 "zoom": "4",
-                                "rect": {"x0": 13.0, "z0": 0.0, "x1": 14.0, "z1": 1.0},
+                                "rect": {"x0": 0.0, "z0": 0.0, "x1": 1.0, "z1": 1.0},
                             },
                             "to": {
                                 "map": "test",
@@ -93,7 +115,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
             ),
             encoding="utf-8",
         )
-        self.task = _LayeredTask(self.root)
+        self.task = _HeadingWalkingTask(self.root)
 
     def tearDown(self):
         self._tmp.cleanup()
@@ -162,23 +184,23 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertEqual(layered.links, ())
 
     def test_y_decides_the_tier(self):
-        _session, _ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        _session, _ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True), "高度落在 lv1 区间、终点在大地图 -> 应当走分层")
 
     def test_ambiguous_height_refuses_to_guess(self):
         """同一高度区间被两层覆盖时明确失败——这正是会把角色送错层的场景。"""
         tier2 = new_grid(
             (1, 4),
-            origin=(10.0, 0.0, 0.0),
+            origin=(0.0, 0.0, 0.0),
             map_name="test",
             zoom="4",
             tier="lv2",
-            floor_regions=[{"x0": 10.0, "x1": 14.0, "z0": 0.0, "z1": 1.0, "y_min": 100.0, "y_max": 110.0}],
+            floor_regions=[{"x0": 0.0, "x1": 4.0, "z0": 0.0, "z1": 1.0, "y_min": 100.0, "y_max": 110.0}],
         )
         tier2.cells = _row(4)
         save_grid(self.root / f"test__lv2_4{GRID_SUFFIX}", tier2)
         self.task._grid_nav_layered_cache.clear()
-        _session, _ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        _session, _ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, False), "判定不出层必须明确失败，不能赌一个")
         self.assertTrue(any("无法唯一确定层级" in line for line in self.task.logs), self.task.logs[-3:])
 
@@ -189,13 +211,17 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertEqual(result, (False, False))
 
     def test_goal_without_height_is_treated_as_overworld(self):
-        """调用方只给平面坐标时按大地图处理，不因为"缺 y"而失败。"""
-        _session, _ctx, result = self._plan(x=0.5, z=0.5, y=105.0, goal=(6.5, 0.5))
+        """调用方只给平面坐标时按大地图处理，不因为"缺 y"而失败。
+
+        起点特意取在**分层区间之外**（x=6.5 不在 lv1 的 x∈[0,4) 里），这样两边都判成
+        大地图，验证的是"缺 y 不报错"而不是"跨层能不能走"。
+        """
+        _session, _ctx, result = self._plan(x=6.5, z=0.5, y=105.0, goal=(9.5, 0.5))
         self.assertEqual(result, (False, False), "两点都判成大地图 -> 同层 -> 单层路径")
 
     # ---- 分段驱动 ----
     def test_cross_layer_route_is_split_into_segments_per_layer(self):
-        session, _ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        session, _ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
         self.assertTrue(session.layered)
         self.assertEqual(len(session.route.segments), 2, "lv1 一段 + 大地图一段")
@@ -207,7 +233,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertEqual(follower.grid.meta.tier, "lv1")
 
     def test_advancing_switches_to_the_next_layer_grid(self):
-        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
         outcome = self.task._advance_layered_segment(ctx)
         self.assertIsNone(outcome, "还有下一段时应继续，而不是结束导航")
@@ -217,7 +243,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
 
     def test_done_handler_advances_instead_of_finishing(self):
         """跟随器报到达时，若整条分层路线还没走完，应当换段而不是结束导航。"""
-        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
         from src.nav.route_follower import DONE, FollowerStep
 
@@ -227,7 +253,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertEqual(session.segment_index, 1)
 
     def test_final_segment_done_finishes_navigation(self):
-        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
         session.segment_index = len(session.route.segments) - 1
         from src.nav.route_follower import DONE, FollowerStep
@@ -242,7 +268,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         于是路线只剩 1 段 + 1 条连接。换段逻辑若不特判，就会把第 0 段重新激活，导航永远
         走不完。
         """
-        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
         self.assertEqual(len(session.route.segments), 1, "大地图那段长度为 0，已被丢弃")
         self.assertEqual(len(session.route.links), 1)
@@ -250,12 +276,66 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertIs(outcome, True, "落点即目标，应当完成而不是继续")
         self.assertTrue(any("落点即目标" in line for line in self.task.logs), self.task.logs[-3:])
 
+    def test_full_loop_drives_a_cross_layer_route_to_completion(self):
+        """跑**完整的** ``navigate_grid_to`` 主循环，而不只是调辅助函数。
+
+        这是本文件里唯一覆盖"接线接对了没"的测试：主循环是
+        ``取快照 → 判定 → 派发``，分层接管后要能顺着"分段 → 跨层 → 下一段"一路走到终点。
+        只测辅助函数会漏掉主循环里的装配错误（例如 DONE 时没换段、规划后没接着跟随）。
+
+        模拟的一处必要约定：跨层**会改变所在高度**。游戏里走过楼梯/门时 y 会变，而
+        ``_cross_layered_link`` 的"走过去"分支本来不做物理动作，所以这里在测试任务里
+        把 y 跟着改掉——不改的话人还在旧层的高度上，"中途换层"的守护会（正确地）判定
+        与当前分段不符并重规划，测试就测不到正常路径了。
+        """
+        task = self.task
+        original_cross = task._cross_layered_link
+
+        def crossing(ctx, link):
+            outcome = original_cross(ctx, link)
+            if outcome is not False:
+                task.y = 105.0 if link.target.tier else 5.0
+            return outcome
+
+        task._cross_layered_link = crossing  # type: ignore[method-assign]
+        task.x, task.z, task.y = 3.5, 0.5, 105.0
+
+        result = task.navigate_grid_to((6.5, 0.5), goal_y=5.0, map_id="test", timeout=60.0)
+
+        self.assertTrue(result, f"完整主循环没能走完跨层路线；日志尾部={task.logs[-6:]}")
+        self.assertLess(abs(task.x - 6.5), 2.5, f"最终位置 x={task.x}")
+        self.assertTrue(any("分层路线" in line for line in task.logs), "应当走了分层路径")
+        self.assertTrue(any("跨层" in line for line in task.logs), "应当执行过跨层")
+        self.assertFalse(task.w_down, "结束时必须松开 W")
+
+    def test_full_loop_fails_cleanly_when_the_route_is_unreachable(self):
+        """分层路线走不通时，完整主循环应当**以失败结束**，而不是卡到超时或走单层。"""
+        task = self.task
+        # 拆掉分层那一侧的可走格：连接端点全部落在阻挡上 -> 层图不可达
+        broken = new_grid(
+            (1, 4),
+            origin=(0.0, 0.0, 0.0),
+            map_name="test",
+            zoom="4",
+            tier="lv1",
+            floor_regions=[{"x0": 0.0, "x1": 4.0, "z0": 0.0, "z1": 1.0, "y_min": 100.0, "y_max": 110.0}],
+        )
+        broken.cells = np.full((1, 4), CELL_BLOCKED, dtype=np.uint8)
+        save_grid(self.root / f"test__lv1_4{GRID_SUFFIX}", broken)
+        task._grid_nav_layered_cache.clear()
+        task.x, task.z, task.y = 3.5, 0.5, 105.0
+
+        result = task.navigate_grid_to((6.5, 0.5), goal_y=5.0, map_id="test", timeout=60.0)
+
+        self.assertFalse(result, "不可达必须以失败结束")
+        self.assertFalse(task.w_down, "结束时必须松开 W")
+
     def test_floor_change_mid_route_triggers_replan(self):
         """玩家在路线中间换到另一层时，必须重新规划——否则跟随器还在拿旧那层的网格走。
 
         对应对方在前端踩到的同类问题：按"同一个 levelId 就不重算"去重，会把换层整条丢掉。
         """
-        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
         self.assertEqual(session.route.segments[0].tier, "lv1")
         # 人还在原处，但高度掉到 lv1 区间之外 -> 判不出层（main 兜底）
@@ -265,22 +345,23 @@ class LayeredNavigationWiringTest(unittest.TestCase):
 
     def test_unique_tier_mismatch_is_detected(self):
         """判到唯一确定、且与当前段不同的层 -> 判定为换层。"""
-        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
         # 把当前段换成主图那一段，而位置仍落在 lv1 区间内 -> 唯一命中 lv1 != 主图
         session.segment_index = len(session.route.segments) - 1
         self.assertEqual(session.route.segments[-1].tier, "")
-        ctx.x, ctx.z, self.task.y = 10.5, 0.5, 105.0
+        ctx.x, ctx.z, self.task.y = 3.5, 0.5, 105.0
         self.assertTrue(self.task._grid_nav_segment_tier_changed(ctx))
         self.assertTrue(any("重新规划" in line for line in self.task.logs), self.task.logs[-2:])
 
     def test_replan_clears_the_layered_route(self):
-        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
         # 起终点改为同层（都判成大地图）后重规划，应当不再走分层
         self.task.y = 5.0
         session.request = type(session.request)(goal=session.request.goal, goal_y=None, map_id=session.request.map_id)
-        again = self.task._try_layered_route_on_plan(ctx, (0.5, 0.5), (6.5, 0.5))
+        # 起点同样取在分层区间之外，此时两边都是大地图 -> 不该再走分层
+        again = self.task._try_layered_route_on_plan(ctx, (6.5, 0.5), (9.5, 0.5))
         self.assertEqual(again, (False, False), "同层时应当交回单层路径")
 
 

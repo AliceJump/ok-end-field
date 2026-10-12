@@ -160,6 +160,11 @@ __all__ = [
 ]
 
 
+#: 非绳索的跨层连接按"走过去"处理时，两端允许的最大水平距离（米）。
+#: 实测数据里 7 条连接全在 1.0~2.5m；超过这个值说明"两端几乎在同一处"的前提不成立，
+#: 本实现不会替角色搬动位置，只能告警（见 :meth:`GridNavigationMixin._cross_layered_link`）。
+_GRID_LINK_WALK_MAX_SPAN_M = 10.0
+
 #: 状态 → 处理器方法名。每个 :class:`NavState` 都必须在这里登记，主循环按状态取方法；
 #: 新增状态却忘了登记时，``tests.TestGridNavigationMixin`` 里的完备性用例会直接失败。
 _GRID_NAV_HANDLERS: dict[NavState, str] = {
@@ -1628,6 +1633,23 @@ class GridNavigationMixin(RuntimeStateMixin):
         水平只差 1.5m）在那里大概匹配不上。要修得先给端点加 Y（属于 links 的 schema 变更）。
         """
         if link.kind != "rope":
+            # "走过去"成立的前提是**两端几乎在同一处**（只差一层）：本实现不搬动角色，
+            # 跨完就直接在下一段的起点上开始走。实测数据里 7 条连接的两端水平距离都是
+            # 1.0~2.5m（相邻），前提成立；但这是**数据模型的隐含约定**，不是我们能校验的
+            # ——端点里没有 Y，也看不出"走多远换层"。远端一旦出现跨度很大的非绳索连接，
+            # 这里会退化成"朝下一段起点直线走"（可能穿墙），所以显式告警而不是静默。
+            span = math.hypot(
+                link.target.center[0] - link.source.center[0],
+                link.target.center[1] - link.source.center[1],
+            )
+            if span > _GRID_LINK_WALK_MAX_SPAN_M:
+                self.log_warning(
+                    f"跨层连接两端相距 {span:.1f}m（超过 {_GRID_LINK_WALK_MAX_SPAN_M:g}m），"
+                    f"而本实现按「走过去」处理、不会替角色搬动位置；"
+                    f"下一段会从当前位置直线走向它的起点，可能不可行。"
+                    f"连接={link.link_id[:8]} {link.kind}",
+                    notify=True,
+                )
             self.log_info(f"跨层：经 {link.kind} 从 {link.source.tier or '大地图'} 到 {link.target.tier or '大地图'}")
             return True
         execute = getattr(self, "zip_line_list_go", None)
