@@ -23,7 +23,7 @@ function New-World {
         head = $Head; state = 'open'; draft = $false; nextId = 1000
         statuses = @{}; reviews = New-Object System.Collections.ArrayList; comments = New-Object System.Collections.ArrayList
         posts = New-Object System.Collections.ArrayList; events = New-Object System.Collections.ArrayList
-        onPost = $null; arrival = @{}; failPost = $null; suiteReads = 0
+        onPost = $null; arrival = @{}; failPost = $null; suiteReads = 0; suitePages = @{}
     }
     $global:W.arrival[$Head] = $t0
 }
@@ -106,8 +106,12 @@ function global:gh {
         }
         "^$r/commits/([0-9a-f]{40})/check-suites" {
             $w.suiteReads++
+            if ($a -notcontains '--paginate' -or $a -notcontains '--slurp') { throw 'Check suites must be fully paginated' }
+            if ($w.suitePages.ContainsKey($Matches[1])) {
+                return (ConvertTo-Json -InputObject @($w.suitePages[$Matches[1]]) -Compress -Depth 5)
+            }
             $suites = if ($w.arrival.ContainsKey($Matches[1])) { @(@{ created_at = (Stamp $w.arrival[$Matches[1]]) }) } else { @() }
-            return (@{ check_suites = $suites } | ConvertTo-Json -Compress -Depth 5)
+            return (ConvertTo-Json -InputObject @(@{ check_suites = $suites }) -Compress -Depth 5)
         }
         "^$r/commits/([0-9a-f]{40})$" { return (@{ commit = @{ committer = @{ date = (Stamp $global:CodeRabbitFakeClock.Now.AddDays(-1)) } } } | ConvertTo-Json -Compress -Depth 5) }
     }
@@ -219,6 +223,19 @@ Test-Case 'commit-time fallback is refreshed until an observed head arrival exis
     Assert-True ($r.result.state -eq 'NO_SIGNAL') "old-head trigger must be discarded: $($r.result.state)"
     Assert-True ($global:W.suiteReads -eq 3) "fallback is re-read, then observed arrival is cached: $($global:W.suiteReads) reads"
     Assert-True ($global:W.posts.Count -eq 0) 'read-only wait must not post'
+}
+
+Test-Case 'head arrival considers check suites on later pages' {
+    New-World
+    $global:W.suitePages[$headA] = @(
+        @{ check_suites = @(@{ created_at = (Stamp $t0.AddSeconds(30)) }) },
+        @{ check_suites = @(@{ created_at = (Stamp $t0) }) }
+    )
+    Add-Comment '@coderabbitai review' 'alice' 'User' $t0.AddSeconds(10) | Out-Null
+    $r = Invoke-Wait @{ NoTrigger = $true }
+    Assert-True ($r.result.state -eq 'TRIGGER_EXHAUSTED') "trigger follows the earliest suite on page two: $($r.result.state)"
+    Assert-True ($global:W.suiteReads -eq 1) 'the fully observed arrival is cached'
+    Assert-True ($global:W.posts.Count -eq 0) 'pagination must remain read-only'
 }
 
 Test-Case 'thread-reply review on the head does not count as a review' {
