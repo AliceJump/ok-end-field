@@ -11,27 +11,21 @@
 来源与版本（**改向量前先核对哈希**，它是两边唯一可靠的漂移信号）::
 
     nav-grid-editor/tests/data/floor_rule_vectors.json
-    commit  923762d  test(nav): 层判定规则的共享测试向量
-    18 向量（15 个 contract=true）
+    commit  ac174e3  feat(nav): 楼层判定改用坐标，不再看官方 levelId
+    schema_version 2 · 16 向量（全部 contract=true）
+    sha256  8f183650e8db3bf88c1ef617d58b2f1f5470490e007ad509009da757e2d2d128
+    12955 bytes
 
-    sha256（对方仓库磁盘上的原文，CRLF 行尾，26935 字节）
-      62fe8347ef1ef21b9433036b2316ba5258841a1ccab72c35eb8a90cba91ac37b
-    sha256（本仓库里提交的副本，Git 已把行尾规范成 LF，25736 字节）
-      f0b30286583da19140a4ce2a976f4012461329116e0e47ba844b632639184f4e
-
-**为什么有两个哈希**：两边内容完全一致，差别只在行尾——Git 提交时按 ``* text=auto eol=lf``
-规范化了。所以核对时**先按行尾归一**再比（把 ``
-`` 换成 ``
-``），否则会误判成"向量被改过"。
-两个原始哈希都留着，是为了能分别对上对方磁盘上的文件、和本仓库里提交的字节。
+**v1 已作废**（26935 bytes / 18 向量）：v1 锁的是编辑器旧的 ``resolve_position_floor``
+（用 ``level_id`` 选候选层、单候选无条件 ``unique``）。两边都改成"只看 Y"之后，v1 的
+失效用例（``level_id`` 为空/等于地图名/未知）不再对应任何实现，单候选那条 wart 也自然
+消失。v2 里那些词表也对齐了：``status`` 多了 ``invalid``，``reason`` 拆成
+``region_hit`` / ``overlap`` / ``no_layers`` / ``no_region_covers`` / ``invalid_map`` /
+``invalid_position``。
 
 优先核对 **sha256** 而不是 commit hash：后者指向仓库状态，对方哪怕只在同一提交里改别的
 文件或 force-push 都会变；内容哈希只在向量本身变化时才变。
 
-**注意**：这份向量锁定的是 nav-grid-editor 的 ``resolve_position_floor`` 语义——即
-「用 ``level_id`` 选候选层、单候选无条件 ``unique``」。产品侧已改为**只按 Y 判定**
-（:func:`~src.nav.layered_map.resolve_tier_by_height`），因为 ``levelId`` 不可信。
-所以本文件校验的是**编辑器的规则**：它是跨仓库契约的锚点与漂移探针，**不等于**生产路径。
 """
 
 import json
@@ -47,7 +41,7 @@ from src.nav.layered_map import (
     LayeredMap,
     load_layered_map,
     normalize_tier,
-    resolve_tier_for_point,
+    resolve_tier_by_height,
 )
 
 VECTORS_PATH = Path(__file__).resolve().parent / "data" / "floor_rule_vectors.json"
@@ -61,7 +55,7 @@ def _number(value):
 
 
 class FloorRuleVectorsTest(unittest.TestCase):
-    """按共享向量校验 :func:`resolve_tier_for_point`。"""
+    """按共享向量校验 :func:`resolve_tier_by_height`（两边都改成"只看 Y"之后的契约）。"""
 
     @classmethod
     def setUpClass(cls):
@@ -116,21 +110,24 @@ class FloorRuleVectorsTest(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as tmp:
                     layered = self._materialize(Path(tmp), vector)
                     query = vector["query"]
-                    got = resolve_tier_for_point(
+                    # v2 的 query 里没有 level_id —— 判定只看坐标，签名里也没有它
+                    got = resolve_tier_by_height(
                         layered,
                         map_name=query["map"],
-                        level_id=query["level_id"],
                         x=_number(query["x"]),
                         y=_number(query["y"]),
                         z=_number(query["z"]),
                     )
                 expect = vector["expect"]
-                # tier_id 的两种主图拼写（"" / "__main__"）等价，比较前归一
+                # tier_id 的两种主图拼写（"" / "__main__"）等价，比较前归一。
+                # v2 起 reason 也是契约的一部分（v1 只比 status/tier/matched），
+                # 因为 invalid 与 main 的区别全靠它承载。
                 same = (
                     got["status"] == expect["status"]
-                    and normalize_tier(got["tier"]) == normalize_tier(expect["tier_id"])
-                    and [normalize_tier(item) for item in sorted(got["matched"])]
+                    and normalize_tier(got.get("tier_id") or got["tier"]) == normalize_tier(expect["tier_id"])
+                    and [normalize_tier(item) for item in sorted(got.get("matched_ids") or got["matched"])]
                     == [normalize_tier(item) for item in sorted(expect["matched"])]
+                    and str(got.get("reason")) == str(expect.get("reason"))
                 )
                 if same:
                     continue
@@ -146,11 +143,14 @@ class FloorRuleVectorsTest(unittest.TestCase):
     def test_vectors_cover_every_status(self):
         """向量至少覆盖到全部分支，否则"通过"没有意义。"""
         statuses = {vector["expect"]["status"] for vector in self.payload["vectors"]}
-        self.assertTrue({"main", "unique", "ambiguous", "no_match", "no_grid"} <= statuses, statuses)
+        self.assertTrue({"main", "unique", "ambiguous", "invalid"} <= statuses, statuses)
 
-    def test_non_finite_coordinates_are_rejected(self):
-        """非有限坐标不能靠 float(nan) 的比较悄悄判成 no_match 之外的结论。"""
+    def test_non_finite_coordinates_are_invalid_not_main(self):
+        """非有限坐标必须报 ``invalid``，**不能**兜底成 ``main``。
+
+        混为一谈会让消费方把"这条位置消息不可用"读成"玩家在地表"，基于坏输入得出错误结论。
+        """
         layered = LayeredMap()
         for bad in (math.nan, math.inf, -math.inf):
-            result = resolve_tier_for_point(layered, map_name="map02", level_id="lv1", x=bad, y=0.0, z=0.0)
-            self.assertEqual(result["status"], "no_match", (bad, result))
+            result = resolve_tier_by_height(layered, map_name="map02", x=bad, y=0.0, z=0.0)
+            self.assertEqual(result["status"], "invalid", (bad, result))

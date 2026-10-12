@@ -633,53 +633,58 @@ def resolve_tier_by_height(
         map_name / x / y / z: 地图名与世界坐标；``y`` 是判定依据，必传且必须有限。
 
     Returns:
-        ``{status, tier, matched, reason}``。
+        ``{status, tier, tier_id, matched, matched_ids, reason}``。词表与 nav-grid-editor 的
+        ``resolve_tier_by_height`` **逐字对齐**（共享向量 v2 是契约，两边各跑一遍）：
 
-        - ``status`` ∈ ``{"unique", "ambiguous", "main", "no_match"}``；
-        - ``tier`` 只在 ``unique`` 时有意义（主图是空串，用 :data:`MAIN_TIER` 显示）；
-        - ``matched`` 是命中的层列表（``ambiguous`` 时是全部候选）；
-        - ``reason`` ∈ ``{"ok", "no_floor_regions_mapped", "no_region_covers", "invalid_input"}``
-          —— ``no_floor_regions_mapped`` / ``no_region_covers`` 两种兜底**必须让调用方看见**：
-          它们意味着"判定不出层，按主图处理"，而不是"确认玩家在地表"。
+        - ``status`` ∈ ``{"unique", "ambiguous", "main", "invalid"}``；
+        - ``tier`` 是内部键（主图为空串），``tier_id`` 是 API 拼写（主图为 ``"__main__"``）；
+        - ``matched`` / ``matched_ids`` 同理，是命中的层列表（``ambiguous`` 时是全部候选）；
+        - ``reason`` ∈ ``{"region_hit", "overlap", "no_layers", "no_region_covers",
+          "invalid_map", "invalid_position"}``。
+
+        **``invalid`` 与 ``main`` 必须分开**：地图名非法或坐标非有限数时，这条位置消息本身
+        不可用，**不代表"玩家在地表"**。把两者混为一谈会让消费方把视图切到大地图——那是
+        一个基于坏输入的错误结论。``main`` 才是"判定结果就是大地图"。
     """
+
+    def result(status: str, reason: str, tiers: list[str] | None = None) -> dict:
+        """统一构造返回值：内部键与 API 拼写都给，省得每个调用点各自转一遍。"""
+        keys = sorted(tiers or [])
+        return {
+            "status": status,
+            "tier": keys[0] if status == "unique" else "",
+            "tier_id": (keys[0] or MAIN_TIER) if status == "unique" else "",
+            "matched": keys,
+            "matched_ids": [tier or MAIN_TIER for tier in keys],
+            "reason": reason,
+        }
+
     if not valid_map_name(map_name):
-        return {"status": "no_match", "tier": "", "matched": [], "reason": "invalid_input"}
+        return result("invalid", "invalid_map")
     try:
         x, y, z = float(x), float(y), float(z)
     except (TypeError, ValueError, OverflowError):
-        return {"status": "no_match", "tier": "", "matched": [], "reason": "invalid_input"}
+        return result("invalid", "invalid_position")
     if not all(math.isfinite(value) for value in (x, y, z)):
-        return {"status": "no_match", "tier": "", "matched": [], "reason": "invalid_input"}
+        return result("invalid", "invalid_position")
 
+    # 候选 = 声明了**有效** floor_regions 的层。区间全非法的层在加载时就被丢空了
+    # （GridMeta 只保留合法区间），于是它不进候选——这正是向量「全部区间都非法 → no_layers」
+    # 那条所要的行为。
     mapped = [
         (tier, grid) for (name, tier), grid in layered.layers.items() if name == map_name and grid.meta.floor_regions
     ]
     if not mapped:
-        # 这张图一个高度区间都没标：只能按主图处理，但要说清这是兜底。
-        # 实测这份数据的区间覆盖率极低（整张 map02 只有 1 段 39 格），所以这条分支是常态。
-        return {
-            "status": "main",
-            "tier": "",
-            "matched": [],
-            "reason": "no_floor_regions_mapped",
-        }
+        # 这张图一个高度区间都没标：兜底到大地图，但 reason 与"没有层"分开。
+        # 实测这份数据的区间覆盖率极低（整张 map02 只有 2 段各 39 格），所以这条是常态。
+        return result("main", "no_layers")
 
     matched = [
         tier for tier, grid in mapped if any(region_contains(region, x, y, z) for region in grid.meta.floor_regions)
     ]
     if len(matched) == 1:
-        return {"status": "unique", "tier": matched[0], "matched": matched, "reason": "ok"}
+        return result("unique", "region_hit", matched)
     if len(matched) > 1:
-        # 顺序不保证（来自目录顺序），调用方不要依赖；这里排一下只为日志稳定
-        return {
-            "status": "ambiguous",
-            "tier": "",
-            "matched": sorted(matched),
-            "reason": "ok",
-        }
-    return {
-        "status": "main",
-        "tier": "",
-        "matched": [],
-        "reason": "no_region_covers",
-    }
+        # 顺序不保证（来自目录顺序），调用方不要依赖；排序只为日志稳定
+        return result("ambiguous", "overlap", matched)
+    return result("main", "no_region_covers")

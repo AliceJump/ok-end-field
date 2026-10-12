@@ -1,1199 +1,223 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "generated_by": "nav-grid-editor",
-  "subject": "MapService.resolve_position_floor —— 由三维坐标判定玩家在哪一层",
+  "subject": "MapService.resolve_tier_by_height —— 由三维坐标判定玩家在哪一层（只看坐标，不看 levelId）",
   "why": [
     "消费侧（ok-end-field）需要独立复刻这条判定，不能走编辑器的 HTTP：跟随器要能在编辑器进程不在时判断位置是否可信。",
     "所以把语义固化成这组向量，两边各跑一遍。任何一侧改了行为，另一侧会立刻红——这是唯一的防漂移手段。",
-    "contract=true 的用例是必须一致的语义；contract=false 的是当前实现的偶然行为，允许改动，别在它上面建东西。"
+    "contract=true 的用例是必须一致的语义；contract=false 的是当前实现的偶然行为，允许改动，别在它上面建东西。",
+    "v2 相对 v1 的变更：官方的 levelId 不可信（同一 levelId 会被多层共用、也可能滞后于玩家实际位置），判定改为只看坐标。v1 的 levelId 用例已作废；「单候选无条件 unique」那条 wart 随之消失，变成下面 new_single_candidate_* 的契约用例。"
   ],
   "rule": {
-    "输入": "(map_name, level_id, x, y, z)",
+    "输入": "(map_name, x, y, z)",
     "步骤": [
-      "map_name 非法，或 x/y/z 不是有限数 → no_match",
-      "wanted_level = str(level_id or '').strip()",
-      "候选层 = 分层目录里 map_name 与 level_id 都相等的层；另外只要主图网格文件存在，就把主图作为一个候选追加进去",
-      "wanted_level 为空、或等于 map_name、或候选层为空 → main（tier_id 为空串；这是『我不在任何一个分层场景里』）",
-      "逐个候选层取网格文件的 meta.floor_regions（没有网格文件的候选直接跳过），点落在任一区间内即 matched",
-      "没有任何候选有网格文件 → no_grid",
-      "只有一个候选有网格文件 → unique（**不看 matched**，见 single_candidate_unique_is_unconditional）",
-      "否则 matched 恰好一个 → unique；多个 → ambiguous（tier_id 为空，matched 列出全部）；零个 → no_match"
+      "map_name 非法、或 x/y/z 不是有限数 → status=invalid（**不是** main：这条位置消息本身不可用，调用方不该据此切到大地图）",
+      "候选层 = 这张地图上有网格文件、且**声明了至少一段合法 floor_regions** 的层；主图只要自己标了区间同样是候选，没有特权",
+      "区间全部非法的层按「没有区间」处理，于是不进候选（记一条日志，不影响其它层）",
+      "没有任何候选层 → status=main, reason=no_layers",
+      "候选层里恰好一层命中 → status=unique, tier_id=该层, reason=region_hit",
+      "命中多于一层 → status=ambiguous, tier_id=\"\", matched 列出全部, reason=overlap（**不替调用方挑**）",
+      "有候选层但一个都没命中 → status=main, reason=no_region_covers"
     ],
     "区间命中": [
       "region 的 cells 非空时：先要求点落在某个 cell 的 X/Z 内（cell 是 [x0,x1,z0,z1]，闭区间），不满足直接不算命中，连 Y 都不看",
       "然后再判外框：x0<=x<=x1 且 z0<=z<=z1 且 y_min<=y<=y_max，全部闭区间"
     ],
-    "区的合法性": [
-      "x0<=x1、z0<=z1、y_min<=y_max（相等合法，允许退化成零面积/零高度）",
-      "x0/x1/z0/z1/y_min/y_max 必须都是有限数",
-      "区间非法时该层按『没有区间』处理（记一条日志），不抛错、不影响其它层"
+    "兜底为什么是 main 而不是「不知道」": [
+      "没有分层重叠的地方本来就只能是大地图——这是用户定的口径。",
+      "但 reason 要把两种兜底分开：no_layers（这一层都没标过）与 no_region_covers（标了但没盖住这点），界面上该说不同的话。",
+      "当前数据下几乎全部坐标都走兜底（map02 只有 2 段各 39 格），所以这条是**主路径**，不是边角情况。"
     ]
   },
   "vectors": [
     {
-      "name": "level_id 为空",
-      "why": "官方 WS 的消息不带 levelId 时的兜底：只能报『在场景外』",
+      "name": "命中唯一一层",
+      "why": "分层导航能成立的根本：坐标落进某层的高度区间",
       "contract": true,
-      "catalog": [],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 0,
-              "y_max": 10
-            }
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]},
+        {"tier": "tier_b", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 200, "y_max": 210}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "main",
-        "tier_id": "",
-        "matched": []
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 205, "z": 0.5},
+      "expect": {"status": "unique", "tier_id": "tier_b", "matched": ["tier_b"], "reason": "region_hit"}
     },
     {
-      "name": "level_id 等于地图名",
-      "why": "官方在某些场景把 levelId 直接写成地图名，同样按『不在分层场景里』处理",
+      "name": "两个区间重叠",
+      "why": "高度区间真的重叠时必须报 ambiguous 交回调用方，绝不能替它挑一个——挑错就是串楼层",
       "contract": true,
-      "catalog": [],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 210}]},
+        {"tier": "tier_b", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 190, "y_max": 300}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "map02",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "main",
-        "tier_id": "",
-        "matched": []
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 200, "z": 0.5},
+      "expect": {"status": "ambiguous", "tier_id": "", "matched": ["tier_a", "tier_b"], "reason": "overlap"}
     },
     {
-      "name": "level_id 在目录里查不到",
-      "why": "主图会被追加为候选；未知 level_id 时它是唯一有网格的候选，于是走『单候选直接断言』分支。注意此时 tier_id 是 \"__main__\" 而不是 \"\" —— 同样是主图，两种拼写都可能出现，消费侧必须归一化。",
-      "contract": false,
-      "catalog": [],
-      "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        }
-      ],
-      "query": {
-        "map": "map02",
-        "level_id": "map02_lv099",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "__main__",
-        "matched": [
-          "__main__"
-        ]
-      }
-    },
-    {
-      "name": "候选层还没有网格文件",
-      "why": "没有网格文件的候选会被跳过；主图仍有网格，于是又只剩一个候选。no_grid 只在『一个候选都没有网格文件』时才出现（见下一条）。",
-      "contract": false,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        }
-      ],
-      "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        }
-      ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "__main__",
-        "matched": [
-          "__main__"
-        ]
-      }
-    },
-    {
-      "name": "唯一候选层即使没命中区间也报 unique",
-      "why": "⚠️ 当前实现的偶然行为：只剩一个候选时直接断言是它，不校验点是否落在它的高度区间里。这让 map02_lv005（目前只有 tips_6/tips_7 有网格）能跟随，但 unique 不等于『坐标确实在该层区间内』。别在这个分支上建逻辑，它可能被改成 no_match。",
-      "contract": false,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        }
-      ],
-      "grids": [
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 100,
-              "y_max": 110
-            }
-          ]
-        }
-      ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "tier_a",
-        "matched": [
-          "tier_a"
-        ]
-      }
-    },
-    {
-      "name": "两个候选、命中恰好一个",
-      "why": "主图与分层同 X/Z 时靠 Y 区分——这是分层导航能成立的根本",
+      "name": "两个候选、都没命中 → 兜底大地图",
+      "why": "楼层之间的缝隙（电梯井、竖井）：没有分层重叠，按大地图处理",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        },
-        {
-          "map_name": "map02",
-          "id": "tier_b",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 300,
-              "y_max": 310
-            }
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 100,
-              "y_max": 110
-            }
-          ]
-        },
-        {
-          "tier": "tier_b",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 200,
-              "y_max": 210
-            }
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]},
+        {"tier": "tier_b", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 200, "y_max": 210}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 205,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "tier_b",
-        "matched": [
-          "tier_b"
-        ]
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 150, "z": 0.5},
+      "expect": {"status": "main", "tier_id": "", "matched": [], "reason": "no_region_covers"}
     },
     {
-      "name": "两个候选、都命中",
-      "why": "高度区间重叠时必须报 ambiguous 让调用方决定，绝不能替它挑一个——挑错就是串楼层",
+      "name": "new_single_candidate_not_covered_yields_main",
+      "why": "⚠️ v2 的行为变更：v1 里「只剩一个候选就无条件报 unique」，于是坐标根本不在区间里也会被断言成那一层。现在只按坐标判——只有一个候选但它没盖住这点 → 兜底大地图",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        },
-        {
-          "map_name": "map02",
-          "id": "tier_b",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 100,
-              "y_max": 210
-            }
-          ]
-        },
-        {
-          "tier": "tier_b",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 190,
-              "y_max": 300
-            }
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 200,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "ambiguous",
-        "tier_id": "",
-        "matched": [
-          "tier_a",
-          "tier_b"
-        ]
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 205, "z": 0.5},
+      "expect": {"status": "main", "tier_id": "", "matched": [], "reason": "no_region_covers"}
     },
     {
-      "name": "两个候选、都没命中",
-      "why": "高度区间之间的缝隙（电梯井、竖井）——不能说『大概在某一层』",
+      "name": "new_single_candidate_covered_yields_unique",
+      "why": "上一条的对照：只有一个候选而它确实盖住了这点 → unique",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        },
-        {
-          "map_name": "map02",
-          "id": "tier_b",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 100,
-              "y_max": 110
-            }
-          ]
-        },
-        {
-          "tier": "tier_b",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 200,
-              "y_max": 210
-            }
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 150,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "no_match",
-        "tier_id": "",
-        "matched": []
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 105, "z": 0.5},
+      "expect": {"status": "unique", "tier_id": "tier_a", "matched": ["tier_a"], "reason": "region_hit"}
+    },
+    {
+      "name": "new_no_layer_declares_regions",
+      "why": "一层都没标过区间 → no_layers。与 no_region_covers 分开：一个是「数据还没标」，一个是「标了但没盖住这点」。当前数据下这是最常见的兜底",
+      "contract": true,
+      "grids": [
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]]},
+        {"tier": "tier_b", "origin": [0, 0, 0], "cells": [[0, 0]]}
+      ],
+      "query": {"map": "map02", "x": 0.5, "y": 5, "z": 0.5},
+      "expect": {"status": "main", "tier_id": "", "matched": [], "reason": "no_layers"}
+    },
+    {
+      "name": "new_main_map_is_a_candidate_like_any_other",
+      "why": "主图只要自己标了区间就是候选，没有特权也不再是特例——所以坐标落进主图的区间就报主图",
+      "contract": true,
+      "grids": [
+        {"tier": "", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 400, "y_max": 410}]},
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]}
+      ],
+      "query": {"map": "map02", "x": 0.5, "y": 405, "z": 0.5},
+      "expect": {"status": "unique", "tier_id": "__main__", "matched": ["__main__"], "reason": "region_hit"}
+    },
+    {
+      "name": "new_main_map_without_regions_cannot_be_hit",
+      "why": "主图没标区间时它不进候选；于是只有 tier_a 是候选，坐标在高处 → no_region_covers（而不是\"命中主图\"）。这也说明主图的区间必须标。",
+      "contract": true,
+      "grids": [
+        {"tier": "", "origin": [0, 0, 0], "cells": [[0, 0]]},
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]}
+      ],
+      "query": {"map": "map02", "x": 0.5, "y": 405, "z": 0.5},
+      "expect": {"status": "main", "tier_id": "", "matched": [], "reason": "no_region_covers"}
     },
     {
       "name": "Y 区间边界是闭的",
       "why": "y 正好等于 y_min / y_max 都算命中；实现里用的是 <= 而不是 <",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        },
-        {
-          "map_name": "map02",
-          "id": "tier_b",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 100,
-              "y_max": 200
-            }
-          ]
-        },
-        {
-          "tier": "tier_b",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 201,
-              "y_max": 300
-            }
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 200}]},
+        {"tier": "tier_b", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 201, "y_max": 300}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 200,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "tier_a",
-        "matched": [
-          "tier_a"
-        ]
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 200, "z": 0.5},
+      "expect": {"status": "unique", "tier_id": "tier_a", "matched": ["tier_a"], "reason": "region_hit"}
     },
     {
       "name": "X/Z 在外框内但不在任何 cell 内",
       "why": "cells 是精确到子格的闸门：先过 cells 的 X/Z 才轮到外框。少了这一步，同一外框下相邻的两层会互相误命中",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        },
-        {
-          "map_name": "map02",
-          "id": "tier_b",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 10,
-              "z0": 0,
-              "z1": 10,
-              "y_min": 100,
-              "y_max": 200,
-              "cells": [
-                [
-                  0,
-                  1,
-                  0,
-                  1
-                ]
-              ]
-            }
-          ]
-        },
-        {
-          "tier": "tier_b",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 10,
-              "z0": 0,
-              "z1": 10,
-              "y_min": 100,
-              "y_max": 200,
-              "cells": [
-                [
-                  5,
-                  6,
-                  5,
-                  6
-                ]
-              ]
-            }
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 10, "z0": 0, "z1": 10, "y_min": 100, "y_max": 200,
+                            "cells": [[0, 1, 0, 1]]}]},
+        {"tier": "tier_b", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 10, "z0": 0, "z1": 10, "y_min": 100, "y_max": 200,
+                            "cells": [[5, 6, 5, 6]]}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 5.5,
-        "y": 150,
-        "z": 5.5
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "tier_b",
-        "matched": [
-          "tier_b"
-        ]
-      }
+      "query": {"map": "map02", "x": 5.5, "y": 150, "z": 5.5},
+      "expect": {"status": "unique", "tier_id": "tier_b", "matched": ["tier_b"], "reason": "region_hit"}
     },
     {
       "name": "退化区间（零面积零高度）合法",
       "why": "校验用的是 > 而不是 >=：x0==x1、y_min==y_max 都放行，正好落在边界上的点算命中",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        },
-        {
-          "map_name": "map02",
-          "id": "tier_b",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 1,
-              "x1": 1,
-              "z0": 2,
-              "z1": 2,
-              "y_min": 100,
-              "y_max": 100
-            }
-          ]
-        },
-        {
-          "tier": "tier_b",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 1,
-              "x1": 1,
-              "z0": 2,
-              "z1": 2,
-              "y_min": 200,
-              "y_max": 200
-            }
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 1, "x1": 1, "z0": 2, "z1": 2, "y_min": 100, "y_max": 100}]},
+        {"tier": "tier_b", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 1, "x1": 1, "z0": 2, "z1": 2, "y_min": 200, "y_max": 200}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 1,
-        "y": 100,
-        "z": 2
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "tier_a",
-        "matched": [
-          "tier_a"
-        ]
-      }
+      "query": {"map": "map02", "x": 1, "y": 100, "z": 2},
+      "expect": {"status": "unique", "tier_id": "tier_a", "matched": ["tier_a"], "reason": "region_hit"}
     },
     {
-      "name": "某层区间非法时按『没有区间』处理",
-      "why": "一个坏区间不能让整次判定失败，也不能连累其它层——只记日志，该层算没命中",
+      "name": "某层区间非法时按「没有区间」处理",
+      "why": "一个坏区间不能让整次判定失败，也不能连累其它层——只记日志，该层不进候选",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        },
-        {
-          "map_name": "map02",
-          "id": "tier_b",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions_raw": [
-            {
-              "x0": 5,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 100,
-              "y_max": 110
-            }
-          ]
-        },
-        {
-          "tier": "tier_b",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 100,
-              "y_max": 110
-            }
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions_raw": [{"x0": 5, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]},
+        {"tier": "tier_b", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 105,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "tier_b",
-        "matched": [
-          "tier_b"
-        ]
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 105, "z": 0.5},
+      "expect": {"status": "unique", "tier_id": "tier_b", "matched": ["tier_b"], "reason": "region_hit"}
     },
     {
-      "name": "坐标非有限数",
-      "why": "NaN/inf 不能被当成『哪一层都算』；直接 no_match",
+      "name": "全部区间都非法 → no_layers",
+      "why": "坏区间把候选层清空了，于是和「一层都没标」同档——兜底大地图并说明原因",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions_raw": [{"x0": 5, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": "nan",
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "no_match",
-        "tier_id": "",
-        "matched": []
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 105, "z": 0.5},
+      "expect": {"status": "main", "tier_id": "", "matched": [], "reason": "no_layers"}
     },
     {
-      "name": "地图名非法",
-      "why": "地图名走白名单（挡路径分隔符与 Windows 保留名），非法直接 no_match",
+      "name": "没有任何网格文件的层不进候选",
+      "why": "目录里登记的层若没人画过网格，就没有区间可比",
       "contract": true,
-      "catalog": [],
-      "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        }
-      ],
-      "query": {
-        "map": "../map02",
-        "level_id": "",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "no_match",
-        "tier_id": "",
-        "matched": []
-      }
-    },
-    {
-      "name": "主图作为一个候选参与判定",
-      "why": "查询真实 level_id 时，只要主图网格文件存在，它就是候选之一——所以地表那层的 floor_regions 也要标，否则它永远 matched=false",
-      "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        }
-      ],
-      "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 400,
-              "y_max": 410
-            }
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ],
-          "floor_regions": [
-            {
-              "x0": 0,
-              "x1": 1,
-              "z0": 0,
-              "z1": 1,
-              "y_min": 100,
-              "y_max": 110
-            }
-          ]
-        }
-      ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 405,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "unique",
-        "tier_id": "__main__",
-        "matched": [
-          "__main__"
-        ]
-      }
-    },
-    {
-      "name": "连主图都没有网格",
-      "why": "没有任何网格文件时候选集为空 → main/\"\"（『我不认识这个场景』），不是 no_grid",
-      "contract": true,
-      "catalog": [],
       "grids": [],
-      "query": {
-        "map": "map02",
-        "level_id": "map02_lv099",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "main",
-        "tier_id": "",
-        "matched": []
-      }
+      "query": {"map": "map02", "x": 0.5, "y": 105, "z": 0.5},
+      "expect": {"status": "main", "tier_id": "", "matched": [], "reason": "no_layers"}
     },
     {
-      "name": "所有候选层都没有网格文件",
-      "why": "no_grid 的成立条件：目录登记了这一层、但没有主图、也没有该层的网格 → 缺数据，与『有数据但没命中』(no_match) 要分开",
+      "name": "坐标非有限数 → invalid",
+      "why": "NaN/inf 不能被当成「哪一层都算」，也不该被当成「在地表」——这条位置消息本身不可用",
       "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        }
-      ],
-      "grids": [],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "no_grid",
-        "tier_id": "",
-        "matched": []
-      }
-    },
-    {
-      "name": "两个候选、都没有高度区间",
-      "why": "有网格但没人标过高度：全部 matched=false 且候选多于一个 → no_match（不是 unique，也不是 no_grid）",
-      "contract": true,
-      "catalog": [
-        {
-          "map_name": "map02",
-          "id": "tier_a",
-          "level_id": "lv1"
-        },
-        {
-          "map_name": "map02",
-          "id": "tier_b",
-          "level_id": "lv1"
-        }
-      ],
       "grids": [
-        {
-          "tier": "",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        },
-        {
-          "tier": "tier_a",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        },
-        {
-          "tier": "tier_b",
-          "origin": [
-            0,
-            0,
-            0
-          ],
-          "cells": [
-            [
-              0,
-              0
-            ]
-          ]
-        }
+        {"tier": "tier_a", "origin": [0, 0, 0], "cells": [[0, 0]],
+         "floor_regions": [{"x0": 0, "x1": 1, "z0": 0, "z1": 1, "y_min": 100, "y_max": 110}]}
       ],
-      "query": {
-        "map": "map02",
-        "level_id": "lv1",
-        "x": 0.5,
-        "y": 5,
-        "z": 0.5
-      },
-      "expect": {
-        "status": "no_match",
-        "tier_id": "",
-        "matched": []
-      }
+      "query": {"map": "map02", "x": "nan", "y": 105, "z": 0.5},
+      "expect": {"status": "invalid", "tier_id": "", "matched": [], "reason": "invalid_position"}
+    },
+    {
+      "name": "地图名非法 → invalid",
+      "why": "地图名走白名单（挡路径分隔符与 Windows 保留名）",
+      "contract": true,
+      "grids": [],
+      "query": {"map": "../map02", "x": 0.5, "y": 105, "z": 0.5},
+      "expect": {"status": "invalid", "tier_id": "", "matched": [], "reason": "invalid_map"}
     }
   ]
 }

@@ -221,10 +221,11 @@ class TestTierByHeight(unittest.TestCase):
                 ("lv_b", [self._region(0, 3, 0, 3, 200, 210)]),
             ]
         )
-        self.assertEqual(
-            resolve_tier_by_height(layered, map_name="map02", x=1.5, y=105, z=1.5),
-            {"status": "unique", "tier": "lv_a", "matched": ["lv_a"], "reason": "ok"},
-        )
+        hit = resolve_tier_by_height(layered, map_name="map02", x=1.5, y=105, z=1.5)
+        self.assertEqual(hit["status"], "unique")
+        self.assertEqual(hit["tier"], "lv_a")
+        self.assertEqual(hit["tier_id"], "lv_a")
+        self.assertEqual(hit["reason"], "region_hit")
         self.assertEqual(resolve_tier_by_height(layered, map_name="map02", x=1.5, y=205, z=1.5)["tier"], "lv_b")
 
     def test_ambiguous_does_not_guess(self):
@@ -238,6 +239,7 @@ class TestTierByHeight(unittest.TestCase):
         )
         result = resolve_tier_by_height(layered, map_name="map02", x=1.5, y=175, z=1.5)
         self.assertEqual(result["status"], "ambiguous")
+        self.assertEqual(result["reason"], "overlap")
         self.assertEqual(result["tier"], "")
         self.assertEqual(sorted(result["matched"]), ["lv_a", "lv_b"])
 
@@ -250,11 +252,24 @@ class TestTierByHeight(unittest.TestCase):
         self.assertEqual(result["reason"], "no_region_covers")
 
     def test_falls_back_to_main_when_nothing_is_mapped(self):
-        """整张图一个区间都没标：兜底到主图，并且与"真的判定出主图"要区分开。"""
+        """整张图一个区间都没标：兜底到主图，且 reason 与"标了但没盖住"分开。
+
+        界面该说不同的话：``no_layers`` 是"这图还没标过高度"，``no_region_covers`` 是
+        "标过，但你不在那些区间里"。v2 把这条列成契约。
+        """
         layered = self._layered([("", []), ("lv_a", [])])
         result = resolve_tier_by_height(layered, map_name="map02", x=1.5, y=5, z=1.5)
         self.assertEqual(result["status"], "main")
-        self.assertEqual(result["reason"], "no_floor_regions_mapped")
+        self.assertEqual(result["reason"], "no_layers")
+
+    def test_invalid_is_not_main(self):
+        """``invalid`` 与 ``main`` 必须分开：前者是"位置不可用"，不是"在地表"。"""
+        layered = self._layered([("", []), ("lv_a", [self._region(0, 3, 0, 3, 100, 110)])])
+        bad_map = resolve_tier_by_height(layered, map_name="bad/name", x=1.5, y=105, z=1.5)
+        self.assertEqual((bad_map["status"], bad_map["reason"]), ("invalid", "invalid_map"))
+        bad_pos = resolve_tier_by_height(layered, map_name="map02", x=float("nan"), y=105, z=1.5)
+        self.assertEqual((bad_pos["status"], bad_pos["reason"]), ("invalid", "invalid_position"))
+        self.assertNotEqual(bad_pos["status"], "main")
 
     def test_main_tier_with_regions_can_match_by_height(self):
         """主图也是候选：玩家在地表时应当由主图的区间命中，而不是靠兜底。"""
@@ -266,8 +281,9 @@ class TestTierByHeight(unittest.TestCase):
         )
         result = resolve_tier_by_height(layered, map_name="map02", x=1.5, y=305, z=1.5)
         self.assertEqual(result["status"], "unique")
-        self.assertEqual(result["tier"], "")
-        self.assertEqual(result["reason"], "ok", "由主图区间命中，不是兜底")
+        self.assertEqual(result["tier"], "", "内部键：主图是空串")
+        self.assertEqual(result["tier_id"], "__main__", "API 拼写")
+        self.assertEqual(result["reason"], "region_hit", "由主图区间命中，不是兜底")
 
     def test_closed_interval_boundaries(self):
         layered = self._layered([("", []), ("lv_a", [self._region(0, 3, 0, 3, 100, 110)])])
@@ -321,8 +337,8 @@ class TestTierByHeight(unittest.TestCase):
         ):
             with self.subTest(**kwargs):
                 result = resolve_tier_by_height(layered, **kwargs)
-                self.assertEqual(result["status"], "no_match")
-                self.assertEqual(result["reason"], "invalid_input")
+                self.assertEqual(result["status"], "invalid")
+                self.assertIn(result["reason"], ("invalid_map", "invalid_position"))
 
 
 class TestCatalogDegradation(unittest.TestCase):

@@ -250,6 +250,30 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertIs(outcome, True, "落点即目标，应当完成而不是继续")
         self.assertTrue(any("落点即目标" in line for line in self.task.logs), self.task.logs[-3:])
 
+    def test_floor_change_mid_route_triggers_replan(self):
+        """玩家在路线中间换到另一层时，必须重新规划——否则跟随器还在拿旧那层的网格走。
+
+        对应对方在前端踩到的同类问题：按"同一个 levelId 就不重算"去重，会把换层整条丢掉。
+        """
+        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        self.assertEqual(session.route.segments[0].tier, "lv1")
+        # 人还在原处，但高度掉到 lv1 区间之外 -> 判不出层（main 兜底）
+        self.task.y = 5.0
+        changed = self.task._grid_nav_segment_tier_changed(ctx)
+        self.assertFalse(changed, "兜底到大地图不算确定换层，避免稀疏覆盖下每拍重规划")
+
+    def test_unique_tier_mismatch_is_detected(self):
+        """判到唯一确定、且与当前段不同的层 -> 判定为换层。"""
+        session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        # 把当前段换成主图那一段，而位置仍落在 lv1 区间内 -> 唯一命中 lv1 != 主图
+        session.segment_index = len(session.route.segments) - 1
+        self.assertEqual(session.route.segments[-1].tier, "")
+        ctx.x, ctx.z, self.task.y = 10.5, 0.5, 105.0
+        self.assertTrue(self.task._grid_nav_segment_tier_changed(ctx))
+        self.assertTrue(any("重新规划" in line for line in self.task.logs), self.task.logs[-2:])
+
     def test_replan_clears_the_layered_route(self):
         session, ctx, result = self._plan(x=10.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))

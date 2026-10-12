@@ -617,7 +617,52 @@ class GridNavigationMixin(RuntimeStateMixin):
         """跟随阶段：没有可用路线就先规划，否则取跟随器动作并派发。"""
         if self._grid_nav_follower is None or ctx.map_id != self._grid_nav_map_id:
             return self._grid_nav_state_call(NavState.PLAN, ctx)
+        if self._grid_nav_segment_tier_changed(ctx):
+            return self._grid_nav_state_call(NavState.PLAN, ctx)
         return self._grid_nav_run_follow(ctx)
+
+    def _grid_nav_segment_tier_changed(self, ctx: NavTick) -> bool:
+        """当前高度落在**另一个确定的层**上时返回 True，用于中途换层后重规划。
+
+        为什么需要它：层判定只在规划时算一次。玩家在路线中间自己走进另一层（下楼梯、
+        坐电梯、被传送）之后，跟随器仍拿着旧那层的网格走，位置对不上会一路判偏航/卡住。
+        对方在前端也踩到同一类问题——按"同一个 levelId 就不重算"去重会把换层整条丢掉。
+
+        **只在判到唯一确定、且与当前分段不同的层时才触发**：``floor_regions`` 现在很稀疏
+        （整张 map02 只有 2 段各 39 格），绝大多数位置会落到 ``main`` 兜底；拿兜底结果去
+        判定"换层了"会每拍重规划。所以这里要求 ``status == "unique"``。
+        """
+        session = ctx.session
+        route = session.route
+        if route is None or not route.segments:
+            return False
+        layered = self._grid_nav_layered_active
+        if layered is None:
+            return False
+        pose = ctx.pose or {}
+        y = pose.get("y")
+        if y is None or ctx.x is None or ctx.z is None:
+            return False
+        try:
+            y_value = float(y)
+        except (TypeError, ValueError):
+            return False
+        index = min(max(0, session.segment_index), len(route.segments) - 1)
+        expected = route.segments[index].tier
+        result = resolve_tier_by_height(
+            layered,
+            map_name=str(ctx.map_id or "").strip(),
+            x=float(ctx.x),
+            y=y_value,
+            z=float(ctx.z),
+        )
+        if result["status"] != "unique" or result["tier"] == expected:
+            return False
+        self.log_info(
+            f"分层导航：当前位置已不在本段的层（{expected or '大地图'} -> "
+            f"{result['tier'] or '大地图'}，Y={y_value:.1f}），重新规划"
+        )
+        return True
 
     def _grid_nav_run_follow(self, ctx: NavTick) -> bool | None:
         """记录走过的已知格、取跟随器动作，然后派发到对应状态。
@@ -1396,6 +1441,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         明确失败，而不是赌一把。
         """
         if position is None:
+            # 调用方没给高度：这不是"坏输入"，是"没提供判据"。终点缺 y 时按大地图处理
+            # （单层地图本来就只需要平面坐标）；起点缺 y 时下面会与终点的判定自然对齐。
             return "", f"{label}没有三维坐标，按大地图处理"
         result = resolve_tier_by_height(
             layered,
@@ -1404,16 +1451,21 @@ class GridNavigationMixin(RuntimeStateMixin):
             y=position[1],
             z=position[2],
         )
-        if result["status"] == "ambiguous":
+        status = result["status"]
+        if status == "ambiguous":
             return None, (
-                f"{label}的 Y 同时落在多层的高度区间里（{result['matched']}），无法唯一确定层级；"
+                f"{label}的 Y 同时落在多层的高度区间里（{result['matched_ids']}），无法唯一确定层级；"
                 "请在编辑器里把这些层重叠区的高度区间分开"
             )
+        if status == "invalid":
+            # **不能兜底成大地图**：invalid 是"这条位置本身不可用"，不是"在地表"。
+            # 当成大地图会基于坏输入给出一个看起来正常的结论。
+            return None, f"{label}的位置不可用（{result['reason']}），无法判定层级"
         tier = result["tier"]
         shown = tier or "大地图"
         if result["reason"] == "no_region_covers":
             note = f"{label}没有落在任何已标定的高度区间，按大地图处理（Y={position[1]:.1f}）"
-        elif result["reason"] == "no_floor_regions_mapped":
+        elif result["reason"] == "no_layers":
             note = f"{label}所在地图还没标过高度区间，按大地图处理"
         else:
             note = f"{label}判定在 {shown}（Y={position[1]:.1f}）"
