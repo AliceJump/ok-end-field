@@ -157,7 +157,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         Args:
             delivery_to: 送货目标名称（用于获取配置中的滑索距离序列）
             need_scroll: 是否需要滚动
-            target: 目标信息，包含名称和类型(例如：(\"登上滑索架\", \"ocr\"))
+            target: 目标信息，包含名称和类型(例如：("登上滑索架", "ocr"))
             need_v: 是否需要按V键追踪
             stay_on_zip_line: 路线结束后留在滑索上，供下一段路线继续测试
         Raises:
@@ -497,6 +497,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         )
         if not result:
             return False
+
         screen_center_x, screen_center_y = self.screen_center()
         scaled_tolerance = self.scale_distance(tolerance)
         numeric_y_offset = int(self.height * ((525 - 486) / 1080))
