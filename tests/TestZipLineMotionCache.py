@@ -210,9 +210,10 @@ class TestZipLineMotionCache(unittest.TestCase):
 
     def test_cached_turn_updates_memory_with_its_final_correction(self):
         stub = self._yaw_stub([(120.0, 0.9), (100.0, 0.9), (90.0, 0.9)])
-        with patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(240, 3)), patch(
-            "src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True
-        ) as record:
+        with (
+            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(240, 3)),
+            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True) as record,
+        ):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, True))
         self.assertEqual([call.args[0] for call in stub._send_zip_line_yaw_delta.call_args_list], [240, 120])
         record.assert_called_once_with(1920, 1080, 120.0, 90.0, 360)
@@ -220,9 +221,10 @@ class TestZipLineMotionCache(unittest.TestCase):
     def test_failed_cached_turn_cannot_contaminate_turn_learning(self):
         stub = self._yaw_stub([(120.0, 0.9)])
         stub._send_zip_line_yaw_delta.return_value = False
-        with patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(240, 3)), patch(
-            "src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion"
-        ) as record:
+        with (
+            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(240, 3)),
+            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion") as record,
+        ):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, False))
         stub._send_zip_line_yaw_delta.assert_called_once_with(240)
         record.assert_not_called()
