@@ -95,10 +95,25 @@ def _warn_modal(parent) -> bool:
     return bool(dlg.exec())
 
 
+def _notify_confirmed(task, key: str) -> None:
+    """把「用户确认打开了这个高风险开关」告诉任务，让它做后续动作（例如预下载）。
+
+    鸭子类型 + 全部包在 try 里：预下载只是锦上添花，任何失败都不该影响开关本身生效，
+    也不该让一个任务没实现这个钩子就报错。
+    """
+
+    hook = getattr(task, "on_danger_switch_confirmed", None)
+    if not callable(hook):
+        return
+    # 钩子是可选增强，失败静默
+    with contextlib.suppress(Exception):
+        hook(key)
+
+
 class LabelAndDangerSwitch:
     """项目自建的 ``danger_switch`` 配置控件。"""
 
-    def __new__(cls, config_desc, config, key: str):
+    def __new__(cls, config_desc, config, key: str, task=None):
         from ok.ui.qt.tasks.ConfigLabelAndWidget import ConfigLabelAndWidget
 
         class _Widget(ConfigLabelAndWidget):
@@ -129,6 +144,7 @@ class LabelAndDangerSwitch:
                 parent = QApplication.activeWindow() or self.window()
                 if _warn_modal(parent):
                     self.update_config(True)
+                    _notify_confirmed(task, self.key)
                     return
                 # 用户没确认：开关回弹到关，且不写配置。
                 self.update_value()
@@ -148,7 +164,7 @@ def install_danger_switch_patch():
     def patched_config_widget(config_type, config_desc, config, key, value, task):
         the_type = config_type.get(key) if config_type is not None else None
         if isinstance(the_type, dict) and the_type.get("type") == "danger_switch":
-            return LabelAndDangerSwitch(config_desc, config, key)
+            return LabelAndDangerSwitch(config_desc, config, key, task)
         return original_config_widget(config_type, config_desc, config, key, value, task)
 
     factory.config_widget = patched_config_widget

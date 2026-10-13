@@ -172,6 +172,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
     "localization-minimap": (
         "Minimap localization",
         (
+            "TestCaptureBackendInstaller.py",
             "TestCaptureBackendLauncher.py",
             "TestCapturePositionSource.py",
             "TestMinimapHeadingMixin.py",

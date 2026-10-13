@@ -61,6 +61,8 @@ WS 有传输延迟，只在两边都停住时才能安全地用它做基准。�
 from __future__ import annotations
 
 import math
+import os
+import threading
 from typing import ClassVar
 
 import numpy as np
@@ -78,6 +80,7 @@ from src.core.NavConfig import (
     NavProfile,
     nav_profile_for_width,
 )
+from src.localization.capture_backend_installer import CaptureBackendInstaller
 from src.localization.capture_backend_launcher import (
     CONFIG_EXPERIMENTAL_AUTOSTART,
     CONFIG_EXPERIMENTAL_EXE,
@@ -117,6 +120,7 @@ __all__ = [
     "CONFIG_EXPERIMENTAL_EXE",
     "CONFIG_EXPERIMENTAL_PORT",
     "CONFIG_EXPERIMENTAL_STOP_ON_EXIT",
+    "CONFIG_EXPERIMENTAL_UPDATE",
     "CONFIG_SYNC_DISTANCE",
     "CONFIG_USE_EXPERIMENTAL",
     "CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT",
@@ -154,6 +158,9 @@ CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT = "关键帧视觉锚定链校正关�
 #: 默认关闭；打开需要过一遍风险确认（见 ``src/patches/danger_switch_patch.py``）。
 CONFIG_USE_EXPERIMENTAL = "使用实验技术"
 CONFIG_EXPERIMENTAL_PORT = "实验技术后端端口"
+#: 手动触发一次「检查并更新后端」。它不进 ``default_config``：按钮型配置只借 config_type 渲染，
+#: 值本身没有意义（框架的按钮控件不读也不写它）。
+CONFIG_EXPERIMENTAL_UPDATE = "检查并更新后端"
 
 #: 位移提交阈值默认值（1920 宽下约 1.8m）。0 = 关闭，回到"按时间提交"的旧行为。
 #: 误差按采样次数累积、每样本误差大致是绝对量，而每样本位移 = 速度 * 采样间隔，
@@ -276,6 +283,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 "停止定位时一并关闭由本应用拉起的后端。默认关：后端的状态绑在当前这一局连接上，"
                 "关掉再拉起等于丢了登录握手，必须重启游戏才能恢复"
             ),
+            CONFIG_EXPERIMENTAL_UPDATE: (
+                "立刻检查并更新抓包后端程序，不等下次启动。用在自己的网络刚恢复、"
+                "或想确认当前用的是哪个版本时"
+            ),
         }
 
     # ------------------------------------------------------------------ #
@@ -312,6 +323,9 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         # 直通模式下 sync_seq 每来一条新样本就 +1，导航据此失效"已走过的已知格"。
         self._minimap_capture_source: CapturePositionSource | None = None
         self._minimap_capture_launcher: BackendLauncher | None = None
+        self._minimap_capture_installer: CaptureBackendInstaller | None = None
+        #: 预下载线程句柄；非 None 表示已经起过一次，不再重复起
+        self._minimap_capture_prefetch: threading.Thread | None = None
         self._minimap_capture_seq = 0
         self._minimap_capture_last_key: tuple | None = None
 
@@ -864,6 +878,57 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         self._minimap_capture_launcher = launcher
         return launcher
 
+    def capture_backend_installer(self) -> CaptureBackendInstaller:
+        """按当前配置返回托管安装器（进程内复用同一个实例）。"""
+
+        installer = self._minimap_capture_installer
+        if installer is None:
+            installer = CaptureBackendInstaller(
+                log_info=self.log_info,
+                log_warning=self.log_warning,
+            )
+            self._minimap_capture_installer = installer
+        return installer
+
+    def ensure_capture_backend_installed(self) -> bool:
+        """确保托管目录里有一份可用的后端 exe；返回它是否可用。
+
+        只有「使用实验技术」打开后才会走到这里，所以关着的时候一次网络请求都不会发。检查受
+        :data:`~src.localization.capture_backend_installer.CHECK_TTL_SECONDS` 节流——本方法会被
+        定位任务**每一拍**调用，没有节流会把未认证的 GitHub 配额打光。
+
+        指定了「实验技术后端程序路径」（或环境变量）时完全跳过：用户自带后端就不该再联网。
+        """
+
+        if self._cfg_str(CONFIG_EXPERIMENTAL_EXE, "").strip() or os.environ.get("EF_CAPTURE_BACKEND"):
+            return True
+        path = self.capture_backend_installer().ensure_installed(allow_network=True)
+        return path is not None and path.is_file()
+
+    def prefetch_capture_backend(self) -> None:
+        """后台预下载后端，不阻塞界面。
+
+        时机是用户**刚勾上**风险开关的那一刻：那时他还没启动游戏，趁这段时间把 18 MB 拿下来，
+        等点「启动游戏」时就不必干等。整个过程失败都不影响什么——启动前那次兜底会再试一次。
+        """
+
+        installer = self.capture_backend_installer()
+        if installer.ensure_installed(allow_network=False) is not None:
+            return
+
+        def _run() -> None:
+            try:
+                installer.ensure_installed(allow_network=True)
+            except Exception as exc:  # 后台线程里的异常没人接，必须自己吞掉
+                self.log_warning(f"实验技术：后端预下载失败（{type(exc).__name__}）")
+
+        if getattr(self, "_minimap_capture_prefetch", None) is not None:
+            return
+        self._minimap_capture_prefetch = threading.Thread(
+            target=_run, name="CaptureBackendPrefetch", daemon=True
+        )
+        self._minimap_capture_prefetch.start()
+
     def ensure_capture_backend(self) -> bool:
         """确保抓包后端在跑；返回它当前是否可用。
 
@@ -876,6 +941,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         launcher = self.capture_backend_launcher()
         if not self._cfg_bool(CONFIG_EXPERIMENTAL_AUTOSTART, True):
             return probe_backend(launcher.port)
+        # 先保证 exe 在本地（缺了就下载/更新），再拉起。这一步是**阻塞**的：宁可让启动多等
+        # 十几秒，也不能让游戏先连上——那样这一局就抓不到登录握手了。
+        if not self.ensure_capture_backend_installed():
+            return False
         return launcher.ensure_running()
 
     def stop_capture_backend(self) -> None:

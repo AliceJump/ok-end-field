@@ -13,7 +13,10 @@
 完整定位链路见 ``docs/dev/小地图定位.md``。
 """
 
+import threading
+
 from ok import TriggerTask
+from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.core.global_config_store import MINIMAP_LEGACY_SOURCE_TASKS
@@ -23,6 +26,7 @@ from src.localization.minimap_position_mixin import (
     CONFIG_EXPERIMENTAL_EXE,
     CONFIG_EXPERIMENTAL_PORT,
     CONFIG_EXPERIMENTAL_STOP_ON_EXIT,
+    CONFIG_EXPERIMENTAL_UPDATE,
     CONFIG_USE_EXPERIMENTAL,
     MinimapPositionMixin,
 )
@@ -58,8 +62,17 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
                     CONFIG_EXPERIMENTAL_EXE,
                     CONFIG_EXPERIMENTAL_AUTOSTART,
                     CONFIG_EXPERIMENTAL_STOP_ON_EXIT,
+                    CONFIG_EXPERIMENTAL_UPDATE,
                 ]
             },
+        }
+        # 手动更新按钮。回调用闭包捕获本任务实例——框架的按钮控件是直接
+        # ``btn.clicked.connect(callback)``，不给任务上下文，而闭包天然带着 self。
+        self.config_type[CONFIG_EXPERIMENTAL_UPDATE] = {
+            "type": "button",
+            "text": CONFIG_EXPERIMENTAL_UPDATE,
+            "icon": FluentIcon.DOWNLOAD,
+            "callback": lambda *_: self.check_capture_backend_update(),
         }
         self._init_minimap_position_mixin()
         # 定位服务是常驻生产者，不能因为执行器暂停或暂无消费者而主动断开 WS。
@@ -207,6 +220,36 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         if correction is not None:
             return f"{motion} 锚定链校正={float(correction):.2f}m"
         return motion
+
+    def on_danger_switch_confirmed(self, key: str) -> None:
+        """风险开关被确认打开后的钩子（由 ``danger_switch_patch`` 回调）。
+
+        在用户刚勾上「使用实验技术」时**后台**把后端拉下来：那时他还没启动游戏，正好用这段
+        时间把 18 MB 拿完，点「启动游戏」时就不必干等。真正的兜底在启动前那一次
+        ``ensure_capture_backend``，所以这里失败也不影响什么。
+        """
+
+        if key == CONFIG_USE_EXPERIMENTAL:
+            self.prefetch_capture_backend()
+
+    def check_capture_backend_update(self) -> None:
+        """「检查并更新后端」按钮：忽略节流立刻查一次，并把结果回报到界面。
+
+        跑在后台线程里——按钮回调在 GUI 线程上，18 MB 的下载同步做会把界面卡死。
+        """
+
+        def _run() -> None:
+            try:
+                path = self.capture_backend_installer().check_now()
+            except Exception as exc:
+                self.log_warning(f"实验技术：检查更新失败（{type(exc).__name__}）", notify=True)
+                return
+            if path is None or not path.is_file():
+                self.log_warning("实验技术：没拿到后端程序，请检查网络后重试", notify=True)
+                return
+            self.log_info(f"实验技术：后端已就绪 —— {path}", notify=True)
+
+        threading.Thread(target=_run, name="CaptureBackendCheckUpdate", daemon=True).start()
 
     def on_destroy(self):
         """任务销毁时停止 WS 客户端和本地位置源。

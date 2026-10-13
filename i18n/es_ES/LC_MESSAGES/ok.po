@@ -3593,3 +3593,9 @@ msgstr "Lanza el backend automáticamente cuando no esté en ejecución. **El ba
 
 msgid "停止定位时一并关闭由本应用拉起的后端。默认关：后端的状态绑在当前这一局连接上，关掉再拉起等于丢了登录握手，必须重启游戏才能恢复"
 msgstr "Cierra también el backend lanzado por esta aplicación al detener la localización. Desactivado por defecto: el estado del backend está ligado a la conexión de la sesión actual, así que cerrarlo y volver a lanzarlo pierde el handshake de inicio de sesión y obliga a reiniciar el juego para recuperarlo"
+
+msgid "检查并更新后端"
+msgstr "Buscar actualizaciones del backend"
+
+msgid "立刻检查并更新抓包后端程序，不等下次启动。用在自己的网络刚恢复、或想确认当前用的是哪个版本时"
+msgstr "Busca e instala de inmediato una versión actualizada del backend de captura en lugar de esperar al próximo inicio. Útil cuando tu red acaba de volver, o para confirmar qué versión estás usando"

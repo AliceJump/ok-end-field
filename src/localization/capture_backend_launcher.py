@@ -28,6 +28,11 @@ import time
 from pathlib import Path
 from urllib import error, request
 
+from src.localization.capture_backend_installer import (
+    ASSET_NAME,
+    installed_executable,
+)
+
 __all__ = [
     "CONFIG_EXPERIMENTAL_AUTOSTART",
     "CONFIG_EXPERIMENTAL_EXE",
@@ -39,8 +44,9 @@ __all__ = [
     "shared_launcher",
 ]
 
-#: 后端可执行文件名
-EXECUTABLE_NAME = "endfield-capture-backend.exe"
+#: 后端可执行文件名。与安装器的 :data:`~src.localization.capture_backend_installer.ASSET_NAME`
+#: 是同一个文件——托管下载下来的就是它，所以这里直接引用，避免两处各写一份而漂移。
+EXECUTABLE_NAME = ASSET_NAME
 
 #: 环境变量：直接指定后端 exe 路径（优先级只低于任务配置）
 ENV_OVERRIDE = "EF_CAPTURE_BACKEND"
@@ -105,14 +111,20 @@ def _from_candidate(value: str | None) -> Path | None:
 def find_backend_executable(configured: str = "") -> Path | None:
     """定位后端 exe；找不到返回 ``None``。
 
-    顺序：任务配置 → 环境变量 → 同级 ``endfield-capture-backend`` 仓库的 ``dist/`` →
-    仓库根目录旁边 → ``PATH``。**不猜、不下载**：找不到就让上层明确报「后端没起来」，
+    顺序：任务配置 → 环境变量 → **托管下载目录** → 同级 ``endfield-capture-backend`` 仓库的
+    ``dist/`` → 仓库根目录旁边 → ``PATH``。**不猜、不下载**：找不到就让上层明确报「后端没起来」，
     而不是随便拉起一个同名程序。
+
+    托管目录排在同级仓库前面，是因为它是唯一被版本跟踪、会被自动更新的那一份；让陈旧的手工
+    构建静默压过它，更新功能就形同虚设。要用自己的构建，把配置「实验技术后端程序路径」或环境
+    变量 ``EF_CAPTURE_BACKEND`` 指过去即可——两者都在托管目录之前。
     """
 
+    managed = installed_executable()
     for candidate in (
         _from_candidate(configured),
         _from_candidate(os.environ.get(ENV_OVERRIDE)),
+        managed if managed.is_file() else None,
         _from_candidate(str(REPO_ROOT.parent / "endfield-capture-backend" / "dist")),
         _from_candidate(str(REPO_ROOT.parent / "endfield-capture-backend")),
         _from_candidate(str(REPO_ROOT)),

@@ -143,8 +143,9 @@ class ProbeTest(unittest.TestCase):
 
 
 class FindExecutableTest(unittest.TestCase):
-    """定位 exe 的搜索顺序。所有用例都把仓库根指到空目录、把 PATH 关掉，
-    免得在本机上搜到真实的 ``endfield-capture-backend/dist``。"""
+    """定位 exe 的搜索顺序。所有用例都把仓库根指到空目录、把 PATH 关掉、把托管安装目录也指到
+    空目录，免得在本机上搜到真实的 ``endfield-capture-backend/dist`` 或已下载的托管副本——
+    那两样都是一装就有，会让"找不到"这类断言随机器状态飘。"""
 
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
@@ -153,6 +154,9 @@ class FindExecutableTest(unittest.TestCase):
         self._patches = [
             mock.patch.object(launcher_mod, "REPO_ROOT", self.root),
             mock.patch.object(launcher_mod.shutil, "which", return_value=None),
+            mock.patch.object(
+                launcher_mod, "installed_executable", return_value=self.root / "downloads" / EXECUTABLE_NAME
+            ),
             mock.patch.dict(os.environ, {launcher_mod.ENV_OVERRIDE: ""}),
         ]
         for patch in self._patches:
@@ -339,6 +343,9 @@ class LaunchTest(unittest.TestCase):
         with (
             mock.patch.object(launcher_mod, "REPO_ROOT", empty_root),
             mock.patch.object(launcher_mod.shutil, "which", return_value=None),
+            mock.patch.object(
+                launcher_mod, "installed_executable", return_value=empty_root / "downloads" / EXECUTABLE_NAME
+            ),
             mock.patch.dict(os.environ, {launcher_mod.ENV_OVERRIDE: ""}),
         ):
             self.assertFalse(launcher.ensure_running())
@@ -512,7 +519,29 @@ class _FakeOwner(MinimapPositionMixin):
 
 
 class MixinWiringTest(unittest.TestCase):
-    """配置到行为的接线：自动启动开关、路径配置、端口变化时重建。"""
+    """配置到行为的接线：自动启动开关、路径配置、端口变化时重建。
+
+    **必须屏蔽联网那一步**：``ensure_capture_backend`` 现在会先确保本地有 exe，而缺了它就会
+    真去 GitHub 下载 18 MB 并把它拉起。这个测试类只关心接线，安装/更新由
+    ``TestCaptureBackendInstaller`` 负责。
+    """
+
+    def setUp(self):
+        self._patches = [
+            mock.patch.object(
+                MinimapPositionMixin, "ensure_capture_backend_installed", return_value=True
+            ),
+            # 托管目录也指空：免得本机已下载的副本被 find_backend_executable 找到并真跑起来
+            mock.patch.object(
+                launcher_mod, "installed_executable", return_value=Path(tempfile.mkdtemp()) / EXECUTABLE_NAME
+            ),
+        ]
+        for patch in self._patches:
+            patch.start()
+
+    def tearDown(self):
+        for patch in reversed(self._patches):
+            patch.stop()
 
     def test_autostart_disabled_only_probes(self):
         owner = _FakeOwner({"使用实验技术": True, "实验技术自动启动后端": False, "实验技术后端端口": _free_port()})
