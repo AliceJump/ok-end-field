@@ -24,6 +24,8 @@ from src.localization.capture_backend_installer import (
     fetch_latest_release,
     installed_executable,
     managed_install_dir,
+    managed_runs_dir,
+    prune_run_directories,
 )
 
 #: 假 exe：以 MZ 开头，内容随便，大小够触发分块读取
@@ -347,6 +349,139 @@ class InstallTest(unittest.TestCase):
                 host.handler.state["asset_bytes"] = b"MZ" + b"bad" * 50  # 与摘要不符
                 path = self._installer(directory, ttl=0.0, cooldown=3600.0).ensure_installed()
             self.assertEqual(path.read_bytes(), FAKE_EXE, "新版装不上时必须留着旧版继续用")
+
+
+class RunRetentionTest(unittest.TestCase):
+    """运行产物的保留策略。每局一个 ``runs/<时间戳>/``（约 20 MB），不设上限能攒到几个 GB。"""
+
+    def _runs(self, directory: Path, names: list[str]) -> None:
+        for name in names:
+            (directory / name).mkdir(parents=True)
+            (directory / name / "capture.pcap").write_bytes(b"x")
+
+    def test_keeps_only_the_newest_five(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runs = Path(directory)
+            names = [f"2026101{i}-120000" for i in range(1, 9)]  # 8 个依次递增的时间戳
+            self._runs(runs, names)
+            removed = prune_run_directories(runs, 5)
+            self.assertEqual(removed, 3)
+            self.assertEqual(sorted(p.name for p in runs.iterdir()), names[-5:])
+
+    def test_never_deletes_a_directory_it_does_not_recognise(self):
+        """**这条是安全底线**：这个函数会删东西，所以名字不像时间戳的一律不碰。
+
+        认不出来就说明它不是后端按惯例建的那批——宁可漏删也不能误删用户放那儿的东西。
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            runs = Path(directory)
+            names = [f"2026100{i}-120000" for i in range(1, 6)]
+            self._runs(runs, names)
+            for odd in ("heading-test", "nav-verify", "我手动放的", "runs", "20261001-1200"):
+                (runs / odd).mkdir()
+            prune_run_directories(runs, 1)
+            survivors = {p.name for p in runs.iterdir()}
+            for odd in ("heading-test", "nav-verify", "我手动放的", "runs", "20261001-1200"):
+                self.assertIn(odd, survivors, f"不该动 {odd}")
+            self.assertIn(names[-1], survivors)
+
+    def test_plain_files_are_left_alone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runs = Path(directory)
+            self._runs(runs, ["20261001-120000", "20261002-120000"])
+            (runs / "20260901-120000").write_bytes("看起来像时间戳，但是个文件".encode())
+            prune_run_directories(runs, 1)
+            self.assertTrue((runs / "20260901-120000").is_file(), "只该动目录")
+
+    def test_nothing_removed_when_under_the_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runs = Path(directory)
+            self._runs(runs, ["20261001-120000", "20261002-120000"])
+            self.assertEqual(prune_run_directories(runs, 5), 0)
+            self.assertEqual(len(list(runs.iterdir())), 2)
+
+    def test_missing_directory_is_not_an_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(prune_run_directories(Path(directory) / "nope", 5), 0)
+
+    def test_keep_zero_removes_every_run_but_keeps_the_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runs = Path(directory)
+            self._runs(runs, ["20261001-120000", "20261002-120000"])
+            self.assertEqual(prune_run_directories(runs, 0), 2)
+            self.assertTrue(runs.is_dir(), "顶层目录本身要留着，后端下次还要往里写")
+
+    def test_lexicographic_order_is_time_order(self):
+        """定宽时间戳按字典序排就是时间序——跨年跨月跨日都不用额外解析。"""
+
+        with tempfile.TemporaryDirectory() as directory:
+            runs = Path(directory)
+            self._runs(runs, ["20251231-235959", "20260101-000000", "20261013-235959"])
+            prune_run_directories(runs, 1)
+            self.assertEqual([p.name for p in runs.iterdir()], ["20261013-235959"])
+
+    def test_runs_dir_sits_under_the_managed_directory(self):
+        self.assertEqual(managed_runs_dir(), managed_install_dir() / "runs")
+
+
+class RunsDirWiringTest(unittest.TestCase):
+    """拉开后端时要显式指定 ``--runs-dir``，**但只管我们自己下载的那份**。"""
+
+    def _launcher(self, directory: str):
+        from src.localization import capture_backend_launcher as launcher_mod
+
+        return launcher_mod.BackendLauncher(8765, executable="", serve_args=("serve",), log_directory=Path(directory))
+
+    def test_managed_copy_gets_an_explicit_runs_dir(self):
+        from src.localization import capture_backend_launcher as launcher_mod
+
+        with tempfile.TemporaryDirectory() as directory:
+            managed_exe = Path(directory) / ASSET_NAME
+            managed_exe.write_bytes(FAKE_EXE)
+            runs = Path(directory) / "runs"
+            with (
+                patch.object(launcher_mod, "installed_executable", return_value=managed_exe),
+                patch.object(launcher_mod, "managed_runs_dir", return_value=runs),
+            ):
+                command = self._launcher(directory)._build_command(managed_exe)
+        self.assertIn("--runs-dir", command)
+        self.assertEqual(command[command.index("--runs-dir") + 1], str(runs))
+
+    def test_a_brought_own_backend_keeps_its_own_default(self):
+        """用户自带的后端：替他改 --runs-dir 等于把他的产物挪到我们的目录里，那是越界。"""
+
+        from src.localization import capture_backend_launcher as launcher_mod
+
+        with tempfile.TemporaryDirectory() as directory:
+            managed_exe = Path(directory) / "managed" / ASSET_NAME
+            managed_exe.parent.mkdir(parents=True)
+            managed_exe.write_bytes(FAKE_EXE)
+            theirs = Path(directory) / "mine" / ASSET_NAME
+            theirs.parent.mkdir(parents=True)
+            theirs.write_bytes(FAKE_EXE)
+            with patch.object(launcher_mod, "installed_executable", return_value=managed_exe):
+                command = self._launcher(directory)._build_command(theirs)
+        self.assertNotIn("--runs-dir", command)
+
+    def test_prune_runs_after_the_launch(self):
+        """清理必须发生在**探活有结果之后**：后端先建目录再起 HTTP 服务，
+
+        放在 _launch 之后立刻清会早于它建目录，稳态就会留成 6 份而不是 5 份。
+        """
+
+        from src.localization import capture_backend_launcher as launcher_mod
+
+        with tempfile.TemporaryDirectory() as directory:
+            launcher = self._launcher(directory)
+            events: list[str] = []
+            launcher._launch = lambda exe: events.append("launch")
+            launcher._wait_until_ready = lambda budget: events.append("wait") or True
+            launcher._prune_managed_runs = lambda exe: events.append("prune")
+            launcher._mark_healthy = lambda: None
+            with patch.object(launcher_mod, "find_backend_executable", return_value=Path("x") / ASSET_NAME):
+                self.assertTrue(launcher.ensure_running())
+        self.assertEqual(events, ["launch", "wait", "prune"])
 
 
 class MixedInTest(unittest.TestCase):

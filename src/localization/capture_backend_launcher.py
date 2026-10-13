@@ -31,6 +31,8 @@ from urllib import error, request
 from src.localization.capture_backend_installer import (
     ASSET_NAME,
     installed_executable,
+    managed_runs_dir,
+    prune_run_directories,
 )
 
 __all__ = [
@@ -65,6 +67,10 @@ RETRY_COOLDOWN = 15.0
 
 #: 探活用的超时。后端是回环上的本机进程，超过这个数就是真的没起来。
 PROBE_TIMEOUT = 1.0
+
+#: 保留多少局运行产物（每局一个 ``runs/<时间戳>/``，约 20 MB）。超过的按时间从旧到新删。
+#: 后端每局都写一份完整报文，不设上限能攒到几个 GB。
+KEEP_RUNS = 5
 
 #: 后端根目录（``src/localization/`` 的上一级再上一级）
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -189,8 +195,40 @@ class BackendLauncher:
 
         return self._process is not None and self._process.poll() is None
 
+    def _managed_runs_dir(self, executable: Path) -> Path | None:
+        """这是**本应用下载的那份**时返回它的运行产物目录；用户自带的后端返回 ``None``。
+
+        只管自己下载的那份：别人的后端该往哪儿写产物是他自己的事，替他改 ``--runs-dir``
+        等于把他的产物挪到我们的目录里，那是越界。
+        """
+
+        try:
+            if Path(executable).resolve() != installed_executable().resolve():
+                return None
+        except OSError:
+            return None
+        return managed_runs_dir()
+
     def _build_command(self, executable: Path) -> list[str]:
-        return [str(executable), *self.serve_args, "--port", str(self.port)]
+        command = [str(executable), *self.serve_args, "--port", str(self.port)]
+        runs_dir = self._managed_runs_dir(executable)
+        if runs_dir is not None:
+            command += ["--runs-dir", str(runs_dir)]
+        return command
+
+    def _prune_managed_runs(self, executable: Path) -> None:
+        """按 :data:`KEEP_RUNS` 清一次历史运行产物。
+
+        调用时机是**拉起之后**：后端在开始监听之前就建好了这一局的 ``runs/<时间戳>/``，所以
+        此刻最新的那个目录已经存在、会被保留，删掉的都是更早的。
+        """
+
+        runs_dir = self._managed_runs_dir(executable)
+        if runs_dir is None:
+            return
+        removed = prune_run_directories(runs_dir, KEEP_RUNS)
+        if removed:
+            self._info(f"实验技术：已清理 {removed} 份历史运行产物（保留最近 {KEEP_RUNS} 局）")
 
     def _launch(self, executable: Path) -> None:
         """起后端进程；日志落到文件，不弹控制台窗口。"""
@@ -273,7 +311,12 @@ class BackendLauncher:
             return False
 
         self._launch(executable)
-        if self._wait_until_ready(STARTUP_GRACE):
+        ready = self._wait_until_ready(STARTUP_GRACE)
+        # **必须等到探活有结果之后再清**：后端是先 mkdir 这一局的 runs/<时间戳>/、再起 HTTP
+        # 服务的，所以端口一旦应答，新目录必然已经存在。放在 _launch 之后立刻清会早于它建目录，
+        # 于是"保留 5 份"实际会留成 6 份。
+        self._prune_managed_runs(executable)
+        if ready:
             self._mark_healthy()
             self._info(f"实验技术：抓包后端就绪（端口 {self.port}）")
             return True

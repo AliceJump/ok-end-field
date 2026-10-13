@@ -1,7 +1,7 @@
-"""下载并更新外部抓包后端（``endfield-capture-backend.exe``）。
+"""下载并更新外部抓包后端（``endfield-capture-backend.exe``），并托管它的运行产物目录。
 
 :mod:`src.localization.capture_backend_launcher` 负责让后端**跑起来**，本模块负责让它**存在**
-——从 GitHub Release 取回可执行文件，并在有新版时静默替换。
+——从 GitHub Release 取回可执行文件、在有新版时静默替换，以及管理它写出来的运行产物。
 
 三条边界：
 
@@ -25,6 +25,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
+import shutil
 import threading
 import time
 import urllib.error
@@ -45,6 +47,8 @@ __all__ = [
     "fetch_latest_release",
     "installed_executable",
     "managed_install_dir",
+    "managed_runs_dir",
+    "prune_run_directories",
 ]
 
 #: 后端所在仓库（发布页由它派生）
@@ -97,6 +101,54 @@ def installed_executable() -> Path:
     """托管 exe 的完整路径（**不保证存在**）。"""
 
     return managed_install_dir() / ASSET_NAME
+
+
+def managed_runs_dir() -> Path:
+    """托管后端写运行产物的目录：``<托管目录>/runs``。
+
+    我们拉起托管的那份 exe 时会用 ``--runs-dir`` 明确指到这里。**不指的话它按 ``./runs``
+    相对当前工作目录写**，而那取决于我们给的 cwd——显式指定才不依赖这个耦合。
+
+    一个运行产物目录约 20 MB（整局报文），攒下去能到几个 GB，所以配了保留策略，
+    见 :func:`prune_run_directories`。
+    """
+
+    return managed_install_dir() / "runs"
+
+
+#: 后端给每局建的目录名形状：``datetime.now().strftime("%Y%m%d-%H%M%S")``
+_RUN_DIR_PATTERN = re.compile(r"^\d{8}-\d{6}$")
+
+
+def prune_run_directories(directory: Path, keep: int) -> int:
+    """只保留最近 ``keep`` 个运行产物目录，返回删掉了几个。
+
+    **只动名字像时间戳的目录**。这个函数会删东西，所以判据刻意收得很紧：名字不符合
+    ``YYYYMMDD-HHMMSS`` 的一律不碰——认不出来就说明它不是后端按惯例建的那批，宁可漏删
+    也不能误删用户放在那儿的东西。
+
+    时间戳是定宽的，所以**字典序就是时间序**，不需要解析成 datetime。正在跑的那一局总是
+    最新的一个，天然落在保留范围内，不会被自己删掉。
+    """
+
+    if keep < 0:
+        return 0
+    try:
+        candidates = [
+            path for path in Path(directory).iterdir() if path.is_dir() and _RUN_DIR_PATTERN.match(path.name)
+        ]
+    except OSError:
+        return 0
+    stale = sorted(candidates, key=lambda path: path.name)[: max(0, len(candidates) - keep)]
+    removed = 0
+    for path in stale:
+        try:
+            shutil.rmtree(path)
+        except OSError:
+            # 删不掉（还是别人的句柄、权限不够）不该让调用方失败，下次再来。
+            continue
+        removed += 1
+    return removed
 
 
 # --------------------------------------------------------------------------- #
