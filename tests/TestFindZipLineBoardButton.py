@@ -159,6 +159,10 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         )
         stub._normalize_values = DeliveryTask._normalize_values
         stub._value_for_index = DeliveryTask._value_for_index
+        # zip_line_list_go 在进入分段循环前会先算历史位移指纹并取一次停稳区域；
+        # 本用例走直接对准那条路，指纹给 None 即可让历史位移逻辑保持惰性。
+        stub._zip_line_motion_route_fingerprint = lambda *args, **kwargs: None
+        stub._zip_line_stop_state = lambda: ("stop", "box")
 
         with self.assertRaises(ZipLineReplanRequired) as raised:
             DeliveryTask.zip_line_list_go(
