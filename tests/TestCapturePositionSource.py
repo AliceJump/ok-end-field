@@ -184,6 +184,55 @@ class PollTest(unittest.TestCase):
             self.assertIsNone(source.poll())
         self.assertTrue(any("还没有解出角色坐标" in text for text in warnings))
 
+    def test_no_position_points_at_restarting_the_game_when_the_handshake_was_missed(self):
+        """**这是那条最容易被误处理的故障**：后端被重启过 → 本局拿不到登录握手。
+
+        泛泛地报"还没有解出角色坐标"会让用户去重启后端，而那**只会更糟**——新后端看到的仍是
+        一条没有 SYN 的连接，永远拿不到握手。所以这里必须直接说清该做什么。
+        """
+
+        warnings: list[str] = []
+        payload = {
+            "lastPosition": None,
+            "ws": {},
+            "flows": [_flows_entry(1, status="缺少连接起点，请重新启动游戏")],
+        }
+        with FakeBackend(payload) as backend:
+            source = CapturePositionSource(backend.port, log_warning=warnings.append)
+            source.poll()
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("重开游戏", warnings[0])
+        self.assertIn("重启后端没有用", warnings[0])
+
+    def test_no_position_without_that_flow_keeps_the_generic_hint(self):
+        """没有那条终态时不能乱指路：说法要停在"确认启动顺序"。"""
+
+        warnings: list[str] = []
+        with FakeBackend({"lastPosition": None, "ws": {}, "flows": [_flows_entry(1)]}) as backend:
+            source = CapturePositionSource(backend.port, log_warning=warnings.append)
+            source.poll()
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("本局连接建立之前启动", warnings[0])
+        self.assertNotIn("重开游戏", warnings[0])
+
+    def test_missing_handshake_hint_does_not_repeat_and_rewarns_on_change(self):
+        """分类进了去重键：同一分类只报一次，但分类变化时应当重新报一次。"""
+
+        warnings: list[str] = []
+        payload = {
+            "lastPosition": None,
+            "ws": {},
+            "flows": [_flows_entry(1, status="缺少连接起点，请重新启动游戏")],
+        }
+        with FakeBackend(payload) as backend:
+            source = CapturePositionSource(backend.port, log_warning=warnings.append)
+            source.poll()
+            source.poll()
+            self.assertEqual(len(warnings), 1, "同一分类不应重复告警")
+            backend.set_payload({"lastPosition": None, "ws": {}, "flows": [_flows_entry(1)]})
+            source.poll()
+        self.assertEqual(len(warnings), 2, "分类变化后应重新告警")
+
     def test_unreachable_warns_once(self):
         warnings: list[str] = []
         source = CapturePositionSource(19999, log_warning=warnings.append, timeout=0.2)

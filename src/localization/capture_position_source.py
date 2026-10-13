@@ -64,8 +64,11 @@ FLOW_IDLE_SECONDS = 30.0
 #: 连接终态的**确切**取值。
 TERMINAL_FLOW_STATUSES = frozenset({"连接已结束"})
 
+#: 后端在「抓包晚于该连接」时给的终态前缀（完整取值是 ``缺少连接起点，请重新启动游戏``）。
+_NO_CONNECTION_START = "缺少连接起点"
+
 #: 连接终态的**前缀**（后面还拼了具体原因，只能按前缀判）。
-TERMINAL_FLOW_STATUS_PREFIXES = ("解码停止", "缺少连接起点")
+TERMINAL_FLOW_STATUS_PREFIXES = ("解码停止", _NO_CONNECTION_START)
 
 #: ``scene_num_id`` → 网格名。**只是近似，别当权威**。
 #:
@@ -353,6 +356,34 @@ class CapturePositionSource:
             return int(flow_id), status, False
         return int(flow_id), status, True
 
+    def _no_position_hint(self, state: dict) -> tuple[str, str]:
+        """没有坐标时给出**可操作**的提示；返回 ``(文案, 分类)``。
+
+        默认文案是"确认后端在本局连接建立之前启动"——正确但泛泛，用户看了不知道该做什么。
+        后端侧明确过一条：``flows[]`` 里一条连接停在「缺少连接起点」的典型成因就是**后端被
+        重启过**（或启动晚于登录），而那种情况下**重启后端只会更糟**——新后端看到的仍是一条
+        没有 SYN 的连接，永远拿不到握手。真正的解法是重开游戏逼出一条新连接。所以这里先扫一眼
+        ``flows[]``，把这种情况挑出来直接说清该做什么。
+
+        分类参与告警去重键：两种情况之间来回切换时应当重新告警一次。
+        """
+
+        flows = state.get("flows")
+        if isinstance(flows, list):
+            for item in flows:
+                if isinstance(item, dict) and str(item.get("status") or "").startswith(_NO_CONNECTION_START):
+                    return (
+                        "实验技术：后端在抓包，但本局拿不到连接起点——登录握手发生在抓包开始之前"
+                        "（最常见的原因是后端被重启过）。**请重开游戏**来逼出一条新连接；"
+                        "重启后端没有用，它看到的仍是一条没有 SYN 的连接。",
+                        "no_connection_start",
+                    )
+        return (
+            "实验技术：后端已连上但还没有解出角色坐标。"
+            "请确认后端是在本局连接建立之前启动的（登录握手必须在抓包范围内）。",
+            "generic",
+        )
+
     def poll(self, *, now: float | None = None) -> CaptureSample | None:
         """取最新一条坐标；没有可用坐标时返回 ``None``。"""
 
@@ -361,11 +392,8 @@ class CapturePositionSource:
             return None
         last = state.get("lastPosition")
         if not isinstance(last, dict):
-            self._warn_once(
-                "no_position",
-                "实验技术：后端已连上但还没有解出角色坐标。"
-                "请确认后端是在本局连接建立之前启动的（登录握手必须在抓包范围内）。",
-            )
+            message, category = self._no_position_hint(state)
+            self._warn_once(f"no_position:{category}", message)
             return None
         try:
             x = float(last["x"])
