@@ -40,12 +40,10 @@ class DemoBattleTask(DemoLevelMixin, Common, MapMixin, ZipLineMixin, BattleMixin
             refresh_times = 0
             this_time_double_reward = False
             while level <= 5:
-                level = self.click_random_and_wait_level_change(level, double_reward_opened=this_time_double_reward)
+                refresh_times += 1
+                level = self.click_random_and_wait_level_change(level, draw_count=refresh_times)
                 if level < 0:
                     return False
-                refresh_times += 1
-                if refresh_times == 3:
-                    self.click_confirm(time_out=2)
                 if ((refresh_times == 2 and level >= 8) or once_double_reward) and not this_time_double_reward:
                     self.log_info("已刷新2次，当前关卡较高，开启双倍奖励")
                     self.wait_click_feature(feature=fL.demo_double_open, time_out=10, raise_if_not_found=False)
@@ -77,7 +75,7 @@ class DemoBattleTask(DemoLevelMixin, Common, MapMixin, ZipLineMixin, BattleMixin
         self.click_confirm(time_out=3)
         return True
 
-    def click_random_and_wait_level_change(self, previous_level, max_retry=3, double_reward_opened=False):
+    def click_random_and_wait_level_change(self, previous_level, draw_count, max_retry=3):
         for retry_index in range(max_retry):
             if not self.wait_click_feature(
                 feature=fL.demo_random_button,
@@ -92,10 +90,10 @@ class DemoBattleTask(DemoLevelMixin, Common, MapMixin, ZipLineMixin, BattleMixin
             if current_level is not None:
                 return current_level
 
-            # 未开双倍时点击『随机』会弹出「仅可在第三抽之前调整奖励翻倍选项…是否确认抽取？」
-            # 确认框会拦截本次抽取导致等级不变；点掉确认框后等待等级变化。
-            # 已开双倍时不会弹此框，无需检测，直接重试。
-            if not double_reward_opened and self.click_confirm(time_out=1):
+            # 从第三抽起，无论是否开启双倍，都可能弹出奖励翻倍选项的确认框。
+            # 玩家可能已关闭确认提示；无论是否找到确认按钮，都继续等待本次抽取结果。
+            if draw_count > 2:
+                self.click_confirm(time_out=1)
                 current_level = self.wait_level_change(previous_level, time_out=4)
                 if current_level is not None:
                     return current_level
