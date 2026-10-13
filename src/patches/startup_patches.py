@@ -8,10 +8,12 @@ def install_startup_patches():
     if _PATCH_INSTALLED:
         return
 
+    from src.patches.capture_backend_autostart_patch import install_capture_backend_autostart_patch
     from src.patches.cascade_dropdown_patch import install_cascade_dropdown_patch
     from src.patches.combat_decision_trace_patch import install_combat_decision_trace_patch
     from src.patches.conditional_rotation_patch import install_conditional_rotation_patch
     from src.patches.config_transfer_patch import install_config_transfer_patch
+    from src.patches.danger_switch_patch import install_danger_switch_patch
     from src.patches.double_spin_range_patch import install_double_spin_range_patch
     from src.patches.dynamic_config_patch import install_dynamic_config_patch
     from src.patches.enemy_direction_recovery_patch import install_enemy_direction_recovery_patch
@@ -30,11 +32,13 @@ def install_startup_patches():
 
     install_no_frame_task_patch()
     install_cascade_dropdown_patch()
+    install_capture_backend_autostart_patch()
     install_enemy_direction_recovery_patch()
     install_timed_enemy_absence_stability_patch()
     install_combat_decision_trace_patch()
     install_config_transfer_patch()
     install_conditional_rotation_patch()
+    install_danger_switch_patch()
     install_double_spin_range_patch()
     install_dynamic_config_patch()
     install_log_upload_patch()

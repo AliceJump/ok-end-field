@@ -725,7 +725,22 @@ class GridNavigationMixin(RuntimeStateMixin):
         :meth:`_wait_for_minimap_sync`、检查导航超时、再决定失败退避。集中到这里后
         调用点只关心 ``wait.synced`` 与 ``wait.timed_out``，"为什么校准"由 ``reason``
         一路带进状态提示和超时告警。
+
+        数据源在 ``pose["sync_supported"]`` 上声明"静止校准这个概念不成立"时，直接当"已对齐"
+        返回：那种源（目前的抓包直通）给的是绝对坐标，既没有可设的锚点、也没有可修的漂移，
+        停车等静止校准只会白等。在这里拦一次就够了，八个调用点不必各自判断；整体超时仍然
+        照常上报，导航该放弃时照样放弃。
+
+        **判据是契约字段而不是 ``source`` 名称**：导航层依赖的是 pose 的接口，不该知道
+        "capture" 是哪个定位实现的内部命名（``tests/TestRuntimeStateArchitecture`` 钉着这条）。
+        字段缺省为 True，所以老的定位源行为不变。
         """
+
+        if not (ctx.pose or {}).get("sync_supported", True):
+            return SyncWait(
+                synced=True,
+                timed_out=self._grid_navigation_timed_out(ctx.deadline, ctx.limit),
+            )
         synced = self._wait_for_minimap_sync(
             ctx.sync_seq,
             ctx.deadline,

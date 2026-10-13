@@ -126,6 +126,10 @@ class MinimapHeadingMixin:
             return raw.strip().lower() in ("1", "true", "yes", "on", "是", "开启", "开")
         return bool(raw)
 
+    def _cfg_str(self, key, default):
+        raw = self.config.get(key, default)
+        return default if raw is None else str(raw)
+
     def _init_minimap_heading_mixin(self):
         """初始化朝向状态；必须在任务 ``__init__`` 中调用且不启动任何线程。"""
         self._last_turn_result = None

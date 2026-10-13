@@ -18,7 +18,14 @@ from ok import TriggerTask
 from src.core.BaseEfTask import BaseEfTask
 from src.core.global_config_store import MINIMAP_LEGACY_SOURCE_TASKS
 from src.icons import Icons
-from src.localization.minimap_position_mixin import MinimapPositionMixin
+from src.localization.minimap_position_mixin import (
+    CONFIG_EXPERIMENTAL_AUTOSTART,
+    CONFIG_EXPERIMENTAL_EXE,
+    CONFIG_EXPERIMENTAL_PORT,
+    CONFIG_EXPERIMENTAL_STOP_ON_EXIT,
+    CONFIG_USE_EXPERIMENTAL,
+    MinimapPositionMixin,
+)
 
 
 class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
@@ -41,6 +48,19 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
             }
         )
         self.config_description.update(self.minimap_position_config_description())
+        # 实验技术用带风险确认的自定义开关（见 src/patches/danger_switch_patch.py）；
+        # 端口与后端程序相关项只在打开时才显示，避免默认状态下多出一堆无意义的项。
+        self.config_type[CONFIG_USE_EXPERIMENTAL] = {
+            "type": "danger_switch",
+            "sub_configs": {
+                True: [
+                    CONFIG_EXPERIMENTAL_PORT,
+                    CONFIG_EXPERIMENTAL_EXE,
+                    CONFIG_EXPERIMENTAL_AUTOSTART,
+                    CONFIG_EXPERIMENTAL_STOP_ON_EXIT,
+                ]
+            },
+        }
         self._init_minimap_position_mixin()
         # 定位服务是常驻生产者，不能因为执行器暂停或暂无消费者而主动断开 WS。
         self._map_ws_consumer_idle_timeout = 0.0
@@ -77,6 +97,18 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
     def run(self):
         """采样一拍定位并发布节流后的状态；本任务不结束自身。"""
         if not self.in_world():
+            return False
+        if self.experimental_capture_enabled():
+            # 直通模式不读画面、不建里程计、不启地图 WS，也不需要分辨率标定档案
+            # （抓包后端直接给绝对坐标），所以整段旧初始化都跳过。
+            #
+            # 这里的 ensure 只是**兜底**（后端中途挂了、或玩家在游戏已经跑起来之后才打开
+            # 这个开关）。真正的拉起时机在游戏启动之前，见
+            # src/patches/capture_backend_autostart_patch.py —— 本任务要等到游戏窗口能截屏
+            # 才会被执行，那时登录握手早就过去了。
+            self.ensure_capture_backend()
+            state = self.sample_world_pose(now=self.active_time())
+            self._report_capture_status(state, self.active_time())
             return False
         self.start_minimap_position(wait_stable=False)
         if not self.minimap_position_ready:
@@ -127,6 +159,40 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
             self._last_status_log_at = now
         return False
 
+    def _report_capture_status(self, state: dict, now: float) -> None:
+        """直通模式的状态栏文本：坐标 + 地图 + 这条采样已经多久了。
+
+        采样的陈旧度（``capture_age``）**只显示不拦截**：上报是事件驱动的，静止时本来就没有
+        新包，年龄大不等于数据坏了。它在"坐标跳变"或"导航拿着旧位置走"时是唯一的线索。
+
+        真正会拦截的是**连接活性**与**地图识别**（见 ``_capture_trust``）。所以坐标可用但不可信
+        时，这里必须把原因显式写出来，否则状态栏看着和正常一模一样。
+        """
+
+        if now - self._last_status_log_at < 1.0:
+            return
+        x, z = state.get("x"), state.get("z")
+        if x is None or z is None:
+            text = f"抓包源无坐标({state.get('trust_reason') or 'unknown'})"
+        else:
+            y = state.get("y")
+            age = state.get("capture_age")
+            parts = [f"({float(x):.1f}, {float(z):.1f})"]
+            if y is not None:
+                parts.append(f"Y={float(y):.1f}")
+            parts.append(str(state.get("map_id") or "未知地图"))
+            if isinstance(age, (int, float)):
+                parts.append(f"{float(age):.1f}s前")
+            # 连接号只在"换了连接"时有意义，但一直显示才能看出它什么时候变——重登正好
+            # 表现为这个数字跳一格。不可信时补上原因，别让它和正常帧长得一样。
+            if state.get("capture_flow") is not None:
+                parts.append(f"连接{state['capture_flow']}")
+            if not state.get("position_trusted", True):
+                parts.append(f"不可用({state.get('trust_reason') or 'unknown'})")
+            text = "抓包 " + " ".join(parts)
+        self.info_set("小地图定位", text)
+        self._last_status_log_at = now
+
     @staticmethod
     def _position_status_text(state: dict, x, z) -> str:
         """生成定位任务状态栏文本。"""
@@ -143,8 +209,14 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         return motion
 
     def on_destroy(self):
-        """任务销毁时停止 WS 客户端和本地位置源。"""
+        """任务销毁时停止 WS 客户端和本地位置源。
+
+        由本应用拉起的抓包后端**默认留着不关**：它的状态绑在当前这一局连接上，关掉再拉起
+        等于丢了登录握手，必须重启游戏才能恢复。要干净退出的用户把「停止定位时关闭后端」
+        打开即可（见 ``CONFIG_EXPERIMENTAL_STOP_ON_EXIT``）。
+        """
         try:
+            self.stop_capture_backend()
             self.stop_minimap_position()
         finally:
             super().on_destroy()

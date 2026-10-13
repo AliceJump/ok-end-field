@@ -3551,3 +3551,45 @@ msgid "距窄道入口航点多近时触发停车校准（米）"
 msgstr ""
 "Distancia al punto de entrada del pasillo a la que se activa la calibración "
 "con parada (metros)."
+
+msgid "使用实验技术"
+msgstr "Usar técnica experimental"
+
+msgid "实验技术后端端口"
+msgstr "Puerto del backend de técnica experimental"
+
+msgid "改用外部抓包后端直接读取角色绝对坐标，绕开小地图里程计、地图 WS 与整条校准链。该技术可能违反游戏服务条款、存在封禁风险，请自行判断是否使用"
+msgstr "Lee las coordenadas absolutas del personaje directamente desde un backend externo de captura de paquetes, evitando el odómetro del minimapa, el WebSocket del mapa y toda la cadena de calibración. Esta técnica puede infringir los términos de servicio del juego y conlleva riesgo de bloqueo; decide tú si la usas"
+
+msgid "启用实验技术"
+msgstr "Activar técnica experimental"
+
+msgid "该技术通过抓取游戏网络流量解析角色坐标，可能违反游戏服务条款，存在账号被封禁的风险。请确认你已了解并自行承担后果。"
+msgstr "Esta técnica analiza las coordenadas del personaje capturando el tráfico de red del juego. Puede infringir los términos de servicio y conlleva el riesgo de que tu cuenta sea bloqueada. Confirma que lo entiendes y asumes las consecuencias."
+
+msgid "我已知晓风险"
+msgstr "Entiendo el riesgo"
+
+msgid "请等待 {seconds} 秒"
+msgstr "Espera {seconds} s"
+
+msgid "实验技术后端程序路径"
+msgstr "Ruta del ejecutable del backend de técnica experimental"
+
+msgid "实验技术自动启动后端"
+msgstr "Iniciar automáticamente el backend de técnica experimental"
+
+msgid "实验技术停止定位时关闭后端"
+msgstr "Cerrar el backend al detener la localización"
+
+msgid "外部抓包后端的本地 HTTP 端口（自动启动用它拉起后端，也用它探活）"
+msgstr "Puerto HTTP local del backend externo de captura de paquetes (el inicio automático lo usa para lanzar el backend y también para sondearlo)"
+
+msgid "后端可执行文件的路径（也可以是放着它的目录）。留空则自动探测：同级 endfield-capture-backend 仓库的 dist/ 目录、本仓库目录，以及系统 PATH"
+msgstr "Ruta del ejecutable del backend (también puede ser el directorio que lo contiene). Déjalo vacío para detectarlo automáticamente: el directorio dist/ de un repositorio endfield-capture-backend hermano, el directorio de este repositorio y el PATH del sistema"
+
+msgid "后端没在跑时自动把它拉起来。**后端必须在游戏建立主连接之前就绪**，否则拿不到登录握手、解不出坐标；由本应用拉起可以保证这个顺序"
+msgstr "Lanza el backend automáticamente cuando no esté en ejecución. **El backend debe estar listo antes de que el juego establezca su conexión principal**; de lo contrario no podrá capturar el handshake de inicio de sesión ni decodificar coordenadas. Que lo lance esta aplicación garantiza ese orden"
+
+msgid "停止定位时一并关闭由本应用拉起的后端。默认关：后端的状态绑在当前这一局连接上，关掉再拉起等于丢了登录握手，必须重启游戏才能恢复"
+msgstr "Cierra también el backend lanzado por esta aplicación al detener la localización. Desactivado por defecto: el estado del backend está ligado a la conexión de la sesión actual, así que cerrarlo y volver a lanzarlo pierde el handshake de inicio de sesión y obliga a reiniciar el juego para recuperarlo"

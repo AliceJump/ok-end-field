@@ -78,6 +78,19 @@ from src.core.NavConfig import (
     NavProfile,
     nav_profile_for_width,
 )
+from src.localization.capture_backend_launcher import (
+    CONFIG_EXPERIMENTAL_AUTOSTART,
+    CONFIG_EXPERIMENTAL_EXE,
+    CONFIG_EXPERIMENTAL_STOP_ON_EXIT,
+    BackendLauncher,
+    probe_backend,
+    shared_launcher,
+)
+from src.localization.capture_position_source import (
+    CAPTURE_SOURCE_NAME,
+    REST_SPEED_THRESHOLD,
+    CapturePositionSource,
+)
 from src.localization.minimap_heading_mixin import (
     CONFIG_MIN_SCORE,
     MinimapHeadingMixin,
@@ -100,7 +113,12 @@ from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 __all__ = [
     "CONFIG_COMMIT_MIN_SHIFT",
+    "CONFIG_EXPERIMENTAL_AUTOSTART",
+    "CONFIG_EXPERIMENTAL_EXE",
+    "CONFIG_EXPERIMENTAL_PORT",
+    "CONFIG_EXPERIMENTAL_STOP_ON_EXIT",
     "CONFIG_SYNC_DISTANCE",
+    "CONFIG_USE_EXPERIMENTAL",
     "CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT",
     "CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION",
     "CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP",
@@ -132,6 +150,10 @@ CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME = "关键帧视觉锚定链校正关键帧�
 CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES = "关键帧视觉锚定链校正关键帧边数"
 CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE = "关键帧视觉锚定链校正关键帧最小响应"
 CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT = "关键帧视觉锚定链校正关键帧锚点权重"
+#: 实验技术：改由外部抓包后端直接提供绝对坐标，绕开里程计/WS 融合与整条校准链。
+#: 默认关闭；打开需要过一遍风险确认（见 ``src/patches/danger_switch_patch.py``）。
+CONFIG_USE_EXPERIMENTAL = "使用实验技术"
+CONFIG_EXPERIMENTAL_PORT = "实验技术后端端口"
 
 #: 位移提交阈值默认值（1920 宽下约 1.8m）。0 = 关闭，回到"按时间提交"的旧行为。
 #: 误差按采样次数累积、每样本误差大致是绝对量，而每样本位移 = 速度 * 采样间隔，
@@ -203,6 +225,11 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: 8,
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: 0.3,
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: 25.0,
+            CONFIG_USE_EXPERIMENTAL: False,
+            CONFIG_EXPERIMENTAL_PORT: 8765,
+            CONFIG_EXPERIMENTAL_EXE: "",
+            CONFIG_EXPERIMENTAL_AUTOSTART: True,
+            CONFIG_EXPERIMENTAL_STOP_ON_EXIT: False,
         }
 
     @staticmethod
@@ -232,6 +259,23 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: "每个关键帧最多和之前多少个关键帧建立直接视觉边",
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: "关键帧视觉边的最低相位相关响应",
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: ("关键帧优化位置作为局部关键帧视觉锚定链校正软锚点的权重"),
+            CONFIG_USE_EXPERIMENTAL: (
+                "改用外部抓包后端直接读取角色绝对坐标，绕开小地图里程计、地图 WS 与整条校准链。"
+                "该技术可能违反游戏服务条款、存在封禁风险，请自行判断是否使用"
+            ),
+            CONFIG_EXPERIMENTAL_PORT: "外部抓包后端的本地 HTTP 端口（自动启动用它拉起后端，也用它探活）",
+            CONFIG_EXPERIMENTAL_EXE: (
+                "后端可执行文件的路径（也可以是放着它的目录）。留空则自动探测："
+                "同级 endfield-capture-backend 仓库的 dist/ 目录、本仓库目录，以及系统 PATH"
+            ),
+            CONFIG_EXPERIMENTAL_AUTOSTART: (
+                "后端没在跑时自动把它拉起来。**后端必须在游戏建立主连接之前就绪**，"
+                "否则拿不到登录握手、解不出坐标；由本应用拉起可以保证这个顺序"
+            ),
+            CONFIG_EXPERIMENTAL_STOP_ON_EXIT: (
+                "停止定位时一并关闭由本应用拉起的后端。默认关：后端的状态绑在当前这一局连接上，"
+                "关掉再拉起等于丢了登录握手，必须重启游戏才能恢复"
+            ),
         }
 
     # ------------------------------------------------------------------ #
@@ -264,6 +308,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         # 绝对坐标信任位：重锚/换图/里程计守卫触发后清零，下一次静校准恢复。
         self._minimap_position_trusted = False
         self._minimap_trust_reason = "uninitialized"
+        # 实验技术（抓包直通）状态：数据源实例与已消费的样本序号。
+        # 直通模式下 sync_seq 每来一条新样本就 +1，导航据此失效"已走过的已知格"。
+        self._minimap_capture_source: CapturePositionSource | None = None
+        self._minimap_capture_launcher: BackendLauncher | None = None
+        self._minimap_capture_seq = 0
+        self._minimap_capture_last_key: tuple | None = None
 
     def _nav_config(self):
         """读全局「导航配置」。取不到时返回 None（由调用方决定怎么报）。"""
@@ -766,7 +816,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
     def sample_world_pose(self, frame=None, *, now=None) -> dict:
         """采样并发布一帧世界坐标，供状态总线消费者使用。"""
 
-        state = self.minimap_position(frame=frame, now=now)
+        if self.experimental_capture_enabled():
+            state = self._capture_world_pose(now=now)
+        else:
+            state = self.minimap_position(frame=frame, now=now)
         publish_world_pose(
             self.runtime_state_hub,
             state,
@@ -775,9 +828,184 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         )
         return state
 
+    # ------------------------------------------------------------------ #
+    # 实验技术：抓包直通
+    # ------------------------------------------------------------------ #
+    def experimental_capture_enabled(self) -> bool:
+        """是否启用外部抓包直通定位。"""
+
+        return self._cfg_bool(CONFIG_USE_EXPERIMENTAL, False)
+
+    def capture_position_source(self) -> CapturePositionSource:
+        """按当前配置端口返回抓包数据源（端口变化时重建）。"""
+
+        port = int(self._cfg_int(CONFIG_EXPERIMENTAL_PORT, 8765))
+        source = self._minimap_capture_source
+        if source is None or source.port != port:
+            source = CapturePositionSource(
+                port,
+                log_info=self.log_info,
+                log_warning=self.log_warning,
+            )
+            self._minimap_capture_source = source
+        return source
+
+    def capture_backend_launcher(self) -> BackendLauncher:
+        """按当前配置返回后端拉起器（与游戏启动前的自动拉起共用同一个实例）。"""
+
+        port = int(self._cfg_int(CONFIG_EXPERIMENTAL_PORT, 8765))
+        executable = self._cfg_str(CONFIG_EXPERIMENTAL_EXE, "")
+        launcher = shared_launcher(
+            port,
+            executable=executable,
+            log_info=self.log_info,
+            log_warning=self.log_warning,
+        )
+        self._minimap_capture_launcher = launcher
+        return launcher
+
+    def ensure_capture_backend(self) -> bool:
+        """确保抓包后端在跑；返回它当前是否可用。
+
+        关掉自动启动时只探活、不拉起——留给"我自己管后端进程"的用法。
+
+        **必须在游戏建立主连接之前调用**：后端要抓到登录握手才推得出正确的解密流。所以
+        定位任务在启用直通的第一拍就会走到这里，而不是等到第一次要坐标时。
+        """
+
+        launcher = self.capture_backend_launcher()
+        if not self._cfg_bool(CONFIG_EXPERIMENTAL_AUTOSTART, True):
+            return probe_backend(launcher.port)
+        return launcher.ensure_running()
+
+    def stop_capture_backend(self) -> None:
+        """按配置停掉后端。默认不停——见 :data:`CONFIG_EXPERIMENTAL_STOP_ON_EXIT` 的说明。"""
+
+        launcher = self._minimap_capture_launcher
+        if launcher is None:
+            return
+        if self._cfg_bool(CONFIG_EXPERIMENTAL_STOP_ON_EXIT, False):
+            launcher.stop()
+        self._minimap_capture_launcher = None
+
+    def _capture_world_pose(self, *, now=None) -> dict:
+        """把抓包样本组装成定位状态契约（直通：抓包给什么就用什么）。
+
+        与融合链的关键差别是整个校准体系都不参与：坐标本来就是绝对值，没有"锚点"可设、
+        也没有漂移可修。因此只要坐标可用，``sync_needed`` 就恒为假——否则导航的
+        ``CALIBRATE`` 状态会把车停下来等一个永远不会到来的静止校准。
+
+        但"绝对"不等于"当前"：坐标是**某一条 TCP 连接**解出来的，而那条连接会随着登出、
+        换账号、重启游戏而结束。后端把最后一次解出的坐标一直留着（它的 ``state.last`` 没有
+        清空点），所以重登之后、新会话报出第一条坐标之前，``/api/state`` 给的仍是**上一局**
+        的坐标——那可能是另一张地图、乃至另一个账号的位置。这种坐标对导航比"没有坐标"更糟，
+        所以这里按下面两条扣掉信任，交给 :meth:`_capture_trust` 判：
+
+        * 产出它的连接已经不再喂数据（``WAIT_TRUST``，带 ``capture_session_ended``）；
+        * 认不出地图（``WAIT_TRUST``，带 ``capture_no_parent_map`` / ``capture_unknown_map``）
+          ——**决不回退到调用方请求的 map_id**：实测场景 463 是自带独立坐标空间的可走区域，
+          拿它当 map02 会在错的网格上从错的起点规划路线。
+
+        两条都只是扣信任、不清空坐标（``x``/``z`` 照给），这样导航停在 ``WAIT_TRUST`` 时能把
+        真正的原因打出来，而不是含糊地报"未锚定"。
+        """
+
+        # 不传本任务时钟：抓包源要用**墙钟**去减后端记录的 Unix 时间戳算陈旧度，
+        # 传 active_time()（time.monotonic）进去会让差值恒为负、被夹成 0。
+        sample = self.capture_position_source().poll()
+        if sample is None:
+            # 后端没数据：不发布伪造坐标。沿用上一帧只会让导航拿着旧位置继续走，
+            # 所以这里显式把坐标置空，让消费者看到"位置不可用"。
+            self._minimap_capture_last_key = None
+            return {
+                "x": None,
+                "y": None,
+                "z": None,
+                "heading": None,
+                "heading_score": None,
+                "map_id": None,
+                "anchor_set": False,
+                "position_trusted": False,
+                "trust_reason": "capture_unavailable",
+                "rest": False,
+                "odom_ok": False,
+                "odom_reason": "capture_unavailable",
+                "sync_needed": False,
+                "sync_checked": True,
+                # 校准不成立是**数据源的性质**，与此刻有没有坐标无关，所以这条分支也给。
+                "sync_supported": False,
+                "sync_seq": self._minimap_capture_seq,
+                "distance_since_sync": 0.0,
+            }
+
+        # 同一坐标重复到达不推进序号：导航用 sync_seq 变化判断"刚重锚"并失效已走过的
+        # 已知格，静止时每秒刷序号会让它反复白白重规划。
+        #
+        # ``flow`` 参与这个键：换了一条连接就是换了一局，必须推进序号，否则"登出后在原地
+        # 重新登录"这种坐标逐位相同的重登会完全不触发失效，导航会以为还是上一局。
+        key = (sample.x, sample.y, sample.z, sample.heading, sample.flow)
+        if key != self._minimap_capture_last_key:
+            self._minimap_capture_last_key = key
+            self._minimap_capture_seq += 1
+
+        rest = sample.speed is not None and abs(sample.speed) < REST_SPEED_THRESHOLD
+        trusted, trust_reason = self._capture_trust(sample)
+        return {
+            "x": sample.x,
+            "y": sample.y,
+            "z": sample.z,
+            # 朝向与 src/nav/route_follower.bearing_to_point 同一套约定（正北 0、顺时针），
+            # 是游戏上报的真值而非图像推断，因此置信度给满。
+            "heading": sample.heading,
+            "heading_score": None if sample.heading is None else 1.0,
+            "map_id": sample.map_id or None,
+            "anchor_set": trusted,
+            "position_trusted": trusted,
+            "trust_reason": trust_reason,
+            "rest": rest,
+            "odom_ok": True,
+            "odom_reason": "capture",
+            "sync_needed": False,
+            "sync_checked": True,
+            # 契约字段：直通源上"静止校准"这个概念不成立，导航据此不必停车等校准。
+            # 直接置为 False，而不是让导航去比对 source 名称（导航层不该知道本模块的命名）。
+            "sync_supported": False,
+            "just_synced": False,
+            "sync_seq": self._minimap_capture_seq,
+            "distance_since_sync": 0.0,
+            # 以下字段只供状态展示，不进发布契约（build_world_pose 会略过未知键）。
+            "capture_age": sample.age_seconds,
+            "capture_speed": sample.speed,
+            "capture_map_id_source": sample.map_id_source,
+            "capture_scene": sample.scene,
+            "capture_flow": sample.flow,
+            "capture_flow_status": sample.flow_status,
+            "capture_flow_alive": sample.flow_alive,
+        }
+
+    @staticmethod
+    def _capture_trust(sample) -> tuple[bool, str]:
+        """这条抓包坐标能不能被导航当真值；返回 ``(可信, 原因)``。
+
+        只做两件事，都遵循"没有把握就不给导航用"：先看产出它的连接是否还在，再看地图是否
+        认得出来。坐标数值本身**不**在这里判——数值是不是合理是后端的事，这里只判"这份坐标
+        描述的是不是当下的位置"。
+        """
+
+        if not sample.flow_alive:
+            return False, "capture_session_ended"
+        if not sample.map_id:
+            return False, (
+                "capture_no_parent_map" if sample.map_id_source == "no_parent_map" else "capture_unknown_map"
+            )
+        return True, CAPTURE_SOURCE_NAME
+
+
     def _minimap_position_source_name(self) -> str:
         """返回当前定位数据源名称，用于状态契约和诊断。"""
 
+        if self.experimental_capture_enabled():
+            return CAPTURE_SOURCE_NAME
         if self._is_map_ws_client_enabled():
             return "official_ws"
         if self._is_ws_position_server_enabled():

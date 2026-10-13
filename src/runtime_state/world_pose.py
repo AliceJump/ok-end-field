@@ -34,6 +34,13 @@ def build_world_pose(
         "sync_needed": bool(state.get("sync_needed", False)),
         "sync_checked": bool(state.get("sync_checked", False)),
         "sync_redundant": bool(state.get("sync_redundant", False)),
+        #: 这个数据源上**「静止校准」这个概念是否成立**。默认 True；直通类数据源（抓包）
+        #: 给绝对坐标、既没有锚点可设也没有漂移可修，因而给 False，导航据此不必停车等校准。
+        #:
+        #: 刻意做成契约字段而不是让导航去比对 ``source`` 名称：导航层依赖的应当是 pose
+        #: 的**接口**，而不是某个定位实现的名字（``tests/TestRuntimeStateArchitecture`` 钉着
+        #: 这条）。写成契约字段后，再来第二个直通数据源（例如命名管道）也自动适用。
+        "sync_supported": bool(state.get("sync_supported", True)),
         "just_synced": bool(state.get("just_synced", False)),
         "sync_residual": state.get("sync_residual"),
         "sync_seq": int(state.get("sync_seq") or 0),

@@ -3426,3 +3426,45 @@ msgid "距窄道入口航点多近时触发停车校准（米）"
 msgstr ""
 "How close to a narrow-passage entry waypoint triggers the stop-and-calibrate"
 " (meters)."
+
+msgid "使用实验技术"
+msgstr "Use experimental technique"
+
+msgid "实验技术后端端口"
+msgstr "Experimental technique backend port"
+
+msgid "改用外部抓包后端直接读取角色绝对坐标，绕开小地图里程计、地图 WS 与整条校准链。该技术可能违反游戏服务条款、存在封禁风险，请自行判断是否使用"
+msgstr "Read the character's absolute coordinates directly from an external packet-capture backend, bypassing the minimap odometer, the map WebSocket and the whole calibration chain. This technique may violate the game's terms of service and risks a ban; decide for yourself whether to use it"
+
+msgid "启用实验技术"
+msgstr "Enable experimental technique"
+
+msgid "该技术通过抓取游戏网络流量解析角色坐标，可能违反游戏服务条款，存在账号被封禁的风险。请确认你已了解并自行承担后果。"
+msgstr "This technique parses character coordinates by capturing the game's network traffic. It may violate the game's terms of service and risks your account being banned. Please confirm that you understand and accept the consequences."
+
+msgid "我已知晓风险"
+msgstr "I understand the risk"
+
+msgid "请等待 {seconds} 秒"
+msgstr "Please wait {seconds} seconds"
+
+msgid "实验技术后端程序路径"
+msgstr "Experimental technique backend executable path"
+
+msgid "实验技术自动启动后端"
+msgstr "Auto-start the experimental technique backend"
+
+msgid "实验技术停止定位时关闭后端"
+msgstr "Close the backend when localization stops"
+
+msgid "外部抓包后端的本地 HTTP 端口（自动启动用它拉起后端，也用它探活）"
+msgstr "Local HTTP port of the external packet-capture backend (auto-start uses it to launch the backend and also to probe it)"
+
+msgid "后端可执行文件的路径（也可以是放着它的目录）。留空则自动探测：同级 endfield-capture-backend 仓库的 dist/ 目录、本仓库目录，以及系统 PATH"
+msgstr "Path to the backend executable (may also be the directory containing it). Leave it empty to auto-detect: the dist/ directory of a sibling endfield-capture-backend repository, this repository's directory, and the system PATH"
+
+msgid "后端没在跑时自动把它拉起来。**后端必须在游戏建立主连接之前就绪**，否则拿不到登录握手、解不出坐标；由本应用拉起可以保证这个顺序"
+msgstr "Launch the backend automatically when it is not running. **The backend must be ready before the game establishes its main connection**, otherwise it cannot capture the login handshake and cannot decode coordinates; letting this application launch it guarantees that order"
+
+msgid "停止定位时一并关闭由本应用拉起的后端。默认关：后端的状态绑在当前这一局连接上，关掉再拉起等于丢了登录握手，必须重启游戏才能恢复"
+msgstr "Also close the backend launched by this application when localization stops. Off by default: the backend's state is bound to the current session's connection, so closing and relaunching it loses the login handshake and requires restarting the game to recover"
