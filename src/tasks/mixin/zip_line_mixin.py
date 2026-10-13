@@ -177,8 +177,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         zip_line_list_str = self.get_zip_line_config_value(delivery_to)
         zip_line_list = parse_int_sequence(zip_line_list_str)
         self.zip_line_list_go(
-            zip_line_list, need_scroll, target, need_v=need_v,
-            stay_on_zip_line=stay_on_zip_line, config_key=delivery_to,
+            zip_line_list,
+            need_scroll,
+            target,
+            need_v=need_v,
+            stay_on_zip_line=stay_on_zip_line,
+            config_key=delivery_to,
         )
 
     @staticmethod
@@ -604,8 +608,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                         self.log_info(f"[zipline-motion-cache] prefeed failed: {e}")
                     if sent:
                         self.log_info(
-                            f"[zipline-motion-cache] target={zip_line} prefeed "
-                            f"move=({prefeed_dx},{prefeed_dy})"
+                            f"[zipline-motion-cache] target={zip_line} prefeed move=({prefeed_dx},{prefeed_dy})"
                         )
                         if prefeed_dx:
                             self._wait_zip_line_prefeed_settled(start_reading, prefeed_dx)
@@ -620,8 +623,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     return None
                 if misses == self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
                     self.log_info(
-                        f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，"
-                        "本轮回退全屏OCR，后续继续尝试模板"
+                        f"滑索{zip_line}连续{misses}次未找到白色/黄色模板目标，本轮回退全屏OCR，后续继续尝试模板"
                     )
                 for processor in processors:
                     if deadline is not None and self.active_time() >= deadline:
@@ -747,7 +749,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             if self.active_time() >= deadline:
                 break
             yaw, _ = reading
-            if previous_yaw is not None and abs(self._zip_line_angle_delta(yaw, previous_yaw)) <= self._ZIP_LINE_ARROW_STABLE_TOLERANCE:
+            if (
+                previous_yaw is not None
+                and abs(self._zip_line_angle_delta(yaw, previous_yaw)) <= self._ZIP_LINE_ARROW_STABLE_TOLERANCE
+            ):
                 stable_samples += 1
             else:
                 stable_samples = 1
@@ -850,9 +855,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 reading = self._read_zip_line_settled_arrow_angle()
                 if reading is None or reading[1] < self._ZIP_LINE_ARROW_MIN_SCORE:
                     self._send_zip_line_yaw_delta(-total_dx)
-                    self.log_info(
-                        "[zipline-yaw] cached turn verification failed; rolled back"
-                    )
+                    self.log_info("[zipline-yaw] cached turn verification failed; rolled back")
                     return target_yaw, False
                 next_yaw, _next_score = reading
                 next_error = abs(self._zip_line_angle_delta(target_yaw, next_yaw))
@@ -863,9 +866,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 )
                 if next_error > tolerance and next_error >= error - 0.5:
                     self._send_zip_line_yaw_delta(-total_dx)
-                    self.log_info(
-                        "[zipline-yaw] cached turn did not improve; rolled back"
-                    )
+                    self.log_info("[zipline-yaw] cached turn did not improve; rolled back")
                     return target_yaw, False
                 current_yaw = next_yaw
                 error = next_error
@@ -907,16 +908,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             if total_dx:
                 self._send_zip_line_yaw_delta(-total_dx)
             self.log_info(
-                f"[zipline-yaw] normalize failed "
-                f"target={target_yaw:.1f} error={error:.1f}; visual alignment continues"
+                f"[zipline-yaw] normalize failed target={target_yaw:.1f} error={error:.1f}; visual alignment continues"
             )
             return target_yaw, False
 
         if total_dx:
             record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx)
         self.log_info(
-            f"[zipline-yaw] normalized "
-            f"{initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
+            f"[zipline-yaw] normalized {initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
         )
         return current_yaw, True
 
@@ -973,20 +972,32 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 raise RuntimeError(f"滑索{zip_line}交互失败")
 
     def zip_line_list_go(
-        self, zip_line_list, need_scroll=None, target=None, need_v=False, stay_on_zip_line=False, config_key=None,
+        self,
+        zip_line_list,
+        need_scroll=None,
+        target=None,
+        need_v=False,
+        stay_on_zip_line=False,
+        config_key=None,
     ):
         """Reuse a matching/nearest yaw history and learn the full action under its original yaw."""
         route_fingerprint = self._zip_line_motion_route_fingerprint(zip_line_list, config_key=config_key)
         for segment_index, zip_line in enumerate(zip_line_list):
             reading = self._read_zip_line_settled_arrow_angle() if route_fingerprint else None
             start_yaw = reading[0] if reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE else None
-            motion_key = build_zip_line_motion_route_fingerprint(
-                route_fingerprint, self.width, self.height, start_yaw
-            ) if start_yaw is not None else None
+            motion_key = (
+                build_zip_line_motion_route_fingerprint(route_fingerprint, self.width, self.height, start_yaw)
+                if start_yaw is not None
+                else None
+            )
             hint = load_zip_line_segment_motion(motion_key, segment_index) if motion_key else None
-            nearest = load_nearest_zip_line_segment_motion(
-                route_fingerprint, segment_index, self.width, self.height, start_yaw
-            ) if motion_key and hint is None else None
+            nearest = (
+                load_nearest_zip_line_segment_motion(
+                    route_fingerprint, segment_index, self.width, self.height, start_yaw
+                )
+                if motion_key and hint is None
+                else None
+            )
 
             with track_zip_line_mouse_motion(self) as motion:
                 if nearest is not None:
@@ -1023,7 +1034,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     break
                 if self.active_time() - start > 240:
                     raise Exception("滑索超时，强制退出")
-            if motion_key and motion.complete and record_zip_line_segment_motion(motion_key, segment_index, motion.dx, motion.dy):
+            if (
+                motion_key
+                and motion.complete
+                and record_zip_line_segment_motion(motion_key, segment_index, motion.dx, motion.dy)
+            ):
                 self.log_info(
                     f"[zipline-motion-cache] segment={segment_index + 1}/{len(zip_line_list)} "
                     f"start_yaw={start_yaw:.1f} learned=({motion.dx},{motion.dy})"
