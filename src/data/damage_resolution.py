@@ -275,6 +275,7 @@ class TimedDamageState:
         self, panel: FixedDamagePanel, hit: DamageHit, *, now: float, inputs: dict[str, float] | None = None,
         native_damage_taken: float = 0.0,
         native_attack_percent: float = 0.0,
+        native_damage_bonus: float = 0.0,
     ) -> DamageResult:
         self.expire(now)
         buckets = {bucket.value: 0.0 for bucket in DamageBucket}
@@ -289,6 +290,9 @@ class TimedDamageState:
         if not math.isfinite(native_damage_taken):
             return DamageResult(None, None, buckets, ("Non-finite native defender damage scale",))
         buckets[DamageBucket.DAMAGE_TAKEN.value] += native_damage_taken
+        if not math.isfinite(native_damage_bonus):
+            return DamageResult(None, None, buckets, ("Non-finite native attacker damage scale",))
+        buckets[DamageBucket.DAMAGE_BONUS.value] += native_damage_bonus
         if not math.isfinite(native_attack_percent):
             return DamageResult(None, None, buckets, ("Non-finite native attack percentage",))
         buckets[DamageBucket.ATTACK.value] += native_attack_percent

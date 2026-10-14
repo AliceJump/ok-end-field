@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-15最新：攻击方普通乘区消费者已接，实际实例owner=hit.actor、enabled和私有BB控制贡献，同侧与面板增伤相加/两侧相乘并最终非负截断。伊冯Refresh4/实际冻结/marker/缓存生产继续未闭合，不默认50%。7新增、47相关/1496全仓通过（146.746秒），AST/Ruff/diff-check、32/128审计一致和2/111复测通过。当前安装输入已从c244/0076变为ab00/4613，原守卫正确拒绝旧RVA继续提取；新pair在主忽略目录native-build-ab00f1c4从头匹配172 images，未把新方法/数值覆盖旧快照。读native-attacker-normal-audit.md与raw continuation.md最新段；继续Refresh返回链/版本桥接或其他独立缺口，不因版本变化、阶段提交或测试通过结束整任务。历史CI职责缺口与未现场验证保留，PR489未改。
+
 > 2026-10-15最新运行时：明确cast上下文→字面多ID OR门槛→受支持原生buff创建→确切Skill.AttachBuff UID→动作/父根/确认CastEnd清理已接；上下文由现有dispatch_native的cast_action显式提供，不自动发布OnBeforeCastSkill、不新增实战识别/技力时点。复用BB每事件清旧ID匹配，嵌套事件不继承外层cast。实际汤汤表现节点验证仅这一创建子项，伊冯Refresh4/Attacker与真实冻结/marker/ComboController仍待办，不把天赋50%挂上。11新增，23专项/80相关/1489全仓通过（153.329秒），AST/Ruff/diff-check、32/128审计一致与2/111复测通过；14/2不提高，历史CI职责缺口保留。见native-cast-event-attachment.md。产品树继续detached推研究分支，raw资料仅主仓库忽略目录，PR489层未变，不因阶段保存停任务。
 
 > 2026-10-15伊冯后续研究：10份实际记录追清战技投射物→projhit→206 OnBeforeOutputBuff Frozen标签+同cast检查→私人1秒标记→102 OnOutputBuff→0.1秒去重→15秒valid/0.5秒ComboCache→attack5附着+50%→21帧清valid。前置事件不等于免疫后成功冻结；58076地址实际存在，先前提取脚本读错层级的判断已纠正，RVA4077d50+冷块4f6e246从CastSkillContext+30.skill调用Skill.AttachBuff。TimedMarker每次创建新对象、HasMarker查任一有效同ID，SUBSS计时且零仍有效，不拿单截止map覆盖。21帧伤害与清许可实际排序、真实marker tick输入、ComboController和附着父根/cast清理仍待办。详见native-yvonne-next-heavy-audit.md；本批只证据文档，面板/报价/运行时未增，最近运行时1478全仓通过和2/111不变。

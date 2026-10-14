@@ -12,6 +12,7 @@ from src.data.combat_simulation import ActionProgram, CombatEvent, CombatWorldSt
 from src.data.damage_modifiers import DamageBucket, DamageModifierSpec, ModifierMagnitude
 from src.data.damage_resolution import DamageHit, FixedDamagePanel
 from src.data.native_buff_program import compile_buff_definition
+from src.data.native_buff_runtime import NativeBuffInstance, finish_buff_instances
 from src.data.native_damage_processors import compile_damage_processors
 from src.data.native_gameplay import native_asset, native_enums, native_record
 from src.data.skill_timing import SkillTimingStore
@@ -160,6 +161,132 @@ class TestNativeDamageProcessors(unittest.TestCase):
             row = native_enums()[name]["Defender"]
             self.assertEqual(row["value"], 1)
             self.assertEqual(bytes.fromhex(row["raw_hex"])[0] >> 1, 1)
+
+
+class TestNativeAttackerDamageProcessors(unittest.TestCase):
+    """Confirmed instance fixtures test pricing, not the unresolved producer."""
+
+    @classmethod
+    def setUpClass(cls):
+        TestNativeDamageProcessors.setUpClass()
+        cls.key = "buff_chr_0017_yvonne_talent_1_valid_up"
+        cls.data = native_record(TestNativeDamageProcessors.store, cls.key)["data"]
+        cls.value = next(p for p in get_character("yvonne").progression.talents
+                         if p.effect_id == "chr_0017_yvonne_talent_1_2").parameters["dmg_up"]
+
+    def setUp(self):
+        self.fixture = TestNativeDamageProcessors()
+        self.fixture.setUp()
+        self.world = self.fixture.world
+
+    def confirmed(self, *, value=None, owner="1", data=None):
+        data = self.data if data is None else data
+        definition = compile_buff_definition(self.fixture.store, get_character("yvonne"),
+                                             self.fixture.profile, owner, self.key, data,
+                                             {"assignBlackboard": True, "assignItems": [{
+                                                 "directValueType": 0, "targetKey": "dmg_up",
+                                                 "inputValueKey": "dmg_up", "useDirectValue": False}]},
+                                             attributes={}, panel=None, path=())
+        # A scenario supplies an already confirmed instance. Keep the actual
+        # native Refresh4 definition; do not invent a Stack0/constant producer.
+        self.assertEqual(definition.stacking, 4)
+        uid = f"confirmed:{len(self.world.native_buff_instances)}:{owner}"
+        program = ActionProgram("confirmed_modifier_fixture", owner, "normal", 0, 0, 0, ())
+        instance = NativeBuffInstance(uid, self.key, owner, owner, definition, program, None, -1, 0)
+        self.world.native_buff_instances[uid] = instance
+        self.world._action_inputs[uid] = {"bb.dmg_up": self.value if value is None else value}
+        return instance
+
+    def test_actual_attacker_scale_adds_to_damage_bonus_and_only_benefits_holder(self):
+        instance = self.confirmed()
+        self.assertFalse(instance.definition.unresolved)
+        self.assertEqual(instance.definition.damage_scales[0].side, 0)
+        for element in ("物理", "灼热", "电磁", "寒冷", "自然"):
+            self.assertAlmostEqual(self.fixture.hit(element, bonus=.3), 100 * (1 + .3 + single(self.value)))
+        self.assertEqual(self.fixture.hit("寒冷", actor="2"), 100)
+        self.assertAlmostEqual(self.fixture.hit("寒冷", enemy="other"), 100 * (1 + single(self.value)))
+
+    def test_attacker_and_defender_additive_arrays_remain_separate(self):
+        self.confirmed()
+        defender = self.fixture.add()
+        taken = single(self.world._action_inputs[defender.uid]["bb.final_spell_resistance_decrease"])
+        spec = DamageModifierSpec("bonus", DamageBucket.DAMAGE_BONUS, ("all",), "self", ModifierMagnitude(.2),
+                                  "gain", duration=2)
+        self.world.damage_state.apply(spec, source_actor="1", enemy="target", now=0, event="gain")
+        self.assertAlmostEqual(self.fixture.hit("寒冷", bonus=.3),
+                               100 * (1 + .3 + .2 + single(self.value)) * (1 + taken))
+        self.assertAlmostEqual(self.fixture.hit("物理", bonus=.3), 100 * (1 + .3 + .2 + single(self.value)))
+
+    def test_missing_value_never_uses_raw_default_or_contaminates_another_actor(self):
+        instance = self.confirmed()
+        self.world._action_inputs[instance.uid].clear()
+        self.assertEqual(self.fixture.hit("寒冷", actor="2"), 100)
+        self.assertEqual(self.fixture.hit("寒冷"), 0)
+        self.assertTrue(any("Native damage modifier input" in r for r in self.world.unresolved))
+
+    def test_disabled_removed_and_forecast_instances_follow_exact_uid(self):
+        instance = self.confirmed()
+        predicted = self.world.fork()
+        predicted._action_inputs[instance.uid]["bb.dmg_up"] = .9
+        self.assertAlmostEqual(self.fixture.hit("寒冷", world=predicted), 100 * (1 + single(.9)))
+        finish_buff_instances(predicted, (instance.uid,))
+        self.assertEqual(self.fixture.hit("寒冷", world=predicted), 100)
+        self.assertIn(instance.uid, self.world.native_buff_instances)
+        instance.enabled = False
+        self.assertEqual(self.fixture.hit("寒冷"), 100)
+        instance.enabled = True
+        self.assertAlmostEqual(self.fixture.hit("寒冷"), 100 * (1 + single(self.value)))
+        finish_buff_instances(self.world, (instance.uid,))
+        self.assertEqual(self.fixture.hit("寒冷"), 100)
+
+    def test_single_precision_values_and_combined_zone_zero_clamp(self):
+        instance = self.confirmed(value=.123456789)
+        self.assertEqual(self.fixture.hit("寒冷"), 100 * (1 + single(.123456789)))
+        self.world._action_inputs[instance.uid]["bb.dmg_up"] = -2
+        self.assertEqual(self.fixture.hit("寒冷"), 0)
+        # Native clamps the combined zone after multiplying both side arrays.
+        defender = self.fixture.definition()
+        defender = replace(defender, callbacks=(), subscriptions=(), unresolved=(),
+                           parameters=(("bb.final_spell_resistance_decrease", -2),), inherited=(),
+                           duration=CombatExpression("literal", (2,)))
+        self.fixture.add(defender)
+        self.assertEqual(self.fixture.hit("寒冷"), 100)
+
+    def test_attacker_element_filter_and_unreviewed_side_pairs_remain_explicit(self):
+        data = copy.deepcopy(self.data)
+        modifier = data["damageModifier"][0]
+        modifier["condition"]["actionData"] = [{"$type": "Beyond.Gameplay.Core.Conditions.CheckDamageType+Data",
+                                                "$value": {"isEnable": True, "damageType": 4}}]
+        instance = self.confirmed(data=data)
+        self.world._action_inputs[instance.uid].clear()
+        self.assertEqual(self.fixture.hit("物理"), 100)
+        self.assertEqual(self.fixture.hit("寒冷"), 0)
+        for enable, side in ((0, 1), (1, 0), (2, 0), (True, 1), (0, False)):
+            with self.subTest(enable=enable, side=side):
+                changed = copy.deepcopy(self.data)
+                changed["damageModifier"][0]["enableSide"] = enable
+                changed["damageModifier"][0]["damageProcessors"][0]["$value"]["side"] = side
+                scales, reasons = compile_damage_processors(changed, self.key)
+                self.assertFalse(scales)
+                self.assertTrue(reasons)
+
+    def test_non_finite_attacker_zone_is_unknown_and_actual_yvonne_producer_stays_unbound(self):
+        from src.data.combat_simulation import walk_combat_events
+        from src.data.native_action_program import compile_native_action
+
+        panel = self.world.characters["1"].panel
+        hit = DamageHit("1", "target", "寒冷", 1)
+        for value in (float("inf"), float("nan")):
+            result = self.world.damage_state.resolve_hit(panel, hit, now=0, native_damage_bonus=value)
+            self.assertIsNone(result.expected)
+        source = native_record(self.fixture.store, "buff_chr_0017_yvonne_talent_1_valid")["data"]
+        program = compile_native_action(self.fixture.store, get_character("yvonne"),
+                                        self.fixture.store.profile("chr_0017_yvonne_attack5"), "1", "normal",
+                                        event_sequence=source["abilityEventAction"][0]["actions"][0],
+                                        buff_path=(source["id"],))
+        self.assertFalse([c for e in walk_combat_events(program.events) for c in e.native_buffs])
+        self.assertTrue(any("reviewed instance policy" in r for e in walk_combat_events(program.events)
+                            for r in e.unresolved))
 
 
 if __name__ == "__main__":

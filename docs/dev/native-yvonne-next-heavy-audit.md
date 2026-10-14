@@ -4,6 +4,8 @@
 
 > 后续已接字面CheckSkillId与受支持buff的确切Skill附着，见[native-cast-event-attachment.md](native-cast-event-attachment.md)。伊冯valid_up的Refresh4/攻击方结算和真实冻结/marker/缓存producer继续未知；本专题的“不启用50%”结论不变。
 
+> 再续批已补已确认实例的Attacker Normal数学消费者，见[native-attacker-normal-audit.md](native-attacker-normal-audit.md)；这是上段“攻击方结算未知”的局部更新。Refresh4重加/真实产生/附着消费链未闭合，因此仍不从战技或开场默认启用50%。本轮安装二进制已换版本，新旧来源分开保存/核验。
+
 ## 已核链路
 
 1. 战技创建`buff_chr_0017_yvonne_normal_skill_projectile`与`buff_chr_0017_yvonne_normal_skill_listener`。投射物的命中与阻挡都可以转入`chr_0017_yvonne_normal_skill_projhit`；不能把阻挡回调等同成功命中。

@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-15攻击方Normal续批：确认实例的Attacker/NormalCalcZone已进真实伤害结算，与已有增伤同侧相加、与Defender侧相乘；按持有者/元素/enabled/私有BB隔离，缺值不借默认。伊冯真实valid_up仍拒绝Refresh4创建，未供应50%，只完成已给定实例的消费者。7新增，47相关/全仓1496通过（16.303/146.746秒），AST/Ruff/diff-check和32/128审计一致，14/2与完整2/111不变。当前安装DLL/metadata哈希已不同，旧提取守卫拒绝继续；新pair独立留主仓库忽略区并从头核172 images，不导入新数值/偏移，Refresh桥接仍待核。见[native-attacker-normal-audit.md](native-attacker-normal-audit.md)，继续当前任务。
+
 > 2026-10-15事件Skill附着续批：字面CheckSkillId和CreateBuffAttachingSkill已进入研究编译器/世界执行，使用明确cast scope取得事件Skill；不借持有者/主控/旧BB或数值payload，未知/旧cast/已结束scope拒绝回调，嵌套上下文独立恢复。实际汤汤0～123帧表现buff创建可重放确切UID附着、动作期限/父根/确认CastEnd清理；不代表汤汤伤害/场地完成。伊冯精确attack5门槛可核，Refresh4/攻击方增伤、冻结/marker/缓存生产仍未知，未启用50%。11新增、23专项/80相关/全仓1489通过（10.440/24.005/153.329秒），AST/Ruff/diff-check通过；32/128审计完全一致、14/2及完整2/111不变，历史CI职责缺口保留。见[native-cast-event-attachment.md](native-cast-event-attachment.md)。未接master/识别/技力时点；阶段保存后继续marker/Refresh与真实producer。
 
 > 2026-10-15骏卫士气续批：核准普通HighPriorityWithMaxStack11保留停用实例、继续计时与移除后重新选择；已确认创建节点可保留实际父根。仅开启这份无回调/非周期/零优先级容器；层数查询包含停用实例，既有加成消费者只读enabled。80SP实际producer、团队终结后续、攻击8%+法强8双属性和原生tick累计仍保留未知，不启用假满层收益。7新增、61相关/1478全仓通过（31.112/137.373秒），末尾门槛/计时诊断后15专项通过；AST/Ruff/diff-check通过，数据流JSON完全一致，32/128、14/2及2/111不提高。逐技能台账见[native-morale-retention-audit.md](native-morale-retention-audit.md)，原始材料只在主仓库忽略目录。继续global连击消费/SkillAffix、伊冯冻结→下一重击以及属性producer缺口，不因本批保存终止任务。

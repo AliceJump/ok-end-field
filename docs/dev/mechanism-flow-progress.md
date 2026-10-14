@@ -30,7 +30,7 @@ TimedCombatLogic有普通战技试接入口、预测/确认分支和HUD SP同步
 | 类别 | 处理 |
 | --- | --- |
 | CombatExpression、MagnitudeTerm、ModifierMagnitude、DamageModifierSpec、DamageHit、DamageField | 标量、枚举及不可变元组；安全实例共享，误传可变字段的实例仍复制 |
-| combat_simulation里的21种冻结定义/结果、NativePassiveProgram、NativeDefenderDamageScale | 递归检查；只有全部后代安全的实例共享 |
+| combat_simulation里的冻结定义/结果、NativePassiveProgram、NativeNormalDamageScale | 递归检查；只有全部后代安全的实例共享 |
 | CombatEvent.effects/resources | 在事件构建时保存EffectValue/ResourceValue；分段计数表变为元组支持的只读Mapping，与原始可变canonical数据脱离 |
 | FixedDamagePanel、DamageResult、ActiveDamageModifier | 含damage_bonus/amplification/buckets/inputs字典，继续复制 |
 | NativePassive、CharacterProgression、角色能力/机制配置、SkillTiming、隐藏状态/排轴配置里的冻结但含可变后代的类型 | 未登记共享；保留原复制行为，本轮不改公共schema |
