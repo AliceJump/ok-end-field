@@ -36,10 +36,17 @@ from pathlib import Path
 from urllib import error, request
 
 __all__ = [
+    "CAPTURE_HEALTH_BACKEND_DOWN",
+    "CAPTURE_HEALTH_DECODING",
+    "CAPTURE_HEALTH_HANDSHAKE_PENDING",
+    "CAPTURE_HEALTH_MISSED_HANDSHAKE",
+    "CAPTURE_HEALTH_NO_CONNECTION",
+    "CAPTURE_HEALTH_OK",
     "CAPTURE_SOURCE_NAME",
     "FLOW_IDLE_SECONDS",
     "REST_SPEED_THRESHOLD",
     "SCENE_MAP_NAMES",
+    "CaptureHealth",
     "CapturePositionSource",
     "CaptureSample",
     "infer_map_id_from_coordinates",
@@ -69,6 +76,22 @@ _NO_CONNECTION_START = "缺少连接起点"
 
 #: 连接终态的**前缀**（后面还拼了具体原因，只能按前缀判）。
 TERMINAL_FLOW_STATUS_PREFIXES = ("解码停止", _NO_CONNECTION_START)
+
+# --------------------------------------------------------------------------- #
+# 抓包会话的健康状态
+# --------------------------------------------------------------------------- #
+#: 有可用坐标
+CAPTURE_HEALTH_OK = "ok"
+#: 后端不可达
+CAPTURE_HEALTH_BACKEND_DOWN = "backend_down"
+#: 后端在跑，但还没看到任何游戏连接（多半是刚启动、游戏还没起）
+CAPTURE_HEALTH_NO_CONNECTION = "no_connection"
+#: 连接已发现，握手还没完成
+CAPTURE_HEALTH_HANDSHAKE_PENDING = "handshake_pending"
+#: 握手成功，正在解码（等第一条坐标）
+CAPTURE_HEALTH_DECODING = "decoding"
+#: **抓包晚于连接建立** —— 唯一一种值得逼一条新连接来救的状态
+CAPTURE_HEALTH_MISSED_HANDSHAKE = "missed_handshake"
 
 #: ``scene_num_id`` → 网格名。**只是近似，别当权威**。
 #:
@@ -113,6 +136,17 @@ def _flow_status_is_terminal(status: str) -> bool:
 
     text = str(status or "").strip()
     return text in TERMINAL_FLOW_STATUSES or text.startswith(TERMINAL_FLOW_STATUS_PREFIXES)
+
+
+def _flow_status_is_missed_handshake(status: str) -> bool:
+    """这条连接是不是「抓包晚于它建立」。
+
+    这是所有终态里**唯一能靠新建一条连接救回来**的那种：后端没看到 SYN，所以推不出密钥流，
+    但它自己并没有坏——换一条连接、让它从头抓握手就行。``连接已结束``（人家正常结束）与
+    ``解码停止``（这条流真出问题了）都不属于这一类，重建连接对它们没有意义。
+    """
+
+    return str(status or "").strip().startswith(_NO_CONNECTION_START)
 
 
 @lru_cache(maxsize=4)
@@ -198,6 +232,48 @@ class CaptureSample:
     #: 那条连接还在喂数据吗。``False`` 表示这条坐标来自**已经结束的一局**——坐标本身是
     #: 真的，但它描述的是过去的位置，不能拿来导航。见模块 docstring 的约定。
     flow_alive: bool = True
+
+
+@dataclass(frozen=True)
+class CaptureHealth:
+    """抓包会话的整体健康状态。
+
+    与 :class:`CaptureSample` 的分工：样本回答"现在有没有坐标"，健康状态回答"**为什么**没有"
+    ——后者才是决定要不要干预的依据。两者的判定都读同一份 ``/api/state``，不额外发请求。
+    """
+
+    #: :data:`CAPTURE_HEALTH_*` 之一
+    state: str
+    #: 人类可读的说明，用于日志
+    detail: str = ""
+    #: 相关连接的 id / 状态，便于排查
+    flow_id: int | None = None
+    flow_status: str = ""
+
+    @property
+    def needs_new_connection(self) -> bool:
+        """是否属于「逼一条新连接就能救」的情形。
+
+        只有这一种状态值得动手重建连接。其余状态要么是在等（后端刚起、握手进行中、刚握上
+        还没走到坐标），要么重建也没用（后端根本没起来）——对它们做"退出重进"只会白白打断
+        玩家。
+        """
+
+        return self.state == CAPTURE_HEALTH_MISSED_HANDSHAKE
+
+    @property
+    def settled(self) -> bool:
+        """是否已经到了"不必再等"的状态（好或坏都算）。
+
+        用来区分"还需要等一会儿"与"已经能下结论"。等一会儿的那几种不该触发恢复，也不该被
+        当成失败上报。
+        """
+
+        return self.state in (
+            CAPTURE_HEALTH_OK,
+            CAPTURE_HEALTH_MISSED_HANDSHAKE,
+            CAPTURE_HEALTH_BACKEND_DOWN,
+        )
 
 
 class CapturePositionSource:
@@ -307,6 +383,58 @@ class CapturePositionSource:
             self._warn_once("bad_payload", "实验技术：抓包后端返回的不是状态对象。")
             return None
         return payload
+
+    def health(self, *, now: float | None = None) -> CaptureHealth:
+        """这条抓包链现在处于什么状态。
+
+        **只看连接，不看坐标**——坐标缺失有好几种成因，混在一起就没法决定该做什么。关键区分：
+
+        * 后端没看到任何连接（刚启动）→ 等，不要动游戏；
+        * 有连接但握手没完成 / 握手完成还没走到坐标 → 等；
+        * 有连接停在「缺少连接起点」→ 这次抓包**已经失败了**，只有新连接能救；
+        * 有任何一条连接走到了解码 → 正常。
+
+        「有条死连接 + 有条活连接」要判成正常：后端把历史连接一直留着，拿旧的死连接去判断会
+        让每一次正常抓包都被误判成需要重建。
+        """
+
+        state = self.fetch_state()
+        if state is None:
+            return CaptureHealth(CAPTURE_HEALTH_BACKEND_DOWN, "连接不到抓包后端")
+
+        flows = state.get("flows")
+        if not isinstance(flows, list) or not flows:
+            return CaptureHealth(CAPTURE_HEALTH_NO_CONNECTION, "后端还没看到游戏连接")
+
+        current = time.time() if now is None else float(now)
+        pending: CaptureHealth | None = None
+        missed: CaptureHealth | None = None
+        for item in flows:
+            if not isinstance(item, dict):
+                continue
+            status = str(item.get("status") or "")
+            raw_id = item.get("id")
+            flow_id = int(raw_id) if isinstance(raw_id, (int, float)) and not isinstance(raw_id, bool) else None
+            if _flow_status_is_missed_handshake(status):
+                missed = missed or CaptureHealth(CAPTURE_HEALTH_MISSED_HANDSHAKE, status, flow_id, status)
+                continue
+            if _flow_status_is_terminal(status):
+                # 正常结束或解码失败：都是这条流的终局，但不代表需要重建连接
+                continue
+            last_packet = item.get("lastPacket")
+            if isinstance(last_packet, (int, float)) and current - float(last_packet) > FLOW_IDLE_SECONDS:
+                continue
+            if status.strip() == "等待登录初始化":
+                pending = pending or CaptureHealth(CAPTURE_HEALTH_HANDSHAKE_PENDING, status, flow_id, status)
+                continue
+            # 其余进行中的状态（正在解码 / 等待 TCP 补包 覆盖值）都算已经握上手了
+            return CaptureHealth(CAPTURE_HEALTH_DECODING, status, flow_id, status)
+
+        if missed is not None:
+            return missed
+        if pending is not None:
+            return pending
+        return CaptureHealth(CAPTURE_HEALTH_NO_CONNECTION, "没有仍在继续的连接")
 
     def _flow_liveness(self, state: dict, record: dict, now: float) -> tuple[int | None, str, bool]:
         """这条坐标是哪条连接解出来的，那条连接还在不在。

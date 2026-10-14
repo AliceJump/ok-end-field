@@ -12,13 +12,22 @@ from typing import ClassVar
 from unittest.mock import patch
 
 from src.localization.capture_position_source import (
+    CAPTURE_HEALTH_BACKEND_DOWN,
+    CAPTURE_HEALTH_DECODING,
+    CAPTURE_HEALTH_HANDSHAKE_PENDING,
+    CAPTURE_HEALTH_MISSED_HANDSHAKE,
+    CAPTURE_HEALTH_NO_CONNECTION,
     CAPTURE_SOURCE_NAME,
     FLOW_IDLE_SECONDS,
     SCENE_MAP_NAMES,
+    CaptureHealth,
     CapturePositionSource,
     map_id_for_scene,
 )
-from src.localization.minimap_position_mixin import MinimapPositionMixin
+from src.localization.minimap_position_mixin import (
+    CAPTURE_RELOGIN_ATTEMPTS,
+    MinimapPositionMixin,
+)
 
 
 def _state_payload(
@@ -252,20 +261,49 @@ class PollTest(unittest.TestCase):
 
 
 class _FakeOwner(MinimapPositionMixin):
-    """只保留定位 mixin 的最小宿主：补齐日志与时钟接口。"""
+    """只保留定位 mixin 的最小宿主：补齐日志、时钟与游戏交互接口。
+
+    游戏交互那几个（``wait_ocr`` / ``ensure_main`` / …）在真实任务上来自 ``BaseEfTask``，这里
+    给一组可被逐个覆盖的桩，好让"重建连接"那条路能在无 GUI 环境下被完整走一遍。
+    """
 
     def __init__(self, config: dict):
         self.config = dict(config)
         self._clock = 1000.0
+        self.clicks: list = []
         self._init_minimap_position_mixin()
 
     def active_time(self) -> float:
         return self._clock
 
+    def sleep(self, seconds=0.0):
+        self._clock += max(0.0, float(seconds or 0.0))
+
     def log_info(self, *args, **kwargs):
         pass
 
     def log_warning(self, *args, **kwargs):
+        pass
+
+    # --- 游戏交互桩（默认"什么都找不到"，由用例按需覆盖）--- #
+    box = type("_Box", (), {"center": (0.0, 0.0, 1.0, 1.0)})()
+
+    def wait_ocr(self, *args, **kwargs):
+        return None
+
+    def wait_feature(self, *args, **kwargs):
+        return None
+
+    def click(self, *args, **kwargs):
+        self.clicks.append(args)
+
+    def ensure_main(self, *args, **kwargs):
+        pass
+
+    def back(self, *args, **kwargs):
+        pass
+
+    def click_confirm(self, *args, **kwargs):
         pass
 
 
@@ -863,3 +901,175 @@ class WarnDedupTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CaptureHealthTest(unittest.TestCase):
+    """健康状态要把"还没好"和"已经废了"分开——只有后者才值得动玩家的游戏。"""
+
+    def _health(self, payload: dict):
+        with FakeBackend(payload) as backend:
+            return CapturePositionSource(backend.port).health()
+
+    def test_no_connection_when_the_backend_has_seen_nothing(self):
+        self.assertEqual(self._health({"lastPosition": None, "flows": []}).state, CAPTURE_HEALTH_NO_CONNECTION)
+
+    def test_backend_down(self):
+        self.assertEqual(CapturePositionSource(19999, timeout=0.2).health().state, CAPTURE_HEALTH_BACKEND_DOWN)
+
+    def test_handshake_pending_is_not_a_failure(self):
+        h = self._health(_state_payload(flow=1, flows=[_flows_entry(1, status="等待登录初始化")]))
+        self.assertEqual(h.state, CAPTURE_HEALTH_HANDSHAKE_PENDING)
+        self.assertFalse(h.needs_new_connection, "握手进行中不该触发重建")
+        self.assertFalse(h.settled, "还没到下结论的时候")
+
+    def test_decoding_is_healthy(self):
+        h = self._health(_state_payload(flow=1, flows=[_flows_entry(1, status="正在解码")]))
+        self.assertEqual(h.state, CAPTURE_HEALTH_DECODING)
+
+    def test_missed_handshake_is_the_only_recoverable_state(self):
+        """**这是本次要修的那个**：后端没看到 SYN，只有新连接能救。"""
+
+        h = self._health(_state_payload(flow=1, flows=[_flows_entry(1, status="缺少连接起点，请重新启动游戏")]))
+        self.assertEqual(h.state, CAPTURE_HEALTH_MISSED_HANDSHAKE)
+        self.assertTrue(h.needs_new_connection)
+        self.assertTrue(h.settled)
+
+    def test_normal_connection_end_does_not_ask_for_a_rebuild(self):
+        """``连接已结束`` 是人家正常结束，重建连接没有意义。"""
+
+        h = self._health(_state_payload(flow=1, flows=[_flows_entry(1, status="连接已结束")]))
+        self.assertFalse(h.needs_new_connection)
+
+    def test_a_live_connection_wins_over_an_old_dead_one(self):
+        """**回归**：后端把历史连接一直留着；拿旧的死连接去判会让每次正常抓包都被误判。"""
+
+        h = self._health(
+            _state_payload(
+                flow=1,
+                flows=[
+                    _flows_entry(1, status="缺少连接起点，请重新启动游戏"),
+                    _flows_entry(2, status="正在解码"),
+                ],
+            )
+        )
+        self.assertEqual(h.state, CAPTURE_HEALTH_DECODING)
+        self.assertFalse(h.needs_new_connection)
+
+
+class CaptureRecoveryTest(unittest.TestCase):
+    """重建连接：只在真需要时做，最多 3 次，成功即清零。"""
+
+    def _owner(self, payload: dict | None, config: dict | None = None):
+        base = {"使用实验技术": True}
+        base.update(config or {})
+        owner = _FakeOwner(base)
+        owner.warnings = []
+        owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
+        if payload is not None:
+            backend = FakeBackend(payload)
+            backend.__enter__()
+            owner._backend = backend
+            owner.config["实验技术后端端口"] = backend.port
+        return owner
+
+    def test_does_nothing_when_the_capture_is_healthy(self):
+        owner = self._owner(_state_payload(flow=1, flows=[_flows_entry(1, status="正在解码")]))
+        try:
+            with patch.object(owner, "force_new_capture_connection") as relogin:
+                self.assertTrue(owner.ensure_capture_session(reason="测试"))
+            relogin.assert_not_called()
+        finally:
+            owner._backend.__exit__(None, None, None)
+
+    def test_does_nothing_while_the_handshake_is_still_in_progress(self):
+        owner = self._owner(_state_payload(flow=1, flows=[_flows_entry(1, status="等待登录初始化")]))
+        try:
+            with patch.object(owner, "force_new_capture_connection") as relogin:
+                self.assertFalse(owner.ensure_capture_session(reason="测试"))
+            relogin.assert_not_called()
+        finally:
+            owner._backend.__exit__(None, None, None)
+
+    def test_does_nothing_when_the_backend_is_down(self):
+        """后端根本没起来时重建连接毫无用处，只会白打断玩家。"""
+
+        owner = _FakeOwner({"使用实验技术": True, "实验技术后端端口": 19999})
+        owner.warnings = []
+        with patch.object(owner, "force_new_capture_connection") as relogin:
+            self.assertFalse(owner.ensure_capture_session(reason="测试"))
+        relogin.assert_not_called()
+
+    def test_recovers_when_the_handshake_was_missed(self):
+        missed = _state_payload(flow=1, flows=[_flows_entry(1, status="缺少连接起点，请重新启动游戏")])
+        owner = self._owner(missed)
+        try:
+            with (
+                patch.object(owner, "force_new_capture_connection", return_value=True),
+                patch.object(
+                    owner, "wait_for_capture_connection",
+                    return_value=CaptureHealth(CAPTURE_HEALTH_DECODING),
+                ),
+            ):
+                self.assertTrue(owner.ensure_capture_session(reason="测试"))
+            self.assertEqual(owner._minimap_capture_relogin_attempts, 0, "成功就要清零")
+        finally:
+            owner._backend.__exit__(None, None, None)
+
+    def test_gives_up_after_three_attempts(self):
+        """**关键安全约束**：无人值守时绝不能反复登出登录。"""
+
+        missed = _state_payload(flow=1, flows=[_flows_entry(1, status="缺少连接起点，请重新启动游戏")])
+        owner = self._owner(missed)
+        try:
+            still_bad = CaptureHealth(CAPTURE_HEALTH_MISSED_HANDSHAKE, "缺少连接起点")
+            with (
+                patch.object(owner, "force_new_capture_connection", return_value=True) as relogin,
+                patch.object(owner, "wait_for_capture_connection", return_value=still_bad),
+            ):
+                for _ in range(6):
+                    self.assertFalse(owner.ensure_capture_session(reason="测试"))
+            self.assertEqual(
+                relogin.call_count, CAPTURE_RELOGIN_ATTEMPTS, f"最多试 {CAPTURE_RELOGIN_ATTEMPTS} 次"
+            )
+        finally:
+            owner._backend.__exit__(None, None, None)
+
+    def test_disabled_by_config(self):
+        missed = _state_payload(flow=1, flows=[_flows_entry(1, status="缺少连接起点，请重新启动游戏")])
+        owner = self._owner(missed, {"抓包失败时自动重新登录": False})
+        try:
+            with patch.object(owner, "force_new_capture_connection") as relogin:
+                self.assertFalse(owner.ensure_capture_session(reason="测试"))
+            relogin.assert_not_called()
+            self.assertTrue(any("自动重新登录" in w for w in owner.warnings), owner.warnings)
+        finally:
+            owner._backend.__exit__(None, None, None)
+
+    def test_aborts_cleanly_when_the_login_button_is_not_found(self):
+        """**这条钉住"绝不盲点"**：界面上找不到按钮时要干净失败，不能继续点下去。"""
+
+        owner = _FakeOwner({"使用实验技术": True})
+        owner.warnings = []
+        owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
+        with (
+            patch.object(owner, "_capture_leave_to_login", return_value=True),
+            patch.object(owner, "wait_ocr", return_value=None),
+            patch.object(owner, "click") as click,
+        ):
+            self.assertFalse(owner.force_new_capture_connection())
+        click.assert_not_called()
+        self.assertTrue(any("请手动进入" in w for w in owner.warnings), owner.warnings)
+
+    def test_aborts_when_the_main_screen_exit_is_missing(self):
+        owner = _FakeOwner({"使用实验技术": True})
+        owner.warnings = []
+        owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
+        with (
+            patch.object(owner, "ensure_main"),
+            patch.object(owner, "back"),
+            patch.object(owner, "wait_feature", return_value=None),
+            patch.object(owner, "click") as click,
+        ):
+            self.assertFalse(owner.force_new_capture_connection())
+        click.assert_not_called()
+        self.assertTrue(any("没找到退出入口" in w for w in owner.warnings), owner.warnings)

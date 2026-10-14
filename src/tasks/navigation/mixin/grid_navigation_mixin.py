@@ -513,6 +513,15 @@ class GridNavigationMixin(RuntimeStateMixin):
         position_service = self.ensure_runtime_position_service(force_start=True)
         if position_service is None:
             return False
+        # 抓包直通时先确认那一局的握手真的抓到了。导航是被"位置永远不来"坑得最直接的地方，
+        # 而重建连接（回登录界面再进）是个会打断玩家的动作，所以只在确实需要时做，见
+        # MinimapPositionMixin.ensure_capture_session。非抓包源没有这个方法，鸭子类型跳过。
+        capture_check = getattr(position_service, "ensure_capture_session", None)
+        if callable(capture_check):
+            try:
+                capture_check(reason="导航前检查抓包")
+            except Exception as exc:  # 校验失败不该挡住导航本身
+                self.log_warning(f"检查抓包会话失败，继续导航: {exc}")
         self._refresh_grid_zip_lines()
         session = NavSession(
             request=request,

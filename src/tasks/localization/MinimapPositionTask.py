@@ -121,6 +121,11 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
             # 才会被执行，那时登录握手早就过去了。
             self.ensure_capture_backend()
             state = self.sample_world_pose(now=self.active_time())
+            if state.get("x") is None:
+                # 只在**没坐标**时才去查会话健康：健康时多查一次等于每拍白发一个 HTTP 请求。
+                # 这一拍也是"启用后第一拍"的校验点——如果后端启动晚于游戏连接（或游戏当时
+                # 已经登录着），会话会停在「缺少连接起点」，这里会把它救回来。
+                self.ensure_capture_session(reason="抓包没有坐标")
             self._report_capture_status(state, self.active_time())
             return False
         self.start_minimap_position(wait_stable=False)

@@ -90,8 +90,11 @@ from src.localization.capture_backend_launcher import (
     shared_launcher,
 )
 from src.localization.capture_position_source import (
+    CAPTURE_HEALTH_DECODING,
+    CAPTURE_HEALTH_OK,
     CAPTURE_SOURCE_NAME,
     REST_SPEED_THRESHOLD,
+    CaptureHealth,
     CapturePositionSource,
 )
 from src.localization.minimap_heading_mixin import (
@@ -119,6 +122,7 @@ __all__ = [
     "CONFIG_EXPERIMENTAL_AUTOSTART",
     "CONFIG_EXPERIMENTAL_EXE",
     "CONFIG_EXPERIMENTAL_PORT",
+    "CONFIG_EXPERIMENTAL_RELOGIN",
     "CONFIG_EXPERIMENTAL_STOP_ON_EXIT",
     "CONFIG_EXPERIMENTAL_UPDATE",
     "CONFIG_SYNC_DISTANCE",
@@ -158,9 +162,17 @@ CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT = "关键帧视觉锚定链校正关�
 #: 默认关闭；打开需要过一遍风险确认（见 ``src/patches/danger_switch_patch.py``）。
 CONFIG_USE_EXPERIMENTAL = "使用实验技术"
 CONFIG_EXPERIMENTAL_PORT = "实验技术后端端口"
+#: 抓包错过登录握手时，是否自动退回登录界面重新进入
+CONFIG_EXPERIMENTAL_RELOGIN = "抓包失败时自动重新登录"
 #: 手动触发一次「检查并更新后端」。它不进 ``default_config``：按钮型配置只借 config_type 渲染，
 #: 值本身没有意义（框架的按钮控件不读也不写它）。
 CONFIG_EXPERIMENTAL_UPDATE = "检查并更新后端"
+
+#: 抓包错过握手时最多重建几次连接（每次都是一次"离开游戏再进入"）。用尽即停手——
+#: 无人值守时反复登出比不修更糟。
+CAPTURE_RELOGIN_ATTEMPTS = 3
+#: 重建连接后等后端接管新连接的秒数。游戏重新登录要读条，中间会经过"没有连接"的阶段。
+CAPTURE_RELOGIN_WAIT_SECONDS = 90.0
 
 #: 位移提交阈值默认值（1920 宽下约 1.8m）。0 = 关闭，回到"按时间提交"的旧行为。
 #: 误差按采样次数累积、每样本误差大致是绝对量，而每样本位移 = 速度 * 采样间隔，
@@ -237,6 +249,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             CONFIG_EXPERIMENTAL_EXE: "",
             CONFIG_EXPERIMENTAL_AUTOSTART: True,
             CONFIG_EXPERIMENTAL_STOP_ON_EXIT: False,
+            CONFIG_EXPERIMENTAL_RELOGIN: True,
         }
 
     @staticmethod
@@ -287,6 +300,11 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 "立刻检查并更新抓包后端程序，不等下次启动。用在自己的网络刚恢复、"
                 "或想确认当前用的是哪个版本时"
             ),
+            CONFIG_EXPERIMENTAL_RELOGIN: (
+                "抓包错过了登录握手时（后端启动晚于游戏连接，或游戏当时已经登录着），"
+                "自动退回登录界面再进入一次，逼出一条新连接让后端重新抓握手。"
+                "**不会登出账号**；最多尝试 3 次，用尽即停手。关掉则只在日志里提示"
+            ),
         }
 
     # ------------------------------------------------------------------ #
@@ -326,6 +344,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         self._minimap_capture_installer: CaptureBackendInstaller | None = None
         #: 预下载线程句柄；非 None 表示已经起过一次，不再重复起
         self._minimap_capture_prefetch: threading.Thread | None = None
+        #: 已尝试重建连接的次数；抓包恢复正常即清零
+        self._minimap_capture_relogin_attempts = 0
+        #: 重建相关的告警只报一次，避免每拍刷屏
+        self._minimap_capture_relogin_warned = False
         self._minimap_capture_seq = 0
         self._minimap_capture_last_key: tuple | None = None
 
@@ -953,6 +975,157 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         if not self.ensure_capture_backend_installed():
             return False
         return launcher.ensure_running()
+
+    def capture_session_health(self) -> CaptureHealth | None:
+        """读一次抓包会话的健康状态；开关关着时返回 ``None``。"""
+
+        if not self.experimental_capture_enabled():
+            return None
+        return self.capture_position_source().health()
+
+    def force_new_capture_connection(self) -> bool:
+        """回登录界面再进入，逼出一条新的 TCP 连接。**不登出账号。**
+
+        只对"抓包错过了本次握手"这种情形有意义：后端没看到 SYN 就推不出密钥流，而它本身没坏
+        ——换一条连接让它从头抓就行。所以这里只做「离开游戏 → 重新进入」，不走登出账号那条重路
+        （``login_flow`` 会点登出并重选账号，那对单纯的"再连一次"是多余的，还得有账号信息）。
+
+        **每一步都做成找不到就干净失败**，绝不盲点：OCR 找不到按钮说明界面跟预期不一样，此时
+        继续点下去可能点到别的东西上，比不动手更糟。
+        """
+
+        from src.data.FeatureList import FeatureList as fL
+
+        done = self._capture_leave_to_login(fL)
+        if not done:
+            return False
+        # 已经在登录界面了，账号还是登录着的，直接进入即可
+        entered = self.wait_ocr(match="登录", time_out=10, box=self.box.center, raise_if_not_found=False)
+        if not entered:
+            self.log_warning(
+                "实验技术：登录界面上没找到「登录」按钮，已停在登录界面——请手动进入一次（只需一次）",
+                notify=True,
+            )
+            return False
+        self.click(entered[0])
+        return True
+
+    def _capture_leave_to_login(self, fL) -> bool:
+        """从游戏世界退到登录界面。与 :meth:`login_mixin.login_flow` 前几步同一套动作。"""
+
+        try:
+            self.ensure_main()
+            self.back()
+            entry = self.wait_feature(
+                feature=fL.main_out,
+                vertical_variance=0.05,
+                horizontal_variance=0.1,
+                threshold=0.6,
+                time_out=10,
+                raise_if_not_found=False,
+            )
+            if not entry:
+                self.log_warning("实验技术：主界面没找到退出入口，取消重建连接", notify=True)
+                return False
+            self.click(entry)
+            self.click_confirm()
+            return True
+        except Exception as exc:
+            self.log_warning(f"实验技术：退到登录界面时出错（{type(exc).__name__}）", notify=True)
+            return False
+
+    def wait_for_capture_connection(self, *, timeout: float, tick: float = 2.0) -> CaptureHealth:
+        """等新连接被接管：一直轮询到"握手成功"或"又错过握手"。
+
+        游戏重新登录要读条，这期间后端会先看到「没有连接」、再到「等待登录初始化」、最后才
+        「正在解码」，所以不能只查一次。返回值是最后一次读到的健康状态。
+        """
+
+        deadline = self.active_time() + max(1.0, float(timeout))
+        health = self.capture_position_source().health()
+        while self.active_time() < deadline:
+            # 读到"正在解码"就够：握手已经拿到，坐标迟早会来。
+            if health.state in (CAPTURE_HEALTH_OK, CAPTURE_HEALTH_DECODING):
+                return health
+            # 又错过了一次：再等下去也不会自己好，交给调用方决定要不要再试
+            if health.needs_new_connection:
+                return health
+            self.sleep(max(0.2, float(tick)))
+            health = self.capture_position_source().health()
+        return health
+
+    def ensure_capture_session(self, *, reason: str) -> bool:
+        """校验抓包是否**真的**接上了；没接上且能靠新连接救时，回登录界面重进一次。
+
+        这是「启用后第一拍 / 每次导航前 / 每次切号后」三个时机共用的入口。返回抓包当前是否可用。
+
+        只在 :attr:`CaptureHealth.needs_new_connection` 时动手：其余状态要么在等（后端刚起、
+        握手进行中、刚握上还没走到坐标），要么重建也没用（后端根本没起来）——对它们做"退出重进"
+        只会白白打断玩家。
+
+        最多尝试 :data:`CAPTURE_RELOGIN_ATTEMPTS` 次，**成功即清零**：重登后能正常抓包，下一次
+        再出问题理应还能修。次数用尽就停手并报错，绝不在无人值守时反复登出。
+        """
+
+        health = self.capture_session_health()
+        if health is None:
+            return False
+        if not health.needs_new_connection:
+            # "可用"= 已经有坐标，或握手已成、坐标在路上。其余（没有连接 / 握手进行中 /
+            # 后端不可达）都属于"还没好"，但不该触发重建。
+            usable = health.state in (CAPTURE_HEALTH_OK, CAPTURE_HEALTH_DECODING)
+            if usable:
+                self._minimap_capture_relogin_attempts = 0
+                self._minimap_capture_relogin_warned = False
+            return usable
+        if not self._cfg_bool(CONFIG_EXPERIMENTAL_RELOGIN, True):
+            self._warn_capture_relogin_disabled()
+            return False
+        if self._minimap_capture_relogin_attempts >= CAPTURE_RELOGIN_ATTEMPTS:
+            self._warn_capture_relogin_exhausted(health)
+            return False
+
+        self._minimap_capture_relogin_attempts += 1
+        attempt = self._minimap_capture_relogin_attempts
+        self.log_warning(
+            f"实验技术：{reason}——本次抓包错过了登录握手（{health.flow_status}），"
+            f"正在返回登录界面重新进入以建立新连接（第 {attempt}/{CAPTURE_RELOGIN_ATTEMPTS} 次）",
+            notify=True,
+        )
+        if not self.force_new_capture_connection():
+            return False
+
+        after = self.wait_for_capture_connection(timeout=CAPTURE_RELOGIN_WAIT_SECONDS)
+        if after.state in (CAPTURE_HEALTH_OK, CAPTURE_HEALTH_DECODING):
+            self._minimap_capture_relogin_attempts = 0
+            self.log_info("实验技术：新连接已被后端接管，抓包恢复")
+            return True
+        self.log_warning(
+            f"实验技术：重新进入后仍没抓到握手（{after.state}）"
+            + ("，稍后会自动再试" if attempt < CAPTURE_RELOGIN_ATTEMPTS else ""),
+            notify=True,
+        )
+        return False
+
+    def _warn_capture_relogin_disabled(self) -> None:
+        if self._minimap_capture_relogin_warned:
+            return
+        self._minimap_capture_relogin_warned = True
+        self.log_warning(
+            "实验技术：本次抓包错过了登录握手，而「抓包失败时自动重新登录」是关着的——"
+            "请手动退回登录界面再进入一次，或打开该开关",
+            notify=True,
+        )
+
+    def _warn_capture_relogin_exhausted(self, health: CaptureHealth) -> None:
+        if self._minimap_capture_relogin_warned:
+            return
+        self._minimap_capture_relogin_warned = True
+        self.log_warning(
+            f"实验技术：已尝试 {CAPTURE_RELOGIN_ATTEMPTS} 次重建连接仍未抓到握手（{health.flow_status}）。"
+            "请手动重启游戏后再启用抓包；本条不再自动重试",
+            notify=True,
+        )
 
     def stop_capture_backend(self) -> None:
         """按配置停掉后端。默认不停——见 :data:`CONFIG_EXPERIMENTAL_STOP_ON_EXIT` 的说明。"""

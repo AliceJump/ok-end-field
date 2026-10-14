@@ -455,10 +455,37 @@ class BaseEfTask(
                     )
                 )
                 self.login_flow(username)
+                self._ensure_capture_after_account_switch()
             else:
                 self.set_current_account("", "")
 
             yield repeat_idx, repeat_times
+
+    def _ensure_capture_after_account_switch(self) -> None:
+        """切号后确认抓包后端接管了新连接。
+
+        切号本身会重建 TCP 连接（游戏内退到登录界面再进入），后端按四元组自动接管，**登录密钥
+        随之重抓**——不需要为它做特殊处理。但"应该会发生"和"确实发生了"是两回事：如果后端那时
+        刚好没在跑，或者新连接落到了它不抓的端口上，这一轮的抓包就是空的，而任务照跑不误。
+
+        所以这里只做校验（必要时触发一次重建连接），不做别的。非抓包源没有这个方法，
+        用鸭子类型跳过。
+        """
+
+        getter = getattr(self, "get_runtime_position_service", None)
+        if not callable(getter):
+            return
+        try:
+            service = getter()
+        except Exception:
+            return
+        check = getattr(service, "ensure_capture_session", None)
+        if not callable(check):
+            return
+        try:
+            check(reason="切换账号后检查抓包")
+        except Exception as exc:  # 校验失败不该打断多账号流程
+            self.log_warning(f"切换账号后检查抓包会话失败，继续执行: {exc}")
 
     def handle_task_exception(self, e: Exception, prefix: str):
         """统一处理任务 run() 中的异常逻辑。

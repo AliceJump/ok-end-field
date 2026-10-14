@@ -3474,3 +3474,9 @@ msgstr "Check for updates to the backend"
 
 msgid "立刻检查并更新抓包后端程序，不等下次启动。用在自己的网络刚恢复、或想确认当前用的是哪个版本时"
 msgstr "Check for and install an updated capture backend right away instead of waiting for the next launch. Useful when your network just came back, or to confirm which version you are running"
+
+msgid "抓包失败时自动重新登录"
+msgstr "Automatically log back in when capturing fails"
+
+msgid "抓包错过了登录握手时（后端启动晚于游戏连接，或游戏当时已经登录着），自动退回登录界面再进入一次，逼出一条新连接让后端重新抓握手。**不会登出账号**；最多尝试 3 次，用尽即停手。关掉则只在日志里提示"
+msgstr "When the capture missed the login handshake (the backend started after the game's connection, or you were already logged in), return to the login screen and enter again to force a new connection so the backend can capture the handshake. **Your account is not logged out**; it tries at most 3 times, then stops. When off, it only writes a log line"

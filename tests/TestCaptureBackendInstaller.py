@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import socket
 import tempfile
 import threading
 import unittest
@@ -34,6 +35,17 @@ FAKE_EXE = b"MZ" + bytes(range(256)) * 40
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _free_port() -> int:
+    """要一个**当前空闲**的端口。
+
+    用例只要碰到"这个端口上有没有人应答"就会受本机状态影响——开发机上真跑着一个后端是常事。
+    """
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -431,7 +443,11 @@ class RunsDirWiringTest(unittest.TestCase):
     def _launcher(self, directory: str):
         from src.localization import capture_backend_launcher as launcher_mod
 
-        return launcher_mod.BackendLauncher(8765, executable="", serve_args=("serve",), log_directory=Path(directory))
+        # **端口必须现取一个空闲的**：写死 8765 的话，本机真有一个后端在跑（开发机上很常见）
+        # 时 probe_backend 会直接成功，ensure_running 就提前返回了——测试从此测不到任何东西，
+        # 而且失败得莫名其妙。
+        port = _free_port()
+        return launcher_mod.BackendLauncher(port, executable="", serve_args=("serve",), log_directory=Path(directory))
 
     def test_managed_copy_gets_an_explicit_runs_dir(self):
         from src.localization import capture_backend_launcher as launcher_mod
