@@ -3716,6 +3716,39 @@
           "global_target_binding"
         ]
       }
+    ],
+    "xaihi": [
+      {
+        "kind": "ult",
+        "skill_id": "chr_0011_seraph_ultimate_skill",
+        "scope": "nominal_unchanged_enemy_tags; no_target_identity_or_remaining_lifetime",
+        "preserves_recommended_tags": [
+          "1cdba15d",
+          "55af885b",
+          "8a8a8a7e",
+          "9648d5bd",
+          "9beb15a3",
+          "a7edd8ab",
+          "bf9d6e57",
+          "edaee3e6"
+        ],
+        "record_hashes": {
+          "chr_0011_seraph_ultimate_skill": "aeb22f042668624c2de97fab95b2d8900eb6cb4017ef0eee1d0c786886f0c0da",
+          "buff_common_damage_immune_ult_skill": "b742dfedad17bd70a8b051ce9ccab45fa231d4ff1e5ed363c58e3bbb38337436",
+          "buff_chr_0011_seraph_atk_buff": "1cc3a54f53c85fee01e7514fd14fc64e00ec9ecd00363b11d5d300f1339ad715",
+          "buff_chr_0011_seraph_atk_buff_2": "a83324c48558330c86e8e4f035a8d41001eb98d7e74c7eb5ba21a583fc64e5dc",
+          "buff_chr_0011_seraph_ultimate_effect": "c3450ba84128987ee93d9b7c8b921358fc330e91ca544fdf1870cdbdd1a9a4ee",
+          "buff_chr_0011_seraph_ultimate_effect_2": "f0f9a2e8c697b238b5418e44c54a5686129e604f99aa55afbf33dd1a8a3633b9"
+        },
+        "evidence": "ally-only amplification, dispel and self immunity; no enemy status creation/consumption",
+        "excludes": [
+          "owner_resources",
+          "distance",
+          "entities",
+          "opaque_predicates",
+          "global_target_binding"
+        ]
+      }
     ]
   }
 }
