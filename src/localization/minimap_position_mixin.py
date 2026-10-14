@@ -173,6 +173,9 @@ CONFIG_EXPERIMENTAL_UPDATE = "检查并更新后端"
 CAPTURE_RELOGIN_ATTEMPTS = 3
 #: 重建连接后等后端接管新连接的秒数。游戏重新登录要读条，中间会经过"没有连接"的阶段。
 CAPTURE_RELOGIN_WAIT_SECONDS = 90.0
+#: 两次重建之间的最小间隔。本方法每拍都被调，没有它就等于"连续猛试"，而每次都要把玩家
+#: 踢回登录界面——实测两次只隔了 14 秒，太激进。
+CAPTURE_RELOGIN_INTERVAL_SECONDS = 20.0
 
 #: 位移提交阈值默认值（1920 宽下约 1.8m）。0 = 关闭，回到"按时间提交"的旧行为。
 #: 误差按采样次数累积、每样本误差大致是绝对量，而每样本位移 = 速度 * 采样间隔，
@@ -348,6 +351,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         self._minimap_capture_relogin_attempts = 0
         #: 重建相关的告警只报一次，避免每拍刷屏
         self._minimap_capture_relogin_warned = False
+        #: 下一次允许重建的时间点（active_time 基准）
+        self._minimap_capture_relogin_next_at = 0.0
         self._minimap_capture_seq = 0
         self._minimap_capture_last_key: tuple | None = None
 
@@ -999,29 +1004,48 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         done = self._capture_leave_to_login(fL)
         if not done:
             return False
-        # 已经在登录界面了，账号还是登录着的，直接进入即可
-        entered = self.wait_ocr(match="登录", time_out=10, box=self.box.center, raise_if_not_found=False)
-        if not entered:
+        # 已经在登录界面、账号还登录着，直接进入即可。
+        #
+        # **必须走 click_text**（内部是 login_ocr → login_screenshot，从屏幕截窗口）：登录界面
+        # 在普通帧通道上取不到有效画面，用 wait_ocr 会永远找不到这个按钮。它同时自带"点击后
+        # 按钮消失即成功"的确认与 60 秒重试，比手写一轮 wait_ocr + click 强。
+        if not callable(getattr(self, "click_text", None)):
+            # 宿主没有 LoginMixin（例如测试替身）；停在这里而不是乱点
+            self.log_warning(
+                "实验技术：已退回登录界面，但当前任务不具备登录界面交互能力——请手动进入一次",
+                notify=True,
+            )
+            return False
+        try:
+            clicked = self.click_text("登录", box=self.box.center)
+        except Exception as exc:
+            self.log_warning(f"实验技术：点击登录按钮时出错（{type(exc).__name__}）", notify=True)
+            return False
+        if not clicked:
             self.log_warning(
                 "实验技术：登录界面上没找到「登录」按钮，已停在登录界面——请手动进入一次（只需一次）",
                 notify=True,
             )
             return False
-        self.click(entered[0])
         return True
 
     def _capture_leave_to_login(self, fL) -> bool:
-        """从游戏世界退到登录界面。与 :meth:`login_mixin.login_flow` 前几步同一套动作。"""
+        """从游戏世界退到登录界面。与 :meth:`login_mixin.login_flow` 前几步同一套动作。
+
+        ``back()`` 之后先停一拍再找退出入口：日志里见过第一次找不到、隔一拍就找到的情形——
+        那时界面还在过渡中，急着找只会白判一次失败。
+        """
 
         try:
             self.ensure_main()
             self.back()
+            self.sleep(1.0)
             entry = self.wait_feature(
                 feature=fL.main_out,
                 vertical_variance=0.05,
                 horizontal_variance=0.1,
                 threshold=0.6,
-                time_out=10,
+                time_out=15,
                 raise_if_not_found=False,
             )
             if not entry:
@@ -1084,6 +1108,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         if self._minimap_capture_relogin_attempts >= CAPTURE_RELOGIN_ATTEMPTS:
             self._warn_capture_relogin_exhausted(health)
             return False
+        # 本方法每拍都会被调（"没坐标"时），没有这个间隔的话三次尝试会在一分钟内打光：
+        # 实测两次之间只隔了 14 秒，而每次都要把玩家从游戏里踢回登录界面——太激进了。
+        now = self.active_time()
+        if now < self._minimap_capture_relogin_next_at:
+            return False
+        self._minimap_capture_relogin_next_at = now + CAPTURE_RELOGIN_INTERVAL_SECONDS
 
         self._minimap_capture_relogin_attempts += 1
         attempt = self._minimap_capture_relogin_attempts

@@ -26,6 +26,7 @@ from src.localization.capture_position_source import (
 )
 from src.localization.minimap_position_mixin import (
     CAPTURE_RELOGIN_ATTEMPTS,
+    CAPTURE_RELOGIN_INTERVAL_SECONDS,
     MinimapPositionMixin,
 )
 
@@ -1028,6 +1029,8 @@ class CaptureRecoveryTest(unittest.TestCase):
             ):
                 for _ in range(6):
                     self.assertFalse(owner.ensure_capture_session(reason="测试"))
+                    # 推过退避间隔，否则后面几次会被间隔挡掉、测不到"次数上限"
+                    owner._clock += CAPTURE_RELOGIN_INTERVAL_SECONDS + 1.0
             self.assertEqual(
                 relogin.call_count, CAPTURE_RELOGIN_ATTEMPTS, f"最多试 {CAPTURE_RELOGIN_ATTEMPTS} 次"
             )
@@ -1053,12 +1056,46 @@ class CaptureRecoveryTest(unittest.TestCase):
         owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
         with (
             patch.object(owner, "_capture_leave_to_login", return_value=True),
-            patch.object(owner, "wait_ocr", return_value=None),
+            patch.object(owner, "click_text", return_value=None, create=True),
             patch.object(owner, "click") as click,
         ):
             self.assertFalse(owner.force_new_capture_connection())
         click.assert_not_called()
         self.assertTrue(any("请手动进入" in w for w in owner.warnings), owner.warnings)
+
+    def test_entering_uses_click_text_not_the_plain_frame_channel(self):
+        """**这条钉住上一轮真实失败的根因**。
+
+        登录界面在普通帧通道上取不到有效画面（``login_flow`` 全程用 ``click_text``，它内部是
+        ``login_ocr`` → ``login_screenshot``，从屏幕截窗口）。我最初写成 ``wait_ocr`` + 手点，
+        结果永远找不到那个按钮——日志里报的就是「没找到「登录」按钮」，看起来像文案不匹配，
+        实际是根本没看到画面。
+        """
+
+        owner = _FakeOwner({"使用实验技术": True})
+        with (
+            patch.object(owner, "_capture_leave_to_login", return_value=True),
+            patch.object(owner, "click_text", return_value=[object()], create=True) as click_text,
+            patch.object(owner, "wait_ocr") as wait_ocr,
+        ):
+            self.assertTrue(owner.force_new_capture_connection())
+        click_text.assert_called_once()
+        self.assertEqual(click_text.call_args.args[0], "登录")
+        wait_ocr.assert_not_called()
+
+    def test_aborts_when_the_host_cannot_do_login_ui(self):
+        """宿主没有 click_text（例如测试替身）时停手，而不是用普通通道乱试。"""
+
+        owner = _FakeOwner({"使用实验技术": True})
+        owner.warnings = []
+        owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
+        with (
+            patch.object(owner, "_capture_leave_to_login", return_value=True),
+            patch.object(owner, "click") as click,
+        ):
+            self.assertFalse(owner.force_new_capture_connection())
+        click.assert_not_called()
+        self.assertTrue(any("不具备登录界面交互能力" in w for w in owner.warnings), owner.warnings)
 
     def test_aborts_when_the_main_screen_exit_is_missing(self):
         owner = _FakeOwner({"使用实验技术": True})

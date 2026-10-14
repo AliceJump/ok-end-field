@@ -30,10 +30,17 @@ from src.localization.minimap_position_mixin import (
     CONFIG_USE_EXPERIMENTAL,
     MinimapPositionMixin,
 )
+from src.tasks.mixin.login_mixin import LoginMixin
 
 
-class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
-    """统一维护小地图融合定位，供导航和其他实时任务消费。"""
+class MinimapPositionTask(MinimapPositionMixin, LoginMixin, BaseEfTask, TriggerTask):
+    """统一维护小地图融合定位，供导航和其他实时任务消费。
+
+    混入 ``LoginMixin`` 只为拿 ``click_text``：抓包错过握手时要回登录界面重新进入，而**登录
+    界面的交互必须走它**（``login_ocr`` → ``login_screenshot``，从屏幕截窗口），普通帧通道在
+    那里取不到有效画面。``LoginMixin`` 没有 ``__init__`` 也没有 ``default_config``，只是几个
+    方法，所以不会给本任务带进「多账户模式」那套配置。
+    """
 
     requires_foreground = True
 
