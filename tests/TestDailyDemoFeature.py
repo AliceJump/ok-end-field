@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.DemoBattleTask import DemoBattleTask
@@ -11,6 +11,7 @@ class _DemoTask:
         self.config_description = {}
         self.levels = iter(levels)
         self.events = []
+        self.log_info = Mock()
 
     def wait_click_feature(self, **kwargs):
         self.events.append("random")

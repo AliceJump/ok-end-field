@@ -89,7 +89,10 @@ class DemoBattleTask(DemoLevelMixin, Common, MapMixin, ZipLineMixin, BattleMixin
             # 第三抽可能弹出奖励翻倍选项的确认框。
             if draw_count == 3:
                 # 玩家可能已关闭确认提示；是否抽取成功由后续等级变化判断。
-                self.click_confirm(time_out=1)
+                if self.click_confirm(time_out=1):
+                    self.log_info("已点击第三抽确认按钮，等待等级变化")
+                else:
+                    self.log_info("未找到第三抽确认按钮，继续等待等级变化")
 
             current_level = self.wait_level_change(previous_level, time_out=4)
             if current_level is not None:
