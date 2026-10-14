@@ -3,7 +3,7 @@
 import json
 import unittest
 from dataclasses import replace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from src.data.battle_conditions import ConditionRequirement, ForecastConditions
 from src.data.battle_highlight import BattleHighlightState
@@ -183,6 +183,62 @@ class TestBattleConditionForecast(unittest.TestCase):
         logic._observe_battle_highlights()
         ordinary = logic._release_battle_candidate('2', 100, task.now, set())
         self.assertEqual(ordinary.observed_bonus, 0)
+
+    def test_xaihi_preserves_enemy_group_but_not_owner_resources(self):
+        arc, wolf = self.observe('2', '弧光'), self.observe('3', '狼卫')
+        self.observe('4', '莱万汀')
+        planner = ReleaseBurstPlanner(['赛希', '弧光', '狼卫', '莱万汀'], store=self.store)
+        after = self.state.forecast_conditions().after('1', 'ult', planner.condition_transitions['1', 'ult'])
+        self.assertTrue(after.supports(ConditionRequirement.from_observation('2', arc)))
+        self.assertTrue(after.supports(ConditionRequirement.from_observation('3', wolf)))
+        self.assertFalse(any(slot == '4' for slot, _ in after.observations))
+        self.assertEqual({f.slot for f in after.facts()}, {'2'})
+
+    def test_xaihi_each_native_dependency_must_exist_and_match(self):
+        dependencies = read_producers()['condition_transitions']['xaihi'][0]['record_hashes']
+        for affected in dependencies:
+            for missing in (False, True):
+                with self.subTest(record=affected, missing=missing):
+                    store = Mock(wraps=self.store)
+
+                    def read(key):
+                        if key != affected:
+                            return self.store.record(key)
+                        if missing:
+                            raise KeyError(key)
+                        return {'source': {'sha256': '0' * 64}}
+
+                    store.record.side_effect = read
+                    with self.assertRaisesRegex(ValueError, 'live condition transition record: ' + affected):
+                        ReleaseBurstPlanner(['赛希'], store=store)
+
+    def test_xaihi_cold_output_prelude_keeps_later_electric_component(self):
+        planner = ReleaseBurstPlanner(['赛希', '弧光', '狼卫', '伊冯'], store=self.store)
+        attack = self.arclight(self.observe('2', '弧光'))
+        normal = ReleaseBurstAction('4', 'normal', planner.normal_durations['4'],
+                                    planner.rows['4']['quotes']['normal']['crit_expect'])
+        actions = (ReleaseBurstAction('1', 'ult', 2, 0), attack, normal)
+        conditions = self.state.forecast_conditions()
+        decision = planner.choose(actions, 100, 0, conditions=conditions)
+        self.assertEqual(decision.sequence, (('1', 'ult'), ('2', 'battle'), ('4', 'normal')))
+        cold_amp = next(spec['magnitude']['base'] for spec in planner.rules['1', 'ult'] if '寒冷' in spec['elements'])
+        self.assertAlmostEqual(decision.damage, attack.value + attack.observed_bonus + normal.value * (1 + cold_amp))
+        # Removing just the reviewed transition changes the real candidate ordering.
+        del planner.condition_transitions['1', 'ult']
+        old = planner.choose(actions, 100, 0, conditions=conditions)
+        self.assertEqual(old.sequence, (('2', 'battle'), ('1', 'ult'), ('4', 'normal')))
+
+    def test_xaihi_real_step_uses_existing_main_control_and_white_condition(self):
+        task = FakeTask()
+        task.sp = 100
+        task.ults = {'1'}
+        task.battle_pulses = {'2'}
+        logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
+        logic._configure_team(['赛希', '弧光', '狼卫', '伊冯'], reset_runtime=True)
+        with patch.object(task, 'detect_current_char_index', return_value=3, create=True):
+            logic.step()
+        self.assertEqual(task.keys, ['ult_1'])
+        self.assertTrue(logic.battle_highlights.forecast_conditions().facts())
 
 
 if __name__ == '__main__':

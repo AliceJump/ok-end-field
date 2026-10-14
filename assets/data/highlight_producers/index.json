@@ -3,7 +3,7 @@
   "source_revision": "cc9b471b50cdd6bc8b3a148b4eca93deef4efa02",
   "actors": 32,
   "closed": 21,
-  "snapshot_sha256": "d871dd5ca71b5cf85b2fb9ee8685e760cd810d7fe969990925dbec29d0b6018d",
+  "snapshot_sha256": "f43ee78ff9bf672b8b93773772562ab9fb24f0fa03399ea2941b9a4c13158415",
   "source_hashes": {
     "assets/data/skill_timings/20261002/index.json": "2b0ead66e568f93d9e0b269f9a7a16921d530338cb5cfe0573a6786236d60e4b",
     "assets/data/skill_timings/20261002/records.json.gz": "e15ff2073e253262ba97cb919216039e4603de01cdd6a7bc598f06e127d62019",
@@ -28,5 +28,5 @@
   },
   "exporter_sha256": "7c3c37cb3c5067118a872826564cfd89d15fdc7d9e58b57bdebb92fc5ff6200b",
   "damage_reviewer_sha256": "62816f651fb16345aba470482bb92725439842de23015b46d9a84265b49f64ea",
-  "condition_reviewer_sha256": "efd51725794f89d25ecee5b75e01102a16442428504fff10bebaddd060e4a6d4"
+  "condition_reviewer_sha256": "8f05ee3505b78c9656f26a3613437e055cc6a58a3dc5e751fa57b1a04227e934"
 }
