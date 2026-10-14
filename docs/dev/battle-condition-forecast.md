@@ -34,7 +34,7 @@
 | buff_chr_0023_antal_ultimate_icon | be55268fa75109fdf04c8f918781d814361a24936f3b30b6e12eb517193ccc85 |
 | buff_chr_0023_antal_ultimate_icon_2 | bdfd590551784fab066e8c7f3fa65c3d764edd1d119d1e4297c6b5f8c4f270e9 |
 
-入口创建本人动作免疫与team增幅buff；后者的OnEnable EnhancedAction在友方buff持有者创建灼热/电磁子图标，均无敌方异常创建、消费或清除。两个子图标只含友方显示效果，共通免疫的霸体设置也只指向本人。入口可能移动本人，不据此保留实体、距离、owner资源或目标身份条件。其他辅助需单独追子技能/场地/周期链，不能仅凭零伤害报价判断。
+入口创建本人动作免疫与team增幅buff；后者的OnBuffStart（buffEvent=0）EnhancedAction在友方buff持有者创建灼热/电磁子图标，均无敌方异常创建、消费或清除。另有DuringBuffEnable（buffEvent=5）显示动作；它与OnBuffEnable（3）是不同原生事件。两个子图标只含友方显示效果，共通免疫的霸体设置也只指向本人。入口可能移动本人，不据此保留实体、距离、owner资源或目标身份条件。其他辅助需单独追子技能/场地/周期链，不能仅凭零伤害报价判断。
 
 额外核准 `CheckAllowNormalSkillHighlight`：同版metadata91417 ExecuteInternal在RVA `3e73490` 读取owner当前普通技能及 `Skill.canInterrupt` / `AbilitySystem.CheckCanInterruptCurSkill`；91418 `_CheckAtbValue` 在 `649e80c`，读取checkAtbValue并调用 `Skill.CheckCost`。91417证据窗2704字节SHA256 `1d5915b99413f872c373d616992aee7840b0bf41d3f4ac1d386af4bbbafb733a`，覆盖相邻内联helper而非声称函数长度；91418证据窗108字节SHA256 `7831a25bcfc7bc1275c98eed472c9dc1df18149cb1c56ca829b4172b8363a353`。原生构建SHA仍为 `c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89`。
 
@@ -44,7 +44,7 @@
 
 赛希六份原生记录：入口`aeb22f042668624c2de97fab95b2d8900eb6cb4017ef0eee1d0c786886f0c0da`；共通免疫`b742dfedad17bd70a8b051ce9ccab45fa231d4ff1e5ed363c58e3bbb38337436`；增幅父buff`1cc3a54f53c85fee01e7514fd14fc64e00ec9ecd00363b11d5d300f1339ad715`；短显示buff`a83324c48558330c86e8e4f035a8d41001eb98d7e74c7eb5ba21a583fc64e5dc`；寒冷/自然子buff分别`c3450ba84128987ee93d9b7c8b921358fc330e91ca544fdf1870cdbdd1a9a4ee`、`f0f9a2e8c697b238b5418e44c54a5686129e604f99aa55afbf33dd1a8a3633b9`。完整ID与SHA在`reviewed_condition_transitions.py`及导出快照，不依赖外部tmp。
 
-入口第17块用CharacterTeamFinder得到`tar`，CreateBuff与满级天赋条件Dispel都使用该友方集合；自身免疫独立。父buffOnEnable的EnhancedAction subtype=5/3，指定两个literal子buff，目标为buff持有者；子buff无敌方tag、属性/伤害修饰或动作回调。显示与自身移动不证明敌方位置恒定。固定配装智识缩放的已有边界不变，本批没有补FinalNonConverted实际producer。
+入口第17块用CharacterTeamFinder得到`tar`，CreateBuff与满级天赋条件Dispel都使用该友方集合；自身免疫独立。父buffOnBuffStart（buffEvent=0）的EnhancedAction subtype=5/3，指定两个literal子buff，目标为buff持有者；子buff无敌方tag、属性/伤害修饰或动作回调。父buff另有DuringBuffEnable（5）显示动作，不当作OnBuffEnable（3）。事件名按同版原生枚举核准，不把展示合同当完整原生事件发布。显示与自身移动不证明敌方位置恒定。固定配装智识缩放的已有边界不变，本批没有补FinalNonConverted实际producer。
 
 本批新增4项：敌方条件组/OR保留且本人资源不保留，六依赖各自变更/缺失拒绝（12子案例），有/无该转换的不同起手排序及真实TimedCombatLogic.step。114项专项通过（2.801秒）。原始独立研究脚本、记录和日志统一位于主仓库Git忽略目录`tmp/condition-research-20261013`，不混入本PR；源码与可重放的运行时数据仍按仓库验收。最终全仓结果见本批验收记录。
 
