@@ -123,6 +123,7 @@ class NativeBuffQuery(ImmutableCombatValue):
     tag_mode: str | None = None
     tags: tuple[int, ...] = ()
     count_type: int = 0
+    first_target_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -1127,6 +1128,11 @@ class CombatWorldState:
                 continue
             try:
                 owners = self.native_targets(query.target, action_id, program)
+                if query.first_target_only:
+                    # SaveBuffStackNum uses GetFirstTarget before resolving the
+                    # AbilitySystem. Keep an observed empty group empty; an
+                    # unbound selector remains unknown below.
+                    owners = owners[:1]
                 if query.tag_mode is not None:
                     # Native tag count obtains one AbilitySystem. Multi-target
                     # selection precedence is not inferred by summing recipients.

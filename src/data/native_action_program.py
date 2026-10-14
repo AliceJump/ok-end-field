@@ -175,7 +175,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             return combat_input("target." + target["targetGroupKey"] + ".count")
         raise UnresolvedMechanic(f"Unbound selector count: {profile.skill_id}/{target['targetSource']}")
 
-    def buff_count(settings, target, count_type=0):
+    def buff_count(settings, target, count_type=0, *, first_target_only=False):
         if count_type not in {0, 1}:
             raise UnresolvedMechanic(f"Unknown native buff count type: {count_type}")
         selector = resource_target(target)
@@ -187,10 +187,10 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             ids = tuple(settings["buffIdList"])
         else:
             raise UnresolvedMechanic(f"Unknown native buff query type: {settings['checkType']}")
-        identity = (selector, ids, mode, tags, count_type)
+        identity = (selector, ids, mode, tags, count_type, first_target_only)
         if identity not in buff_queries:
             key = f"native.query.{len(buff_queries)}"
-            buff_queries[identity] = NativeBuffQuery(key, selector, ids, mode, tags, count_type)
+            buff_queries[identity] = NativeBuffQuery(key, selector, ids, mode, tags, count_type, first_target_only)
         buff_ids.update(ids)
         return combat_input(buff_queries[identity].key)
 
@@ -479,6 +479,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 raise UnresolvedMechanic(f"Unbound binary operation: {body['operation']}")
             formula = CombatExpression(operation, (number(body["value1"]), number(body["value2"])))
             emit(CombatEvent(at, "native_formula", assignments=(("bb." + body["key"], formula),)))
+        elif name == "SaveBuffStackNum+Data":
+            buff_id = body["buffId"]["buffId"]
+            if not isinstance(buff_id, str) or not buff_id:
+                raise UnresolvedMechanic("Native basic buff snapshot needs a literal buff ID")
+            settings = {"checkType": 0, "buffIdList": [buff_id]}
+            value = buff_count(settings, body["checkTarget"], first_target_only=True)
+            emit(CombatEvent(at, "native_snapshot", assignments=(("bb." + body["key"],
+                              CombatExpression("float32", (value,))),)))
         elif name == "SaveBuffStackNumAdvanced+Data":
             emit(CombatEvent(at, "native_snapshot", assignments=(("bb." + body["key"],
                               buff_count(body["buffSettings"], body["checkTarget"])),)))
