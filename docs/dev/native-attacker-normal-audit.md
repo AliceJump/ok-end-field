@@ -39,6 +39,8 @@ Normal = max(0,
 
 独立目录`tmp/condition-research-20261013/native-build-ab00f1c4`仅在主仓库Git忽略区，保留两份新输入及provenance；没有修改游戏文件。新metadata有91478类型/574771方法，从头定位code registration并核对全部172个image，未借旧缓存。新AddBuffByAbilityAction索引59317、OnBuffCreated60987等只登记为新版本研究位置，不能冒充旧56496/58076已完成跨版本校准。完整源码/字段/返回链、VFS资源及当前客户端实战适用性仍需继续验证。
 
+随后用该新pair的MetadataRegistration.fieldOffsets单独核名，fieldOffsetsCount与91478类型数一致。新CastSkillContext.skill仍为+30；新BuffContext为buff+38、buffId+48、**layer+50、skillCastInfo+58**，新AddBuffContext.oriBuffInst为+70。这不只是方法索引/RVA变化：不能用旧记录的skillCastInfo+50、oriBuffInst+68读取新结构。新字段JSON只在忽略目录buff-fields.json，未写入旧运行快照。新_AddBuffInternal59319/RVA589b730和AddBuffFinal59320/RVA589aea0已独立定位，后续从这条新返回链核查，并与留存旧指令逐段对照；不因名字相同就宣布版本等价。
+
 ## 验证
 
 新增7项，伤害处理器文件15项及47项相关测试通过（相关16.303秒），全仓1496项通过（146.746秒）。AST3、Ruff I/F、diff-check通过；32角色/128技能damage-data-flow与保存JSON完全一致，14模型释放/2原生ATK及完整原生程序2/111不提高。未新增测试文件，既有研究分支CI职责缺口仍保留。无现场验证，任务未完成。
