@@ -34,7 +34,7 @@ class _DemoImpl(_DemoTask, DemoBattleTask):
 
 class DailyDemoFeatureTests(unittest.TestCase):
     def test_battle_demo_confirms_third_draw_with_and_without_double_reward(self):
-        task = _DemoImpl([4, 3, None, 6, 4, 3, None, 6, 6])
+        task = _DemoImpl([4, 3, 6, 4, 3, 6, 6])
         feature = task
         feature.left_time = True
 
@@ -71,36 +71,34 @@ class DailyDemoFeatureTests(unittest.TestCase):
         self.assertEqual(click_feature.call_args_list.count(double_reward_call), 2)
         self.assertEqual(click_confirm.call_args_list, [call(time_out=1), call(time_out=1), call(time_out=3)])
 
-    def test_first_two_draws_retry_without_checking_confirmation(self):
-        for draw_count in (1, 2):
+    def test_other_draws_retry_without_checking_confirmation(self):
+        for draw_count in (1, 2, 4):
             with self.subTest(draw_count=draw_count):
                 task = _DemoImpl([None, 6])
                 self.assertEqual(task.click_random_and_wait_level_change(5, draw_count=draw_count), 6)
                 self.assertEqual(task.events, ["random", "wait", "warning", "random", "wait"])
 
-    def test_confirmed_draw_waits_for_level_before_retrying(self):
-        for draw_count in (3, 4):
-            with self.subTest(draw_count=draw_count):
-                task = _DemoImpl([None, 6])
-                self.assertEqual(task.click_random_and_wait_level_change(5, draw_count=draw_count), 6)
-                self.assertEqual(task.events, ["random", "wait", "confirm", "wait"])
+    def test_third_draw_confirms_before_waiting_for_level(self):
+        task = _DemoImpl([6])
+        self.assertEqual(task.click_random_and_wait_level_change(5, draw_count=3), 6)
+        self.assertEqual(task.events, ["random", "confirm", "wait"])
 
     def test_missing_confirmation_still_waits_before_retrying_random(self):
-        task = _DemoImpl([None, 6])
+        task = _DemoImpl([6])
 
         with patch.object(task, "click_confirm", return_value=False) as click_confirm:
             self.assertEqual(task.click_random_and_wait_level_change(5, draw_count=3), 6)
 
         click_confirm.assert_called_once_with(time_out=1)
-        self.assertEqual(task.events, ["random", "wait", "wait"])
+        self.assertEqual(task.events, ["random", "wait"])
 
     def test_retries_when_level_stays_unchanged_after_confirmation(self):
-        task = _DemoImpl([None, None, 6])
+        task = _DemoImpl([None, 6])
         feature = task
 
         with patch.object(feature, "wait_level_change", side_effect=task.wait_level_change):
             self.assertEqual(feature.click_random_and_wait_level_change(5, draw_count=3), 6)
-        self.assertEqual(task.events, ["random", "wait", "confirm", "wait", "warning", "random", "wait"])
+        self.assertEqual(task.events, ["random", "confirm", "wait", "warning", "random", "confirm", "wait"])
 
 
 if __name__ == "__main__":

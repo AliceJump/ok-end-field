@@ -86,17 +86,14 @@ class DemoBattleTask(DemoLevelMixin, Common, MapMixin, ZipLineMixin, BattleMixin
                 self.log_warning("未找到演算随机按钮")
                 return -1
 
+            # 第三抽可能弹出奖励翻倍选项的确认框。
+            if draw_count == 3:
+                # 玩家可能已关闭确认提示；是否抽取成功由后续等级变化判断。
+                self.click_confirm(time_out=1)
+
             current_level = self.wait_level_change(previous_level, time_out=4)
             if current_level is not None:
                 return current_level
-
-            # 从第三抽起，无论是否开启双倍，都可能弹出奖励翻倍选项的确认框。
-            # 玩家可能已关闭确认提示；无论是否找到确认按钮，都继续等待本次抽取结果。
-            if draw_count > 2:
-                self.click_confirm(time_out=1)
-                current_level = self.wait_level_change(previous_level, time_out=4)
-                if current_level is not None:
-                    return current_level
 
             self.log_warning(f"第 {retry_index + 1} 次点击随机按钮后等级未变化，重试点击")
 
