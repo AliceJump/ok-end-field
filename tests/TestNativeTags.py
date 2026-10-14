@@ -248,6 +248,65 @@ class TestNativeTags(unittest.TestCase):
         self.assertEqual(before["owner"], ("2",))
         self.assertEqual(before["source"], ("1",))
 
+    def advanced_snapshot(self, *, count_type=0, ids=False, limit_cast=False, source=4, group=""):
+        settings = {"checkType": 0 if ids else 1, "buffIdList": ["a", "b"] if ids else [],
+                    "tagQuery": {"queryType": 0, "tags": [{"raw": "21281e40"}]}}
+        node = {"$type": "Beyond.Gameplay.Core.SaveBuffStackNumAdvanced+Data",
+                "$value": {"isEnable": True, "checkTarget": {"targetSource": source, "targetGroupKey": group},
+                           "buffSettings": settings, "buffStackNumType": count_type, "limitSkillCastId": limit_cast,
+                           "key": "saved"}}
+        store = SkillTimingStore()
+        program = compile_native_action(store, get_character("akekuri"), store.profiles("秋栗", "ult")[0], "1", "normal",
+                                        event_sequence={"actionData": [node]}, event_blackboard={"saved": 0},
+                                        isolated_blackboard=True)
+        return replace(program, key="advanced_snapshot_probe", energy_cost=0, duration=2, cooldown=0, actor_lock=0,
+                       next_action_windows=())
+
+    def test_advanced_tag_snapshot_uses_authored_layer_or_distinct_id_mode(self):
+        self.world.native_buff_tags.update(a=self.tags, b=self.tags)
+        self.world.native_buffs.update({("1", "a"): (3, None), ("1", "b"): (4, None)})
+        for mode, expected in ((0, 7), (1, 2)):
+            program = self.advanced_snapshot(count_type=mode)
+            self.assertTrue(self.world.start(program, action_id="mode" + str(mode)))
+            self.assertEqual(self.world._action_inputs["mode" + str(mode)]["bb.saved"], expected)
+        self.assertFalse(self.world.unresolved)
+
+    def test_advanced_literal_id_snapshot_still_counts_layers_when_tag_enum_is_one(self):
+        self.world.native_buffs.update({("1", "a"): (3, None), ("1", "b"): (4, None)})
+        program = self.advanced_snapshot(count_type=1, ids=True)
+        self.assertTrue(self.world.start(program, action_id="ids"))
+        self.assertEqual(self.world._action_inputs["ids"]["bb.saved"], 7)
+
+    def test_advanced_first_target_does_not_combine_recommended_objects(self):
+        self.world.native_buff_tags.update(a=self.tags, b=self.tags)
+        self.world.native_buffs.update({("1", "a"): (3, None), ("2", "b"): (4, None)})
+        program = self.advanced_snapshot(source=2, group="recipients")
+        program = replace(program, events=tuple(replace(e, at=1) for e in program.events))
+        self.assertTrue(self.world.start(program, action_id="advanced_first"))
+        self.world._action_targets["advanced_first"]["recipients"] = ("2", "1")
+        self.world.advance(1)
+        self.assertEqual(self.world._action_inputs["advanced_first"]["bb.saved"], 4)
+
+    def test_unknown_cast_filter_or_tag_count_mode_is_not_silently_disabled(self):
+        for limit, mode in ((True, 0), (None, 0), (False, None), (False, 2), (False, True), (False, 1.0)):
+            with self.subTest(limit=limit, mode=mode):
+                program = self.advanced_snapshot(count_type=mode, limit_cast=limit)
+                self.assertTrue(any(event.unresolved for event in program.events))
+
+    def test_explicit_unresolved_part_does_not_become_a_zero_count_entity(self):
+        for factory in (self.combo_snapshot, self.advanced_snapshot):
+            with self.subTest(factory=factory.__name__):
+                world = CombatWorldState(("1",), regen=0)
+                program = (factory(target_source=2, target_key="recipients") if factory == self.combo_snapshot
+                           else factory(source=2, group="recipients"))
+                program = replace(program, events=tuple(replace(e, at=1) for e in program.events))
+                self.assertTrue(world.start(program, action_id="part"))
+                world._action_targets["part"]["recipients"] = ("unresolved_part",)
+                world.advance(1)
+                self.assertTrue(world.unresolved)
+                self.assertNotIn("bb.saved" if factory == self.advanced_snapshot else "bb.count",
+                                 world._action_inputs["part"])
+
 
 if __name__ == "__main__":
     unittest.main()

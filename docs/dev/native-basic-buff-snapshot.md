@@ -2,6 +2,8 @@
 
 本批在研究执行器接入`SaveBuffStackNum+Data`，区别于已有Advanced节点。它不是新识别器，也不产生buff；只读取模型当前可确认的状态，把结果传入下一原生公式。未确认的生产者继续保留诊断。
 
+> 随后的Advanced续批同时校正首对象、标签计数模式与cast过滤边界，见末尾；原有手写查询默认不启用首对象限制，避免将原生节点合同推广为所有查询的规则。
+
 ## 原生合同
 
 同版metadata方法59506，`Beyond.Gameplay.Core.SaveBuffStackNum.ExecuteInternal`，RVA`601d0c0`。到下一已知方法指针的564字节窗口SHA256为`81ebbfc8f72af6ed52070d5c287fc38a4da12d47846f2728b37b31c3c73a806d`；边界包含尾部对齐，不当严格函数长度。DLL和metadata仍等于现有快照的`c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89`与`0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e`。
@@ -29,3 +31,15 @@
 独立原始研究资料按用户约定只保留主仓库忽略目录`tmp/condition-research-20261013`；本文件仅为已执行产品合同及边界。下一批继续全局Stack分派、CreateGlobalBuffAction动作结束、期间计时和SkillAffix释放。普通节点输入可调用与本批测试通过不能认定整个机制闭环。
 
 5项新增、50项相关与全仓1466项测试通过（12.595/133.436秒），最后测试断言/导入整理后13项再次通过。Python AST、Ruff I/F与diff-check通过；完整加成数据流审计与已保存JSON完全一致，128来源/报价可重放。研究分支已有未登记CI职责的历史缺口仍使全量分组校验失败，本批未新增测试文件或改分组；正式全仓测试按run_tests.ps1通过，不把局部执行器测试冒充CI分组通过。
+
+## Advanced续批：87处声明的范围与模式
+
+同版方法59515 ExecuteInternal，RVA`601c6f8`，下一已知方法指针边界1676字节SHA256`1ca7559c7f5cb27baa895e34651752a21fc746a17e857136732457cca1bf33b0`。它也先GetFirstTarget、ResolvePartBuffSource，因此不能合计两个推荐对象的状态。
+
+tag查询分支按buffStackNumType=0/1调用GetBuffCountByTag/GetBuffIdCountByTag，分别数层数和不同ID数量；明确ID列表的另一分支则逐项GetBuffCountById相加，不使用这个tag枚举。结果仍写成float32。本批保留这两个分支，未把模式1一律当成“每个ID有无”的规则。
+
+limitSkillCastId=true会从原生当前Skill/SkillCastInfo取额外过滤上下文。该生产链未建立时明确报缺口；flag未知也不默认为false，tag计数枚举未知/非整数不默认为0。模型未绑定的实体/部位不能冒充零buff的对象；确切空选择仍为0，部位到AbilitySystem根的实际重定向后续补齐。
+
+当前原生来源共有87处启用声明，均为mode0、limitSkillCastId=false。已有常用单对象报价未因本批改变，但多对象/未来mode1与cast限定不能再被错误解释。声明统计不等于87个生产链完成。
+
+新增5项覆盖tag层数/ID区别、显式ID列表不受tag枚举影响、有序首对象、cast/未知模式保留诊断、基本/Advanced未解析部位不写0。最终全仓1471项通过（140.957秒）；最后专项19项通过，AST、Ruff I/F与diff-check通过。之前未加实体/部位守卫的1470项结果不作为最终验收替代。固定面板/128报价/现有释放规则及2/111覆盖不变，原生通知、global层数与SkillAffix完整清理仍未完成。

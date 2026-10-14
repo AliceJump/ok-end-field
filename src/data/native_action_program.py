@@ -176,7 +176,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         raise UnresolvedMechanic(f"Unbound selector count: {profile.skill_id}/{target['targetSource']}")
 
     def buff_count(settings, target, count_type=0, *, first_target_only=False):
-        if count_type not in {0, 1}:
+        if type(count_type) is not int or count_type not in {0, 1}:
             raise UnresolvedMechanic(f"Unknown native buff count type: {count_type}")
         selector = resource_target(target)
         mode, tags = None, ()
@@ -488,8 +488,15 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             emit(CombatEvent(at, "native_snapshot", assignments=(("bb." + body["key"],
                               CombatExpression("float32", (value,))),)))
         elif name == "SaveBuffStackNumAdvanced+Data":
+            if body.get("limitSkillCastId") is not False:
+                raise UnresolvedMechanic("Native cast-bound buff snapshot needs captured skill-cast identity")
+            settings = body["buffSettings"]
+            # The native enum is used only by the tag-query arm. Explicit ID
+            # lists always sum GetBuffCountById, regardless of that enum.
+            count_type = body.get("buffStackNumType") if settings["checkType"] == 1 else 0
+            value = buff_count(settings, body["checkTarget"], count_type, first_target_only=True)
             emit(CombatEvent(at, "native_snapshot", assignments=(("bb." + body["key"],
-                              buff_count(body["buffSettings"], body["checkTarget"])),)))
+                              CombatExpression("float32", (value,))),)))
         elif name == "StoreAttributeValue+Data":
             enums = native_enums()
             if body["primaryAttributeType"] != enums["Beyond.GEnums.ModifyAttributeType"]["Specific"]["value"]:

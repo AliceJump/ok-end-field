@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-14Advanced续接：a888459e普通快照已推研究分支，随后校正Advanced首对象/tag计数模式/明确ID合计及未绑定cast/部位根诊断；最终1471全仓和19项专项通过，32/128与2/111不提高。87处当前声明0/false只登记，不代表原生全闭环。产品树mechanism-runtime-continuation保持detached，原始研究位于主仓库忽略目录。SkillAffix已追到投射物/实体/技能结束/输出buff/回收的引用计数与pending request；完整带cast身份的创建/消费和原生BB通知继续未知。继续这个依赖链，不把阶段提交当任务结束。
+
 > 2026-10-14继续研究：恢复detached产品工作树mechanism-runtime-continuation，从远程5ee69d5e推进普通SaveBuffStackNum首对象/float32快照，实际common read→参数表及owner/source callback执行已接。50相关/1466全仓通过，数据流审计未变，32/128与2/111不提高；历史CI职责缺口明确保留。证据与逐来源边界见native-basic-buff-snapshot.md。秋栗global资源已解出并360字节回编码一致，原生创建/清理、单精度计时、独立Stack枚举/分支和group容器已定位；全部独立原始资料放主仓库tmp/condition-research-20261013，不放工作树。下一批继续真实GlobalBuff分发/优先级、CreateGlobalBuffAction OnEnd与SkillAffix同cast清理，不新增识别或技力时机，不因阶段保存停整个任务。
 
 > 2026-10-09最新续接：弧光基础202%物理/条件追加405%电磁已在研究生成器与审计拆分，单帧声明、互斥路径及备用目标证据见native-arclight-base-row-audit.md。只改变弧光一份基础报价，32面板/profile/build及其他127份数值不变；53相关/全仓1461通过（10.527/112.948秒），128来源与逐字节重生成通过。原生完整程序仍2/111，未新增实际检测。PR #489已推1d2daa64，白圈场景条件参与安塔尔辅助后的后续输出预测，运行时入口/四子buff全核验；98相关/1133全仓通过、当前head review无新增actionable。两层继续分开，已释放树保持detached；冻结cc9b来源树不改。后续继续可获证据的条件传递与研究效果缺口，automation-2不删除。

@@ -1133,6 +1133,11 @@ class CombatWorldState:
                     # AbilitySystem. Keep an observed empty group empty; an
                     # unbound selector remains unknown below.
                     owners = owners[:1]
+                    if owners and owners[0] not in self.characters and owners[0] not in self.enemies:
+                        # Native ResolvePartBuffSource can redirect a part to
+                        # its entity. Without that binding, zero would invent
+                        # an empty AbilitySystem for an unknown root.
+                        raise UnresolvedMechanic("Unbound native buff-source entity/part")
                 if query.tag_mode is not None:
                     # Native tag count obtains one AbilitySystem. Multi-target
                     # selection precedence is not inferred by summing recipients.
