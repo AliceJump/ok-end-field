@@ -306,7 +306,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             CONFIG_EXPERIMENTAL_RELOGIN: (
                 "抓包错过了登录握手时（后端启动晚于游戏连接，或游戏当时已经登录着），"
                 "自动退回登录界面再进入一次，逼出一条新连接让后端重新抓握手。"
-                "**不会登出账号**；最多尝试 3 次，用尽即停手。关掉则只在日志里提示"
+                "**不会切换账号**；最多尝试 3 次，用尽即停手。关掉则只在日志里提示"
             ),
         }
 
@@ -989,73 +989,28 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         return self.capture_position_source().health()
 
     def force_new_capture_connection(self) -> bool:
-        """回登录界面再进入，逼出一条新的 TCP 连接。**不登出账号。**
+        """走**完整的重进流程**（打开登出入口 → 确认 → 点一下继续），逼一条新的 TCP 连接。
 
         只对"抓包错过了本次握手"这种情形有意义：后端没看到 SYN 就推不出密钥流，而它本身没坏
-        ——换一条连接让它从头抓就行。所以这里只做「离开游戏 → 重新进入」，不走登出账号那条重路
-        （``login_flow`` 会点登出并重选账号，那对单纯的"再连一次"是多余的，还得有账号信息）。
+        ——换一条连接让它从头抓就行。
 
-        **每一步都做成找不到就干净失败**，绝不盲点：OCR 找不到按钮说明界面跟预期不一样，此时
-        继续点下去可能点到别的东西上，比不动手更糟。
+        复用 :meth:`LoginMixin.relogin_same_account`：按用户口径**不重新选择账号**，确认登出后
+        在登录界面（出现 ``fL.logout``、"点击任意位置继续"）点一下屏幕中央继续进入。用鸭子类型
+        取方法而不是 import，定位层不反向依赖任务层；拿不到可用的重进实现就干净失败——宁可不做，
+        也不要乱点。
         """
 
-        from src.data.FeatureList import FeatureList as fL
-
-        done = self._capture_leave_to_login(fL)
-        if not done:
-            return False
-        # 已经在登录界面、账号还登录着，直接进入即可。
-        #
-        # **必须走 click_text**（内部是 login_ocr → login_screenshot，从屏幕截窗口）：登录界面
-        # 在普通帧通道上取不到有效画面，用 wait_ocr 会永远找不到这个按钮。它同时自带"点击后
-        # 按钮消失即成功"的确认与 60 秒重试，比手写一轮 wait_ocr + click 强。
-        if not callable(getattr(self, "click_text", None)):
-            # 宿主没有 LoginMixin（例如测试替身）；停在这里而不是乱点
+        relogin = getattr(self, "relogin_same_account", None)
+        if not callable(relogin):
             self.log_warning(
-                "实验技术：已退回登录界面，但当前任务不具备登录界面交互能力——请手动进入一次",
+                "实验技术：当前任务没有可用的重进实现，无法自动重建连接——请手动退回登录界面再进入一次",
                 notify=True,
             )
             return False
         try:
-            clicked = self.click_text("登录", box=self.box.center)
+            return bool(relogin())
         except Exception as exc:
-            self.log_warning(f"实验技术：点击登录按钮时出错（{type(exc).__name__}）", notify=True)
-            return False
-        if not clicked:
-            self.log_warning(
-                "实验技术：登录界面上没找到「登录」按钮，已停在登录界面——请手动进入一次（只需一次）",
-                notify=True,
-            )
-            return False
-        return True
-
-    def _capture_leave_to_login(self, fL) -> bool:
-        """从游戏世界退到登录界面。与 :meth:`login_mixin.login_flow` 前几步同一套动作。
-
-        ``back()`` 之后先停一拍再找退出入口：日志里见过第一次找不到、隔一拍就找到的情形——
-        那时界面还在过渡中，急着找只会白判一次失败。
-        """
-
-        try:
-            self.ensure_main()
-            self.back()
-            self.sleep(1.0)
-            entry = self.wait_feature(
-                feature=fL.main_out,
-                vertical_variance=0.05,
-                horizontal_variance=0.1,
-                threshold=0.6,
-                time_out=15,
-                raise_if_not_found=False,
-            )
-            if not entry:
-                self.log_warning("实验技术：主界面没找到退出入口，取消重建连接", notify=True)
-                return False
-            self.click(entry)
-            self.click_confirm()
-            return True
-        except Exception as exc:
-            self.log_warning(f"实验技术：退到登录界面时出错（{type(exc).__name__}）", notify=True)
+            self.log_warning(f"实验技术：自动重新登录失败（{type(exc).__name__}: {exc}）", notify=True)
             return False
 
     def wait_for_capture_connection(self, *, timeout: float, tick: float = 2.0) -> CaptureHealth:

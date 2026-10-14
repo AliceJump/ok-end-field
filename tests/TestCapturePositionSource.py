@@ -9,7 +9,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import ClassVar
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from src.localization.capture_position_source import (
     CAPTURE_HEALTH_BACKEND_DOWN,
@@ -1048,65 +1048,39 @@ class CaptureRecoveryTest(unittest.TestCase):
         finally:
             owner._backend.__exit__(None, None, None)
 
-    def test_aborts_cleanly_when_the_login_button_is_not_found(self):
-        """**这条钉住"绝不盲点"**：界面上找不到按钮时要干净失败，不能继续点下去。"""
+    def test_delegates_to_relogin_same_account(self):
+        """**这条钉住真正的修法**：走 LoginMixin 的重进流程，不自己拼一半，也不重选账号。
 
-        owner = _FakeOwner({"使用实验技术": True})
-        owner.warnings = []
-        owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
-        with (
-            patch.object(owner, "_capture_leave_to_login", return_value=True),
-            patch.object(owner, "click_text", return_value=None, create=True),
-            patch.object(owner, "click") as click,
-        ):
-            self.assertFalse(owner.force_new_capture_connection())
-        click.assert_not_called()
-        self.assertTrue(any("请手动进入" in w for w in owner.warnings), owner.warnings)
-
-    def test_entering_uses_click_text_not_the_plain_frame_channel(self):
-        """**这条钉住上一轮真实失败的根因**。
-
-        登录界面在普通帧通道上取不到有效画面（``login_flow`` 全程用 ``click_text``，它内部是
-        ``login_ocr`` → ``login_screenshot``，从屏幕截窗口）。我最初写成 ``wait_ocr`` + 手点，
-        结果永远找不到那个按钮——日志里报的就是「没找到「登录」按钮」，看起来像文案不匹配，
-        实际是根本没看到画面。
+        用户口径是这个流程**不切换账号**，所以既不能自己拼「退到登录界面 → 点登录」，
+        也不能用会点「最近」、重选账号的 ``login_flow``。这里断言的是"调了重进流程"，
+        而不是"点了哪些按钮"。
         """
 
         owner = _FakeOwner({"使用实验技术": True})
-        with (
-            patch.object(owner, "_capture_leave_to_login", return_value=True),
-            patch.object(owner, "click_text", return_value=[object()], create=True) as click_text,
-            patch.object(owner, "wait_ocr") as wait_ocr,
-        ):
-            self.assertTrue(owner.force_new_capture_connection())
-        click_text.assert_called_once()
-        self.assertEqual(click_text.call_args.args[0], "登录")
-        wait_ocr.assert_not_called()
+        owner.relogin_same_account = MagicMock(return_value=True)
+        self.assertTrue(owner.force_new_capture_connection())
+        owner.relogin_same_account.assert_called_once_with()
 
-    def test_aborts_when_the_host_cannot_do_login_ui(self):
-        """宿主没有 click_text（例如测试替身）时停手，而不是用普通通道乱试。"""
+    def test_relogin_false_is_returned_as_false(self):
+        owner = _FakeOwner({"使用实验技术": True})
+        owner.relogin_same_account = MagicMock(return_value=False)
+        self.assertFalse(owner.force_new_capture_connection())
+
+    def test_aborts_cleanly_without_relogin_support(self):
+        """没有可用的重进实现就停手——宁可不做，也不要乱点。"""
 
         owner = _FakeOwner({"使用实验技术": True})
         owner.warnings = []
         owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
-        with (
-            patch.object(owner, "_capture_leave_to_login", return_value=True),
-            patch.object(owner, "click") as click,
-        ):
-            self.assertFalse(owner.force_new_capture_connection())
-        click.assert_not_called()
-        self.assertTrue(any("不具备登录界面交互能力" in w for w in owner.warnings), owner.warnings)
+        self.assertFalse(owner.force_new_capture_connection())
+        self.assertTrue(any("没有可用的重进实现" in w for w in owner.warnings), owner.warnings)
 
-    def test_aborts_when_the_main_screen_exit_is_missing(self):
+    def test_relogin_failure_is_reported_not_propagated(self):
+        """重进抛异常时必须接住，不能让整条定位链跟着炸。"""
+
         owner = _FakeOwner({"使用实验技术": True})
         owner.warnings = []
         owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
-        with (
-            patch.object(owner, "ensure_main"),
-            patch.object(owner, "back"),
-            patch.object(owner, "wait_feature", return_value=None),
-            patch.object(owner, "click") as click,
-        ):
-            self.assertFalse(owner.force_new_capture_connection())
-        click.assert_not_called()
-        self.assertTrue(any("没找到退出入口" in w for w in owner.warnings), owner.warnings)
+        owner.relogin_same_account = MagicMock(side_effect=RuntimeError("未回到登录界面"))
+        self.assertFalse(owner.force_new_capture_connection())
+        self.assertTrue(any("自动重新登录失败" in w for w in owner.warnings), owner.warnings)

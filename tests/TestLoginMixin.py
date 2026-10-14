@@ -26,6 +26,13 @@ class TestLoginMixin(unittest.TestCase):
         task.wait_click_feature = MagicMock(return_value=True)
         task.click_text = MagicMock()
         task._confirm_logged_in = MagicMock(return_value=True)
+        task.ensure_main = MagicMock()
+        task.back = MagicMock()
+        task.click_confirm = MagicMock()
+        task.get_game_hwnd = MagicMock(return_value=123)
+        task.screen_center = MagicMock(return_value=(50, 50))
+        task.log_info = MagicMock()
+        task.log_warning = MagicMock()
         task.log_error = MagicMock()
         task.box = SimpleNamespace(bottom_left=MagicMock(), center=MagicMock())
         task.lang = SimpleNamespace(login_mixin=SimpleNamespace(ms=MagicMock(), k_20275ef2=MagicMock()))
@@ -56,6 +63,31 @@ class TestLoginMixin(unittest.TestCase):
         self.assertEqual(account_match.pattern, re.escape(username[-4:]))
         self.assertIsNotNone(account_match.fullmatch(username[-4:]))
         self.assertEqual(task.click_text.call_args_list[2], call("登录", box=task.box.center))
+
+    @patch("src.tasks.mixin.login_mixin.run_at_window_pos")
+    def test_relogin_same_account_skips_account_text_clicks(self, run_at_window_pos):
+        task = self._make_task()
+
+        self.assertTrue(task.relogin_same_account())
+
+        task.click_text.assert_not_called()
+        run_at_window_pos.assert_called_once()
+
+    @patch("src.tasks.mixin.login_mixin.run_at_window_pos")
+    def test_relogin_same_account_returns_false_when_window_activation_fails(self, run_at_window_pos):
+        task = self._make_task()
+        task.active_and_send_mouse_delta.return_value = False
+
+        self.assertFalse(task.relogin_same_account())
+
+        run_at_window_pos.assert_not_called()
+
+    def test_relogin_same_account_raises_without_main_out_button(self):
+        task = self._make_task()
+        task.wait_feature.return_value = None
+
+        with self.assertRaises(RuntimeError):
+            task.relogin_same_account()
 
 
 @unittest.skipUnless(sys.platform == "win32", "Window activation requires Windows desktop dependencies")
