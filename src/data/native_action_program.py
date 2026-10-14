@@ -664,6 +664,12 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
 
                         definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
                                                              attributes=attributes, panel=panel, path=buff_path)
+                    elif stacking["stackingType"] == 11:
+                        from src.data.native_buff_program import compile_buff_definition, reviewed_retained_layers
+
+                        if reviewed_retained_layers(buff_id, data):
+                            definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
+                                                                 attributes=attributes, panel=panel, path=buff_path)
                     bound_instance = (action_bound or inherited_bound) and definition is not None
                     parent_instance = (child_bound or ability_bound) and definition is not None
                     if (child_bound or ability_bound) and not parent_instance:

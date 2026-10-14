@@ -67,7 +67,7 @@ def resolve_native_hit(world, panel, hit, inputs):
     addition = 0.0
     unknown = []
     for instance in world.native_buff_instances.values():
-        if instance.owner != hit.enemy:
+        if instance.owner != hit.enemy or not instance.enabled:
             continue
         # Read the modifier's own blackboard, never the attack's or another buff's.
         for scale in instance.definition.damage_scales:

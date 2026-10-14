@@ -31,6 +31,8 @@ class NativeBuffInstance:
     inherit_skill_ids: tuple[str, ...] = ()
     finish_with_next_skill: bool = False
     attack_addition: float | None = 0.0
+    enabled: bool = True
+    priority_position: int | None = None
 
 
 def _instances(world, owner, key):
@@ -51,6 +53,31 @@ def _single(value):
     if not math.isfinite(result):
         raise UnresolvedMechanic("Non-finite native Refresh duration")
     return result
+
+
+def _select_retained_layers(world, instance, maximum):
+    """Re-enable surviving candidates in their stored native insertion order."""
+    group = _stacking_group(world, instance.owner, instance.key, instance.definition)
+    for position, candidate in enumerate(sorted(group, key=lambda v: v.priority_position)):
+        candidate.enabled = position < maximum
+
+
+def _insert_retained_layer(world, instance, maximum):
+    group = sorted(_stacking_group(world, instance.owner, instance.key, instance.definition),
+                   key=lambda v: v.priority_position)
+    remaining = _single(instance.expires - world.time)
+    position = len(group)
+    for index, candidate in enumerate(group):
+        # Buff.CompareTo compares float32 remaining life after equal priority.
+        # Near ties keep the earlier instance UID ahead of the new allocation.
+        difference = _single(remaining - _single(candidate.expires - world.time))
+        if difference > _single(1e-5):
+            position = index
+            break
+    group.insert(position, instance)
+    for index, candidate in enumerate(group):
+        candidate.priority_position = index
+        candidate.enabled = index < maximum
 
 
 def _refresh_duration(world, instance, duration):
@@ -127,6 +154,11 @@ def _finish(world, instance):
                     _finish(world, child)
         finally:
             instance.finishing = False
+            if instance.definition.retained_priority_layers:
+                # Native Refresh after removing one member does not re-sort or
+                # refresh survivors' clocks; it only selects the next candidates.
+                maximum = int(instance.definition.maximum.evaluate(world._action_inputs[instance.uid]))
+                _select_retained_layers(world, instance, maximum)
 
 
 def finish_action_buffs(world, action_id, *, reason=None, next_skill=None):
@@ -220,15 +252,33 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         raise UnresolvedMechanic(f"Parent-bound periodic buff needs tick/end ordering: {change.key}")
     limit = definition.trigger_limit.evaluate(values)
     # Unique, Unlimited and reviewed Refresh do not read maxStackCnt.
-    maximum = definition.maximum.evaluate(values) if definition.stacking == 2 else 0
+    maximum = definition.maximum.evaluate(values) if definition.stacking in {2, 11} else 0
+    if definition.retained_priority_layers and definition.stacking != 11:
+        raise UnresolvedMechanic(f"Conflicting native retained-layer policy: {change.key}")
     if duration is not None and duration < 0 or limit != int(limit) or maximum != int(maximum):
         raise UnresolvedMechanic(f"Invalid native buff parameters: {change.key}")
-    if definition.stacking not in {0, 2, 4, 7}:
+    if definition.stacking == 11:
+        from src.data.native_buff_program import POGRANI_MORALE
+
+        if (not definition.retained_priority_layers or change.key != POGRANI_MORALE
+                or definition.callbacks or definition.subscriptions or period != -1
+                or duration is None or not math.isfinite(duration) or duration <= 0 or maximum <= 0
+                or change.action_finish_after is not None or change.inherit_skill_ids):
+            raise UnresolvedMechanic(f"Native retained priority layers need plain reviewed morale binding: {change.key}")
+        duration = _single(duration)
+        # Replay uses the world's authored clock, not the native per-tick delta
+        # stream/accumulated SUBSS. Keep that precision boundary explicit.
+        world.unresolved.add(f"Native retained-layer tick accumulation not yet bound: {change.key}")
+    elif definition.stacking not in {0, 2, 4, 7}:
         raise UnresolvedMechanic(f"Native buff stacking policy not yet bound: {change.key}/{definition.stacking}")
     group = _stacking_group(world, owner, change.key, definition)
     if any(v.definition.stacking != definition.stacking or
            definition.stacking != 4 and v.definition.maximum != definition.maximum for v in group):
         raise UnresolvedMechanic(f"Native shared stacking group has conflicting policies: {change.key}")
+    if definition.stacking == 11 and any(
+        v.definition.maximum.evaluate(world._action_inputs[v.uid]) != maximum for v in group
+    ):
+        raise UnresolvedMechanic(f"Native retained group maximum change needs native group initialization: {change.key}")
     world.unresolved.update(definition.unresolved)
     world.native_buff_tags[change.key] = definition.tags
     for _ in range(delta):
@@ -259,15 +309,18 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
             instance.action_finish_at = world.time + change.action_finish_after
             instance.inherit_skill_ids = change.inherit_skill_ids
             instance.finish_with_next_skill = change.finish_with_next_skill
+        if definition.retained_priority_layers:
+            _insert_retained_layer(world, instance, int(maximum))
         world.native_buff_instances[uid] = instance
         world._action_inputs[uid] = dict(values)
         world._action_inputs[uid]["cast.non_returned_sp"] = world._action_inputs.get(action_id, {}).get("cast.non_returned_sp", 0)
         world._action_inputs[uid]["event.skill_type"] = inputs.get("event.skill_type", 0)
         world._action_targets[uid] = {"current": (owner,), "owner": (owner,), "source": (program.actor,)}
         _sync(world, owner, change.key)
-        _callbacks(world, instance, 0)
-        _callbacks(world, instance, 3)
-        _callbacks(world, instance, 5)
+        if instance.enabled:
+            _callbacks(world, instance, 0)
+            _callbacks(world, instance, 3)
+            _callbacks(world, instance, 5)
         from src.data.reviewed_marker_events import publish_marker_added
 
         if uid in world.native_buff_instances:
@@ -317,7 +370,7 @@ def control_buff(world, control):
 
 def dispatch_buff_event(world, trigger, actor, payload, target=None):
     for instance in tuple(world.native_buff_instances.values()):
-        if instance.owner != actor:
+        if instance.owner != actor or not instance.enabled:
             continue
         for kind, program in instance.definition.subscriptions:
             if kind == trigger:

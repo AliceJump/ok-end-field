@@ -32,7 +32,7 @@ def attack_addition(world, actor):
     """Sum captured percentages; removal follows the buff's actual UID lifetime."""
     total = 0.0
     for instance in world.native_buff_instances.values():
-        if instance.owner != actor or not instance.definition.attack_additions:
+        if instance.owner != actor or not instance.enabled or not instance.definition.attack_additions:
             continue
         if instance.attack_addition is None:
             raise MissingCombatInput(f"Native attack modifier input: {instance.key}")

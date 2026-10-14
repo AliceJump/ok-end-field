@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-15骏卫士气续批：核准普通HighPriorityWithMaxStack11保留停用实例、继续计时与移除后重新选择；已确认创建节点可保留实际父根。仅开启这份无回调/非周期/零优先级容器；层数查询包含停用实例，既有加成消费者只读enabled。80SP实际producer、团队终结后续、攻击8%+法强8双属性和原生tick累计仍保留未知，不启用假满层收益。7新增、61相关/1478全仓通过（31.112/137.373秒），末尾门槛/计时诊断后15专项通过；AST/Ruff/diff-check通过，数据流JSON完全一致，32/128、14/2及2/111不提高。逐技能台账见[native-morale-retention-audit.md](native-morale-retention-audit.md)，原始材料只在主仓库忽略目录。继续global连击消费/SkillAffix、伊冯冻结→下一重击以及属性producer缺口，不因本批保存终止任务。
+
 > 2026-10-14Advanced续批：SaveBuffStackNumAdvanced真实首对象读取、tag mode0层数/mode1不同ID数、明确ID列表始终合计层数已区分；无法确认cast过滤或实体/部位根时保留诊断、不写0。87处当前声明全为0/false，不以此认定执行完成。5新增、最终1471全仓通过（140.957秒），19项最后专项通过；固定32/128、13规则、审计和2/111不变。见native-basic-buff-snapshot.md。独立GlobalBuff Stack枚举/跳转表、计时冷分支与SkillAffix14方法继续保存在主仓库忽略目录；下一批继续全局分发/堆叠和引用清理，阶段保存后继续推进。
 
 > 2026-10-14续批：普通SaveBuffStackNum进入原生编译器/世界BB执行，按原生GetFirstTarget读取并float32保存；不合计多个对象，已知空组写0、未绑定组清旧输出并保持未知。当前4处声明/3记录：噗切娜反击两项、莱万汀energy、共享combo_trigger；actual common片段→SkillSetting tier及OnBeforeCastSkill持有者/来源分离已验证，不冒充全局连击producer已完。5新增、50相关/全仓1466通过（12.595/133.436秒），最终13项复测、AST/Ruff/diff-check通过。32面板/128报价/13释放规则及完整覆盖2/111不变，数据流审计逐对象相同；历史CI未登记项仍在。见native-basic-buff-snapshot.md。独立解包/机器码/工具在主仓库忽略目录，不混入产品diff；秋栗GlobalBuff完整堆叠/BB传播、动作结束与SkillAffix清理继续。

@@ -5,6 +5,28 @@ from src.data.combat_simulation import NativeBuffProgram, UnresolvedMechanic
 from src.data.native_gameplay import native_enums
 from src.data.native_tags import expand_tags
 
+POGRANI_MORALE = "buff_chr_0029_pograni_talent1"
+
+
+def reviewed_retained_layers(buff_id, data):
+    """Only the reviewed nonperiodic, constant-priority morale container.
+
+    This approves retention and selection, not its attribute modifiers or SP
+    producer. In particular, priority-key updates and callbacks remain unbound.
+    """
+    return (buff_id == POGRANI_MORALE and data["id"] == buff_id
+            and data["stackingSettings"] == {
+                "identifierType": 0, "isNeedStackEffect": False, "maxStackCnt": -1,
+                "maxStackCntKey": "max_stack", "negatePriority": False, "priority": 0.0,
+                "priorityKey": "", "stackEffects": [], "stackingKey": "", "stackingType": 11,
+                "useMaxStackCntKey": True, "usePriorityKey": False}
+            and data["lifeType"] == 0 and not data["hasAddingCooldown"]
+            and not data["useTimeDilationDt"] and not data["onlyUseSelfTimeDilation"]
+            and data["duration"] == {"blackboardKey": "duration", "useBlackboardKey": True, "value": 20.0}
+            and data["triggerInterval"] == {"blackboardKey": "", "useBlackboardKey": False, "value": -1.0}
+            and not any(data[key] for key in ("buffEventAction", "abilityEventAction", "timelineActions",
+                                             "igniteEventAction", "applyTags", "tagsAfterTriggerExtendBuffAction")))
+
 
 def compile_buff_definition(store, character, profile, actor, buff_id, data, reference, *, attributes, panel, path):
     from src.data.native_action_program import compile_native_action
@@ -75,4 +97,4 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
                              if data["stackingSettings"]["useMaxStackCntKey"] else
                              CombatExpression("literal", (float(data["stackingSettings"]["maxStackCnt"]),)),
                              tuple(callbacks), tuple(subscriptions), tuple(unresolved), expand_tags(data["applyTags"]),
-                             stacking_key, damage_scales, attack_additions)
+                             stacking_key, damage_scales, attack_additions, reviewed_retained_layers(buff_id, data))
