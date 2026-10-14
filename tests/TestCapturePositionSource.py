@@ -338,22 +338,6 @@ class PoseContractTest(unittest.TestCase):
     def test_source_name_is_minimap_when_disabled(self):
         self.assertEqual(_FakeOwner({"使用实验技术": False})._minimap_position_source_name(), "minimap")
 
-    def test_sync_seq_advances_only_on_new_coordinate(self):
-        with FakeBackend(_state_payload()) as backend:
-            owner = _FakeOwner({"使用实验技术": True, "实验技术后端端口": backend.port})
-            first = owner._capture_world_pose()
-            again = owner._capture_world_pose()
-        self.assertEqual(first["sync_seq"], 1)
-        self.assertEqual(again["sync_seq"], 1, "同一坐标重复到达不应推进序号")
-
-    def test_sync_seq_advances_when_coordinate_changes(self):
-        with FakeBackend(_state_payload()) as backend:
-            owner = _FakeOwner({"使用实验技术": True, "实验技术后端端口": backend.port})
-            first = owner._capture_world_pose()
-            backend.set_payload(_state_payload(x=-240.0))
-            second = owner._capture_world_pose()
-        self.assertEqual(second["sync_seq"], first["sync_seq"] + 1)
-
     def test_unavailable_backend_reports_no_position(self):
         """后端不可用时不能伪造坐标：必须显式给 None 让消费者看到"位置不可用"。"""
 
@@ -507,6 +491,25 @@ class SessionLivenessTest(unittest.TestCase):
             first = owner._capture_world_pose()
             second = owner._capture_world_pose()
         self.assertEqual(second["sync_seq"], first["sync_seq"])
+
+    def test_sync_seq_tracks_the_connection_not_the_coordinate(self):
+        """``sync_seq`` 表示「换了坐标基准」（新连接），不表示「坐标变了」。
+
+        导航把它当「真重锚」并清空走过的已知格。抓包源给的是绝对坐标，移动时每拍都在变；
+        按「采样变了」推进会让偏航回退永远拿不到历史格（网格导航文档 §7.5），所以这里钉住
+        「同一连接内怎么动都不推进」。
+        """
+
+        with FakeBackend(_state_payload(flow=1, flows=[_flows_entry(1)])) as backend:
+            owner = _FakeOwner({"使用实验技术": True, "实验技术后端端口": backend.port})
+            first = owner._capture_world_pose()
+            backend.set_payload(
+                _state_payload(flow=1, flows=[_flows_entry(1)], x=-230.0, z=-210.0, yaw=100.0)
+            )
+            moved = owner._capture_world_pose()
+        self.assertEqual(first["sync_seq"], 1, "首个样本按新连接起步")
+        self.assertEqual(moved["sync_seq"], 1, "同一连接内移动不推进序号")
+        self.assertEqual(moved["x"], -230.0, "移动本身仍要如实上报坐标")
 
 
 class MapTrustTest(unittest.TestCase):

@@ -354,7 +354,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         #: 下一次允许重建的时间点（active_time 基准）
         self._minimap_capture_relogin_next_at = 0.0
         self._minimap_capture_seq = 0
-        self._minimap_capture_last_key: tuple | None = None
+        #: 上一条坐标所属的连接号；只有它变化才推进 ``_minimap_capture_seq``
+        self._minimap_capture_last_flow: int | None = None
 
     def _nav_config(self):
         """读全局「导航配置」。取不到时返回 None（由调用方决定怎么报）。"""
@@ -1150,7 +1151,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         if sample is None:
             # 后端没数据：不发布伪造坐标。沿用上一帧只会让导航拿着旧位置继续走，
             # 所以这里显式把坐标置空，让消费者看到"位置不可用"。
-            self._minimap_capture_last_key = None
+            # 刻意不清空 ``_minimap_capture_last_flow``：数据中断后接上的如果还是同一条连接，
+            # 就不该被当成新的一局而让导航作废"走过的已知格"。
             return {
                 "x": None,
                 "y": None,
@@ -1172,14 +1174,17 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 "distance_since_sync": 0.0,
             }
 
-        # 同一坐标重复到达不推进序号：导航用 sync_seq 变化判断"刚重锚"并失效已走过的
-        # 已知格，静止时每秒刷序号会让它反复白白重规划。
+        # ``sync_seq`` 只在**换了连接**（换了一局）时推进：导航把它解释成"真重锚 → 世界坐标
+        # 整体平移 → 已走过的已知格作废"，并在 ``NavSession.note_sync`` 里清空
+        # ``visited_cells``。抓包源给的是绝对坐标，移动时每拍都在变；若按"采样变了"就推进，
+        # 移动本身就会每拍清空导航的历史格，偏航回退（网格导航文档 §7.5）会退化成
+        # "没有已走过的已知格可返回"。
         #
-        # ``flow`` 参与这个键：换了一条连接就是换了一局，必须推进序号，否则"登出后在原地
-        # 重新登录"这种坐标逐位相同的重登会完全不触发失效，导航会以为还是上一局。
-        key = (sample.x, sample.y, sample.z, sample.heading, sample.flow)
-        if key != self._minimap_capture_last_key:
-            self._minimap_capture_last_key = key
+        # 判据必须用连接号而不是坐标：换连接时坐标可能逐位相同（"登出后在原地重新登录"），
+        # 那种情况只有 ``flow`` 变了。连接号识别不出来（``None``）时按"同一局"处理，宁可少
+        # 失效一次，也不要把正常移动误判成重锚。
+        if sample.flow != self._minimap_capture_last_flow:
+            self._minimap_capture_last_flow = sample.flow
             self._minimap_capture_seq += 1
 
         rest = sample.speed is not None and abs(sample.speed) < REST_SPEED_THRESHOLD
