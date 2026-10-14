@@ -45,7 +45,11 @@ class DemoBattleTask(DemoLevelMixin, Common, MapMixin, ZipLineMixin, BattleMixin
                 if level < 0:
                     return False
                 if ((refresh_times == 2 and level >= 8) or once_double_reward) and not this_time_double_reward:
-                    self.log_info("已刷新2次，当前关卡较高，开启双倍奖励")
+                    self.log_info(
+                        self.tr("已刷新 {refresh_times} 次，当前等级 {level}，开启双倍奖励").format(
+                            refresh_times=refresh_times, level=level
+                        )
+                    )
                     self.wait_click_feature(feature=fL.demo_double_open, time_out=10, raise_if_not_found=False)
                     this_time_double_reward = True
             if not this_time_double_reward:

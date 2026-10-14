@@ -52,6 +52,7 @@ class DailyDemoFeatureTests(unittest.TestCase):
             patch.object(feature, "ensure_main", create=True),
             patch.object(feature, "auto_battle", create=True),
             patch.object(feature, "log_info", create=True),
+            patch.object(feature, "tr", side_effect=lambda message: message),
             patch.object(feature, "click_confirm", wraps=feature.click_confirm) as click_confirm,
         ):
             self.assertTrue(feature.battle_demo())
