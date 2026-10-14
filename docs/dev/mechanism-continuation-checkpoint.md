@@ -1,6 +1,6 @@
 # 机制模拟续接检查点（2026-10-05）
 
-> 2026-10-15伊冯后续研究：10份实际记录追清战技投射物→projhit→206 OnBeforeOutputBuff Frozen标签+同cast检查→私人1秒标记→102 OnOutputBuff→0.1秒去重→15秒valid/0.5秒ComboCache→attack5附着+50%→21帧清valid。前置事件不等于免疫后成功冻结；真实附着回调58076的模块方法指针当前为空，继续追映射而不伪造consumer。ComboCache OnEnd逐handle移除已核，marker真实时钟和附着父根/cast清理仍待办。详见native-yvonne-next-heavy-audit.md；本批只证据文档，面板/报价/运行时未增，最近运行时1478全仓通过和2/111不变。
+> 2026-10-15伊冯后续研究：10份实际记录追清战技投射物→projhit→206 OnBeforeOutputBuff Frozen标签+同cast检查→私人1秒标记→102 OnOutputBuff→0.1秒去重→15秒valid/0.5秒ComboCache→attack5附着+50%→21帧清valid。前置事件不等于免疫后成功冻结；58076地址实际存在，先前提取脚本读错层级的判断已纠正，RVA4077d50+冷块4f6e246从CastSkillContext+30.skill调用Skill.AttachBuff。TimedMarker每次创建新对象、HasMarker查任一有效同ID，SUBSS计时且零仍有效，不拿单截止map覆盖。21帧伤害与清许可实际排序、真实marker tick输入、ComboController和附着父根/cast清理仍待办。详见native-yvonne-next-heavy-audit.md；本批只证据文档，面板/报价/运行时未增，最近运行时1478全仓通过和2/111不变。
 
 > 2026-10-15最新续接：研究执行器已补骏卫士气11策略的受限保留/生效选择、float32 epsilon插入、独立名义期限和父根清理；停用项不删除、不重计时，count仍计未结束实例。新enabled状态进入预测签名并限制已有加成消费者。真实80SP、队友终结后续、双属性和tick累计未闭合，均不猜；只核准这一无动作/非周期/零优先级结构，不泛化11回调/动态优先级。7新增，61相关/1478全仓及最后15专项通过；原32/128、14/2和完整2/111不变，台账见native-morale-retention-audit.md。历史CI职责缺口仍保留，PR #489层未改。产品树detached，独立研究继续仅放主仓库tmp/condition-research-20261013；后续接力继续global消费与SkillAffix/伊冯下一重击，不重复本批、不结束automation-2。
 
