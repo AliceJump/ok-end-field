@@ -793,10 +793,25 @@ class GridNavigationMixin(RuntimeStateMixin):
         return None
 
     def _grid_nav_state_wait_anchor(self, ctx: NavTick) -> bool | None:
-        """融合坐标尚未锚定：停车等下一拍。"""
-        self._wait_for_grid_position("等待融合坐标锚定")
+        """还没有可用的平面坐标：停车等下一拍。
+
+        等待原因取 pose 里的 ``trust_reason`` / ``odom_reason``，而不是写死一句"融合坐标尚未
+        锚定"：抓包直通模式下没有"融合"可言，真正的原因是 ``capture_unavailable``（后端连不上
+        或还没解出坐标），而这两种情况该做的事完全不同——一个去查全局导航配置和游戏窗口，另一个
+        去查抓包后端。
+        """
+
+        self._wait_for_grid_position(self._grid_wait_reason(ctx.pose, "等待坐标"))
         self.sleep(ctx.tick)
         return None
+
+    @staticmethod
+    def _grid_wait_reason(pose: dict | None, prefix: str) -> str:
+        """把 pose 里的原因拼进等待文案；没有原因时只用前缀。"""
+
+        source = pose or {}
+        reason = str(source.get("trust_reason") or source.get("odom_reason") or "").strip()
+        return f"{prefix}: {reason}" if reason else prefix
 
     def _grid_nav_state_wait_trust(self, ctx: NavTick) -> bool | None:
         """重锚后绝对坐标不可信：停车，并在静止时请求一次静态校准。

@@ -9,6 +9,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import ClassVar
+from unittest.mock import patch
 
 from src.localization.capture_position_source import (
     CAPTURE_SOURCE_NAME,
@@ -571,6 +572,89 @@ class CapturePoseGatesNavigationTest(unittest.TestCase):
 
         pose = self._pose_for(_state_payload(flow=1, flows=[_flows_entry(1)]))
         self.assertIsNone(self._classify(pose), "健康帧应当放行到规划阶段")
+
+
+class CaptureSkipsMinimapChainTest(unittest.TestCase):
+    """抓包直通模式下不该启动小地图定位链。
+
+    导航入口 ``navigate_grid_to`` 会**无条件**调 ``ensure_runtime_position_service``，而后者无条件
+    调 ``start_minimap_position``。抓包模式下那条路根本不需要比例尺/里程计/融合/地图 WS，所以要
+    在 mixin 里短路——否则不只是白建对象、白启 WS，还会在拿不到比例尺时让导航**立刻失败**并报
+    一条指向全局导航配置的错（而该查的是抓包后端）。
+    """
+
+    def _owner(self, config: dict):
+        return _FakeOwner(config)
+
+    def test_start_is_a_noop_and_never_reads_the_nav_profile(self):
+        owner = self._owner({"使用实验技术": True})
+        with patch.object(
+            MinimapPositionMixin, "_nav_profile", side_effect=AssertionError("抓包模式不该读比例尺")
+        ):
+            self.assertTrue(owner.start_minimap_position(wait_stable=False))
+        self.assertIsNone(owner._minimap_od, "不该建里程计")
+        self.assertIsNone(owner._minimap_fusion, "不该建融合")
+
+    def test_position_is_ready_without_odometry_objects(self):
+        owner = self._owner({"使用实验技术": True})
+        self.assertIsNone(owner._minimap_od)
+        self.assertTrue(owner.minimap_position_ready)
+
+    def test_ensure_position_service_succeeds_with_an_unusable_nav_config(self):
+        """**这是导航真的会撞上的那条**：拿不到比例尺时，抓包模式也必须能过这道闸。"""
+
+        owner = self._owner({"使用实验技术": True})
+        owner.enabled = True
+        owner._minimap_position_service = owner  # 让它把自己当成共享定位服务
+        with patch.object(MinimapPositionMixin, "_nav_profile", return_value=None):
+            service = owner.ensure_runtime_position_service(force_start=True)
+        self.assertIs(service, owner, "抓包模式不该因为拿不到比例尺而返回 None")
+
+    def test_fusion_path_still_requires_the_profile(self):
+        """反向钉子：非抓包模式行为不变，仍然要靠比例尺建链。"""
+
+        owner = self._owner({"使用实验技术": False})
+        with patch.object(MinimapPositionMixin, "_nav_profile", return_value=None):
+            self.assertFalse(owner.start_minimap_position(wait_stable=False))
+        self.assertFalse(owner.minimap_position_ready)
+
+
+class WaitReasonTest(unittest.TestCase):
+    """导航等待态的文案要带上真实原因——抓包模式下没有"融合"可言。"""
+
+    def test_reason_is_appended_when_present(self):
+        from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
+
+        self.assertEqual(
+            GridNavigationMixin._grid_wait_reason({"trust_reason": "capture_unavailable"}, "等待坐标"),
+            "等待坐标: capture_unavailable",
+        )
+
+    def test_odom_reason_is_used_as_the_fallback(self):
+        from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
+
+        self.assertEqual(
+            GridNavigationMixin._grid_wait_reason({"odom_reason": "shift_too_small"}, "等待坐标"),
+            "等待坐标: shift_too_small",
+        )
+
+    def test_prefix_alone_when_there_is_no_reason(self):
+        from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
+
+        self.assertEqual(GridNavigationMixin._grid_wait_reason(None, "等待坐标"), "等待坐标")
+        self.assertEqual(GridNavigationMixin._grid_wait_reason({}, "等待坐标"), "等待坐标")
+
+    def test_the_unavailable_capture_pose_reports_capture_unavailable(self):
+        """端到端：后端连不上时，导航等待文案里出现的正是 ``capture_unavailable``。"""
+
+        from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
+
+        owner = _FakeOwner({"使用实验技术": True, "实验技术后端端口": 19999})
+        pose = owner._capture_world_pose()
+        self.assertEqual(
+            GridNavigationMixin._grid_wait_reason(pose, "等待坐标"),
+            "等待坐标: capture_unavailable",
+        )
 
 
 class NavigationSyncBypassTest(unittest.TestCase):

@@ -399,6 +399,13 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             False = 没有可用的官方 WS 真值（未配置 content / 认证失败 / 等稳定超时），
             此时若本地 WS 服务能提供位置，会在后续静止时自动完成首次锚定。
         """
+        if self.experimental_capture_enabled():
+            # 抓包直通模式：坐标不来自小地图，**不需要**比例尺、里程计、融合与地图 WS。
+            # 必须在这里提前返回：否则下面那道 `_nav_profile()` 会因为拿不到分辨率/配置无效而
+            # 返回 False，让调用方以为"定位器没初始化好"——而抓包根本不用比例尺，于是导航会在
+            # 真正该看后端的地方报一条指向全局导航配置的错。即使比例尺算得出来，也会白建两个
+            # 对象并启动地图 WS，正是本模式声明要绕开的那一整套。
+            return True
         profile = self._nav_profile()
         if profile is None:
             self.log_warning(
@@ -1255,7 +1262,16 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
 
     @property
     def minimap_position_ready(self) -> bool:
-        """定位器是否已完成初始化，可安全调用 :meth:`minimap_position`。"""
+        """定位器是否已完成初始化，可安全调用 :meth:`minimap_position`。
+
+        抓包直通模式下恒为真：那条路根本不经过里程计与融合（:meth:`sample_world_pose` 会走
+        :meth:`_capture_world_pose`），而 :meth:`minimap_position` 也只在非抓包分支被调用。
+        之所以要让它返回真，是因为这个属性被调用方当成"定位服务可用吗"的闸门——抓包模式下用
+        里程计对象在不在来判断，会拿一个本模式根本不需要的条件把整条路挡死。
+        """
+
+        if self.experimental_capture_enabled():
+            return True
         return self._minimap_od is not None and self._minimap_fusion is not None
 
     def minimap_rest_diag(self) -> dict | None:
