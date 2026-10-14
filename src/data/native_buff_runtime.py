@@ -207,6 +207,8 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     definition = change.definition
     if definition is None:
         raise UnresolvedMechanic(f"Buff addition lacks instance definition: {change.key}")
+    if change.attach_to_event_skill and definition.stacking == 4:
+        raise UnresolvedMechanic(f"Native skill-attached Refresh reapplication needs binding: {change.key}")
     parent = world._native_buff_context if change.child_of_buff else None
     if change.child_of_buff and (parent is None or parent.uid != action_id
                                 or parent.uid not in world.native_buff_instances and not parent.finishing):
@@ -327,6 +329,10 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
             publish_marker_added(world, instance, action_id, inputs)
         if uid not in world.native_buff_instances:
             continue
+        if change.attach_to_event_skill:
+            from src.data.native_skill_runtime import attach_created_buff
+
+            attach_created_buff(world, instance)
         if passive_root is not None:
             # _AddPassiveBuff stores only valid AddBuff results after creation.
             # Unique reapplication creates no wrapper and never joins this list.

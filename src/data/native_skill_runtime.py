@@ -6,6 +6,31 @@ compiler keeps inheritance unresolved until a producer supplies that context.
 
 import heapq
 
+from src.data.combat_simulation import UnresolvedMechanic
+
+
+def resolve_cast_context(world, action_id):
+    """Resolve an explicitly supplied CastSkillContext to its current object."""
+    identity = world._native_action_abilities.get(action_id)
+    if (identity is None or action_id not in world._started_ids
+            or world._native_skill_casts.get(identity) != action_id
+            or action_id in world._native_confirmed_cast_ends
+            or identity not in world.native_active_skills):
+        raise UnresolvedMechanic(f"Native cast event lacks its current Skill context: {action_id}")
+    return (*identity, action_id)
+
+
+def attach_created_buff(world, instance):
+    """CreateBuffAttachingSkill.OnBuffCreated uses the event Skill, not owner."""
+    context = world._native_cast_context
+    if context is None:
+        world.unresolved.add(f"Native skill-attached buff lacks CastSkillContext: {instance.key}")
+        return False
+    actor, skill, scope = context
+    if resolve_cast_context(world, scope) != context:
+        raise UnresolvedMechanic(f"Native skill-attached buff has stale Skill context: {instance.key}")
+    return attach_skill_buffs(world, actor, skill, (instance.uid,))
+
 
 def bind_skill_object(world, actor, skill):
     """Record a resolved object in this actor's activeSkillMap, without Enable."""

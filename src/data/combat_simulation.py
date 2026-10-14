@@ -77,6 +77,7 @@ class NativeBuffChange(ImmutableCombatValue):
     passive_of_ability: bool = False
     inherit_skill_ids: tuple[str, ...] = ()
     finish_with_next_skill: bool = False
+    attach_to_event_skill: bool = False
 
 
 @dataclass(frozen=True)
@@ -293,6 +294,7 @@ class ActionProgram(ImmutableCombatValue):
     native_requires_override: bool = False
     native_attribute_queries: tuple[NativeAttributeQuery, ...] = ()
     scenario_ignored_nodes: tuple[str, ...] = ()
+    native_cast_skill_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -358,6 +360,7 @@ class CombatWorldState:
         self.native_buffs: dict[tuple[str, str], tuple[int, float | None]] = {}
         self.native_buff_instances: dict[str, object] = {}
         self._native_buff_context: object | None = None
+        self._native_cast_context: tuple[str, str, str] | None = None
         self.native_abilities: dict[tuple[str, str], object] = {}
         self._native_action_abilities: dict[str, tuple[str, str]] = {}
         self.native_skill_buffs: dict[tuple[str, str], list[str]] = {}
@@ -808,10 +811,22 @@ class CombatWorldState:
         finally:
             self._executing_action = previous_action
 
-    def dispatch_native(self, trigger, actor, payload=None, *, target=None):
+    def dispatch_native(self, trigger, actor, payload=None, *, target=None, cast_action=None):
         """Callbacks read the event's state before its producer consumes a pool."""
         previous_action = self._executing_action
+        previous_cast = self._native_cast_context
         try:
+            # A numeric skill-type/name payload is not a native Skill object.
+            # Nested unrelated events must not borrow their caller's context.
+            from src.data.native_skill_runtime import resolve_cast_context
+
+            self._native_cast_context = None
+            if cast_action is not None:
+                try:
+                    self._native_cast_context = resolve_cast_context(self, cast_action)
+                except UnresolvedMechanic as error:
+                    self.unresolved.add(str(error))
+                    return False
             from src.data.native_buff_runtime import dispatch_buff_event
 
             dispatch_buff_event(self, trigger, actor, payload or {}, target)
@@ -832,6 +847,7 @@ class CombatWorldState:
                         self._execute_event(action_id, self._sequence, program, invoked)
         finally:
             self._executing_action = previous_action
+            self._native_cast_context = previous_cast
 
     def _resource_amount(self, actor, change, inputs):
         kind = change.kind
@@ -1025,6 +1041,8 @@ class CombatWorldState:
             heapq.heappush(self._queue, (expires, self._sequence, uid, program, event))
 
     def _apply_native_buff(self, owner, change, inputs, action_id, program):
+        if change.attach_to_event_skill and change.definition is None:
+            raise UnresolvedMechanic(f"Native skill-attached buff lacks executable instance: {change.key}")
         delta = change.count.evaluate(inputs)
         if delta != int(delta):
             raise UnresolvedMechanic(f"Non-integer native buff layers: {change.key}")
@@ -1173,6 +1191,22 @@ class CombatWorldState:
                     inputs[query.key] = float(value)
             except UnresolvedMechanic:
                 pass
+        for skill_id in program.native_cast_skill_ids:
+            key = "event.cast_skill." + skill_id
+            if needed is not None and key not in needed:
+                continue
+            # Callback BBs persist across events. Missing/new context must not
+            # reuse a previous true, a caller payload, or a default value.
+            inputs.pop(key, None)
+            if self._native_cast_context is not None:
+                from src.data.native_skill_runtime import resolve_cast_context
+
+                context = self._native_cast_context
+                try:
+                    if resolve_cast_context(self, context[2]) == context:
+                        inputs[key] = float(context[1] == skill_id)
+                except UnresolvedMechanic:
+                    pass
         for timer_id in program.native_timer_ids:
             key = f"timer.{timer_id}.ready"
             if needed is None or key in needed:
@@ -1591,7 +1625,7 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         tuple(sorted(state._native_action_abilities.items())),
                         tuple((key, tuple(value)) for key, value in sorted(state.native_skill_buffs.items())),
                         tuple(sorted(state.native_active_skills)),
-                        tuple(sorted(state._native_skill_casts.items())),
+                        tuple(sorted(state._native_skill_casts.items())), state._native_cast_context,
                         tuple(sorted(state._native_confirmed_cast_ends)),
                         tuple((uid, repr(passive), tuple(sorted(state._action_inputs[uid].items())))
                               for uid, passive in state.native_passives.items()),

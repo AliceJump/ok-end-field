@@ -137,6 +137,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
     buff_queries = {}
     attribute_queries = {}
     timer_ids = set()
+    cast_skill_ids = set()
     event_defaults = {}
     spell_buff_definitions = {}
     ability_events = {v["value"]: k for k, v in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
@@ -257,6 +258,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 tests = {0: "lt", 1: "le", 2: "gt", 3: "ge", 4: "eq"}
                 count = buff_count({"checkType": 0, "buffIdList": [bid]}, value["checkTarget"])
                 test = CombatExpression(tests[value["compareType"]], (count, number(value["value"])))
+            elif name == "CheckSkillId+Data":
+                identities = []
+                for reference in value["skillIdList"]:
+                    if reference.get("useBlackboardKey") is not False or not isinstance(reference.get("value"), str) or not reference["value"]:
+                        raise UnresolvedMechanic("Dynamic/unknown native event skill identity needs binding")
+                    identities.append(reference["value"])
+                cast_skill_ids.update(identities)
+                test = CombatExpression("any", tuple(combat_input("event.cast_skill." + key) for key in identities))
             elif name in {"CheckBuffIdInContext+Data", "CheckBuffIdInContextAdvanced+Data"}:
                 advanced = name == "CheckBuffIdInContextAdvanced+Data"
                 # Advanced ID entries are StringBlackboardRefs, and its output
@@ -615,7 +624,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 ignore_energy_gain=body["ignoreUspGainScalar"], returned_sp=body["atbGainMethod"] == 1,
                 only_main_source=resource == CombatResourceType.SKILL_POINT and body["atbOnlyMainChar"],
             ),)))
-        elif name == "CreateBuffAction+Data":
+        elif name in {"CreateBuffAction+Data", "CreateBuffAttachingSkill+Data"}:
+            attaches_skill = name == "CreateBuffAttachingSkill+Data"
             # Empty inheritSkillIdList cannot match the next-skill transfer arm.
             # Only root timeline actions have an authored OnEnd deadline here.
             action_bound = (body.get("autoFinishByAction") and not body.get("asChildBuff")
@@ -647,6 +657,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 if eid is not None and (count is None or count != int(count)):
                     raise UnresolvedMechanic(f"Dynamic native buff count: {buff_id}")
                 if eid is not None:
+                    if attaches_skill:
+                        raise UnresolvedMechanic(f"Canonical skill-attached buff lacks native instance identity: {buff_id}")
                     if action_bound:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Canonical buff lacks action-bound instance identity",)))
                     if child_bound or ability_bound:
@@ -670,6 +682,10 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                         if reviewed_retained_layers(buff_id, data):
                             definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
                                                                  attributes=attributes, panel=panel, path=buff_path)
+                    if attaches_skill and (definition is None or definition.stacking == 4):
+                        # In particular, Yvonne's Refresh4 + attacker modifier
+                        # and reparenting are not licensed by this node binding.
+                        raise UnresolvedMechanic(f"Native skill-attached buff needs reviewed instance policy: {buff_id}")
                     bound_instance = (action_bound or inherited_bound) and definition is not None
                     parent_instance = (child_bound or ability_bound) and definition is not None
                     if (child_bound or ability_bound) and not parent_instance:
@@ -691,7 +707,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                                               child_of_buff=bool(parent_instance and child_bound),
                                               child_of_ability=bool(parent_instance and ability_bound),
                                               inherit_skill_ids=tuple(body["inheritSkillIdList"]) if bound_instance and inherited_bound else (),
-                                              finish_with_next_skill=bool(body["finishWithNextSkillIfNotInherited"]) if inherited_bound else False)
+                                              finish_with_next_skill=bool(body["finishWithNextSkillIfNotInherited"]) if inherited_bound else False,
+                                              attach_to_event_skill=attaches_skill)
                     if action_bound and definition is None:
                         emit(CombatEvent(at, "unresolved_native", unresolved=("Action-bound buff lacks executable instance definition",)))
                     emit(CombatEvent(at, "native_buff_created", native_buffs=(change,)))
@@ -767,4 +784,4 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                             next_action_windows=profile.allow_next, native_buff_ids=tuple(sorted(buff_ids)),
                             native_timer_ids=tuple(sorted(timer_ids)))
     return replace(program, gate=cost, native_buff_queries=tuple(buff_queries.values()),
-                   native_attribute_queries=tuple(attribute_queries.values()))
+                   native_attribute_queries=tuple(attribute_queries.values()), native_cast_skill_ids=tuple(sorted(cast_skill_ids)))

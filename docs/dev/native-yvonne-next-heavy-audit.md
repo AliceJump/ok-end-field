@@ -2,6 +2,8 @@
 
 本批进一步核查满级天赋的真实生产/消费链，不启用新的伤害规则。`+50%`只对应一次指定重击；“战技释放后本人持续全伤+50%”没有依据。描述中的成功冻结与实际原生前置通知必须分开，不能把前置事件当作免疫检查后已施加状态。
 
+> 后续已接字面CheckSkillId与受支持buff的确切Skill附着，见[native-cast-event-attachment.md](native-cast-event-attachment.md)。伊冯valid_up的Refresh4/攻击方结算和真实冻结/marker/缓存producer继续未知；本专题的“不启用50%”结论不变。
+
 ## 已核链路
 
 1. 战技创建`buff_chr_0017_yvonne_normal_skill_projectile`与`buff_chr_0017_yvonne_normal_skill_listener`。投射物的命中与阻挡都可以转入`chr_0017_yvonne_normal_skill_projhit`；不能把阻挡回调等同成功命中。
