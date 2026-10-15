@@ -21,6 +21,21 @@ _build_spec.loader.exec_module(builds)
 
 
 class TestParseEquip(unittest.TestCase):
+    def test_client_verified_weapon_stat_overrides_wiki_typo_only_for_matching_item(self):
+        data = _REPO / "assets/data"
+        weapons = json.loads((data / "weapons.json").read_text(encoding="utf-8"))
+        rank = weapons["玉中身"]["weapon_skills"][0]["ranks"]["Rank 3"]
+        rank["寒冷伤害提升·大"] = "寒冷伤害+14.9%"
+        before = json.loads(json.dumps(weapons))
+        mod.apply_client_weapon_stat_overrides(weapons, data)
+        self.assertEqual(rank["寒冷伤害提升·大"], "寒冷伤害+14.4%")
+        before["玉中身"]["weapon_skills"][0]["ranks"]["Rank 3"]["寒冷伤害提升·大"] = "寒冷伤害+14.4%"
+        self.assertEqual(weapons, before)
+        weapons["玉中身"]["item_id"] = "different_item"
+        rank["寒冷伤害提升·大"] = "寒冷伤害+14.9%"
+        mod.apply_client_weapon_stat_overrides(weapons, data)
+        self.assertEqual(rank["寒冷伤害提升·大"], "寒冷伤害+14.9%")
+
     def test_client_supplement_survives_wiki_export_without_overriding_new_wiki_data(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
