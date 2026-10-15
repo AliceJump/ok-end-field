@@ -4,17 +4,6 @@
     "kind": "installed_client_tables",
     "verified_at": "2026-10-15",
     "table_index_updated_at": "2026-10-15T07:55:45+08:00",
-    "table_index_sha256": "459b9368250cb76e2ba98aca7f881365e82644427c929882e6ef9f0472c57eaa",
-    "table_sha256": {
-      "CharPresetTable": "1220e95a8fba5d9c9e727551e095aca456074e17618201aaad56a0ce1bce9cc4",
-      "CharacterTable": "86d02aeee73d219f19cb415ba355e441faeab8291b7b374d7949012e27321d79",
-      "EquipSuitTable": "be23642aa53359e3af7a4395287164218448dfe646e0276637cc5b62385641e7",
-      "EquipTable": "481191696749fa2faedcd977823698b72d9c96a6fdc0d29958c56186dcd2832f",
-      "I18nTextTable_CN": "188d49529679d1096a90e685bb2cbd8cd69fcb512e018686c2698bad1642ad1b",
-      "ItemTable": "18a68066771d216dcda80165c2ec7954b2a309fd50e9ecfcd8f741080108cad7",
-      "SkillPatchTable": "ebc67209aaae5f3e3e1e9aa5bbf6b15dbd81b7d5c7dabaa8cd88b9566cfb12ae",
-      "WeaponBasicTable": "ec1028bc03e6e7fc44a1f7ab8741c90e36b66c8ef8c72e4a7e4d3e0fff3c65f7"
-    },
     "freshness_scope": "本机已安装的2026-10-15热更新，含chr_0036_jsspsi；不宣称已核对服务器最新版本"
   },
   "equipments": {

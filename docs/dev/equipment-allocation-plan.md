@@ -69,7 +69,7 @@ EndSync 页面：`https://endsync.vercel.app/zh/wiki/<slug>/`。“A/B”表示�
 
 四件采用本机客户端 `CharPresetTable.std_90_chr_0036_jsspsi`：**50式应龙软甲 / 50式应龙手套 / 50式应龙信标 / 纾难印章**。该预设是90级、零潜、四技能12级，装备配置可直接核验（evidence_level=1，官方客户端标准预设）。它与干员装备界面“推荐”入口的对应关系尚未证实，不能称为该页面的推荐配装，也不代表社区毕业共识。
 
-本机Table索引更新于2026-10-15 07:55:45，包含祀 `chr_0036_jsspsi`。逐表内容均通过索引MD5校验，发布数据保留源表SHA256与索引SHA256；这证明本机已安装该次热更新，不代表已经对照服务器最新版本。复查时Wiki装备目录258件，本机EquipTable为276件，三件新应龙装备只在本机表中找到；[EndSync](https://endsync.vercel.app/zh/wiki/si/)暂无祀的精选配置。
+本机Table索引更新于2026-10-15 07:55:45，包含祀 `chr_0036_jsspsi`。这证明本机已安装该次热更新，不代表已经对照服务器最新版本。复查时Wiki装备目录258件，本机EquipTable为276件，三件新应龙装备只在本机表中找到；[EndSync](https://endsync.vercel.app/zh/wiki/si/)暂无祀的精选配置。
 
 所需三件新装备的名字、部位、套装、基础与精锻3词条来自 `ItemTable`、`EquipTable`、`EquipSuitTable`、`I18nTextTable_CN`；套组攻击15%和条件连携20%/最多3层由 `SkillPatchTable.passive_equipsuit_atk_02` 交叉核验。生产所需的最小数据在 `assets/data/client_loadout_data.json`，Wiki生成器保留客户端补充，后续Wiki收录同名条目时以Wiki条目替换；原生ID与Wiki itemId分别存储。
 
@@ -84,7 +84,7 @@ EndSync 页面：`https://endsync.vercel.app/zh/wiki/<slug>/`。“A/B”表示�
 机制语义层保留河山共影100SP→起墨15SP→收笔0SP、20秒笔意与墨魂传递/同次命中去重规则，以及01号位决定寒冷/灼热附着的分支。
 目前收录的是静态基准与机制语义；墨魂记录/转移和队伍事件尚未接入完整时间轴伤害结算，不能把标准循环估值当作祀的实际队伍收益。
 
-原始抓取保存在主仓库忽略目录 `tools/wiki_catalog/`，不随PR发布。
+原始抓取和文件校验哈希保存在主仓库忽略目录 `tools/wiki_catalog/`，不随PR发布。
 
 ## 6. 遗留
 
