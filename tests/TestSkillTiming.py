@@ -46,6 +46,23 @@ class TestSkillTiming(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate supplemental timing"):
             SkillTimingStore(supplements=(*SUPPLEMENTS, *SUPPLEMENTS))
 
+    def test_supplement_rejects_bad_allow_windows_even_with_matching_hash(self):
+        cases = (["1", 2, ["skill"]], [0, float("nan"), ["skill"]], [-1, 2, ["skill"]],
+                 [2, 1, ["skill"]], [0, 2, "skill"], [0, 2, [None]], [0, 2], None)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            for window in cases:
+                with self.subTest(window=window):
+                    rows = json.loads((SUPPLEMENTS[0] / "profiles.json").read_bytes())
+                    rows[0]["profile"]["allow_next"] = [window]
+                    raw = json.dumps(rows).encode()
+                    manifest = json.loads((SUPPLEMENTS[0] / "index.json").read_bytes())
+                    manifest["profiles_sha256"] = hashlib.sha256(raw).hexdigest()
+                    (path / "profiles.json").write_bytes(raw)
+                    (path / "index.json").write_text(json.dumps(manifest), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "Invalid supplemental allow-next window"):
+                        SkillTimingStore(supplements=(path,))
+
     def test_all_native_characters_have_data_and_explicit_runtime_coverage(self):
         store = load_skill_timings()
         with_skills = 0

@@ -309,6 +309,14 @@ class SkillTimingStore:
                 raise ValueError("Unverified timing supplement")
             for row in json.loads(raw):
                 data = dict(row["profile"])
+                for window in data["allow_next"]:
+                    if (not isinstance(window, (list, tuple)) or len(window) != 3
+                            or any(type(x) not in (int, float) or not math.isfinite(x) or x < 0
+                                   for x in window[:2])
+                            or window[1] < window[0]
+                            or not isinstance(window[2], (list, tuple))
+                            or any(not isinstance(skill_id, str) or not skill_id for skill_id in window[2])):
+                        raise ValueError("Invalid supplemental allow-next window")
                 data["allow_next"] = tuple((start, end, tuple(ids)) for start, end, ids in data["allow_next"])
                 profile = SkillTiming(**data)
                 numbers = (profile.duration, profile.exclusive, profile.cooldown, profile.repeat_guard,
