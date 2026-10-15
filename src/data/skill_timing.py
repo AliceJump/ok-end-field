@@ -11,6 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "assets/data/skill_timings/20261002"
+SUPPLEMENTS = (SNAPSHOT.parent / "20261015-si",)
 _SUFFIX = {"battle": "normal_skill", "link": "combo_skill", "ult": "ultimate_skill"}
 _MIN_HARD_LOCK_SECONDS = 0.3
 _ACTIONABLE_GRACE_SECONDS = 0.15
@@ -225,6 +226,7 @@ class SkillTiming:
     allow_next: tuple[tuple[float, float, tuple[str, ...]], ...]
     sp_cost: float | None = None
     effect_start: float | None = None
+    repeat_guard: float = 0.0
 
     @property
     def hard_lock(self) -> float:
@@ -284,7 +286,7 @@ class BattleStateSpec:
 
 
 class SkillTimingStore:
-    def __init__(self, path: Path = SNAPSHOT):
+    def __init__(self, path: Path = SNAPSHOT, *, supplements=()):
         self.path = path
         self.index = json.loads((path / "index.json").read_text(encoding="utf-8"))
         if self.index["schema_version"] != 1 or self.index["frames_per_second"] != 30:
@@ -297,6 +299,37 @@ class SkillTimingStore:
         self._normal_attack_sp_gains = {}
         self._global_normal_attack_sp_gain = None
         self._state_specs = {}
+        self._supplement_profiles = {}
+        for supplement in supplements:
+            manifest = json.loads((supplement / "index.json").read_text(encoding="utf-8"))
+            raw = (supplement / "profiles.json").read_bytes()
+            if (manifest.get("schema_version") != 1 or manifest.get("frames_per_second") != 30
+                    or not manifest.get("verified_byte_roundtrip")
+                    or hashlib.sha256(raw).hexdigest() != manifest.get("profiles_sha256")):
+                raise ValueError("Unverified timing supplement")
+            for row in json.loads(raw):
+                data = dict(row["profile"])
+                for window in data["allow_next"]:
+                    if (not isinstance(window, (list, tuple)) or len(window) != 3
+                            or any(type(x) not in (int, float) or not math.isfinite(x) or x < 0
+                                   for x in window[:2])
+                            or window[1] < window[0]
+                            or not isinstance(window[2], (list, tuple))
+                            or any(not isinstance(skill_id, str) or not skill_id for skill_id in window[2])):
+                        raise ValueError("Invalid supplemental allow-next window")
+                data["allow_next"] = tuple((start, end, tuple(ids)) for start, end, ids in data["allow_next"])
+                profile = SkillTiming(**data)
+                numbers = (profile.duration, profile.exclusive, profile.cooldown, profile.repeat_guard,
+                           *(x for x in (profile.sp_cost, profile.effect_start) if x is not None))
+                if any(type(x) not in (int, float) or not math.isfinite(x) or x < 0 for x in numbers):
+                    raise ValueError("Invalid supplemental timing")
+                if row["kind"] not in _SUFFIX or not row["aliases"] or not profile.skill_id:
+                    raise ValueError("Invalid supplemental entry")
+                for alias in row["aliases"]:
+                    key = (alias, row["kind"])
+                    if key in self._supplement_profiles or self.profiles(alias, row["kind"]):
+                        raise ValueError("Duplicate supplemental timing")
+                    self._supplement_profiles[key] = (profile,)
 
     def _entry_skill_id(self, cid: str, kind: str) -> str | None:
         """Resolve the button's native entry skill without character-name exceptions.
@@ -378,6 +411,8 @@ class SkillTimingStore:
 
     def profiles(self, character: str, kind: str) -> tuple[SkillTiming, ...]:
         """Resolve native entry skills; keep both administrator portrait variants."""
+        if (character, kind) in self._supplement_profiles:
+            return self._supplement_profiles[character, kind]
         profiles = []
         for cid, row in self.index["characters"].items():
             if character not in (row["name"], row["key"], row["english_name"], cid):
@@ -539,4 +574,4 @@ class SkillTimingStore:
 
 @lru_cache(maxsize=1)
 def load_skill_timings() -> SkillTimingStore:
-    return SkillTimingStore()
+    return SkillTimingStore(supplements=SUPPLEMENTS)
