@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "character": "祀",
+  "native_id": "chr_0036_jsspsi",
+  "skill": "chr_0036_jsspsi_ultimate_skill",
+  "native_inputs": {
+    "GameAssembly.dll": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "global-metadata.dat": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "verification": "whole-record EOF, identifier and byte-identical pooled-string MemoryPack re-encoding",
+  "native_record_sha256": {
+    "chr_0036_jsspsi_ultimate_skill": "5fd15c6738ab3f3d52e2eb3e8c7ba70e5e0303e0594eebb5d5a9b9b93a79f3f0",
+    "chr_0036_jsspsi_ultimate_skill_abilityrange": "ec55270fa493022be1d659f5257984e4cb781fee12eb108171513c2055838125",
+    "chr_0036_jsspsi_ultimate_skill_abilityrange_1": "c8c257858bc41312e9c6516def54eefb93eff2e4feab2a71eedc3b6043c3371a",
+    "buff_chr_0036_jsspsi_atk_buff_2": "cf56e90cf76165e639dd01ca22b878e7d5ca28ab16cff8c73f8d0ab6c0411900"
+  },
+  "spawn_branches": [
+    {
+      "branch": "succeedActions",
+      "skill": "chr_0036_jsspsi_ultimate_skill_abilityrange",
+      "frame": 0,
+      "parameter_mapping": {
+        "EntityBB_enhance_final": "enhance_final",
+        "EntityBB_enhance_duration": "enhance_duration",
+        "EntityBB_atk_scale": "atk_scale",
+        "EntityBB_poise": "poise",
+        "EntityBB_atk_scale_2": "atk_scale_2",
+        "EntityBB_poise_2": "poise_2"
+      }
+    },
+    {
+      "branch": "failActions",
+      "skill": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+      "frame": 0,
+      "parameter_mapping": {
+        "EntityBB_enhance_final": "enhance_final",
+        "EntityBB_enhance_duration": "enhance_duration",
+        "EntityBB_atk_scale": "atk_scale",
+        "EntityBB_poise": "poise",
+        "EntityBB_atk_scale_2": "atk_scale_2",
+        "EntityBB_poise_2": "poise_2"
+      }
+    }
+  ],
+  "recipient_paths": [
+    {
+      "path": "chr_0036_jsspsi_ultimate_skill_abilityrange/timelineActions/23/1/succeedActions/4",
+      "target": "CharacterTeamFinder:tar1",
+      "count": 1,
+      "auto_finish": false,
+      "as_child": false,
+      "parameter_mapping": {
+        "enhance_final": "EntityBB_enhance_final",
+        "duration": "EntityBB_enhance_duration"
+      }
+    },
+    {
+      "path": "chr_0036_jsspsi_ultimate_skill_abilityrange/timelineActions/23/1/failActions/0/succeedActions/4",
+      "target": "CharacterTeamFinder:tar1",
+      "count": 1,
+      "auto_finish": false,
+      "as_child": false,
+      "parameter_mapping": {
+        "enhance_final": "EntityBB_enhance_final",
+        "duration": "EntityBB_enhance_duration"
+      }
+    },
+    {
+      "path": "chr_0036_jsspsi_ultimate_skill_abilityrange/timelineActions/23/1/failActions/0/failActions/1",
+      "target": "CharacterTeamFinder:tar1",
+      "count": 1,
+      "auto_finish": false,
+      "as_child": false,
+      "parameter_mapping": {
+        "enhance_final": "EntityBB_enhance_final",
+        "duration": "EntityBB_enhance_duration"
+      }
+    },
+    {
+      "path": "chr_0036_jsspsi_ultimate_skill_abilityrange_1/timelineActions/23/1/succeedActions/4",
+      "target": "CharacterTeamFinder:tar1",
+      "count": 1,
+      "auto_finish": false,
+      "as_child": false,
+      "parameter_mapping": {
+        "enhance_final": "EntityBB_enhance_final",
+        "duration": "EntityBB_enhance_duration"
+      }
+    },
+    {
+      "path": "chr_0036_jsspsi_ultimate_skill_abilityrange_1/timelineActions/23/1/failActions/0/succeedActions/4",
+      "target": "CharacterTeamFinder:tar1",
+      "count": 1,
+      "auto_finish": false,
+      "as_child": false,
+      "parameter_mapping": {
+        "enhance_final": "EntityBB_enhance_final",
+        "duration": "EntityBB_enhance_duration"
+      }
+    },
+    {
+      "path": "chr_0036_jsspsi_ultimate_skill_abilityrange_1/timelineActions/23/1/failActions/0/failActions/1",
+      "target": "CharacterTeamFinder:tar1",
+      "count": 1,
+      "auto_finish": false,
+      "as_child": false,
+      "parameter_mapping": {
+        "enhance_final": "EntityBB_enhance_final",
+        "duration": "EntityBB_enhance_duration"
+      }
+    }
+  ],
+  "release_frame": 62,
+  "fps": 30,
+  "parameters": [
+    {
+      "level": 1,
+      "enhance_final": 0.20000000298023224,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 2,
+      "enhance_final": 0.20999999344348907,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 3,
+      "enhance_final": 0.2199999988079071,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 4,
+      "enhance_final": 0.23999999463558197,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 5,
+      "enhance_final": 0.25,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 6,
+      "enhance_final": 0.25999999046325684,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 7,
+      "enhance_final": 0.2800000011920929,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 8,
+      "enhance_final": 0.28999999165534973,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 9,
+      "enhance_final": 0.30000001192092896,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 10,
+      "enhance_final": 0.3199999928474426,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 11,
+      "enhance_final": 0.3400000035762787,
+      "enhance_duration": 12.0
+    },
+    {
+      "level": 12,
+      "enhance_final": 0.36000001430511475,
+      "enhance_duration": 12.0
+    }
+  ],
+  "buff_policy": {
+    "id": "buff_chr_0036_jsspsi_atk_buff_2",
+    "life_type": 0,
+    "stacking_type": 2,
+    "max_stacks": 1,
+    "event": 5,
+    "subtypes": [
+      4,
+      5
+    ],
+    "child_cleanup": true,
+    "auto_finish": false,
+    "recipient": "team",
+    "ends_on_source_action": false
+  },
+  "source_hashes": {
+    "assets/data/character_skills/si.json": "798dfac9d870b90d1c7cc41a65eb4803cfbb06ef52aadbaa79f85ece694ae37d",
+    "assets/data/character_builds/si.json": "70d822ddbd3579344de91d0dc656b050eacf1a9ca835267d8111cf45864acb59",
+    "assets/data/damage_baseline.json": "121c0168fd705047b2f924db85d4dcde882178c5fcab44af2e829e7e7099d6bc",
+    "assets/data/skill_timings/20261015-si/index.json": "929af3f81d717124bbeebf1c608d9b7908ea6f56f96b87cb7f66535b9b7e2395",
+    "assets/data/skill_timings/20261015-si/profiles.json": "471dadbec2a1e77381e3636b7954e94f3c7d650e4a6d17d684c85447586e8346"
+  },
+  "scope": "reviewed nominal release contract; no hit/field predicate; not a complete entity/skill interpreter"
+}

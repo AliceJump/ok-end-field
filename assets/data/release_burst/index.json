@@ -93,14 +93,23 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "423a9fedf59f3786da18935c355f7279f6f6ac0604e610bb6dbc0f281a4f445e",
-  "actors": 32,
-  "rules": 13,
-  "support_evidence_sha256": "5689d265e22be15805c55ec520c50f13f5d163513d8092254621657868cde730",
+  "snapshot_sha256": "2bb5efc9081f4b96228156a1478b8acad912be5298a3ce53aba42d3c62b3229e",
+  "actors": 33,
+  "rules": 15,
+  "supplement_source_hashes": {
+    "assets/data/character_skills/si.json": "798dfac9d870b90d1c7cc41a65eb4803cfbb06ef52aadbaa79f85ece694ae37d",
+    "assets/data/character_builds/si.json": "70d822ddbd3579344de91d0dc656b050eacf1a9ca835267d8111cf45864acb59",
+    "assets/data/damage_baseline.json": "121c0168fd705047b2f924db85d4dcde882178c5fcab44af2e829e7e7099d6bc",
+    "assets/data/skill_timings/20261015-si/index.json": "929af3f81d717124bbeebf1c608d9b7908ea6f56f96b87cb7f66535b9b7e2395",
+    "assets/data/skill_timings/20261015-si/profiles.json": "471dadbec2a1e77381e3636b7954e94f3c7d650e4a6d17d684c85447586e8346",
+    "assets/data/release_burst/si-release-contract.json": "86cb40dbec3fe5aa6b7d8d94d617e216b1ebc9e31dac61889556ffc1052accf6"
+  },
+  "support_evidence_sha256": "3be2462a70add10cdd4f2302745a7d42858fcda059ff51d4bcab7c21291d7b5f",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "70c80baeb02714cab64ae0e38e35fa208549542f31d7851689ef0006104e1f9d",
+    "export_release_burst_snapshot.py": "b15912ab3704253484cd7acab3107a8cca7857555b6e6af093d3593ddea49ac9",
     "reviewed_support_release.py": "f2c26229742a99f6ee236d61d0ecf6747f11433ed86473ffd51bf07b33498458",
-    "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792"
+    "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792",
+    "reviewed_si_release.py": "6f2ae531a074b477fda1aca21973e0216220525e1a00bb2db797e38e2c5321de"
   },
   "stances": 1
 }

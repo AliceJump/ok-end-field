@@ -20,9 +20,9 @@ from tests.TestSkillTiming import FakeTask
 class TestReleaseBurstPlanner(unittest.TestCase):
     def test_export_scope_and_selected_builds(self):
         rows = read_snapshot()
-        self.assertEqual(len(rows), 32)
-        self.assertEqual(sum(len(r["rules"]) for r in rows.values()), 13)
-        self.assertEqual(len([r for r in rows.values() if r["rules"]]), 9)
+        self.assertEqual(len(rows), 33)
+        self.assertEqual(sum(len(r["rules"]) for r in rows.values()), 15)
+        self.assertEqual(len([r for r in rows.values() if r["rules"]]), 10)
         self.assertEqual(rows["管理员"]["profile"]["potential"], 3)
         self.assertEqual(rows["余烬"]["profile"]["character_level"], 80)
         self.assertEqual(rows["余烬"]["profile"]["skill_rank"], 9)
@@ -30,6 +30,53 @@ class TestReleaseBurstPlanner(unittest.TestCase):
             self.assertFalse(rows[name]["rules"])
         for row in rows.values():
             self.assertNotIn("link", row["quotes"])
+
+    def test_si_team_amplification_starts_at_verified_child_frame_and_filters_elements(self):
+        planner = ReleaseBurstPlanner(["祀", "伊冯", "狼卫", "佩丽卡"])
+        before = [planner.price(actor, "ult", 0) for actor in ("2", "3", "4")]
+        planner.confirm("1", "ult", 0)
+        starts, ends = 62 / 30, 62 / 30 + 12
+        for actor, basic in zip(("2", "3", "4"), before):
+            self.assertEqual(planner.price(actor, "ult", starts - .001), basic)
+            self.assertAlmostEqual(planner.price(actor, "ult", starts) / basic,
+                                   1 if actor == "4" else 1.3600000143051147)
+            self.assertEqual(planner.price(actor, "ult", ends), basic)
+        own = planner.price("1", "battle", 0)
+        self.assertAlmostEqual(planner.price("1", "battle", starts) / own, 1.3600000143051147)
+
+    def test_si_release_refresh_is_timed_and_not_cancelled_by_her_next_action(self):
+        planner = ReleaseBurstPlanner(["祀", "伊冯"])
+        before = planner.price("2", "ult", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("1", "ult", 0)
+        self.assertEqual(len(planner.bonuses), 4)
+        planner.confirm("1", "battle", 3)
+        planner.source_unavailable("1")
+        self.assertGreater(planner.price("2", "ult", 4), before)
+        planner.confirm("1", "ult", 10)
+        self.assertEqual(len(planner.bonuses), 4)
+        self.assertGreater(planner.price("2", "ult", 20), before)
+        self.assertEqual(planner.price("2", "ult", 25), before)
+
+    def test_si_zero_sp_support_opener_changes_actual_sequence_without_entity_damage(self):
+        planner = ReleaseBurstPlanner(["祀", "伊冯"])
+        actions = (ReleaseBurstAction("1", "ult", 3, 999999), ReleaseBurstAction("2", "ult", 2, 1000))
+        chosen = planner.choose(actions, 0, 0)
+        self.assertEqual(chosen.sequence, (("1", "ult"), ("2", "ult")))
+        self.assertAlmostEqual(chosen.damage, 1360.0000143051147)
+        self.assertFalse(planner.bonuses)
+        self.assertEqual(planner.price("1", "ult", 3, value=999999), 0)
+        self.assertIsNone(planner.choose(actions[:1], 0, 0))
+        wrong = ReleaseBurstPlanner(["祀", "陈千语"])
+        self.assertIsNone(wrong.choose(actions, 0, 0))
+        self.assertIsNone(planner.choose((actions[0], ReleaseBurstAction("2", "battle", 1, 1000, 100, 100)), 99, 0))
+
+    def test_si_and_xaihi_amp_share_one_bucket_without_duplicate_fixed_equipment(self):
+        planner = ReleaseBurstPlanner(["祀", "赛希", "伊冯"])
+        basic = planner.price("3", "ult", 0)
+        planner.confirm("1", "ult", 0)
+        planner.confirm("2", "ult", 0)
+        self.assertAlmostEqual(planner.price("3", "ult", 3) / basic, 1 + .36000001430511475 + .38478, places=7)
 
     def test_changed_snapshot_fails_hash_validation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -161,7 +208,8 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertEqual(evidence["梨诺"]["input_value"], 890.838)
         self.assertAlmostEqual(xai["magnitude"]["base"], (.24 + .0003 * 366) * 1.1, places=7)
         self.assertAlmostEqual(liino["magnitude"]["base"], .0004 * 890.838, places=7)
-        for name, block in evidence.items():
+        for name in ("赛希", "梨诺"):
+            block = evidence[name]
             native = load_skill_timings().record(block["skill"])
             self.assertEqual(native["source"]["sha256"], block["native_record_sha256"][block["skill"]])
             self.assertIn("without_dynamic_four_stats", block["input_policy"])
@@ -368,6 +416,49 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic._configure_team(["安塔尔", "莱万汀", "佩丽卡", "狼卫"], reset_runtime=True)
         return task, logic
+
+    def test_si_real_step_selects_team_ultimate_before_cold_carry_and_no_public_sp(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["祀", "别礼", "埃特拉", "诀"], reset_runtime=True)
+        task.sp = 0
+        before = logic.release_burst.price("2", "ult", 0)
+        decision = logic._release_burst_decision(logic._ready_ultimate_actions(), 0, task.now)
+        self.assertEqual(decision.action.slot, "1")
+        self.assertGreater(decision.gain, 0)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertEqual(task.sp, 0)
+        task.now = 3.1
+        self.assertAlmostEqual(logic.release_burst.price("2", "ult", task.now) / before, 1.3600000143051147)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+
+    def test_si_rejected_cast_or_feedback_does_not_publish_bonuses(self):
+        for feedback in (False, True):
+            with self.subTest(feedback=feedback):
+                task, logic = self.make_logic()
+                logic._configure_team(["祀", "别礼", "埃特拉", "诀"], reset_runtime=True)
+                if feedback:
+                    task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+                else:
+                    task.use_ult = lambda **kwargs: False
+                logic._use_timed_ultimate("1", logic.store.profiles("祀", "ult"), burst_selected=True)
+                self.assertFalse(logic.release_burst.bonuses)
+                self.assertFalse(logic.release_burst.last_confirmed)
+
+    def test_si_repeat_guard_survives_rebase_and_excludes_only_battle_candidates(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["祀", "别礼", "埃特拉", "诀"], reset_runtime=True)
+        task.ults = {"1"}
+        task.sp = 100
+        self.assertTrue(logic._try_battle_token("1", 100))
+        task.sp = 0
+        task.now = .2
+        logic._confirm_battle(task.now)
+        self.assertAlmostEqual(logic.battle_retry_after["1"], 25.6)
+        task.now = 3
+        self.assertIsNone(logic._release_battle_candidate("1", 100, task.now, set()))
+        self.assertTrue(logic._ready_ultimate_actions())
 
     def test_real_step_inserts_support_before_existing_burst(self):
         task, logic = self.make_logic()
@@ -745,6 +836,41 @@ class TestReleaseSnapshotExportBoundary(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "full lowercase"):
                     self.exporter.export(self.root, revision, SNAPSHOT)
                 git.assert_not_called()
+
+    def test_si_rank_and_current_native_provenance_are_distinct_from_old_export(self):
+        actor, proof = self.exporter.si_release_actor(self.root)
+        contract = json.loads((SNAPSHOT / "si-release-contract.json").read_bytes())
+        self.assertEqual(actor["profile"]["potential"], 0)
+        self.assertEqual(actor["profile"]["skill_rank"], 12)
+        self.assertEqual(proof["native_inputs"], contract["native_inputs"])
+        self.assertEqual(proof["contract_sha256"], hashlib.sha256(
+            (SNAPSHOT / "si-release-contract.json").read_bytes()).hexdigest())
+        self.assertEqual(len(proof["native_record_sha256"]), 4)
+        self.assertEqual(proof["input_policy"], "rank12_constant_no_dynamic_attribute_input")
+        self.assertEqual(len(actor["rules"]), 2)
+        self.assertNotIn("link", actor["quotes"])
+
+    def test_si_export_refuses_stale_source_and_changed_recipient_contract(self):
+        contract_path = SNAPSHOT / "si-release-contract.json"
+        contract = json.loads(contract_path.read_bytes())
+        read_bytes = Path.read_bytes
+        for change, message in (("source", "Stale Si release source"),
+                                ("recipient", "review before exporting"),
+                                ("magnitude", "amplification disagree")):
+            with self.subTest(change=change):
+                changed = json.loads(json.dumps(contract))
+                if change == "source":
+                    changed["source_hashes"]["assets/data/character_skills/si.json"] = "0" * 64
+                elif change == "recipient":
+                    changed["buff_policy"]["recipient"] = "self"
+                else:
+                    changed["parameters"][-1]["enhance_final"] = .5
+
+                def substitute(path):
+                    return json.dumps(changed).encode() if path == contract_path else read_bytes(path)
+
+                with patch.object(Path, "read_bytes", substitute), self.assertRaisesRegex(ValueError, message):
+                    self.exporter.si_release_actor(self.root)
 
     def test_only_registered_checkouts_and_named_repo_outputs_are_selected(self):
         listing = f"worktree {self.root.as_posix()}\nHEAD {'a' * 40}\n"
