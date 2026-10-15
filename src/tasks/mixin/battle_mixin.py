@@ -19,6 +19,7 @@ BattleMixin
 """
 
 import json
+import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -58,6 +59,7 @@ from src.core.global_config_store import get_global_config
 from src.core.sequence_parser import parse_sequence
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.FeatureList import FeatureList as fL
+from src.image.combo_skill_detector import ComboSkillDetector
 from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.image.hsv_config import HSVRange as hR
 from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
@@ -1016,14 +1018,42 @@ class BattleMixin(BaseEfTask):
             )
         )
 
+    def observe_link_skills(self, *, team=None, ready=None, frame=None):
+        """Read four fixed portrait slots without inputs or inferred cast state.
+
+        Reuse the existing narrow ready marker; never expand to the HUD or
+        search all characters when the team is incomplete. ``observed_at`` is
+        the observation time, not an exact engine/capture timestamp.
+        """
+        if ready is None:
+            ready = self.is_link_skill_ready()
+        detector = getattr(self, "_combo_skill_detector", None)
+        if detector is None:
+            detector = self._combo_skill_detector = ComboSkillDetector()
+        if team is None:
+            team = getattr(self, "_battle_team", None) or ()
+        observed_at = time.monotonic()
+        if frame is None and ready:
+            frame = self.frame
+        observation = detector.observe(frame, team, ready=ready, observed_at=observed_at)
+        self.link_skill_observation = observation
+        return observation
+
     def use_link_skill(self):
         """
         使用连携技能。
         """
         if self.is_link_skill_ready():
-            self.press_combat_key("e")
+            self.observe_link_skills(ready=True)
+            try:
+                self.press_combat_key("e")
+            finally:
+                # The queue can change even if its count/positions stay fixed.
+                self._combo_skill_detector.reset()
             return True
 
+        if getattr(self, "_combo_skill_detector", None) is not None:
+            self.observe_link_skills(ready=False)
         return False
 
     def use_recommend_skill(self):

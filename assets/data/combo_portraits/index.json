@@ -1,0 +1,676 @@
+{
+  "schema_version": 1,
+  "atlas": "portraits.png",
+  "tile_size": 154,
+  "atlas_sha256": "13ab9a860a33982ab08490ae8fd23214f81a8aaefcc5183eda02d61deec751f4",
+  "capture": "20261015-current-client-vfs5",
+  "character_count": 33,
+  "characters_sha256": "10af8ed5b077e0f91763e4de89557dd44b10edf69c7619249c07bf5caf5d78a3",
+  "bindings_sha256": "872762cc3e11f78b5f167304fe6dbb1532f89cf16f2ed5e6733d9856449b18c0",
+  "portraits": [
+    {
+      "native_id": "chr_0002_endminm",
+      "character": "管理员",
+      "aliases": [
+        "endministrator",
+        "管理员",
+        "chr_0002_endminm"
+      ],
+      "tile": [
+        0,
+        0,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0002_endminm.png",
+      "source_png_sha256": "0fb440252bd2ba5b89b43d6d8b211f925330484bb541e3da7113d2c8dc74340b",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 479514906085704429
+    },
+    {
+      "native_id": "chr_0003_endminf",
+      "character": "管理员",
+      "aliases": [
+        "endministrator",
+        "管理员",
+        "chr_0003_endminf"
+      ],
+      "tile": [
+        154,
+        0,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0003_endminf.png",
+      "source_png_sha256": "f5192cd69a71f8425d9d2d4ddc0e6fe85e19940868fefba8f1e1ddd56faacac8",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 479514904943807479
+    },
+    {
+      "native_id": "chr_0004_pelica",
+      "character": "佩丽卡",
+      "aliases": [
+        "perlica",
+        "佩丽卡",
+        "chr_0004_pelica"
+      ],
+      "tile": [
+        308,
+        0,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0004_pelica.png",
+      "source_png_sha256": "704c45814332e7711e541754b4c024d09ef3d56f338be421f798902f850884cb",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 424648616580136889
+    },
+    {
+      "native_id": "chr_0005_chen",
+      "character": "陈千语",
+      "aliases": [
+        "chen_qianyu",
+        "陈千语",
+        "chr_0005_chen"
+      ],
+      "tile": [
+        462,
+        0,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0005_chen.png",
+      "source_png_sha256": "cd3d4cafbe36f3a496182a6a5e520685733ca912489b369f5b826a6045915782",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 256834592505321380
+    },
+    {
+      "native_id": "chr_0006_wolfgd",
+      "character": "狼卫",
+      "aliases": [
+        "wulfgard",
+        "狼卫",
+        "chr_0006_wolfgd"
+      ],
+      "tile": [
+        616,
+        0,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0006_wolfgd.png",
+      "source_png_sha256": "42774800bfe94adc4543a6589e1da04c50168774d7de98247cc3df262bd31dde",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 420551891570317720
+    },
+    {
+      "native_id": "chr_0007_ikut",
+      "character": "弧光",
+      "aliases": [
+        "arclight",
+        "弧光",
+        "chr_0007_ikut"
+      ],
+      "tile": [
+        0,
+        154,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0007_ikut.png",
+      "source_png_sha256": "71f547b66186ad5cd2551fa9013984f9f66153e74dd32710a7e803d4adaf4f8c",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 257127874618380223
+    },
+    {
+      "native_id": "chr_0009_azrila",
+      "character": "余烬",
+      "aliases": [
+        "ember",
+        "余烬",
+        "chr_0009_azrila"
+      ],
+      "tile": [
+        154,
+        154,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0009_azrila.png",
+      "source_png_sha256": "7985edf712bafb143cdb88fa2e99b4c3a1de915d7f83990d1f59877ae40ee30e",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 445520273407541011
+    },
+    {
+      "native_id": "chr_0011_seraph",
+      "character": "赛希",
+      "aliases": [
+        "xaihi",
+        "赛希",
+        "chr_0011_seraph"
+      ],
+      "tile": [
+        308,
+        154,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0011_seraph.png",
+      "source_png_sha256": "04b7ed966c1cc7d1117ce59100cf2324035731eb7cd76cb8ae7abf1ac017f960",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 830732778858743950
+    },
+    {
+      "native_id": "chr_0012_avywen",
+      "character": "艾维文娜",
+      "aliases": [
+        "avywenna",
+        "艾维文娜",
+        "chr_0012_avywen"
+      ],
+      "tile": [
+        462,
+        154,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0012_avywen.png",
+      "source_png_sha256": "456c987d6f54b15cf6c60147650fa05bbee47f401d2d2532b97a4ba1e775d9f0",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 868278700376938608
+    },
+    {
+      "native_id": "chr_0013_aglina",
+      "character": "洁尔佩塔",
+      "aliases": [
+        "gilberta",
+        "洁尔佩塔",
+        "chr_0013_aglina"
+      ],
+      "tile": [
+        616,
+        154,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0013_aglina.png",
+      "source_png_sha256": "0ef55f4add35fb527af7aa8a88a6ef1962971de58322c5e2cb8a9a1def6bdb9d",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 841209553326578969
+    },
+    {
+      "native_id": "chr_0014_aurora",
+      "character": "昼雪",
+      "aliases": [
+        "snowshine",
+        "昼雪",
+        "chr_0014_aurora"
+      ],
+      "tile": [
+        0,
+        308,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0014_aurora.png",
+      "source_png_sha256": "d1fea4309ed69bce62275d2b118723e89b726c30b53f8e2549459f4691955323",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 860118105940231226
+    },
+    {
+      "native_id": "chr_0015_lifeng",
+      "character": "黎风",
+      "aliases": [
+        "lifeng",
+        "黎风",
+        "chr_0015_lifeng"
+      ],
+      "tile": [
+        154,
+        308,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0015_lifeng.png",
+      "source_png_sha256": "73fc852c72afb6119b8c896dcac7ffa99cd34f2d5863ed55751de2555ce84460",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 808676107287015598
+    },
+    {
+      "native_id": "chr_0016_laevat",
+      "character": "莱万汀",
+      "aliases": [
+        "laevatain",
+        "莱万汀",
+        "chr_0016_laevat"
+      ],
+      "tile": [
+        308,
+        308,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0016_laevat.png",
+      "source_png_sha256": "e33813fd966b4d12268387d33106db9cb92e04bae922b94158b84995fcd6fa70",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 824355952958527035
+    },
+    {
+      "native_id": "chr_0017_yvonne",
+      "character": "伊冯",
+      "aliases": [
+        "yvonne",
+        "伊冯",
+        "chr_0017_yvonne"
+      ],
+      "tile": [
+        462,
+        308,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0017_yvonne.png",
+      "source_png_sha256": "e38eef010ea0ac263ff263e498b1f2d164508317b83dd16145c70177b8c8ca08",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 868692775939706922
+    },
+    {
+      "native_id": "chr_0018_dapan",
+      "character": "大潘",
+      "aliases": [
+        "da_pan",
+        "大潘",
+        "chr_0018_dapan"
+      ],
+      "tile": [
+        616,
+        308,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0018_dapan.png",
+      "source_png_sha256": "1fe15ee9104227cf041c9477836c652380112de4fd04544eb78f0bf6037888a5",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 201349623543119310
+    },
+    {
+      "native_id": "chr_0019_karin",
+      "character": "秋栗",
+      "aliases": [
+        "akekuri",
+        "秋栗",
+        "chr_0019_karin"
+      ],
+      "tile": [
+        0,
+        462,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0019_karin.png",
+      "source_png_sha256": "0246890c6fa4129c115915695a388e26b0640404e0490b17bc813c02443de3ec",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 201336781612194770
+    },
+    {
+      "native_id": "chr_0020_meurs",
+      "character": "卡契尔",
+      "aliases": [
+        "catcher",
+        "卡契尔",
+        "chr_0020_meurs"
+      ],
+      "tile": [
+        154,
+        462,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0020_meurs.png",
+      "source_png_sha256": "8a695c555e458ec2d0d382058f63c03198a59b60238beafb2353594aacff5fcf",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 381968445808693385
+    },
+    {
+      "native_id": "chr_0021_whiten",
+      "character": "埃特拉",
+      "aliases": [
+        "estella",
+        "埃特拉",
+        "chr_0021_whiten"
+      ],
+      "tile": [
+        308,
+        462,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0021_whiten.png",
+      "source_png_sha256": "1820e6a25656431a6f87fdcf755e76653fe901f89c4da14d28c67210f85b7837",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 999156483608190889
+    },
+    {
+      "native_id": "chr_0022_bounda",
+      "character": "萤石",
+      "aliases": [
+        "fluorite",
+        "萤石",
+        "chr_0022_bounda"
+      ],
+      "tile": [
+        462,
+        462,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0022_bounda.png",
+      "source_png_sha256": "5c5bc9ad9e94a74dd2dedeedcf6edfe24d24fcfb66c8abb12f8ef0db570eb6b2",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 992912516578746694
+    },
+    {
+      "native_id": "chr_0023_antal",
+      "character": "安塔尔",
+      "aliases": [
+        "antal",
+        "安塔尔",
+        "chr_0023_antal"
+      ],
+      "tile": [
+        616,
+        462,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0023_antal.png",
+      "source_png_sha256": "7980a6c3187ffaf015417f7ed2f9aa9b6451e69bc0e6761bd2def0f5d9e778d5",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 381222050392979042
+    },
+    {
+      "native_id": "chr_0024_deepfin",
+      "character": "阿列什",
+      "aliases": [
+        "alesh",
+        "阿列什",
+        "chr_0024_deepfin"
+      ],
+      "tile": [
+        0,
+        616,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0024_deepfin.png",
+      "source_png_sha256": "daf95392e45888936137d46627d48603e66a845f01cfe3735a06a3c110cf6dd1",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 1075966709964439180
+    },
+    {
+      "native_id": "chr_0025_ardelia",
+      "character": "艾尔黛拉",
+      "aliases": [
+        "ardelia",
+        "艾尔黛拉",
+        "chr_0025_ardelia"
+      ],
+      "tile": [
+        154,
+        616,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0025_ardelia.png",
+      "source_png_sha256": "33890480e03d539cbcb031a3f702fb0c66eeca6784d18d33322463a3c63ca1e9",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 1088348591120113922
+    },
+    {
+      "native_id": "chr_0026_lastrite",
+      "character": "别礼",
+      "aliases": [
+        "last_rite",
+        "别礼",
+        "chr_0026_lastrite"
+      ],
+      "tile": [
+        308,
+        616,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0026_lastrite.png",
+      "source_png_sha256": "44f2e03f95e8b01c355e89db0c402cb4a3c359b231440c569e399019712db869",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 1122718553297192847
+    },
+    {
+      "native_id": "chr_0027_tangtang",
+      "character": "汤汤",
+      "aliases": [
+        "tangtang",
+        "汤汤",
+        "chr_0027_tangtang"
+      ],
+      "tile": [
+        462,
+        616,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0027_tangtang.png",
+      "source_png_sha256": "45992123a5353fe53dd094c43b061b80388738c34a84cdb8d4bfe3ee727537e4",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 1084171477499692372
+    },
+    {
+      "native_id": "chr_0028_wulfa",
+      "character": "洛茜",
+      "aliases": [
+        "rossi",
+        "洛茜",
+        "chr_0028_wulfa"
+      ],
+      "tile": [
+        616,
+        616,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0028_wulfa.png",
+      "source_png_sha256": "28a148f3a612c059138e6a7ace36f5fff46343c156cf13bc303de8a3e1d7a049",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 382835223484004542
+    },
+    {
+      "native_id": "chr_0029_pograni",
+      "character": "骏卫",
+      "aliases": [
+        "pogranichnik",
+        "骏卫",
+        "chr_0029_pograni"
+      ],
+      "tile": [
+        0,
+        770,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0029_pograni.png",
+      "source_png_sha256": "a63656d15bfc78173cc0a14acec7c39280987aad295713bc9494c35d31d4fb09",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 1050099633269309186
+    },
+    {
+      "native_id": "chr_0030_zhuangfy",
+      "character": "庄方宜",
+      "aliases": [
+        "zhuang_fangyi",
+        "庄方宜",
+        "chr_0030_zhuangfy"
+      ],
+      "tile": [
+        154,
+        770,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0030_zhuangfy.png",
+      "source_png_sha256": "b2081f08158bbee9f94e1f1e6d328a5afb505c2dc2b6450b4da2048dbbdd6bf5",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 95227412058781562
+    },
+    {
+      "native_id": "chr_0031_mifu",
+      "character": "弭弗",
+      "aliases": [
+        "mi_fu",
+        "弭弗",
+        "chr_0031_mifu"
+      ],
+      "tile": [
+        308,
+        770,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0031_mifu.png",
+      "source_png_sha256": "288aaf152604c6b717c466050c92aa1cc6f76dbeb5f62d2105a28e47e03a9d05",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 322014215262304718
+    },
+    {
+      "native_id": "chr_0032_lizhiyan",
+      "character": "诀",
+      "aliases": [
+        "arcane",
+        "诀",
+        "chr_0032_lizhiyan"
+      ],
+      "tile": [
+        462,
+        770,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0032_lizhiyan.png",
+      "source_png_sha256": "d3624cfa54608305c7bbda20d23d8f6479fc91add5129ac70625dba33f148e6f",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 166121807313739114
+    },
+    {
+      "native_id": "chr_0033_camille",
+      "character": "卡缪",
+      "aliases": [
+        "camille",
+        "卡缪",
+        "chr_0033_camille"
+      ],
+      "tile": [
+        616,
+        770,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0033_camille.png",
+      "source_png_sha256": "f75ac42a46a065fea1f532bdee963f4ddedf9b386fad62c8d187f3d3d85d2e79",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 320009346839805506
+    },
+    {
+      "native_id": "chr_0034_typhoea",
+      "character": "提弗洛斯",
+      "aliases": [
+        "typhoeus",
+        "提弗洛斯",
+        "chr_0034_typhoea"
+      ],
+      "tile": [
+        0,
+        924,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0034_typhoea.png",
+      "source_png_sha256": "2ae218e87aa7626af3123e198cda43d2d0ffe4a6c4f207dbd9ce7315d5b21423",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 335805560481043960
+    },
+    {
+      "native_id": "chr_0035_liino",
+      "character": "梨诺",
+      "aliases": [
+        "liino",
+        "梨诺",
+        "chr_0035_liino"
+      ],
+      "tile": [
+        154,
+        924,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0035_liino.png",
+      "source_png_sha256": "d7c8b8e1497ed90119660a0d796363f354a74e44cdc0095890bcc723ff6a0f3b",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 323708141923552216
+    },
+    {
+      "native_id": "chr_0036_jsspsi",
+      "character": "祀",
+      "aliases": [
+        "si",
+        "祀",
+        "chr_0036_jsspsi"
+      ],
+      "tile": [
+        308,
+        924,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0036_jsspsi.png",
+      "source_png_sha256": "be46d9f7d0d36bc39711a6fbc980f40a08b5584108ed602dea05ee1299fd364a",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 281864666339504502
+    },
+    {
+      "native_id": "chr_0037_minghe",
+      "character": null,
+      "aliases": [
+        "chr_0037_minghe"
+      ],
+      "tile": [
+        462,
+        924,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0037_minghe.png",
+      "source_png_sha256": "6694153de523423d8cef7fdc8a21a5c4cb56f9459174ed5011232d0acb938241",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 249391002770841339
+    },
+    {
+      "native_id": "chr_0038_purrche",
+      "character": "噗切娜",
+      "aliases": [
+        "purrchena",
+        "噗切娜",
+        "chr_0038_purrche"
+      ],
+      "tile": [
+        616,
+        924,
+        154,
+        154
+      ],
+      "asset_path": "Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_chr_0038_purrche.png",
+      "source_png_sha256": "8b67aed51d63b982afbb28dfbf78166dd4285b47fc6efab6f4acaa779ce7b1ef",
+      "source_bundle_sha256": "ad88c2e17c56ad63d2ebd2321a5372adad814ccc18297ded786e41846716deca",
+      "vfs_path_hash": 356392947287453587
+    }
+  ],
+  "scope": "round portrait identity only; not castability, timer, hit or release confirmation"
+}
