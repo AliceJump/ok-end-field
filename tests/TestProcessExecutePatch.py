@@ -211,6 +211,10 @@ class TestOfficialLauncher(unittest.TestCase):
         verify.assert_called_once_with(r"D:\Launcher\Launcher.exe")
         self.assertEqual(popen.call_args.args[0], [r"D:\Launcher\Launcher.exe", "--game=Endfield", "--reason=4"])
         self.assertEqual(popen.call_args.kwargs["stdout"], subprocess.DEVNULL)
+        self.assertEqual(
+            popen.call_args.kwargs["creationflags"],
+            subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+        )
         sleep.assert_called_once_with(0.25)
 
     def test_prepare_missing_launcher_fails_without_spawning(self):
@@ -246,17 +250,18 @@ class TestOfficialLauncher(unittest.TestCase):
         installed.assert_not_called()
         kernel.CloseHandle.assert_not_called()
 
-    def test_arguments_preserve_explicit_values(self):
-        self.assertEqual(
-            official_launcher.launcher_arguments("-force-d3d11"),
-            "-force-d3d11 -launcher_lang=zh-cn -launcher_sub_channel=1",
-        )
-        for arguments in (
-            "-launcher_lang=en-us -launcher_sub_channel=7 -dx11",
-            '"-launcher_lang=en-us" "-launcher_sub_channel=7"',
-            "-launcher_lang en-us -launcher_sub_channel 7",
+    def test_launch_game_preserves_arguments_without_injecting_defaults(self):
+        kernel = Mock()
+        game_path = os.path.abspath("Endfield.exe")
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
         ):
-            self.assertEqual(official_launcher.launcher_arguments(arguments), arguments)
+            self.assertTrue(official_launcher.launch_game(game_path, "-force-d3d11", Mock()))
+        create.assert_called_once_with(kernel, game_path, "-force-d3d11", 321)
+        kernel.CloseHandle.assert_called_once_with(321)
 
     def test_running_game_skips_launcher(self):
         with (

@@ -21,7 +21,7 @@ Check the following in order:
 
 Recent CN SDK versions check the game's immediate parent process. The app verifies the official Hypergryph launcher's digital signature and creates the game with its running `Games.exe` as the parent. If necessary, it opens the launcher using its installation registration. No click on "Start Game" is required. Keep the official launcher installed and keep the game executable selected as the game path.
 
-Default arguments are `-launcher_lang=zh-cn -launcher_sub_channel=1`. Explicit values and other arguments, including DX11 options, are preserved. This launch method targets the official CN launcher; international and other channel versions have not been validated. An already running game is left running.
+The app does not inject CN language or channel arguments into `Endfield.exe`; existing custom launch arguments, including DX11 options, are preserved unchanged. This launch method targets the official CN launcher; international and other channel versions have not been validated. An already running game is left running.
 
 The app waits up to 120 seconds for the game window during SDK initialization. On failure, check `logs/ok-script.log` for signature, process access, or Windows process creation errors. If the launcher cannot be located, open the official launcher manually and retry.
 

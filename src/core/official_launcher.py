@@ -9,7 +9,6 @@ from __future__ import annotations
 import ctypes
 import json
 import os
-import re
 import subprocess
 import time
 from ctypes import wintypes
@@ -217,6 +216,7 @@ def prepare_launcher(kernel, logger):
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
     )
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
@@ -225,14 +225,6 @@ def prepare_launcher(kernel, logger):
             return parent
         time.sleep(0.25)
     raise TimeoutError("Official Games.exe did not become ready within 30 seconds")
-
-
-def launcher_arguments(arguments: str) -> str:
-    # These defaults belong to the verified CN launcher. Explicit user values win.
-    for key, value in (("launcher_lang", "zh-cn"), ("launcher_sub_channel", "1")):
-        if not re.search(rf'(?:^|\s)"?-{key}(?:=|\s|$)', arguments, re.IGNORECASE):
-            arguments = f"{arguments} -{key}={value}".strip()
-    return arguments
 
 
 def create_process(kernel, game_path: str, arguments: str, parent) -> int:
@@ -293,7 +285,7 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
         # The user may have started the game while the launcher was opening.
         if running_pids("Endfield.exe"):
             return True
-        pid = create_process(kernel, os.path.abspath(game_path), launcher_arguments(arguments), parent)
+        pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
         logger.info(f"Created Endfield with official launcher parent: pid={pid}")
         return True
     finally:
