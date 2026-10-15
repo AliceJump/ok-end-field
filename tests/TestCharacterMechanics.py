@@ -52,6 +52,20 @@ class TestCharacterMechanics(unittest.TestCase):
         self.assertEqual(battle[0].sp_refund, 50)
         self.assertIn("shred>=3", battle[1].requires)
 
+    def test_si_preserves_ink_phases_recording_and_event_trigger(self):
+        mechanic = load_character_mechanics()["祀"]
+        self.assertEqual(mechanic.state_seconds, 20)
+        battle = [item for item in mechanic.transitions if item.action == "battle"]
+        self.assertEqual([item.phase for item in battle], ["河山共影", "起墨", "收笔"])
+        self.assertEqual([item.sp_cost for item in battle], [100, 15, 0])
+        self.assertIn("ATTACH_COLD|ATTACH_BURN:first_slot", battle[0].produces)
+        self.assertIn("fixed_damage:recorded_damage", battle[2].produces)
+        link = next(item for item in mechanic.transitions if item.action == "link")
+        self.assertEqual(link.requires, ("event:consume_or_absorb_cold_or_burn",))
+        self.assertEqual(link.consumes, ())
+        self.assertTrue(any("13%" in item for item in mechanic.evidence))
+        self.assertTrue(any("只结算一次" in item for item in battle[1].notes))
+
     def test_typhoeus_private_resources_and_resets_are_preserved(self):
         mechanic = load_character_mechanics()["提弗洛斯"]
         resources = {item.key: item.maximum for item in mechanic.resources}

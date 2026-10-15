@@ -34,6 +34,17 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(len(characters), len(json_files))
         self.assertEqual(len(characters), len(set(characters)))
 
+    def test_si_official_roster_and_team_amplification_load(self):
+        character = load_all_characters()["si"]
+        self.assertEqual((character.name, character.star, character.profession), ("祀", 6, "辅助"))
+        self.assertEqual(character.weapon_type, "双手剑")
+        ultimate = next(skill for skill in character.skills if skill.skill_id == "si_ultimate")
+        self.assertEqual(
+            {effect.effect_id for effect in ultimate.effects},
+            {EffectType.BUFF_COLD_UP, EffectType.BUFF_BURN_UP},
+        )
+        self.assertTrue(all(effect.value == 36 and effect.target == "ally" for effect in ultimate.effects))
+
     def test_all_effect_ids_and_targets_are_valid(self):
         valid_effect_ids = {effect.value for effect in EffectType}
 

@@ -118,6 +118,7 @@ def _parse_stat_clause(sentence: str) -> dict | None:
         (r"连携技冷却缩减\+(\d+(?:\.\d+)?)%", "combo_cd"),
         (r"失衡效率加成\+(\d+(?:\.\d+)?)%", "stagger_eff"),
         (r"最大生命值\+(\d+(?:\.\d+)?)%", "hp_pct"),
+        (r"主能力\+(\d+(?:\.\d+)?)%", "primary"),
         (r"副能力\+(\d+(?:\.\d+)?)%", "secondary"),
     ]
     for pat, key in patterns:
@@ -292,12 +293,19 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
             continue
         last = str(values[-1])
         flat_label = label.replace("/", "").replace(" ", "")
+        if "伤害记录" in flat_label:
+            # 记录的是已结算伤害，爆发按记录值造成固定伤害，不能作为攻击倍率再次计算。
+            conditional.append(f"{label}: {last}（记录已造成的伤害，固定伤害爆发另行结算）")
+            continue
+        if "笔意爆发失衡" in flat_label:
+            conditional.append(f"{label}: {last}（笔意结束或收笔时结算）")
+            continue
         if "受击后" in flat_label:
             conditional.append(f"{label}: {last}（需要施放过程中受到伤害）")
             continue
         if "消耗" in label and ("倍率" in label or "伤害" in label):
             # 消耗型伤害行（如「消耗每层附着 / 额外伤害倍率」）：按消耗层数结算，
-            # 触发条件通常保证层数供给，但每层倍率口径（平叠 vs ×(1+异常等级)）
+            # 触发条件通常保证层数供给，但每层倍率口径（平叠 vs x(1+异常等级)）
             # 待打桩裁决（ROTATION_REQUIREMENTS P1-8 C9），A 层裸伤害不计入。
             conditional.append(f"{label}: {last}（按消耗层数，A 层不计）")
             continue

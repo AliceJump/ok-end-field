@@ -446,7 +446,87 @@ def _yvonne(key: str, payload: dict) -> CharacterMechanic | None:
     )
 
 
+def _si(key: str, payload: dict) -> CharacterMechanic | None:
+    battle = _skill(payload, "战技")
+    link = _skill(payload, "连携技")
+    ult = _skill(payload, "终结技")
+    if not (battle and link and ult):
+        return None
+    text = battle.get("description") or ""
+    draw_cost = re.search(r"起墨：消耗(\d+)技力", text)
+    duration = _last_stat(battle, "笔意时长（秒）")
+    record_pct = _last_stat(battle, "伤害记录比例")
+    if not draw_cost or duration is None or record_pct is None:
+        return None
+    return CharacterMechanic(
+        key=key,
+        name=str(payload.get("name") or key),
+        archetype="record_damage_ink_soul",
+        generic_cycle_safe=False,
+        resources=(
+            MechanicResource("ink_mark", "笔意", 1),
+            MechanicResource("ink_soul", "墨魂", 1),
+            MechanicResource("recorded_damage", "已记录伤害"),
+        ),
+        transitions=(
+            MechanicTransition(
+                "battle",
+                "河山共影",
+                "起墨",
+                sp_gate=_last_stat(battle, "技力消耗"),
+                sp_cost=_last_stat(battle, "技力消耗"),
+                produces=("ink_mark", "immobilize", "ATTACH_COLD|ATTACH_BURN:first_slot"),
+                notes=(
+                    "01号位为灼热干员时改为灼热附着；其余情况施加寒冷附着，伤害仍为寒冷",
+                    f"记录目标所受伤害的 {record_pct:g}%，结束时按记录值造成固定伤害",
+                ),
+            ),
+            MechanicTransition(
+                "battle",
+                "起墨",
+                "收笔",
+                sp_gate=float(draw_cost.group(1)),
+                sp_cost=float(draw_cost.group(1)),
+                requires=("ink_mark",),
+                produces=("ink_soul",),
+                notes=("墨魂继承笔意剩余时间；伤害和效果传递给本体，同时命中只结算一次",),
+            ),
+            MechanicTransition(
+                "battle",
+                "收笔",
+                "河山共影",
+                sp_gate=0,
+                sp_cost=0,
+                requires=("ink_soul",),
+                consumes=("ink_soul", "ink_mark", "recorded_damage"),
+                produces=("fixed_damage:recorded_damage",),
+                notes=("墨魂消失触发爆发；丹青不渝提供队友加速",),
+            ),
+            MechanicTransition(
+                "link",
+                str(link["name"]),
+                requires=("event:consume_or_absorb_cold_or_burn",),
+                notes=("按本次被消耗或吸收附着的最高层数提高倍率；连携自身不消费附着",),
+            ),
+            MechanicTransition(
+                "ult",
+                str(ult["name"]),
+                produces=("BUFF_COLD_UP", "BUFF_BURN_UP"),
+                notes=("代理人的眷顾：减少01号位干员连携技剩余冷却时间",),
+            ),
+        ),
+        state_seconds=duration,
+        evidence=(
+            f"笔意持续 {duration:g}s，记录 {record_pct:g}% 已结算伤害，不是攻击倍率",
+            "笔意/墨魂目标重复命中不叠算；原目标被击败后按官方规则转移墨魂连接",
+            "连携触发依赖消费/吸收事件，不等价于目标当前持有寒冷/灼热附着",
+            "终结技增幅、天赋减冷却与加速不计入无条件静态面板",
+        ),
+    )
+
+
 _BUILDERS = {
+    "si": _si,
     "mi_fu": _mifu,
     "typhoeus": _typhoeus,
     "zhuang_fangyi": _zhuang,

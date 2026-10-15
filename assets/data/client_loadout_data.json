@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "source": {
+    "kind": "installed_client_tables",
+    "verified_at": "2026-10-15",
+    "table_index_updated_at": "2026-10-15T07:55:45+08:00",
+    "freshness_scope": "本机已安装的2026-10-15热更新，含chr_0036_jsspsi；不宣称已核对服务器最新版本"
+  },
+  "equipments": {
+    "50式应龙软甲": {
+      "item_id": null,
+      "native_id": "item_equip_t4_suit_atk02_body_05",
+      "rarity": 5,
+      "quality": "金色品质",
+      "part": "护甲",
+      "set": "50式应龙装备组",
+      "ability_tag": "智识",
+      "stat_tag": "连携技伤害加成",
+      "lv70_stats": {
+        "防御力": 56,
+        "智识": 87,
+        "力量": 58,
+        "连携技伤害加成": "+20.7%"
+      },
+      "refinement_max": {
+        "智识": "+113",
+        "力量": "+75",
+        "连携技伤害加成": "+26.9%"
+      },
+      "native_refinement_values": {
+        "智识": 113.0,
+        "力量": 75.0,
+        "连携技伤害加成": 0.26910001039505005
+      },
+      "set_effect": "3件套组效果：装备者攻击力+15%。\n当小队内任意干员施放战技时，装备者获得一层应龙之锐，使得该干员下一次连携技伤害+20%，应龙之锐最多叠加3层。",
+      "recommended_operator_ids": [],
+      "recommended_loadouts": [],
+      "source": "本机客户端EquipTable/ItemTable/I18nTextTable_CN（2026-10-15）"
+    },
+    "50式应龙手套": {
+      "item_id": null,
+      "native_id": "item_equip_t4_suit_atk02_hand_03",
+      "rarity": 5,
+      "quality": "金色品质",
+      "part": "护手",
+      "set": "50式应龙装备组",
+      "ability_tag": "智识",
+      "stat_tag": "连携技伤害加成",
+      "lv70_stats": {
+        "防御力": 42,
+        "智识": 65,
+        "力量": 43,
+        "连携技伤害加成": "+34.5%"
+      },
+      "refinement_max": {
+        "智识": "+84",
+        "力量": "+55",
+        "连携技伤害加成": "+44.9%"
+      },
+      "native_refinement_values": {
+        "智识": 84.0,
+        "力量": 55.0,
+        "连携技伤害加成": 0.44850000739097595
+      },
+      "set_effect": "3件套组效果：装备者攻击力+15%。\n当小队内任意干员施放战技时，装备者获得一层应龙之锐，使得该干员下一次连携技伤害+20%，应龙之锐最多叠加3层。",
+      "recommended_operator_ids": [],
+      "recommended_loadouts": [],
+      "source": "本机客户端EquipTable/ItemTable/I18nTextTable_CN（2026-10-15）"
+    },
+    "50式应龙信标": {
+      "item_id": null,
+      "native_id": "item_equip_t4_suit_atk02_edc_06",
+      "rarity": 5,
+      "quality": "金色品质",
+      "part": "配件",
+      "set": "50式应龙装备组",
+      "ability_tag": "智识",
+      "stat_tag": "连携技伤害加成",
+      "lv70_stats": {
+        "防御力": 21,
+        "智识": 32,
+        "力量": 21,
+        "连携技伤害加成": "+41.4%"
+      },
+      "refinement_max": {
+        "智识": "+41",
+        "力量": "+27",
+        "连携技伤害加成": "+53.8%"
+      },
+      "native_refinement_values": {
+        "智识": 41.0,
+        "力量": 27.0,
+        "连携技伤害加成": 0.5382000207901001
+      },
+      "set_effect": "3件套组效果：装备者攻击力+15%。\n当小队内任意干员施放战技时，装备者获得一层应龙之锐，使得该干员下一次连携技伤害+20%，应龙之锐最多叠加3层。",
+      "recommended_operator_ids": [],
+      "recommended_loadouts": [],
+      "source": "本机客户端EquipTable/ItemTable/I18nTextTable_CN（2026-10-15）"
+    }
+  },
+  "loadouts": {
+    "si": {
+      "native_character_id": "chr_0036_jsspsi",
+      "preset_id": "std_90_chr_0036_jsspsi",
+      "character_level": 90,
+      "potential_level": 0,
+      "skill_levels": {
+        "normalAttackSkillLevel": 12,
+        "normalSkillLevel": 12,
+        "comboSkillLevel": 12,
+        "ultimateSkillLevel": 12
+      },
+      "native_weapon_id": "wpn_claym_0018",
+      "native_piece_ids": [
+        "item_equip_t4_suit_atk02_body_05",
+        "item_equip_t4_suit_atk02_hand_03",
+        "item_equip_t4_suit_atk02_edc_06",
+        "item_equip_t4_parts_wuling01_edc_03"
+      ],
+      "pieces": [
+        "50式应龙软甲",
+        "50式应龙手套",
+        "50式应龙信标",
+        "纾难印章"
+      ],
+      "source_kind": "client_standard_preset",
+      "recommendation_ui_verified": false
+    }
+  },
+  "weapon_stat_overrides": [
+    {
+      "weapon_name": "玉中身",
+      "wiki_item_id": "2499",
+      "rank": "Rank 3",
+      "stat_name": "寒冷伤害提升·大",
+      "value": "寒冷伤害+14.4%",
+      "native_weapon_id": "wpn_claym_0018",
+      "native_skill_id": "wpn_sp_attr_crystdam_high",
+      "native_blackboard_key": "crystdam",
+      "native_value": 0.14444445073604584,
+      "reason": "Wiki原文误写14.9%；WeaponBasicTable确认与悠久传承共用同一技能，SkillPatchTable的level=3为14.444445%。"
+    }
+  ]
+}
