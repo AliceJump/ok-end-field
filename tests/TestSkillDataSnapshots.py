@@ -59,11 +59,23 @@ class TestSnapshotChecks(unittest.TestCase):
         stored = next(row for row in load(data / "damage_baseline.json") if row["key"] == "si")
         self.assertEqual(result, stored)
         self.assertEqual(build["stars"], 6)
-        self.assertEqual(build["equipment"]["evidence_level"], 3)
-        self.assertEqual(result["panel"]["智识"], 650)
-        self.assertEqual(result["panel"]["力量"], 226)
-        self.assertAlmostEqual(result["panel"]["ATK"], 5508.1)
-        self.assertEqual(result["panel"]["ult_charge"], 107.6)
+        self.assertEqual(build["equipment"]["evidence_level"], 1)
+        client = load(data / "client_loadout_data.json")
+        for name, equipment in client["equipments"].items():
+            self.assertEqual(equipments[name], equipment)
+            self.assertIsNone(equipment["item_id"])
+            self.assertTrue(equipment["native_id"].startswith("item_equip_"))
+        preset = client["loadouts"]["si"]
+        self.assertEqual(build["equipment"]["pieces"], preset["pieces"])
+        self.assertEqual((preset["character_level"], preset["potential_level"]), (90, 0))
+        self.assertTrue(all(level == 12 for level in preset["skill_levels"].values()))
+        self.assertEqual(preset["source_kind"], "client_standard_preset")
+        self.assertFalse(preset["recommendation_ui_verified"])
+        self.assertEqual(result["panel"]["智识"], 628)
+        self.assertEqual(result["panel"]["力量"], 274)
+        self.assertAlmostEqual(result["panel"]["ATK"], 6060.6)
+        self.assertEqual(result["panel"]["ult_charge"], 33.4)
+        self.assertAlmostEqual(result["panel"]["damage_basis"]["damage_bonus"]["combo"], 1.256)
         skills = {skill["type"]: skill for skill in result["skills"]}
         self.assertEqual(skills["战技"]["multiplier_pct"], 100)
         self.assertEqual(skills["战技"]["stagger"], 5)
@@ -87,9 +99,9 @@ class TestSnapshotChecks(unittest.TestCase):
             {"祀": ["2338"]},
             {"2338": "力量"},
         )
-        self.assertEqual(alternative["panel"]["智识"], 777.4)
-        self.assertEqual(alternative["panel"]["力量"], 226)
-        self.assertEqual(alternative["panel"]["ATK"], 4239.2)
+        self.assertEqual(alternative["panel"]["智识"], 751.09)
+        self.assertEqual(alternative["panel"]["力量"], 274)
+        self.assertEqual(alternative["panel"]["ATK"], 4842.6)
         self.assertEqual(alternative["panel"]["elem_dmg_pct"]["寒冷"], 43.3)
 
     def test_snapshot_selection_rejects_partial_and_escape(self):

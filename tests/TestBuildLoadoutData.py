@@ -21,6 +21,18 @@ _build_spec.loader.exec_module(builds)
 
 
 class TestParseEquip(unittest.TestCase):
+    def test_client_supplement_survives_wiki_export_without_overriding_new_wiki_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            supplement = {
+                "equipments": {"客户端新装备": {"native_id": "native_1"}, "已收录装备": {"native_id": "native_2"}}
+            }
+            (root / "client_loadout_data.json").write_text(json.dumps(supplement), encoding="utf-8")
+            equipments = {"已收录装备": {"item_id": "wiki_1"}}
+            mod.merge_client_equipment(equipments, root)
+            self.assertEqual(equipments["客户端新装备"], {"native_id": "native_1"})
+            self.assertEqual(equipments["已收录装备"], {"item_id": "wiki_1"})
+
     def test_lv70_flat_and_percentage_values(self):
         item = {"document": {"documentMap": {}}}
         table = [["生命值", "+1000"], ["物理伤害加成", "+5%"], ["暴击率加成", "+12.5%"]]
@@ -34,7 +46,7 @@ class TestParseEquip(unittest.TestCase):
     def test_recommended_loadout_preserves_duplicate_accessory_slots(self):
         item = {"document": {"documentMap": {}}}
         # 取自 2026-10-07 森空岛 item/info 的险关手甲（itemId=2335）推荐表结构：
-        # 提弗洛斯 2116 / 险关装甲 2334 / 险关手甲 2335 / 险关通信器 2336 ×2。
+        # 提弗洛斯 2116 / 险关装甲 2334 / 险关手甲 2335 / 险关通信器 2336 x2。
         table = [
             ["推荐干员", "推荐用途", "装备推荐", "", "", ""],
             ["[entry:2116]", "套组", "护甲", "[entry:2334]", "护手", "[entry:2335]"],
