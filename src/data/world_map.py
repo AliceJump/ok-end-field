@@ -44,4 +44,5 @@ higher_order_feature_dict = {
     "快子遴捡晶格": fL.higher_order_lattice,
     "象限拟合液": fL.higher_order_quadrant_liquid,
     "三相纳米片": fL.higher_order_three_photos,
+    "跃迁浆体涂片": fL.higher_order_warp_plasma_coated_slide,
 }

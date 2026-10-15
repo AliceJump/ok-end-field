@@ -4287,5 +4287,93 @@
     "vi_VN": {
       "pattern": "Lõi Phân Tách"
     }
+  },
+  "k_84e3e9d9": {
+    "zh_CN": {
+      "pattern": "祀的画"
+    },
+    "zh_TW": {
+      "pattern": "祀的畫"
+    },
+    "en_US": {
+      "pattern": "Si's Painting"
+    },
+    "ja_JP": {
+      "pattern": "スーの絵"
+    },
+    "ko_KR": {
+      "pattern": "사의 그림"
+    },
+    "es_ES": {
+      "pattern": "Pintura de Si"
+    },
+    "pt_BR": {
+      "pattern": "Pintura de Si"
+    },
+    "de_DE": {
+      "pattern": "Sis Gemälde"
+    },
+    "fr_FR": {
+      "pattern": "Peinture de Si"
+    },
+    "id_ID": {
+      "pattern": "Lukisan Si"
+    },
+    "it_IT": {
+      "pattern": "Dipinto di Si"
+    },
+    "ru_RU": {
+      "pattern": "(?i)Картина Си"
+    },
+    "th_TH": {
+      "pattern": "ภาพวาด​ของ​ซือ"
+    },
+    "vi_VN": {
+      "pattern": "Bức Tranh Của Si"
+    }
+  },
+  "k_a2eb44e6": {
+    "zh_CN": {
+      "pattern": "跃迁浆体涂片"
+    },
+    "zh_TW": {
+      "pattern": "躍遷漿體塗片"
+    },
+    "en_US": {
+      "pattern": "Warp Plasma-Coated Slide"
+    },
+    "ja_JP": {
+      "pattern": "遷移スラリー塗抹標本"
+    },
+    "ko_KR": {
+      "pattern": "도약 교질 도말 표본"
+    },
+    "es_ES": {
+      "pattern": "Lámina recubierta con plasma Warp"
+    },
+    "pt_BR": {
+      "pattern": "Lâmina Coberta com Plasma de Deformação"
+    },
+    "de_DE": {
+      "pattern": "Dia mit Zeitschleifen-Plasmabeschichtung"
+    },
+    "fr_FR": {
+      "pattern": "Lame de distorsion enduite de plasma"
+    },
+    "id_ID": {
+      "pattern": "Sisipan Lapis Plasma Terdistorsi"
+    },
+    "it_IT": {
+      "pattern": "Vetrino ricoperto di plasma distorto"
+    },
+    "ru_RU": {
+      "pattern": "Стекло с варп-плазменным покрытием"
+    },
+    "th_TH": {
+      "pattern": "แผ่น​สไลด์​เคลือบ​พลาสมา​วาร์​ป"
+    },
+    "vi_VN": {
+      "pattern": "Lam Kính Phủ Plasma Biến Dạng Không-Thời"
+    }
   }
 }
