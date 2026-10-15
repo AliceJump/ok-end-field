@@ -14,17 +14,24 @@ ok/util/process.py 的 execute() 存在两个问题:
 
 隔离策略
 --------
-仅替换 process_mod.os / process_mod.subprocess 为桩对象, 不真正拉起进程;
+启动流程使用桩对象；原生 API 测试只创建临时 Python 进程，不启动游戏；
 测试类结束后恢复原模块属性与安装标记, 由文件末尾的哨兵测试验证全局状态恢复。
 """
 
+import json
 import os
 import subprocess
+import sys
+import tempfile
 import types
 import unittest
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import ok.util.process as process_mod
+import psutil
 
+from src.core import official_launcher
 from src.patches import process_execute_patch
 
 GAME_PATH = os.path.abspath(__file__)
@@ -45,6 +52,10 @@ class TestProcessExecutePatch(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        import ok.core.start_controller as controller
+
+        cls._controller = controller
+        cls._original_controller_execute = controller.execute
         cls._original_execute = process_mod.execute
         cls._original_os = process_mod.os
         cls._original_subprocess = process_mod.subprocess
@@ -56,6 +67,7 @@ class TestProcessExecutePatch(unittest.TestCase):
 
     @classmethod
     def _restore_patch_state(cls):
+        cls._controller.execute = cls._original_controller_execute
         process_mod.execute = cls._original_execute
         process_mod.os = cls._original_os
         process_mod.subprocess = cls._original_subprocess
@@ -87,6 +99,43 @@ class TestProcessExecutePatch(unittest.TestCase):
 
     def test_execute_replaced(self):
         self.assertIs(process_mod.execute, process_execute_patch._execute_fixed)
+
+    def test_gui_cached_execute_replaced(self):
+        self.assertIs(self._controller.execute, process_execute_patch._execute_fixed)
+
+    def test_endfield_uses_official_parent_for_both_start_methods(self):
+        recorder = self._install_stubs()
+        with (
+            patch.object(process_mod, "get_path", return_value=r"D:\Game Folder\Endfield.exe"),
+            patch.object(official_launcher, "launch_game", return_value=True) as launch,
+            patch.object(process_mod.os, "path", wraps=os.path) as paths,
+        ):
+            paths.exists.return_value = True
+            for method in ("start", "os.startfile"):
+                self.assertTrue(
+                    process_mod.execute(
+                        r'"D:\Game Folder\Endfield.exe" -launcher_lang=en-us',
+                        "-force-d3d11",
+                        method,
+                    )
+                )
+            launch.assert_called_with(
+                r"D:\Game Folder\Endfield.exe",
+                "-launcher_lang=en-us -force-d3d11",
+                process_mod.logger,
+            )
+        self.assertEqual(recorder.calls, [])
+
+    def test_endfield_failure_does_not_fall_back_to_shell(self):
+        recorder = self._install_stubs()
+        with (
+            patch.object(process_mod, "get_path", return_value=r"D:\Endfield.exe"),
+            patch.object(official_launcher, "launch_game", side_effect=OSError("access denied")),
+            patch.object(process_mod.os, "path", wraps=os.path) as paths,
+        ):
+            paths.exists.return_value = True
+            self.assertIsNone(process_mod.execute(r"D:\Endfield.exe"))
+        self.assertEqual(recorder.calls, [])
 
     def test_install_idempotent(self):
         before = process_mod.execute
@@ -125,6 +174,10 @@ class TestZProcessExecutePatchStateRestored(unittest.TestCase):
         self.assertIs(process_mod.execute, TestProcessExecutePatch._original_execute)
         self.assertIs(process_mod.os, TestProcessExecutePatch._original_os)
         self.assertIs(process_mod.subprocess, TestProcessExecutePatch._original_subprocess)
+        self.assertIs(
+            TestProcessExecutePatch._controller.execute,
+            TestProcessExecutePatch._original_controller_execute,
+        )
         self.assertEqual(
             process_execute_patch._PATCH_INSTALLED,
             TestProcessExecutePatch._original_flag,
@@ -133,6 +186,173 @@ class TestZProcessExecutePatchStateRestored(unittest.TestCase):
             process_execute_patch._original_execute,
             TestProcessExecutePatch._original_cached_execute,
         )
+
+
+class TestOfficialLauncher(unittest.TestCase):
+    def test_prepare_reuses_running_launcher(self):
+        with (
+            patch.object(official_launcher, "official_parent", return_value=123),
+            patch.object(official_launcher, "installed_launcher") as installed,
+            patch.object(official_launcher.subprocess, "Popen") as popen,
+        ):
+            self.assertEqual(official_launcher.prepare_launcher(Mock(), Mock()), 123)
+        installed.assert_not_called()
+        popen.assert_not_called()
+
+    def test_prepare_opens_registered_launcher_and_waits_for_games(self):
+        with (
+            patch.object(official_launcher, "official_parent", side_effect=[None, None, 123]),
+            patch.object(official_launcher, "installed_launcher", return_value=r"D:\Launcher\Launcher.exe"),
+            patch.object(official_launcher, "verify_launcher") as verify,
+            patch.object(official_launcher.subprocess, "Popen") as popen,
+            patch.object(official_launcher.time, "sleep") as sleep,
+        ):
+            self.assertEqual(official_launcher.prepare_launcher(Mock(), Mock()), 123)
+        verify.assert_called_once_with(r"D:\Launcher\Launcher.exe")
+        self.assertEqual(popen.call_args.args[0], [r"D:\Launcher\Launcher.exe", "--game=Endfield", "--reason=4"])
+        self.assertEqual(popen.call_args.kwargs["stdout"], subprocess.DEVNULL)
+        sleep.assert_called_once_with(0.25)
+
+    def test_prepare_missing_launcher_fails_without_spawning(self):
+        with (
+            patch.object(official_launcher, "official_parent", return_value=None),
+            patch.object(official_launcher, "installed_launcher", side_effect=RuntimeError("not installed")),
+            patch.object(official_launcher.subprocess, "Popen") as popen,
+            self.assertRaisesRegex(RuntimeError, "not installed"),
+        ):
+            official_launcher.prepare_launcher(Mock(), Mock())
+        popen.assert_not_called()
+
+    def test_prepare_times_out_without_games_process(self):
+        with (
+            patch.object(official_launcher, "official_parent", return_value=None),
+            patch.object(official_launcher, "installed_launcher", return_value=r"D:\Launcher\Launcher.exe"),
+            patch.object(official_launcher, "verify_launcher"),
+            patch.object(official_launcher.subprocess, "Popen"),
+            patch.object(official_launcher.time, "monotonic", side_effect=[0, 31]),
+            self.assertRaises(TimeoutError),
+        ):
+            official_launcher.prepare_launcher(Mock(), Mock())
+
+    def test_parent_access_denied_is_reported_without_retrying_launcher(self):
+        kernel = Mock()
+        kernel.OpenProcess.side_effect = OSError("access denied")
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[123]),
+            patch.object(official_launcher, "installed_launcher") as installed,
+            self.assertRaisesRegex(RuntimeError, "privileges"),
+        ):
+            official_launcher.prepare_launcher(kernel, Mock())
+        installed.assert_not_called()
+        kernel.CloseHandle.assert_not_called()
+
+    def test_arguments_preserve_explicit_values(self):
+        self.assertEqual(
+            official_launcher.launcher_arguments("-force-d3d11"),
+            "-force-d3d11 -launcher_lang=zh-cn -launcher_sub_channel=1",
+        )
+        for arguments in (
+            "-launcher_lang=en-us -launcher_sub_channel=7 -dx11",
+            '"-launcher_lang=en-us" "-launcher_sub_channel=7"',
+            "-launcher_lang en-us -launcher_sub_channel 7",
+        ):
+            self.assertEqual(official_launcher.launcher_arguments(arguments), arguments)
+
+    def test_running_game_skips_launcher(self):
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[123]),
+            patch.object(official_launcher, "prepare_launcher") as prepare,
+        ):
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+            prepare.assert_not_called()
+
+    def test_game_started_during_preparation_skips_duplicate_and_closes_parent(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], [123]]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_process") as create,
+        ):
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+            create.assert_not_called()
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_create_failure_closes_parent(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_process", side_effect=OSError("denied")),
+            self.assertRaises(OSError),
+        ):
+            official_launcher.launch_game("unused", "", Mock())
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_signature_requires_valid_official_signer(self):
+        signer = next(iter(official_launcher.OFFICIAL_SIGNERS))
+        for status, fingerprint, accepted in ((0, signer, True), (1, signer, False), (0, "other", False)):
+            with (
+                self.subTest(status=status, signer=fingerprint),
+                patch.object(
+                    official_launcher.subprocess,
+                    "run",
+                    return_value=types.SimpleNamespace(
+                        stdout=json.dumps({"status": status, "signer": fingerprint}),
+                    ),
+                ),
+            ):
+                if accepted:
+                    official_launcher.verify_launcher("Games.exe")
+                else:
+                    with self.assertRaises(RuntimeError):
+                        official_launcher.verify_launcher("Games.exe")
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows native process API")
+    def test_native_parent_cwd_and_unicode_arguments(self):
+        # Use two disposable Python processes, never a game or the real launcher.
+        kernel = official_launcher._kernel32()
+        # The venv executable is a redirector that starts a second process.
+        # Use the underlying executable to measure the actual native child.
+        executable = sys._base_executable
+        parent = subprocess.Popen(
+            [executable, "-c", "import sys; sys.stdin.read()"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        handle = None
+        try:
+            handle = official_launcher._check(kernel.OpenProcess(0x0080 | 0x1000, False, parent.pid))
+            with tempfile.TemporaryDirectory() as folder:
+                receipt = Path(folder) / "receipt.json"
+                code = (
+                    "import os,sys,json; from pathlib import Path; "
+                    "p=Path(sys.argv[1]); q=p.with_suffix('.tmp'); "
+                    "q.write_text(json.dumps([os.getppid(),os.getcwd(),sys.argv[2:]]),encoding='utf-8'); "
+                    "q.replace(p)"
+                )
+                values = ["含空格 value", 'quote"and\\slashes\\']
+                arguments = subprocess.list2cmdline(["-c", code, str(receipt), *values])
+                pid = official_launcher.create_process(kernel, executable, arguments, handle)
+                child = psutil.Process(pid)
+                try:
+                    self.assertEqual(child.wait(timeout=10), 0)
+                finally:
+                    if child.is_running():
+                        child.kill()
+                        child.wait(timeout=5)
+                actual_parent, cwd, actual_values = json.loads(receipt.read_text(encoding="utf-8"))
+                self.assertEqual(actual_parent, parent.pid)
+                self.assertEqual(os.path.normcase(cwd), os.path.normcase(os.path.dirname(executable)))
+                self.assertEqual(actual_values, values)
+        finally:
+            if handle:
+                kernel.CloseHandle(handle)
+            parent.stdin.close()
+            parent.wait(timeout=10)
 
 
 if __name__ == "__main__":
