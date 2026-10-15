@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from src.data.combat_catalog import CombatCatalog
 from src.data.combat_observation import EnemyPresence
-from src.data.combat_runtime import CombatRuntime
+from src.data.combat_runtime import BattleRecommendation, CombatRuntime
 from src.data.combat_simulation import (
     ActionProgram,
     CombatEvent,
@@ -127,7 +127,10 @@ class TestMechanismBattleDispatch(unittest.TestCase):
         self.task.now = .5
         self.runtime.observe_sp(100, .5)
         self.logic.last_enemy_presence = EnemyPresence.PRESENT
-        with patch.object(self.logic, "_battle_context", return_value=((), None, None)), patch.object(self.logic, "_try_battle_token") as dispatch:
+        # The branch mismatch gate is independent of the bounded search wall clock.
+        with patch.object(self.runtime, "recommend_battle", return_value=BattleRecommendation(self.producer)), \
+                patch.object(self.logic, "_battle_context", return_value=((), None, None)), \
+                patch.object(self.logic, "_try_battle_token") as dispatch:
             self.assertFalse(self.logic._try_mechanism_battle(100))
         dispatch.assert_not_called()
         self.assertTrue(any("button_phase_mismatch" in text for text in self.task.messages))

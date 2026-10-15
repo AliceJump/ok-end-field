@@ -25,6 +25,9 @@ def script(name):
 class TestCharacterProgression(unittest.TestCase):
     def test_every_character_has_max_combat_talents_and_explicit_potential_baseline(self):
         characters = load_all_characters()
+        self.assertEqual(len(characters), 33)
+        self.assertEqual({key for key, c in characters.items() if c.progression is None}, {"si"})
+        characters = {key: c for key, c in characters.items() if c.progression is not None}
         self.assertEqual(len(characters), 32)
         self.assertEqual(sum(len(c.progression.talents) for c in characters.values()), 64)
         for key, character in characters.items():
@@ -81,7 +84,10 @@ class TestCharacterProgression(unittest.TestCase):
                     node = node[int(part)] if isinstance(node, list) else node[part]
                 self.assertEqual(node, entry["action"])
                 self.assertEqual(entry["execution_status"], "requires_action_interpreter")
-        for character in load_all_characters().values():
+        for key, character in load_all_characters().items():
+            if character.progression is None:
+                self.assertEqual(key, "si")  # New client progression awaits its own audited capture.
+                continue
             for passive in (*character.progression.talent_ranks, *character.progression.potentials):
                 for modifier in passive.modifiers:
                     for arm, field in (("attachSkill", "skillId"), ("attachBuff", "buffId")):

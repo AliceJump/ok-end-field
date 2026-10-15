@@ -17,6 +17,14 @@ Check the following in order:
 - When running from source, run `uv sync` again to install dependencies compatible with the current project.
 - Run the terminal, IDE, and application as administrator.
 
+### CN game requires the official launcher or times out
+
+Recent CN SDK versions check the game's immediate parent process. The app verifies the official Hypergryph launcher's digital signature and creates the game with its running `Games.exe` as the parent. If necessary, it opens the launcher using its installation registration. No click on "Start Game" is required. Keep the official launcher installed and keep the game executable selected as the game path.
+
+The app does not inject CN language or channel arguments into `Endfield.exe`; existing custom launch arguments, including DX11 options, are preserved unchanged. This launch method targets the official CN launcher; international and other channel versions have not been validated. An already running game is left running.
+
+The app waits up to 120 seconds for the game window during SDK initialization. On failure, check `logs/ok-script.log` for signature, process access, or Windows process creation errors. If the launcher cannot be located, open the official launcher manually and retry.
+
 ## Bug reports and feedback
 
 Open a [GitHub Issue](https://github.com/AliceJump/ok-end-field/issues) with a clear screenshot or recording, relevant redacted logs, reproduction steps, actual and expected behaviour, and the application version. Do not upload account details, personal paths, keys, or other sensitive information.

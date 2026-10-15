@@ -198,3 +198,11 @@ class CombatRuntime:
         self.world.disable_actor(actor)
         if self.pending is not None:
             self.pending.predicted.disable_actor(actor)
+
+    def restore_actor(self, actor, now):
+        """Restore availability after stable original-portrait recovery, without recreating effects."""
+        self.advance(now)
+        if actor in self.world.characters:
+            self.world.characters[actor].alive = True
+        if self.pending is not None and actor in self.pending.predicted.characters:
+            self.pending.predicted.characters[actor].alive = True

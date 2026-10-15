@@ -1145,7 +1145,7 @@
       "pattern": "Beförderungen"
     },
     "fr_FR": {
-      "pattern": "Promotions"
+      "pattern": "(?i)Promotions"
     },
     "id_ID": {
       "pattern": "Promosi"
@@ -1453,7 +1453,7 @@
       "pattern": "Fertigkeitsverbesserung"
     },
     "fr_FR": {
-      "pattern": "Amélioration des compétences"
+      "pattern": "(?i)Amélioration des compétences"
     },
     "id_ID": {
       "pattern": "Kenaikan Skill"
@@ -4066,6 +4066,314 @@
     },
     "vi_VN": {
       "pattern": "Rừng Tuyết"
+    }
+  },
+  "amethyst_bottle": {
+    "zh_CN": {
+      "pattern": "紫晶质瓶"
+    },
+    "zh_TW": {
+      "pattern": "紫晶質瓶"
+    },
+    "en_US": {
+      "pattern": "Amethyst Bottle"
+    },
+    "ja_JP": {
+      "pattern": "紫晶製ボトル"
+    },
+    "ko_KR": {
+      "pattern": "자수정 병"
+    },
+    "es_ES": {
+      "pattern": "Botella de amatista"
+    },
+    "pt_BR": {
+      "pattern": "Garrafa de Ametista"
+    },
+    "de_DE": {
+      "pattern": "Amethyst-Flasche"
+    },
+    "fr_FR": {
+      "pattern": "Bouteille en améthyste"
+    },
+    "id_ID": {
+      "pattern": "Botol Ametis"
+    },
+    "it_IT": {
+      "pattern": "Bottiglia di ametista"
+    },
+    "ru_RU": {
+      "pattern": "Аметистовая бутылка"
+    },
+    "th_TH": {
+      "pattern": "ขวด​อเม​ทิส​ต์"
+    },
+    "vi_VN": {
+      "pattern": "Chai Thạch Anh Tím"
+    }
+  },
+  "amethyst_part": {
+    "zh_CN": {
+      "pattern": "紫晶零件"
+    },
+    "zh_TW": {
+      "pattern": "紫晶零件"
+    },
+    "en_US": {
+      "pattern": "Amethyst Part"
+    },
+    "ja_JP": {
+      "pattern": "紫晶部品"
+    },
+    "ko_KR": {
+      "pattern": "자수정 부품"
+    },
+    "es_ES": {
+      "pattern": "Pieza de amatista"
+    },
+    "pt_BR": {
+      "pattern": "Peça de Ametista"
+    },
+    "de_DE": {
+      "pattern": "Amethyst-Teil"
+    },
+    "fr_FR": {
+      "pattern": "Pièce en améthyste"
+    },
+    "id_ID": {
+      "pattern": "Bagian Ametis"
+    },
+    "it_IT": {
+      "pattern": "Parte di ametista"
+    },
+    "ru_RU": {
+      "pattern": "Аметистовая деталь"
+    },
+    "th_TH": {
+      "pattern": "ชิ้นส่วน​อเม​ทิส​ต์"
+    },
+    "vi_VN": {
+      "pattern": "Mảnh Thạch Anh Tím"
+    }
+  },
+  "xiranite": {
+    "zh_CN": {
+      "pattern": "息壤"
+    },
+    "zh_TW": {
+      "pattern": "息壤"
+    },
+    "en_US": {
+      "pattern": "Xiranite"
+    },
+    "ja_JP": {
+      "pattern": "息壌"
+    },
+    "ko_KR": {
+      "pattern": "식양"
+    },
+    "es_ES": {
+      "pattern": "Xiranita"
+    },
+    "pt_BR": {
+      "pattern": "Xiranita"
+    },
+    "de_DE": {
+      "pattern": "Xiranit"
+    },
+    "fr_FR": {
+      "pattern": "Xiranite"
+    },
+    "id_ID": {
+      "pattern": "Xiranite"
+    },
+    "it_IT": {
+      "pattern": "Xiranite"
+    },
+    "ru_RU": {
+      "pattern": "Ксиранит"
+    },
+    "th_TH": {
+      "pattern": "ซี​เรน​ไนต์"
+    },
+    "vi_VN": {
+      "pattern": "Xiranite"
+    }
+  },
+  "cuprium_part": {
+    "zh_CN": {
+      "pattern": "赤铜零件"
+    },
+    "zh_TW": {
+      "pattern": "赤銅零件"
+    },
+    "en_US": {
+      "pattern": "Cuprium Part"
+    },
+    "ja_JP": {
+      "pattern": "赤銅部品"
+    },
+    "ko_KR": {
+      "pattern": "적동 부품"
+    },
+    "es_ES": {
+      "pattern": "Pieza de cuprio"
+    },
+    "pt_BR": {
+      "pattern": "Peça de Cuprium"
+    },
+    "de_DE": {
+      "pattern": "Cuprium-Teil"
+    },
+    "fr_FR": {
+      "pattern": "Pièce en cuprium"
+    },
+    "id_ID": {
+      "pattern": "Bagian Cuprium"
+    },
+    "it_IT": {
+      "pattern": "Parte di cuprium"
+    },
+    "ru_RU": {
+      "pattern": "Куприевая деталь"
+    },
+    "th_TH": {
+      "pattern": "ชิ้นส่วน​คู​เพ​รี​ยม"
+    },
+    "vi_VN": {
+      "pattern": "Mảnh Đồng"
+    }
+  },
+  "separator_core": {
+    "zh_CN": {
+      "pattern": "分离芯"
+    },
+    "zh_TW": {
+      "pattern": "分離芯"
+    },
+    "en_US": {
+      "pattern": "Separator Core"
+    },
+    "ja_JP": {
+      "pattern": "分離コア"
+    },
+    "ko_KR": {
+      "pattern": "분리 필터"
+    },
+    "es_ES": {
+      "pattern": "Núcleo separador"
+    },
+    "pt_BR": {
+      "pattern": "Núcleo Separador"
+    },
+    "de_DE": {
+      "pattern": "Separatorkern"
+    },
+    "fr_FR": {
+      "pattern": "Noyau séparateur"
+    },
+    "id_ID": {
+      "pattern": "Inti Pemisah"
+    },
+    "it_IT": {
+      "pattern": "Nucleo separatore"
+    },
+    "ru_RU": {
+      "pattern": "Ядро сепаратора"
+    },
+    "th_TH": {
+      "pattern": "แกน​ตัว​แยก"
+    },
+    "vi_VN": {
+      "pattern": "Lõi Phân Tách"
+    }
+  },
+  "k_84e3e9d9": {
+    "zh_CN": {
+      "pattern": "祀的画"
+    },
+    "zh_TW": {
+      "pattern": "祀的畫"
+    },
+    "en_US": {
+      "pattern": "Si's Painting"
+    },
+    "ja_JP": {
+      "pattern": "スーの絵"
+    },
+    "ko_KR": {
+      "pattern": "사의 그림"
+    },
+    "es_ES": {
+      "pattern": "Pintura de Si"
+    },
+    "pt_BR": {
+      "pattern": "Pintura de Si"
+    },
+    "de_DE": {
+      "pattern": "Sis Gemälde"
+    },
+    "fr_FR": {
+      "pattern": "Peinture de Si"
+    },
+    "id_ID": {
+      "pattern": "Lukisan Si"
+    },
+    "it_IT": {
+      "pattern": "Dipinto di Si"
+    },
+    "ru_RU": {
+      "pattern": "(?i)Картина Си"
+    },
+    "th_TH": {
+      "pattern": "ภาพวาด​ของ​ซือ"
+    },
+    "vi_VN": {
+      "pattern": "Bức Tranh Của Si"
+    }
+  },
+  "k_a2eb44e6": {
+    "zh_CN": {
+      "pattern": "跃迁浆体涂片"
+    },
+    "zh_TW": {
+      "pattern": "躍遷漿體塗片"
+    },
+    "en_US": {
+      "pattern": "Warp Plasma-Coated Slide"
+    },
+    "ja_JP": {
+      "pattern": "遷移スラリー塗抹標本"
+    },
+    "ko_KR": {
+      "pattern": "도약 교질 도말 표본"
+    },
+    "es_ES": {
+      "pattern": "Lámina recubierta con plasma Warp"
+    },
+    "pt_BR": {
+      "pattern": "Lâmina Coberta com Plasma de Deformação"
+    },
+    "de_DE": {
+      "pattern": "Dia mit Zeitschleifen-Plasmabeschichtung"
+    },
+    "fr_FR": {
+      "pattern": "Lame de distorsion enduite de plasma"
+    },
+    "id_ID": {
+      "pattern": "Sisipan Lapis Plasma Terdistorsi"
+    },
+    "it_IT": {
+      "pattern": "Vetrino ricoperto di plasma distorto"
+    },
+    "ru_RU": {
+      "pattern": "Стекло с варп-плазменным покрытием"
+    },
+    "th_TH": {
+      "pattern": "แผ่น​สไลด์​เคลือบ​พลาสมา​วาร์​ป"
+    },
+    "vi_VN": {
+      "pattern": "Lam Kính Phủ Plasma Biến Dạng Không-Thời"
     }
   }
 }

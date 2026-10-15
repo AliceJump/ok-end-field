@@ -56,3 +56,18 @@ uv run --locked python -m unittest discover -s tests
 - Focused unittest: `uv run --locked python -m unittest tests.TestModule -v`.
 - Do not use a direct `.venv` interpreter invocation as formal verification; all formal checks use a locked `uv` entry point.
 - Preserve and report pre-existing independent failures; do not hide them by switching interpreters or dependencies.
+
+### CI responsibility groups
+
+When adding, renaming, or deleting `tests/Test*.py` files, update `TEST_GROUPS` in `scripts/testing/run_ci_test_group.py` in the same change. Every discovered test file must belong to exactly one responsibility group; remove stale filenames and avoid duplicate assignments. Choose the group by the behavior tested, following nearby related tests.
+
+Before committing or pushing those changes, run:
+
+```powershell
+uv run --locked python -X utf8 scripts/testing/run_ci_test_group.py --validate
+uv run --locked python -X utf8 scripts/testing/run_ci_test_group.py --group <group-name>
+```
+
+Replace `<group-name>` with each affected group key from `TEST_GROUPS`. The validator checks registration; running the affected groups checks that CI actually loads and runs the tests.
+
+`scripts/testing/run_tests.ps1` and ordinary unittest discovery do not validate group registration. Passing the full suite does not satisfy the `Validate test responsibility groups` step in `pr-test.yml` and `build.yml`. Errors such as `Unassigned test files`, `Grouped files that no longer exist`, or `Test files assigned more than once` require correcting `TEST_GROUPS`, rather than bypassing validation.

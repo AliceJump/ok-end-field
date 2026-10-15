@@ -2,6 +2,7 @@ import shutil
 import webbrowser
 from pathlib import Path
 
+from ok import TaskDisabledException
 from qfluentwidgets import FluentIcon
 
 from src.core.config_migration import _NO_MIGRATION
@@ -435,8 +436,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.zip_line_list_go(
                 zip_line_list,
                 need_scroll=self.zip_line_scroll_enabled(),
-                target=(secondary_objective_direction_dot, "feature"),
-                need_v=True,
+                target=None if only_zip_line else (secondary_objective_direction_dot, "feature"),
+                need_v=not only_zip_line,
+                stay_on_zip_line=only_zip_line,
             )  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
             if only_zip_line:
                 return True
@@ -659,23 +661,38 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             full_cycle_targets = get_full_cycle_targets(self.delivery_area, test_location)
             if not full_cycle_targets:
                 self.log_info(f"未配置测试区域({test_location})的送货目标")
-                return
+                return False
             self._accepted_delivery_location = test_location
+            all_routes_passed = True
             for end in full_cycle_targets:
-                self.task_to_transfer_point()
-                self.to_storage_point_and_back_zip_line(only_zip_line=True)
-                if self.wait_click_ocr(
-                    match=self.lang.DeliveryTask.k_b0e3a2da,
-                    box=self.box.bottom_right,
-                    settle_time=1,
-                    time_out=2,
-                    log=True,
-                    after_sleep=2,
-                    alt=True,
-                ):
-                    self.log_info("已找到并登上滑索架，继续测试")
-                    self.on_zip_line_start(end, need_v=False, need_scroll=self.zip_line_scroll_enabled())
+                self._set_delivery_stage(f"完整循环测试：{test_location} → {end}")
+                try:
+                    if not parse_int_sequence(self.get_zip_line_config_value(end)):
+                        all_routes_passed = False
+                        self.log_info(f"测试目标({end})滑索配置为空，继续下一条路线")
+                        continue
+                    if not self.task_to_transfer_point():
+                        all_routes_passed = False
+                        self.log_info(f"测试目标({end})传送失败，继续下一条路线")
+                        continue
+                    if not self.to_storage_point_and_back_zip_line(only_zip_line=True):
+                        all_routes_passed = False
+                        self.log_info(f"测试目标({end})未能到达送货点，继续下一条路线")
+                        continue
+                    # 出发路线抵达后仍在滑索上，直接测试当前 NPC 路线。
+                    self.on_zip_line_start(
+                        end,
+                        need_v=False,
+                        need_scroll=self.zip_line_scroll_enabled(),
+                        stay_on_zip_line=True,
+                    )
                     self.sleep(2)
+                except TaskDisabledException:
+                    raise
+                except Exception as e:
+                    all_routes_passed = False
+                    self.log_info(f"测试目标({end})失败: {e}，继续下一条路线")
+            return all_routes_passed
         else:
             zip_line_list_str = self.get_zip_line_config_value(self.config.get(self.CFG_TEST_TARGET))
             if zip_line_list_str:
@@ -743,7 +760,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 account_log_suffix=self.tr("自动送货"),
                 allow_multi_account=allow_multi,
             ):
-                self._run_single_delivery_cycle()
+                result = self._run_single_delivery_cycle()
+                if self.config.get(self.CFG_TEST_TARGET) == self.TEST_FULL_CYCLE and result is False:
+                    self._set_delivery_stage("完整循环测试：未全部通过")
+                    self._delivery_fail("完整循环测试已结束，存在未通过的路线，详见日志")
 
         except Exception as e:
             self.handle_task_exception(e, "DeliveryTask_Exception")

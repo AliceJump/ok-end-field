@@ -218,7 +218,7 @@ class AutoCombatLogic:
         if current_points < 1:
             if task.use_ult():
                 return
-            if current_points < 0 and (task.ocr_lv() or not task.in_team()):
+            if current_points < 0 and (task.ocr_lv() or task.has_team_hud() is False):
                 self.normal_skill_index = 0
                 return
             task.approach_enemy()
@@ -229,6 +229,9 @@ class AutoCombatLogic:
             return
 
         skill_key = self.normal_skill_sequence[self.normal_skill_index]
+        if str(skill_key) in ("1", "2", "3", "4") and int(skill_key) - 1 in getattr(task, "_squad_dead_slots", set()):
+            self.normal_skill_index += 1
+            return
         task.send_key(skill_key)  # 确认使用send_key：技能键为游戏固定不可配置键，不经过KeyConfigManager管理
         task.log_info(f"Used skill {skill_key}")
         self.normal_skill_index += 1
@@ -314,6 +317,8 @@ class AutoCombatLogic:
             return False, ""
 
         # 数字战技 1/2/3/4
+        if token in ("1", "2", "3", "4") and int(token) - 1 in getattr(task, "_squad_dead_slots", set()):
+            return True, ""
         if task.get_skill_bar_count() >= 1:
             task.send_key(token)  # 确认使用send_key：技能键为游戏固定不可配置键，不经过KeyConfigManager管理
             task.log_info(f"释放技能 {token}")

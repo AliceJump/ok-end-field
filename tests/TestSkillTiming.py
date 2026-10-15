@@ -851,8 +851,9 @@ class TestTimedCombat(unittest.TestCase):
         logic.order = ["2", "1"]
         logic.ult_order = ["2", "1"]
         task.detected_team = ["佩丽卡", "?", "陈千语", "管理员"]
+        task._squad_dead_slots = {1}
 
-        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+        for _ in range(3):
             logic._refresh_team_slots(1)
 
         self.assertEqual(logic.team, ["佩丽卡", "狼卫", "陈千语", "管理员"])
@@ -863,17 +864,32 @@ class TestTimedCombat(unittest.TestCase):
         logic.step()
         self.assertEqual(task.keys, ["1"])
 
+    def test_disabled_slot_can_cast_again_after_portrait_recovers(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        task.detected_team[1] = "?"
+        task._squad_dead_slots = {1}
+        for _ in range(3):
+            logic._refresh_team_slots(1)
+        self.assertFalse(logic._try_battle_token("2", 100))
+        self.assertEqual(task.keys, [])
+        task.detected_team[1] = "狼卫"
+        task._squad_dead_slots = set()
+        logic._refresh_team_slots(1)
+        self.assertTrue(logic._try_battle_token("2", 100))
+        self.assertEqual(task.keys, ["2"])
+
     def test_transient_unknown_slot_recovers_without_false_death_mask(self):
         task = FakeTask()
         logic = logic_for(task)
 
         task.detected_team = ["?", "狼卫", "陈千语", "管理员"]
         logic._refresh_team_slots(1)
-        self.assertEqual(logic.dead_slot_evidence["1"], 1)
+        self.assertEqual(logic.disabled_slots, set())
 
         task.detected_team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
         logic._refresh_team_slots(1)
-        self.assertNotIn("1", logic.dead_slot_evidence)
+        self.assertEqual(logic.disabled_slots, set())
 
         task.detected_team = ["?", "狼卫", "陈千语", "管理员"]
         logic._refresh_team_slots(1)
@@ -896,8 +912,9 @@ class TestTimedCombat(unittest.TestCase):
         logic.pending = (100.0, "2", 100.0)
         logic.active_slot = "2"
         task.detected_team = ["佩丽卡", "?", "陈千语", "管理员"]
+        task._squad_dead_slots = {1}
 
-        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+        for _ in range(3):
             logic._refresh_team_slots(1)
 
         self.assertIsNone(logic.pending)

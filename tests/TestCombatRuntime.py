@@ -52,6 +52,18 @@ class TestCombatRuntime(unittest.TestCase):
         self.runtime.confirm("1", "battle", 101)
         self.assertFalse(self.runtime.world.characters["2"].alive)
 
+    def test_recovered_actor_survives_pending_commit_without_resetting_resources(self):
+        self.runtime.stage(self.program, 100)
+        self.runtime.disable_actor("2", 100.1)
+        self.runtime.world.characters["2"].energy = 19
+        self.runtime.pending.predicted.characters["2"].energy = 19
+        self.runtime.restore_actor("2", 100.2)
+        self.assertTrue(self.runtime.world.characters["2"].alive)
+        self.assertTrue(self.runtime.pending.predicted.characters["2"].alive)
+        self.assertTrue(self.runtime.confirm("1", "battle", 101))
+        self.assertTrue(self.runtime.world.characters["2"].alive)
+        self.assertEqual(self.runtime.world.characters["2"].energy, 19)
+
     def test_failed_new_attempt_clears_old_prediction(self):
         self.runtime.stage(self.program, 100)
         unavailable = ActionProgram("unavailable", "1", "battle", 300, 1, 0, ())

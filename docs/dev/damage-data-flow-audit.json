@@ -1,7 +1,9 @@
 {
   "schema_version": 1,
   "scope": "damage data contract per canonical character and skill; not full mechanics execution",
-  "missing_characters": [],
+  "missing_characters": [
+    "si"
+  ],
   "characters": [
     {
       "key": "akekuri",
@@ -10537,7 +10539,7 @@
             "力量": 89.0,
             "敏捷": 176.0,
             "智识": 145.0,
-            "意志": 890.838
+            "意志": 1205.3339999999998
           },
           "unverified_attack_dependencies": [],
           "attack_conversion": "floor_final_main_sub"

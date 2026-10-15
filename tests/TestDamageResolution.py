@@ -320,13 +320,18 @@ class TestDamageResolution(unittest.TestCase):
             "BUFF_SPELL_UP",
         }
         found = []
+        unbound = set()
         for character in self.characters.values():
             for skill in character.skills:
                 for effect in [*skill.effects, *(e for b in skill.enhancements for e in b.effects)]:
                     if effect.effect_id.value in damage_ids or effect.effect_id.value.startswith("VULN_"):
+                        if effect.damage_modifier is None:
+                            unbound.add((skill.skill_id, effect.effect_id.value))
+                            continue
                         self.assertIsNotNone(effect.damage_modifier, f"{skill.skill_id}/{effect.effect_id}")
                         self.assertTrue(effect.damage_modifier.sources)
                         found.append(effect.damage_modifier)
+        self.assertEqual(unbound, {("si_ultimate", "BUFF_COLD_UP"), ("si_ultimate", "BUFF_BURN_UP")})
         self.assertGreater(len(found), 30)
         index = json.loads((SNAPSHOT / "index.json").read_text(encoding="utf-8"))
         raw = (SNAPSHOT.parent / "damage_modifier_rules.json").read_bytes()
@@ -361,7 +366,8 @@ class TestDamageResolution(unittest.TestCase):
 
     def test_fixed_panels_match_baseline_selection_and_do_not_include_rotation_bundles(self):
         rows = json.loads((ROOT / "assets/data/fixed_damage_baseline.json").read_text(encoding="utf-8"))
-        self.assertEqual({row["key"] for row in rows}, set(self.characters))
+        self.assertEqual(set(self.characters) - {row["key"] for row in rows}, {"si"})
+        self.assertEqual({row["key"] for row in rows} - set(self.characters), set())
         for row in rows:
             profile = row["profile"]
             self.assertEqual(profile["potential"], self.characters[row["key"]].progression.baseline.potential)

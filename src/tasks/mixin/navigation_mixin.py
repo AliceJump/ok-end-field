@@ -425,6 +425,10 @@ class NavigationMixin(SearchMixin):
         tolerance=TOLERANCE,
         ocr_frame_processor_list=None,
         allow_random_move=True,
+        deadline=None,
+        max_iterations=None,
+        ocr_target_detector=None,
+        ocr_target_mover=None,
     ):
         """将OCR识别或图像特征检测的目标对准屏幕中心（自动移动视角/鼠标）
 
@@ -448,6 +452,11 @@ class NavigationMixin(SearchMixin):
             once_time: 每次循环最小耗时(秒)，保证操作频率
             tolerance: 目标中心与屏幕中心的容忍偏差(像素)，默认50，偏差在范围内判定成功
             ocr_frame_processor_list: OCR帧处理函数列表(可用于色彩隔离等预处理)
+            allow_random_move: False 时未识别到目标不会执行随机视角搜索。
+            deadline: 可选的 active_time 绝对截止时间，达到后按原失败语义结束。
+            max_iterations: 可选的底层循环次数上限；传入时覆盖 max_time * 2 的循环预算。
+            ocr_target_detector: 可选单帧 OCR 检测器，返回已校正坐标的目标；None 表示等待，空列表表示识别失败。
+            ocr_target_mover: 可选 OCR 目标移动函数，也用于短暂丢失后的目标跟踪；非 OCR 路径不使用。
 
         Returns:
             tuple[int,int] | bool: 成功对中返回对中前的目标中心坐标 (x, y)，失败返回 False(当raise_if_fail=False时)
@@ -474,15 +483,27 @@ class NavigationMixin(SearchMixin):
         success = False
         random_move_count = 0
         move_count = 0
-        for _ in range(max_time * 2):
+        iteration_limit = max_time * 2 if max_iterations is None else max(0, int(max_iterations))
+        for _ in range(iteration_limit):
+            if deadline is not None and self.active_time() >= deadline:
+                break
             start_action_time = self.active_time()
             if need_scroll:
                 self.do_scroll(1, 400)
-            if ocr:
+            if ocr and ocr_target_detector is not None:
+                result = ocr_target_detector(self.next_frame())
+                if deadline is not None and self.active_time() >= deadline:
+                    break
+                if result is None:
+                    self.sleep(0.03)
+                    continue
+            elif ocr:
                 # 使用OCR模式识别目标，设置超时时间为2秒，并启用日志记录
                 start_time = self.active_time()
                 result = None
                 while self.active_time() - start_time < 0.15:
+                    if deadline is not None and self.active_time() >= deadline:
+                        break
                     frame = self.next_frame()
                     if not isinstance(ocr_frame_processor_list, list):
                         ocr_frame_processor_list = [ocr_frame_processor_list]
@@ -507,6 +528,8 @@ class NavigationMixin(SearchMixin):
                 start_time = self.active_time()
                 result = None
                 while True:
+                    if deadline is not None and self.active_time() >= deadline:
+                        break
                     if self.active_time() - start_time >= 1:
                         break
                     frame = self.next_frame()
@@ -519,6 +542,8 @@ class NavigationMixin(SearchMixin):
                         )
                     else:
                         for feature_name in ocr_match_or_feature_name_list:
+                            if deadline is not None and self.active_time() >= deadline:
+                                break
                             if self.active_time() - start_time >= 1:
                                 break
 
@@ -543,7 +568,7 @@ class NavigationMixin(SearchMixin):
                     result = result[0]
                 if observations is not None:
                     result = copy(result)
-                if is_num:
+                if is_num and (not ocr or ocr_target_detector is None):
                     result.y = result.y - int(self.height * ((525 - 486) / 1080))
                 if only_y:
                     result.x = self.screen_center()[0] - result.width // 2
@@ -566,13 +591,16 @@ class NavigationMixin(SearchMixin):
                 if abs(dx) <= scaled_tolerance and abs(dy) <= scaled_tolerance:
                     return target_center
                 else:
-                    self.move_to_target_once(
-                        result,
-                        max_step=max_step,
-                        min_step=min_step,
-                        slow_radius=slow_radius,
-                        deadzone=deadzone,
-                    )
+                    if ocr and ocr_target_mover is not None:
+                        ocr_target_mover(result)
+                    else:
+                        self.move_to_target_once(
+                            result,
+                            max_step=max_step,
+                            min_step=min_step,
+                            slow_radius=slow_radius,
+                            deadzone=deadzone,
+                        )
 
             else:
                 if observations is not None:
@@ -604,7 +632,10 @@ class NavigationMixin(SearchMixin):
                     last_target.y = screen_center_y - offset_y
                     last_target.width = offset_width
                     last_target.height = offset_height
-                    self.move_to_target_once(last_target)
+                    if ocr and ocr_target_mover is not None:
+                        ocr_target_mover(last_target)
+                    else:
+                        self.move_to_target_once(last_target)
                     last_target_fail_count += 1
                     random_move_count = 0
                     move_count += 1

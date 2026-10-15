@@ -27,6 +27,11 @@ def _execute_fixed(game_cmd: str, arguments=None, start_method=None):
     try:
         process_mod.logger.info(f"try execute {game_cmd} {arguments} with {start_method}")
         working_dir = process_mod.os.path.dirname(game_path)
+        if process_mod.os.path.basename(game_path).casefold() == "endfield.exe":
+            from src.core.official_launcher import launch_game
+
+            _, args_part = process_mod._split_game_command(game_cmd, game_path, arguments)
+            return launch_game(game_path, args_part or "", process_mod.logger)
         if start_method == process_mod.WINDOWS_START_METHOD_OS_STARTFILE:
             _, args_part = process_mod._split_game_command(game_cmd, game_path, arguments)
             # os.startfile() 的 arguments 只接受 str, 传 None 会 TypeError
@@ -50,7 +55,7 @@ def _execute_fixed(game_cmd: str, arguments=None, start_method=None):
 
 
 def install_process_execute_patch():
-    """修复 ok 库 ok/util/process.py execute() 拉起 PC 游戏的两个问题。(详见 issue #338)
+    """修复 PC 启动的输出管道、空参数和官方启动器父进程问题。
 
     背景:游戏未运行时点击"启动游戏",execute() 以
     `start "" /b "Endfield.exe"` + `stdout/stderr=PIPE` 拉起游戏,但两条管道从不被读取。
@@ -66,6 +71,7 @@ def install_process_execute_patch():
 
     1. `start /b` 分支 stdout/stderr 改为 DEVNULL,不再接管管道;
     2. os.startfile 分支 arguments 传 "" 而不是 None。
+    3. Endfield.exe 通过经签名核验的官方 Games.exe 父进程启动。
 
     安装是幂等的:重复调用直接返回,不影响已替换的 execute。
     """
@@ -80,4 +86,11 @@ def install_process_execute_patch():
     if _original_execute is None:
         _original_execute = process_mod.execute
     process_mod.execute = _execute_fixed
+    # ok 在导入 config/interaction 时可能已缓存 from ... import execute。
+    # 同时更新实际 GUI 启动入口，避免仅修改工具模块却没有生效。
+    import sys
+
+    controller = sys.modules.get("ok.core.start_controller")
+    if controller is not None and controller.execute is _original_execute:
+        controller.execute = _execute_fixed
     _PATCH_INSTALLED = True

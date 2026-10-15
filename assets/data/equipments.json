@@ -5379,5 +5379,95 @@
     "refinement_max": {},
     "set_effect": "无套组技能。",
     "recommended_operator_ids": []
+  },
+  "50式应龙软甲": {
+    "item_id": null,
+    "native_id": "item_equip_t4_suit_atk02_body_05",
+    "rarity": 5,
+    "quality": "金色品质",
+    "part": "护甲",
+    "set": "50式应龙装备组",
+    "ability_tag": "智识",
+    "stat_tag": "连携技伤害加成",
+    "lv70_stats": {
+      "防御力": 56,
+      "智识": 87,
+      "力量": 58,
+      "连携技伤害加成": "+20.7%"
+    },
+    "refinement_max": {
+      "智识": "+113",
+      "力量": "+75",
+      "连携技伤害加成": "+26.9%"
+    },
+    "native_refinement_values": {
+      "智识": 113.0,
+      "力量": 75.0,
+      "连携技伤害加成": 0.26910001039505005
+    },
+    "set_effect": "3件套组效果：装备者攻击力+15%。\n当小队内任意干员施放战技时，装备者获得一层应龙之锐，使得该干员下一次连携技伤害+20%，应龙之锐最多叠加3层。",
+    "recommended_operator_ids": [],
+    "recommended_loadouts": [],
+    "source": "本机客户端EquipTable/ItemTable/I18nTextTable_CN（2026-10-15）"
+  },
+  "50式应龙手套": {
+    "item_id": null,
+    "native_id": "item_equip_t4_suit_atk02_hand_03",
+    "rarity": 5,
+    "quality": "金色品质",
+    "part": "护手",
+    "set": "50式应龙装备组",
+    "ability_tag": "智识",
+    "stat_tag": "连携技伤害加成",
+    "lv70_stats": {
+      "防御力": 42,
+      "智识": 65,
+      "力量": 43,
+      "连携技伤害加成": "+34.5%"
+    },
+    "refinement_max": {
+      "智识": "+84",
+      "力量": "+55",
+      "连携技伤害加成": "+44.9%"
+    },
+    "native_refinement_values": {
+      "智识": 84.0,
+      "力量": 55.0,
+      "连携技伤害加成": 0.44850000739097595
+    },
+    "set_effect": "3件套组效果：装备者攻击力+15%。\n当小队内任意干员施放战技时，装备者获得一层应龙之锐，使得该干员下一次连携技伤害+20%，应龙之锐最多叠加3层。",
+    "recommended_operator_ids": [],
+    "recommended_loadouts": [],
+    "source": "本机客户端EquipTable/ItemTable/I18nTextTable_CN（2026-10-15）"
+  },
+  "50式应龙信标": {
+    "item_id": null,
+    "native_id": "item_equip_t4_suit_atk02_edc_06",
+    "rarity": 5,
+    "quality": "金色品质",
+    "part": "配件",
+    "set": "50式应龙装备组",
+    "ability_tag": "智识",
+    "stat_tag": "连携技伤害加成",
+    "lv70_stats": {
+      "防御力": 21,
+      "智识": 32,
+      "力量": 21,
+      "连携技伤害加成": "+41.4%"
+    },
+    "refinement_max": {
+      "智识": "+41",
+      "力量": "+27",
+      "连携技伤害加成": "+53.8%"
+    },
+    "native_refinement_values": {
+      "智识": 41.0,
+      "力量": 27.0,
+      "连携技伤害加成": 0.5382000207901001
+    },
+    "set_effect": "3件套组效果：装备者攻击力+15%。\n当小队内任意干员施放战技时，装备者获得一层应龙之锐，使得该干员下一次连携技伤害+20%，应龙之锐最多叠加3层。",
+    "recommended_operator_ids": [],
+    "recommended_loadouts": [],
+    "source": "本机客户端EquipTable/ItemTable/I18nTextTable_CN（2026-10-15）"
   }
 }

@@ -107,7 +107,9 @@ Options: 『⭐Collect mail』
 
 Obtain dispatch tickets through trading in 「Region Building / Outpost Management」.
 
-The program traverses all outposts in all regions to obtain as many dispatch tickets as possible. **The goods the program supports trading** are listed in `goods_dict` in [world_map.py](../../src/data/world_map.py).
+The program traverses all outposts in all regions to obtain as many dispatch tickets as possible. **The goods the program supports trading** are listed in `goods_dict` in [world_map.json](../../assets/data/world_map.json).
+
+Newly supported goods: [Amethyst Bottle](../../assets/data/world_map.json#L28) and [Amethyst Part](../../assets/data/world_map.json#L29) in Valley 4, plus [Xiranite](../../assets/data/world_map.json#L46), [Cuprium Part](../../assets/data/world_map.json#L47), and [Separator Core](../../assets/data/world_map.json#L48) in Wuling.
 
 Options: 『⭐Outpost exchange』『Trading goods priority sequence』『Outpost exchange only buys priority goods』
 
@@ -117,11 +119,13 @@ When 『Outpost exchange only buys priority goods』 is enabled, only goods in t
 
 The 『Trading goods priority sequence』 option is empty by default, in which case the program recognizes *goods the outpost accepts* and trades the *program-supported goods* among them in **random order**.
 
-To make the program trade in order, fill the 『Trading goods priority sequence』 with **regular expressions separated by English commas `,`**, so that:
+To make the program trade in order, fill the 『Trading goods priority sequence』 with **goods names or regular expressions separated by commas `,`**, so that:
 
 - For **priority goods** that are both *accepted by the outpost* and *supported by the program*, they are traded in **fill order**.
 - Other goods are traded in random order after the priority goods.
 - Wrong / not accepted / not supported goods names are ignored.
+
+Complete goods names supported by the current outpost use exact matching; other entries use regular-expression search within goods names. Use names in the game's current language. For example, `Xiranite` matches only Xiranite, not Heavy Xiranite or other goods containing “Xiranite”; use `.*Xiranite.*` to match all goods containing “Xiranite”. In Chinese, the equivalent entries are `息壤` and `.*息壤.*`, with `重息壤` being a separate good.
 
 #### Example
 

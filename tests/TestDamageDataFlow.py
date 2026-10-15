@@ -124,7 +124,7 @@ class TestDamageDataFlow(unittest.TestCase):
         self.assertEqual(report["summary"]["replay_verified_quotes"], 128)
         self.assertIsNone(report["summary"]["complete_characters"])
         self.assertEqual(report["summary"]["skills_pending_semantic_review"], 128)
-        self.assertFalse(report["missing_characters"])
+        self.assertEqual(report["missing_characters"], ["si"])
         mifu = next(row for row in report["characters"] if row["key"] == "mi_fu")
         battle = next(skill for skill in mifu["skills"] if skill["type"] == "战技")
         self.assertTrue(any(branch["replaces_base_action"] for branch in battle["branches"]))

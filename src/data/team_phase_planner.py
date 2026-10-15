@@ -459,3 +459,16 @@ class TeamPhasePlanner:
             self.state.action_index = 0
             return True
         return False
+
+    def restore_slots(self, slots: set[str], *, preferred_slots: tuple[str, ...] = ()) -> bool:
+        """Re-enable recovered slots; restart a canceled plan rather than resume it."""
+        restored = self.state.disabled_slots.intersection(slots)
+        if not restored:
+            return False
+        self.state.disabled_slots.difference_update(restored)
+        if self.active_plan is not None:
+            return False
+        remaining_disabled = set(self.state.disabled_slots)
+        self.configure(self.plans, preferred_slots=preferred_slots)
+        self.disable_slots(remaining_disabled)
+        return self.active_plan is not None
