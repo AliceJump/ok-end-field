@@ -443,6 +443,13 @@ class TimedCombatLogic:
         self._clear_action_attempt_feedback()
         self._observe_battle()
         self._set_cooldowns()
+        repeat_guard = max((profile.repeat_guard for profile in self.active), default=0.0)
+        if repeat_guard:
+            self.battle_retry_after[token] = max(self.battle_retry_after.get(token, 0), self.started + repeat_guard)
+            self.task.log_info(
+                f"时间排轴: 战技 {token} 已确认，后续替换按钮未观测，"
+                f"本次起手后 {repeat_guard:g}s 内不重复按该战技；终结技照常"
+            )
         self._activate_state(token, self.state_specs.get(token), "战技")
         self.main_control.record_cast(token, "battle", self.active, self.started)
         self._observe_phase_action(token, "battle")

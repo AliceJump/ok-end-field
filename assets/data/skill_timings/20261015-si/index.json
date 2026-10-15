@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "frames_per_second": 30,
+  "verified_byte_roundtrip": true,
+  "profiles_sha256": "471dadbec2a1e77381e3636b7954e94f3c7d650e4a6d17d684c85447586e8346",
+  "native_inputs": {
+    "GameAssembly.dll": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "global-metadata.dat": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "sources": {
+    "chr_0036_jsspsi_normal_skill": {
+      "source_sha256": "ca2599cda4bd11e790714dba636f2d8eea715d9a8e0c83647a3ec9457ef431a8",
+      "source_bytes": 9012,
+      "decoded_sha256": "ebd4bdc616dd918e925a65941b79e0e50bfb7af00578f7dd20e098e8fdd001e1",
+      "duration_frame": 168,
+      "exclusive_frame": 35,
+      "costs": [
+        {
+          "type": 1,
+          "value": 100.0,
+          "cooldown": 0.0
+        }
+      ],
+      "level_rows": 12,
+      "byte_identical": true
+    },
+    "chr_0036_jsspsi_combo_skill": {
+      "source_sha256": "fc426586958638e30b6508c94ccd98fa26116337410eccb54becf793dfcbfe85",
+      "source_bytes": 14079,
+      "decoded_sha256": "117fe7d0c53ef18d4b2721326098bbad22b058a78de7070845e147d30a9ec92d",
+      "duration_frame": 228,
+      "exclusive_frame": 35,
+      "costs": [
+        {
+          "type": 1,
+          "value": 0.0,
+          "cooldown": 16.0
+        }
+      ],
+      "level_rows": 12,
+      "byte_identical": true
+    },
+    "chr_0036_jsspsi_ultimate_skill": {
+      "source_sha256": "5fd15c6738ab3f3d52e2eb3e8c7ba70e5e0303e0594eebb5d5a9b9b93a79f3f0",
+      "source_bytes": 12561,
+      "decoded_sha256": "f0d9b7810528195bde6bb1d2db5e369950d5caf0ff2ed81490924f220c135ba2",
+      "duration_frame": 214,
+      "exclusive_frame": 85,
+      "costs": [
+        {
+          "type": 0,
+          "value": 80.0,
+          "cooldown": 30.0
+        }
+      ],
+      "level_rows": 12,
+      "byte_identical": true
+    }
+  },
+  "skill_patch_sha256": "ebc67209aaae5f3e3e1e9aa5bbf6b15dbd81b7d5c7dabaa8cd88b9566cfb12ae",
+  "policy": "Base battle and ultimate admission only. Battle repeat guard is full authored timeline plus nominal 20-second ink lifetime; it is not cooldown or proof of hit. Unobserved 15-SP/0-SP replacement buttons are not automatically pressed. Anonymous combo dispatch retains master behavior."
+}

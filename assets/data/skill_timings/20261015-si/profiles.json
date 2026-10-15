@@ -1,0 +1,89 @@
+[
+  {
+    "aliases": [
+      "祀",
+      "si",
+      "Si",
+      "chr_0036_jsspsi"
+    ],
+    "kind": "battle",
+    "profile": {
+      "skill_id": "chr_0036_jsspsi_normal_skill",
+      "duration": 5.6,
+      "exclusive": 1.1666666666666667,
+      "cooldown": 0.0,
+      "skill_points": 1,
+      "sp_cost": 100.0,
+      "allow_next": [
+        [
+          1.1333333333333333,
+          1.7666666666666666,
+          [
+            "chr_0036_jsspsi_normal_skill_1"
+          ]
+        ]
+      ],
+      "effect_start": 0.3,
+      "repeat_guard": 25.6
+    }
+  },
+  {
+    "aliases": [
+      "祀",
+      "si",
+      "Si",
+      "chr_0036_jsspsi"
+    ],
+    "kind": "link",
+    "profile": {
+      "skill_id": "chr_0036_jsspsi_combo_skill",
+      "duration": 7.6,
+      "exclusive": 1.1666666666666667,
+      "cooldown": 16.0,
+      "skill_points": 0,
+      "sp_cost": 0.0,
+      "allow_next": [
+        [
+          0.6666666666666666,
+          2.7,
+          [
+            "chr_0036_jsspsi_normal_skill",
+            "chr_0036_jsspsi_normal_skill_1"
+          ]
+        ]
+      ],
+      "effect_start": null,
+      "repeat_guard": 0.0
+    }
+  },
+  {
+    "aliases": [
+      "祀",
+      "si",
+      "Si",
+      "chr_0036_jsspsi"
+    ],
+    "kind": "ult",
+    "profile": {
+      "skill_id": "chr_0036_jsspsi_ultimate_skill",
+      "duration": 7.133333333333334,
+      "exclusive": 2.8333333333333335,
+      "cooldown": 30.0,
+      "skill_points": null,
+      "sp_cost": null,
+      "allow_next": [
+        [
+          2.1333333333333333,
+          2.8333333333333335,
+          [
+            "chr_0036_jsspsi_normal_skill",
+            "chr_0036_jsspsi_combo_skill",
+            "chr_0036_jsspsi_normal_skill_1"
+          ]
+        ]
+      ],
+      "effect_start": null,
+      "repeat_guard": 0.0
+    }
+  }
+]
