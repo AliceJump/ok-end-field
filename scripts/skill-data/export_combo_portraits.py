@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 from pathlib import Path
 
 from PIL import Image
@@ -15,7 +16,29 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def reviewed_locations(source, destination):
+    common = Path(subprocess.check_output(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=ROOT, text=True).strip())
+    scratch = common.parent.resolve() / "tmp"
+    source = Path(source).resolve()
+    if not source.is_relative_to(scratch):
+        raise ValueError("Portrait capture must stay in the main checkout's ignored tmp directory")
+    destination = Path(destination).resolve()
+    allowed = (ROOT / "assets/data/combo_portraits", ROOT / "tmp/combo-portrait-reexport")
+    if not any(destination == path.resolve() and destination.is_relative_to(ROOT.resolve()) for path in allowed):
+        raise ValueError("Output must be the portrait snapshot or its named verification directory")
+    return source, destination
+
+
+def contained_file(directory, relative):
+    path = (directory / relative).resolve()
+    if not path.is_relative_to(directory):
+        raise ValueError("Portrait source/output escapes its reviewed directory")
+    return path
+
+
 def export(source: Path, destination: Path):
+    source, destination = reviewed_locations(source, destination)
     # Import only the product's character/profile mapping, never research code.
     import sys
 
@@ -24,7 +47,7 @@ def export(source: Path, destination: Path):
 
     characters_raw = (ROOT / "assets/data/characters.json").read_bytes()
     characters = json.loads(characters_raw)
-    bindings_raw = (source / "bindings.json").read_bytes()
+    bindings_raw = contained_file(source, "bindings.json").read_bytes()
     bindings = {row["path"]: row for row in json.loads(bindings_raw)}
     owners = {}
     store = load_skill_timings()
@@ -37,12 +60,14 @@ def export(source: Path, destination: Path):
             if re.fullmatch(r"chr_\d{4}_[a-z0-9]+", native_id) is None:
                 raise ValueError(f"Unreviewed native id: {native_id}")
             owners[native_id] = (key, row["zh"])
-    paths = sorted((source / "media/Texture2D").glob("icon_round_chr_*.png"))
+    portrait_directory = contained_file(source, "media/Texture2D")
+    paths = sorted(portrait_directory.glob("icon_round_chr_*.png"))
     if len(paths) != 35:
         raise ValueError("Review the portrait capture before changing the 35-image boundary")
     atlas = Image.new("RGBA", (154 * 5, 154 * 7))
     records = []
     for index, path in enumerate(paths):
+        path = contained_file(portrait_directory, path.name)
         native_id = path.stem.rsplit("_p", 1)[0].removeprefix("icon_round_")
         asset_path = f"Assets/Beyond/DynamicAssets/Gameplay/UI/Sprites/CharRoundIcon/icon_round_{native_id}.png"
         binding = bindings[asset_path]
@@ -63,7 +88,7 @@ def export(source: Path, destination: Path):
     if not set(owners) <= {r["native_id"] for r in records}:
         raise ValueError("Current character portraits are missing")
     destination.mkdir(parents=True, exist_ok=True)
-    atlas_path = destination / "portraits.png"
+    atlas_path = contained_file(destination, "portraits.png")
     atlas.save(atlas_path)
     manifest = {
         "schema_version": 1, "atlas": "portraits.png", "tile_size": 154,
@@ -73,7 +98,7 @@ def export(source: Path, destination: Path):
         "bindings_sha256": hashlib.sha256(bindings_raw).hexdigest(), "portraits": records,
         "scope": "round portrait identity only; not castability, timer, hit or release confirmation",
     }
-    (destination / "index.json").write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode())
+    contained_file(destination, "index.json").write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode())
     print(f"Exported {len(records)} portraits, mapped to {len(characters)} product characters")
 
 

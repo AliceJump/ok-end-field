@@ -78,10 +78,14 @@ class PortraitBank:
             for alias in row["aliases"]:
                 self.aliases.setdefault(alias, set()).add(native_id)
 
-    def candidates(self, team):
+    def candidates(self, team, variants=None):
         selected = {}
         for slot, alias in enumerate(team, 1):
-            for native_id in self.aliases.get(alias, ()):
+            available = self.aliases.get(alias, ())
+            hint = (variants or {}).get(slot)
+            if hint in available:
+                available = (hint,)
+            for native_id in available:
                 name = self.characters[native_id]
                 if name is not None:
                     selected.setdefault(native_id, (name, []))[1].append(slot)
@@ -103,6 +107,14 @@ def combo_slot_boxes(width: int, height: int) -> tuple[tuple[int, int, int, int]
     return tuple(tuple(round((v - (960 if i % 2 == 0 else 540)) * scale
                              + (width / 2 if i % 2 == 0 else height / 2))
                        for i, v in enumerate(box)) for box in _SLOT_BOXES)
+
+
+def _frame_size(frame):
+    if not isinstance(frame, np.ndarray) or frame.dtype != np.uint8 or frame.ndim != 3:
+        return None
+    if frame.shape[2] not in (3, 4) or frame.shape[0] <= 0 or frame.shape[1] <= 0:
+        return None
+    return frame.shape[1], frame.shape[0]
 
 
 class ComboSkillDetector:
@@ -162,33 +174,7 @@ class ComboSkillDetector:
         return ComboSlotObservation(observation.position, observation.box, name if known else None,
                                     native_id if known else None, team_slot if known else None, score, margin)
 
-    def observe(self, frame, team, *, ready: bool | None, observed_at: float) -> ComboObservation:
-        if not math.isfinite(observed_at):
-            raise ValueError("Combo observation requires a finite capture time")
-        team = tuple(team[:4])
-        valid = (isinstance(frame, np.ndarray) and frame.dtype == np.uint8 and frame.ndim == 3
-                 and frame.shape[2] in (3, 4) and frame.shape[0] > 0 and frame.shape[1] > 0)
-        size = (frame.shape[1], frame.shape[0]) if valid else None
-        boxes = combo_slot_boxes(*size) if size else ((0, 0, 0, 0),) * 4
-        slots = tuple(ComboSlotObservation(i + 1, box) for i, box in enumerate(boxes))
-        if ready is not True or not valid:
-            self.reset()
-            return ComboObservation(ready, observed_at, team, size, slots, "not_ready" if ready is False else "unknown")
-        signature = (team, size)
-        if signature != self._signature:
-            self.reset()
-            self._signature = signature
-        if not any(alias and alias != "?" for alias in team):
-            return ComboObservation(ready, observed_at, team, size, slots, "unknown_team")
-        if self._bank is None:
-            try:
-                self._bank = load_combo_portraits()
-            except (OSError, ValueError, KeyError, TypeError, cv2.error):
-                return ComboObservation(ready, observed_at, team, size, slots, "portraits_unavailable")
-        candidates = self._bank.candidates(team)
-        if not candidates:
-            return ComboObservation(ready, observed_at, team, size, slots, "unknown_team")
-        scale = min(size[0] / 1920, size[1] / 1080)
+    def _observe_slots(self, frame, slots, candidates, scale):
         results = []
         for index, slot in enumerate(slots):
             rendered_size = round(_RENDERED_SIZES[index] * scale)
@@ -206,4 +192,32 @@ class ComboSkillDetector:
                 result = self._match_slot(face, candidates, rendered_size, slot)
                 self._slots[index] = (fingerprint, result)
             results.append(result)
-        return ComboObservation(ready, observed_at, team, size, tuple(results), "observed")
+        return tuple(results)
+
+    def observe(self, frame, team, *, ready: bool | None, observed_at: float, variants=None) -> ComboObservation:
+        if not math.isfinite(observed_at):
+            raise ValueError("Combo observation requires a finite capture time")
+        team = tuple(team[:4])
+        size = _frame_size(frame)
+        boxes = combo_slot_boxes(*size) if size else ((0, 0, 0, 0),) * 4
+        slots = tuple(ComboSlotObservation(i + 1, box) for i, box in enumerate(boxes))
+        if ready is not True or size is None:
+            self.reset()
+            return ComboObservation(ready, observed_at, team, size, slots, "not_ready" if ready is False else "unknown")
+        signature = (team, size, tuple(sorted((variants or {}).items())))
+        if signature != self._signature:
+            self.reset()
+            self._signature = signature
+        if not any(alias and alias != "?" for alias in team):
+            return ComboObservation(ready, observed_at, team, size, slots, "unknown_team")
+        if self._bank is None:
+            try:
+                self._bank = load_combo_portraits()
+            except (OSError, ValueError, KeyError, TypeError, cv2.error):
+                return ComboObservation(ready, observed_at, team, size, slots, "portraits_unavailable")
+        candidates = self._bank.candidates(team, variants)
+        if not candidates:
+            return ComboObservation(ready, observed_at, team, size, slots, "unknown_team")
+        scale = min(size[0] / 1920, size[1] / 1080)
+        results = self._observe_slots(frame, slots, candidates, scale)
+        return ComboObservation(ready, observed_at, team, size, results, "observed")

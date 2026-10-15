@@ -1,14 +1,18 @@
 """Fixed-slot identities remain separate from queue existence/cast success."""
 
 import hashlib
+import importlib.util
 import json
 import tempfile
+import time
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import cv2
 import numpy as np
+from ok import Box
 
 from src.image.combo_skill_detector import (
     PORTRAITS,
@@ -132,6 +136,19 @@ class TestComboSkillDetector(unittest.TestCase):
             self.assertEqual(result.head.native_id, native)
             self.assertEqual(result.head.character, "管理员")
 
+    def test_confirmed_team_variant_restricts_candidates_and_invalidates_cache(self):
+        bank = load_combo_portraits()
+        self.assertEqual(set(bank.candidates(["管理员"], {1: "chr_0002_endminm"})), {"chr_0002_endminm"})
+        self.assertEqual(len(bank.candidates(["管理员"], {1: "chr_0036_jsspsi"})), 2)
+        detector = ComboSkillDetector()
+        frame = render_heads(("chr_0003_endminf",))
+        known = detector.observe(frame, ["管理员"], ready=True, observed_at=1)
+        self.assertEqual(known.head.native_id, "chr_0003_endminf")
+        limited = detector.observe(frame, ["管理员"], ready=True, observed_at=2, variants={1: "chr_0002_endminm"})
+        self.assertIsNone(limited.head)
+        restored = detector.observe(frame, ["管理员"], ready=True, observed_at=3, variants={1: "chr_0003_endminf"})
+        self.assertEqual(restored.head.native_id, "chr_0003_endminf")
+
     def test_duplicate_actor_aliases_do_not_invent_a_unique_team_slot(self):
         bank = load_combo_portraits()
         choices = bank.candidates(["管理员", "chr_0002_endminm"])
@@ -152,8 +169,10 @@ class TestComboSkillDetector(unittest.TestCase):
         result = ComboSkillDetector().observe(np.full((1080, 1920, 3), 100, np.uint8), TEAM, ready=True, observed_at=2)
         self.assertIsNone(result.head)
         self.assertEqual(len(result.slots), 4)
+        detector = ComboSkillDetector()
+        invalid_time = float("nan")
         with self.assertRaises(ValueError):
-            ComboSkillDetector().observe(None, TEAM, ready=True, observed_at=float("nan"))
+            detector.observe(None, TEAM, ready=True, observed_at=invalid_time)
 
     def test_hidden_hint_does_not_load_assets_and_missing_assets_fail_soft(self):
         with patch("src.image.combo_skill_detector.load_combo_portraits", side_effect=OSError("missing")) as load:
@@ -183,6 +202,7 @@ class TestComboSkillDetector(unittest.TestCase):
 
 
 class _Task:
+    _link_team_variants = BattleMixin._link_team_variants
     observe_link_skills = BattleMixin.observe_link_skills
     use_link_skill = BattleMixin.use_link_skill
 
@@ -200,6 +220,46 @@ class _Task:
 
 
 class TestComboSkillAdapter(unittest.TestCase):
+    def test_team_probe_keeps_original_gender_template_before_name_merge(self):
+        task = SimpleNamespace(
+            frame=np.zeros((1080, 1920, 3), np.uint8),
+            _collect_team_candidate_boxes=lambda: ([Box(20, 20, 40, 40)], ["battle_icon_endministrator_female"]),
+            _build_search_boxes=lambda *args, **kwargs: [Box(20, 20, 40, 40)],
+            _match_team_slots=lambda *args, **kwargs: [(0, "battle_icon_endministrator_female", .95)],
+            _update_squad_hud=lambda *args, **kwargs: None,
+        )
+        with patch("src.tasks.mixin.battle_mixin.observe_squad_hud", return_value=None):
+            result = BattleMixin._detect_team_core(task)
+        self.assertEqual(result[0], ("endministrator", .95, "battle_icon_endministrator_female"))
+        self.assertEqual(task._last_combo_team_probe[0][0][2], "battle_icon_endministrator_female")
+        self.assertEqual(task._last_combo_team_probe[1], (1920, 1080))
+        # Failed subsequent scans clear the old variant instead of retaining it.
+        task.frame = None
+        BattleMixin._detect_team_core(task)
+        self.assertIsNone(task._last_combo_team_probe)
+
+    def test_recent_team_detection_limits_gender_without_rescanning(self):
+        task = _Task()
+        task._battle_team = ["管理员", "佩丽卡"]
+        task.frame = render_heads(("chr_0003_endminf",))
+        rows = (("endministrator", .9, "battle_icon_endministrator_male"), ("perlica", .9, "battle_icon_perlica"))
+        task._last_combo_team_probe = (rows, (1920, 1080), time.monotonic())
+        # A conflicting observed female cannot slip through a male-only search.
+        self.assertIsNone(task.observe_link_skills().head)
+        task._last_combo_team_probe = (rows, (1920, 1080), time.monotonic() - 3)
+        self.assertEqual(task.observe_link_skills().head.native_id, "chr_0003_endminf")
+
+    def test_stale_different_size_or_changed_team_does_not_reuse_gender(self):
+        task = _Task()
+        task._battle_team = ["管理员", "佩丽卡"]
+        task.frame = render_heads(("chr_0003_endminf",))
+        admin = ("endministrator", .9, "battle_icon_endministrator_male")
+        for size, seen_at, teammate in (((1280, 720), time.monotonic(), "perlica"),
+                                        ((1920, 1080), time.monotonic() - 3, "perlica"),
+                                        ((1920, 1080), time.monotonic(), "si")):
+            task._last_combo_team_probe = ((admin, (teammate, .9, "")), size, seen_at)
+            self.assertEqual(task.observe_link_skills().head.native_id, "chr_0003_endminf")
+
     def test_explicit_observation_is_read_only_and_e_keeps_original_input(self):
         task = _Task()
         observation = task.observe_link_skills()
@@ -228,3 +288,25 @@ class TestComboSkillAdapter(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "input failed"):
                 task.use_link_skill()
         self.assertFalse(task._combo_skill_detector._slots)
+
+
+class TestComboPortraitExportBoundary(unittest.TestCase):
+    def test_capture_and_output_are_restricted_before_any_export(self):
+        root = Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location("combo_export", root / "scripts/skill-data/export_combo_portraits.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            output = root / "assets/data/combo_portraits"
+            outside = path / "outside"
+            with self.assertRaisesRegex(ValueError, "main checkout"):
+                module.reviewed_locations(path, output)
+            with patch.object(module.subprocess, "check_output", return_value=str(path / ".git")):
+                source = path / "tmp/capture"
+                with self.assertRaisesRegex(ValueError, "Output must"):
+                    module.reviewed_locations(source, outside)
+                _, destination = module.reviewed_locations(source, output)
+                self.assertEqual(destination, output)
+            with self.assertRaisesRegex(ValueError, "escapes"):
+                module.contained_file(path, "../escaped.png")

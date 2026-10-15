@@ -81,6 +81,11 @@ _TEMPLATE_ALIASES: dict[str, str] = {
     "battle_icon_endministrator_female": "battle_icon_endministrator",
     "battle_icon_endministrator_male": "battle_icon_endministrator",
 }
+_ADMIN_COMBO_VARIANTS = {
+    "battle_icon_endministrator_male": "chr_0002_endminm",
+    "battle_icon_endministrator_female": "chr_0003_endminf",
+}
+_COMBO_TEAM_PROBE_MAX_AGE = 2.5
 
 # ── 切人图标（main_char 箭头）搜索框组：判定当前是第几个角色 ──────────────
 # 数据来源：ok_templates 子模块标注（基准分辨率 1920x1080）。
@@ -579,6 +584,7 @@ class BattleMixin(BaseEfTask):
 
     def _detect_team_core(self, frame=None, slot_indices=None) -> list[tuple[str, float, str]]:
         """编队识别核心逻辑：返回四个槽位的 (en_name, score, feature_name)。"""
+        self._last_combo_team_probe = None
         if frame is None:
             frame = self.frame
 
@@ -637,6 +643,10 @@ class BattleMixin(BaseEfTask):
             read_health=True,
             confirm_count=slot_indices is None,
         )
+
+        # Keep the actual template variant before public team names collapse
+        # both administrator portraits into the same character.
+        self._last_combo_team_probe = (tuple(slot_results), (fw, fh), time.monotonic())
 
         return slot_results
 
@@ -1018,6 +1028,27 @@ class BattleMixin(BaseEfTask):
             )
         )
 
+    def _link_team_variants(self, team, frame, observed_at):
+        """Reuse a recent same-team portrait probe; no additional team scan."""
+        probe = getattr(self, "_last_combo_team_probe", None)
+        if probe is None or frame is None or getattr(frame, "ndim", 0) != 3:
+            return {}
+        rows, size, seen_at = probe
+        if (size != (frame.shape[1], frame.shape[0])
+                or not 0 <= observed_at - seen_at <= _COMBO_TEAM_PROBE_MAX_AGE):
+            return {}
+        names = _load_char_name_map()
+        variants = {}
+        for slot, (name, _score, feature) in enumerate(rows[:len(team)], 1):
+            member = team[slot - 1]
+            if name == "?" or member == "?":
+                continue
+            if member not in (name, names.get(name)):
+                return {}  # A changed squad cannot constrain the old squad.
+            if feature in _ADMIN_COMBO_VARIANTS:
+                variants[slot] = _ADMIN_COMBO_VARIANTS[feature]
+        return variants
+
     def observe_link_skills(self, *, team=None, ready=None, frame=None):
         """Read four fixed portrait slots without inputs or inferred cast state.
 
@@ -1035,7 +1066,8 @@ class BattleMixin(BaseEfTask):
         observed_at = time.monotonic()
         if frame is None and ready:
             frame = self.frame
-        observation = detector.observe(frame, team, ready=ready, observed_at=observed_at)
+        variants = self._link_team_variants(team, frame, observed_at)
+        observation = detector.observe(frame, team, ready=ready, observed_at=observed_at, variants=variants)
         self.link_skill_observation = observation
         return observation
 
