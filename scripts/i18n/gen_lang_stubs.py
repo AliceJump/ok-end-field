@@ -166,7 +166,8 @@ def main() -> int:
         parts.append(f"    {module_name}: {cls}")
     parts.append("")
 
-    TYPED_OUT.write_text("\n".join(parts).rstrip() + "\n", encoding="utf-8")
+    # newline="\n"：Windows 上 Path.write_text 默认会把 \n 转成 CRLF，违反仓库 LF 约定
+    TYPED_OUT.write_text("\n".join(parts).rstrip() + "\n", encoding="utf-8", newline="\n")
     print(f"[ok] 已生成 {TYPED_OUT.relative_to(REPO_ROOT)}（{len(modules)} 个模块）")
 
     # 幂等更新 __init__.py：LangAccessor 继承 _LangAccessorTyped
@@ -196,7 +197,7 @@ def main() -> int:
             print("[warn] 未在 __init__.py 中找到 class LangAccessor，请手动修改")
             failed = True
     if changed:
-        INIT_FILE.write_text(init_text, encoding="utf-8")
+        INIT_FILE.write_text(init_text, encoding="utf-8", newline="\n")
         print(f"[ok] 已更新 {INIT_FILE.relative_to(REPO_ROOT)}（LangAccessor 继承类型化基类）")
     else:
         print(f"[ok] {INIT_FILE.relative_to(REPO_ROOT)} 无需更新")

@@ -117,7 +117,7 @@ class OfficialPrefixSyncTests(unittest.TestCase):
         config = json.loads((root / "scripts/i18n/official_prefix_overrides.json").read_text(encoding="utf-8"))
         data = json.loads((root / "assets/lang/world_map.json").read_text(encoding="utf-8"))
         rules = load_prefix_overrides(root)["world_map"]
-        self.assertEqual(len(rules), 24)
+        self.assertEqual(len(rules), 25)
         self.assertEqual(rules["k_beibujinqu"], ("重度能量淤积点",))
         for category, spec in config["world_map"].items():
             for key in spec["keys"]:

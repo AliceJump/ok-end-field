@@ -251,6 +251,7 @@ class FeatureList(str, Enum):
     view_location = "view_location"
     visit_icon = "visit_icon"
     warehouse_node_enter = "warehouse_node_enter"
+    higher_order_warp_plasma_coated_slide = "higher_order_warp_plasma_coated_slide"
     weapon_quota = "weapon_quota"
     week_reward_collect = "week_reward_collect"
     week_task_collect = "week_task_collect"
