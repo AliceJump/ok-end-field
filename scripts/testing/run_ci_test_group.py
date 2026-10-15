@@ -16,6 +16,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         "Accounts and authentication",
         (
             "TestAccountBattleConfig.py",
+            "TestAccountIdentity.py",
             "TestAccountKeyConfig.py",
             "TestAccountOverrideMixin.py",
             "TestAccountScopeStore.py",
