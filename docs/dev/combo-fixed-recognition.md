@@ -46,3 +46,7 @@ uv run --locked python scripts/skill-data/export_combo_portraits.py --source <�
 新增测试已登记 combat-runtime 职责组，该组完整执行通过。
 
 编队性别生产链及路径边界续批后，最终22项专项、28项头像/编队相关及全仓1286项通过（92.654秒）；combat-runtime组、114文件/16组登记、AST/Ruff I,F/diff-check及两份产物逐字节复现再次通过。初版Sonar指出的导出路径边界、方法复杂度和异常断言结构已修复，服务端复扫结果另行核验。
+
+PR评审续修：显式只读查询仍向调用方报告异常，原按E路径将截图/匹配等可选观测异常隔离，清空旧快照及缓存后继续原按键；TaskDisabledException/FinishedException正常传播且不按E，按键本身异常也不被吞掉。未创建detector就失败时仍安全清理。新增4项专项覆盖截图/匹配异常、构造前失败、任务取消/结束与按键异常优先级，26项专项通过。该修复不改变识别阈值或按键资格。
+
+评审修复后标准全仓1290项通过（64.025秒），Ruff I/F及diff-check通过；等待服务端检查和机器人对新提交的完整增量审阅。

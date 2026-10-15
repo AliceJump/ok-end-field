@@ -8,11 +8,11 @@ import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 import cv2
 import numpy as np
-from ok import Box
+from ok import Box, CaptureException, FinishedException, TaskDisabledException
 
 from src.image.combo_skill_detector import (
     PORTRAITS,
@@ -203,6 +203,7 @@ class TestComboSkillDetector(unittest.TestCase):
 
 class _Task:
     _link_team_variants = BattleMixin._link_team_variants
+    _observe_optional_link_skills = BattleMixin._observe_optional_link_skills
     observe_link_skills = BattleMixin.observe_link_skills
     use_link_skill = BattleMixin.use_link_skill
 
@@ -220,6 +221,48 @@ class _Task:
 
 
 class TestComboSkillAdapter(unittest.TestCase):
+    def test_observation_failure_before_detector_creation_still_sends_e(self):
+        task = _Task()
+        task.link_skill_observation = object()
+        with patch.object(task, "observe_link_skills", side_effect=RuntimeError("probe failed")):
+            self.assertTrue(task.use_link_skill())
+        self.assertEqual(task.keys, ["e"])
+        self.assertIsNone(task.link_skill_observation)
+        self.assertFalse(hasattr(task, "_combo_skill_detector"))
+
+    def test_frame_or_matching_error_drops_old_identity_without_blocking_e(self):
+        task = _Task()
+        task.observe_link_skills()
+        with patch.object(_Task, "frame", new_callable=PropertyMock, create=True) as frame:
+            frame.side_effect = CaptureException("capture failed")
+            self.assertTrue(task.use_link_skill())
+        self.assertEqual(task.keys, ["e"])
+        self.assertIsNone(task.link_skill_observation)
+        self.assertFalse(task._combo_skill_detector._slots)
+        task.observe_link_skills()
+        with patch.object(task._combo_skill_detector, "observe", side_effect=cv2.error("match failed")):
+            self.assertTrue(task.use_link_skill())
+        self.assertEqual(task.keys, ["e", "e"])
+        self.assertIsNone(task.link_skill_observation)
+        self.assertFalse(task._combo_skill_detector._slots)
+
+    def test_cancel_or_finish_from_observation_propagates_without_input(self):
+        for error_type in (TaskDisabledException, FinishedException):
+            task = _Task()
+            task.observe_link_skills()
+            with patch.object(task, "observe_link_skills", side_effect=error_type("stop")):
+                with self.assertRaises(error_type):
+                    task.use_link_skill()
+            self.assertFalse(task.keys)
+            self.assertFalse(task._combo_skill_detector._slots)
+
+    def test_input_error_wins_even_when_optional_observation_also_fails(self):
+        task = _Task()
+        with patch.object(task, "observe_link_skills", side_effect=RuntimeError("probe failed")), \
+                patch.object(task, "press_combat_key", side_effect=RuntimeError("input failed")):
+            with self.assertRaisesRegex(RuntimeError, "input failed"):
+                task.use_link_skill()
+
     def test_team_probe_keeps_original_gender_template_before_name_merge(self):
         task = SimpleNamespace(
             frame=np.zeros((1080, 1920, 3), np.uint8),

@@ -25,7 +25,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from ok import Box
+from ok import Box, FinishedException, TaskDisabledException
 
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
@@ -1071,21 +1071,38 @@ class BattleMixin(BaseEfTask):
         self.link_skill_observation = observation
         return observation
 
+    def _observe_optional_link_skills(self, ready):
+        """Recognition failure cannot suppress E; task cancellation still can."""
+        self.link_skill_observation = None
+        try:
+            self.observe_link_skills(ready=ready)
+        except (TaskDisabledException, FinishedException):
+            raise
+        except Exception:
+            # Frame access and OpenCV are optional observations. Discard old
+            # data rather than retaining a stale identity after either fails.
+            self.link_skill_observation = None
+            detector = getattr(self, "_combo_skill_detector", None)
+            if detector is not None:
+                detector.reset()
+
     def use_link_skill(self):
         """
         使用连携技能。
         """
         if self.is_link_skill_ready():
-            self.observe_link_skills(ready=True)
             try:
+                self._observe_optional_link_skills(True)
                 self.press_combat_key("e")
             finally:
                 # The queue can change even if its count/positions stay fixed.
-                self._combo_skill_detector.reset()
+                detector = getattr(self, "_combo_skill_detector", None)
+                if detector is not None:
+                    detector.reset()
             return True
 
         if getattr(self, "_combo_skill_detector", None) is not None:
-            self.observe_link_skills(ready=False)
+            self._observe_optional_link_skills(False)
         return False
 
     def use_recommend_skill(self):
