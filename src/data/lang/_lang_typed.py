@@ -125,6 +125,9 @@ class CharactersModule(_LangModuleBaseT):
     purrchena: str
     """噗切娜"""
 
+    si: str
+    """祀"""
+
 
 class DailyBattleMixinModule(_LangModuleBaseT):
     """daily_battle_mixin — OCR 语言节点（值取自 zh_CN）"""

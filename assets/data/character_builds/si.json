@@ -1,0 +1,35 @@
+{
+  "character": "祀",
+  "character_key": "si",
+  "element": "寒冷",
+  "stars": 6,
+  "weapon": {
+    "name": "玉中身",
+    "level_max": 90,
+    "skill_rank": 9,
+    "source": "官方游戏内武器推荐（森空岛WIKI）",
+    "evidence_level": 1,
+    "note": "官方游戏内武器推荐（森空岛WIKI 干员页），武器页反向互证=一致"
+  },
+  "matrix": {
+    "name": "无瑕基质·效益",
+    "source": "官方武器页「推荐武器基质」",
+    "evidence_level": 1,
+    "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
+  },
+  "equipment": {
+    "set_main": "长息装备组",
+    "set_off": null,
+    "pieces": [
+      "纾难护甲",
+      "长息护手",
+      "长息蓄电核",
+      "长息蓄电核"
+    ],
+    "level_max": 70,
+    "refinement_max": 3,
+    "source": "启发式支援配装（官方技能与装备属性）",
+    "evidence_level": 3,
+    "note": "智识/力量与终结技充能优先，长息3件由终结技增幅触发；2026-10-15 已查长息装备页未推荐祀，EndSync 暂无样本，待专属攻略验证"
+  }
+}

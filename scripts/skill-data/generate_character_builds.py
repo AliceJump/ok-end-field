@@ -91,6 +91,12 @@ COMMUNITY_SETS = {
 # 「A/B」= 该套装出现在 B 套配装中的 A 套，「同四件 C」= 完全相同四件组合出现次数。
 ENDSYNC = "EndSync 社区汇总"
 CURATED_BUILDS = {
+    "祀": (
+        ["纾难护甲", "长息护手", "长息蓄电核", "长息蓄电核"],
+        "启发式支援配装（官方技能与装备属性）",
+        "智识/力量与终结技充能优先，长息3件由终结技增幅触发；2026-10-15 已查长息装备页未推荐祀，EndSync 暂无样本，待专属攻略验证",
+        3,
+    ),
     "安塔尔": (["落潮轻甲", "长息护手", "长息蓄电核", "长息蓄电核"], ENDSYNC, "长息 5/6，同四件 3/6", 2),
     "诀": (
         ["动火用辅助骨骼", "动火用护手", "动火用隔温板", "生物辅助护板"],
@@ -491,7 +497,7 @@ def main() -> int:
             "character": name,
             "character_key": path.stem,
             "element": element,
-            "stars": char.get("stars"),
+            "stars": char.get("stars", char.get("star")),
             "weapon": {
                 "name": weapon,
                 "level_max": 90,

@@ -1406,5 +1406,25 @@
     "vi_VN": {
       "string": "Purrchena"
     }
+  },
+  "si": {
+    "zh_CN": {
+      "string": "祀"
+    },
+    "zh_TW": {
+      "string": "祀"
+    },
+    "en_US": {
+      "string": "Si"
+    },
+    "ja_JP": {
+      "string": "スー"
+    },
+    "ko_KR": {
+      "string": "사"
+    },
+    "es_ES": {
+      "string": "Si"
+    }
   }
 }
