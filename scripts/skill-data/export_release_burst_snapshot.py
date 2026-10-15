@@ -14,6 +14,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from reviewed_release_stance import release_stance
+from reviewed_si_release import si_release_actor
 from reviewed_support_release import support_release
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -126,6 +127,10 @@ def export(source, revision, destination):
     actual = {row["character"]: len(row["rules"]) for row in actors if row["rules"]}
     if len(actors) != 32 or actual != expected:
         raise ValueError("Release-only export scope changed; review before widening it")
+    si_actor, si_evidence = si_release_actor(ROOT)
+    actors.append(si_actor)
+    supports.append(si_evidence)
+    actual["祀"] = len(si_actor["rules"])
     hashes = _evidence_hashes(source, rows)
     data = {"schema_version": 1, "scope": "confirmed_release_bonuses", "actors": actors,
             "excluded": ["hit_or_target_outcomes", "field_occupancy", "combo_release",
@@ -138,13 +143,19 @@ def export(source, revision, destination):
     manifest = {"schema_version": 1, "source_revision": head,
                 "source_repository": "https://github.com/AliceJump/ok-end-field",
                 "source_branch": "codex/effect-semantics-normalization", "source_hashes": hashes,
-                "snapshot_sha256": hashlib.sha256(payload).hexdigest(), "actors": 32, "rules": 13,
+                "snapshot_sha256": hashlib.sha256(payload).hexdigest(), "actors": 33, "rules": 15,
+                "supplement_source_hashes": {
+                    **si_evidence["source_hashes"],
+                    "assets/data/release_burst/si-release-contract.json": si_evidence["contract_sha256"]},
                 "support_evidence_sha256": hashlib.sha256(support_payload).hexdigest(),
                 "exporter_hashes": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in
                                     (Path(__file__), ROOT / "scripts/skill-data/reviewed_support_release.py",
                                      ROOT / "scripts/skill-data/reviewed_release_stance.py")}, "stances": 1}
+    manifest["exporter_hashes"]["reviewed_si_release.py"] = hashlib.sha256(
+        (ROOT / "scripts/skill-data/reviewed_si_release.py").read_bytes()).hexdigest()
     (destination / "index.json").write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf8"))
-    print(f"Exported {len(actors)} fixed panels and {sum(actual.values())} release rules from {head}")
+    print(f"Exported 32 research panels from {head}, one reviewed master Si projection, "
+          f"and {sum(actual.values())} release rules")
 
 
 if __name__ == "__main__":

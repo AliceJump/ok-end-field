@@ -4374,6 +4374,184 @@
           ]
         }
       }
+    },
+    {
+      "character": "祀",
+      "key": "si",
+      "profile": {
+        "character_level": 90,
+        "skill_rank": 12,
+        "potential": 0,
+        "potential_basis": "user_six_star_p0",
+        "all_attribute_nodes": false,
+        "constant_passive_sources": [],
+        "conditional_talent_state": "untriggered",
+        "scope": "master_static_build_projection; native_progression_not_imported"
+      },
+      "build": {
+        "weapon": "玉中身",
+        "matrix": "无瑕基质·效益",
+        "set_main": "50式应龙装备组",
+        "set_off": null,
+        "pieces": [
+          "50式应龙软甲",
+          "50式应龙手套",
+          "50式应龙信标",
+          "纾难印章"
+        ]
+      },
+      "panel": {
+        "attack_white": 809.0,
+        "attack_percent": 0.598,
+        "attack_flat": 0,
+        "attribute_factor": 4.688000000000001,
+        "crit_rate": 0.05,
+        "crit_damage": 0.5,
+        "amplification": {
+          "物理": 0.0,
+          "灼热": 0.0,
+          "寒冷": 0.0,
+          "电磁": 0.0,
+          "自然": 0.0
+        },
+        "damage_bonus": {
+          "all": 0.0,
+          "all_skill": 0.0,
+          "物理": 0.0,
+          "灼热": 0.0,
+          "寒冷": 0.433,
+          "电磁": 0.0,
+          "自然": 0.0,
+          "normal": 0.0,
+          "skill": 0.0,
+          "combo": 1.256,
+          "ultimate": 0.0
+        }
+      },
+      "attribute_basis": {
+        "scope": "master_static_build_without_dynamic_four_stats_or_conversions"
+      },
+      "quotes": {
+        "normal": {
+          "non_crit": 33089.0,
+          "crit_expect": 33916.3,
+          "bonus_pct": 43.3,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "normal"
+            ],
+            "multiplier": 3.81,
+            "crit_policy": "baseline_expectation",
+            "scope": "master_fixed_build_without_conditional_rows"
+          }
+        },
+        "battle": {
+          "non_crit": 8684.8,
+          "crit_expect": 8901.9,
+          "bonus_pct": 43.3,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "skill"
+            ],
+            "multiplier": 1.0,
+            "crit_policy": "baseline_expectation",
+            "scope": "master_fixed_build_without_conditional_rows"
+          }
+        },
+        "ult": {
+          "non_crit": 0.0,
+          "crit_expect": 0.0,
+          "bonus_pct": 43.3,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "ultimate"
+            ],
+            "multiplier": 5.0,
+            "crit_policy": "baseline_expectation",
+            "scope": "master_fixed_build_without_conditional_rows"
+          },
+          "pricing_scope": "support_opener_only; entity_multi_hit_damage_not_forecast"
+        }
+      },
+      "rules": [
+        {
+          "key": "si_ultimate:BUFF_COLD_UP",
+          "bucket": "amplification",
+          "elements": [
+            "寒冷"
+          ],
+          "recipient": "team",
+          "magnitude": {
+            "base": 0.36000001430511475,
+            "terms": [],
+            "by_count": [],
+            "count_input": null,
+            "accumulation": "linear"
+          },
+          "trigger": "ultimate_cast",
+          "damage_tags": [],
+          "permanent": false,
+          "condition_inputs": [],
+          "duration": 12.0,
+          "duration_input": null,
+          "evaluation": "application",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "unresolved": null,
+          "sources": [
+            "si-release-contract.json",
+            "SkillPatchTable/chr_0036_jsspsi_ultimate_skill/level12",
+            "native:chr_0036_jsspsi_ultimate_skill:child_frame:62"
+          ],
+          "lifetime_scope": "timed",
+          "kind": "ult",
+          "ends_on_source_action": false,
+          "starts_after": 2.066666666666667,
+          "blocks_source_actions": []
+        },
+        {
+          "key": "si_ultimate:BUFF_BURN_UP",
+          "bucket": "amplification",
+          "elements": [
+            "灼热"
+          ],
+          "recipient": "team",
+          "magnitude": {
+            "base": 0.36000001430511475,
+            "terms": [],
+            "by_count": [],
+            "count_input": null,
+            "accumulation": "linear"
+          },
+          "trigger": "ultimate_cast",
+          "damage_tags": [],
+          "permanent": false,
+          "condition_inputs": [],
+          "duration": 12.0,
+          "duration_input": null,
+          "evaluation": "application",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "unresolved": null,
+          "sources": [
+            "si-release-contract.json",
+            "SkillPatchTable/chr_0036_jsspsi_ultimate_skill/level12",
+            "native:chr_0036_jsspsi_ultimate_skill:child_frame:62"
+          ],
+          "lifetime_scope": "timed",
+          "kind": "ult",
+          "ends_on_source_action": false,
+          "starts_after": 2.066666666666667,
+          "blocks_source_actions": []
+        }
+      ],
+      "stance": null
     }
   ],
   "excluded": [

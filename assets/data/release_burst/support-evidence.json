@@ -282,5 +282,42 @@
       "src/data/damage_state_rules.py": "2c201bb70a7dd0d02bb5c56b406ab56d22d5b5aa95e658bfac7dac9d6b12519f",
       "src/data/fixed_skill_modifiers.py": "fd90e488c261ef8d9f0f9db1a6eb6eaae2c06996ae031cfff162597adf31a280"
     }
+  },
+  {
+    "character": "祀",
+    "skill": "chr_0036_jsspsi_ultimate_skill",
+    "release_frame": 62,
+    "fps": 30,
+    "duration": 12.0,
+    "amplification": 0.36000001430511475,
+    "profile": {
+      "character_level": 90,
+      "skill_rank": 12,
+      "potential": 0,
+      "potential_basis": "user_six_star_p0",
+      "all_attribute_nodes": false,
+      "constant_passive_sources": [],
+      "conditional_talent_state": "untriggered",
+      "scope": "master_static_build_projection; native_progression_not_imported"
+    },
+    "input_policy": "rank12_constant_no_dynamic_attribute_input",
+    "native_record_sha256": {
+      "chr_0036_jsspsi_ultimate_skill": "5fd15c6738ab3f3d52e2eb3e8c7ba70e5e0303e0594eebb5d5a9b9b93a79f3f0",
+      "chr_0036_jsspsi_ultimate_skill_abilityrange": "ec55270fa493022be1d659f5257984e4cb781fee12eb108171513c2055838125",
+      "chr_0036_jsspsi_ultimate_skill_abilityrange_1": "c8c257858bc41312e9c6516def54eefb93eff2e4feab2a71eedc3b6043c3371a",
+      "buff_chr_0036_jsspsi_atk_buff_2": "cf56e90cf76165e639dd01ca22b878e7d5ca28ab16cff8c73f8d0ab6c0411900"
+    },
+    "native_inputs": {
+      "GameAssembly.dll": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+      "global-metadata.dat": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+    },
+    "contract_sha256": "86cb40dbec3fe5aa6b7d8d94d617e216b1ebc9e31dac61889556ffc1052accf6",
+    "source_hashes": {
+      "assets/data/character_skills/si.json": "798dfac9d870b90d1c7cc41a65eb4803cfbb06ef52aadbaa79f85ece694ae37d",
+      "assets/data/character_builds/si.json": "70d822ddbd3579344de91d0dc656b050eacf1a9ca835267d8111cf45864acb59",
+      "assets/data/damage_baseline.json": "121c0168fd705047b2f924db85d4dcde882178c5fcab44af2e829e7e7099d6bc",
+      "assets/data/skill_timings/20261015-si/index.json": "929af3f81d717124bbeebf1c608d9b7908ea6f56f96b87cb7f66535b9b7e2395",
+      "assets/data/skill_timings/20261015-si/profiles.json": "471dadbec2a1e77381e3636b7954e94f3c7d650e4a6d17d684c85447586e8346"
+    }
   }
 ]
