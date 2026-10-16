@@ -1186,7 +1186,16 @@ class TimedCombatLogic:
                 same_actor_duration=max(p.actionable for p in combo.profiles), queue_position=combo.position,
                 damage_duration=max(max(p.duration, p.handoff) for p in combo.profiles)))
         conditions = self.battle_highlights.forecast_conditions() if self.battle_highlights is not None else ForecastConditions()
-        return self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions)
+        decision = self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions)
+        if decision is not None and decision.gain <= 1e-6 and not self._combo_queue and self.order:
+            # Cast-only valuation also compares unbuffed damage. That new path
+            # must not indefinitely bypass an available, retained support in the
+            # existing cycle (for example Xaihi's zero-damage crystal skill).
+            retained = {token for token in self.order
+                        if (quote := self.damage_quotes.get(self.team[int(token) - 1])) is not None and quote.retain}
+            if any(action.slot in retained and action.kind == "battle" for action in actions):
+                return None
+        return decision
 
     def _observe_combo_queue(self):
         self._combo_observation, self._combo_queue = None, ()
