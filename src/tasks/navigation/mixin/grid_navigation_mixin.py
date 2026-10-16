@@ -623,9 +623,54 @@ class GridNavigationMixin(RuntimeStateMixin):
                 float(ctx.x) - session.goal[0],
                 float(ctx.z) - session.goal[1],
             )
-            if distance_to_goal <= max(0.0, float(session.stop_distance)):
+            if distance_to_goal <= max(0.0, float(session.stop_distance)) and self._grid_nav_stop_layer_matches(ctx):
                 return NavState.STOP_REACHED
         return None
+
+    def _grid_nav_stop_layer_matches(self, ctx: NavTick) -> bool:
+        """终点接近判定只在**已经在目标层**时成立。
+
+        ``stop_distance`` 只比 XZ 距离：目标在楼上/楼下且恰好同一 XZ 时会提前报成功
+        （网格送货会同时传 ``goal_y`` 和 5m ``stop_distance``，实测跨层同 XZ 很常见），
+        于是角色还在另一层就直接进入交付搜索。这里复用与规划同一套「只看 Y」的层判定
+        确认当前层与目标层一致；没有分层数据、没有 ``goal_y`` 或取不到当前高度时保持
+        原来的平面判定。
+        """
+        session = ctx.session
+        if session.goal_y is None:
+            return True
+        pose = ctx.pose or {}
+        y = pose.get("y")
+        if y is None or ctx.x is None or ctx.z is None:
+            return True
+        try:
+            position = (float(ctx.x), float(y), float(ctx.z))
+            goal = (float(session.goal[0]), float(session.goal_y), float(session.goal[1]))
+        except (TypeError, ValueError):
+            return True
+        layered = self._grid_layered_map(
+            ctx.map_id,
+            grid_dir=session.request.grid_dir,
+            zoom=session.request.zoom,
+        )
+        if layered is None:
+            return True
+        current_tier, _ = self._grid_tier_for_point(
+            layered,
+            ctx.map_id,
+            position,
+            label="当前位置",
+        )
+        goal_tier, _ = self._grid_tier_for_point(
+            layered,
+            ctx.map_id,
+            goal,
+            label="终点",
+        )
+        if current_tier is None or goal_tier is None:
+            # 判不出层时不提前结束：宁可继续规划（会明确失败），也不赌一个"已经到了"。
+            return False
+        return current_tier == goal_tier
 
     def _grid_nav_follow(self, ctx: NavTick) -> bool | None:
         """跟随阶段：没有可用路线就先规划，否则取跟随器动作并派发。"""
@@ -1082,9 +1127,17 @@ class GridNavigationMixin(RuntimeStateMixin):
         session = ctx.session
         step = ctx.step
         self._set_grid_walking(False)
-        if session.layered and session.segment_index + 1 < len(session.route.segments):
-            # 这一段走完了，但整条分层路线还没完：跨过连接、切到下一段。
-            return self._advance_layered_segment(ctx)
+        if session.layered:
+            route = session.route
+            index = session.segment_index
+            has_next_segment = index + 1 < len(route.segments)
+            trailing = route.transitions[index] if 0 <= index < len(route.transitions) else ()
+            if has_next_segment or trailing:
+                # 这一段走完了，但整条分层路线还没完：跨过连接、切到下一段。
+                # 末尾那段之后仍可能挂着连接——终点恰好压在连接落点上时，规划器会丢掉长度
+                # 为 0 的收尾步行段，把连接留在最后一个槽位。那条连接同样必须执行，否则会
+                # 把"还要跳一层"直接报成已经到达。
+                return self._advance_layered_segment(ctx)
         if session.recovery_goal is not None:
             wait = self._grid_nav_sync(ctx, SyncReason.BACKTRACK_DONE)
             if wait.timed_out:
@@ -1547,9 +1600,11 @@ class GridNavigationMixin(RuntimeStateMixin):
         session.start_tier = start_tier
         session.goal_tier = goal_tier
         self.log_info(f"分层导航：{start_note}；{goal_note}")
-        # 同层：交回原来的单层路径（含用户滑索）。分层只负责"**确实要换层**"的那部分，
-        # 同层行为因此与分层功能上线前逐字一致，也不会与滑索的代价模型互相干扰。
-        if start_tier == goal_tier:
+        # **双方都在大地图**时才交回原来的单层路径（含用户滑索）：那条路径加载的就是主图
+        # 网格，同层行为因此与分层功能上线前逐字一致，也不会与滑索的代价模型互相干扰。
+        # 非主图的同层（例如起终点都在 lv1）必须继续走分层：单层回退加载的主图网格会忽略
+        # 本层墙体，给出一条真实执行时过不去的路线。
+        if start_tier == goal_tier == "":
             return None, ""
         start_grid = layered.layers.get(layer_key(ctx.map_id, start_tier))
         goal_grid = layered.layers.get(layer_key(ctx.map_id, goal_tier))

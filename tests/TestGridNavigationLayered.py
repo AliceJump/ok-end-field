@@ -21,7 +21,7 @@ import numpy as np
 
 from src.core.GridNavConfig import CONFIG_GRID_DIR
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, GRID_SUFFIX, new_grid, save_grid
-from src.nav.nav_state import GridRouteRequest, NavSession, NavTick
+from src.nav.nav_state import GridRouteRequest, NavSession, NavState, NavTick
 from tests.TestGridNavigationMixin import _FakeGridTask
 
 
@@ -121,13 +121,14 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self._tmp.cleanup()
 
     # ---- 辅助 ----
-    def _ctx(self, *, x, z, y, goal, goal_y=None):
+    def _ctx(self, *, x, z, y, goal, goal_y=None, stop_distance=None):
         self.task.x, self.task.z, self.task.y = x, z, y
         session = NavSession(
             request=GridRouteRequest(
                 goal=(float(goal[0]), float(goal[1])),
                 goal_y=None if goal_y is None else float(goal_y),
                 map_id="test",
+                stop_distance=None if stop_distance is None else float(stop_distance),
             ),
             deadline=self.task.active_time() + 180.0,
             limit=180.0,
@@ -206,9 +207,17 @@ class LayeredNavigationWiringTest(unittest.TestCase):
 
     # ---- 单层路径不受影响 ----
     def test_same_tier_falls_back_to_single_layer(self):
-        """起终点同层：不接管，交回单层路径（行为与分层上线前一致）。"""
+        """起终点都在大地图：不接管，交回单层路径（行为与分层上线前一致）。"""
         _session, _ctx, result = self._plan(x=0.5, z=0.5, y=5.0, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (False, False))
+
+    def test_same_tier_on_a_non_main_layer_keeps_that_layer_grid(self):
+        """起终点都在 lv1 时必须继续走分层：单层回退加载的是主图网格，会忽略本层墙体。"""
+        session, _ctx, result = self._plan(x=0.5, z=0.5, y=105.0, goal=(3.5, 0.5), goal_y=105.0)
+
+        self.assertEqual(result, (True, True))
+        self.assertEqual(list(session.route.tiers), ["lv1"])
+        self.assertEqual(self.task._grid_nav_follower.grid.meta.tier, "lv1")
 
     def test_goal_without_height_is_treated_as_overworld(self):
         """调用方只给平面坐标时按大地图处理，不因为"缺 y"而失败。
@@ -218,6 +227,33 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         """
         _session, _ctx, result = self._plan(x=6.5, z=0.5, y=105.0, goal=(9.5, 0.5))
         self.assertEqual(result, (False, False), "两点都判成大地图 -> 同层 -> 单层路径")
+
+    # ---- 终点接近判定 ----
+    def test_stop_distance_does_not_shortcut_across_layers(self):
+        """目标在另一层且恰好同一 XZ：5m 停车距离不能直接判成功。"""
+        _session, ctx = self._ctx(
+            x=3.5,
+            z=0.5,
+            y=105.0,
+            goal=(3.5, 0.5),
+            goal_y=5.0,
+            stop_distance=5.0,
+        )
+
+        self.assertIsNone(self.task._grid_nav_classify(ctx), "跨层不能触发 STOP_REACHED")
+
+    def test_stop_distance_still_applies_on_the_goal_layer(self):
+        """已经在目标层且进入停车距离：保持原来的提前结束行为。"""
+        _session, ctx = self._ctx(
+            x=3.5,
+            z=0.5,
+            y=105.0,
+            goal=(3.2, 0.5),
+            goal_y=105.0,
+            stop_distance=5.0,
+        )
+
+        self.assertEqual(self.task._grid_nav_classify(ctx), NavState.STOP_REACHED)
 
     # ---- 分段驱动 ----
     def test_cross_layer_route_is_split_into_segments_per_layer(self):
@@ -274,6 +310,24 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertEqual(len(session.route.links), 1)
         outcome = self.task._advance_layered_segment(ctx)
         self.assertIs(outcome, True, "落点即目标，应当完成而不是继续")
+        self.assertTrue(any("落点即目标" in line for line in self.task.logs), self.task.logs[-3:])
+
+    def test_done_handler_executes_the_trailing_link(self):
+        """**走主循环入口**：最后一段之后的跨层也必须执行，不能直接报到达。
+
+        上面的用例直接调 ``_advance_layered_segment``，绕开了 ``_grid_nav_state_done``
+        的入口条件；而真实的接线正是靠这个条件决定要不要跨最后那条连接。
+        """
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        self.assertEqual(len(session.route.segments), 1)
+        self.assertEqual(len(session.route.transitions[0]), 1, "末尾仍挂着 1 条连接")
+        from src.nav.route_follower import DONE, FollowerStep
+
+        ctx.step = FollowerStep(DONE, distance_to_goal=0.1)
+        outcome = self.task._grid_nav_state_done(ctx)
+
+        self.assertIs(outcome, True, "跨完末尾连接才算到达")
         self.assertTrue(any("落点即目标" in line for line in self.task.logs), self.task.logs[-3:])
 
     def test_full_loop_drives_a_cross_layer_route_to_completion(self):

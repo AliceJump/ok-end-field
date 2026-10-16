@@ -184,7 +184,9 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task.next_frame = lambda: object()
         task.ocr = lambda **kwargs: calls.append(kwargs["match"]) or [object()]
         task.click_with_alt = lambda candidate, **kwargs: None
-        task.skip_dialog = lambda **kwargs: None
+        task.skip_dialog = lambda **kwargs: True
+        task.wait_feature = lambda **kwargs: True
+        task.wait_click_feature = lambda **kwargs: False
         task.ensure_main = lambda: None
 
         self.assertTrue(task._submit_at_destination(resource_pattern))
@@ -207,11 +209,49 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task.next_frame = lambda: object()
         task.ocr = lambda **kwargs: calls.append(kwargs["match"]) or [object()]
         task.click_with_alt = lambda candidate, **kwargs: None
-        task.skip_dialog = lambda **kwargs: None
+        task.skip_dialog = lambda **kwargs: True
+        task.wait_feature = lambda **kwargs: True
+        task.wait_click_feature = lambda **kwargs: False
         task.ensure_main = lambda: None
 
         self.assertTrue(task._submit_at_destination(target_pattern))
         self.assertEqual(calls, [target_pattern])
+
+    def test_direct_submit_fails_without_success_evidence(self):
+        """点过提交按钮但拿不到送达证据时必须失败，不能直接报成功。"""
+        task = self._task()
+        resource_pattern = re.compile("资源")
+        task.lang = SimpleNamespace(
+            DeliveryTask=SimpleNamespace(
+                k_6536f6f1=resource_pattern,
+                k_0c1ef9f5=re.compile("交货"),
+            )
+        )
+        task.box = SimpleNamespace(bottom_right=object())
+        task._delivery_approach_walk_mode = False
+        task.next_frame = lambda: object()
+        task.ocr = lambda **kwargs: [object()]
+        task.click_with_alt = lambda candidate, **kwargs: None
+        task.skip_dialog = lambda **kwargs: False
+        task.ensure_main = lambda: None
+        task.to_end_and_submit = lambda *args, **kwargs: self.fail("点击已提交，不得退回旧流程重走")
+
+        self.assertFalse(task._submit_at_destination(resource_pattern))
+        self.assertTrue(task._delivery_failure_recorded)
+
+    def test_grid_pickup_enters_cargo_in_transit_protection(self):
+        """取货成功后必须进入携货状态，后续失败才会终止当前账号的日常任务。"""
+        task = self._task()
+        task._navigate_delivery_coordinate = lambda coordinate, label, stop_distance=None: label != "送货点"
+        task._pickup_receive_good_with_fallback = lambda: True
+        task._recognize_delivery_end = lambda patterns: ("资源", re.compile("资源"))
+
+        self.assertFalse(task._run_grid_delivery_state_machine({}))
+        self.assertTrue(task._delivery_cargo_in_transit, "取货成功后必须进入携货状态")
+
+        task._delivery_fail("网格导航取货或送达流程未完成")
+
+        self.assertTrue(task.daily_failure_is_fatal(), "携货状态下的失败必须终止当前账号的后续日常")
 
     def test_destination_approach_walks_and_searches_submit(self):
         task = self._task()
@@ -232,7 +272,9 @@ class TestDeliveryStateMachine(unittest.TestCase):
         ocr_results = iter(([], [object()]))
         task.ocr = lambda **kwargs: next(ocr_results, [object()])
         task.click_with_alt = lambda candidate, **kwargs: submit_calls.append(candidate) or None
-        task.skip_dialog = lambda **kwargs: None
+        task.skip_dialog = lambda **kwargs: True
+        task.wait_feature = lambda **kwargs: True
+        task.wait_click_feature = lambda **kwargs: False
         task.ensure_main = lambda: None
 
         self.assertTrue(task._approach_delivery_destination_for_submit(target_pattern))

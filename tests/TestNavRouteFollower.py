@@ -8,6 +8,7 @@ from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta
 from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
     DONE,
+    FAILED,
     NARROW_CALIBRATE,
     REPLAN,
     STUCK,
@@ -173,6 +174,34 @@ class TestGridRouteFollower(unittest.TestCase):
         step = self.follower.update((-833.464, 5.084), heading=90.0, now=0.0)
 
         self.assertNotEqual(step.action, REPLAN)
+
+    def test_snapped_goal_reports_failure_instead_of_arrival(self):
+        """终点不可通行被吸附到 7m 外时，走到吸附点不等于到达请求目标。"""
+        self.follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(0, 0), (3, 0)],
+            waypoints=[(0.5, 0.5), (3.5, 0.5)],
+        )
+        self.follower.goal = (10.5, 0.5)
+
+        step = self.follower.update((3.5, 0.5), heading=90.0, now=0.0)
+
+        self.assertEqual(step.action, FAILED)
+        self.assertIn("吸附", step.reason)
+        self.assertAlmostEqual(step.distance_to_goal, 7.0)
+
+    def test_snapped_goal_within_radius_still_reports_arrival(self):
+        """吸附偏移仍在到达半径内时保持原行为：报到达而不是失败。"""
+        self.follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(0, 0), (3, 0)],
+            waypoints=[(0.5, 0.5), (3.5, 0.5)],
+        )
+        self.follower.goal = (3.9, 0.5)
+
+        step = self.follower.update((3.5, 0.5), heading=90.0, now=0.0)
+
+        self.assertEqual(step.action, DONE)
 
     def test_skips_current_waypoint_when_near_next_segment(self):
         self.follower.plan_result = PlanResult(

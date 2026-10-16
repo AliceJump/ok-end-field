@@ -485,6 +485,15 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         if not self.skip_dialog(time_out=5):
             return self._delivery_fail("交付后的对话流程未正常结束")
 
+        return self._confirm_delivery_submit_evidence(end_pattern, end_target_box)
+
+    def _confirm_delivery_submit_evidence(self, end_pattern, end_target_box=None) -> bool:
+        """提交后按正向证据确认送达；证据不足时记为失败。
+
+        ``end_target_box`` 是取货后识别到的目标文本框：拿不到正向证据时用它判断目标是否
+        已经消失。缺框又没有任何正向证据一律判失败——**点过提交按钮不等于送达成功**，
+        忽略这一点会让状态机进入 DONE 并继续下一单。
+        """
         if self.wait_feature(
             feature=fL.delivery_success_check,
             time_out=1,
@@ -643,33 +652,48 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         )
         return results[0] if results else None
 
-    def _click_delivery_submit(self, candidate) -> bool:
+    def _click_delivery_submit(self, candidate, end_pattern, end_target_box=None) -> bool:
+        """点击提交按钮，并复用旧的送达证据确认；没有证据就不算成功。"""
         self._set_grid_walking(False)
         self._restore_delivery_approach_run_mode()
         self.click_with_alt(candidate, after_sleep=2)
-        self.skip_dialog(time_out=5)
-        self.ensure_main()
-        return True
+        if not self.skip_dialog(time_out=5):
+            return self._delivery_fail("交付后的对话流程未正常结束")
+        return self._confirm_delivery_submit_evidence(end_pattern, end_target_box)
 
-    def _try_click_delivery_submit(self, submit_pattern, frame=None) -> bool:
+    def _try_click_delivery_submit(self, submit_pattern, frame=None, end_target_box=None) -> bool | None:
+        """找到提交按钮就点一次并返回送达确认结果；没找到按钮返回 ``None``。
+
+        ``None`` 与 ``False`` 必须分开：``None`` 是"这里没有按钮，换别的方式找"，
+        ``False`` 是"按钮点了但没拿到送达证据"，后者不能再去点第二次。
+        """
         candidate = self._find_delivery_submit_candidate(submit_pattern, frame=frame)
         if candidate is None:
-            return False
-        return self._click_delivery_submit(candidate)
+            return None
+        return self._click_delivery_submit(candidate, submit_pattern, end_target_box)
 
-    def _approach_delivery_destination_for_submit(self, submit_pattern) -> bool:
-        """从终点前几米开始步行接近，并在移动中搜索交货按钮。"""
+    def _approach_delivery_destination_for_submit(self, submit_pattern, end_target_box=None) -> bool | None:
+        """从终点前几米开始步行接近，并在移动中搜索交货按钮。
+
+        返回 ``None`` 表示整个接近过程都没找到提交按钮（调用方可以走旧回退），
+        找到后就由送达确认的结果说了算。
+        """
         coordinate = getattr(self, "_delivery_target_coordinate", None)
         if coordinate is None:
-            return False
+            return None
         goal = (float(coordinate[0]), float(coordinate[2]))
         self._enter_delivery_approach_walk_mode()
         started = self.active_time()
         try:
             while self.active_time() - started < DELIVERY_APPROACH_TIMEOUT_S:
                 frame = self.next_frame()
-                if self._try_click_delivery_submit(submit_pattern, frame=frame):
-                    return True
+                outcome = self._try_click_delivery_submit(
+                    submit_pattern,
+                    frame=frame,
+                    end_target_box=end_target_box,
+                )
+                if outcome is not None:
+                    return outcome
                 state = self.world_pose(frame=frame, max_age=1.0)
                 if state is None or not state.get("position_trusted", True):
                     self._set_grid_walking(False)
@@ -713,20 +737,28 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                     self._set_grid_walking(False)
                     self.sleep(DELIVERY_APPROACH_STEP_S)
             self.log_warning("接近送货点时未搜索到交货按钮")
-            return False
+            return None
         finally:
             self._set_grid_walking(False)
             if self._delivery_approach_walk_mode:
                 self._restore_delivery_approach_run_mode()
 
-    def _submit_at_destination(self, end_pattern) -> bool:
+    def _submit_at_destination(self, end_pattern, end_target_box=None) -> bool:
+        """网格导航到达终点后提交委托；只有拿到送达证据才算成功。
+
+        先试原地直接点提交，再试边走边找按钮；两处都没找到按钮时才回退旧的送达流程。
+        已经点过提交的情况由 ``_try_click_delivery_submit`` 的 ``False`` 表达，不会再退回
+        旧流程把导航和点击重走一遍。
+        """
         submit_pattern = self._resolve_delivery_submit_pattern(end_pattern)
-        if self._try_click_delivery_submit(submit_pattern):
-            return True
-        if self._approach_delivery_destination_for_submit(submit_pattern):
-            return True
+        outcome = self._try_click_delivery_submit(submit_pattern, end_target_box=end_target_box)
+        if outcome is not None:
+            return outcome
+        outcome = self._approach_delivery_destination_for_submit(submit_pattern, end_target_box=end_target_box)
+        if outcome is not None:
+            return outcome
         self.log_info("网格导航到达后未直接找到提交按钮，回退原送达搜索")
-        return self.to_end_and_submit(end_pattern)
+        return self.to_end_and_submit(end_pattern, end_target_box=end_target_box)
 
     def _resolve_delivery_submit_pattern(self, end_pattern):
         """资源终点在提交阶段使用“交货”按钮，其他终点沿用目标文本。"""
@@ -817,11 +849,14 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                     else DeliveryPhase.FAILED
                 )
             elif phase == DeliveryPhase.PICKUP:
-                phase = (
-                    DeliveryPhase.RECOGNIZE_DESTINATION
-                    if self._pickup_receive_good_with_fallback()
-                    else DeliveryPhase.FAILED
-                )
+                if self._pickup_receive_good_with_fallback():
+                    # 取货动作完成后才进入携货 fatal 状态；成功送达证据会立即解除。
+                    # 网格状态机漏掉这一步时，取货后的失败不会终止日常调度，会带着货物
+                    # 继续跑后续任务。
+                    self._delivery_cargo_in_transit = True
+                    phase = DeliveryPhase.RECOGNIZE_DESTINATION
+                else:
+                    phase = DeliveryPhase.FAILED
             elif phase == DeliveryPhase.RECOGNIZE_DESTINATION:
                 end, end_pattern = self._recognize_delivery_end(ends_pattern_dict)
                 if end is None:

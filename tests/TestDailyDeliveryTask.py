@@ -98,6 +98,10 @@ class TestDailyDeliveryTask(unittest.TestCase):
         )
         stub._delivery_fail = lambda message: DeliveryTask._delivery_fail(stub, message)
         stub._confirm_delivery_success = lambda evidence: DeliveryTask._confirm_delivery_success(stub, evidence)
+        # 送达确认已抽成共享方法（旧流程与网格提交路径共用），桩里一并接上
+        stub._confirm_delivery_submit_evidence = lambda pattern, end_target_box=None: (
+            DeliveryTask._confirm_delivery_submit_evidence(stub, pattern, end_target_box)
+        )
         # 提交模式解析已抽成复用方法（网格导航的提交路径也要用），桩里一并接上
         stub._resolve_delivery_submit_pattern = lambda pattern: DeliveryTask._resolve_delivery_submit_pattern(
             stub, pattern

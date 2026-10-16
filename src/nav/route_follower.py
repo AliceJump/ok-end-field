@@ -282,6 +282,23 @@ class GridRouteFollower:
         goal_distance = distance_xz(pos, final)
         if goal_distance <= self.config.goal_radius:
             self._reset_motion()
+            if self.goal is not None:
+                snap_offset = distance_xz(final, self.goal)
+                if snap_offset > self.config.goal_radius:
+                    # 规划器把不可通行的目标吸附到了附近的可行走格。走到吸附点不等于到达
+                    # 请求目标，调用方（取货点/送货点确认）不能据 DONE 认定已经到位。
+                    return self._step(
+                        FAILED,
+                        final,
+                        goal_distance=snap_offset,
+                        heading_error=None,
+                        target_bearing=None,
+                        waypoint_distance=goal_distance,
+                        reason=(
+                            f"已到达最近的可行走航点，但距请求目标仍有 {snap_offset:.1f}m"
+                            "（请求目标不可通行，终点已被吸附）"
+                        ),
+                    )
             return self._step(
                 DONE,
                 final,
