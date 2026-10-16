@@ -21,8 +21,8 @@ _SLOT_BOXES = ((1134, 450, 1223, 539), (1228, 470, 1294, 536), (1299, 470, 1365,
 _SMALL_PITCH = _SLOT_BOXES[2][0] - _SLOT_BOXES[1][0]
 _SLOT_BOXES += (tuple(v + (_SMALL_PITCH if i % 2 == 0 else 0) for i, v in enumerate(_SLOT_BOXES[2])),)
 _RENDERED_SIZES = (83, 61, 61, 61)
-_MIN_SCORE = .80
-_MIN_MARGIN = .08
+_MIN_SCORE = 0.80
+_MIN_MARGIN = 0.08
 
 
 @dataclass(frozen=True)
@@ -56,8 +56,12 @@ class PortraitBank:
     def __init__(self, path: Path = PORTRAITS):
         manifest = json.loads((path / "index.json").read_bytes())
         raw = (path / "portraits.png").read_bytes()
-        if (manifest["schema_version"] != 1 or manifest["atlas"] != "portraits.png"
-                or manifest["tile_size"] != 154 or hashlib.sha256(raw).hexdigest() != manifest["atlas_sha256"]):
+        if (
+            manifest["schema_version"] != 1
+            or manifest["atlas"] != "portraits.png"
+            or manifest["tile_size"] != 154
+            or hashlib.sha256(raw).hexdigest() != manifest["atlas_sha256"]
+        ):
             raise ValueError("Combo portrait atlas provenance/hash mismatch")
         atlas = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_UNCHANGED)
         if atlas is None or atlas.ndim != 3 or atlas.shape[2] != 4:
@@ -68,10 +72,15 @@ class PortraitBank:
         for row in manifest["portraits"]:
             native_id = row["native_id"]
             x, y, width, height = row["tile"]
-            if (native_id in self.portraits or width != 154 or height != 154
-                    or not 0 <= x < x + width <= atlas.shape[1] or not 0 <= y < y + height <= atlas.shape[0]):
+            if (
+                native_id in self.portraits
+                or width != 154
+                or height != 154
+                or not 0 <= x < x + width <= atlas.shape[1]
+                or not 0 <= y < y + height <= atlas.shape[0]
+            ):
                 raise ValueError("Invalid combo portrait tile")
-            tile = atlas[y:y + height, x:x + width].copy()
+            tile = atlas[y : y + height, x : x + width].copy()
             tile.flags.writeable = False
             self.portraits[native_id] = tile
             self.characters[native_id] = row["character"]
@@ -92,8 +101,10 @@ class PortraitBank:
         owner_slots = {}
         for name, slots in selected.values():
             owner_slots.setdefault(name, set()).update(slots)
-        return {native_id: (name, next(iter(owner_slots[name])) if len(owner_slots[name]) == 1 else None)
-                for native_id, (name, _slots) in selected.items()}
+        return {
+            native_id: (name, next(iter(owner_slots[name])) if len(owner_slots[name]) == 1 else None)
+            for native_id, (name, _slots) in selected.items()
+        }
 
 
 @lru_cache(maxsize=1)
@@ -104,9 +115,13 @@ def load_combo_portraits() -> PortraitBank:
 def combo_slot_boxes(width: int, height: int) -> tuple[tuple[int, int, int, int], ...]:
     """Use the ready marker's center anchoring and uniform reference scaling."""
     scale = min(width / 1920, height / 1080)
-    return tuple(tuple(round((v - (960 if i % 2 == 0 else 540)) * scale
-                             + (width / 2 if i % 2 == 0 else height / 2))
-                       for i, v in enumerate(box)) for box in _SLOT_BOXES)
+    return tuple(
+        tuple(
+            round((v - (960 if i % 2 == 0 else 540)) * scale + (width / 2 if i % 2 == 0 else height / 2))
+            for i, v in enumerate(box)
+        )
+        for box in _SLOT_BOXES
+    )
 
 
 def _frame_size(frame):
@@ -134,8 +149,8 @@ class ComboSkillDetector:
         key = (native_id, size)
         if key not in self._templates:
             scaled = cv2.resize(self._bank.portraits[native_id], (size, size), interpolation=cv2.INTER_LINEAR)
-            center, half = size // 2, round(size * .27)
-            face = scaled[center - half:center + half, center - half:center + half]
+            center, half = size // 2, round(size * 0.27)
+            face = scaled[center - half : center + half, center - half : center + half]
             mask = cv2.erode((face[:, :, 3] >= 250).astype(np.uint8) * 255, np.ones((3, 3), np.uint8))
             self._templates[key] = (cv2.cvtColor(face[:, :, :3], cv2.COLOR_BGR2GRAY), mask)
         return self._templates[key]
@@ -144,11 +159,14 @@ class ComboSkillDetector:
     def _face(frame, box, size, scale):
         x, y, x2, y2 = box
         cx, cy = round((x + x2) / 2), round((y + y2) / 2)
-        half, shift = round(size * .27), max(1, round(3 * scale))
+        half, shift = round(size * 0.27), max(1, round(3 * scale))
         bounds = (cx - half - shift, cy - half - shift, cx + half + shift, cy + half + shift)
         left, top, right, bottom = bounds
-        if (size < 16 or not 0 <= x <= left < right <= x2 <= frame.shape[1]
-                or not 0 <= y <= top < bottom <= y2 <= frame.shape[0]):
+        if (
+            size < 16
+            or not 0 <= x <= left < right <= x2 <= frame.shape[1]
+            or not 0 <= y <= top < bottom <= y2 <= frame.shape[0]
+        ):
             return None
         crop = frame[top:bottom, left:right]
         return cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY if crop.shape[2] == 3 else cv2.COLOR_BGRA2GRAY)
@@ -171,8 +189,15 @@ class ComboSkillDetector:
         runner = max((row[0] for row in scores if row[2] != name), default=0.0)
         margin = score - runner
         known = score >= _MIN_SCORE and margin >= _MIN_MARGIN
-        return ComboSlotObservation(observation.position, observation.box, name if known else None,
-                                    native_id if known else None, team_slot if known else None, score, margin)
+        return ComboSlotObservation(
+            observation.position,
+            observation.box,
+            name if known else None,
+            native_id if known else None,
+            team_slot if known else None,
+            score,
+            margin,
+        )
 
     def _observe_slots(self, frame, slots, candidates, scale):
         results = []

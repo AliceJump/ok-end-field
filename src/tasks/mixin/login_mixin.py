@@ -217,9 +217,7 @@ class LoginMixin(BaseEfTask):
             if len(recent_candidates) == 1:
                 self.log_info("目标账号就是切换前账号，已选择标记为‘最近’的账号")
                 return recent_candidates[0]
-            self.log_error(
-                f"目标账号是切换前账号，但‘最近’候选数量为 {len(recent_candidates)}，无法唯一确定"
-            )
+            self.log_error(f"目标账号是切换前账号，但‘最近’候选数量为 {len(recent_candidates)}，无法唯一确定")
             return None
 
         if visible_account_parts(previous_username) == visible_account_parts(username):

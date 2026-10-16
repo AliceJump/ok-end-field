@@ -36,10 +36,10 @@ def render_heads(identities, *, width=1920, height=1080, dim=()):
         x, y, x2, y2 = box
         cx, cy = round((x + x2) / 2), round((y + y2) / 2)
         x, y = cx - size // 2, cy - size // 2
-        background = frame[y:y + size, x:x + size]
+        background = frame[y : y + size, x : x + size]
         alpha = portrait[:, :, 3:4].astype(float) / 255
         if index in dim:
-            alpha *= .7
+            alpha *= 0.7
         background[:] = np.round(portrait[:, :, :3] * alpha + background * (1 - alpha)).astype(np.uint8)
     return frame
 
@@ -179,7 +179,9 @@ class TestComboSkillDetector(unittest.TestCase):
             detector = ComboSkillDetector()
             self.assertEqual(detector.observe(None, TEAM, ready=False, observed_at=1).status, "not_ready")
             load.assert_not_called()
-            self.assertEqual(detector.observe(render_heads(HEADS), ["?"], ready=True, observed_at=1).status, "unknown_team")
+            self.assertEqual(
+                detector.observe(render_heads(HEADS), ["?"], ready=True, observed_at=1).status, "unknown_team"
+            )
             load.assert_not_called()
             result = detector.observe(render_heads(HEADS), TEAM, ready=True, observed_at=2)
             self.assertEqual(result.status, "portraits_unavailable")
@@ -258,8 +260,10 @@ class TestComboSkillAdapter(unittest.TestCase):
 
     def test_input_error_wins_even_when_optional_observation_also_fails(self):
         task = _Task()
-        with patch.object(task, "observe_link_skills", side_effect=RuntimeError("probe failed")), \
-                patch.object(task, "press_combat_key", side_effect=RuntimeError("input failed")):
+        with (
+            patch.object(task, "observe_link_skills", side_effect=RuntimeError("probe failed")),
+            patch.object(task, "press_combat_key", side_effect=RuntimeError("input failed")),
+        ):
             with self.assertRaisesRegex(RuntimeError, "input failed"):
                 task.use_link_skill()
 
@@ -268,12 +272,12 @@ class TestComboSkillAdapter(unittest.TestCase):
             frame=np.zeros((1080, 1920, 3), np.uint8),
             _collect_team_candidate_boxes=lambda: ([Box(20, 20, 40, 40)], ["battle_icon_endministrator_female"]),
             _build_search_boxes=lambda *args, **kwargs: [Box(20, 20, 40, 40)],
-            _match_team_slots=lambda *args, **kwargs: [(0, "battle_icon_endministrator_female", .95)],
+            _match_team_slots=lambda *args, **kwargs: [(0, "battle_icon_endministrator_female", 0.95)],
             _update_squad_hud=lambda *args, **kwargs: None,
         )
         with patch("src.tasks.mixin.battle_mixin.observe_squad_hud", return_value=None):
             result = BattleMixin._detect_team_core(task)
-        self.assertEqual(result[0], ("endministrator", .95, "battle_icon_endministrator_female"))
+        self.assertEqual(result[0], ("endministrator", 0.95, "battle_icon_endministrator_female"))
         self.assertEqual(task._last_combo_team_probe[0][0][2], "battle_icon_endministrator_female")
         self.assertEqual(task._last_combo_team_probe[1], (1920, 1080))
         # Failed subsequent scans clear the old variant instead of retaining it.
@@ -285,7 +289,7 @@ class TestComboSkillAdapter(unittest.TestCase):
         task = _Task()
         task._battle_team = ["管理员", "佩丽卡"]
         task.frame = render_heads(("chr_0003_endminf",))
-        rows = (("endministrator", .9, "battle_icon_endministrator_male"), ("perlica", .9, "battle_icon_perlica"))
+        rows = (("endministrator", 0.9, "battle_icon_endministrator_male"), ("perlica", 0.9, "battle_icon_perlica"))
         task._last_combo_team_probe = (rows, (1920, 1080), time.monotonic())
         # A conflicting observed female cannot slip through a male-only search.
         self.assertIsNone(task.observe_link_skills().head)
@@ -296,11 +300,13 @@ class TestComboSkillAdapter(unittest.TestCase):
         task = _Task()
         task._battle_team = ["管理员", "佩丽卡"]
         task.frame = render_heads(("chr_0003_endminf",))
-        admin = ("endministrator", .9, "battle_icon_endministrator_male")
-        for size, seen_at, teammate in (((1280, 720), time.monotonic(), "perlica"),
-                                        ((1920, 1080), time.monotonic() - 3, "perlica"),
-                                        ((1920, 1080), time.monotonic(), "si")):
-            task._last_combo_team_probe = ((admin, (teammate, .9, "")), size, seen_at)
+        admin = ("endministrator", 0.9, "battle_icon_endministrator_male")
+        for size, seen_at, teammate in (
+            ((1280, 720), time.monotonic(), "perlica"),
+            ((1920, 1080), time.monotonic() - 3, "perlica"),
+            ((1920, 1080), time.monotonic(), "si"),
+        ):
+            task._last_combo_team_probe = ((admin, (teammate, 0.9, "")), size, seen_at)
             self.assertEqual(task.observe_link_skills().head.native_id, "chr_0003_endminf")
 
     def test_explicit_observation_is_read_only_and_e_keeps_original_input(self):
@@ -336,7 +342,9 @@ class TestComboSkillAdapter(unittest.TestCase):
 class TestComboPortraitExportBoundary(unittest.TestCase):
     def test_capture_and_output_are_restricted_before_any_export(self):
         root = Path(__file__).resolve().parents[1]
-        spec = importlib.util.spec_from_file_location("combo_export", root / "scripts/skill-data/export_combo_portraits.py")
+        spec = importlib.util.spec_from_file_location(
+            "combo_export", root / "scripts/skill-data/export_combo_portraits.py"
+        )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         with tempfile.TemporaryDirectory() as directory:

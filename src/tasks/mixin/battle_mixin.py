@@ -1034,12 +1034,11 @@ class BattleMixin(BaseEfTask):
         if probe is None or frame is None or getattr(frame, "ndim", 0) != 3:
             return {}
         rows, size, seen_at = probe
-        if (size != (frame.shape[1], frame.shape[0])
-                or not 0 <= observed_at - seen_at <= _COMBO_TEAM_PROBE_MAX_AGE):
+        if size != (frame.shape[1], frame.shape[0]) or not 0 <= observed_at - seen_at <= _COMBO_TEAM_PROBE_MAX_AGE:
             return {}
         names = _load_char_name_map()
         variants = {}
-        for slot, (name, _score, feature) in enumerate(rows[:len(team)], 1):
+        for slot, (name, _score, feature) in enumerate(rows[: len(team)], 1):
             member = team[slot - 1]
             if name == "?" or member == "?":
                 continue
