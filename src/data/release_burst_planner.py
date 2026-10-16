@@ -274,16 +274,16 @@ class ReleaseBurstPlanner:
         quote = self.quote(actor, kind)
         return quote is not None and quote.get("pricing_scope", "").startswith("unconditional_cast_only;")
 
-    def battle_values(self, actor, observation=None):
+    def battle_values(self, actor, assessment=None):
         binding = self.highlight_damage.get(actor)
         if binding is not None:
-            return binding.values(observation)
+            return binding.values(assessment)
         quote = self.quote(actor, 'battle')
         return (quote['crit_expect'], 0.0) if quote is not None else (None, 0.0)
 
-    def battle_components(self, actor, observation=None):
+    def battle_components(self, actor, assessment=None):
         binding = self.highlight_damage.get(actor)
-        return binding.components(observation) if binding is not None else ((), ())
+        return binding.components(assessment) if binding is not None else ((), ())
 
     def price_components(self, actor, now, components, *, bonuses=None):
         values = [self._price_value(actor, now, c.element, set(c.damage_tags), c.bonus_pct, c.value, bonuses)

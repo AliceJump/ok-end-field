@@ -11,6 +11,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 
+from src.data.battle_conditions import BattleConditionAssessment
 from src.data.highlight_producers import read_producers
 
 
@@ -65,13 +66,13 @@ class HighlightDamageBinding:
         extra = spec['extra_projectiles'] * spec['extra_parameter']
         return cls(skill_id, unit * base, unit * extra)
 
-    def values(self, observation):
-        return self.base_value, self.conditional_value if self.matches(observation) else 0.0
+    def values(self, assessment):
+        return self.base_value, self.conditional_value if self.matches(assessment) else 0.0
 
-    def matches(self, observation):
-        matched = (observation is not None and observation.ready is True
-                   and observation.skill_ids == (self.skill_id,))
+    def matches(self, assessment):
+        matched = (isinstance(assessment, BattleConditionAssessment) and assessment.satisfied is True
+                   and assessment.skill_ids == (self.skill_id,))
         return matched
 
-    def components(self, observation):
-        return self.base_components, self.conditional_components if self.matches(observation) else ()
+    def components(self, assessment):
+        return self.base_components, self.conditional_components if self.matches(assessment) else ()

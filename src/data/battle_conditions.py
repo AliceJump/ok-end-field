@@ -10,11 +10,50 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from src.data.highlight_conditions import HighlightAtom, HighlightExpression, parse_highlight
-from src.data.highlight_producers import read_producers
+from src.data.highlight_conditions import (
+    HighlightAtom,
+    HighlightExpression,
+    HighlightInference,
+    infer_highlight,
+    parse_highlight,
+)
+from src.data.highlight_producers import TeamProducerClosure, read_producers
 
 if TYPE_CHECKING:
     from src.data.battle_highlight import BattleHighlightObservation
+
+
+@dataclass(frozen=True)
+class BattleConditionAssessment:
+    """Derived condition evidence, never an instruction to cast a skill."""
+
+    skill_ids: tuple[str, ...]
+    condition_json: str
+    satisfied: bool | None
+    observed_at: float
+    inference: HighlightInference
+    model_inference: HighlightInference
+
+
+class BattleConditionEvaluator:
+    """Interpret raw samples separately from visual sensing and action policy."""
+
+    def __init__(self, team=()):
+        self.closure = TeamProducerClosure.for_team(team) if team else None
+
+    def assess(self, observation: BattleHighlightObservation | None):
+        if observation is None:
+            return None
+        value = observation.visible if type(observation.visible) is bool else None
+        expression = parse_highlight(observation.condition_json)
+        return BattleConditionAssessment(
+            observation.skill_ids, observation.condition_json, value, observation.observed_at,
+            infer_highlight(expression, value),
+            infer_highlight(expression, value, possible=self.closure.possible if self.closure is not None else None),
+        )
+
+    def forecast(self, observations):
+        return ForecastConditions.from_assessments({slot: self.assess(obs) for slot, obs in observations.items()})
 
 
 @dataclass(frozen=True)
@@ -24,8 +63,9 @@ class ConditionRequirement:
     condition_json: str
 
     @classmethod
-    def from_observation(cls, slot, observation):
-        return cls(slot, observation.skill_ids, observation.condition_json) if observation is not None else None
+    def from_assessment(cls, slot, assessment):
+        return (cls(slot, assessment.skill_ids, assessment.condition_json)
+                if isinstance(assessment, BattleConditionAssessment) else None)
 
 
 @dataclass(frozen=True)
@@ -74,15 +114,16 @@ class ConditionTransition:
 
 @dataclass(frozen=True)
 class ForecastConditions:
-    observations: tuple[tuple[str, BattleHighlightObservation], ...] = ()
+    observations: tuple[tuple[str, BattleConditionAssessment], ...] = ()
     projected_actions: tuple[tuple[str, str], ...] = ()
 
     @classmethod
-    def from_observations(cls, observations):
-        return cls(tuple(sorted((slot, obs) for slot, obs in observations.items() if obs.ready is True)))
+    def from_assessments(cls, assessments):
+        return cls(tuple(sorted((slot, value) for slot, value in assessments.items()
+                                if isinstance(value, BattleConditionAssessment) and value.satisfied is True)))
 
     def supports(self, requirement):
-        return any(slot == requirement.slot and obs.ready is True
+        return requirement is not None and any(slot == requirement.slot and obs.satisfied is True
                    and obs.skill_ids == requirement.skill_ids and obs.condition_json == requirement.condition_json
                    for slot, obs in self.observations)
 
