@@ -480,6 +480,42 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertGreater(logic._overflow_score("1") * max(profile.handoff, .3), value)
         self.assertLess(logic._overflow_score("1") * max(profile.handoff, .3), 30000)
 
+    def test_cast_only_comparison_preserves_available_zero_damage_support_in_cycle(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["赛希", "艾维文娜", "佩丽卡"], reset_runtime=True)
+        logic.order = ["1", "2", "3"]
+        logic.cursor = 0
+        task.sp = 100
+        task.ults = set()
+        self.assertTrue(logic.damage_quotes["赛希"].retain)
+        self.assertEqual(logic.release_burst.quote("1", "battle")["crit_expect"], 0)
+        # Previously a positive battle (or normal) won each step without moving
+        # the old cursor, permanently skipping this available support.
+        for main in (None, 1):
+            with self.subTest(main=main):
+                logic._burst_main_control = str(main + 1) if main is not None else None
+                self.assertIsNone(logic._release_burst_decision([], 100, task.now))
+        logic.cursor = 1  # Support later in the old cycle must also remain reachable.
+        self.assertIsNone(logic._release_burst_decision([], 100, task.now))
+        logic.cursor = 0
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+        task.sp = 0
+        task.now += .3
+        logic._confirm_battle(task.now)
+        self.assertEqual(logic.cursor, 1)
+
+    def test_unavailable_retained_support_does_not_block_corrected_damage_comparison(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["赛希", "艾维文娜", "佩丽卡"], reset_runtime=True)
+        logic.order = ["1", "2", "3"]
+        logic.cursor = 0
+        logic.state_until["1"] = 10
+        task.sp = 100
+        task.ults = set()
+        logic.step()
+        self.assertEqual(task.keys, ["3"])
+
     def test_si_real_step_selects_team_ultimate_before_cold_carry_and_no_public_sp(self):
         task, logic = self.make_logic()
         logic._configure_team(["祀", "别礼", "埃特拉", "诀"], reset_runtime=True)
