@@ -1,5 +1,7 @@
 # 原生事件Skill上下文与buff附着（2026-10-15）
 
+2026-10-16续核：新客户端的Refresh4直接返回与out旧实例、BuffContainer.CreateBuff返回包装、CreateBuff创建回调/父根/Skill附着门槛已补静态证据，见[native-refresh-return-audit.md](native-refresh-return-audit.md)。空创建返回不代表没有接收/来源通知；完整重入及producer仍未执行。下文机器码与运行合同仍属于旧快照，不替换成新字段/RVA。
+
 本批接入研究执行器的`CreateBuffAttachingSkill`和字面`CheckSkillId`子集。调用者明确提供已建立的cast身份后，创建的实际buff UID才能挂到事件中的Skill对象。本人、buff持有者、监听器所属技能以及当前主控都不能替代该对象。没有新增识别、自动OnBeforeCastSkill发布或技力时点处理；PR #489的释放编排层未改。
 
 ## 原生合同
