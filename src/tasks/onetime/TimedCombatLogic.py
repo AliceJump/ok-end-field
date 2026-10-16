@@ -8,7 +8,8 @@ from dataclasses import replace
 
 from ok import FinishedException, TaskDisabledException
 
-from src.data.battle_conditions import ConditionRequirement, ForecastConditions
+from src.data.battle_conditions import BattleConditionEvaluator, ConditionRequirement, ForecastConditions
+from src.data.battle_execution_policy import battle_execution_policy
 from src.data.battle_highlight import BattleHighlightState
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
 from src.data.combat_observation import (
@@ -69,6 +70,7 @@ class TimedCombatLogic:
         self.damage_quotes = {}
         self.release_burst = None
         self.battle_highlights = None
+        self.battle_condition_evaluator = BattleConditionEvaluator()
         self._burst_main_control = None
         self._ult_action_seconds = {}
         self._combo_observation = None
@@ -486,7 +488,7 @@ class TimedCombatLogic:
         if self.pending is None:
             return
         before_sp, token, expected_cost = self.pending
-        if self._battle_uses_pulse(token):
+        if self._uses_white_acknowledgement(token):
             self._confirm_pulsed_battle(now, before_sp, token, expected_cost)
             return
         current_sp = self._sample_sp(force=True)
@@ -523,7 +525,7 @@ class TimedCombatLogic:
 
     def _confirm_pulsed_battle(self, now, before_sp, token, expected_cost):
         """Accept only a valid post-key observation of the white ring disappearing."""
-        if self._battle_pulse_state(token) is False:
+        if self._battle_execution_policy(token).confirms_release(self._battle_pulse_state(token)):
             self._note_assumed_sp_spend(before_sp, expected_cost)
             self._accept_pending_battle(token)
             self.task.log_info(f"时间排轴: 庄方宜战技 {token} 按键后白色脉冲消失，确认释放")
@@ -620,7 +622,8 @@ class TimedCombatLogic:
             previous_phase_indices = {}
 
         self.team = team
-        self.battle_highlights = BattleHighlightState(self.store, team) if isinstance(self.store, SkillTimingStore) else None
+        self.battle_highlights = BattleHighlightState(self.store) if isinstance(self.store, SkillTimingStore) else None
+        self.battle_condition_evaluator = BattleConditionEvaluator(team)
         self.task._battle_team = list(team)
         self.task._battle_member_count = len(team)
         self.ult_order = generate_damage_rotation(team)
@@ -937,26 +940,42 @@ class TimedCombatLogic:
                 return
             self.cursor = (self.cursor + 1) % len(self.order)
 
-    def _battle_uses_pulse(self, token):
+    def _battle_execution_policy(self, token):
         mechanic = self._mechanic_for_token(token)
-        return mechanic is not None and mechanic.key == "zhuang_fangyi"
+        return battle_execution_policy(mechanic.key if mechanic is not None else None)
 
-    def _battle_pulse_state(self, token):
-        probe = getattr(self.task, "is_battle_skill_pulsing", None)
-        state = probe(token) if callable(probe) else None
+    def _uses_white_acknowledgement(self, token):
+        return self._battle_execution_policy(token).uses_white_acknowledgement
+
+    def _battle_pulse_state(self, token, *, samples=None):
+        if samples is None:
+            probe = getattr(self.task, "is_battle_skill_pulsing", None)
+            state = probe(token) if callable(probe) else None
+        else:
+            state = samples.get(token)
         if self.battle_highlights is not None:
             profiles, _, _ = self._battle_context(token)
             observation = self.battle_highlights.observe(token, profiles, state, self._clock())
             if observation is not None:
-                return observation.ready
+                return observation.visible
         return state if type(state) is bool else None
 
-    def _battle_pulse_ready(self, token):
-        return not self._battle_uses_pulse(token) or self._battle_pulse_state(token) is True
+    def _execution_allows_battle(self, token):
+        policy = self._battle_execution_policy(token)
+        return policy.can_attempt(self._battle_pulse_state(token) if policy.uses_white_acknowledgement else None)
+
+    def _battle_condition(self, token):
+        observation = self.battle_highlights.observations.get(token) if self.battle_highlights is not None else None
+        return self.battle_condition_evaluator.assess(observation)
+
+    def _scene_conditions(self):
+        return (self.battle_condition_evaluator.forecast(self.battle_highlights.observations)
+                if self.battle_highlights is not None else ForecastConditions())
 
     def _observe_battle_highlights(self):
         if self.battle_highlights is None:
             return
+        bound = {}
         for index in range(len(self.team)):
             token = str(index + 1)
             if not self._slot_available(token):
@@ -964,9 +983,17 @@ class TimedCombatLogic:
                 continue
             profiles, _, _ = self._battle_context(token)
             if self.battle_highlights.condition(profiles) is not None:
-                self._battle_pulse_state(token)
+                bound[token] = profiles
             else:
                 self.battle_highlights.observations.pop(token, None)
+        if not bound:
+            return
+        monitor = getattr(self.task, "observe_battle_skill_highlights", None)
+        samples = monitor() if callable(monitor) else None
+        if callable(monitor) and not isinstance(samples, dict):
+            samples = {}
+        for token in bound:
+            self._battle_pulse_state(token, samples=samples)
 
     def _try_battle_token(self, token, sp, overflow=False, advance_cursor=True):
         now = self._clock()
@@ -995,7 +1022,7 @@ class TimedCombatLogic:
             return False
         if not self.phase_planner.can_spend(token, "battle", sp, expected_cost):
             return False
-        if not self._battle_pulse_ready(token):
+        if not self._execution_allows_battle(token):
             return False
 
         self.phase_planner.start_if_ready(token, "battle")
@@ -1006,7 +1033,7 @@ class TimedCombatLogic:
         self._begin(profiles, started, slot=token, kind="battle")
         self.pending_advance_cursor = advance_cursor
 
-        if self._battle_uses_pulse(token):
+        if self._uses_white_acknowledgement(token):
             self.pending = (sp, token, expected_cost)
             self.task.log_info(f"时间排轴: 庄方宜战技 {token} 白色脉冲就绪，按键后等待白色消失")
         elif expected_cost <= self.assume_success_sp_threshold:
@@ -1074,10 +1101,10 @@ class TimedCombatLogic:
         if self.release_burst is not None:
             components = ()
             if token in self.release_burst.highlight_damage:
-                observation = self.battle_highlights.observations.get(token) if self.battle_highlights is not None else None
-                base, extra = self.release_burst.battle_values(token, observation)
+                assessment = self._battle_condition(token)
+                base, extra = self.release_burst.battle_values(token, assessment)
                 damage = base + extra
-                base_components, extra_components = self.release_burst.battle_components(token, observation)
+                base_components, extra_components = self.release_burst.battle_components(token, assessment)
                 components = base_components + extra_components
             priced = (self.release_burst.price_components(token, self._clock(), components) if components
                       else self.release_burst.price(token, "battle", self._clock(), value=damage))
@@ -1185,7 +1212,7 @@ class TimedCombatLogic:
                 combo.slot, "link", max(p.handoff for p in combo.profiles), quote["crit_expect"],
                 same_actor_duration=max(p.actionable for p in combo.profiles), queue_position=combo.position,
                 damage_duration=max(max(p.duration, p.handoff) for p in combo.profiles)))
-        conditions = self.battle_highlights.forecast_conditions() if self.battle_highlights is not None else ForecastConditions()
+        conditions = self._scene_conditions()
         decision = self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions)
         if decision is not None and decision.gain <= 1e-6 and not self._combo_queue and self.order:
             # Cast-only valuation also compares unbuffed damage. That new path
@@ -1267,7 +1294,7 @@ class TimedCombatLogic:
             return None
         if token == self.forced_main_control_slot and now < self.forced_main_control_until:
             return None
-        if token not in future_free and not self._battle_pulse_ready(token):
+        if token not in future_free and not self._execution_allows_battle(token):
             return None
         mechanic = self._mechanic_for_token(token)
         if mechanic is not None and mechanic.archetype == "multi_stage_battle":
@@ -1279,14 +1306,14 @@ class TimedCombatLogic:
                 or not self._ready(profiles, slot=token, kind="battle")
                 or (not self.phase_planner.can_spend(token, "battle", sp, cost) and token not in future_free)):
             return None
-        observation = self.battle_highlights.observations.get(token) if self.battle_highlights is not None else None
-        base, extra = self.release_burst.battle_values(token, observation)
-        base_components, extra_components = self.release_burst.battle_components(token, observation)
+        assessment = self._battle_condition(token)
+        base, extra = self.release_burst.battle_values(token, assessment)
+        base_components, extra_components = self.release_burst.battle_components(token, assessment)
         return ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
                                   base, gate, cost, same_actor_duration=max(p.actionable for p in profiles),
                                   observed_bonus=extra, base_components=base_components,
                                   observed_components=extra_components,
-                                  condition=ConditionRequirement.from_observation(token, observation))
+                                  condition=ConditionRequirement.from_assessment(token, assessment))
 
     def _release_normal_candidate(self, now):
         main = self._burst_main_control

@@ -12,7 +12,7 @@
 
 ## 状态与边界
 
-`BattleHighlightState.forecast_conditions()` 从本帧真实观察建立不可变 `ForecastConditions`。状态保存原条件组、按钮/技能变体、来源角色、观察时间以及有证据的tag/buff下限事实。opaque节点和通用就绪节点不当作战场事实；队伍来源模型排除出来的某一OR分支不冒充实际观察事实。二元、三元与嵌套AND/OR均保持原逻辑。
+`BattleConditionEvaluator.forecast()`从本帧原始白圈观察先产出条件判定，再建立不可变`ForecastConditions`；观测层只保存visible与来源，不运行推断或决定释放。状态保存原条件组、按钮/技能变体、来源角色、观察时间以及有证据的tag/buff下限事实。opaque节点和通用就绪节点不当作战场事实；队伍来源模型排除出来的某一OR分支不冒充实际观察事实。二元、三元与嵌套AND/OR均保持原逻辑。批次监测复用现有BattleMixin固定小框，独立执行合同见[white-ring-observation-boundary.md](white-ring-observation-boundary.md)。
 
 每个搜索分支带自己的一份状态，预测动作之后应用审核过的转换。安塔尔终结技是最早核准保留敌方tag条件的动作，随后核准了赛希终结技。未审核的攻击、可能消费/改变条件的动作使对应预测证据退回未知，绝不写成每个分支false。预测没有把消费、命中或返还写入真实战斗观察。实际白圈熄灭/未知、按钮变体或换队会替换旧观察。
 

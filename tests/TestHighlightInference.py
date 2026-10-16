@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from src.data.battle_conditions import BattleConditionEvaluator
 from src.data.battle_highlight import BattleHighlightState
 from src.data.highlight_conditions import HighlightAtom, HighlightExpression, infer_highlight, parse_highlight
 from src.data.highlight_producers import SNAPSHOT, TeamProducerClosure, read_producers
@@ -68,9 +69,10 @@ class TestHighlightInference(unittest.TestCase):
                 self.assertFalse(infer_highlight(term('a'), ready, possible=lambda _: True).facts)
 
     def test_observed_conflict_drops_narrowing_without_changing_ready(self):
-        state = BattleHighlightState(load_skill_timings(), ['陈千语', '余烬', '黎风', '管理员'])
-        observation = state.observe('1', state.store.profiles('狼卫', 'battle'), True, 0)
-        self.assertTrue(observation.ready)
+        state = BattleHighlightState(load_skill_timings())
+        evaluator = BattleConditionEvaluator(['陈千语', '余烬', '黎风', '管理员'])
+        observation = evaluator.assess(state.observe('1', state.store.profiles('狼卫', 'battle'), True, 0))
+        self.assertTrue(observation.satisfied)
         self.assertTrue(observation.model_inference.conflicted)
         self.assertFalse(observation.model_inference.facts)
         self.assertFalse(observation.inference.confirms('tag', '9648d5bd'))
@@ -78,16 +80,16 @@ class TestHighlightInference(unittest.TestCase):
     def test_native_wolf_or_refines_for_fire_team_and_stays_open_for_two_elements(self):
         store = load_skill_timings()
         profiles = store.profiles('狼卫', 'battle')
-        fire = BattleHighlightState(store, ['狼卫', '卡缪', '余烬', '管理员'])
-        observation = fire.observe('1', profiles, True, 0)
+        fire = BattleHighlightState(store)
+        observation = BattleConditionEvaluator(['狼卫', '卡缪', '余烬', '管理员']).assess(fire.observe('1', profiles, True, 0))
         result = observation.model_inference
         self.assertTrue(result.confirms('tag', '9648d5bd'))
         self.assertFalse(result.confirms('tag', 'bf9d6e57'))
         # External/prior enemy sources are not independently bounded by roster
         # recognition. Keep this refinement separate from actual UI facts.
         self.assertFalse(observation.inference.confirms('tag', '9648d5bd'))
-        mixed = BattleHighlightState(store, ['狼卫', '佩丽卡', '余烬', '骏卫'])
-        result = mixed.observe('1', profiles, True, 0).model_inference
+        mixed = BattleHighlightState(store)
+        result = BattleConditionEvaluator(['狼卫', '佩丽卡', '余烬', '骏卫']).assess(mixed.observe('1', profiles, True, 0)).model_inference
         self.assertFalse(result.confirms('tag', '9648d5bd'))
         self.assertFalse(result.confirms('tag', 'bf9d6e57'))
 
@@ -95,9 +97,10 @@ class TestHighlightInference(unittest.TestCase):
         store = load_skill_timings()
         for team in (['狼卫', '?'], ['狼卫', '洛茜'], ['狼卫', '艾维文娜'], ['狼卫', '莱万汀']):
             with self.subTest(team=team):
-                state = BattleHighlightState(store, team)
-                self.assertFalse(state.closure.closed)
-                result = state.observe('1', store.profiles('狼卫', 'battle'), True, 0).model_inference
+                state = BattleHighlightState(store)
+                evaluator = BattleConditionEvaluator(team)
+                self.assertFalse(evaluator.closure.closed)
+                result = evaluator.assess(state.observe('1', store.profiles('狼卫', 'battle'), True, 0)).model_inference
                 self.assertFalse(result.confirms('tag', '9648d5bd'))
 
     def test_forced_burning_and_cross_reaction_are_distinct_producers(self):
@@ -113,20 +116,21 @@ class TestHighlightInference(unittest.TestCase):
         closure = TeamProducerClosure.for_team(['狼卫'])
         atom = HighlightAtom('tag', 'bf9d6e57', json.dumps({'targetSource': 1}))
         self.assertIsNone(closure.possible(atom))
-        state = BattleHighlightState(load_skill_timings(), ['狼卫', '陈千语'])
-        observation = state.observe('2', state.store.profiles('庄方宜', 'battle'), True, 0)
+        state = BattleHighlightState(load_skill_timings())
+        observation = BattleConditionEvaluator(['狼卫', '陈千语']).assess(state.observe('2', state.store.profiles('庄方宜', 'battle'), True, 0))
         self.assertTrue(observation.model_inference.confirms('buff', 'buff_chr_0030_zhuangfy_ult_skill_free', target_source=1))
         self.assertFalse(observation.inference.confirms('buff', 'buff_chr_0030_zhuangfy_ult_skill_free', target_source=1))
         self.assertFalse(observation.inference.confirms('buff', 'buff_chr_0030_zhuangfy_have_sword'))
 
     def test_latest_unknown_discards_inferred_counts_without_exact_stack_guess(self):
-        state = BattleHighlightState(load_skill_timings(), ['莱万汀'])
+        state = BattleHighlightState(load_skill_timings())
+        evaluator = BattleConditionEvaluator(['莱万汀'])
         profiles = state.store.profiles('莱万汀', 'battle')
-        result = state.observe('1', profiles, True, 0).inference
+        result = evaluator.assess(state.observe('1', profiles, True, 0)).inference
         self.assertTrue(result.confirms('buff', 'buff_chr_0016_laevat_energy', minimum=4, target_source=4))
         self.assertFalse(result.confirms('buff', 'buff_chr_0016_laevat_energy', minimum=5))
-        self.assertFalse(state.observe('1', profiles, None, 1).inference.facts)
-        self.assertFalse(state.observe('1', profiles, False, 2).inference.facts)
+        self.assertFalse(evaluator.assess(state.observe('1', profiles, None, 1)).inference.facts)
+        self.assertFalse(evaluator.assess(state.observe('1', profiles, False, 2)).inference.facts)
 
     def test_duplicate_and_contradictory_literals_have_logical_meaning(self):
         negated = HighlightExpression('not', (term('a'),))

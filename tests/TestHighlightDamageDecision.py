@@ -3,7 +3,7 @@
 import unittest
 from dataclasses import replace
 
-from src.data.battle_conditions import ForecastConditions
+from src.data.battle_conditions import BattleConditionEvaluator, ForecastConditions
 from src.data.battle_highlight import BattleHighlightState
 from src.data.release_burst_planner import ReleaseBurstAction, ReleaseBurstPlanner
 from src.data.skill_timing import load_skill_timings
@@ -17,17 +17,29 @@ class TestHighlightDamageDecision(unittest.TestCase):
 
     def test_native_projectile_damage_uses_baseline_rank_and_current_condition(self):
         planner = ReleaseBurstPlanner(['狼卫'], store=self.store)
-        state = BattleHighlightState(self.store, ['狼卫'])
+        state = BattleHighlightState(self.store)
+        evaluator = BattleConditionEvaluator(['狼卫'])
         profiles = self.store.profiles('狼卫', 'battle')
         quote = planner.quote('1', 'battle')
         unit = quote['crit_expect'] / quote['quote_basis']['multiplier']
-        base, extra = planner.battle_values('1', state.observe('1', profiles, True, 0))
+        base, extra = planner.battle_values('1', evaluator.assess(state.observe('1', profiles, True, 0)))
         self.assertAlmostEqual(base / unit, 3 * 0.7699999809265137)
         self.assertAlmostEqual(extra / unit, 8.5)
         for observed in (False, None):
-            self.assertEqual(planner.battle_values('1', state.observe('1', profiles, observed, 1)), (base, 0))
-        other = state.observe('1', self.store.profiles('弧光', 'battle'), True, 2)
+            self.assertEqual(planner.battle_values('1', evaluator.assess(state.observe('1', profiles, observed, 1))), (base, 0))
+        other = evaluator.assess(state.observe('1', self.store.profiles('弧光', 'battle'), True, 2))
         self.assertEqual(planner.battle_values('1', other), (base, 0))
+
+    def test_raw_visible_ring_cannot_enable_damage_without_condition_assessment(self):
+        planner = ReleaseBurstPlanner(['弧光'], store=self.store)
+        sensor = BattleHighlightState(self.store)
+        raw = sensor.observe('1', self.store.profiles('弧光', 'battle'), True, 0)
+        base, raw_extra = planner.battle_values('1', raw)
+        self.assertEqual(raw_extra, 0)
+        self.assertFalse(planner.battle_components('1', raw)[1])
+        assessment = BattleConditionEvaluator(['弧光']).assess(raw)
+        self.assertEqual(planner.battle_values('1', assessment)[0], base)
+        self.assertGreater(planner.battle_values('1', assessment)[1], 0)
 
     def test_native_candidate_and_overflow_score_change_but_cost_does_not(self):
         task = FakeTask()
@@ -57,7 +69,7 @@ class TestHighlightDamageDecision(unittest.TestCase):
         logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
         logic._configure_team(['狼卫', '安塔尔', '余烬', '骏卫'], reset_runtime=True)
         logic.step()
-        self.assertTrue(logic.battle_highlights.observations['1'].ready)
+        self.assertTrue(logic.battle_highlights.observations['1'].visible)
         self.assertIsNone(logic._release_battle_candidate('1', 0, task.now, set()))
         self.assertNotIn('1', task.keys)
 
@@ -87,9 +99,10 @@ class TestHighlightDamageDecision(unittest.TestCase):
 
     def test_arclight_base_and_conduct_extra_keep_separate_native_elements(self):
         planner = ReleaseBurstPlanner(['弧光'], store=self.store)
-        state = BattleHighlightState(self.store, ['弧光'])
+        state = BattleHighlightState(self.store)
+        evaluator = BattleConditionEvaluator(['弧光'])
         profiles = self.store.profiles('弧光', 'battle')
-        base, extra = planner.battle_components('1', state.observe('1', profiles, True, 0))
+        base, extra = planner.battle_components('1', evaluator.assess(state.observe('1', profiles, True, 0)))
         self.assertEqual((base[0].element, extra[0].element), ('物理', '电磁'))
         self.assertEqual((base[0].bonus_pct, extra[0].bonus_pct), (29.9, 33.6))
         panel = planner.rows['1']['panel']
@@ -97,8 +110,8 @@ class TestHighlightDamageDecision(unittest.TestCase):
         self.assertAlmostEqual(base[0].value, neutral * 2 * 1.0099999904632568 * 1.299)
         self.assertAlmostEqual(extra[0].value, neutral * 4.050000190734863 * 1.336)
         for observed in (False, None):
-            self.assertEqual(planner.battle_components('1', state.observe('1', profiles, observed, 1)), (base, ()))
-        wrong = state.observe('1', self.store.profiles('狼卫', 'battle'), True, 2)
+            self.assertEqual(planner.battle_components('1', evaluator.assess(state.observe('1', profiles, observed, 1))), (base, ()))
+        wrong = evaluator.assess(state.observe('1', self.store.profiles('狼卫', 'battle'), True, 2))
         self.assertEqual(planner.battle_components('1', wrong), (base, ()))
 
     def test_team_electric_amplification_only_prices_arclight_electric_component(self):

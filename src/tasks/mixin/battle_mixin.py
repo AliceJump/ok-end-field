@@ -1119,28 +1119,26 @@ class BattleMixin(BaseEfTask):
             self._observe_optional_link_skills(False)
         return False
 
-    def is_battle_skill_pulsing(self, slot):
-        """Read one slot's white ring; return None for an unusable observation.
-
-        Used for Zhuang Fangyi's battle releases and confirmation, independent
-        of the generic recommendation toggle. Keep the existing right-anchored
-        party mapping and all-active-buttons flash rejection.
-        """
+    def observe_battle_skill_highlights(self):
+        """Sample all fixed button rings together, without deciding any action."""
         member_count = int(getattr(self, "_battle_member_count", 0) or 0)
         if not 1 <= member_count <= len(RECOMMEND_SKILL_REGIONS):
-            return None
-        if str(slot) not in {str(i) for i in range(1, member_count + 1)}:
-            return None
+            return {}
+        unknown = dict.fromkeys((str(i) for i in range(1, member_count + 1)))
         frame = self.frame
         if frame is None or frame.size == 0:
-            return None
+            return unknown
         regions = RECOMMEND_SKILL_REGIONS[-member_count:]
         detector = get_recommend_skill_detector()
         ratios = [detector.white_ratio(frame, float(r["x"]), float(r["y"]), float(r["button_radius"]))
                   for r in regions]
         if len(regions) >= 3 and all(ratio >= PULSE_ON_RATIO for ratio in ratios):
-            return None
-        return ratios[int(slot) - 1] >= PULSE_ON_RATIO
+            return unknown
+        return {str(i): ratio >= PULSE_ON_RATIO for i, ratio in enumerate(ratios, 1)}
+
+    def is_battle_skill_pulsing(self, slot):
+        """Existing execution hook; sensing does not imply mechanism readiness."""
+        return BattleMixin.observe_battle_skill_highlights(self).get(str(slot))
 
     def use_recommend_skill(self):
         """检测推荐技能按钮的白色圆周脉冲，命中即按对应战技键（每周期按一次）。

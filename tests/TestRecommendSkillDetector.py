@@ -191,6 +191,16 @@ class TestBattleSkillPulseQuery(unittest.TestCase):
         task.frame = self.task_frame(4, {1, 2, 3, 4}).frame
         self.assertIsNone(BattleMixin.is_battle_skill_pulsing(task, "1"))
 
+    def test_batch_monitor_scans_each_fixed_ring_once_without_recommendation_edges(self):
+        task = self.task_frame(3, {2})
+        detector = RecommendSkillDetector()
+        with patch("src.tasks.mixin.battle_mixin.get_recommend_skill_detector", return_value=detector):
+            with patch.object(detector, "white_ratio", wraps=detector.white_ratio) as sample:
+                values = BattleMixin.observe_battle_skill_highlights(task)
+                self.assertEqual(values, {"1": False, "2": True, "3": False})
+                self.assertEqual(sample.call_count, 3)
+        self.assertTrue(detector.detect(task.frame, .920, .898, .037, "批次3"))
+
     def test_unusable_frame_or_party_is_not_disappearance(self):
         task = self.task_frame()
         for slot in ("0", "5", "unknown"):

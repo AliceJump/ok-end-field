@@ -1,8 +1,8 @@
-"""Current button-condition observations from the packaged native records.
+"""Raw ring visibility bound to the current native button contract.
 
 An observation replaces the previous one, including UNKNOWN. It describes the
-whole authored predicate, preserving OR branches and stack thresholds rather
-than inventing individual enemy statuses or exact resource counts.
+current visual sample. Interpretation, producer closure and execution policy
+belong to separate consumers; this module never determines skill readiness.
 """
 
 from __future__ import annotations
@@ -10,34 +10,20 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from src.data.battle_conditions import ForecastConditions
-from src.data.highlight_conditions import HighlightInference, infer_highlight, parse_highlight
-from src.data.highlight_producers import TeamProducerClosure
-
 
 @dataclass(frozen=True)
 class BattleHighlightObservation:
     skill_ids: tuple[str, ...]
     condition_json: str
-    ready: bool | None
+    visible: bool | None
     observed_at: float
-    inference: HighlightInference = HighlightInference()
-    model_inference: HighlightInference = HighlightInference()
-
-    @property
-    def confirmed_condition(self):
-        return json.loads(self.condition_json) if self.ready is True else None
 
 
 class BattleHighlightState:
-    def __init__(self, store, team=()):
+    def __init__(self, store):
         self.store = store
         self.conditions = {}
         self.observations: dict[str, BattleHighlightObservation] = {}
-        self.closure = TeamProducerClosure.for_team(team) if team else None
-
-    def forecast_conditions(self):
-        return ForecastConditions.from_observations(self.observations)
 
     def condition(self, profiles):
         """Only bind a single, nonempty predicate for the current button."""
@@ -67,9 +53,6 @@ class BattleHighlightState:
         observation = BattleHighlightObservation(
             tuple(profile.skill_id for profile in profiles), condition,
             value if type(value) is bool else None, now,
-            infer_highlight(parse_highlight(condition), value),
-            infer_highlight(parse_highlight(condition), value,
-                            possible=self.closure.possible if self.closure is not None else None),
         )
         self.observations[slot] = observation
         return observation

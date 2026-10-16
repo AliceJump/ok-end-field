@@ -4,7 +4,7 @@
 
 ## 两种结论分别保存
 
-`BattleHighlightObservation.inference` 只保存当前按钮条件直接蕴含的事实。`model_inference` 再按当前队伍的技能来源图缩小分支，它是模型内结论。队伍识别没有独立证明敌方、环境或既有状态不能供给另一分支，所以不能把后者写成实战敌人事实。两者都保留角色槽位、技能变体、原始目标选择器及观察时间；没有推荐目标身份就不写入全局 EnemyState，也不跨按钮合并敌人条件。
+2026-10-16已将原始观测与判定解耦，并接入现有监测的一批固定小框采样：`BattleHighlightObservation`仅保存visible和来源合同，`BattleConditionEvaluator`独立产出`BattleConditionAssessment`。其中`inference`只保存当前按钮条件直接蕴含的事实，`model_inference`再按当前队伍技能来源图缩小分支，它是模型内结论。队伍识别没有独立证明敌方、环境或既有状态不能供给另一分支，所以不能把后者写成实战敌人事实。两者都保留角色槽位、技能变体、原始目标选择器及观察时间；没有推荐目标身份就不写入全局EnemyState，也不跨按钮合并敌人条件。原始亮圈对象不能直接启用强化报价。庄方宜已批准的执行确认由独立policy保留，详见[white-ring-observation-boundary.md](white-ring-observation-boundary.md)。
 
 例如狼卫白圈直接证明推荐目标有燃烧或导电。只有在规定的队伍技能来源模型完整、其中仅可能提供燃烧时，模型结论才缩小到燃烧；真实观察仍保留 OR。若闭包所有分支都排除而白圈亮，标记模型冲突并退回未知，保留这次正向观察。未知队员、未知创建次数、动态引用、缺少记录和未解释 producer 都使来源边界保持开放。
 
