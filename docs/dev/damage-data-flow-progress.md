@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-17模板续批：客户端VFS更新已独立捕获8728项/缺失0，6323份技能/buff重新EOF/ID/逐字节回编码，庄方宜70份解码语义未变。三份真实造剑/剑/区域模板核准；剑寿命读输入BB而非字面45秒，造剑实际是Bezier2D，不能把邻近travelDuration=0.2直接当到达时间。真实生成到区域快照仍未执行，不提高运行收益或2/111。见[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)。
+
 > 2026-10-16实体BB续批：庄方宜区域显式剑数由CreateAssignDataPair在创建前采样，经SetSource写入实体BB，非持续订阅；来源children与全局实体登记区分。研究编译器遗漏的CheckEntityNum过滤/写值/服务端操作现明确保持未知，防止假授权后续动作。2新增、24专项/1735全仓通过，87窗口/11字段组/28锚点独立核准；未实现实际计数producer，未改面板/报价/完整覆盖口径。见[native-zhuangfy-salvo-audit.md](native-zhuangfy-salvo-audit.md)。用户新指令优先完成接入线白圈观测/判定解耦，研究不混PR489。
 
 > 2026-10-16庄方宜剑数producer续查：新版SkillData.buffs挂载的独立被动按OnBuffTrigger、配置0.03秒更新本人50米XZ内带标签的剑实体计数→被动UI→EntityBB_SwordNum。它不是历史累计生成数或上限9；与区域创建/读取的相位、实体到达和移除仍未执行核准。两份被动记录补齐后共13份核验，独立解析器补顶层buff字面依赖；未改运行值或2/111。见[native-zhuangfy-salvo-audit.md](native-zhuangfy-salvo-audit.md)。
