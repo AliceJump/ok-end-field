@@ -27,9 +27,9 @@
 
 原基础报价把约607%全部当成电磁，本批在当前候选中替换为两个独立组件。物理段保留固定29.9%伤害加成，电磁段保留固定33.6%；由同一未舍入固定攻击/属性系数和暴击期望计算，固定装备不再次挂动态buff。
 
-`TimedCombatLogic._release_battle_candidate`携带组件，`ReleaseBurstPlanner._forecast_step`分别计算受益过滤后相加；高技力 `_overflow_score`使用相同组件报价。安塔尔电磁增幅只提高电磁部分，秋栗团队白攻击提高两部分。仅第一预测动作采用当前白圈追加；经过其他动作后回退基础两次物理报价，下一真实step重新观察。
+`TimedCombatLogic._release_battle_candidate`携带组件，`ReleaseBurstPlanner._forecast_step`分别计算受益过滤后相加；高技力 `_overflow_score`使用相同组件报价。安塔尔电磁增幅只提高电磁部分，秋栗团队白攻击提高两部分。绑定条件的候选通过 `ForecastConditions.supports` 核验当前分支证据，经过已审核的安塔尔、赛希终结转换后可继续采用白圈追加；其他未知或可能修改条件的动作后回退基础两次物理报价，下一真实step重新观察。原首动作限制已被 [场景条件预测](battle-condition-forecast.md) 替代。
 
-白圈不亮或未知仍允许按原普通战技规则选招，战技消耗/门槛保持100SP。白圈不抢占调度，不写入全局EnemyState，不确认消费导电、返SP或命中。连携保持master处理，基础静态排轴的旧聚合报价仍是后续边界，不能宣称所有优化器都完成组件替换。
+白圈不亮或未知仍允许按原普通战技规则选招，战技消耗/门槛保持100SP。白圈不抢占调度，不写入全局EnemyState，不确认消费导电、返SP或命中。连携队首现按 [独立报价与队列约束合同](combo-queue-scheduling.md) 接入；未知变体仍保留匿名处理。基础静态排轴的旧聚合报价仍是后续边界，不能宣称所有优化器都完成组件替换。
 
 ## 验证
 
