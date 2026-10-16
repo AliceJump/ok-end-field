@@ -14,6 +14,7 @@ import cv2
 import numpy as np
 from ok import Box, CaptureException, FinishedException, TaskDisabledException
 
+from src.image.combo_order import ComboOrder
 from src.image.combo_skill_detector import (
     PORTRAITS,
     ComboSkillDetector,
@@ -49,6 +50,71 @@ HEADS = ("chr_0004_pelica", "chr_0030_zhuangfy", "chr_0012_avywen", "chr_0036_js
 
 
 class TestComboSkillDetector(unittest.TestCase):
+    def test_order_shortlist_reduces_matches_but_head_stays_full_team(self):
+        detector = ComboSkillDetector()
+        frame = render_heads(HEADS)
+        first = detector.observe(frame, TEAM, ready=True, observed_at=1)
+        self.assertEqual(len(detector.order.before), 6)
+        with patch.object(detector, "_match_slot", wraps=detector._match_slot) as match:
+            second = detector.observe(render_heads(HEADS, dim=(1, 2, 3)), TEAM, ready=True, observed_at=1.1)
+        self.assertEqual([r.native_id for r in second.slots], list(HEADS))
+        self.assertEqual(second.head.match_scope, "team")
+        # Same-face repeats are not excluded: variants can share a portrait.
+        self.assertEqual([len(call.args[1]) for call in match.call_args_list], [4, 3, 2])
+        self.assertTrue(all(r.match_scope == "battle_order" for r in second.slots[2:]))
+        self.assertEqual(first.slots[3].match_scope, "team")
+
+    def test_conflicting_pixels_relearn_and_do_not_keep_excluded_later_faces(self):
+        detector = ComboSkillDetector()
+        detector.observe(render_heads(HEADS), TEAM, ready=True, observed_at=1)
+        changed = (HEADS[2], HEADS[0], HEADS[3], HEADS[1])
+        result = detector.observe(render_heads(changed), TEAM, ready=True, observed_at=1.1)
+        self.assertEqual([r.native_id for r in result.slots], list(changed))
+        self.assertTrue(all(r.match_scope == "team" for r in result.slots))
+        self.assertIn((HEADS[2], HEADS[0]), detector.order.before)
+        self.assertNotIn((HEADS[0], HEADS[2]), detector.order.before)
+
+    def test_audits_recheck_shortlists_and_e_reset_keeps_order(self):
+        detector = ComboSkillDetector()
+        frame = render_heads(HEADS)
+        detector.observe(frame, TEAM, ready=True, observed_at=1)
+        narrowed = detector.observe(frame, TEAM, ready=True, observed_at=1.1)
+        self.assertEqual(narrowed.slots[3].match_scope, "battle_order")
+        audited = detector.observe(frame, TEAM, ready=True, observed_at=1.5)
+        self.assertTrue(all(r.match_scope == "team" for r in audited.slots))
+        detector.reset()  # Pressing E/hidden prompt clears identities, not battle history.
+        self.assertEqual(len(detector.order.before), 6)
+        self.assertFalse(detector._slots)
+        again = detector.observe(frame, TEAM, ready=True, observed_at=1.6)
+        self.assertTrue(all(r.match_scope == "team" for r in again.slots))
+        detector.reset(clear_order=True)
+        self.assertFalse(detector.order.before)
+
+    def test_team_change_discards_order_but_layout_change_only_forces_audit(self):
+        detector = ComboSkillDetector()
+        detector.observe(render_heads(HEADS), TEAM, ready=True, observed_at=1)
+        result = detector.observe(render_heads(HEADS, width=2400), TEAM, ready=True, observed_at=1.1)
+        self.assertEqual(len(detector.order.before), 6)
+        self.assertTrue(all(r.match_scope == "team" for r in result.slots))
+        detector.observe(render_heads((HEADS[0],)), TEAM[:1], ready=True, observed_at=1.2)
+        self.assertFalse(detector.order.before)
+
+    def test_order_table_partial_transitive_conflict_and_duplicates(self):
+        def slots(ids, scope="team"):
+            return [SimpleNamespace(native_id=native, match_scope=scope) for native in ids]
+        order = ComboOrder()
+        order.learn(slots(("a", None, "b")))
+        order.learn(slots(("b", "c")))
+        self.assertIn(("a", "c"), order.before)
+        self.assertEqual(set(order.after(["b"], dict.fromkeys("abcd"))), {"b", "c", "d"})
+        order.learn(slots(("c", "a"), "battle_order"))
+        self.assertNotIn(("c", "a"), order.before)
+        self.assertTrue(order.learn(slots(("c", "a"))))
+        self.assertEqual(order.before, {("c", "a")})
+        order.clear()
+        order.learn(slots(("a", "a", "b")))
+        self.assertFalse(order.before)
+
     def test_atlas_covers_catalog_and_both_administrators(self):
         bank = load_combo_portraits()
         catalog = json.loads((PORTRAITS.parents[2] / "assets/data/characters.json").read_bytes())

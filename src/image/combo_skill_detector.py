@@ -9,12 +9,14 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
 import cv2
 import numpy as np
+
+from src.image.combo_order import ComboOrder
 
 PORTRAITS = Path(__file__).resolve().parents[2] / "assets/data/combo_portraits"
 _SLOT_BOXES = ((1134, 450, 1223, 539), (1228, 470, 1294, 536), (1299, 470, 1365, 536))
@@ -34,6 +36,7 @@ class ComboSlotObservation:
     team_slot: int | None = None
     score: float | None = None
     margin: float | None = None
+    match_scope: str = "team"
     # An unrecognized fixed slot can be empty, obscured or unknown. Keep its
     # position and do not invent absence, canCast, a skill variant or a timer.
 
@@ -138,12 +141,19 @@ class ComboSkillDetector:
         self._signature = None
         self._templates = {}
         self._slots = {}
+        self.order = ComboOrder()
+        self._order_team = None
+        self._last_full_audit = None
 
-    def reset(self):
+    def reset(self, *, clear_order=False):
         """Invalidate identities after input, team/layout changes or hidden HUD."""
         self._signature = None
         self._templates.clear()
         self._slots.clear()
+        self._last_full_audit = None
+        if clear_order:
+            self.order.clear()
+            self._order_team = None
 
     def _template(self, native_id, size):
         key = (native_id, size)
@@ -199,7 +209,7 @@ class ComboSkillDetector:
             margin,
         )
 
-    def _observe_slots(self, frame, slots, candidates, scale):
+    def _observe_slots(self, frame, slots, candidates, scale, *, full_audit):
         results = []
         for index, slot in enumerate(slots):
             rendered_size = round(_RENDERED_SIZES[index] * scale)
@@ -210,12 +220,22 @@ class ComboSkillDetector:
             # Exact face-pixel equality only. A new portrait, transparency or
             # scene overlay forces matching; elapsed time never renews identity.
             fingerprint = (face.shape, face.tobytes())
+            limited = self.order.after([r.native_id for r in results if r.native_id], candidates)
+            scope = candidates if full_audit or index == 0 or not limited else limited
+            signature = tuple(sorted(scope))
             cached = self._slots.get(index)
-            if cached and cached[0] == fingerprint:
+            if cached and cached[0] == (fingerprint, signature):
                 result = cached[1]
             else:
-                result = self._match_slot(face, candidates, rendered_size, slot)
-                self._slots[index] = (fingerprint, result)
+                result = self._match_slot(face, scope, rendered_size, slot)
+                if len(scope) < len(candidates):
+                    # History is a hint. A weak/unknown narrowed result must
+                    # retry the whole team, and the head is never narrowed.
+                    if result.native_id and result.score >= .90 and result.margin >= .12:
+                        result = replace(result, match_scope="battle_order")
+                    else:
+                        result = self._match_slot(face, candidates, rendered_size, slot)
+                self._slots[index] = ((fingerprint, signature), result)
             results.append(result)
         return tuple(results)
 
@@ -223,6 +243,9 @@ class ComboSkillDetector:
         if not math.isfinite(observed_at):
             raise ValueError("Combo observation requires a finite capture time")
         team = tuple(team[:4])
+        if team != self._order_team:
+            self.reset(clear_order=True)
+            self._order_team = team
         size = _frame_size(frame)
         boxes = combo_slot_boxes(*size) if size else ((0, 0, 0, 0),) * 4
         slots = tuple(ComboSlotObservation(i + 1, box) for i, box in enumerate(boxes))
@@ -244,5 +267,16 @@ class ComboSkillDetector:
         if not candidates:
             return ComboObservation(ready, observed_at, team, size, slots, "unknown_team")
         scale = min(size[0] / 1920, size[1] / 1080)
-        results = self._observe_slots(frame, slots, candidates, scale)
+        full_audit = (self._last_full_audit is None or observed_at < self._last_full_audit
+                      or observed_at - self._last_full_audit >= .5)
+        results = self._observe_slots(frame, slots, candidates, scale, full_audit=full_audit)
+        if full_audit:
+            self._last_full_audit = observed_at
+        if self.order.learn(results):
+            self._slots.clear()
+            # Any narrowed slots in the conflicting frame need a full retry
+            # before consumers see them or the new order learns from them.
+            results = self._observe_slots(frame, slots, candidates, scale, full_audit=True)
+            self.order.learn(results)
+            self._last_full_audit = observed_at
         return ComboObservation(ready, observed_at, team, size, results, "observed")

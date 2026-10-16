@@ -9,6 +9,7 @@ from src.core.BattleConfig import (
     KEY_BATTLE_INITIAL_WAIT,
     KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY,
 )
+from src.image.combo_skill_detector import ComboSkillDetector
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.tasks.onetime.ImmediateTimedCombatLogic import ImmediateTimedCombatLogic
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
@@ -16,6 +17,26 @@ from tests.TestConditionalRotation import _FakeTask
 
 
 class TestCombatStartupWait(unittest.TestCase):
+    def test_new_or_absent_battle_discards_learned_combo_order(self):
+        for in_combat in (True, False):
+            with self.subTest(in_combat=in_combat):
+                task = _FakeTask({"技能时间排轴": True}, skill=3)
+                detector = task._combo_skill_detector = ComboSkillDetector()
+                detector.order.before = {("a", "b")}
+                task.in_combat = lambda **kwargs: in_combat
+                with patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic.run", return_value=True):
+                    AutoCombatLogic(task).run()
+                self.assertFalse(detector.order.before)
+
+    def test_same_battle_reentry_preserves_combo_order(self):
+        task = _FakeTask({"技能时间排轴": True}, skill=3)
+        task._recommend_detector_in_combat = True
+        detector = task._combo_skill_detector = ComboSkillDetector()
+        detector.order.before = {("a", "b")}
+        with patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic.run", return_value=True):
+            AutoCombatLogic(task).run()
+        self.assertEqual(detector.order.before, {("a", "b")})
+
     def test_wait_settings_are_no_longer_registered(self):
         for key in (KEY_BATTLE_INITIAL_WAIT, KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY):
             with self.subTest(key=key):
