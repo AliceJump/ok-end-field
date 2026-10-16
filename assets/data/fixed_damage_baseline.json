@@ -8259,7 +8259,7 @@
     "data_flow": {
       "schema_version": 1,
       "sources": {
-        "assets/data/character_skills/zhuang_fangyi.json": "a787c68655fdb57cf69dad2a3703209b5ed24050e10c531d8a9334f1fc54ed48",
+        "assets/data/character_skills/zhuang_fangyi.json": "e8f0e762a488af1b9131ee15c62667031aa9aa4f455d4cae0a14ec3aa59e8832",
         "assets/data/character_builds/zhuang_fangyi.json": "f5c34b1518f52657af5342b9345e4c8560a98f2b0ef51631b26001af41e43e40",
         "assets/data/weapons.json": "2628ad6bacf607440eda2d3e3fd1a9aead2754af5c6be0f67396566b0332f5bf",
         "assets/data/equipments.json": "70ced6fc6c4631489c6513cc80486129aaf70de9c108e588bbc81dc85883a8ea",

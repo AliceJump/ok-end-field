@@ -24,6 +24,7 @@ class MechanicResource:
     key: str
     label: str
     maximum: int | None = None
+    initial_count: int | None = 0
 
 
 @dataclass(frozen=True)
@@ -319,7 +320,7 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
         generic_cycle_safe=False,
         resources=(
             MechanicResource("conducting", "导电等级", 4),
-            MechanicResource("qingting_sword", "青霆剑", sword_cap),
+            MechanicResource("qingting_sword", "青霆剑", sword_cap, initial_count=None),
             MechanicResource("ult_state", "天理合真"),
         ),
         transitions=(
@@ -337,9 +338,11 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
                 None,
                 sp_gate=_last_stat(battle, "技力消耗"),
                 sp_cost=_last_stat(battle, "技力消耗"),
-                consumes=("STATUS_CONDUCTING:all_if_present", "STACK_QINGTING_SWORD:all_on_attack"),
-                produces=(f"STACK_QINGTING_SWORD:1..{per_cast_cap}",),
-                notes=("导电等级决定本次倍率和生成剑数",),
+                consumes=("STATUS_CONDUCTING:all_if_present",),
+                produces=(f"STACK_QINGTING_SWORD:0..{per_cast_cap}_conditional",),
+                notes=("导电等级决定本次倍率和生成剑数", "未消费导电且现存剑不少于3时不生成新剑",
+                       "生成条件未闭合，不把范围视为均匀分布或确定新增；雷击不宣告消费全部剑",
+                       "剑的到达、范围、寿命和实际移除链仍待执行"),
             ),
             MechanicTransition(
                 "ult",
@@ -355,8 +358,9 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
                 sp_gate=0,
                 sp_cost=0,
                 requires=("ult_state", "first_battle_in_ult"),
-                consumes=("STACK_QINGTING_SWORD:all_on_attack",),
                 produces=("STACK_QINGTING_SWORD:3", "ATTACH_ELECTROMAGNETIC"),
+                notes=("有目标才请求生成三剑，投射物到达建剑不等于释放时已计入区域快照",
+                       "未声明消费既有剑；实际计数与寿命清理仍待执行"),
             ),
         ),
         state_seconds=ult_duration,
@@ -364,9 +368,10 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
             "连携消耗电磁附着并施加/升级导电",
             f"战技消费导电并单次最多生成 {per_cast_cap} 柄青霆剑",
             f"青霆剑快照上限 {sword_cap if sword_cap is not None else 'unknown'}",
-            f"终结技持续 {ult_duration:g}s；首次战技免费且固定生成 3 剑"
+            f"终结技持续 {ult_duration:g}s；首次战技免费且在有目标时请求生成 3 剑"
             if ult_duration
-            else "终结技首次战技免费且固定生成 3 剑",
+            else "终结技首次战技免费且在有目标时请求生成 3 剑",
+            "青霆剑到达、实际计数和区域快照未闭合，完整战技伤害保持未知",
         ),
     )
 

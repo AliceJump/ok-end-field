@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-17新运行边界：继续从[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)的时序和旧假设修正章节接力。生成投射物的实际scalar/force比较、同tick碰撞后到达派发、Controller寿命选择和PeriodicTimer已核；388次原始指令回放只是显式输入标量验证。研究代码不再先清空既有剑、把未知初始数置0、均分条件生成或给旧纸面首次免费包络概率1。32面板/128报价数值未动，只更新庄方宜canonical来源哈希；PR489不自动带这些研究变化。目标是继续到达/登记/被动更新/区域取数与真实计数producer，不能把这批当电剑总伤害已经接入。人类要求PR533关闭已执行，主仓试用文件保留；定时ACTIVE规则02:06起五小时不变。
+
 > 2026-10-17最新：先读[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)。本次用户已批准电剑预测、导电确立时取最低等级，但不能把白圈OR任一分支当导电。主仓独立新捕获data-refresh-20261017：8728提取无缺失/6323技能buff回编码通过，庄方宜70份decoded相等；三模板新解出并JSON/Raw长度摘要核准。Bezier2D.OnStart读speed而非travelDuration=0.2，后续Tick/实际点/到达/计数/创建采样相位继续核准，不将请求3剑当本次已读3剑。未改PR489或数值，完整2/111不变。定时任务中文已直接工具重写、ASCII转义回读逐字核验无替换字符；新实际锚点2026-10-17北京时间02:06、此后五小时，不恢复旧锚点。
 
 > 2026-10-16最新：区域SwordNum显式赋值的创建前采样/SetSource两BB/实体登记与OnSpawn顺序已有同版证据；原始探针与验证仅主仓ignored，详见[native-zhuangfy-salvo-audit.md](native-zhuangfy-salvo-audit.md)。CheckEntityNum带过滤或storeKey不再被编译器当纯predicate放行，真实producer与server operation尚未执行。2新增、24专项/1735全仓通过，不提高2/111、不改32/128或既有数值绑定。人类最新要求白圈解耦并复用现有监测，优先接入PR489，研究后续不覆盖它。

@@ -271,15 +271,7 @@
             "stagger_value": 15,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": [
-                {
-                    "effect_id": "STACK_QINGTING_SWORD",
-                    "value": null,
-                    "duration": null,
-                    "target": "field",
-                    "count": -1
-                }
-            ],
+            "effects": [],
             "rank_stats": {
                 "levels": [
                     "RANK 1",

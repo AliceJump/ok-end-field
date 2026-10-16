@@ -83,7 +83,10 @@ class TestCharacterMechanics(unittest.TestCase):
         self.assertEqual(free.sp_gate, 0)
         self.assertEqual(free.sp_cost, 0)
         self.assertIn("STACK_QINGTING_SWORD:3", free.produces)
-        self.assertIn("STACK_QINGTING_SWORD:all_on_attack", free.consumes)
+        self.assertFalse(any(token.startswith("STACK_QINGTING_SWORD:") for token in free.consumes))
+        ordinary = next(item for item in mechanic.transitions if item.phase == "惊霆诀")
+        self.assertFalse(any(token.startswith("STACK_QINGTING_SWORD:") for token in ordinary.consumes))
+        self.assertIn("STACK_QINGTING_SWORD:0..3_conditional", ordinary.produces)
         resources = {item.key: item.maximum for item in mechanic.resources}
         self.assertEqual(resources["conducting"], 4)
         self.assertEqual(resources["qingting_sword"], 9)

@@ -212,8 +212,10 @@ class TestTeamPhasePlanner(unittest.TestCase):
         self.assertAlmostEqual(ty_battle.expected_fraction, 0.5)
 
         zhuang_free = next(action for action in by_actor["庄方宜"].actions if action.label == "天理合真首次惊霆诀")
-        self.assertAlmostEqual(zhuang_free.expected_damage, zhuang_free.damage_high)
-        self.assertEqual(zhuang_free.full_probability, 1)
+        self.assertIsNone(zhuang_free.expected_damage)
+        self.assertIsNone(zhuang_free.full_probability)
+        self.assertIsNone(by_actor["庄方宜"].expected_damage)
+        self.assertFalse(by_actor["庄方宜"].runtime_executable)
 
         yvonne_battle = next(action for action in by_actor["伊冯"].actions if action.kind == "battle")
         self.assertGreater(yvonne_battle.expected_damage, yvonne_battle.damage_low)

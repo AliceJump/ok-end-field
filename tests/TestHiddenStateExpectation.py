@@ -42,6 +42,25 @@ class TestHiddenDamageExpectation(unittest.TestCase):
     def _battle_transition(self, actor):
         return next(item for item in self.mechanics[actor].transitions if item.action == "battle")
 
+    def test_zhuang_free_battle_adds_to_preexisting_swords_instead_of_erasing_them(self):
+        hidden = HiddenStateExpectation(["庄方宜"], self.mechanics)
+        hidden.resources["1", "qingting_sword"] = DiscreteBelief.certain(6, 9)
+        free = next(t for t in self.mechanics["庄方宜"].transitions if t.phase == "天理合真首次惊霆诀")
+        # Supply the nominal transition only; no live reach/count observation is invented.
+        hidden.apply_tokens("1", consumes=free.consumes, produces=free.produces)
+        self.assertEqual(hidden.resources["1", "qingting_sword"].probabilities,
+                         DiscreteBelief.certain(9, 9).probabilities)
+
+    def test_zhuang_no_conduct_at_three_swords_does_not_invent_uniform_extra_swords(self):
+        hidden = HiddenStateExpectation(["庄方宜"], self.mechanics)
+        hidden.resources["1", "qingting_sword"] = DiscreteBelief.certain(3, 9)
+        hidden.resources["1", "conducting"] = DiscreteBelief.certain(0, 4)
+        ordinary = self._battle_transition("庄方宜")
+        hidden.apply_tokens("1", consumes=ordinary.consumes, produces=ordinary.produces)
+        self.assertEqual(hidden.resources["1", "qingting_sword"].probabilities,
+                         DiscreteBelief.certain(3, 9).probabilities)
+        self.assertIn(("1", "STACK_QINGTING_SWORD:0..3_conditional"), hidden.unresolved_productions)
+
     def test_damage_envelope_loader_skips_non_dict_rows(self):
         rows = [
             None,
@@ -129,7 +148,7 @@ class TestHiddenDamageExpectation(unittest.TestCase):
         self.assertEqual(estimate.expected_fraction, 0)
         self.assertAlmostEqual(estimate.expected, estimate.low)
 
-    def test_zhuang_first_ultimate_battle_is_known_full_not_probabilistic(self):
+    def test_zhuang_first_ultimate_battle_does_not_guarantee_arrival_or_full_salvo(self):
         hidden = HiddenStateExpectation(
             ["庄方宜", "佩丽卡", "诀", "洛茜"],
             self.mechanics,
@@ -141,9 +160,15 @@ class TestHiddenDamageExpectation(unittest.TestCase):
             self.envelopes[("庄方宜", "战技")],
             transition,
         )
-        self.assertEqual(estimate.full_probability, 1)
-        self.assertEqual(estimate.expected_fraction, 1)
-        self.assertAlmostEqual(estimate.expected, estimate.high)
+        self.assertIsNone(estimate)
+        self.assertNotIn(("1", "qingting_sword"), hidden.resources)
+
+    def test_zhuang_unknown_initial_swords_are_not_zero_and_open_producer_is_recorded(self):
+        hidden = HiddenStateExpectation(["庄方宜"], self.mechanics)
+        ordinary = self._battle_transition("庄方宜")
+        hidden.apply_tokens("1", consumes=ordinary.consumes, produces=ordinary.produces)
+        self.assertNotIn(("1", "qingting_sword"), hidden.resources)
+        self.assertIn(("1", "STACK_QINGTING_SWORD:0..3_conditional"), hidden.unresolved_productions)
 
 
 if __name__ == "__main__":

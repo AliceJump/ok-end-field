@@ -209,6 +209,7 @@ class HiddenStateExpectation:
         self.team = tuple(team)
         self.mechanics = mechanics
         self.resources: dict[tuple[str, str], DiscreteBelief] = {}
+        self.unresolved_productions: set[tuple[str, str]] = set()
         self.conditions: dict[str, float] = {}
         self.attachments: dict[str, DiscreteBelief] = {}
         self.spell_attach = DiscreteBelief.certain(0, 4)
@@ -243,8 +244,8 @@ class HiddenStateExpectation:
                 continue
             slot = str(index)
             for resource in mechanic.resources:
-                if resource.maximum is not None:
-                    self.resources[(slot, resource.key)] = DiscreteBelief.certain(0, resource.maximum)
+                if resource.maximum is not None and resource.initial_count is not None:
+                    self.resources[(slot, resource.key)] = DiscreteBelief.certain(resource.initial_count, resource.maximum)
 
     def condition_probability(self, condition: str) -> float:
         condition = str(condition or "")
@@ -335,6 +336,11 @@ class HiddenStateExpectation:
         for token in produces:
             if token.startswith("STACK_") and ":" in token:
                 effect, raw = token.split(":", 1)
+                if raw.endswith("_conditional"):
+                    # A conditional range is not a sampled or uniform gain.
+                    # Retain the open producer even when no prior count exists.
+                    self.unresolved_productions.add((slot, token))
+                    continue
                 key, belief = self._resource(slot, effect)
                 if key is None or belief is None:
                     continue
@@ -431,6 +437,13 @@ class HiddenStateExpectation:
     ) -> ExpectedDamage | None:
         if envelope is None:
             return None
+        mechanic = self.mechanics.get(actor)
+        if (kind == "战技" and mechanic is not None
+                and any(resource.key == "qingting_sword" for resource in mechanic.resources)):
+            # This legacy envelope has neither arrival nor a cast-local sword
+            # snapshot. Free eligibility cannot turn its high endpoint into
+            # a complete salvo quote; keep the paper plan unpriced.
+            return None
         if envelope.high <= envelope.low:
             return ExpectedDamage(
                 envelope.low,
@@ -439,21 +452,6 @@ class HiddenStateExpectation:
                 1.0,
                 1.0,
                 "single_caliber",
-            )
-
-        if (
-            transition is not None
-            and getattr(transition, "phase", "") == "天理合真首次惊霆诀"
-            and actor == "庄方宜"
-            and kind == "战技"
-        ):
-            return ExpectedDamage(
-                envelope.low,
-                envelope.high,
-                envelope.high,
-                1.0,
-                1.0,
-                "guaranteed_3_swords_in_first_ult_battle",
             )
 
         if envelope.stack_resource == "spell_attach" and envelope.stack_maximum:
