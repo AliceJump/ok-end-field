@@ -13,7 +13,7 @@ from ok import FinishedException, TaskDisabledException
 from src.data.combo_queue import bind_combo_queue, read_combo_buttons, same_combo_head
 from src.data.release_burst_planner import ReleaseBurstAction, ReleaseBurstPlanner
 from src.data.skill_timing import load_skill_timings
-from src.image.combo_skill_detector import ComboObservation, ComboSlotObservation
+from src.image.combo_skill_detector import ComboObservation, ComboSkillDetector, ComboSlotObservation
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 from tests.TestComboSkillDetector import _Task, render_heads
 from tests.TestSkillTiming import FakeTask
@@ -52,6 +52,22 @@ class QueueTask(FakeTask):
 
 
 class TestComboQueueScheduling(unittest.TestCase):
+    def test_learned_tail_matches_bind_but_relearned_head_rejects_old_input(self):
+        team = ["佩丽卡", "艾维文娜", "祀", "安塔尔"]
+        buttons = read_combo_buttons()
+        ids = [next(b["owner_native_id"] for b in buttons if b["character"] == name) for name in team]
+        detector = ComboSkillDetector()
+        detector.observe(render_heads(ids), team, ready=True, observed_at=1)
+        warm = detector.observe(render_heads(ids), team, ready=True, observed_at=1.1)
+        self.assertEqual(warm.head.match_scope, "team")
+        self.assertTrue(any(s.match_scope == "battle_order" for s in warm.slots[1:]))
+        queue = bind_combo_queue(warm, team, set(), load_skill_timings(), 1.1)
+        self.assertEqual([c.slot for c in queue], ["1", "2", "3", "4"])
+        changed = detector.observe(render_heads(ids[::-1]), team, ready=True, observed_at=1.2)
+        self.assertFalse(same_combo_head(warm, changed))
+        rebound = bind_combo_queue(changed, team, set(), load_skill_timings(), 1.2)
+        self.assertEqual([c.slot for c in rebound], ["4", "3", "2", "1"])
+
     def test_catalog_export_rejects_external_input_output_and_path_escape(self):
         root = Path(__file__).resolve().parents[1]
         spec = importlib.util.spec_from_file_location("combo_button_export", root / "scripts/skill-data/export_combo_buttons.py")
