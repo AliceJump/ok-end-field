@@ -3098,3 +3098,39 @@ msgstr ""
 "Account list, one phone number per line.\n"
 "Only the content before the first comma is used; the remainder is ignored.\n"
 "Switching matches the first three and last four visible digits; duplicate numbers are disambiguated using the Recent marker and the account active before switching."
+
+msgid "连携技检测"
+msgstr "Combo Skill Detection"
+
+msgid "仅观察连携提示与四个固定头像槽，显示角色、队伍位置、匹配分数和检测耗时；不释放技能。"
+msgstr "Observe the combo prompt and four fixed portrait slots. Show characters, team slots, match scores and detection times without casting skills."
+
+msgid "每轮检测后的等待秒数，点击停止结束检测。"
+msgstr "Seconds to wait after each scan. Click Stop to end detection."
+
+msgid "连携提示"
+msgstr "Combo prompt"
+
+msgid "无画面"
+msgstr "No frame"
+
+msgid "当前编队"
+msgstr "Current team"
+
+msgid "检测耗时"
+msgstr "Detection time"
+
+msgid "提示 {ready:.2f}ms / 头像 {heads:.2f}ms / 编队 {team:.2f}ms"
+msgstr "Prompt {ready:.2f}ms / Portraits {heads:.2f}ms / Team {team:.2f}ms"
+
+msgid "存在"
+msgstr "Present"
+
+msgid "未检测到"
+msgstr "Not detected"
+
+msgid "连携槽位 {position}"
+msgstr "Combo slot {position}"
+
+msgid "未知"
+msgstr "Unknown"

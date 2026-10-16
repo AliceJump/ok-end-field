@@ -3193,3 +3193,39 @@ msgstr ""
 "Lista de cuentas, un teléfono por línea.\n"
 "Solo se utiliza el contenido anterior a la primera coma; se ignora el resto.\n"
 "El cambio compara los tres primeros y los cuatro últimos dígitos visibles; si hay duplicados, usa la marca Reciente y la cuenta activa antes del cambio para identificar el destino."
+
+msgid "连携技检测"
+msgstr "Detección de habilidades de combo"
+
+msgid "仅观察连携提示与四个固定头像槽，显示角色、队伍位置、匹配分数和检测耗时；不释放技能。"
+msgstr "Observa el aviso de combo y los cuatro retratos fijos. Muestra personajes, posiciones del equipo, puntuaciones y tiempos de detección sin lanzar habilidades."
+
+msgid "每轮检测后的等待秒数，点击停止结束检测。"
+msgstr "Segundos de espera después de cada escaneo. Pulsa Detener para finalizar."
+
+msgid "连携提示"
+msgstr "Aviso de combo"
+
+msgid "无画面"
+msgstr "Sin imagen"
+
+msgid "当前编队"
+msgstr "Equipo actual"
+
+msgid "检测耗时"
+msgstr "Tiempo de detección"
+
+msgid "提示 {ready:.2f}ms / 头像 {heads:.2f}ms / 编队 {team:.2f}ms"
+msgstr "Aviso {ready:.2f}ms / Retratos {heads:.2f}ms / Equipo {team:.2f}ms"
+
+msgid "存在"
+msgstr "Presente"
+
+msgid "未检测到"
+msgstr "No detectado"
+
+msgid "连携槽位 {position}"
+msgstr "Posición de combo {position}"
+
+msgid "未知"
+msgstr "Desconocido"

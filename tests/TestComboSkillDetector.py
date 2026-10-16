@@ -8,7 +8,7 @@ import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import PropertyMock, patch
+from unittest.mock import Mock, PropertyMock, patch
 
 import cv2
 import numpy as np
@@ -23,6 +23,7 @@ from src.image.combo_skill_detector import (
     load_combo_portraits,
 )
 from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.test.ComboSkillDetectTask import ComboSkillDetectTask
 
 
 def render_heads(identities, *, width=1920, height=1080, dim=()):
@@ -427,3 +428,78 @@ class TestComboPortraitExportBoundary(unittest.TestCase):
                 self.assertEqual(destination, output)
             with self.assertRaisesRegex(ValueError, "escapes"):
                 module.contained_file(path, "../escaped.png")
+
+
+class TestComboSkillDetectTask(unittest.TestCase):
+    def make_stub(self, *, frame=None, ready=True):
+        detector, observations = ComboSkillDetector(), []
+
+        def observe(**kwargs):
+            result = detector.observe(kwargs['frame'], kwargs['team'], ready=kwargs['ready'], observed_at=time.monotonic())
+            observations.append(result)
+            return result
+
+        stub = SimpleNamespace(
+            frame=frame, config={'扫描间隔(秒)': .1}, tr=lambda s: s, log_info=Mock(), info_set=Mock(),
+            draw_boxes=Mock(), clear_box=Mock(), detect_team=Mock(return_value=TEAM),
+            is_link_skill_ready=Mock(return_value=ready), observe_link_skills=Mock(side_effect=observe),
+            _combo_skill_detector=detector, sleep=Mock(side_effect=TaskDisabledException('stop')),
+            press_key=Mock(), press_combat_key=Mock(), use_link_skill=Mock(),
+        )
+        return stub, observations
+
+    def test_live_task_reports_four_slots_without_input_and_cleans_up_on_stop(self):
+        stub, observations = self.make_stub(frame=render_heads((HEADS[0], None, HEADS[2], None)))
+        with self.assertRaises(TaskDisabledException):
+            ComboSkillDetectTask.run.__wrapped__(stub)
+        self.assertEqual([s.character for s in observations[0].slots], ['佩丽卡', None, '艾维文娜', None])
+        self.assertEqual([s.position for s in observations[0].slots], [1, 2, 3, 4])
+        stub.detect_team.assert_called_once_with(stub.frame)
+        stub.is_link_skill_ready.assert_called_once()
+        stub.press_key.assert_not_called()
+        stub.press_combat_key.assert_not_called()
+        stub.use_link_skill.assert_not_called()
+        self.assertIsNone(stub.link_skill_observation)
+        self.assertFalse(stub._combo_skill_detector._slots)
+        self.assertFalse(stub._combo_skill_detector.order.before)
+        stub.clear_box.assert_called_once()
+
+    def test_hidden_prompt_overwrites_previous_slot_labels_and_reuses_team_probe(self):
+        stub, observations = self.make_stub(frame=render_heads(HEADS))
+        stub.is_link_skill_ready.side_effect = [True, False]
+        stub.sleep.side_effect = [None, TaskDisabledException('stop')]
+        with self.assertRaises(TaskDisabledException):
+            ComboSkillDetectTask.run.__wrapped__(stub)
+        self.assertTrue(observations[0].ready)
+        self.assertFalse(observations[1].ready)
+        stub.detect_team.assert_called_once()
+        labels = {call.args[0]: call.args[1] for call in stub.info_set.call_args_list}
+        for position in range(1, 5):
+            self.assertEqual(labels[f'连携槽位 {position}'], '未知')
+        self.assertEqual(labels['连携提示'], '未检测到')
+
+    def test_missing_frame_does_not_claim_prompt_absence_or_scan_old_pixels(self):
+        stub, observations = self.make_stub()
+        stub.link_skill_observation = object()
+        stub.config['扫描间隔(秒)'] = float('nan')
+        with self.assertRaises(TaskDisabledException):
+            ComboSkillDetectTask.run.__wrapped__(stub)
+        self.assertFalse(observations)
+        stub.detect_team.assert_not_called()
+        stub.is_link_skill_ready.assert_not_called()
+        stub.observe_link_skills.assert_not_called()
+        self.assertIn(('连携提示', '无画面'), [call.args for call in stub.info_set.call_args_list])
+        stub.sleep.assert_called_once_with(.1)
+        self.assertIsNone(stub.link_skill_observation)
+
+    def test_debug_task_is_registered_and_can_be_constructed(self):
+        from src.config import config
+
+        executor = SimpleNamespace(scene=None, debug=True, pause_start=None)
+        app = SimpleNamespace(tr=lambda s: s)
+        with patch('src.core.BaseEfTask.Controller'), patch('src.core.BaseEfTask.get_global_config', return_value={}):
+            task = ComboSkillDetectTask(executor, app)
+        self.assertTrue(task.visible)
+        self.assertEqual(task.name, '连携技检测')
+        self.assertEqual(task.default_config['扫描间隔(秒)'], .1)
+        self.assertIn(['src.tasks.test.ComboSkillDetectTask', 'ComboSkillDetectTask'], config['onetime_tasks'])

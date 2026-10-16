@@ -2894,3 +2894,39 @@ msgstr ""
 "帳號列表，每行一個手機號碼。\n"
 "若一行包含逗號，只使用逗號前的帳號內容，逗號後內容會直接忽略。\n"
 "切換帳號時按登入畫面可見的手機號碼前三位和後四位匹配；若可見號碼重複，則結合『最近』標記與切換前帳號確認目標。"
+
+msgid "连携技检测"
+msgstr "連攜技檢測"
+
+msgid "仅观察连携提示与四个固定头像槽，显示角色、队伍位置、匹配分数和检测耗时；不释放技能。"
+msgstr "僅觀察連攜提示與四個固定頭像槽，顯示角色、隊伍位置、匹配分數及檢測耗時；不釋放技能。"
+
+msgid "每轮检测后的等待秒数，点击停止结束检测。"
+msgstr "每輪檢測後的等待秒數，點擊停止結束檢測。"
+
+msgid "连携提示"
+msgstr "連攜提示"
+
+msgid "无画面"
+msgstr "無畫面"
+
+msgid "当前编队"
+msgstr "目前編隊"
+
+msgid "检测耗时"
+msgstr "檢測耗時"
+
+msgid "提示 {ready:.2f}ms / 头像 {heads:.2f}ms / 编队 {team:.2f}ms"
+msgstr "提示 {ready:.2f}ms / 頭像 {heads:.2f}ms / 編隊 {team:.2f}ms"
+
+msgid "存在"
+msgstr "存在"
+
+msgid "未检测到"
+msgstr "未檢測到"
+
+msgid "连携槽位 {position}"
+msgstr "連攜槽位 {position}"
+
+msgid "未知"
+msgstr "未知"
