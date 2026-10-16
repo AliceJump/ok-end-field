@@ -145,6 +145,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestFindZipLineBoardButton.py",
             "TestNavigationDetectionScope.py",
             "TestNavigationMixin.py",
+            "TestPitchScanTask.py",
             "TestZipLineConfig.py",
             "TestZipLineGoldGate.py",
             "TestPressEsc.py",

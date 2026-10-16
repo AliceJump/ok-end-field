@@ -3026,3 +3026,28 @@ msgstr "Cuprium Part"
 
 msgid "分离芯"
 msgstr "Separator Core"
+
+msgid "大幅俯仰扫描实测"
+msgstr "Wide pitch sweep preview"
+
+msgid "在游戏主界面测试大幅平滑俯仰扫描；先中键复位并强制鼠标归中，完成后自动停止。"
+msgstr ""
+"Preview a wide, smooth pitch sweep in the game world. Reset with middle-"
+"click and center the cursor first, then stop automatically."
+
+msgid "俯仰振幅(1080p像素)"
+msgstr "Pitch amplitude (1080p pixels)"
+
+msgid "测试周期数"
+msgstr "Test cycles"
+
+msgid "上下单侧鼠标输入幅度，以1080p测试值为基准，按实际窗口高度缩放。增大振幅会延长周期，保持移动速度。"
+msgstr ""
+"One-sided mouse input amplitude, based on the 1080p test and scaled by the "
+"actual window height. A larger amplitude lengthens the cycle to preserve "
+"movement speed."
+
+msgid "完整上下摆动的次数；水平持续旋转，按停止键可随时结束。"
+msgstr ""
+"Number of full pitch cycles while rotating horizontally. Use the stop hotkey"
+" to end at any time."

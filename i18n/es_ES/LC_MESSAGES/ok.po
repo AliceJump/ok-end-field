@@ -3122,3 +3122,28 @@ msgstr "Pieza de cuprio"
 
 msgid "分离芯"
 msgstr "Núcleo separador"
+
+msgid "大幅俯仰扫描实测"
+msgstr "Prueba de barrido vertical amplio"
+
+msgid "在游戏主界面测试大幅平滑俯仰扫描；先中键复位并强制鼠标归中，完成后自动停止。"
+msgstr ""
+"Prueba un barrido vertical amplio y suave en el mundo del juego. Primero "
+"restablece con el botón central y centra el cursor; se detiene al terminar."
+
+msgid "俯仰振幅(1080p像素)"
+msgstr "Amplitud vertical (píxeles a 1080p)"
+
+msgid "测试周期数"
+msgstr "Ciclos de prueba"
+
+msgid "上下单侧鼠标输入幅度，以1080p测试值为基准，按实际窗口高度缩放。增大振幅会延长周期，保持移动速度。"
+msgstr ""
+"Amplitud de entrada del ratón en cada dirección, basada en la prueba a 1080p"
+" y escalada según la altura real de la ventana. Una mayor amplitud alarga el"
+" ciclo para mantener la velocidad."
+
+msgid "完整上下摆动的次数；水平持续旋转，按停止键可随时结束。"
+msgstr ""
+"Número de ciclos verticales completos mientras gira horizontalmente. Usa la "
+"tecla de detención para finalizar en cualquier momento."
