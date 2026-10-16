@@ -82,7 +82,7 @@ def export(source, destination):
                 "scope": "button_owner_and_portrait_only; no_variant_inference_or_cast_confirmation"}
     destination.mkdir(parents=True, exist_ok=True)
     contained(destination, "buttons.json").write_bytes(payload)
-    contained(destination, "index.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf8")
+    contained(destination, "index.json").write_bytes((json.dumps(manifest, indent=2) + "\n").encode("utf8"))
     print(f"Exported {len(rows)} native combo button bindings")
 
 
