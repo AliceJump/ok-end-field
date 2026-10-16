@@ -739,7 +739,10 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         ):
             if enter_bool:
                 # 开始下一轮刷取
-                self.to_restart()
+                if not self.to_restart():
+                    return False
+                enter_feature = fL.restart_battle
+                enter_match = {"vertical_variance": 0.1}
             else:
                 enter_feature = (
                     fL.to_max_produce_num
@@ -749,6 +752,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                     )
                     else fL.give_gift
                 )
+                enter_match = {"box": self.box_of_screen(0.946, 0.904, 0.970, 0.943)}
                 self.click_feature(
                     feature=enter_feature,
                     time_out=10,
@@ -761,7 +765,14 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                     self.log_info("无体力，开始额外刷取（放弃领奖）")
                     self.battle_ctx.is_extra_mode = True
                 enter_bool = True
-            if not self.to_battle():
+
+            def retry_transition(feature=enter_feature, match=enter_match):
+                button = self.find_one(feature=feature, **match)
+                if button:
+                    self.log_info("入场按钮仍在，重试入场")
+                    self.click(button, after_sleep=0.5)
+
+            if not self.to_battle(transition_recovery=retry_transition):
                 return False
             # 移至奖励发放点，按下 F
             if not self.to_end():
@@ -912,14 +923,11 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             return False
         return True
 
-    def to_battle(self):
+    def to_battle(self, transition_recovery=None):
         if not is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
             self.wait_pop_up(time_out=4)
-            end_time = self.active_time()
-            while not self.wait_feature(feature=fL.battle_space_left, time_out=1, raise_if_not_found=False):
-                if self.active_time() - end_time > 300:
-                    self.log_info("等待超时，进入协议空间超时")
-                    return False
+            if not self.wait_battle_space(transition_recovery=transition_recovery):
+                return False
             self.strafe_search(
                 lambda: self.wait_ocr(
                     match=self.lang.daily_battle_mixin.k_4cc61900,

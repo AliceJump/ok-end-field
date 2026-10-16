@@ -1,8 +1,9 @@
 import types
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
+from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import stages_cost
 from src.tasks.mixin.navigation_detection_scope import get_navigation_detection_scope
 from src.tasks.mixin.search_mixin import SearchMixin
@@ -85,6 +86,61 @@ def _make_impl(task):
 
 
 class TestDailyBattleToEnd(unittest.TestCase):
+    def test_to_battle_passes_recovery_and_only_starts_after_entry(self):
+        for entered in (True, False):
+            with self.subTest(entered=entered):
+                task = Mock()
+                task.battle_ctx = BattleContext(category_name="normal")
+                task.wait_battle_space.return_value = entered
+                task.auto_battle.return_value = True
+                recovery = Mock()
+                with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+                    self.assertEqual(BattleTask.to_battle(task, transition_recovery=recovery), entered)
+                task.wait_battle_space.assert_called_once_with(transition_recovery=recovery)
+                self.assertEqual(task.auto_battle.call_count, int(entered))
+                self.assertEqual(task.strafe_search.call_count, int(entered))
+
+    def test_recycle_recovery_checks_current_entry_button(self):
+        task = Mock()
+        task.battle_ctx = BattleContext(left_ticket=100)
+        task._battle_stage_cost = 20
+        button = object()
+        task.find_one.side_effect = [None, button, None, button]
+        task.get_claim.return_value = 80
+        task.to_end.side_effect = [True, False]
+
+        def enter(transition_recovery):
+            transition_recovery()
+            transition_recovery()
+            return True
+
+        task.to_battle.side_effect = enter
+        self.assertFalse(BattleTask.battle_recycle(task))
+
+        entry_box = task.box_of_screen.return_value
+        self.assertEqual(
+            [call.kwargs for call in task.find_one.call_args_list],
+            [
+                {"feature": fL.give_gift, "box": entry_box},
+                {"feature": fL.give_gift, "box": entry_box},
+                {"feature": fL.restart_battle, "vertical_variance": 0.1},
+                {"feature": fL.restart_battle, "vertical_variance": 0.1},
+            ],
+        )
+        self.assertEqual(task.click.call_count, 2)
+        task.to_restart.assert_called_once_with()
+
+    def test_recycle_does_not_wait_for_battle_after_failed_restart(self):
+        task = Mock()
+        task.battle_ctx = BattleContext(left_ticket=100)
+        task._battle_stage_cost = 20
+        task.get_claim.return_value = 80
+        task.to_restart.return_value = False
+
+        self.assertFalse(BattleTask.battle_recycle(task))
+
+        self.assertEqual(task.to_battle.call_count, 1)
+
     def test_stage_cost_is_numeric_property(self):
         category, expected_cost = next(iter(stages_cost.items()))
         task = BattleTask.__new__(BattleTask)
