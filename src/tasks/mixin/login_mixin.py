@@ -204,7 +204,7 @@ class LoginMixin(BaseEfTask):
             if not eligible:
                 continue
 
-            def pair_score(suffix_box: Box):
+            def pair_score(suffix_box: Box, prefix_box: Box = prefix_box):
                 if suffix_box is prefix_box:
                     return (-1, -1)
                 prefix_center_y = prefix_box.y + prefix_box.height / 2
