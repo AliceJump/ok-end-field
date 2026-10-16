@@ -58,6 +58,7 @@ from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
 from src.core.sequence_parser import parse_sequence
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
+from src.data.combo_queue import fresh_combo_observation, same_combo_head
 from src.data.FeatureList import FeatureList as fL
 from src.image.combo_skill_detector import ComboSkillDetector
 from src.image.enemy_health_probe import probe_enemy_presence_fast
@@ -1085,13 +1086,27 @@ class BattleMixin(BaseEfTask):
             if detector is not None:
                 detector.reset()
 
-    def use_link_skill(self):
+    def use_link_skill(self, *, expected=None):
         """
         使用连携技能。
         """
+        self.link_skill_input_at = None
         if self.is_link_skill_ready():
             try:
-                self._observe_optional_link_skills(True)
+                if expected is not None:
+                    # A priced identity must still be the actual head at E.
+                    # Recognition failure cannot turn it into anonymous input.
+                    self.next_frame()
+                    self._observe_optional_link_skills(self.is_link_skill_ready())
+                    current = getattr(self, "link_skill_observation", None)
+                    team = getattr(self, "_battle_team", None) or ()
+                    if (not fresh_combo_observation(expected, team, time.monotonic())
+                            or not fresh_combo_observation(current, team, time.monotonic())
+                            or not same_combo_head(expected, current)):
+                        return False
+                else:
+                    self._observe_optional_link_skills(True)
+                self.link_skill_input_at = time.monotonic()
                 self.press_combat_key("e")
             finally:
                 # The queue can change even if its count/positions stay fixed.

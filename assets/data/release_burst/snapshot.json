@@ -116,6 +116,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 8883.6,
+          "crit_expect": 9105.7,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 1.8,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -270,6 +286,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 45492.9,
+          "crit_expect": 46630.2,
+          "bonus_pct": 64.6,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 7.8,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -389,6 +421,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 11693.2,
+          "crit_expect": 11985.6,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "电磁",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.4,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -577,6 +625,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 84204.6,
+          "crit_expect": 86309.7,
+          "bonus_pct": 75.8,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "自然",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 7.0,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -696,6 +760,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 16511.3,
+          "crit_expect": 16924.0,
+          "bonus_pct": 87.4,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "电磁",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.5,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -813,6 +893,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 12113.4,
+          "crit_expect": 12416.2,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "自然",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.5,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -932,6 +1028,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 29495.1,
+          "crit_expect": 30232.5,
+          "bonus_pct": 66.5,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "电磁",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.8,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -1086,6 +1198,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "reviewed_base_rows"
           }
+        },
+        "link": {
+          "non_crit": 21334.1,
+          "crit_expect": 21867.5,
+          "bonus_pct": 97.1,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "灼热",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.0,
+            "crit_policy": "baseline_expectation",
+            "scope": "reviewed_base_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -1205,6 +1333,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 7176.6,
+          "crit_expect": 7356.0,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 2.8,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -1326,6 +1470,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 9711.3,
+          "crit_expect": 10901.0,
+          "bonus_pct": 8.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 2.7,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -1445,6 +1605,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 79893.7,
+          "crit_expect": 81891.1,
+          "bonus_pct": 135.7,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 6.5,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -1562,6 +1738,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "reviewed_base_rows"
           }
+        },
+        "link": {
+          "non_crit": 6166.5,
+          "crit_expect": 6320.6,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 9,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 1.84,
+            "crit_policy": "baseline_expectation",
+            "scope": "reviewed_base_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -1679,6 +1871,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 43560.2,
+          "crit_expect": 44649.3,
+          "bonus_pct": 59.8,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 5.0,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -1798,6 +2006,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 41051.2,
+          "crit_expect": 42077.4,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 10.05,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -1954,6 +2178,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 29016.6,
+          "crit_expect": 31163.9,
+          "bonus_pct": 98.7,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "自然",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.8,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -2071,6 +2311,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 18395.7,
+          "crit_expect": 18855.6,
+          "bonus_pct": 44.8,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "自然",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.15,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -2188,6 +2444,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 52544.2,
+          "crit_expect": 53857.8,
+          "bonus_pct": 69.7,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "灼热",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 5.4,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -2341,6 +2613,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 50559.8,
+          "crit_expect": 51823.8,
+          "bonus_pct": 187.6,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.2,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -2463,6 +2751,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 45780.0,
+          "crit_expect": 46924.5,
+          "bonus_pct": 73.2,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 4.8,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -2581,6 +2885,22 @@
             "scope": "rank_row_sum_without_conditional_rows"
           },
           "pricing_scope": "support_opener_only; sustained_and_closing_damage_not_forecast"
+        },
+        "link": {
+          "non_crit": 16897.7,
+          "crit_expect": 17320.2,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "电磁",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.6,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -2815,6 +3135,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "reviewed_base_rows"
           }
+        },
+        "link": {
+          "non_crit": 32930.5,
+          "crit_expect": 33753.7,
+          "bonus_pct": 119.6,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 2.5,
+            "crit_policy": "baseline_expectation",
+            "scope": "reviewed_base_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -2937,6 +3273,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 10057.2,
+          "crit_expect": 11012.6,
+          "bonus_pct": 43.3,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "电磁",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 1.8,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -3091,6 +3443,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "reviewed_base_rows"
           }
+        },
+        "link": {
+          "non_crit": 7377.0,
+          "crit_expect": 7561.5,
+          "bonus_pct": 74.7,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 0.95,
+            "crit_policy": "baseline_expectation",
+            "scope": "reviewed_base_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -3210,6 +3578,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 11962.1,
+          "crit_expect": 12261.1,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 4.5,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -3327,6 +3711,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 26889.9,
+          "crit_expect": 34486.3,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "物理",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 4.5,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -3446,6 +3846,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 0.0,
+          "crit_expect": 0.0,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 0.0,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -3563,6 +3979,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 22745.8,
+          "crit_expect": 23314.4,
+          "bonus_pct": 74.7,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 2.4,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -3680,6 +4112,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 18903.2,
+          "crit_expect": 19375.7,
+          "bonus_pct": 59.3,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "自然",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.0,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -3799,6 +4247,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 7135.4,
+          "crit_expect": 7313.8,
+          "bonus_pct": 106.8,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "灼热",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 1.35,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -3918,6 +4382,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 15598.8,
+          "crit_expect": 15988.7,
+          "bonus_pct": 0.0,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 4.5,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -4112,6 +4592,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 11910.2,
+          "crit_expect": 15274.9,
+          "bonus_pct": 44.8,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 2.0,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [],
@@ -4229,6 +4725,22 @@
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
           }
+        },
+        "link": {
+          "non_crit": 49024.2,
+          "crit_expect": 50249.8,
+          "bonus_pct": 84.7,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "电磁",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 3.6,
+            "crit_policy": "baseline_expectation",
+            "scope": "rank_row_sum_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_variant_or_conditional_followups"
         }
       },
       "rules": [
@@ -4462,6 +4974,22 @@
             "scope": "master_fixed_build_without_conditional_rows"
           }
         },
+        "link": {
+          "non_crit": 122226.4,
+          "crit_expect": 125282.0,
+          "bonus_pct": 168.9,
+          "quote_basis": {
+            "skill_rank": 12,
+            "element": "寒冷",
+            "damage_tags": [
+              "combo"
+            ],
+            "multiplier": 7.5,
+            "crit_policy": "baseline_expectation",
+            "scope": "master_fixed_build_without_conditional_rows"
+          },
+          "pricing_scope": "base_combo_only; no_recorded_or_replayed_damage"
+        },
         "ult": {
           "non_crit": 0.0,
           "crit_expect": 0.0,
@@ -4557,7 +5085,8 @@
   "excluded": [
     "hit_or_target_outcomes",
     "field_occupancy",
-    "combo_release",
+    "combo_release_bonus_producers",
+    "ambiguous_combo_variants",
     "native_four_stat_producers",
     "unconfirmed_nonconverted_attributes"
   ]

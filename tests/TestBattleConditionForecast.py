@@ -127,14 +127,15 @@ class TestBattleConditionForecast(unittest.TestCase):
     def test_forecast_consumer_cannot_reuse_another_old_enemy_condition(self):
         arc = self.observe('2', '弧光')
         wolf = self.observe('3', '狼卫')
-        initial = (0.0, 0.0, 200.0, (), [], {}, {}, self.state.forecast_conditions())
-        used = self.planner._forecast_step(initial, self.arclight(arc), 0, 0, releases=False, horizon=6)
+        initial = (0.0, 0.0, 200.0, (), [], {}, {}, self.state.forecast_conditions(), 0.0)
+        used = self.planner._forecast_step(initial, self.arclight(arc), 0, 0, releases=False, horizon=6,
+                                           predecessors={0: ()})
         self.assertFalse(used[7].supports(ConditionRequirement.from_observation('3', wolf)))
         binding = self.planner.highlight_damage['3']
         action = ReleaseBurstAction('3', 'battle', .5, binding.base_value, 100, 100,
                                     observed_bonus=binding.conditional_value,
                                     condition=ConditionRequirement.from_observation('3', wolf))
-        later = self.planner._forecast_step(used, action, 1, 0, releases=False, horizon=6)
+        later = self.planner._forecast_step(used, action, 1, 0, releases=False, horizon=6, predecessors={1: ()})
         self.assertAlmostEqual(later[0] - used[0], binding.base_value)
 
     def test_sp_shortage_still_prevents_support_only_prelude(self):

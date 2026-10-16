@@ -93,7 +93,7 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "2bb5efc9081f4b96228156a1478b8acad912be5298a3ce53aba42d3c62b3229e",
+  "snapshot_sha256": "3d0abb12328da9e58d5a8ea98033f38a7d184c28debb29b1df1d19803d316b31",
   "actors": 33,
   "rules": 15,
   "supplement_source_hashes": {
@@ -106,10 +106,10 @@
   },
   "support_evidence_sha256": "3be2462a70add10cdd4f2302745a7d42858fcda059ff51d4bcab7c21291d7b5f",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "b15912ab3704253484cd7acab3107a8cca7857555b6e6af093d3593ddea49ac9",
+    "export_release_burst_snapshot.py": "8e799f6869782dfb61b21f103111635479fd6c6f05f5d16bfb4681af155a325c",
     "reviewed_support_release.py": "f2c26229742a99f6ee236d61d0ecf6747f11433ed86473ffd51bf07b33498458",
     "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792",
-    "reviewed_si_release.py": "6f2ae531a074b477fda1aca21973e0216220525e1a00bb2db797e38e2c5321de"
+    "reviewed_si_release.py": "807639a720cdfa6205b02887fde35aadc2409c554a6d0adab77b2f61d6286dfa"
   },
   "stances": 1
 }

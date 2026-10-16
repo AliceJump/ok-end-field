@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "native_inputs": {
+    "GameAssembly.dll": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "global-metadata.dat": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "buttons": 43,
+  "buttons_sha256": "aab8af7ad043646886b20053aaad1c17889cb1b76486732d3e1974d0bf9b9093",
+  "source_lock_sha256": "d9f713eeca6b7932632405e172df27afe2c7ce4448893350bc3b2e5cbed0824a",
+  "roundtrip_proof_sha256": "4f05b377b1d0db3f490f834bce244bd875992180b9122ea48c18e76a1a814d0d",
+  "portrait_index_sha256": "e185ad034cd3bf9d124142231638ac05b5585bf14f85911a21fd5011687877c2",
+  "exporter_sha256": "27cd15f32c04ede48690660ac6d67c8cde78e8df11578c28b7046de07bf7be5f",
+  "scope": "button_owner_and_portrait_only; no_variant_inference_or_cast_confirmation"
+}
