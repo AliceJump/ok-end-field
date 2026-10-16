@@ -1,7 +1,7 @@
 """生成角色毕业配置文件（第一阶段：静态伤害基准数据库）。
 
 证据链（evidence_level 越小越权威）：
-1 = 官方游戏内推荐（森空岛 WIKI 干员页「武器推荐」/ 武器页「推荐装备干员」互证
+1 = 官方客户端标准预设，或官方游戏内推荐（森空岛 WIKI 干员页「武器推荐」/ 武器页「推荐装备干员」互证
     / 装备页「推荐装备干员」完整四槽卡；旧导出回退 recommended_operator_ids 反查）
 2 = 高质量社区攻略（新浪全干员装备适配一图流 / ldcapple 精确四件套，见 references）
 3 = 启发式默认（按元素/定位套用同源社区模板，标记 heuristic）
@@ -91,6 +91,12 @@ COMMUNITY_SETS = {
 # 「A/B」= 该套装出现在 B 套配装中的 A 套，「同四件 C」= 完全相同四件组合出现次数。
 ENDSYNC = "EndSync 社区汇总"
 CURATED_BUILDS = {
+    "祀": (
+        ["50式应龙软甲", "50式应龙手套", "50式应龙信标", "纾难印章"],
+        "官方客户端标准预设（CharPresetTable）",
+        "2026-10-15 本机热更新 std_90_chr_0036_jsspsi：90级、零潜、四技能12级；与推荐配装入口的对应关系尚未核验",
+        1,
+    ),
     "安塔尔": (["落潮轻甲", "长息护手", "长息蓄电核", "长息蓄电核"], ENDSYNC, "长息 5/6，同四件 3/6", 2),
     "诀": (
         ["动火用辅助骨骼", "动火用护手", "动火用隔温板", "生物辅助护板"],
@@ -491,7 +497,7 @@ def main() -> int:
             "character": name,
             "character_key": path.stem,
             "element": element,
-            "stars": char.get("stars"),
+            "stars": char.get("stars", char.get("star")),
             "weapon": {
                 "name": weapon,
                 "level_max": 90,

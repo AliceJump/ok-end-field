@@ -36,6 +36,74 @@ def _complete(root: Path, name: str) -> None:
 
 
 class TestSnapshotChecks(unittest.TestCase):
+    def test_si_loadout_baseline_uses_official_attributes_and_excludes_conditional_damage(self):
+        data = _REPO / "assets/data"
+
+        def load(path):
+            return json.loads(path.read_text(encoding="utf-8"))
+
+        char = load(data / "character_skills/si.json")
+        build = load(data / "character_builds/si.json")
+        weapons = load(data / "weapons.json")
+        equipments = load(data / "equipments.json")
+        result = baseline.compute_character(
+            "si",
+            char,
+            build,
+            weapons,
+            equipments,
+            {"2338": "智识"},
+            {"祀": ["2338"]},
+            {"2338": "力量"},
+        )
+        stored = next(row for row in load(data / "damage_baseline.json") if row["key"] == "si")
+        self.assertEqual(result, stored)
+        self.assertEqual(build["stars"], 6)
+        self.assertEqual(build["equipment"]["evidence_level"], 1)
+        client = load(data / "client_loadout_data.json")
+        for name, equipment in client["equipments"].items():
+            self.assertEqual(equipments[name], equipment)
+            self.assertIsNone(equipment["item_id"])
+            self.assertTrue(equipment["native_id"].startswith("item_equip_"))
+        preset = client["loadouts"]["si"]
+        self.assertEqual(build["equipment"]["pieces"], preset["pieces"])
+        self.assertEqual((preset["character_level"], preset["potential_level"]), (90, 0))
+        self.assertTrue(all(level == 12 for level in preset["skill_levels"].values()))
+        self.assertEqual(preset["source_kind"], "client_standard_preset")
+        self.assertFalse(preset["recommendation_ui_verified"])
+        self.assertEqual(result["panel"]["智识"], 628)
+        self.assertEqual(result["panel"]["力量"], 274)
+        self.assertAlmostEqual(result["panel"]["ATK"], 6060.6)
+        self.assertEqual(result["panel"]["ult_charge"], 33.4)
+        self.assertAlmostEqual(result["panel"]["damage_basis"]["damage_bonus"]["combo"], 1.256)
+        skills = {skill["type"]: skill for skill in result["skills"]}
+        self.assertEqual(skills["战技"]["multiplier_pct"], 100)
+        self.assertEqual(skills["战技"]["stagger"], 5)
+        self.assertEqual(skills["连携技"]["multiplier_pct"], 750)
+        self.assertEqual(skills["终结技"]["multiplier_pct"], 500)
+        self.assertEqual(result["panel"]["damage_basis"]["amplification"]["寒冷"], 0)
+        for name, attack in (("玉中身", "500"), ("悠久传承", "485")):
+            weapon = weapons[name]
+            self.assertEqual(weapon["base_attack"]["values"][-1], attack)
+            self.assertEqual(len(weapon["weapon_skills"][0]["ranks"]), 9)
+            self.assertEqual(weapon["recommended_operator_ids"], ["2338"])
+            self.assertEqual(weapon["recommended_matrix_ids"], ["477"])
+        build["weapon"]["name"] = "悠久传承"
+        alternative = baseline.compute_character(
+            "si",
+            char,
+            build,
+            weapons,
+            equipments,
+            {"2338": "智识"},
+            {"祀": ["2338"]},
+            {"2338": "力量"},
+        )
+        self.assertEqual(alternative["panel"]["智识"], 751.09)
+        self.assertEqual(alternative["panel"]["力量"], 274)
+        self.assertEqual(alternative["panel"]["ATK"], 4842.6)
+        self.assertEqual(alternative["panel"]["elem_dmg_pct"]["寒冷"], 43.3)
+
     def test_snapshot_selection_rejects_partial_and_escape(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "captures"
@@ -57,7 +125,7 @@ class TestSnapshotChecks(unittest.TestCase):
             "A配": {"set": "A", "part": "配件"},
             "B配": {"set": "B", "part": "配件"},
         }
-        pieces = builds.select_official_pieces([*list(equipment), "A甲1"], equipment)
+        pieces = builds.select_official_pieces([*equipment, "A甲1"], equipment)
         self.assertEqual(pieces, ["A甲1", "A手", "A配", "B配"])
         self.assertEqual(builds.select_official_pieces(["A甲1", "A甲2", "A手"], equipment), ["A甲1", "A手", None, None])
 

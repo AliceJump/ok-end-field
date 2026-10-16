@@ -521,7 +521,7 @@ def ensure_click_on_zip_line(self, max_attempts=5)
 ```text
 from src.tasks.mixin.login_mixin import LoginMixin
 
-def login_flow(self, username: str, password: str | None = None)
+def login_flow(self, username: str)
 def click_text(
     self, match: str, box=None,
     need_wait_disappear=True, success_match=None,
@@ -532,10 +532,10 @@ def click_text(
 
 1. 判断当前是否已登录，必要时回到主界面并退出当前账号。
 2. 等待登录界面的 `logout` 特征并确认登出。
-3. 点击“最近”，再用 `username` 后四位 OCR 点击最近账号。
+3. 点击“最近”，用 `username` 的前三位和后四位匹配同一行的可见号码。重复候选结合“最近”标识与切换前账号身份消歧，无法唯一确定时重试，超时后报错。
 4. 点击“登录”，通过重新出现 `logout` 特征确认成功。
 
-`password` 仅为旧调用兼容参数，当前不存储、不输入、也不参与账号判定。失败路径可能返回 `False` 或抛 `RuntimeError`；成功无显式返回值。后四位匹配要求最近账号列表中后四位唯一。
+`login_flow` 只接收 `username`，不存储或输入密码。失败路径可能返回 `False` 或抛 `RuntimeError`；成功无显式返回值。账号列表旧格式中首个逗号后的内容被忽略且不持久化。
 
 ## 4. 语言资源 API
 

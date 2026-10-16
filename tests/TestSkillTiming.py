@@ -10,7 +10,7 @@ import numpy as np
 
 from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
-from src.data.skill_timing import SNAPSHOT, SkillTiming, SkillTimingStore, load_skill_timings
+from src.data.skill_timing import SNAPSHOT, SUPPLEMENTS, SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
 from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.tasks.mixin.battle_mixin import BattleMixin, _measure_combat_too_far_text_band
@@ -19,6 +19,58 @@ from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
 
 class TestSkillTiming(unittest.TestCase):
+    def test_si_supplement_admits_real_entries_without_replacing_historical_snapshot(self):
+        store = load_skill_timings()
+        for alias in ("祀", "si", "Si", "chr_0036_jsspsi"):
+            (battle,) = store.profiles(alias, "battle")
+            (ultimate,) = store.profiles(alias, "ult")
+            self.assertEqual(battle.skill_id, "chr_0036_jsspsi_normal_skill")
+            self.assertEqual(battle.sp_cost, 100)
+            self.assertAlmostEqual(battle.duration, 168 / 30)
+            self.assertAlmostEqual(battle.exclusive, 35 / 30)
+            self.assertAlmostEqual(battle.repeat_guard, 20 + 168 / 30)
+            self.assertAlmostEqual(ultimate.duration, 214 / 30)
+            self.assertAlmostEqual(ultimate.exclusive, 85 / 30)
+            self.assertIsNone(ultimate.sp_cost)  # Personal ultimate energy is not public SP.
+            self.assertTrue(store.profiles(alias, "link"))
+        self.assertEqual(SkillTimingStore().profiles("祀", "battle"), ())
+
+    def test_supplement_refuses_corrupt_data_and_duplicate_aliases(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            for name in ("index.json", "profiles.json"):
+                (path / name).write_bytes((SUPPLEMENTS[0] / name).read_bytes())
+            (path / "profiles.json").write_bytes(b"[]")
+            with self.assertRaisesRegex(ValueError, "Unverified timing supplement"):
+                SkillTimingStore(supplements=(path,))
+        with self.assertRaisesRegex(ValueError, "Duplicate supplemental timing"):
+            SkillTimingStore(supplements=(*SUPPLEMENTS, *SUPPLEMENTS))
+
+    def test_supplement_rejects_bad_allow_windows_even_with_matching_hash(self):
+        cases = (
+            ["1", 2, ["skill"]],
+            [0, float("nan"), ["skill"]],
+            [-1, 2, ["skill"]],
+            [2, 1, ["skill"]],
+            [0, 2, "skill"],
+            [0, 2, [None]],
+            [0, 2],
+            None,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            for window in cases:
+                with self.subTest(window=window):
+                    rows = json.loads((SUPPLEMENTS[0] / "profiles.json").read_bytes())
+                    rows[0]["profile"]["allow_next"] = [window]
+                    raw = json.dumps(rows).encode()
+                    manifest = json.loads((SUPPLEMENTS[0] / "index.json").read_bytes())
+                    manifest["profiles_sha256"] = hashlib.sha256(raw).hexdigest()
+                    (path / "profiles.json").write_bytes(raw)
+                    (path / "index.json").write_text(json.dumps(manifest), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "Invalid supplemental allow-next window"):
+                        SkillTimingStore(supplements=(path,))
+
     def test_all_native_characters_have_data_and_explicit_runtime_coverage(self):
         store = load_skill_timings()
         with_skills = 0
@@ -231,6 +283,53 @@ def logic_for(task, clock=None):
 
 
 class TestTimedCombat(unittest.TestCase):
+    def test_observed_si_team_keeps_first_slot_and_dispatches_battle(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic._configure_team(["祀", "别礼", "埃特拉", "诀"], reset_runtime=True)
+        self.assertEqual(set(logic.order), {"1", "2", "3", "4"})
+        task.sp = 100
+        self.assertTrue(logic._try_battle_token("1", 100))
+        self.assertEqual(task.keys, ["1"])
+        self.assertEqual(logic.pending, (100, "1", 100))
+        self.assertNotIn("1", logic.battle_retry_after)
+        task.sp = 0
+        task.now = 0.2
+        logic._confirm_battle(task.now)
+        self.assertIsNone(logic.pending)
+        self.assertAlmostEqual(logic.battle_retry_after["1"], 25.6)
+        task.now = 2
+        self.assertFalse(logic._try_battle_token("1", 100))
+        task.now = 25.7
+        self.assertTrue(logic._try_battle_token("1", 100))
+
+    def test_si_ultimate_remains_available_during_unobserved_battle_replacements(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic._configure_team(["祀", "别礼", "埃特拉", "诀"], reset_runtime=True)
+        logic.order = []
+        logic.ult_order = ["1"]
+        logic.battle_retry_after["1"] = 25.6
+        task.sp = 0
+        task.ults = {"1"}
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertIn("chr_0036_jsspsi_ultimate_skill", logic.cooldowns)
+
+    def test_unconfirmed_si_attempt_does_not_install_long_replacement_guard(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic._configure_team(["祀", "别礼", "埃特拉", "诀"], reset_runtime=True)
+        task.sp = 100
+        self.assertFalse(logic._try_battle_token("1", 99))
+        self.assertTrue(logic._try_battle_token("1", 100))
+        task.now = 0.9
+        logic._confirm_battle(task.now)
+        self.assertIsNone(logic.pending)
+        self.assertLess(logic.battle_retry_after["1"], 2)
+        task.now = 1.2
+        self.assertTrue(logic._try_battle_token("1", 100))
+
     def test_low_cost_feedback_uses_two_fresh_frames_before_accepting_cast(self):
         band = self._synthetic_too_far_band()
         recoveries = []

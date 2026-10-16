@@ -125,6 +125,9 @@ class CharactersModule(_LangModuleBaseT):
     purrchena: str
     """噗切娜"""
 
+    si: str
+    """祀"""
+
 
 class DailyBattleMixinModule(_LangModuleBaseT):
     """daily_battle_mixin — OCR 语言节点（值取自 zh_CN）"""
@@ -971,6 +974,12 @@ class WorldMapModule(_LangModuleBaseT):
 
     separator_core: re.Pattern[str]
     """分离芯"""
+
+    k_84e3e9d9: re.Pattern[str]
+    """祀的画"""
+
+    k_a2eb44e6: re.Pattern[str]
+    """跃迁浆体涂片"""
 
 
 class ZipLineMixinModule(_LangModuleBaseT):

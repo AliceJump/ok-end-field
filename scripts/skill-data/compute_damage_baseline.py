@@ -118,6 +118,7 @@ def _parse_stat_clause(sentence: str) -> dict | None:
         (r"连携技冷却缩减\+(\d+(?:\.\d+)?)%", "combo_cd"),
         (r"失衡效率加成\+(\d+(?:\.\d+)?)%", "stagger_eff"),
         (r"最大生命值\+(\d+(?:\.\d+)?)%", "hp_pct"),
+        (r"主能力\+(\d+(?:\.\d+)?)%", "primary"),
         (r"副能力\+(\d+(?:\.\d+)?)%", "secondary"),
     ]
     for pat, key in patterns:
@@ -292,6 +293,13 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
             continue
         last = str(values[-1])
         flat_label = label.replace("/", "").replace(" ", "")
+        if "伤害记录" in flat_label:
+            # 记录的是已结算伤害，爆发按记录值造成固定伤害，不能作为攻击倍率再次计算。
+            conditional.append(f"{label}: {last}（记录已造成的伤害，固定伤害爆发另行结算）")
+            continue
+        if "笔意爆发失衡" in flat_label:
+            conditional.append(f"{label}: {last}（笔意结束或收笔时结算）")
+            continue
         if "受击后" in flat_label:
             conditional.append(f"{label}: {last}（需要施放过程中受到伤害）")
             continue

@@ -1,0 +1,35 @@
+{
+  "character": "祀",
+  "character_key": "si",
+  "element": "寒冷",
+  "stars": 6,
+  "weapon": {
+    "name": "玉中身",
+    "level_max": 90,
+    "skill_rank": 9,
+    "source": "官方游戏内武器推荐（森空岛WIKI）",
+    "evidence_level": 1,
+    "note": "官方游戏内武器推荐（森空岛WIKI 干员页），武器页反向互证=一致"
+  },
+  "matrix": {
+    "name": "无瑕基质·效益",
+    "source": "官方武器页「推荐武器基质」",
+    "evidence_level": 1,
+    "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
+  },
+  "equipment": {
+    "set_main": "50式应龙装备组",
+    "set_off": null,
+    "pieces": [
+      "50式应龙软甲",
+      "50式应龙手套",
+      "50式应龙信标",
+      "纾难印章"
+    ],
+    "level_max": 70,
+    "refinement_max": 3,
+    "source": "官方客户端标准预设（CharPresetTable）",
+    "evidence_level": 1,
+    "note": "2026-10-15 本机热更新 std_90_chr_0036_jsspsi：90级、零潜、四技能12级；与推荐配装入口的对应关系尚未核验"
+  }
+}

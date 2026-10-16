@@ -413,6 +413,31 @@ def validate_snapshot(manifest: dict, snap_dir: Path) -> None:
             raise ValueError(f"子类 {subtype} 缺少有效详情")
 
 
+def merge_client_equipment(equipments: dict, data_dir: Path) -> None:
+    """补入已核验客户端装备；Wiki 后续收录同名条目时优先使用 Wiki。"""
+    supplement_path = data_dir / "client_loadout_data.json"
+    if supplement_path.is_file():
+        supplement = json.loads(supplement_path.read_text(encoding="utf-8"))
+        for name, equipment in supplement.get("equipments", {}).items():
+            equipments.setdefault(name, equipment)
+
+
+def apply_client_weapon_stat_overrides(weapons: dict, data_dir: Path) -> None:
+    """按已核验客户端值修正 Wiki 错字，仅匹配指定物品、等级与现有词条。"""
+    supplement_path = data_dir / "client_loadout_data.json"
+    if not supplement_path.is_file():
+        return
+    supplement = json.loads(supplement_path.read_text(encoding="utf-8"))
+    for correction in supplement.get("weapon_stat_overrides", []):
+        weapon = weapons.get(correction["weapon_name"], {})
+        if weapon.get("item_id") != correction["wiki_item_id"]:
+            continue
+        for skill in weapon.get("weapon_skills", []):
+            rank = skill.get("ranks", {}).get(correction["rank"], {})
+            if correction["stat_name"] in rank:
+                rank[correction["stat_name"]] = correction["value"]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", default=None, help="item_details 快照目录名（默认最新）")
@@ -507,6 +532,8 @@ def main() -> int:
         elif kind == "matrix":
             matrices[name] = parse_matrix(item, item_id, matrix_tags)
 
+    merge_client_equipment(equipments, DATA_DIR)
+    apply_client_weapon_stat_overrides(weapons, DATA_DIR)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     _write_json(DATA_DIR / "weapons.json", weapons)
     _write_json(DATA_DIR / "equipments.json", equipments)

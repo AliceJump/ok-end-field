@@ -26,6 +26,7 @@ class TestParseStatClause(unittest.TestCase):
             mod._parse_stat_clause("所有技能伤害+20%"), {"kind": "pct", "stat": "all_skill_dmg", "value": 20.0}
         )
         self.assertEqual(mod._parse_stat_clause("暴击率+5%"), {"kind": "pct", "stat": "crit_rate", "value": 5.0})
+        self.assertEqual(mod._parse_stat_clause("主能力+19.6%"), {"kind": "pct", "stat": "primary", "value": 19.6})
 
     def test_element_damage(self):
         self.assertEqual(mod._parse_stat_clause("电磁伤害+16.8%"), {"kind": "pct", "stat": "elem_电磁", "value": 16.8})
@@ -62,6 +63,37 @@ class TestSkillMultiplier(unittest.TestCase):
         self.assertAlmostEqual(mult, 924.0)
         self.assertAlmostEqual(stagger, 10.0)
         self.assertEqual(cond, [])
+
+    def test_recorded_damage_and_delayed_stagger_are_not_initial_hit(self):
+        skill = {
+            "rank_stats": self._rows(
+                [
+                    ("伤害倍率", "100%"),
+                    ("伤害记录比例", "13%"),
+                    ("失衡值", "5"),
+                    ("笔意爆发失衡值", "5"),
+                ]
+            )
+        }
+        mult, stagger, conditional = mod._skill_multiplier(skill)
+        self.assertEqual(mult, 100)
+        self.assertEqual(stagger, 5)
+        self.assertEqual(len(conditional), 2)
+        self.assertIn("固定伤害", conditional[0])
+
+    def test_si_link_keeps_consumed_attachment_bonus_conditional(self):
+        skill = {
+            "rank_stats": self._rows(
+                [
+                    ("伤害倍率", "750%"),
+                    ("每消耗或吸收1层 / 提高倍率", "100%"),
+                    ("失衡值", "10"),
+                ]
+            )
+        }
+        mult, stagger, conditional = mod._skill_multiplier(skill)
+        self.assertEqual((mult, stagger), (750, 10))
+        self.assertEqual(len(conditional), 1)
 
     def test_decimal_multiplier(self):
         skill = {

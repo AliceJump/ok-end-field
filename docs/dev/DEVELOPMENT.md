@@ -356,7 +356,7 @@ self.press_combat_key("e")  # combat
 
 ### 6.7 登录和多账号
 
-`LoginMixin.login_flow(username, password=None)` 通过登录界面的“最近账号”列表选择账号，不输入密码。旧账号行中的逗号后密码字段会被忽略且不存储。
+`LoginMixin.login_flow(username)` 通过登录界面的“最近账号”列表选择账号，不输入密码。匹配手机号前三位和后四位；重复可见号码结合“最近”标识与切换前账号身份消歧，无法唯一确定时拒绝猜测。旧账号行中首个逗号后的内容会被忽略且不存储。
 
 多账号任务应使用 `iter_multi_account_context()` 或现有 `AccountMixin` 流程，并在读取账号覆盖配置前设置 `current_account_id`。账号覆盖优先稳定 ID，用户名仅作为后备。
 
