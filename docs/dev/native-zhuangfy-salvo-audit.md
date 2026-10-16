@@ -1,0 +1,60 @@
+# 庄方宜雷击总量与首次免费三剑（新版独立核对）
+
+2026-10-16。用户实战日志暴露出当前接入层仅按普通45%/姿态81%单雷计价，不能代表整次战技；本批继续核对可获得的原生证据，不把未经确认的场上剑数写入排轴。运行时仍未启用下面的总量投影。
+
+## 版本和复现边界
+
+使用同会话已解出的新版VFS5/content27010254数据。DLL SHA256为`ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c`，metadata为`461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca`。这不是接入PR锁定的旧cc9b世界；名字一样不代表可以直接替换旧运行合同。
+
+主仓忽略目录中的`inspect_native_skill_effects.py`对普通、姿态两份入口重新解析MemoryPack、核验EOF并与保存的decoded逐项相等；字面递归共11份去重记录。`audit_zhuang_salvo.py`另核原始/decoded摘要、真实原生字段类型、分支索引、BB和等级参数，保存`zhuang-salvo-20261016/salvo-proof.json`。临时脚本、解包对象和输出均不进入本工作树或PR。字面引用无缺失不等于完整动态执行闭包。
+
+新版普通入口SHA256：`7a8f64afcbda88181ed72561e6543e24707cd963b3750b5ec0bcc247ae585512`。姿态与区域记录、实体生成和普通触发buff的各自摘要在上述证据中独立保留，不借旧版摘要。
+
+## 首次免费：请求三个位置不等于即时已有三柄剑
+
+姿态入口第5帧的有目标分支检查`ult_skill_free`（索引34）。P0走P1检查的失败分支，索引41的RandomPointFinder明确`pointNum.useBlackboardKey=false/value=3`；残留`haveSwordNum`字串不使它变成动态读值。索引42发出生成剑的投射物，只在到达时调用`normal_skill_gene_sword_projhit`，不是直接在按钮输入时创建三份剑实体。
+
+projhit按实际实体组、数量限制等条件创建剑；姿态入口随后还需通过战斗/推荐目标检查，在第15帧索引81创建区域实体。这里`assignBlackboard=true`，并用`assignEntityBlackboard/assignPairs`传递`EntityBB_SwordNum`。因此，要将“首次三剑”变成实际总量，仍须闭合：随机位置生成、投射物到达、剑实体创建/计数更新、区域读取这份值的顺序。不能拿免费资格、白圈、请求位置数或剑数上限9替代实际输入。
+
+## 每次伤害和最后一次六倍
+
+姿态入口索引79的SimpleCalc先算：
+
+```text
+atk_up_final = conductCnt × atk_up_per_conduct
+```
+
+区域实体起始索引0：
+
+```text
+atk_scale_final = atk_scale + atk_up_final
+```
+
+这是附加伤害倍率，不是再乘一个常规增伤桶。满专精原生参数为`atk_scale=0.8100000023841858`、`atk_up_per_conduct=0.18000000715255737`，没有实际导电消费等级就不能默认追加值。
+
+区域`tick_index`初值为1。12～64帧窗口按0.2秒间隔检查`tick_index < EntityBB_SwordNum`；满足时执行17/19之一的名义伤害并增加tick_index，不满足时Jump至64。69帧的单独序列重新检查`tar`目标组，再以索引25把`atk_scale_final`乘`final_rate`，由索引28执行末击。17与19是互斥分支，不能把两条DamageAction都相加。
+
+字段类型已在本版NativeImage中核准：CompareFloat.Data.compare实际是`Beyond.CompareType`（LT=0、Equals=4），不是另一个`EConditionCompareType`；SimpleCalc.operation实际是ModifyDynamicBlackboard.OperationType（Add=1、Multiply=2）。末击节点的字面fallback为18，但`useBlackboardKey=true`，选中技能12的实际`final_rate=6`；不能拿fallback18计价。
+
+在已提供有效的剑数N≥1、实际消费导电等级C、目标仍在各伤害范围、tick/Jump完整执行等条件下，名义结构应为：
+
+```text
+单雷单位 = atk_scale + C × atk_up_per_conduct
+总倍率 = 单雷单位 × (N - 1 + final_rate)
+```
+
+N=0时区域有结束分支，不能直接套上述公式。窗口长短、delta、Jump和目标变化仍限制实际执行，表中仅用明确假设解释单雷报价少了多少，不写回现场状态：
+
+| 假定N | 假定C | 姿态名义总倍率，float32计算 |
+| --- | --- | --- |
+| 1 | 0 | 486.000013% |
+| 3 | 0 | 648.000002% |
+| 9 | 0 | 1134.000015% |
+
+普通态另走`normal_skill_trigger_sword`：先按实际剑实体选择，将`swordIndex`、`EntityBB_SwordNum→swordCnt`、已相加的atk_scale和final_rate传给`buff_chr_0030_zhuangfy_sword_triggerd`；后者根据实际索引/总数判末击，在索引36乘final_rate。它与姿态区域分路执行，不能只把姿态实体程序改个倍率用于普通态。
+
+## 下一步所需输入
+
+仍缺实际选择剑数、导电消费等级、推荐目标/区域目标持续有效性、生成投射物到达与实体登记/移除顺序、native tick/Jump执行。当前白圈合同只覆盖对应按钮机制可用，不提供这些数量及命中事实。研究得到的是带条件的总量结构，不是运行时完整producer，也不新加识别。
+
+本批11份记录/原始及decoded摘要、2个原生字段类型、运算/比较枚举、所选rank12参数与条件样例核验通过，脚本AST通过。首次把末段目标组写成普通态的`thunderTar`被验证拒绝，按本版区域实际`tar`修正后通过。没有借旧输出掩盖失败。32研究面板/128报价、14模型释放/2原生ATK绑定及完整程序2/111均不变。

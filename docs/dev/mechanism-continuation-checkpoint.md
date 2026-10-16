@@ -112,3 +112,7 @@
 本地外部研究目录保留 DamageScaleProcessorConfig 的解析树、原始/回编码对象、bundle 绑定证据、枚举及方法反汇编；新增研究脚本和日志保持忽略。续接先读本检查点和 native-combat-execution-audit，再检查远程分支与 master 差异。
 
 本阶段全仓1137项测试通过（59.822秒）；修改文件的Python/JSON解析、敏感路径检查、Ruff I/F与git diff --check通过。新增8项伤害处理器专项覆盖真实导电生产链、元素/目标、同区加法、过期/共享替换、独立BB、预测隔离和缺失输入拒绝。未进行游戏现场验证。
+# 2026-10-16 续作：庄方宜实际总量证据
+
+先读[native-zhuangfy-salvo-audit.md](native-zhuangfy-salvo-audit.md)。本版11份记录及原始/decoded摘要、原生字段枚举核准，首次免费P0请求3位置→投射物reach→实体登记→区域剑数仍不能简化成3剑。姿态区域常规N-1雷加末击6倍，倍率追加按实际C相加，不把fallback18、互斥DamageAction或上限9填进实战。主仓ignored中的audit_zhuang_salvo.py与zhuang-salvo-20261016/salvo-proof.json可复核；未改研究32面板/128报价/14模型释放/2原生ATK/2完整程序覆盖。下一步补真实实体BB、到达/创建/计数与目标/区域执行，不能把静态总量公式当producer。接入PR489仍独立、未合并。
+
