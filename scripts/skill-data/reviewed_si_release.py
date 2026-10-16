@@ -46,18 +46,19 @@ def si_release_actor(root):
         })
     quotes = {}
     for row in baseline["skills"]:
-        kind = {"普通攻击": "normal", "战技": "battle", "终结技": "ult"}.get(row["type"])
+        kind = {"普通攻击": "normal", "战技": "battle", "终结技": "ult", "连携技": "link"}.get(row["type"])
         if kind is None:
             continue
         quotes[kind] = {key: row[key] for key in ("non_crit", "crit_expect", "bonus_pct")}
         quotes[kind]["quote_basis"] = {
-            "skill_rank": 12, "element": "寒冷", "damage_tags": [{"normal": "normal", "battle": "skill", "ult": "ultimate"}[kind]],
+            "skill_rank": 12, "element": "寒冷", "damage_tags": [{"normal": "normal", "battle": "skill", "ult": "ultimate", "link": "combo"}[kind]],
             "multiplier": row["multiplier_pct"] / 100, "crit_policy": "baseline_expectation",
             "scope": "master_fixed_build_without_conditional_rows",
         }
     # The entity's many hit windows straddle buff onset. Do not price their sum at cast completion.
     quotes["ult"].update(non_crit=0.0, crit_expect=0.0,
                          pricing_scope="support_opener_only; entity_multi_hit_damage_not_forecast")
+    quotes["link"]["pricing_scope"] = "base_combo_only; no_recorded_or_replayed_damage"
     actor = {
         "character": "祀", "key": "si", "profile": {
             "character_level": 90, "skill_rank": 12, "potential": 0,

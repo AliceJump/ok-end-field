@@ -73,6 +73,11 @@ def _actor_quotes(planner, index, row):
             # an immediate release quote. Do not invent hits.
             quotes[kind].update(non_crit=0.0, crit_expect=0.0,
                                 pricing_scope="support_opener_only; sustained_and_closing_damage_not_forecast")
+    links = [skill for skill in row["skills"] if skill["type"] == "连携技"]
+    if len(links) != 1:
+        raise ValueError("Review ambiguous base combo quotes before exporting")
+    quotes["link"] = {key: links[0][key] for key in ("non_crit", "crit_expect", "bonus_pct", "quote_basis")}
+    quotes["link"]["pricing_scope"] = "base_combo_only; no_variant_or_conditional_followups"
     return quotes
 
 
@@ -133,7 +138,8 @@ def export(source, revision, destination):
     actual["祀"] = len(si_actor["rules"])
     hashes = _evidence_hashes(source, rows)
     data = {"schema_version": 1, "scope": "confirmed_release_bonuses", "actors": actors,
-            "excluded": ["hit_or_target_outcomes", "field_occupancy", "combo_release",
+            "excluded": ["hit_or_target_outcomes", "field_occupancy", "combo_release_bonus_producers",
+                         "ambiguous_combo_variants",
                          "native_four_stat_producers", "unconfirmed_nonconverted_attributes"]}
     destination.mkdir(parents=True, exist_ok=True)
     payload = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf8")

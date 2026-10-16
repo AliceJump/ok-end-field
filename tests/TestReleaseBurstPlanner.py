@@ -29,7 +29,7 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         for name in ("洁尔佩塔", "噗切娜", "伊冯"):
             self.assertFalse(rows[name]["rules"])
         for row in rows.values():
-            self.assertNotIn("link", row["quotes"])
+            self.assertEqual(row["quotes"]["link"]["quote_basis"]["damage_tags"], ["combo"])
 
     def test_si_team_amplification_starts_at_verified_child_frame_and_filters_elements(self):
         planner = ReleaseBurstPlanner(["祀", "伊冯", "狼卫", "佩丽卡"])
@@ -848,7 +848,7 @@ class TestReleaseSnapshotExportBoundary(unittest.TestCase):
         self.assertEqual(len(proof["native_record_sha256"]), 4)
         self.assertEqual(proof["input_policy"], "rank12_constant_no_dynamic_attribute_input")
         self.assertEqual(len(actor["rules"]), 2)
-        self.assertNotIn("link", actor["quotes"])
+        self.assertEqual(actor["quotes"]["link"]["quote_basis"]["multiplier"], 7.5)
 
     def test_si_export_refuses_stale_source_and_changed_recipient_contract(self):
         contract_path = SNAPSHOT / "si-release-contract.json"

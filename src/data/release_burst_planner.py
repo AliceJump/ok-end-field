@@ -1,6 +1,6 @@
 """Release-certain buffs priced over the existing scheduler's burst candidates.
 
-No native world, hit inference, combo ownership or resource confirmation lives
+No native world, hit inference or resource confirmation lives
 here. Fixed panels and resolved rules are exported from a pinned review revision.
 """
 
@@ -112,6 +112,8 @@ class ReleaseBurstAction:
     base_components: tuple[HighlightDamageComponent, ...] = ()
     observed_components: tuple[HighlightDamageComponent, ...] = ()
     condition: ConditionRequirement | None = None
+    queue_position: int = 0
+    damage_duration: float | None = None
 
 
 @dataclass(frozen=True)
@@ -320,9 +322,11 @@ class ReleaseBurstPlanner:
                  * max(0, 1 + base_amp + additions["amplification"]) / (1 + base_amp))
         return value * ratio
 
-    def _forecast_step(self, node, action, index, now, *, releases, horizon):
-        damage, time, budget, indices, current, actor_locks, stances, conditions = node
-        if index in indices:
+    def _forecast_step(self, node, action, index, now, *, releases, horizon, predecessors):
+        damage, time, budget, indices, current, actor_locks, stances, conditions, queue_delay = node
+        if index in indices or any(i not in indices for i in predecessors[index]):
+            return None
+        if indices and predecessors.get("normal", -1) in indices:
             return None
         started = max(time, actor_locks.get(action.slot, now))
         pending_stance = stances.get(action.slot)
@@ -343,16 +347,22 @@ class ReleaseBurstPlanner:
         next_stances = dict(stances)
         if releases:
             self._release(forecast, action.slot, action.kind, started)
+        pricing_bonuses = forecast
+        if action.kind == "link":
+            # A whole-skill quote has no per-hit timing. Credit a window only
+            # when it covers the complete authored interval, not just handoff.
+            pricing_bonuses = [b for b in forecast if b.starts_at <= started
+                              and started + (action.damage_duration or action.duration) < b.expires_at]
         # Scene evidence survives only reviewed state-preserving actions.
         # Unscoped legacy valuations still apply solely to the first action.
         enhanced = conditions.supports(action.condition) if action.condition is not None else not indices
         value = action.value + (action.observed_bonus if enhanced else 0)
         if action.base_components:
             components = action.base_components + (action.observed_components if enhanced else ())
-            priced = self.price_components(action.slot, end, components, bonuses=forecast)
+            priced = self.price_components(action.slot, end, components, bonuses=pricing_bonuses)
         else:
             priced = self.price(action.slot, action.kind, end, value=value,
-                                bonuses=forecast, stances=stances)
+                                bonuses=pricing_bonuses, stances=stances)
         if priced is None:
             return None
         if releases:
@@ -361,11 +371,12 @@ class ReleaseBurstPlanner:
         locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
         next_conditions = conditions.after(action.slot, action.kind, self.condition_transitions.get((action.slot, action.kind)))
         return (damage + priced, end, min(300.0, budget - action.sp_cost),
-                (*indices, index), forecast, locks, next_stances, next_conditions)
+                (*indices, index), forecast, locks, next_stances, next_conditions,
+                queue_delay + (started - now if action.kind == "link" else 0))
 
     @staticmethod
     def _select_beam(expanded, quota):
-        expanded.sort(key=lambda entry: (-entry[0], entry[1], entry[3]))
+        expanded.sort(key=lambda entry: (-entry[0], entry[8], entry[1], entry[3]))
         per_start, beam = {}, []
         for entry in expanded:
             first = entry[3][0]
@@ -375,41 +386,58 @@ class ReleaseBurstPlanner:
         return beam
 
     def _search(self, actions, sp, now, *, releases, bonuses, horizon, width, conditions):
-        beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions)]
+        predecessors = {i: tuple(j for j, a in enumerate(actions) if a.kind == "link"
+                                 and a.queue_position < action.queue_position)
+                        if action.kind == "link" else () for i, action in enumerate(actions)}
+        predecessors["normal"] = (next((i for i, a in enumerate(actions) if a.kind == "normal"), -1)
+                                  if any(a.kind == "link" for a in actions) else -1)
+        beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions, 0.0)]
         best = beam[0]
         for _ in actions:
             expanded = [entry for node in beam for index, action in enumerate(actions)
                         if (entry := self._forecast_step(node, action, index, now,
-                                                        releases=releases, horizon=horizon)) is not None]
+                                                        releases=releases, horizon=horizon,
+                                                        predecessors=predecessors)) is not None]
             if not expanded:
                 break
-            candidate = max(expanded, key=lambda entry: (entry[0], -entry[1]))
-            if (candidate[0], -candidate[1]) > (best[0], -best[1]):
+            candidate = max(expanded, key=lambda entry: (entry[0], -entry[8], -entry[1]))
+            if (candidate[0], -candidate[8], -candidate[1]) > (best[0], -best[8], -best[1]):
                 best = candidate
             beam = self._select_beam(expanded, max(1, width // len(actions)))
         return best
 
     def choose(self, actions, sp, now, *, horizon=12.0, width=16, conditions=ForecastConditions()):
         actions = tuple(actions)
-        if (not actions or len(actions) > 9 or sum(a.kind == "normal" for a in actions) > 1
+        positions = sorted(a.queue_position for a in actions if a.kind == "link")
+        if (not actions or len(actions) > 13 or sum(a.kind == "normal" for a in actions) > 1
                 or len({(a.slot, a.kind) for a in actions}) != len(actions)
+                or positions != list(range(1, len(positions) + 1)) or len(positions) > 4
                 or not math.isfinite(sp) or not math.isfinite(now) or sp < 0
-                or any(a.kind not in {"normal", "battle", "ult"} or a.duration <= 0
+                or any(a.kind not in {"normal", "battle", "ult", "link"} or a.duration <= 0
                        or not all(math.isfinite(v) for v in (a.duration, a.value, a.sp_gate, a.sp_cost))
-                       or a.value < 0 for a in actions)):
+                       or a.value < 0 or (a.kind != "link" and a.queue_position != 0)
+                       or (a.damage_duration is not None and (not math.isfinite(a.damage_duration)
+                                                             or a.damage_duration < a.duration))
+                       for a in actions)):
             return None
-        actions = tuple(a for a in actions if not self.action_blocked(a.slot, a.kind, now))
+        blocked_link = min((a.queue_position for a in actions if a.kind == "link"
+                            and self.action_blocked(a.slot, a.kind, now)), default=5)
+        actions = tuple(a for a in actions if not self.action_blocked(a.slot, a.kind, now)
+                        and (a.kind != "link" or a.queue_position < blocked_link))
         if not actions:
             return None
         self.bonuses[:] = [b for b in self.bonuses if now < b.expires_at]
         self.stances = {actor: stance for actor, stance in self.stances.items() if now < stance.expires_at}
-        if not self.bonuses and not self.stances and not any(self.rules.get((a.slot, a.kind)) for a in actions):
+        has_links = any(a.kind == "link" for a in actions)
+        if (not has_links and not self.bonuses and not self.stances
+                and not any(self.rules.get((a.slot, a.kind)) for a in actions)):
             return None
         best = self._search(actions, min(sp, 300), now, releases=True,
                             bonuses=list(self.bonuses), horizon=horizon, width=width, conditions=conditions)
         plain = self._search(actions, min(sp, 300), now, releases=False, bonuses=[], horizon=horizon, width=width,
                              conditions=conditions)
-        if not best[3] or best[0] <= plain[0] + 1e-6 or actions[best[3][0]].kind == "normal":
+        if (not best[3] or (not has_links and (best[0] <= plain[0] + 1e-6
+                                             or actions[best[3][0]].kind == "normal"))):
             return None  # Normals are an existing held-output tail, not a new input.
         return ReleaseBurstDecision(actions[best[3][0]],
                                     tuple((actions[i].slot, actions[i].kind) for i in best[3]),

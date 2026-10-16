@@ -5,6 +5,8 @@ from __future__ import annotations
 import time
 from collections import deque
 
+from ok import FinishedException, TaskDisabledException
+
 from src.data.battle_conditions import ConditionRequirement, ForecastConditions
 from src.data.battle_highlight import BattleHighlightState
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
@@ -14,6 +16,7 @@ from src.data.combat_observation import (
     normalize_action_block_reason,
     normalize_enemy_presence,
 )
+from src.data.combo_queue import bind_combo_queue
 from src.data.release_burst_planner import ReleaseBurstAction, ReleaseBurstPlanner
 from src.data.skill_rotation import generate_damage_rotation
 from src.data.skill_timing import SkillTiming, SkillTimingStore, load_skill_timings
@@ -71,6 +74,8 @@ class TimedCombatLogic:
         self.battle_highlights = None
         self._burst_main_control = None
         self._ult_action_seconds = {}
+        self._combo_observation = None
+        self._combo_queue = ()
         self.plan = None
         self.cycle_samples = deque(maxlen=5)
         self._cycle_start = None
@@ -604,6 +609,7 @@ class TimedCombatLogic:
             return False
 
         previous_team = list(self.team)
+        self._combo_observation, self._combo_queue = None, ()
         previous_order = list(self.order)
         current_token = (
             previous_order[self.cursor] if previous_order and 0 <= self.cursor < len(previous_order) else None
@@ -917,6 +923,9 @@ class TimedCombatLogic:
         if kind == "ult":
             quote = self.damage_quotes.get(self.team[int(token) - 1])
             self._cycle_bonus += quote.ult if quote else 0
+        elif token is not None:
+            quote = self.damage_quotes.get(self.team[int(token) - 1])
+            self._cycle_bonus += quote.link if quote else 0
         else:
             active_names = self._active_team_names()
             if active_names and all(name in self.damage_quotes for name in active_names):
@@ -1172,8 +1181,69 @@ class TimedCombatLogic:
         normal = self._release_normal_candidate(now)
         if normal is not None:
             actions.append(normal)
+        for combo in self._combo_queue:
+            quote = self.release_burst.quote(combo.slot, "link")
+            if quote is None or not self._allowed(combo.profiles, candidate_slot=combo.slot, candidate_kind="link"):
+                break
+            actions.append(ReleaseBurstAction(
+                combo.slot, "link", max(p.handoff for p in combo.profiles), quote["crit_expect"],
+                same_actor_duration=max(p.actionable for p in combo.profiles), queue_position=combo.position,
+                damage_duration=max(max(p.duration, p.handoff) for p in combo.profiles)))
         conditions = self.battle_highlights.forecast_conditions() if self.battle_highlights is not None else ForecastConditions()
         return self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions)
+
+    def _observe_combo_queue(self):
+        self._combo_observation, self._combo_queue = None, ()
+        observe = getattr(self.task, "observe_link_skills", None)
+        if not callable(observe) or not self._allowed(candidate_kind="link"):
+            return
+        try:
+            observation = observe(team=self.team)
+            queue = bind_combo_queue(observation, self.team, self.disabled_slots, self.store, self._clock())
+        except (TaskDisabledException, FinishedException):
+            raise
+        except Exception:
+            return  # Optional identity failure keeps the existing anonymous path.
+        self._combo_observation, self._combo_queue = observation, queue
+
+    def _try_link_skill(self):
+        combo = self._combo_queue[0] if self._combo_queue else None
+        active_names = self._active_team_names()
+        by_name = {name: self.store.profiles(name, "link") for name in active_names}
+        links = combo.profiles if combo is not None else tuple(p for ps in by_name.values() for p in ps)
+        token = combo.slot if combo is not None else None
+        if (not active_names or not self._allowed(links, candidate_slot=token, candidate_kind="link")
+                or not self.task.is_link_skill_ready()):
+            return False
+        started = self._clock()
+        self._arm_action_feedback()
+        accepted = (self.task.use_link_skill(expected=self._combo_observation) if combo is not None
+                    else self.task.use_link_skill())
+        self._combo_observation, self._combo_queue = None, ()
+        if not accepted:
+            return False
+        input_at = getattr(self.task, "link_skill_input_at", None)
+        if isinstance(input_at, (int, float)) and started <= input_at <= self._clock():
+            started = input_at  # The refresh/matching time is not animation progress.
+        self._note_action_attempt("link", token)
+        if links:
+            self._begin(links, started, slot=token, kind="link")
+        else:
+            self._clear_active(started)
+        if combo is not None and self._wait_assumed_success_feedback():
+            return True
+        # E remains an assumed release under the existing feedback contract.
+        # Avatars disappearing do not establish hit, resource gains or success.
+        if token is not None and self.release_burst is not None:
+            self.release_burst.confirm(token, "link", started)
+        self._observe_bonus("link", token)
+        if token is not None:
+            self.task.log_info(f"时间排轴: 连携技 {token}，按当前队首释放")
+        else:
+            missing = [name for name, profiles in by_name.items() if not profiles]
+            self.task.log_info("时间排轴: 连携技按现有就绪检测释放"
+                               + (f"；缺少时间轴 {missing}，不阻断释放" if missing else ""))
+        return True
 
     def _release_ultimate_candidate(self, token, profiles):
         quote = self.release_burst.quote(token, "ult")
@@ -1300,6 +1370,8 @@ class TimedCombatLogic:
             self.forced_main_control_slot = None
             self.forced_main_control_until = 0.0
         ready_ults = self._ready_ultimate_actions()
+        self._observe_combo_queue()
+        now = self._clock()
         decision = self._release_burst_decision(ready_ults, sp, now)
         if decision is not None:
             action = decision.action
@@ -1310,6 +1382,12 @@ class TimedCombatLogic:
                     return
             elif action.kind == "battle" and self._try_battle_token(action.slot, sp, advance_cursor=False):
                 return
+            elif action.kind == "link":
+                self._try_link_skill()
+                return  # A changed head needs a new step, never anonymous E at the old price.
+            elif action.kind == "normal":
+                self._hold(True)
+                return  # Keeping main-control output must not fall through to E.
 
         burst_action = self.phase_planner.next_action
         if (
@@ -1343,24 +1421,8 @@ class TimedCombatLogic:
         if self._try_overflow_battle_skill(sp, "主循环"):
             return
 
-        active_names = self._active_team_names()
-        link_profiles = {name: self.store.profiles(name, "link") for name in active_names}
-        links = tuple(profile for profiles in link_profiles.values() for profile in profiles)
-        if active_names and self._allowed(links, candidate_kind="link") and self.task.is_link_skill_ready():
-            started = self._clock()
-            self._arm_action_feedback()
-            if self.task.use_link_skill():
-                self._note_action_attempt("link")
-                if links:
-                    self._begin(links, started, kind="link")
-                else:
-                    self._clear_active(started)
-                self._observe_bonus("link")
-                missing = [name for name, profiles in link_profiles.items() if not profiles]
-                self.task.log_info(
-                    "时间排轴: 连携技按现有就绪检测释放" + (f"；缺少时间轴 {missing}，不阻断释放" if missing else "")
-                )
-                return
+        if self._try_link_skill():
+            return
 
         for _rate, token, profiles in ready_ults:
             if self._use_timed_ultimate(token, profiles):

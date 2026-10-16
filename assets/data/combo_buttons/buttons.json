@@ -1,0 +1,346 @@
+[
+  {
+    "skill_id": "chr_0002_endminm_combo_skill",
+    "owner_native_id": "chr_0002_endminm",
+    "character": "管理员",
+    "portrait_native_id": "chr_0002_endminm",
+    "source_sha256": "f93537d480f7df650f9f20c6986cd9e54af6c88ab3ac9135184e472123735ddc",
+    "decoded_sha256": "56bece7c6380e0ed650890340952ef331ea5276d90d6c5df6ce80dcf65636457"
+  },
+  {
+    "skill_id": "chr_0003_endminf_combo_skill",
+    "owner_native_id": "chr_0003_endminf",
+    "character": "管理员",
+    "portrait_native_id": "chr_0003_endminf",
+    "source_sha256": "1e8b8356322e879762e3d8c9e27dd109b569ea6aff417fe96629f078d9e44c4a",
+    "decoded_sha256": "c44bf43d4bd871953488e32c0cece91db4376fb26e31412c4c51829495083a46"
+  },
+  {
+    "skill_id": "chr_0004_pelica_combo_skill",
+    "owner_native_id": "chr_0004_pelica",
+    "character": "佩丽卡",
+    "portrait_native_id": "chr_0004_pelica",
+    "source_sha256": "2fe87bc46bdec1bb2d7c0cd7a8658954b68eaa52caf32cdddc686caeb9d27530",
+    "decoded_sha256": "c6e7a7d33f4d0c2cf622b51f282c75ea170a0f3c76d071f4eb43291b8c9d7917"
+  },
+  {
+    "skill_id": "chr_0005_chen_combo_skill",
+    "owner_native_id": "chr_0005_chen",
+    "character": "陈千语",
+    "portrait_native_id": "chr_0005_chen",
+    "source_sha256": "8bf207e1393a630efbbb3f27b0f27329eb22440134192616aa57c8a5f8d554cb",
+    "decoded_sha256": "7d755912b3657b8daccc23c5458ace0d01adaa22987ebec896904235cc866728"
+  },
+  {
+    "skill_id": "chr_0006_wolfgd_combo_skill",
+    "owner_native_id": "chr_0006_wolfgd",
+    "character": "狼卫",
+    "portrait_native_id": "chr_0006_wolfgd",
+    "source_sha256": "a49f834a08fd41d1f455f9e9d45ea520761528b2a6f7f95b0a14bc1f259a0893",
+    "decoded_sha256": "a7f44a4bc9dbac391ceafe249baeacb329bff7d936c5f90235fc6700897a34cb"
+  },
+  {
+    "skill_id": "chr_0007_ikut_combo_skill",
+    "owner_native_id": "chr_0007_ikut",
+    "character": "弧光",
+    "portrait_native_id": "chr_0007_ikut",
+    "source_sha256": "0acafb396225b6c4d697c167d1b5bfc30c7d0a4dc34b510073b619595e5f8561",
+    "decoded_sha256": "ded46ddecd3aac3dddaaace20ad7dbe446103a16b56e00a78dc7750ab9faeb06"
+  },
+  {
+    "skill_id": "chr_0009_azrila_combo_skill",
+    "owner_native_id": "chr_0009_azrila",
+    "character": "余烬",
+    "portrait_native_id": "chr_0009_azrila",
+    "source_sha256": "fb0c1f5dbfcee97f3a3df933fbc83091e6ceabd90d5dfc3a42ba0d5ebf535ee5",
+    "decoded_sha256": "cbc3240b1af1412433cf1738963ea2e41c99568017e2b495140804ce4598f1cb"
+  },
+  {
+    "skill_id": "chr_0011_seraph_combo_skill",
+    "owner_native_id": "chr_0011_seraph",
+    "character": "赛希",
+    "portrait_native_id": "chr_0011_seraph",
+    "source_sha256": "a702e91cdc73951fad29190376927c79d7bb2e81530d6b3eeff15fdb2f7a7fe2",
+    "decoded_sha256": "dfd02b070b68b669d4b1ecf807d84b472f2c35d83a8aa1e706d993c3bb64d322"
+  },
+  {
+    "skill_id": "chr_0012_avywen_combo_skill",
+    "owner_native_id": "chr_0012_avywen",
+    "character": "艾维文娜",
+    "portrait_native_id": "chr_0012_avywen",
+    "source_sha256": "4a02bc8a30ad2140b98d18069eba6a4dcdff55351a416a76cb674325ac85a085",
+    "decoded_sha256": "a611c40685a73313ddba167a5b9585b6c6ba9f66ae3a50b239d30683db590778"
+  },
+  {
+    "skill_id": "chr_0013_aglina_combo_skill",
+    "owner_native_id": "chr_0013_aglina",
+    "character": "洁尔佩塔",
+    "portrait_native_id": "chr_0013_aglina",
+    "source_sha256": "8a38d927ad0da36725007a69a0acbea05994df72b5dac542136db5320ec34913",
+    "decoded_sha256": "f54d0154a99586aa693486423459d43079f982be5b1193fd4cba8996a1866c3e"
+  },
+  {
+    "skill_id": "chr_0014_aurora_combo_skill",
+    "owner_native_id": "chr_0014_aurora",
+    "character": "昼雪",
+    "portrait_native_id": "chr_0014_aurora",
+    "source_sha256": "26711f17ea9a12dc6ec77dea3e4cada7faff587a76e58fd9cda7084cd7dcf8d2",
+    "decoded_sha256": "70618380eb28dc738ee20356a18a012c98ad0a12ffb9d0e188ac4801029ad5ca"
+  },
+  {
+    "skill_id": "chr_0015_lifeng_combo_skill",
+    "owner_native_id": "chr_0015_lifeng",
+    "character": "黎风",
+    "portrait_native_id": "chr_0015_lifeng",
+    "source_sha256": "f7d2566ca5ffd997d32e998c54928abe838970f458c12966a0ffdf33c8f72ba1",
+    "decoded_sha256": "30f402cf676aa2e087fa18ac149d0df1cc51d2a0c5f494332bc3dc296d1f2f91"
+  },
+  {
+    "skill_id": "chr_0016_laevat_combo_skill",
+    "owner_native_id": "chr_0016_laevat",
+    "character": "莱万汀",
+    "portrait_native_id": "chr_0016_laevat",
+    "source_sha256": "1e1f7b54552d59961888f50974f96754bf55e56d6771442d3a11a860fa9adec9",
+    "decoded_sha256": "e6ad3626bad43359a3e92eb0463ed14d33907d3a7b80d5210aa710c30e8ce1e1"
+  },
+  {
+    "skill_id": "chr_0017_yvonne_combo_skill",
+    "owner_native_id": "chr_0017_yvonne",
+    "character": "伊冯",
+    "portrait_native_id": "chr_0017_yvonne",
+    "source_sha256": "c2bf74afd75bb45325abc5419a219caf234b39cd248e9ab21603b3f568f54a29",
+    "decoded_sha256": "ed416f74c48722caae7caf79f4bc718ea0b0ae55fa83b056f9f40345c3e8395f"
+  },
+  {
+    "skill_id": "chr_0018_dapan_combo_skill",
+    "owner_native_id": "chr_0018_dapan",
+    "character": "大潘",
+    "portrait_native_id": "chr_0018_dapan",
+    "source_sha256": "08a6928389c3b5c0a00c23245c0b82804c1235ae5f29eef77eaaac6003540019",
+    "decoded_sha256": "261d60104b5e901dea342f594bfc804d6da8e9b47e943f1fbf410caa791f4779"
+  },
+  {
+    "skill_id": "chr_0019_karin_combo_skill",
+    "owner_native_id": "chr_0019_karin",
+    "character": "秋栗",
+    "portrait_native_id": "chr_0019_karin",
+    "source_sha256": "fcdd493354a6f9c766f7c511757dec2cbe1e916f04ffd68bf2c9c86cd7554e49",
+    "decoded_sha256": "0947b61350723f8cde6bf0b31a626d541d4acae0a990267b13e04e9c4c4408b7"
+  },
+  {
+    "skill_id": "chr_0020_meurs_combo_skill",
+    "owner_native_id": "chr_0020_meurs",
+    "character": "卡契尔",
+    "portrait_native_id": "chr_0020_meurs",
+    "source_sha256": "9c1aebbc19e964ac18df4b14d651a26c8808b5c9e5803c91e295aa959efcbabf",
+    "decoded_sha256": "b200aea55d9dd12f4d5fc034ed567a3af507d99d761a30a27c5bc85ba8822cf1"
+  },
+  {
+    "skill_id": "chr_0021_whiten_combo_skill",
+    "owner_native_id": "chr_0021_whiten",
+    "character": "埃特拉",
+    "portrait_native_id": "chr_0021_whiten",
+    "source_sha256": "312891329c5b96c168581e36073d6242554b62998abef4d266284a822eeed507",
+    "decoded_sha256": "62a7ac022c666de0a24d9af4237fe67ec262c56a620d7a87e225484677b07c56"
+  },
+  {
+    "skill_id": "chr_0022_bounda_combo_skill",
+    "owner_native_id": "chr_0022_bounda",
+    "character": "萤石",
+    "portrait_native_id": "chr_0022_bounda",
+    "source_sha256": "2beafcb16661acd6e087f6dc032c536011bc0befb191fcda6d16c54ac1834a8b",
+    "decoded_sha256": "a16592e2e553bfaadf6d54dd79c498d908898dbdd8b7172ea323454aaf9b4d81"
+  },
+  {
+    "skill_id": "chr_0023_antal_combo_skill",
+    "owner_native_id": "chr_0023_antal",
+    "character": "安塔尔",
+    "portrait_native_id": "chr_0023_antal",
+    "source_sha256": "5496daf5d696e5894cbb8b8b876a0757e13d64c98eac251882249fbdb1045e34",
+    "decoded_sha256": "3abab932b8f0e85adfd0a9c91851bb43cc8b7e2543394c4abbbf85c3397de1c1"
+  },
+  {
+    "skill_id": "chr_0024_deepfin_combo_skill",
+    "owner_native_id": "chr_0024_deepfin",
+    "character": "阿列什",
+    "portrait_native_id": "chr_0024_deepfin",
+    "source_sha256": "f0bdc94942e97e899f98bac865c7de9b787f7f3419ee53fc2bffbb790695d3b5",
+    "decoded_sha256": "6d5cc974535a5e5fab473c6cf603f37ba9d2f11b4e8268494e3cf13e79b784f7"
+  },
+  {
+    "skill_id": "chr_0025_ardelia_combo_skill",
+    "owner_native_id": "chr_0025_ardelia",
+    "character": "艾尔黛拉",
+    "portrait_native_id": "chr_0025_ardelia",
+    "source_sha256": "34e0a89b5e3a972186945883f8ff8461152e25c76e1370991cbb7245a6f014a6",
+    "decoded_sha256": "798551105c24a962ce17d7f0826125f27da818b25558f521c9bd8bc0143190bb"
+  },
+  {
+    "skill_id": "chr_0026_lastrite_combo_skill",
+    "owner_native_id": "chr_0026_lastrite",
+    "character": "别礼",
+    "portrait_native_id": "chr_0026_lastrite",
+    "source_sha256": "6bcd79071485f172eb48bc4458437f6833ca4771055a2a64ff972ed79d49ca08",
+    "decoded_sha256": "3f626d06df1ba70f61594ea4a0c0a34f1f470d8bf2012c558f8c5c1aedc6fc8f"
+  },
+  {
+    "skill_id": "chr_0027_tangtang_combo_skill",
+    "owner_native_id": "chr_0027_tangtang",
+    "character": "汤汤",
+    "portrait_native_id": "chr_0027_tangtang",
+    "source_sha256": "e81cd50cfdd963aecd6b1fe7dc90792a9782d34ef657644f58b9e491ec4da50b",
+    "decoded_sha256": "ea39932c5639d189603a10130faf8af869ffc9d85821992ee447ee5d8caf5cb3"
+  },
+  {
+    "skill_id": "chr_0028_wulfa_combo_1_skill",
+    "owner_native_id": "chr_0028_wulfa",
+    "character": "洛茜",
+    "portrait_native_id": "chr_0005_chen",
+    "source_sha256": "0730c03737df73ad875df7cb819ed392c2fdf766b7f303c67641027405b6df7b",
+    "decoded_sha256": "1632b69721b5d146a9c583cad8043d16e5049aee9006cf01b18196b322453df1"
+  },
+  {
+    "skill_id": "chr_0028_wulfa_combo_2_skill",
+    "owner_native_id": "chr_0028_wulfa",
+    "character": "洛茜",
+    "portrait_native_id": "chr_0028_wulfa",
+    "source_sha256": "eaf7009988fff8a6fccdff5762d83f8438f562ccb7e1039b308a01be7260fe93",
+    "decoded_sha256": "c8b527eecf718f2f3a29382698da3be3301c3e158c6f66cafe2de7d08a3ea483"
+  },
+  {
+    "skill_id": "chr_0028_wulfa_combo_3_skill",
+    "owner_native_id": "chr_0028_wulfa",
+    "character": "洛茜",
+    "portrait_native_id": "chr_0028_wulfa",
+    "source_sha256": "fda33324303b332d995a8102c2dd2df8008a19ff5a3439c0396c52ee8ce71c17",
+    "decoded_sha256": "975f22437080fa61e10f1e7aee3fa3f1e36fd3a2d6cc10f6a3cf54f88db0b7ed"
+  },
+  {
+    "skill_id": "chr_0029_pograni_combo_skill",
+    "owner_native_id": "chr_0029_pograni",
+    "character": "骏卫",
+    "portrait_native_id": "chr_0029_pograni",
+    "source_sha256": "54b90ac2bab9c6357e49b7521f52ee77ad8153a54193879f32b9a0612d066458",
+    "decoded_sha256": "3b2af097bafb2fa145720f75f2560211bc9f9fb4915ac544423923882721c217"
+  },
+  {
+    "skill_id": "chr_0030_zhuangfy_combo_skill",
+    "owner_native_id": "chr_0030_zhuangfy",
+    "character": "庄方宜",
+    "portrait_native_id": "chr_0030_zhuangfy",
+    "source_sha256": "f9a184b3c2874fbf723b3b264e7e81f1a832c52c8abdb3a5153606ebd8a60e20",
+    "decoded_sha256": "87397962a71dae222946e191af7941fefbd41ee38ae16f8e9005abab575a4abc"
+  },
+  {
+    "skill_id": "chr_0030_zhuangfy_combo_skill_ult",
+    "owner_native_id": "chr_0030_zhuangfy",
+    "character": "庄方宜",
+    "portrait_native_id": "chr_0030_zhuangfy",
+    "source_sha256": "9e5fdcf12e300fc86534efa610146c8c3799b2ba526f2088b2911fa93b7a788e",
+    "decoded_sha256": "97b49bb6c4a27899272139c2747472067d10a9f40950bafc4e2fee9f530194ef"
+  },
+  {
+    "skill_id": "chr_0031_mifu_combo_skill",
+    "owner_native_id": "chr_0031_mifu",
+    "character": "弭弗",
+    "portrait_native_id": "chr_0031_mifu",
+    "source_sha256": "245c2831d57be93db228efbabbac50d82bbca33465f01fbabab5d94b481f74ec",
+    "decoded_sha256": "b63019f60776c7d9387de92e40ddfce92f881720aa9e93d1d6d44322a0a72bf4"
+  },
+  {
+    "skill_id": "chr_0032_lizhiyan_combo_skill",
+    "owner_native_id": "chr_0032_lizhiyan",
+    "character": "诀",
+    "portrait_native_id": "chr_0032_lizhiyan",
+    "source_sha256": "411f10038e294ffa11679639fb52152d2a211fad2a81c31b6dea8a9335ea73b9",
+    "decoded_sha256": "eab599db0df406322c3e63e0e5ad85ef7a37287f39e0ad0581c263cceac2c879"
+  },
+  {
+    "skill_id": "chr_0033_camille_combo_skill",
+    "owner_native_id": "chr_0033_camille",
+    "character": "卡缪",
+    "portrait_native_id": "chr_0033_camille",
+    "source_sha256": "305f23a88ed0c39fb8133ed8a63cc55742bf30a1e81cf3f6717bcd2fd42e3bca",
+    "decoded_sha256": "880e3b376bc22c278bbe7e6e46a8dd4e58417861bd633519a1cfa4f42d4a44e6"
+  },
+  {
+    "skill_id": "chr_0033_camille_combo_skill_2",
+    "owner_native_id": "chr_0033_camille",
+    "character": "卡缪",
+    "portrait_native_id": "chr_0033_camille",
+    "source_sha256": "8b61fc57e8162f1e7cd7d02b275ddb43becc173dbe382ee3af2fb4ec3ddf578d",
+    "decoded_sha256": "82b23b59add7d465daa13238d461d32f30914a4cb44cb25412535ec1f968a9cb"
+  },
+  {
+    "skill_id": "chr_0034_typhoea_combo_skill",
+    "owner_native_id": "chr_0034_typhoea",
+    "character": "提弗洛斯",
+    "portrait_native_id": "chr_0034_typhoea",
+    "source_sha256": "780b82ed507a996982edcd21930af155dd2da9f90cb6afcbea0ccda722131c14",
+    "decoded_sha256": "f22caeb2e26472c59a83f14a7969cadb85d89d6aa7644820135b8d798cc2f136"
+  },
+  {
+    "skill_id": "chr_0034_typhoea_combo_skillfloating",
+    "owner_native_id": "chr_0034_typhoea",
+    "character": "提弗洛斯",
+    "portrait_native_id": "chr_0034_typhoea",
+    "source_sha256": "f668da1f5a25183581e971d828d7453c024323f3ee09ba215f6688ec9a8368c4",
+    "decoded_sha256": "8e473e5cf7c0e9c96df5b7cd5e248d1f059a7d42c772f85baa719f55a226cb20"
+  },
+  {
+    "skill_id": "chr_0035_liino_combo_skill",
+    "owner_native_id": "chr_0035_liino",
+    "character": "梨诺",
+    "portrait_native_id": "chr_0035_liino",
+    "source_sha256": "15a29b5e520636a28ed5a438635e2b0a17f5b6dc2d98948838757b9e495580e9",
+    "decoded_sha256": "fb7b8c810079c1b75f9ecdf28f4949950d1c24f22cc0e3354445f5ef3f57cfbb"
+  },
+  {
+    "skill_id": "chr_0036_jsspsi_combo_skill",
+    "owner_native_id": "chr_0036_jsspsi",
+    "character": "祀",
+    "portrait_native_id": "chr_0036_jsspsi",
+    "source_sha256": "fc426586958638e30b6508c94ccd98fa26116337410eccb54becf793dfcbfe85",
+    "decoded_sha256": "117fe7d0c53ef18d4b2721326098bbad22b058a78de7070845e147d30a9ec92d"
+  },
+  {
+    "skill_id": "chr_0038_purrche_combo_skill",
+    "owner_native_id": "chr_0038_purrche",
+    "character": "噗切娜",
+    "portrait_native_id": "chr_0038_purrche",
+    "source_sha256": "eac327eef21fb16fd1242913ea08f3237a26d7631cb4c868d7f7eb94306c8a90",
+    "decoded_sha256": "41eb00096eb7ba64e7b33d991bdd6a243d851e4911413ef6b027e90fa14f5908"
+  },
+  {
+    "skill_id": "chr_0038_purrche_combo_skill_abilityrange_1_1",
+    "owner_native_id": "chr_0038_purrche",
+    "character": "噗切娜",
+    "portrait_native_id": "chr_0018_dapan",
+    "source_sha256": "0bbbac2ef351f5de4a1630d2dfbadd3deffda3db4599393fdee74b6cfdb56ebe",
+    "decoded_sha256": "dab25540a9335e6f5ad5e5803db9f53a9e95f39ea40d1a98f58036d5929ca04a"
+  },
+  {
+    "skill_id": "chr_0038_purrche_combo_skill_abilityrange_1_1_potential_3",
+    "owner_native_id": "chr_0038_purrche",
+    "character": "噗切娜",
+    "portrait_native_id": "chr_0018_dapan",
+    "source_sha256": "3bbe35072459ecfbc026321845f3514a728a42488d3134eb3765d34f1c374b46",
+    "decoded_sha256": "6ae797a3aeecbbcabc1d4c79c2e6035c4e9ff1364194816d5fa884bbfb458ffe"
+  },
+  {
+    "skill_id": "chr_0038_purrche_combo_skill_giftbox_abilityrange",
+    "owner_native_id": "chr_0038_purrche",
+    "character": "噗切娜",
+    "portrait_native_id": "chr_0018_dapan",
+    "source_sha256": "a9fce12adc5c6447fb951acd8edf2f9d8ec62d70da067021ba4ad84438c5b002",
+    "decoded_sha256": "e2bcb80cc4f820a304203dfca069a2e220866b4e14b043439f8f58216496f45e"
+  },
+  {
+    "skill_id": "chr_0038_purrche_ultimate_skill_abilityrange_blackhole",
+    "owner_native_id": "chr_0038_purrche",
+    "character": "噗切娜",
+    "portrait_native_id": "chr_0018_dapan",
+    "source_sha256": "f29b2afa45aa48fcdd923dcb7ae2da7279fd8032672e3c13548ec8b264faed74",
+    "decoded_sha256": "c4f440ce04cf180c2bf1e9c2b6d514c25138f90ad5fd4164a360722521e32773"
+  }
+]
