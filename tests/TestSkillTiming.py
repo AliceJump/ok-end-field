@@ -22,8 +22,8 @@ class TestSkillTiming(unittest.TestCase):
     def test_si_supplement_admits_real_entries_without_replacing_historical_snapshot(self):
         store = load_skill_timings()
         for alias in ("祀", "si", "Si", "chr_0036_jsspsi"):
-            battle, = store.profiles(alias, "battle")
-            ultimate, = store.profiles(alias, "ult")
+            (battle,) = store.profiles(alias, "battle")
+            (ultimate,) = store.profiles(alias, "ult")
             self.assertEqual(battle.skill_id, "chr_0036_jsspsi_normal_skill")
             self.assertEqual(battle.sp_cost, 100)
             self.assertAlmostEqual(battle.duration, 168 / 30)
@@ -47,8 +47,16 @@ class TestSkillTiming(unittest.TestCase):
             SkillTimingStore(supplements=(*SUPPLEMENTS, *SUPPLEMENTS))
 
     def test_supplement_rejects_bad_allow_windows_even_with_matching_hash(self):
-        cases = (["1", 2, ["skill"]], [0, float("nan"), ["skill"]], [-1, 2, ["skill"]],
-                 [2, 1, ["skill"]], [0, 2, "skill"], [0, 2, [None]], [0, 2], None)
+        cases = (
+            ["1", 2, ["skill"]],
+            [0, float("nan"), ["skill"]],
+            [-1, 2, ["skill"]],
+            [2, 1, ["skill"]],
+            [0, 2, "skill"],
+            [0, 2, [None]],
+            [0, 2],
+            None,
+        )
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
             for window in cases:
@@ -286,7 +294,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(logic.pending, (100, "1", 100))
         self.assertNotIn("1", logic.battle_retry_after)
         task.sp = 0
-        task.now = .2
+        task.now = 0.2
         logic._confirm_battle(task.now)
         self.assertIsNone(logic.pending)
         self.assertAlmostEqual(logic.battle_retry_after["1"], 25.6)
@@ -315,7 +323,7 @@ class TestTimedCombat(unittest.TestCase):
         task.sp = 100
         self.assertFalse(logic._try_battle_token("1", 99))
         self.assertTrue(logic._try_battle_token("1", 100))
-        task.now = .9
+        task.now = 0.9
         logic._confirm_battle(task.now)
         self.assertIsNone(logic.pending)
         self.assertLess(logic.battle_retry_after["1"], 2)

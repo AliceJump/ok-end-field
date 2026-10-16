@@ -40,15 +40,15 @@ class TestAccountScopeStore(unittest.TestCase):
         )
 
     def test_sync_account_list_does_not_persist_comma_suffix(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            with (
-                patch.object(Config, "config_folder", tmp),
-                patch.object(account_scope_store, "_CACHE_PATH", None),
-                patch.object(account_scope_store, "_CACHE_MTIME", object()),
-                patch.object(account_scope_store, "_CACHE_DATA", {}),
-            ):
-                summary = account_scope_store.sync_account_list_text("13812345678,ignored\n13987654321")
-                stored = account_scope_store.load_overrides(force=True)
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            patch.object(Config, "config_folder", tmp),
+            patch.object(account_scope_store, "_CACHE_PATH", None),
+            patch.object(account_scope_store, "_CACHE_MTIME", object()),
+            patch.object(account_scope_store, "_CACHE_DATA", {}),
+        ):
+            summary = account_scope_store.sync_account_list_text("13812345678,ignored\n13987654321")
+            stored = account_scope_store.load_overrides(force=True)
 
         self.assertEqual(summary["total_valid"], 2)
         self.assertNotIn("password_ignored_for_identity", summary)

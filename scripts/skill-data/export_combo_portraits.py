@@ -17,8 +17,11 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def reviewed_locations(source, destination):
-    common = Path(subprocess.check_output(
-        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=ROOT, text=True).strip())
+    common = Path(
+        subprocess.check_output(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=ROOT, text=True
+        ).strip()
+    )
     scratch = common.parent.resolve() / "tmp"
     source = Path(source).resolve()
     if not source.is_relative_to(scratch):
@@ -78,27 +81,38 @@ def export(source: Path, destination: Path):
         x, y = index % 5 * 154, index // 5 * 154
         atlas.paste(tile, (x, y))
         key, name = owners.get(native_id, (None, None))
-        records.append({
-            "native_id": native_id, "character": name,
-            "aliases": [key, name, native_id] if name else [native_id],
-            "tile": [x, y, 154, 154], "asset_path": asset_path,
-            "source_png_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            "source_bundle_sha256": binding["sha256"], "vfs_path_hash": binding["hash"],
-        })
+        records.append(
+            {
+                "native_id": native_id,
+                "character": name,
+                "aliases": [key, name, native_id] if name else [native_id],
+                "tile": [x, y, 154, 154],
+                "asset_path": asset_path,
+                "source_png_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                "source_bundle_sha256": binding["sha256"],
+                "vfs_path_hash": binding["hash"],
+            }
+        )
     if not set(owners) <= {r["native_id"] for r in records}:
         raise ValueError("Current character portraits are missing")
     destination.mkdir(parents=True, exist_ok=True)
     atlas_path = contained_file(destination, "portraits.png")
     atlas.save(atlas_path)
     manifest = {
-        "schema_version": 1, "atlas": "portraits.png", "tile_size": 154,
+        "schema_version": 1,
+        "atlas": "portraits.png",
+        "tile_size": 154,
         "atlas_sha256": hashlib.sha256(atlas_path.read_bytes()).hexdigest(),
-        "capture": "20261015-current-client-vfs5", "character_count": len(characters),
+        "capture": "20261015-current-client-vfs5",
+        "character_count": len(characters),
         "characters_sha256": hashlib.sha256(characters_raw).hexdigest(),
-        "bindings_sha256": hashlib.sha256(bindings_raw).hexdigest(), "portraits": records,
+        "bindings_sha256": hashlib.sha256(bindings_raw).hexdigest(),
+        "portraits": records,
         "scope": "round portrait identity only; not castability, timer, hit or release confirmation",
     }
-    contained_file(destination, "index.json").write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode())
+    contained_file(destination, "index.json").write_bytes(
+        (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode()
+    )
     print(f"Exported {len(records)} portraits, mapped to {len(characters)} product characters")
 
 
