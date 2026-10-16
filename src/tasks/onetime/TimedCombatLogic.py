@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from collections import deque
+from dataclasses import replace
 
 from ok import FinishedException, TaskDisabledException
 
@@ -681,6 +682,11 @@ class TimedCombatLogic:
         self.release_burst = ReleaseBurstPlanner(team, store=self.store if isinstance(self.store, SkillTimingStore) else None)
         if previous_burst is not None and not reset_runtime:
             self.release_burst.preserve(previous_burst)
+        for token, row in self.release_burst.rows.items():
+            if self.release_burst.cast_only_quote(token, "battle") and row["character"] in self.damage_quotes:
+                value = row["quotes"]["battle"]["crit_expect"]
+                self.damage_quotes[row["character"]] = replace(
+                    self.damage_quotes[row["character"]], battle=value, conservative=value)
 
         burst_plans = build_team_burst_plans(team, self.mechanics, self.store)
         preferred_slots = tuple(token for token in self.ult_order if self._slot_available(token))
