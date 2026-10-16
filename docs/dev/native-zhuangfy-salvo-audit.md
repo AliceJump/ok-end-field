@@ -55,6 +55,21 @@ N=0时区域有结束分支，不能直接套上述公式。窗口长短、delta
 
 ## 下一步所需输入
 
+### 续查：剑数实际producer已找到
+
+`chr_0030_zhuangfy_check_sword_passive`不是有timeline动作的战技。它通过SkillData顶层`buffs`挂载`buff_chr_0030_zhuangfy_passive_check_sword`，并把`swordRange=50`传进去；只有遍历action节点会漏掉这条依赖。独立解析器已补读顶层字面buff引用，输出明确不因此推断初始化时刻。
+
+该buff是Infinity，配置`triggerInterval=0.029999999329447746`、`waitFirstTriggerInterval=false`；事件1在本版真实枚举为OnBuffTrigger，不称OnBuffEnable或借用AI中另一个同名Event。它按序执行：
+
+1. 查本人OwnerSpawnedEntity（类型512）中满足剑标签的实体，XZ平面距离不大于`swordRange`，保存`swordsInRange`。
+2. CheckEntityNum将实际组大小写入`swordsNum`；`containsHittableTarget=false`、`excludeDeadEntity=false`，不能等同“实际可打中目标的有效剑数”。
+3. NotifyCharPassiveUIAction把这个数通知被动UI。
+4. ModifyDynamicBlackboard把`swordsNum`写入本人`EntityBB_SwordNum`。
+
+因此场上本人的剑因移动超出50米、实体到期或移除都会影响计数；不能按历史累计生成次数保持到上限9。0.03秒是配置触发间隔，不是已实测的固定33Hz，也不证明与区域创建处于同一更新相位。buff初始化、触发/实体到达/区域创建与assignEntityBlackboard读取/复制的确切先后仍待实现核准。
+
+新增两份当前记录同样经过EOF、回编码及raw/decoded摘要核验，合计13份；audit脚本进一步核这条顶层挂载、传参、实际筛选/计数/UI/BB写入顺序及buff事件枚举。没有在运行时创建默认0、3或9，没有新增UI数字识别。
+
 仍缺实际选择剑数、导电消费等级、推荐目标/区域目标持续有效性、生成投射物到达与实体登记/移除顺序、native tick/Jump执行。当前白圈合同只覆盖对应按钮机制可用，不提供这些数量及命中事实。研究得到的是带条件的总量结构，不是运行时完整producer，也不新加识别。
 
 本批11份记录/原始及decoded摘要、2个原生字段类型、运算/比较枚举、所选rank12参数与条件样例核验通过，脚本AST通过。首次把末段目标组写成普通态的`thunderTar`被验证拒绝，按本版区域实际`tar`修正后通过。没有借旧输出掩盖失败。32研究面板/128报价、14模型释放/2原生ATK绑定及完整程序2/111均不变。
