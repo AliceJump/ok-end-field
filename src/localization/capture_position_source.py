@@ -195,9 +195,7 @@ def infer_map_id_from_coordinates(x: float, z: float, grid_dir: Path | None = No
 
     directory = _GRID_DIR if grid_dir is None else Path(grid_dir)
     hits = [
-        name
-        for name, x0, z0, x1, z1 in _grid_extents(str(directory))
-        if x0 <= float(x) < x1 and z0 <= float(z) < z1
+        name for name, x0, z0, x1, z1 in _grid_extents(str(directory)) if x0 <= float(x) < x1 and z0 <= float(z) < z1
     ]
     return hits[0] if len(hits) == 1 else ""
 

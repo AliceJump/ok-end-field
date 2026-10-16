@@ -300,8 +300,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 "关掉再拉起等于丢了登录握手，必须重启游戏才能恢复"
             ),
             CONFIG_EXPERIMENTAL_UPDATE: (
-                "立刻检查并更新抓包后端程序，不等下次启动。用在自己的网络刚恢复、"
-                "或想确认当前用的是哪个版本时"
+                "立刻检查并更新抓包后端程序，不等下次启动。用在自己的网络刚恢复、或想确认当前用的是哪个版本时"
             ),
             CONFIG_EXPERIMENTAL_RELOGIN: (
                 "抓包错过了登录握手时（后端启动晚于游戏连接，或游戏当时已经登录着），"
@@ -959,9 +958,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
 
         if getattr(self, "_minimap_capture_prefetch", None) is not None:
             return
-        self._minimap_capture_prefetch = threading.Thread(
-            target=_run, name="CaptureBackendPrefetch", daemon=True
-        )
+        self._minimap_capture_prefetch = threading.Thread(target=_run, name="CaptureBackendPrefetch", daemon=True)
         self._minimap_capture_prefetch.start()
 
     def ensure_capture_backend(self) -> bool:
@@ -1238,7 +1235,6 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 "capture_no_parent_map" if sample.map_id_source == "no_parent_map" else "capture_unknown_map"
             )
         return True, CAPTURE_SOURCE_NAME
-
 
     def _minimap_position_source_name(self) -> str:
         """返回当前定位数据源名称，用于状态契约和诊断。"""

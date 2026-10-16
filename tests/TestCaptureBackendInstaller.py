@@ -300,10 +300,13 @@ class InstallTest(unittest.TestCase):
 
     def test_network_failure_without_a_local_copy_reports_unavailable(self):
         warnings: list[str] = []
-        with tempfile.TemporaryDirectory() as directory, patch.multiple(
-            installer_mod,
-            _API_URL="http://127.0.0.1:9/api",
-            _REDIRECT_URL="http://127.0.0.1:9/redirect",
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.multiple(
+                installer_mod,
+                _API_URL="http://127.0.0.1:9/api",
+                _REDIRECT_URL="http://127.0.0.1:9/redirect",
+            ),
         ):
             installer = self._installer(directory, cooldown=3600.0, log_warning=warnings.append)
             self.assertIsNone(installer.ensure_installed())
@@ -551,7 +554,9 @@ class MixedInTest(unittest.TestCase):
         owner = self._owner({})
         events: list[str] = []
         with (
-            patch.object(owner, "ensure_capture_backend_installed", side_effect=lambda: events.append("install") or True),
+            patch.object(
+                owner, "ensure_capture_backend_installed", side_effect=lambda: events.append("install") or True
+            ),
             patch.object(owner, "capture_backend_launcher") as launcher,
         ):
             launcher.return_value.ensure_running.side_effect = lambda: events.append("launch") or True

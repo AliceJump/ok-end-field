@@ -469,9 +469,7 @@ class AutostartPatchTest(unittest.TestCase):
         original = _Controller.do_start
         with (
             mock.patch.object(patch_mod, "_PATCH_INSTALLED", False),
-            mock.patch.object(
-                patch_mod, "ensure_capture_backend_before_game", side_effect=RuntimeError("boom")
-            ),
+            mock.patch.object(patch_mod, "ensure_capture_backend_before_game", side_effect=RuntimeError("boom")),
             mock.patch("ok.core.start_controller.StartController", _Controller),
         ):
             patch_mod.install_capture_backend_autostart_patch()
@@ -528,9 +526,7 @@ class MixinWiringTest(unittest.TestCase):
 
     def setUp(self):
         self._patches = [
-            mock.patch.object(
-                MinimapPositionMixin, "ensure_capture_backend_installed", return_value=True
-            ),
+            mock.patch.object(MinimapPositionMixin, "ensure_capture_backend_installed", return_value=True),
             # 托管目录也指空：免得本机已下载的副本被 find_backend_executable 找到并真跑起来
             mock.patch.object(
                 launcher_mod, "installed_executable", return_value=Path(tempfile.mkdtemp()) / EXECUTABLE_NAME

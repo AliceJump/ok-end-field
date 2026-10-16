@@ -351,8 +351,8 @@ class TestZipLineGoldGate(unittest.TestCase):
         sender.side_effect = lambda **kwargs: events.append("prefeed" if kwargs["dx"] == 160 else "fine") or True
         stub._move_to_zip_line_target.side_effect = lambda target: stub.active_and_send_mouse_delta(dx=40, dy=20)
         targets = iter([self._matched_icon(1400, 800), self._matched_icon()])
-        stub._find_zip_line_template_target.side_effect = (
-            lambda *args, **kwargs: events.append("detect") or next(targets)
+        stub._find_zip_line_template_target.side_effect = lambda *args, **kwargs: (
+            events.append("detect") or next(targets)
         )
         with track_zip_line_mouse_motion(stub) as total:
             result = ZipLineMixin._align_zip_line_distance(
@@ -372,7 +372,9 @@ class TestZipLineGoldGate(unittest.TestCase):
                 stub._find_zip_line_template_target.side_effect = [self._matched_icon(1400, 800), self._matched_icon()]
                 sender = stub.active_and_send_mouse_delta
                 sender.side_effect = [outcome, True]
-                stub._move_to_zip_line_target.side_effect = lambda target: stub.active_and_send_mouse_delta(40, 20)
+                stub._move_to_zip_line_target.side_effect = lambda target, stub=stub: stub.active_and_send_mouse_delta(
+                    40, 20
+                )
                 with track_zip_line_mouse_motion(stub) as total:
                     result = ZipLineMixin._align_zip_line_distance(stub, 108, max_time=2, initial_move=(160, 80))
 
@@ -403,7 +405,9 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub._try_click_on_zip_line = Mock(side_effect=[(False, "gate"), (True, None)])
         stub.log_info = Mock()
         stub.ocr.return_value = [SimpleNamespace(name="move")]
-        with patch("src.tasks.navigation.mixin.zip_line_mixin.load_zip_line_segment_motion", return_value=(160, 80, 2)) as load:
+        with patch(
+            "src.tasks.navigation.mixin.zip_line_mixin.load_zip_line_segment_motion", return_value=(160, 80, 2)
+        ) as load:
             ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
 
         load.assert_called_once()

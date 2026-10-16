@@ -86,8 +86,8 @@ def _scaled_px(value: int, _screen_width: int, screen_height: int) -> int:
 
 def _enemy_hp_width_thresholds(height: int) -> tuple[int, int]:
     """Return reject/context and context/direct width boundaries for ``height``."""
-    min_width = max(1, int(math.ceil(height * ENEMY_HP_MIN_WIDTH_HEIGHT_RATIO)))
-    direct_width = max(min_width, int(math.ceil(height * ENEMY_HP_DIRECT_WIDTH_HEIGHT_RATIO)))
+    min_width = max(1, math.ceil(height * ENEMY_HP_MIN_WIDTH_HEIGHT_RATIO))
+    direct_width = max(min_width, math.ceil(height * ENEMY_HP_DIRECT_WIDTH_HEIGHT_RATIO))
     return min_width, direct_width
 
 

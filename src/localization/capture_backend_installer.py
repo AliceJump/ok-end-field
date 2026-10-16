@@ -77,9 +77,7 @@ REQUEST_TIMEOUT = 20.0
 
 _API_URL = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
 _REDIRECT_URL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
-_DOWNLOAD_TMPL = (
-    f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases/download/{{tag}}/{ASSET_NAME}"
-)
+_DOWNLOAD_TMPL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases/download/{{tag}}/{ASSET_NAME}"
 
 _USER_AGENT = "ok-end-field-capture-backend-installer"
 
@@ -134,9 +132,7 @@ def prune_run_directories(directory: Path, keep: int) -> int:
     if keep < 0:
         return 0
     try:
-        candidates = [
-            path for path in Path(directory).iterdir() if path.is_dir() and _RUN_DIR_PATTERN.match(path.name)
-        ]
+        candidates = [path for path in Path(directory).iterdir() if path.is_dir() and _RUN_DIR_PATTERN.match(path.name)]
     except OSError:
         return 0
     stale = sorted(candidates, key=lambda path: path.name)[: max(0, len(candidates) - keep)]

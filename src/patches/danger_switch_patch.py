@@ -36,8 +36,7 @@ CONFIRM_DELAY_SECONDS = 5
 #: 弹窗文案（gettext msgid 必须与这里的字面量逐字一致）
 TITLE_ENABLE = "启用实验技术"
 WARNING_BODY = (
-    "该技术通过抓取游戏网络流量解析角色坐标，可能违反游戏服务条款，"
-    "存在账号被封禁的风险。请确认你已了解并自行承担后果。"
+    "该技术通过抓取游戏网络流量解析角色坐标，可能违反游戏服务条款，存在账号被封禁的风险。请确认你已了解并自行承担后果。"
 )
 CONFIRM_BUTTON = "我已知晓风险"
 COUNTDOWN_TEMPLATE = "请等待 {seconds} 秒"

@@ -32,9 +32,22 @@ from src.localization.minimap_position_mixin import (
 
 
 def _state_payload(
-    *, scene=232, x=-243.2, y=259.47, z=-228.39, yaw=250.586, speed=0.0, ws_map_id="map02",
-    level_id="map02_lv005", level_name="试验园区", map_id="map02", map_name="武陵", dungeon_name="",
-    captured_at=None, flow=None, flows=None,
+    *,
+    scene=232,
+    x=-243.2,
+    y=259.47,
+    z=-228.39,
+    yaw=250.586,
+    speed=0.0,
+    ws_map_id="map02",
+    level_id="map02_lv005",
+    level_name="试验园区",
+    map_id="map02",
+    map_name="武陵",
+    dungeon_name="",
+    captured_at=None,
+    flow=None,
+    flows=None,
 ):
     """构造后端 /api/state 的响应。
 
@@ -55,8 +68,7 @@ def _state_payload(
         "speed": speed,
     }
     if level_id is not None:
-        last.update(levelId=level_id, levelName=level_name, mapId=map_id, mapName=map_name,
-                    dungeonName=dungeon_name)
+        last.update(levelId=level_id, levelName=level_name, mapId=map_id, mapName=map_name, dungeonName=dungeon_name)
     if flow is not None:
         last["flow"] = flow
     payload = {"lastPosition": last, "ws": {"lastPosition": {"mapId": ws_map_id}}}
@@ -400,9 +412,7 @@ class SessionLivenessTest(unittest.TestCase):
     def test_a_newer_connection_makes_the_old_position_stale(self):
         """重登最典型的形态：新连接已经建好并在解码，但还没报过任何坐标。"""
 
-        pose = self._pose_for(
-            _state_payload(flow=1, flows=[_flows_entry(1, status="连接已结束"), _flows_entry(2)])
-        )
+        pose = self._pose_for(_state_payload(flow=1, flows=[_flows_entry(1, status="连接已结束"), _flows_entry(2)]))
         self.assertFalse(pose["position_trusted"])
         self.assertEqual(pose["capture_flow"], 1, "要报出产出坐标的那条连接，不是最新的那条")
 
@@ -503,9 +513,7 @@ class SessionLivenessTest(unittest.TestCase):
         with FakeBackend(_state_payload(flow=1, flows=[_flows_entry(1)])) as backend:
             owner = _FakeOwner({"使用实验技术": True, "实验技术后端端口": backend.port})
             first = owner._capture_world_pose()
-            backend.set_payload(
-                _state_payload(flow=1, flows=[_flows_entry(1)], x=-230.0, z=-210.0, yaw=100.0)
-            )
+            backend.set_payload(_state_payload(flow=1, flows=[_flows_entry(1)], x=-230.0, z=-210.0, yaw=100.0))
             moved = owner._capture_world_pose()
         self.assertEqual(first["sync_seq"], 1, "首个样本按新连接起步")
         self.assertEqual(moved["sync_seq"], 1, "同一连接内移动不推进序号")
@@ -527,9 +535,7 @@ class MapTrustTest(unittest.TestCase):
         拿它当 map02 会在错的网格上、从错的起点规划路线。
         """
 
-        pose = self._pose_for(
-            _state_payload(scene=463, x=16.3, y=107.3, z=-41.2, level_id="", map_id="", ws_map_id="")
-        )
+        pose = self._pose_for(_state_payload(scene=463, x=16.3, y=107.3, z=-41.2, level_id="", map_id="", ws_map_id=""))
         self.assertIsNone(pose["map_id"])
         self.assertFalse(pose["position_trusted"])
         self.assertEqual(pose["trust_reason"], "capture_unknown_map")
@@ -537,9 +543,7 @@ class MapTrustTest(unittest.TestCase):
     def test_scene_without_a_parent_map_is_not_trusted(self):
         """试炼场这类场景本就不属于任何大地图：没有网格可导航，这是正确结果而不是故障。"""
 
-        pose = self._pose_for(
-            _state_payload(scene=999, level_id="blackbox_power_1", map_id="", ws_map_id="")
-        )
+        pose = self._pose_for(_state_payload(scene=999, level_id="blackbox_power_1", map_id="", ws_map_id=""))
         self.assertIsNone(pose["map_id"])
         self.assertFalse(pose["position_trusted"])
         self.assertEqual(pose["trust_reason"], "capture_no_parent_map")
@@ -598,9 +602,7 @@ class CapturePoseGatesNavigationTest(unittest.TestCase):
     def test_unknown_map_pose_stops_at_wait_trust(self):
         from src.nav.nav_state import NavState
 
-        pose = self._pose_for(
-            _state_payload(scene=463, x=16.3, y=107.3, z=-41.2, level_id="", map_id="", ws_map_id="")
-        )
+        pose = self._pose_for(_state_payload(scene=463, x=16.3, y=107.3, z=-41.2, level_id="", map_id="", ws_map_id=""))
         self.assertEqual(self._classify(pose), NavState.WAIT_TRUST)
 
     def test_ended_session_pose_stops_at_wait_trust(self):
@@ -630,9 +632,7 @@ class CaptureSkipsMinimapChainTest(unittest.TestCase):
 
     def test_start_is_a_noop_and_never_reads_the_nav_profile(self):
         owner = self._owner({"使用实验技术": True})
-        with patch.object(
-            MinimapPositionMixin, "_nav_profile", side_effect=AssertionError("抓包模式不该读比例尺")
-        ):
+        with patch.object(MinimapPositionMixin, "_nav_profile", side_effect=AssertionError("抓包模式不该读比例尺")):
             self.assertTrue(owner.start_minimap_position(wait_stable=False))
         self.assertIsNone(owner._minimap_od, "不该建里程计")
         self.assertIsNone(owner._minimap_fusion, "不该建融合")
@@ -866,9 +866,7 @@ class WarnDedupTest(unittest.TestCase):
 
     def test_unknown_map_warns_once_while_position_repeats(self):
         warnings: list[str] = []
-        payload = _state_payload(
-            scene=999999, ws_map_id="", level_id="", map_id="", flow=1, flows=[_flows_entry(1)]
-        )
+        payload = _state_payload(scene=999999, ws_map_id="", level_id="", map_id="", flow=1, flows=[_flows_entry(1)])
         payload["lastPosition"]["x"] = 99999.0
         payload["lastPosition"]["z"] = 99999.0
         with FakeBackend(payload) as backend:
@@ -1010,7 +1008,8 @@ class CaptureRecoveryTest(unittest.TestCase):
             with (
                 patch.object(owner, "force_new_capture_connection", return_value=True),
                 patch.object(
-                    owner, "wait_for_capture_connection",
+                    owner,
+                    "wait_for_capture_connection",
                     return_value=CaptureHealth(CAPTURE_HEALTH_DECODING),
                 ),
             ):
@@ -1034,9 +1033,7 @@ class CaptureRecoveryTest(unittest.TestCase):
                     self.assertFalse(owner.ensure_capture_session(reason="测试"))
                     # 推过退避间隔，否则后面几次会被间隔挡掉、测不到"次数上限"
                     owner._clock += CAPTURE_RELOGIN_INTERVAL_SECONDS + 1.0
-            self.assertEqual(
-                relogin.call_count, CAPTURE_RELOGIN_ATTEMPTS, f"最多试 {CAPTURE_RELOGIN_ATTEMPTS} 次"
-            )
+            self.assertEqual(relogin.call_count, CAPTURE_RELOGIN_ATTEMPTS, f"最多试 {CAPTURE_RELOGIN_ATTEMPTS} 次")
         finally:
             owner._backend.__exit__(None, None, None)
 

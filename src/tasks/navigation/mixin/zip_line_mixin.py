@@ -1143,7 +1143,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return build_zip_line_route_fingerprint(config_key, route_values)
 
     @staticmethod
-
     @staticmethod
     def _zip_line_angle_delta(target_yaw, current_yaw):
         """Return the shortest signed yaw delta in (-180, 180]."""
@@ -1354,9 +1353,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         )
         return current_yaw, True
 
-    def _align_and_activate_zip_line(
-        self, zip_line, need_scroll=None, initial_move=None, *, distance_tolerance=None
-    ):
+    def _align_and_activate_zip_line(self, zip_line, need_scroll=None, initial_move=None, *, distance_tolerance=None):
         """对齐并激活一段滑索，只在第一次尝试时重放历史位移。"""
         self._align_zip_line_distance(
             zip_line,
@@ -1505,9 +1502,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     raise
                 continue
             reading = self._read_zip_line_settled_arrow_angle() if route_fingerprint else None
-            start_yaw = (
-                reading[0] if reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE else None
-            )
+            start_yaw = reading[0] if reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE else None
             motion_key = (
                 build_zip_line_motion_route_fingerprint(route_fingerprint, self.width, self.height, start_yaw)
                 if start_yaw is not None
@@ -1515,18 +1510,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             )
             hint = load_zip_line_segment_motion(motion_key, index) if motion_key else None
             nearest = (
-                load_nearest_zip_line_segment_motion(
-                    route_fingerprint, index, self.width, self.height, start_yaw
-                )
+                load_nearest_zip_line_segment_motion(route_fingerprint, index, self.width, self.height, start_yaw)
                 if motion_key and hint is None
                 else None
             )
             with track_zip_line_mouse_motion(self) as motion:
                 if nearest is not None:
                     matched_yaw, _dx, _dy, _samples = nearest
-                    actual_yaw, ready = self._normalize_zip_line_segment_yaw(
-                        matched_yaw, initial_reading=reading
-                    )
+                    actual_yaw, ready = self._normalize_zip_line_segment_yaw(matched_yaw, initial_reading=reading)
                     if ready:
                         # 用确认过的朝向回查缓存，而不是只用请求时那个朝向
                         matched_key = build_zip_line_motion_route_fingerprint(

@@ -316,9 +316,7 @@ class TestZipLineMotionCache(unittest.TestCase):
             active_and_send_mouse_delta=Mock(side_effect=lambda **kwargs: events.append("send") or True),
             _wait_zip_line_prefeed_settled=Mock(side_effect=lambda *args: events.append("settle") or settled),
             next_frame=Mock(side_effect=lambda: events.append("frame") or post_prefeed_frame),
-            _find_zip_line_template_target=Mock(
-                side_effect=lambda *args, **kwargs: events.append("detect") or None
-            ),
+            _find_zip_line_template_target=Mock(side_effect=lambda *args, **kwargs: events.append("detect") or None),
             log_info=Mock(),
         )
 
