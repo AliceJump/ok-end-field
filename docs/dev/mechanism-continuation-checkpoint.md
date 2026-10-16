@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-16最新：区域SwordNum显式赋值的创建前采样/SetSource两BB/实体登记与OnSpawn顺序已有同版证据；原始探针与验证仅主仓ignored，详见[native-zhuangfy-salvo-audit.md](native-zhuangfy-salvo-audit.md)。CheckEntityNum带过滤或storeKey不再被编译器当纯predicate放行，真实producer与server operation尚未执行。2新增、24专项/1735全仓通过，不提高2/111、不改32/128或既有数值绑定。人类最新要求白圈解耦并复用现有监测，优先接入PR489，研究后续不覆盖它。
+
 > 2026-10-16庄方宜新断点：先读[native-zhuangfy-salvo-audit.md](native-zhuangfy-salvo-audit.md)。13份原生记录已核，独立被动通过顶层SkillData.buffs挂载，按配置0.03秒统计本人50米XZ内剑实体→UI→EntityBB_SwordNum，区域仍读实际值。不能以累计生成次数/首次3位置/上限9替代它；创建、触发、移除及区域读取顺序继续核。原生全程序2/111、32/128和执行绑定不变，不将条件公式当真实producer已执行。
 
 > 2026-10-16新版Refresh证据：先读[native-refresh-return-audit.md](native-refresh-return-audit.md)。当前ab00/4613的Stack4已有对象时返回空handle、out旧对象，但更新旧寿命；CreateBuff创建回调/父根/动作及Skill附着不因此重新执行。接收9/来源102通知可独立发生，完整重入与producer未闭合，伊冯50%仍不自动供应。25窗口、6组字段、epsilon/18锚点与两研究脚本AST核验通过；未改旧运行快照、32面板/128报价或2/111。新版VFS的6323技能/buff解析回编码已完成，下文“仍待验证”为旧状态。原始研究只在主仓ignored目录；接入PR489和已合并529另线保存，不能将本批静态证据当运行收益。

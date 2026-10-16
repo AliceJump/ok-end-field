@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-16实体BB续批：庄方宜区域显式剑数由CreateAssignDataPair在创建前采样，经SetSource写入实体BB，非持续订阅；来源children与全局实体登记区分。研究编译器遗漏的CheckEntityNum过滤/写值/服务端操作现明确保持未知，防止假授权后续动作。2新增、24专项/1735全仓通过，87窗口/11字段组/28锚点独立核准；未实现实际计数producer，未改面板/报价/完整覆盖口径。见[native-zhuangfy-salvo-audit.md](native-zhuangfy-salvo-audit.md)。用户新指令优先完成接入线白圈观测/判定解耦，研究不混PR489。
+
 > 2026-10-16庄方宜剑数producer续查：新版SkillData.buffs挂载的独立被动按OnBuffTrigger、配置0.03秒更新本人50米XZ内带标签的剑实体计数→被动UI→EntityBB_SwordNum。它不是历史累计生成数或上限9；与区域创建/读取的相位、实体到达和移除仍未执行核准。两份被动记录补齐后共13份核验，独立解析器补顶层buff字面依赖；未改运行值或2/111。见[native-zhuangfy-salvo-audit.md](native-zhuangfy-salvo-audit.md)。
 
 > 2026-10-16新版Refresh证据：当前ab00/4613构建的Stack4直接空返回/out旧对象→BuffContainer.CreateBuff→AddBuffByAbilityAction→创建回调门槛已核。寿命更新不等于新建/重新挂父根或事件Skill；空返回仍可能发布接收9/来源102通知，完整重入、增强和producer继续未知。25代码窗口、6组字段、float32 epsilon及18指令锚点独立校验通过，原始研究只在主仓ignored目录。新版VFS字符串池及6323技能/buff已完成EOF/ID/逐字节回编码，取代下文历史“仍待验证”。本批只更新审核文档，不改变旧快照/数值/运行绑定/2/111。详见[native-refresh-return-audit.md](native-refresh-return-audit.md)。当前实际接入PR489及已合并529的进度独立记录，不并入本研究分支。

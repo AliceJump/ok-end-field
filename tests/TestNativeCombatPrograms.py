@@ -294,6 +294,50 @@ class TestNativeCombatPrograms(unittest.TestCase):
         self.assertFalse(any(e.resources or e.native_resources for e in walk_combat_events(p.events)))
         self.assertTrue(self.world.unresolved)
 
+    def test_entity_count_outputs_and_filters_do_not_authorize_following_payout(self):
+        payout = next(n for n in _nodes(self.store.record(self.base.key)["data"])
+                      if n["$type"].endswith("ObtainCostAction+Data"))
+        for changed in ({"storeKey": "swordsNum"}, {"containsHittableTarget": True},
+                        {"excludeDeadEntity": True}):
+            for branched in (False, True):
+                with self.subTest(changed=changed, branched=branched):
+                    check = {"$type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data", "$value": {
+                        "isEnable": True, "serverActionIndex": 999,
+                        "checkTarget": {"targetSource": 2, "targetGroupKey": "smart_target"},
+                        "compareType": 3, "minNum": 0, "storeKey": "",
+                        "containsHittableTarget": False, "excludeDeadEntity": False, **changed,
+                    }}
+                    sequence = {"actionData": [check, payout]}
+                    if branched:
+                        sequence = {"actionData": [{"$type": "Beyond.Gameplay.Core.IfElseAction+IfElseActionData",
+                            "$value": {"isEnable": True, "serverActionIndex": 1000,
+                                "conditionAction": {"actionData": [check]},
+                                "succeedActions": {"actionData": [payout]},
+                                "failActions": {"actionData": [payout]}}}]}
+                    program = self.compile_sequence(sequence)
+                    world = self.catalog.world.fork()
+                    world.regen = 0
+                    world.start(program, action_id="count")
+                    self.assertEqual(world.sp, 200)
+                    self.assertTrue(any("Native entity count" in item for item in world.unresolved))
+                    self.assertFalse(any(e.native_resources for e in walk_combat_events(program.events)))
+                    self.assertNotIn("bb.swordsNum", world._action_inputs["count"])
+
+    def test_plain_entity_count_without_filters_or_output_remains_executable(self):
+        payout = next(n for n in _nodes(self.store.record(self.base.key)["data"])
+                      if n["$type"].endswith("ObtainCostAction+Data"))
+        program = self.compile_sequence({"actionData": [{
+            "$type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data", "$value": {
+                "isEnable": True, "serverActionIndex": 999,
+                "checkTarget": {"targetSource": 2, "targetGroupKey": "smart_target"},
+                "compareType": 3, "minNum": 1, "storeKey": "",
+                "containsHittableTarget": False, "excludeDeadEntity": False,
+            }}, payout]})
+        self.assertTrue(any(e.native_resources for e in walk_combat_events(program.events)))
+        self.world.start(program, action_id="plain_count")
+        self.assertGreater(self.world.sp, 200)
+        self.assertFalse(any("Native entity count" in item for item in self.world.unresolved))
+
     def test_fixed_bonuses_follow_element_and_hit_tags(self):
         panel = FixedDamagePanel(100, 0, 0, 1, 0, .5, damage_bonus={
             "all": .1, "all_skill": .2, "物理": .3, "skill": .4,

@@ -55,6 +55,18 @@ N=0时区域有结束分支，不能直接套上述公式。窗口长短、delta
 
 ## 下一步所需输入
 
+### 创建时的剑数快照与计数副作用（续批）
+
+本版原生默认路径进一步核准了赋值的先后。SpawnAbilityEntity（63058/RVA62eca70）先遍历Data+0xa8的assignPairs（+0xa4启用），在62ef2fe调用CreateAssignDataPair；数值输入经ActionBlackboard.TryGetFloat后将当时float32拓宽为double写入返回pair。随后才在62efc82或62f07e3调用ObjectContainer.SpawnAbilityEntity。该列表不是输入BB的动态订阅，缺值分支返回空pair，模型仍不能据此默认剑数0。
+
+ObjectContainer先LoadEntity，再SetSource、RegisterEntity、TryStart。SetSource分别处理sourceBlackboard（+0x2c8）与entityBlackboard（+0x2d0），冷分支760d097把上述pair列表合入后者；创建动作拿到有效实体后才调用AbilityEntityController.OnSpawn。因而区域显式EntityBB_SwordNum传值是创建前的快照，不能用之后角色被动的同名key更新自动覆盖它；尚未排除其他显式写入或IFix，亦不称区域BB绝不会改变。OwnerSpawnedEntityFinder读取来源AbilitySystem的m_children（+0x1a0），与全局RegisterEntity是不同集合，来源关系通过SetSource/_OnSetAsSource登记。实体到达、初始化、被动刷新与区域创建的实际调度相位仍待执行。
+
+SpawnAbilityEntity.OnEnd独立检查pauseEffectOnEnd（+0xe0）与dieOnEnd（+0xe5）；后者为真才走Entity.Release冷分支。生成剑记录dieOnEnd=false不能被简化为动作结束即删除，也不证明永久存续。
+
+另核Conditions.CheckEntityNum（96696/RVA642d5e0）：它先按过滤统计并比较，只在比较成功且storeKey非空时检查/更新BB；单精度差超过epsilon且AssignDynamic成功后创建类型7的server operation。这不是已证明的AbilitySystem监听事件。研究编译器之前忽略containsHittableTarget、excludeDeadEntity和storeKey，现已使这些未绑定行为明确未知，不授权直接序列后续资源或IfElse任一臆测分支；无过滤无输出的纯计数仍执行。没有实现新的计数producer或导入新版运行快照。
+
+原始探针及独立验证只在主仓忽略目录zhuang-entity-flow-20261016：87个选定机器窗口、11组字段与28个指令锚点的同版摘要/逐字节/字段注册表复核通过；窗口按下一方法指针封顶32KB，含数据或相邻块，不冒充严格函数长度或IFix覆盖。新增2项回归、24专项及1735全仓（167.249秒）通过，Ruff I/F与diff-check通过。面板/报价/既有绑定数值不变，不提高完整原生覆盖口径。
+
 ### 续查：剑数实际producer已找到
 
 `chr_0030_zhuangfy_check_sword_passive`不是有timeline动作的战技。它通过SkillData顶层`buffs`挂载`buff_chr_0030_zhuangfy_passive_check_sword`，并把`swordRange=50`传进去；只有遍历action节点会漏掉这条依赖。独立解析器已补读顶层字面buff引用，输出明确不因此推断初始化时刻。

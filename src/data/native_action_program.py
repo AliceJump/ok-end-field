@@ -242,6 +242,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 test = CombatExpression("any", tuple(CombatExpression("eq", (combat_input("event.skill_type"), float(i)))
                                                      for i in value["skillTypeList"]))
             elif name == "CheckEntityNum+Data":
+                # Counting hittable/dead-filtered targets is not the same as
+                # taking a context group's size. A nonempty storeKey also
+                # writes the count on success and can issue a server op; a
+                # pure predicate must not silently discard those producers.
+                if value["containsHittableTarget"] or value["excludeDeadEntity"]:
+                    raise UnresolvedMechanic("Native entity count filtering needs target lifecycle binding")
+                if value["storeKey"]:
+                    raise UnresolvedMechanic("Native entity count output/server operation needs binding")
                 tests = {0: "lt", 1: "le", 2: "gt", 3: "ge", 4: "eq"}
                 test = CombatExpression(tests[value["compareType"]],
                                                (target_count(value["checkTarget"]), float(value["minNum"])))
