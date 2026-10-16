@@ -476,6 +476,9 @@ class AutoCombatLogic:
         task = self.task
         task._battle_team = None
         if not task.in_combat(required_yellow=1):
+            combo_detector = getattr(task, "_combo_skill_detector", None)
+            if combo_detector is not None:
+                combo_detector.reset(clear_order=True)
             # 非战斗状态：清标记，下次进入战斗时才会复位推荐技能检测器
             task._recommend_detector_in_combat = False
             now = task.active_time()
@@ -497,6 +500,9 @@ class AutoCombatLogic:
         # auto_battle 在同一场战斗内重入 run() 时不再复位，避免同周期白圈
         # 因 active 被清空而重复触发。
         if not getattr(task, "_recommend_detector_in_combat", False):
+            combo_detector = getattr(task, "_combo_skill_detector", None)
+            if combo_detector is not None:
+                combo_detector.reset(clear_order=True)
             get_recommend_skill_detector().reset()
             task._recommend_detector_in_combat = True
 
