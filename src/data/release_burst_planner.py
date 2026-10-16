@@ -270,6 +270,10 @@ class ReleaseBurstPlanner:
         row = self.rows.get(actor)
         return row["quotes"].get(kind) if row is not None else None
 
+    def cast_only_quote(self, actor, kind):
+        quote = self.quote(actor, kind)
+        return quote is not None and quote.get("pricing_scope", "").startswith("unconditional_cast_only;")
+
     def battle_values(self, actor, observation=None):
         binding = self.highlight_damage.get(actor)
         if binding is not None:
@@ -295,7 +299,7 @@ class ReleaseBurstPlanner:
             if enhanced is not None:
                 quote = enhanced
                 value = None  # A base master value cannot undo an action replacement.
-        if quote.get("pricing_scope", "").startswith("support_opener_only"):
+        if quote.get("pricing_scope", "").startswith(("support_opener_only", "unconditional_cast_only;")):
             value = quote["crit_expect"]
         return self._price_value(actor, now, quote["quote_basis"]["element"],
                                  set(quote["quote_basis"]["damage_tags"]), quote["bonus_pct"],
@@ -429,14 +433,17 @@ class ReleaseBurstPlanner:
         self.bonuses[:] = [b for b in self.bonuses if now < b.expires_at]
         self.stances = {actor: stance for actor, stance in self.stances.items() if now < stance.expires_at}
         has_links = any(a.kind == "link" for a in actions)
-        if (not has_links and not self.bonuses and not self.stances
+        # A corrected conditional cast must not fall back to the old row-sum
+        # ordering merely because a different, unbuffed action wins.
+        needs_cast_pricing = has_links or any(self.cast_only_quote(a.slot, a.kind) for a in actions)
+        if (not needs_cast_pricing and not self.bonuses and not self.stances
                 and not any(self.rules.get((a.slot, a.kind)) for a in actions)):
             return None
         best = self._search(actions, min(sp, 300), now, releases=True,
                             bonuses=list(self.bonuses), horizon=horizon, width=width, conditions=conditions)
         plain = self._search(actions, min(sp, 300), now, releases=False, bonuses=[], horizon=horizon, width=width,
                              conditions=conditions)
-        if (not best[3] or (not has_links and (best[0] <= plain[0] + 1e-6
+        if (not best[3] or (not needs_cast_pricing and (best[0] <= plain[0] + 1e-6
                                              or actions[best[3][0]].kind == "normal"))):
             return None  # Normals are an existing held-output tail, not a new input.
         return ReleaseBurstDecision(actions[best[3][0]],

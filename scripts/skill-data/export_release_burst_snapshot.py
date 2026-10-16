@@ -13,6 +13,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
+from reviewed_avywenna_recall import recall_quote
 from reviewed_release_stance import release_stance
 from reviewed_si_release import si_release_actor
 from reviewed_support_release import support_release
@@ -61,7 +62,7 @@ def _actor_rules(planner, index, row, store):
     return rules, evidence
 
 
-def _actor_quotes(planner, index, row):
+def _actor_quotes(planner, index, row, store):
     quotes = {}
     for kind in ("normal", "battle", "ult"):
         quote = planner.quotes.get((str(index), kind))
@@ -73,6 +74,8 @@ def _actor_quotes(planner, index, row):
             # an immediate release quote. Do not invent hits.
             quotes[kind].update(non_crit=0.0, crit_expect=0.0,
                                 pricing_scope="support_opener_only; sustained_and_closing_damage_not_forecast")
+        if row["key"] == "avywenna" and kind == "battle":
+            quotes[kind] = recall_quote(row, store)
     links = [skill for skill in row["skills"] if skill["type"] == "连携技"]
     if len(links) != 1:
         raise ValueError("Review ambiguous base combo quotes before exporting")
@@ -89,7 +92,7 @@ def _collect_actors(rows, planner, store):
             supports.append(evidence)
         actors.append({"character": row["character"], "key": row["key"], "profile": row["profile"],
                        "build": row["build"], "panel": row["panel"]["damage_basis"],
-                       "attribute_basis": row["attribute_basis"], "quotes": _actor_quotes(planner, index, row),
+                       "attribute_basis": row["attribute_basis"], "quotes": _actor_quotes(planner, index, row, store),
                        "rules": rules, "stance": release_stance(row, store)})
     return actors, supports
 
@@ -159,6 +162,8 @@ def export(source, revision, destination):
                                      ROOT / "scripts/skill-data/reviewed_release_stance.py")}, "stances": 1}
     manifest["exporter_hashes"]["reviewed_si_release.py"] = hashlib.sha256(
         (ROOT / "scripts/skill-data/reviewed_si_release.py").read_bytes()).hexdigest()
+    manifest["exporter_hashes"]["reviewed_avywenna_recall.py"] = hashlib.sha256(
+        (ROOT / "scripts/skill-data/reviewed_avywenna_recall.py").read_bytes()).hexdigest()
     (destination / "index.json").write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf8"))
     print(f"Exported 32 research panels from {head}, one reviewed master Si projection, "
           f"and {sum(actual.values())} release rules")

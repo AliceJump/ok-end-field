@@ -1000,8 +1000,8 @@
           }
         },
         "battle": {
-          "non_crit": 95834.7,
-          "crit_expect": 98230.6,
+          "non_crit": 19166.947198181384,
+          "crit_expect": 19646.120878135916,
           "bonus_pct": 174.1,
           "quote_basis": {
             "skill_rank": 12,
@@ -1009,9 +1009,51 @@
             "damage_tags": [
               "skill"
             ],
-            "multiplier": 7.5,
+            "multiplier": 1.5,
             "crit_policy": "baseline_expectation",
-            "scope": "rank_row_sum_without_conditional_rows"
+            "scope": "whirlwind_only_without_recalled_spear_hits"
+          },
+          "pricing_scope": "unconditional_cast_only; recall_entities_and_path_hits_unobserved",
+          "deferred_components": [
+            {
+              "parameter_key": "atk_scale_lance",
+              "multiplier": 1.6799999475479126,
+              "non_crit": 21466.980191732226,
+              "crit_expect": 22003.65469652553,
+              "kind": "normal_spear",
+              "source_skill_id": "chr_0012_avywen_combo_skill_lance_back",
+              "actual_count": null,
+              "included_in_quote": false,
+              "requires": [
+                "actual_owned_entity_count",
+                "return_projectile_path_hit"
+              ]
+            },
+            {
+              "parameter_key": "atk_scale_lance_ult",
+              "multiplier": 4.320000171661377,
+              "non_crit": 55200.81012424542,
+              "crit_expect": 56580.83037735155,
+              "kind": "strong_spear",
+              "source_skill_id": "chr_0012_avywen_ultimate_skill_lance_back",
+              "actual_count": null,
+              "included_in_quote": false,
+              "requires": [
+                "actual_owned_entity_count",
+                "return_projectile_path_hit"
+              ]
+            }
+          ],
+          "source_evidence": {
+            "native_record_sha256": {
+              "chr_0012_avywen_normal_skill": "dfadd90a92539712513bfcfe93e59add3e134abc455b6056fdaa200948970e3c",
+              "chr_0012_avywen_combo_skill_lance_back": "b38a4f21a384df878c40abf41f729b4b7c17338aab6f194ca132c1dfb23b894c",
+              "chr_0012_avywen_ultimate_skill_lance_back": "13c4f5e28d684f4b932a8cb5df190ad274c1aafe0f8dcb7aefe2a668629853d1"
+            },
+            "ranked_row_sha256": "ecaffcaedab3cfa2fd231f84b77bd05bdb4787f3ae098dfa1f918923df7a4aa6",
+            "whirlwind_action_index": 30,
+            "normal_return_launch_index": 67,
+            "strong_return_launch_index": 75
           }
         },
         "ult": {

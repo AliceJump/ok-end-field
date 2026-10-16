@@ -158,6 +158,46 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertAlmostEqual(planner.price("1", "battle", 1) / before,
                                1 + .336 / (1 + 174.1 / 100))
 
+    def test_avywenna_quote_separates_unobserved_return_hits_from_whirlwind(self):
+        quote = read_snapshot()["艾维文娜"]["quotes"]["battle"]
+        self.assertEqual(quote["quote_basis"]["multiplier"], 1.5)
+        self.assertAlmostEqual(quote["crit_expect"], 19646.120878135916)
+        normal, strong = quote["deferred_components"]
+        self.assertAlmostEqual(normal["multiplier"], 1.68, places=6)
+        self.assertAlmostEqual(strong["multiplier"], 4.32, places=6)
+        for component in (normal, strong):
+            self.assertIsNone(component["actual_count"])
+            self.assertFalse(component["included_in_quote"])
+            self.assertIn("return_projectile_path_hit", component["requires"])
+
+    def test_avywenna_legacy_full_quote_cannot_reenter_price_after_buffs(self):
+        planner = ReleaseBurstPlanner(["艾维文娜", "梨诺"])
+        base = planner.quote("1", "battle")["crit_expect"]
+        self.assertEqual(planner.price("1", "battle", 0, value=98230.6), base)
+        planner.confirm("1", "battle", 0)
+        planner.confirm("2", "ult", 0)
+        self.assertEqual(planner.price("1", "battle", 3, value=98230.6), planner.price("1", "battle", 3))
+        self.assertGreater(planner.price("1", "battle", 3), base)
+
+    def test_avywenna_unknown_recall_does_not_lose_unbuffed_winner_to_legacy_fallback(self):
+        planner = ReleaseBurstPlanner(["艾维文娜", "佩丽卡"])
+        actions = (ReleaseBurstAction("1", "battle", 1, 98230.6, 100, 100),
+                   ReleaseBurstAction("2", "battle", 1, planner.quote("2", "battle")["crit_expect"], 100, 100))
+        decision = planner.choose(actions, 100, 0)
+        self.assertEqual((decision.action.slot, decision.action.kind), ("2", "battle"))
+        self.assertEqual(decision.sequence, (("2", "battle"),))
+        self.assertEqual(decision.gain, 0)
+        self.assertFalse(planner.last_confirmed)
+        self.assertFalse(planner.bonuses)
+
+    def test_avywenna_link_and_ultimate_acceptance_do_not_invent_field_counts(self):
+        planner = ReleaseBurstPlanner(["艾维文娜"])
+        base = planner.price("1", "battle", 0)
+        planner.confirm("1", "link", 0)
+        planner.confirm("1", "ult", 1)
+        self.assertEqual(planner.price("1", "battle", 2), base)
+        self.assertTrue(all(c["actual_count"] is None for c in planner.quote("1", "battle")["deferred_components"]))
+
     def test_attack_window_uses_white_attack_and_source_action_cleanup(self):
         planner = ReleaseBurstPlanner(["秋栗", "狼卫"])
         panel = planner.rows["2"]["panel"]
@@ -416,6 +456,29 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic._configure_team(["安塔尔", "莱万汀", "佩丽卡", "狼卫"], reset_runtime=True)
         return task, logic
+
+    def test_observed_electric_team_spends_100_sp_on_pelica_without_assumed_spears(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["庄方宜", "佩丽卡", "艾维文娜", "梨诺"], reset_runtime=True)
+        task.ults = set()
+        task.sp = 100
+        task.battle_pulses = {"3"}  # An entity/distance hint is not a typed count or path hit.
+        logic.step()
+        self.assertEqual(task.keys, ["2"])
+        self.assertEqual(logic.pending[1], "2")
+        self.assertFalse(logic.release_burst.last_confirmed)
+
+    def test_avywenna_cycle_and_overflow_use_the_same_cast_only_quote(self):
+        task, logic = self.make_logic()
+        logic._configure_team(["艾维文娜", "佩丽卡"], reset_runtime=True)
+        value = logic.release_burst.quote("1", "battle")["crit_expect"]
+        self.assertEqual(logic.damage_quotes["艾维文娜"].battle, value)
+        self.assertEqual(logic.damage_quotes["艾维文娜"].conservative, value)
+        profile = logic.store.profiles("艾维文娜", "battle")[0]
+        self.assertAlmostEqual(logic._overflow_score("1") * max(profile.handoff, .3), value)
+        logic.release_burst.confirm("1", "battle", 0)
+        self.assertGreater(logic._overflow_score("1") * max(profile.handoff, .3), value)
+        self.assertLess(logic._overflow_score("1") * max(profile.handoff, .3), 30000)
 
     def test_si_real_step_selects_team_ultimate_before_cold_carry_and_no_public_sp(self):
         task, logic = self.make_logic()
