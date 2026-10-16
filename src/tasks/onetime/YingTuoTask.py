@@ -57,7 +57,17 @@ class YingTuoTask(BattleMixin):
                 ):
                     self.log_info("未能进入战斗")
                     raise Exception("未能进入战斗")
-                if not self.battle_and_exit():
+
+                def retry_transition():
+                    button = self.find_one(
+                        feature=fL.give_gift,
+                        box=self.box_of_screen(0.934, 0.881, 0.977, 0.965),
+                    )
+                    if button:
+                        self.log_info("挑战入场按钮仍在，重试入场")
+                        self.click(button, after_sleep=0.5)
+
+                if not self.battle_and_exit(transition_recovery=retry_transition):
                     self.log_info("战斗过程中发生错误，返回失败")
                     raise Exception("战斗过程中发生错误")
                 if not self.wait_feature(
@@ -127,12 +137,9 @@ class YingTuoTask(BattleMixin):
             self.draw_boxes("yingtuo_gray_bars", debug_boxes, color="green", debug=True)
         return bars
 
-    def battle_and_exit(self):
-        end_time = self.active_time()
-        while not self.wait_feature(feature=fL.battle_space_left, time_out=1, raise_if_not_found=False):
-            if self.active_time() - end_time > 300:
-                self.log_info("等待超时，进入协议空间超时")
-                return False
+    def battle_and_exit(self, transition_recovery=None):
+        if not self.wait_battle_space(transition_recovery=transition_recovery):
+            return False
         self.auto_battle()
         if not self.wait_click_feature(
             feature=fL.left_battle,

@@ -1644,6 +1644,27 @@ class BattleMixin(BaseEfTask):
             )
         )
 
+    def wait_battle_space(self, transition_recovery=None, time_out=300):
+        """按当前画面验证入场；上一步恢复由调用方提供，超时仅作 watchdog。"""
+        start = self.active_time()
+        last_log = start
+        self.log_info("等待进入协议空间")
+        while True:
+            self.next_frame()
+            if self.find_feature(feature=fL.battle_space_left):
+                self.log_info("已进入协议空间")
+                return True
+            now = self.active_time()
+            if now - start >= time_out:
+                self.log_info("等待进入协议空间超时")
+                return False
+            if transition_recovery is not None:
+                transition_recovery()
+            if now - last_log >= 10:
+                self.log_info("尚未检测到协议空间，继续检查入场状态")
+                last_log = now
+            self.sleep(0.1)
+
     def auto_battle(self, no_battle: bool = False):
         """
         自动战斗主循环
