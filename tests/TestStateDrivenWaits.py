@@ -1,11 +1,12 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ok import Box
 
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
+from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.battle_mixin import BattleMixin, _resolve_skill_bar_progress
 from src.tasks.mixin.map_mixin import MapMixin
 
@@ -248,6 +249,61 @@ class _TaskMapHarness:
 
 
 class TestStateDrivenWaits(unittest.TestCase):
+    def test_battle_entry_prioritizes_destination_over_recovery(self):
+        task = Mock()
+        task.active_time.return_value = 0
+        task.find_feature.return_value = [object()]
+        recovery = Mock()
+
+        self.assertTrue(BattleMixin.wait_battle_space(task, transition_recovery=recovery))
+
+        task.find_feature.assert_called_once_with(feature=fL.battle_space_left)
+        recovery.assert_not_called()
+        task.sleep.assert_not_called()
+
+    def test_battle_entry_keeps_polling_during_long_loading(self):
+        task = Mock()
+        task.active_time.side_effect = [0, 0, 120, 240]
+        task.find_feature.side_effect = [[], [], [], [object()]]
+        recovery = Mock()
+
+        self.assertTrue(BattleMixin.wait_battle_space(task, transition_recovery=recovery))
+
+        self.assertEqual(task.next_frame.call_count, 4)
+        self.assertEqual(recovery.call_count, 3)
+        self.assertEqual([call.args for call in task.sleep.call_args_list], [(0.1,)] * 3)
+        task.log_info.assert_any_call("尚未检测到协议空间，继续检查入场状态")
+
+    def test_battle_entry_recovers_on_first_missing_frame(self):
+        task = Mock()
+        task.active_time.return_value = 0
+        task.find_feature.side_effect = [[], [object()]]
+        recovery = Mock()
+
+        self.assertTrue(BattleMixin.wait_battle_space(task, transition_recovery=recovery))
+
+        recovery.assert_called_once_with()
+        task.sleep.assert_called_once_with(0.1)
+
+    def test_battle_entry_watchdog_stops_recovery_at_deadline(self):
+        task = Mock()
+        task.active_time.side_effect = [0, 300]
+        task.find_feature.return_value = []
+        recovery = Mock()
+
+        self.assertFalse(BattleMixin.wait_battle_space(task, transition_recovery=recovery))
+
+        recovery.assert_not_called()
+        task.sleep.assert_not_called()
+
+    def test_battle_entry_propagates_task_stop(self):
+        task = Mock()
+        task.active_time.return_value = 0
+        task.next_frame.side_effect = RuntimeError("stopped")
+
+        with self.assertRaisesRegex(RuntimeError, "stopped"):
+            BattleMixin.wait_battle_space(task)
+
     def test_skill_bar_progress_full_scan_short_circuits_from_right(self):
         full_calls = []
         fill_calls = []

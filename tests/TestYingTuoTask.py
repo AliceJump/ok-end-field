@@ -1,8 +1,9 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 
+from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.YingTuoTask import YingTuoTask
 
 
@@ -34,6 +35,39 @@ class _FakeYingTuoTask:
 
 
 class TestYingTuoTask(unittest.TestCase):
+    def test_battle_and_exit_waits_for_entry_before_combat(self):
+        for entered in (True, False):
+            with self.subTest(entered=entered):
+                task = Mock()
+                task.wait_battle_space.return_value = entered
+                recovery = Mock()
+
+                self.assertEqual(YingTuoTask.battle_and_exit(task, transition_recovery=recovery), entered)
+
+                task.wait_battle_space.assert_called_once_with(transition_recovery=recovery)
+                self.assertEqual(task.auto_battle.call_count, int(entered))
+                self.assertEqual(task.wait_click_feature.call_count, int(entered))
+
+    def test_run_recovery_only_clicks_visible_entry_button(self):
+        task = Mock()
+        task.find_normal_challenge.side_effect = [True, False]
+        task.wait_until.return_value = [object()]
+        button = object()
+        task.find_one.side_effect = [None, button]
+
+        def enter(transition_recovery):
+            clicks = task.click.call_count
+            transition_recovery()
+            self.assertEqual(task.click.call_count, clicks)
+            transition_recovery()
+            task.click.assert_called_with(button, after_sleep=0.5)
+            return True
+
+        task.battle_and_exit.side_effect = enter
+        YingTuoTask.run.__wrapped__(task)
+
+        task.find_one.assert_called_with(feature=fL.give_gift, box=task.box_of_screen.return_value)
+
     def test_gray_bars_mean_current_screen_has_challenge(self):
         task = _FakeYingTuoTask()
         leftmost = type("Bar", (), {"center_x": 50.0, "center_y": 25.0})()
