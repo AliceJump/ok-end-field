@@ -15,8 +15,8 @@ class SearchMixin(BaseEfTask):
         delay: float = 0.005,
         between_delay: float = 0.0,
         detection_multiplier: int = 2,
-        pitch_amplitude: int = 30,
-        pitch_cycles: int = 8,
+        pitch_amplitude: int = 240,
+        pitch_cycles: int = 5,
     ):
         """沿平滑正弦俯仰轨迹原地旋转整圈搜索，命中即返回检测结果。
 
@@ -35,9 +35,9 @@ class SearchMixin(BaseEfTask):
             between_delay: 原实现每个水平分段的等待预算；提高检测频次后会按采样倍数均分，
                 保持整圈额外等待总量不变。
             detection_multiplier: 每个原水平分段拆成多少个检测采样点，默认 2 倍频率。
-            pitch_amplitude: 1080p 基准下的最大俯仰鼠标位移，默认 30px；按分辨率缩放。
-            pitch_cycles: 一整圈内完成的正弦俯仰周期数，默认 8 个周期；默认 80 个采样点时
-                每 10 次采样完成一个周期。
+            pitch_amplitude: 1080p 基准下的最大俯仰鼠标位移，默认 240px；按分辨率缩放。
+            pitch_cycles: 一整圈内完成的正弦俯仰周期数，默认 5 个周期；默认 80 个采样点时
+                每 16 次采样完成一个完整周期。
 
         Returns:
             check_func 的命中结果；整圈未命中返回 None。
