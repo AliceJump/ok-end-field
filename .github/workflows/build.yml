@@ -284,6 +284,43 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Materialize navigation grid data for update repositories
+        shell: pwsh
+        run: |
+          $navPath = "assets/nav-grid-data"
+          $indexEntry = git ls-files --stage -- $navPath
+          if (-not $indexEntry) {
+            Write-Host "Navigation grid submodule is not present in this release; skipping."
+            exit 0
+          }
+          if (-not $indexEntry.StartsWith("160000 ")) {
+            throw "$navPath exists in the index but is not a git submodule."
+          }
+
+          $navCommit = ($indexEntry -split '\s+')[1]
+          git submodule update --init -- $navPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to initialize $navPath."
+          }
+          git -C $navPath lfs pull
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to download Git LFS objects for $navPath."
+          }
+
+          $pointerFiles = Get-ChildItem -LiteralPath $navPath -File -Recurse | Where-Object {
+            $_.Length -le 200 -and
+            (Get-Content -LiteralPath $_.FullName -Raw -ErrorAction SilentlyContinue) -match '^version https://git-lfs.github.com/spec/v1'
+          }
+          if ($pointerFiles) {
+            $paths = ($pointerFiles.FullName -join ', ')
+            throw "Git LFS pointer files remain after pull: $paths"
+          }
+
+          Remove-Item -LiteralPath (Join-Path $navPath ".git") -Recurse -Force -ErrorAction SilentlyContinue
+          Set-Content -LiteralPath (Join-Path $navPath ".gitattributes") -Value "* -filter -diff -merge" -Encoding ascii
+          Set-Content -LiteralPath (Join-Path $navPath ".source-commit") -Value $navCommit -NoNewline -Encoding ascii
+          Write-Host "Prepared $navPath as ordinary Git files from $navCommit."
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
