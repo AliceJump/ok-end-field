@@ -91,6 +91,8 @@ from src.localization.capture_backend_launcher import (
 )
 from src.localization.capture_position_source import (
     CAPTURE_HEALTH_DECODING,
+    CAPTURE_HEALTH_MISSED_HANDSHAKE,
+    CAPTURE_HEALTH_NO_CONNECTION,
     CAPTURE_HEALTH_OK,
     CAPTURE_SOURCE_NAME,
     REST_SPEED_THRESHOLD,
@@ -303,7 +305,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 "立刻检查并更新抓包后端程序，不等下次启动。用在自己的网络刚恢复、或想确认当前用的是哪个版本时"
             ),
             CONFIG_EXPERIMENTAL_RELOGIN: (
-                "抓包错过了登录握手时（后端启动晚于游戏连接，或游戏当时已经登录着），"
+                "抓包后端在跑、但当前没有可用坐标时（错过了登录握手，或还没看到游戏连接），"
                 "自动退回登录界面再进入一次，逼出一条新连接让后端重新抓握手。"
                 "**不会切换账号**；最多尝试 3 次，用尽即停手。关掉则只在日志里提示"
             ),
@@ -1032,13 +1034,19 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         return health
 
     def ensure_capture_session(self, *, reason: str) -> bool:
-        """校验抓包是否**真的**接上了；没接上且能靠新连接救时，回登录界面重进一次。
+        """校验抓包是否**真的**接上了；后端在跑但当前没有坐标时，回登录界面重进一次。
 
         这是「启用后第一拍 / 每次导航前 / 每次切号后」三个时机共用的入口。返回抓包当前是否可用。
 
-        只在 :attr:`CaptureHealth.needs_new_connection` 时动手：其余状态要么在等（后端刚起、
-        握手进行中、刚握上还没走到坐标），要么重建也没用（后端根本没起来）——对它们做"退出重进"
-        只会白白打断玩家。
+        "可用" = 已经有坐标，或握手已成、第一条坐标在路上（``ok`` / ``decoding``）。
+
+        会触发重建的只有**后端在跑、但当前没有坐标且不会自己恢复**这一种：``no_connection``
+        （后端一条游戏连接都没看到）与 ``missed_handshake``（看到连接却没过握手）。前者多半是
+        后端晚于游戏连接才开始抓，后者是错过了 SYN——两种都靠"退到登录界面再进入"逼一条新连接，
+        让后端从连接开头抓握手。
+
+        ``handshake_pending``（握手正在进行）与 ``backend_down``（后端不可达）都不动手：前者再等
+        一会就好，后者重建也没用——对它们做"退出重进"只会白白打断玩家。
 
         最多尝试 :data:`CAPTURE_RELOGIN_ATTEMPTS` 次，**成功即清零**：重登后能正常抓包，下一次
         再出问题理应还能修。次数用尽就停手并报错，绝不在无人值守时反复登出。
@@ -1047,14 +1055,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         health = self.capture_session_health()
         if health is None:
             return False
-        if not health.needs_new_connection:
-            # "可用"= 已经有坐标，或握手已成、坐标在路上。其余（没有连接 / 握手进行中 /
-            # 后端不可达）都属于"还没好"，但不该触发重建。
-            usable = health.state in (CAPTURE_HEALTH_OK, CAPTURE_HEALTH_DECODING)
-            if usable:
-                self._minimap_capture_relogin_attempts = 0
-                self._minimap_capture_relogin_warned = False
-            return usable
+        if health.state in (CAPTURE_HEALTH_OK, CAPTURE_HEALTH_DECODING):
+            self._minimap_capture_relogin_attempts = 0
+            self._minimap_capture_relogin_warned = False
+            return True
+        if health.state not in (CAPTURE_HEALTH_NO_CONNECTION, CAPTURE_HEALTH_MISSED_HANDSHAKE):
+            return False
         if not self._cfg_bool(CONFIG_EXPERIMENTAL_RELOGIN, True):
             self._warn_capture_relogin_disabled()
             return False
@@ -1071,7 +1077,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         self._minimap_capture_relogin_attempts += 1
         attempt = self._minimap_capture_relogin_attempts
         self.log_warning(
-            f"实验技术：{reason}——本次抓包错过了登录握手（{health.flow_status}），"
+            f"实验技术：{reason}——本次抓包没有可用坐标（{health.detail or health.state}），"
             f"正在返回登录界面重新进入以建立新连接（第 {attempt}/{CAPTURE_RELOGIN_ATTEMPTS} 次）",
             notify=True,
         )
@@ -1095,7 +1101,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             return
         self._minimap_capture_relogin_warned = True
         self.log_warning(
-            "实验技术：本次抓包错过了登录握手，而「抓包失败时自动重新登录」是关着的——"
+            "实验技术：本次抓包没有可用坐标，而「抓包失败时自动重新登录」是关着的——"
             "请手动退回登录界面再进入一次，或打开该开关",
             notify=True,
         )
@@ -1105,7 +1111,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             return
         self._minimap_capture_relogin_warned = True
         self.log_warning(
-            f"实验技术：已尝试 {CAPTURE_RELOGIN_ATTEMPTS} 次重建连接仍未抓到握手（{health.flow_status}）。"
+            f"实验技术：已尝试 {CAPTURE_RELOGIN_ATTEMPTS} 次重建连接仍未抓到握手（{health.detail or health.state}）。"
             "请手动重启游戏后再启用抓包；本条不再自动重试",
             notify=True,
         )

@@ -992,6 +992,24 @@ class CaptureRecoveryTest(unittest.TestCase):
         finally:
             owner._backend.__exit__(None, None, None)
 
+    def test_recovers_when_the_backend_sees_no_connection(self):
+        """后端在跑、但一条游戏连接都没看到：这一局的位置源没了，重进逼一条新连接。"""
+
+        owner = self._owner(_state_payload(flow=None, flows=[]))
+        try:
+            with (
+                patch.object(owner, "force_new_capture_connection", return_value=True) as relogin,
+                patch.object(
+                    owner,
+                    "wait_for_capture_connection",
+                    return_value=CaptureHealth(CAPTURE_HEALTH_DECODING),
+                ),
+            ):
+                self.assertTrue(owner.ensure_capture_session(reason="测试"))
+            relogin.assert_called_once()
+        finally:
+            owner._backend.__exit__(None, None, None)
+
     def test_does_nothing_when_the_backend_is_down(self):
         """后端根本没起来时重建连接毫无用处，只会白打断玩家。"""
 

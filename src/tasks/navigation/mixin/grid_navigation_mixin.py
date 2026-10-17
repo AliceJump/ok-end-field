@@ -80,7 +80,7 @@ from src.data import map_mark_query, user_map_mark_store
 from src.data.FeatureList import FeatureList as fL
 from src.nav.grid_io import GRID_SUFFIX, DenseGrid, load_grid
 from src.nav.grid_planner import GridPlanner, PlanResult
-from src.nav.layered_map import LayeredMap, TierLink, layer_key, load_layered_map, resolve_tier_by_height
+from src.nav.layered_map import LayeredMap, LayerKey, TierLink, layer_key, load_layered_map, resolve_tier_by_height
 from src.nav.layered_planner import LayeredPlanner, LayeredRoute
 from src.nav.nav_state import (
     GridRouteRequest,
@@ -103,7 +103,9 @@ from src.nav.route_follower import (
     FollowerConfig,
     FollowerStep,
     GridRouteFollower,
+    angle_delta,
     bearing_to_point,
+    distance_xz,
 )
 from src.nav.zip_line_graph import ZIP_LINE_POWER_FACILITY_NAMES, ZipLineGraph, ZipLineNode
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
@@ -164,6 +166,52 @@ __all__ = [
 #: 实测数据里 7 条连接全在 1.0~2.5m；超过这个值说明"两端几乎在同一处"的前提不成立，
 #: 本实现不会替角色搬动位置，只能告警（见 :meth:`GridNavigationMixin._cross_layered_link`）。
 _GRID_LINK_WALK_MAX_SPAN_M = 10.0
+
+#: 绳索跨越时"按住 W 走向落点/等高度变化"的轮询周期（秒）。
+GRID_ROPE_POLL_S = 0.1
+#: 绳索**下行**：按住 W 走向落点、等高度真正落到下一层的时间上限（秒）。
+#: 实测两端水平只差 1.5m，正常一两次轮询就落地；超时说明没走下去，必须报出来。
+GRID_ROPE_DESCENT_TIMEOUT_S = 6.0
+#: 绳索**下行**但目标层没有标定高度区间时，用来收尾的最短水平位移（米）。
+#: 没有高度就验不了"落到哪一层"，只能按"至少走过了落差段"收尾并记日志。
+GRID_ROPE_DESCENT_MIN_SPAN_M = 3.0
+#: 绳索**上行**：等 ``fL.gather_icon2`` 交互图标出现的时间上限（秒）。
+GRID_ROPE_ICON_TIMEOUT_S = 5.0
+#: 绳索**上行**：点完图标后等高度升到目标层的时间上限（秒）。
+GRID_ROPE_RIDE_TIMEOUT_S = 6.0
+#: 绳索下行时，实测方位与目标方位的夹角小于这个值就不重复转视角（免得每拍动鼠标）。
+GRID_ROPE_REAIM_DEADBAND_DEG = 20.0
+#: 绳索下行时，与落点的水平距离小于这个值就不再重新对准：近垂直的绳索在几乎正下方
+#: 时方位会剧烈抖动，继续转视角只会让角色原地打转。
+GRID_ROPE_AIM_MIN_SPAN_M = 2.0
+#: 绳索下行"按住 W 但连着这么久没有任何位移"就单独报这个故障（秒）。
+GRID_ROPE_STALL_S = 2.0
+#: 判定"这一拍到底动没动"的三维位移阈值（米）。
+GRID_ROPE_STALL_EPS_M = 0.05
+
+
+def _rope_goes_up(
+    source_range: tuple[float, float] | None,
+    target_range: tuple[float, float] | None,
+) -> bool | None:
+    """绳索跨越是上行吗；``None`` 表示判不出来。
+
+    判据是两端**所在层**已标定的高度区间（``floor_regions``）：连接端点本身没有 Y，
+    这是唯一能自证的数据。区间缺失或重叠时返回 ``None`` 让调用方明确失败——猜错方向
+    要么白等图标、要么在崖壁上一直撞墙。
+
+    Args:
+        source_range: 起点所在层的 ``(y_min, y_max)``；``None`` 表示该层没标定。
+        target_range: 落点所在层的 ``(y_min, y_max)``。
+    """
+    if source_range is None or target_range is None:
+        return None
+    if target_range[0] > source_range[1]:
+        return True
+    if target_range[1] < source_range[0]:
+        return False
+    return None
+
 
 #: 状态 → 处理器方法名。每个 :class:`NavState` 都必须在这里登记，主循环按状态取方法；
 #: 新增状态却忘了登记时，``tests.TestGridNavigationMixin`` 里的完备性用例会直接失败。
@@ -966,9 +1014,26 @@ class GridNavigationMixin(RuntimeStateMixin):
         if self._grid_navigation_timed_out(session.deadline, session.limit):
             return False
         if follower is None or not result.ok:
+            # 单层走不通：起终点都在大地图时分层被跳过了，但主图的可行走区可能被切成互不
+            # 相通的块，而"进一层再绕出来"只有分层图能表达。再给分层一次机会，失败才报错。
+            self.log_info("单层路线规划失败，改用分层绕行重试")
+            layered_taken, layered_ok = self._try_layered_route_on_plan(
+                ctx,
+                route_start,
+                route_goal,
+                allow_same_main=True,
+            )
+            if layered_taken:
+                if not layered_ok:
+                    return False
+                if self._grid_navigation_timed_out(session.deadline, session.limit):
+                    return False
+                return self._grid_nav_run_follow(ctx)
             self._log_grid_plan_failure(result, "导航规划失败")
             return False
         self._grid_nav_follower = follower
+        # 拓扑记录：单层路径用的就是主图网格，落到大地图。
+        session.active_tier = self._grid_follower_tier(follower)
         self._record_grid_visited_cell(
             follower,
             ctx.position,
@@ -1568,6 +1633,95 @@ class GridNavigationMixin(RuntimeStateMixin):
             note = f"{label}判定在 {shown}（Y={position[1]:.1f}）"
         return tier, note
 
+    def _grid_start_tier(
+        self,
+        layered: LayeredMap,
+        map_id: str,
+        position: tuple[float, float, float] | None,
+        xz: tuple[float, float],
+        *,
+        label: str,
+        known_tier: str | None,
+    ) -> tuple[str | None, str]:
+        """规划**起点**落在哪一层；``None`` 表示判不出来。
+
+        判据按"越可信越靠前"排：
+
+        1. **高度判到唯一一层**：玩家自己换过层（下楼梯、被传送）时以 Y 为准；
+        2. **当前正在使用的网格**（``known_tier``，见 :attr:`NavSession.active_tier`）：
+           跨过连接点之后当前网格自然变成落点那一层，重规划就该继续用它；
+        3. **X/Z 上唯一有可走格的层**：同一处只有它标了可走格（"a 处 x 层有 free 格而
+           y 层没有，就认为人在 x 层"）。人在分层场景里时主图那一格通常是未知格，
+           于是不会被误判成大地图；
+        4. 都不成立 -> 大地图兜底（与只按高度判定时的老行为一致）。
+
+        **为什么不能只按高度兜底**：``floor_regions`` 是稀疏逐处标注的，实测 map02 上
+        绝大多数位置会落到"没有区间覆盖 -> 大地图"，而角色此刻正站在某一层的网格上。
+        拿这个兜底去重规划，就会把一个还在层上的角色丢回主图——主图在那一格是未知格，
+        规划直接失败。
+        """
+        verdict = ""
+        ambiguous = ""
+        if position is not None:
+            result = resolve_tier_by_height(
+                layered,
+                map_name=str(map_id or "").strip(),
+                x=position[0],
+                y=position[1],
+                z=position[2],
+            )
+            status = result["status"]
+            if status == "unique":
+                return result["tier"], f"{label}高度判定在 {result['tier'] or '大地图'}（Y={position[1]:.1f}）"
+            if status == "invalid":
+                # **不能兜底成大地图**：invalid 是"这条位置本身不可用"，不是"在地表"。
+                return None, f"{label}的位置不可用（{result['reason']}），无法判定层级"
+            if status == "ambiguous":
+                # 高度区间互相重叠是**数据问题**：拓扑记录与 X/Z 还能救回来，救不回来就得
+                # 明确失败——这正是会把角色送错层的场景，不能赌一个。
+                ambiguous = (
+                    f"{label}的 Y 同时落在多层的高度区间里（{result['matched_ids']}），"
+                    "无法唯一确定层级；请在编辑器里把这些层重叠区的高度区间分开"
+                )
+                verdict = f"{label}的高度区间无法唯一确定层级"
+            else:
+                verdict = f"{label}没有落在任何已标定的高度区间"
+        # 2) 当前正在使用的网格（拓扑记录）
+        if known_tier is not None:
+            grid = layered.grid(map_id, known_tier)
+            if grid is not None:
+                i, j = grid.index_of_world(xz[0], xz[1])
+                if grid.in_bounds(i, j):
+                    return known_tier, f"{label}沿用当前正在使用的网格（{known_tier or '大地图'}）"
+        # 3) X/Z 上唯一有可走格的层
+        candidates = self._grid_tiers_with_walkable_cell(layered, map_id, xz)
+        if len(candidates) == 1:
+            tier = candidates[0]
+            return tier, f"{label}所在 X/Z 上只有 {tier or '大地图'} 标了可走格"
+        if candidates:
+            shown = [tier or "大地图" for tier in candidates]
+            verdict = f"{verdict}，而 X/Z 上有多层标了可走格（{shown}）"
+        if ambiguous:
+            return None, ambiguous
+        return "", f"{verdict}，按大地图处理"
+
+    def _grid_tiers_with_walkable_cell(
+        self,
+        layered: LayeredMap,
+        map_id: str,
+        xz: tuple[float, float],
+    ) -> tuple[str, ...]:
+        """该 X/Z 上**哪些层的网格有可走格**（按层 id 排序，主图是空串）。"""
+        name = str(map_id or "").strip()
+        found: list[str] = []
+        for (layer_map, tier), grid in layered.layers.items():
+            if layer_map != name:
+                continue
+            i, j = grid.index_of_world(xz[0], xz[1])
+            if grid.in_bounds(i, j) and grid.is_free(i, j):
+                found.append(tier)
+        return tuple(sorted(found))
+
     def _plan_layered_route(
         self,
         ctx: NavTick,
@@ -1575,8 +1729,15 @@ class GridNavigationMixin(RuntimeStateMixin):
         *,
         start_xz: tuple[float, float],
         goal_xz: tuple[float, float],
+        allow_same_main: bool = False,
     ) -> tuple[LayeredRoute | None, str]:
-        """按分层地图规划；返回 ``(路线, 说明)``。路线为 None 时说明里是原因。"""
+        """按分层地图规划；返回 ``(路线, 说明)``。路线为 None 时说明里是原因。
+
+        ``allow_same_main``：起终点**都在大地图**时是否也走分层。默认不走——同层行为要
+        与分层功能上线前逐字一致（含用户滑索的代价模型）。但主图的可行走区实测会被切成
+        互不相通的块，"借一层绕过去"只有分层图能表达，所以单层规划失败时会带着它重试
+        一次（见 :meth:`_grid_nav_state_plan`）。
+        """
         session = ctx.session
         start_y = (ctx.pose or {}).get("y")
         start_pos = None
@@ -1585,7 +1746,14 @@ class GridNavigationMixin(RuntimeStateMixin):
                 start_pos = (float(start_xz[0]), float(start_y), float(start_xz[1]))
             except (TypeError, ValueError):
                 start_pos = None
-        start_tier, start_note = self._grid_tier_for_point(layered, ctx.map_id, start_pos, label="起点")
+        start_tier, start_note = self._grid_start_tier(
+            layered,
+            ctx.map_id,
+            start_pos,
+            start_xz,
+            label="起点",
+            known_tier=session.active_tier,
+        )
         if start_tier is None:
             return None, start_note
         goal_pos = None
@@ -1604,7 +1772,11 @@ class GridNavigationMixin(RuntimeStateMixin):
         # 网格，同层行为因此与分层功能上线前逐字一致，也不会与滑索的代价模型互相干扰。
         # 非主图的同层（例如起终点都在 lv1）必须继续走分层：单层回退加载的主图网格会忽略
         # 本层墙体，给出一条真实执行时过不去的路线。
-        if start_tier == goal_tier == "":
+        #
+        # 例外是 ``allow_same_main``：主图自己的可行走区会被切成互不相通的几块（实测
+        # 674 格 / 4757 格），从其中一块到另一块只有"进一层再出来"这条路，而那是单层
+        # 网格表达不了的。单层规划失败时调用方会带这个开关再来一次。
+        if start_tier == goal_tier == "" and not allow_same_main:
             return None, ""
         start_grid = layered.layers.get(layer_key(ctx.map_id, start_tier))
         goal_grid = layered.layers.get(layer_key(ctx.map_id, goal_tier))
@@ -1650,6 +1822,16 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_layered_planner_cache[id(layered)] = planner
         return planner
 
+    @staticmethod
+    def _grid_follower_tier(follower) -> str:
+        """跟随器当前用的层名（``grid.meta.tier``）；取不到就按主图算。
+
+        测试里的替身跟随器不一定带 ``grid``，所以这里不能直接访问属性。
+        """
+        grid = getattr(follower, "grid", None)
+        meta = getattr(grid, "meta", None)
+        return str(getattr(meta, "tier", "") or "")
+
     def _activate_layered_segment(self, ctx: NavTick, *, reason: str = "") -> bool:
         """把跟随器切到当前分段；返回是否装配成功。
 
@@ -1678,6 +1860,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         follower.adopt(segment.plan, goal=segment_goal, start=ctx.position)
         self._grid_nav_follower = follower
         self._grid_nav_map_id = ctx.map_id
+        # 拓扑记录：跨过连接点、切到这一段之后，当前网格就是这一段的层。
+        session.active_tier = segment.tier
         tail = f"（{reason}）" if reason else ""
         self.log_info(
             f"分层导航：第 {index + 1}/{len(route.segments)} 段，层={segment.tier or '大地图'}，"
@@ -1715,63 +1899,243 @@ class GridNavigationMixin(RuntimeStateMixin):
         - ``stairs`` / ``elevator`` / ``portal`` / ``door`` / ``other``：**走过去**。两端平面
           距离通常只有一两格（实测相邻），换层由游戏里的楼梯/门完成，所以这里只切换分段，
           物理过渡交给下一段的行走。
-        - ``rope``：**滑索机制，不能走**。复用任务已有的滑索执行（登索 + 对准目标方位），
-          与用户滑索架同一套流程。
+        - ``rope``：**不是滑索**，两套动作没有共同点，见 :meth:`_cross_layered_rope`。
 
         **关于距离：连接端点里没有 Y，所以这里只能算水平距离。** ``links.json`` 的 ``rect``
         只有 ``x0/z0/x1/z1``（编辑器侧同样如此），端点的实际高度**不在数据里**；两层的高度
         关系只能从各自的 ``floor_regions`` 区间**推断**（例如 tips_7 的 y[249,251] 与 tips_6
-        的 y[239,241] 推出落差 ∈ [8,12]m），而那是区间不是点，拿来定价或对准都不可靠。
-        所以这条距离只用于"直接对准"模式下无关紧要的位置，**若用户把滑索目标选择方式改成
-        OCR，它会拿这个水平距离去匹配游戏显示的距离**——近垂直的连接（实测 map02 那条 rope
-        水平只差 1.5m）在那里大概匹配不上。要修得先给端点加 Y（属于 links 的 schema 变更）。
+        的 y[239,241] 推出落差 ∈ [8,12]m），而那是区间不是点。落差只用于判断绳索的上下行
+        （见 :func:`_rope_goes_up`），不参与定价与对准。
         """
-        if link.kind != "rope":
-            # "走过去"成立的前提是**两端几乎在同一处**（只差一层）：本实现不搬动角色，
-            # 跨完就直接在下一段的起点上开始走。实测数据里 7 条连接的两端水平距离都是
-            # 1.0~2.5m（相邻），前提成立；但这是**数据模型的隐含约定**，不是我们能校验的
-            # ——端点里没有 Y，也看不出"走多远换层"。远端一旦出现跨度很大的非绳索连接，
-            # 这里会退化成"朝下一段起点直线走"（可能穿墙），所以显式告警而不是静默。
-            span = math.hypot(
-                link.target.center[0] - link.source.center[0],
-                link.target.center[1] - link.source.center[1],
+        if link.kind == "rope":
+            return self._cross_layered_rope(link)
+        # "走过去"成立的前提是**两端几乎在同一处**（只差一层）：本实现不搬动角色，
+        # 跨完就直接在下一段的起点上开始走。实测数据里 7 条连接的两端水平距离都是
+        # 1.0~2.5m（相邻），前提成立；但这是**数据模型的隐含约定**，不是我们能校验的
+        # ——端点里没有 Y，也看不出"走多远换层"。远端一旦出现跨度很大的非绳索连接，
+        # 这里会退化成"朝下一段起点直线走"（可能穿墙），所以显式告警而不是静默。
+        span = math.hypot(
+            link.target.center[0] - link.source.center[0],
+            link.target.center[1] - link.source.center[1],
+        )
+        if span > _GRID_LINK_WALK_MAX_SPAN_M:
+            self.log_warning(
+                f"跨层连接两端相距 {span:.1f}m（超过 {_GRID_LINK_WALK_MAX_SPAN_M:g}m），"
+                f"而本实现按「走过去」处理、不会替角色搬动位置；"
+                f"下一段会从当前位置直线走向它的起点，可能不可行。"
+                f"连接={link.link_id[:8]} {link.kind}",
+                notify=True,
             )
-            if span > _GRID_LINK_WALK_MAX_SPAN_M:
-                self.log_warning(
-                    f"跨层连接两端相距 {span:.1f}m（超过 {_GRID_LINK_WALK_MAX_SPAN_M:g}m），"
-                    f"而本实现按「走过去」处理、不会替角色搬动位置；"
-                    f"下一段会从当前位置直线走向它的起点，可能不可行。"
-                    f"连接={link.link_id[:8]} {link.kind}",
-                    notify=True,
-                )
-            self.log_info(f"跨层：经 {link.kind} 从 {link.source.tier or '大地图'} 到 {link.target.tier or '大地图'}")
-            return True
-        execute = getattr(self, "zip_line_list_go", None)
-        board = getattr(self, "board_zip_line", None)
-        if not callable(execute) or not callable(board):
-            self.log_warning("跨层连接是绳索，但当前任务未接入滑索执行能力", notify=True)
-            return False
+        self.log_info(f"跨层：经 {link.kind} 从 {link.source.tier or '大地图'} 到 {link.target.tier or '大地图'}")
+        return True
+
+    def _cross_layered_rope(self, link: TierLink) -> bool:
+        """执行一次绳索跨越：**下行走过去，上行点交互图标**。
+
+        绳索不是滑索，两套动作没有共同点——绳索既没有可登的滑索架，也没有距离序列可对：
+
+        - **下行**（落点更低）：从起点朝落点**直接走过去**，落差由游戏自己完成。实测
+          map02 那条绳索两端水平只差 1.5m，玩法上就是走下落差，不需要识别任何模板。
+        - **上行**（落点更高）：走到低端之后屏幕上会出现绳索的交互图标
+          （``fL.gather_icon2``），点一下才会被送上高端。
+
+        方向由两端所在层的高度区间判定（见 :func:`_rope_goes_up`）；判不出来时按下行尝试
+        （走一段后靠高度验证收尾），并把"数据不够"告警出来。
+        """
+        source_range = self._layer_y_range(link.source.key)
+        target_range = self._layer_y_range(link.target.key)
+        up = _rope_goes_up(source_range, target_range)
+        if up is None:
+            shown = f"{link.source.tier or '大地图'} / {link.target.tier or '大地图'}"
+            self.log_warning(
+                f"跨层绳索分不出上下行：两端所在层（{shown}）的高度区间缺失或重叠，"
+                f"本次按「直接走过去」尝试，连接={link.link_id[:8]}",
+                notify=True,
+            )
+            # 判不出方向时按下行处理：下行是"走过去 + 验证高度"，就算其实在上行也只是
+            # 走一段后按超时失败；反过来赌上行会朝崖壁白等图标，代价更隐蔽。
+            return self._rope_cross_down(link, target_range)
+        if up:
+            return self._rope_cross_up(link, target_range)
+        return self._rope_cross_down(link, target_range)
+
+    def _layer_y_range(self, key: LayerKey) -> tuple[float, float] | None:
+        """某一层已标定的高度区间；该层没有网格、或没标 ``floor_regions`` 时返回 ``None``。"""
+        layered = self._grid_nav_layered_active
+        grid = layered.layers.get(key) if layered is not None else None
+        regions = grid.meta.floor_regions if grid is not None else ()
+        lows = [region.get("y_min") for region in regions if region.get("y_min") is not None]
+        highs = [region.get("y_max") for region in regions if region.get("y_max") is not None]
+        if not lows or not highs:
+            return None
+        try:
+            return float(min(lows)), float(max(highs))
+        except (TypeError, ValueError):
+            return None
+
+    def _rope_cross_down(self, link: TierLink, target_range: tuple[float, float] | None) -> bool:
+        """绳索下行：朝落点按住 W 走过去，等高度真的落到下一层。
+
+        方向按**当前位置 -> 落点中心**算，不是两个矩形中心的连线：角色的落点由上一段决定，
+        站在源矩形里的哪一处是随机的，用矩形中心连线会走偏。起手先对准一次；之后只在
+        方位偏出 ``GRID_ROPE_REAIM_DEADBAND_DEG`` 时才重新转视角，而已经贴到落点附近
+        （水平 ``GRID_ROPE_AIM_MIN_SPAN_M`` 以内）就不再转——近垂直的绳索这时方位会抖。
+
+        没有高度就没法验证落在哪一层（目标层没标 ``floor_regions`` 时），那种情况退化成
+        "走过落差段就收尾"：判定依据从高度换成水平位移，并在日志里说明，而不是静默放行。
+
+        **按住 W 却没有任何位移**会单独计时并单独报错：实测里"输入没进游戏 / 被墙挡住"
+        与"走了但高度没变"是两种完全不同的故障，只报后者会把排查方向带偏。
+        """
         start = link.source.center
         end = link.target.center
-        # 只有水平距离可算：端点里没有 Y（见方法说明）
-        distance = math.hypot(end[0] - start[0], end[1] - start[1])
-        bearing = bearing_to_point(start[0], start[1], end[0], end[1])
-        self.log_info(f"跨层：乘坐绳索 {distance:.1f}m，方位 {bearing:.1f}°")
-        self._set_grid_walking(False)
-        if not self._grid_zip_line_enter_rack(None, board, switch_walk_mode=not self._grid_nav_zip_line_walk_mode):
-            return False
-        try:
-            execute(
-                [max(1, round(distance))],
-                need_scroll=False,
-                need_v=False,
-                distance_tolerance=[max(2, round(distance * 0.1))],
-                target_bearing=[bearing],
-                target_positions=[end],
+        span = math.hypot(end[0] - start[0], end[1] - start[1])
+        self.log_info(f"跨层：绳索下行，直接走向落点（水平 {span:.1f}m）")
+        walked_enough = max(GRID_ROPE_DESCENT_MIN_SPAN_M, span + 2.0)
+        if target_range is None:
+            self.log_info(
+                f"跨层：{link.target.tier or '大地图'} 没有标定高度区间，本次按走过 {walked_enough:.1f}m 收尾"
             )
-        except Exception as exc:
-            self.log_warning(f"跨层绳索执行失败: {exc}", notify=True)
+        deadline = self.active_time() + GRID_ROPE_DESCENT_TIMEOUT_S
+        aimed_bearing: float | None = None
+        previous: tuple[float, float, float] | None = None
+        stalled = 0.0
+        self._set_grid_walking(True)
+        try:
+            while True:
+                point = self._grid_nav_pose_point()
+                if point is None:
+                    self.log_warning("绳索下行：读不到当前坐标，停止前进", notify=True)
+                    return False
+                stalled = (
+                    0.0
+                    if previous is None or math.dist(point, previous) >= GRID_ROPE_STALL_EPS_M
+                    else stalled + GRID_ROPE_POLL_S
+                )
+                previous = point
+                bearing = bearing_to_point(point[0], point[2], end[0], end[1])
+                if aimed_bearing is None:
+                    # 起手必须对准（这一步就是本方法相对"按矩形中心连线走"的修正）
+                    self._aim_grid_view_to_bearing(bearing, reason="绳索下行")
+                    aimed_bearing = bearing
+                elif distance_xz((point[0], point[2]), end) >= GRID_ROPE_AIM_MIN_SPAN_M and (
+                    abs(angle_delta(bearing, aimed_bearing)) > GRID_ROPE_REAIM_DEADBAND_DEG
+                ):
+                    self._aim_grid_view_to_bearing(bearing, reason="绳索下行", log_success=False)
+                    aimed_bearing = bearing
+                if target_range is not None and target_range[0] <= point[1] <= target_range[1]:
+                    self.log_info(f"绳索下行完成：高度 {point[1]:.1f} 已落到 {link.target.tier or '大地图'}")
+                    return True
+                if target_range is None:
+                    walked = distance_xz((point[0], point[2]), start)
+                    if walked >= walked_enough:
+                        self.log_info(f"绳索下行完成：已走过 {walked:.1f}m（无高度区间可验证）")
+                        return True
+                if stalled >= GRID_ROPE_STALL_S:
+                    self.log_warning(
+                        f"绳索下行失败：按住 W 已 {stalled:.1f}s 没有任何位移"
+                        f"（按住的键没进游戏，或被挡住），连接={link.link_id[:8]}",
+                        notify=True,
+                    )
+                    return False
+                if self.active_time() >= deadline:
+                    self.log_warning(
+                        f"绳索下行超时：按住 W 走了 {GRID_ROPE_DESCENT_TIMEOUT_S:g}s，高度仍未落到 "
+                        f"{link.target.tier or '大地图'}（连接={link.link_id[:8]}）",
+                        notify=True,
+                    )
+                    return False
+                self.sleep(GRID_ROPE_POLL_S)
+        finally:
+            self._set_grid_walking(False)
+
+    def _rope_cross_up(self, link: TierLink, target_range: tuple[float, float]) -> bool:
+        """绳索上行：对准绳索、点 ``fL.gather_icon2`` 交互图标，等高度升到目标层。"""
+        start = link.source.center
+        end = link.target.center
+        point = self._grid_nav_pose_point()
+        origin = (point[0], point[2]) if point is not None else start
+        bearing = bearing_to_point(origin[0], origin[1], end[0], end[1])
+        span = math.hypot(end[0] - start[0], end[1] - start[1])
+        self.log_info(f"跨层：绳索上行，找交互图标登索（水平 {span:.1f}m，方位 {bearing:.1f}°）")
+        self._aim_grid_view_to_bearing(bearing, reason="绳索上行")
+        if not self._click_grid_rope_icon():
+            self.log_warning(
+                f"跨层绳索上行失败：没找到绳索交互图标 fL.gather_icon2（连接={link.link_id[:8]}）",
+                notify=True,
+            )
             return False
+        return self._wait_rope_ascent(link, target_range)
+
+    def _click_grid_rope_icon(self) -> bool:
+        """找绳索的交互图标并点击；找不到返回 ``False``。
+
+        走 ok-script 的 ``wait_click_feature``：它自己刷新帧、按标定的模板找、找到就点。
+        ``alt`` 用开放世界交互的点击方式，与其它野外图标一致。
+        """
+        click = getattr(self, "wait_click_feature", None)
+        if not callable(click):
+            self.log_warning("当前任务没有 wait_click_feature，无法点击绳索交互图标", notify=True)
+            return False
+        return bool(
+            click(
+                feature=fL.gather_icon2,
+                time_out=GRID_ROPE_ICON_TIMEOUT_S,
+                settle_time=1,
+                alt=True,
+                raise_if_not_found=False,
+            )
+        )
+
+    def _wait_rope_ascent(self, link: TierLink, target_range: tuple[float, float]) -> bool:
+        """等角色被绳索送到目标层；超时说明点击没生效，告警并判失败。"""
+        deadline = self.active_time() + GRID_ROPE_RIDE_TIMEOUT_S
+        while True:
+            point = self._grid_nav_pose_point()
+            if point is not None and target_range[0] <= point[1] <= target_range[1]:
+                self.log_info(f"绳索上行完成：高度 {point[1]:.1f} 已进入 {link.target.tier or '大地图'}")
+                return True
+            if self.active_time() >= deadline:
+                self.log_warning(
+                    f"绳索上行超时：已点击交互图标，但 {GRID_ROPE_RIDE_TIMEOUT_S:g}s 内高度没有进入 "
+                    f"{link.target.tier or '大地图'}（连接={link.link_id[:8]}）",
+                    notify=True,
+                )
+                return False
+            self.sleep(GRID_ROPE_POLL_S)
+
+    def _grid_nav_pose_point(self) -> tuple[float, float, float] | None:
+        """读一帧最新的世界坐标（含高度）；读不到返回 ``None``。
+
+        绳索的上下行都要靠高度验证，所以这里不能拿旧快照凑合，也不把缺失的 Y 当成 0。
+        """
+        pose = self.world_pose(frame=self.next_frame(), max_age=2.0)
+        if not pose:
+            return None
+        try:
+            return float(pose["x"]), float(pose["y"]), float(pose["z"])
+        except (KeyError, TypeError, ValueError):
+            return None
+
+    def _aim_grid_view_to_bearing(self, bearing: float, *, reason: str, log_success: bool = True) -> bool:
+        """只转视角对准某个世界方位；未到位只告警，不阻断调用方。
+
+        走路过程中会反复调用，``log_success=False`` 用来避免每拍刷一条"已对准"。
+        """
+        result = self.pose_aim_view_to_bearing(
+            bearing,
+            tolerance=self._grid_turn_tolerance(),
+            max_rounds=2,
+            min_score=self._grid_heading_min_score(),
+            verify_heading=False,
+        )
+        if not result.get("ok"):
+            self.log_warning(
+                f"{reason}：对准 {bearing:.1f}° 未到位（实测={result.get('heading')}，误差={result.get('error')}）"
+            )
+            return False
+        if log_success:
+            self.log_info(f"{reason}：已对准 {bearing:.1f}°")
         return True
 
     def _try_layered_route_on_plan(
@@ -1779,6 +2143,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         ctx: NavTick,
         start_xz: tuple[float, float],
         goal_xz: tuple[float, float],
+        *,
+        allow_same_main: bool = False,
     ) -> tuple[bool, bool]:
         """规划时先试分层路线；返回 ``(是否已接管, 是否成功)``。
 
@@ -1788,6 +2154,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         - ``(True, False)``：**确实需要跨层但走不通**（判定不出层、层图不可达……）。
           这时**不退回单层**：单层路线会无视层级，可能给出一条"物理上过不去"的路线，
           比明确失败更糟。原因已经记进日志，调用方按失败结束本次导航。
+
+        ``allow_same_main=True`` 时，起终点都在大地图也会交给分层规划器（见
+        :meth:`_plan_layered_route`）——只给"单层已经走不通"的重试用。
         """
         layered = self._grid_layered_map(
             ctx.map_id,
@@ -1805,6 +2174,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             layered,
             start_xz=start_xz,
             goal_xz=goal_xz,
+            allow_same_main=allow_same_main,
         )
         if route is None:
             if not reason:

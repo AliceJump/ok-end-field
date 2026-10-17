@@ -4,6 +4,12 @@ import ast
 import unittest
 from pathlib import Path
 
+from src.tasks.trigger.ItemNavigatorTask import (
+    POSITION_IMPLEMENTATION_KEY,
+    POSITION_IMPLEMENTATION_UNIFIED,
+    ItemNavigatorTask,
+)
+
 
 class TestRuntimeStateArchitecture(unittest.TestCase):
     def test_runtime_state_has_a_purpose_specific_package_name(self):
@@ -74,6 +80,25 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
         self.assertIn("RuntimeStateMixin", source)
         self.assertNotIn("WsPositionMixin", source)
         self.assertNotIn("_recv_ws_position_payload", source)
+
+    def test_item_navigator_keeps_legacy_position_source_unless_explicitly_enabled(self):
+        task = object.__new__(ItemNavigatorTask)
+        task.config = {}
+        self.assertFalse(task._use_unified_navigation())
+
+        task.config = {POSITION_IMPLEMENTATION_KEY: POSITION_IMPLEMENTATION_UNIFIED}
+        self.assertTrue(task._use_unified_navigation())
+
+    def test_item_navigator_dispatches_position_reader_by_compatibility_mode(self):
+        task = object.__new__(ItemNavigatorTask)
+        task.config = {}
+        task._read_item_navigator_legacy_position = lambda: (("legacy", 1.0, 2.0, 3.0), "")
+        task.world_pose = lambda **_kwargs: self.fail("旧版兼容不得读取统一定位")
+        self.assertEqual(task._read_navigation_position()[0][0], "legacy")
+
+        task.config = {POSITION_IMPLEMENTATION_KEY: POSITION_IMPLEMENTATION_UNIFIED}
+        task.world_pose = lambda **_kwargs: {"map_id": "unified", "x": 1.0, "y": 2.0, "z": 3.0}
+        self.assertEqual(task._read_navigation_position()[0][0], "unified")
 
 
 if __name__ == "__main__":

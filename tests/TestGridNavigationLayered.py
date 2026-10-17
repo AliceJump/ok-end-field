@@ -6,6 +6,7 @@
 - 起终点**跨层**时才走分层路径，**同层**仍走原来的单层路径（含用户滑索），零回归；
 - 分层路线装配成"每段一个跟随器"，换段 = 换跟随器；
 - 判定不出层 / 层图不可达时**明确失败**，而不是退回一条无视层级的单层路线。
+- 绳索跨越**不复用滑索**：下行走过去、上行点 ``fL.gather_icon2``（见 ``RopeCrossingTest``）。
 
 路线能不能"走"到终点由 ``TestNavLayeredPlanner`` 负责（那边直接调规划器，不受本层
 输入模拟的干扰）；这里只验证接线。
@@ -20,7 +21,8 @@ from pathlib import Path
 import numpy as np
 
 from src.core.GridNavConfig import CONFIG_GRID_DIR
-from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, GRID_SUFFIX, new_grid, save_grid
+from src.data.FeatureList import FeatureList as fL
+from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, CELL_UNKNOWN, GRID_SUFFIX, new_grid, save_grid
 from src.nav.nav_state import GridRouteRequest, NavSession, NavState, NavTick
 from tests.TestGridNavigationMixin import _FakeGridTask
 
@@ -417,6 +419,424 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         # 起点同样取在分层区间之外，此时两边都是大地图 -> 不该再走分层
         again = self.task._try_layered_route_on_plan(ctx, (6.5, 0.5), (9.5, 0.5))
         self.assertEqual(again, (False, False), "同层时应当交回单层路径")
+
+
+class _RopeTask(_LayeredTask):
+    """绳索用例的夹具：按住 W 会真的下落差，点交互图标会被送上落差。"""
+
+    def __init__(self, grid_dir: Path):
+        super().__init__(grid_dir)
+        self.upper_y = 105.0
+        self.lower_y = 5.0
+        self.y = self.upper_y
+        self.click_calls: list[dict] = []
+        #: 交互图标找得到吗（``False`` = 屏幕上没有这个图标）
+        self.icon_found = True
+        #: 点了图标会被送上高端吗（``False`` = 点击没生效）
+        self.ride_up = True
+        #: 按 W 走起来会落到低端吗（``False`` = 走了但高度不变）
+        self.drop_on_walk = True
+        #: 按 W 会真的移动吗（``False`` = 键按下了但角色不动）
+        self.walk_moves = True
+
+    def wait_click_feature(self, **kwargs):  # type: ignore[override]
+        self.click_calls.append(kwargs)
+        if self.icon_found and self.ride_up:
+            self.y = self.upper_y
+        return self.icon_found
+
+    def sleep(self, seconds):
+        if not self.walk_moves:
+            self.t += max(0.0, float(seconds))
+            return
+        super().sleep(seconds)
+        if self.w_down and self.drop_on_walk:
+            self.y = self.lower_y
+
+
+class RopeCrossingTest(unittest.TestCase):
+    """绳索跨越：**不是滑索**——下行走过去，上行点 ``fL.gather_icon2``。
+
+    两条路径都靠"高度真的换层了吗"收尾，所以夹具必须能给出高度：走起来 y 落到低层、
+    点完图标 y 升到高层。滑索那两个接口则故意装上，用来证明绳索一次都不碰它们。
+    """
+
+    def setUp(self):
+        self.task, self.layered, self.ctx = self._make_task()
+        #: 起点在上层 lv1、落点在主图：原方向就是"下行"
+        self.link = self.layered.links[0]
+
+    def _make_task(self, *, main_regions=True):
+        """独立夹具：返回 ``(任务, 分层地图, ctx)``；每份夹具自带临时目录。"""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self._write_layers(Path(tmp.name), main_regions=main_regions)
+        task = _RopeTask(Path(tmp.name))
+        layered = task._grid_layered_map("test")
+        self.assertIsNotNone(layered, "应当发现分层数据（有 lv1 层）")
+        # 跨越时 ``_layer_y_range`` 读的是"当前生效的分层地图"，直接调用就得先装上
+        task._grid_nav_layered_active = layered
+        session = NavSession(
+            request=GridRouteRequest(goal=(2.5, 0.5), map_id="test"),
+            deadline=task.active_time() + 180.0,
+            limit=180.0,
+            tick=0.2,
+        )
+        ctx = task._grid_nav_poll(session)
+        self.assertIsInstance(ctx, NavTick)
+        return task, layered, ctx
+
+    def _write_layers(self, root: Path, *, main_regions=True):
+        main = new_grid(
+            (1, 12),
+            map_name="test",
+            zoom="4",
+            floor_regions=(
+                [{"x0": 0.0, "x1": 12.0, "z0": 0.0, "z1": 1.0, "y_min": 0.0, "y_max": 10.0}] if main_regions else None
+            ),
+        )
+        main.cells = _row(12)
+        save_grid(root / f"test_4{GRID_SUFFIX}", main)
+        upper = new_grid(
+            (1, 12),
+            map_name="test",
+            zoom="4",
+            tier="lv1",
+            floor_regions=[{"x0": 0.0, "x1": 12.0, "z0": 0.0, "z1": 1.0, "y_min": 100.0, "y_max": 110.0}],
+        )
+        upper.cells = _row(12)
+        save_grid(root / f"test__lv1_4{GRID_SUFFIX}", upper)
+        (root / "links.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "links": [
+                        {
+                            "id": "rope1",
+                            "from": {
+                                "map": "test",
+                                "tier": "lv1",
+                                "zoom": "4",
+                                "rect": {"x0": 3.0, "z0": 0.0, "x1": 4.0, "z1": 1.0},
+                            },
+                            "to": {
+                                "map": "test",
+                                "tier": "",
+                                "zoom": "4",
+                                "rect": {"x0": 2.0, "z0": 0.0, "x1": 3.0, "z1": 1.0},
+                            },
+                            "bidirectional": False,
+                            "kind": "rope",
+                            "cost": 1.0,
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def _cross(self, link):
+        """执行一次跨越。``ctx`` 目前只是历史参数，仍按真实入口传进去。"""
+        return self.task._cross_layered_link(self.ctx, link)
+
+    def test_descent_walks_instead_of_riding_a_zip_line(self):
+        self.task.zip_line_list_go = lambda *args, **kwargs: self.fail("绳索下行不该复用滑索执行")
+        self.task.board_zip_line = lambda *args, **kwargs: self.fail("绳索下行不该登索")
+
+        self.assertTrue(self._cross(self.link))
+
+        self.assertEqual(self.task.y, self.task.lower_y, "应当真的走到了下一层")
+        self.assertFalse(self.task.w_down, "结束时必须松开 W")
+        self.assertFalse(self.task.click_calls, "下行不需要找交互图标")
+        self.assertTrue(any("绳索下行" in line for line in self.task.logs), self.task.logs[-4:])
+
+    def test_descent_aims_from_the_current_position(self):
+        """对准方向按"当前位置 -> 落点中心"算，不是两个矩形中心的连线。
+
+        角色站在源矩形里的哪一处由上一段决定，用矩形中心连线会朝错的方向走——这正是
+        现场那次"按住 W 走了 6s 高度没变"的成因之一。
+        """
+        self.task.x, self.task.z = 3.5, 1.5  # 落点中心在 (2.5, 0.5)
+
+        self.assertTrue(self._cross(self.link))
+
+        expected = math.degrees(math.atan2(2.5 - 3.5, 0.5 - 1.5)) % 360.0
+        rect_centers = math.degrees(math.atan2(2.5 - 3.5, 0.5 - 0.5)) % 360.0
+        self.assertEqual(len(self.task.aims), 1, self.task.aims)
+        self.assertAlmostEqual(self.task.aims[0], expected, places=3)
+        self.assertNotAlmostEqual(self.task.aims[0], rect_centers, places=3)
+
+    def test_descent_reports_a_stall_when_w_does_not_move_the_character(self):
+        """按住 W 却完全没有位移时，单独报这个故障，而不是只说"高度没变"。"""
+        self.task.walk_moves = False
+
+        self.assertFalse(self._cross(self.link))
+
+        self.assertFalse(self.task.w_down, "失败路径也要松开 W")
+        self.assertTrue(any("没有任何位移" in line for line in self.task.logs), self.task.logs[-3:])
+
+    def test_ascent_clicks_the_gather_icon(self):
+        self.task.y = self.task.lower_y
+        upwards = self.link.reversed
+
+        self.assertTrue(self._cross(upwards))
+
+        self.assertEqual(len(self.task.click_calls), 1, "上行应当点一次交互图标")
+        click = self.task.click_calls[0]
+        self.assertEqual(click["feature"], fL.gather_icon2)
+        self.assertFalse(click["raise_if_not_found"], "找不到图标由本层报错，不该抛异常")
+        self.assertEqual(self.task.y, self.task.upper_y, "点完图标应当被送上高端")
+        self.assertFalse(self.task.w_down, "上行不该压着 W")
+        self.assertTrue(any("绳索上行" in line for line in self.task.logs), self.task.logs[-4:])
+
+    def test_ascent_fails_clearly_when_the_icon_is_missing(self):
+        self.task.y = self.task.lower_y
+        self.task.icon_found = False
+
+        self.assertFalse(self._cross(self.link.reversed))
+
+        self.assertTrue(any("没找到绳索交互图标" in line for line in self.task.logs), self.task.logs[-3:])
+
+    def test_ascent_times_out_when_the_click_does_not_take(self):
+        """点了图标但没被送上去：必须判失败，而不是把上不去当成到达。"""
+        self.task.y = self.task.lower_y
+        self.task.ride_up = False
+
+        self.assertFalse(self._cross(self.link.reversed))
+
+        self.assertTrue(any("绳索上行超时" in line for line in self.task.logs), self.task.logs[-3:])
+
+    def test_descent_times_out_when_the_height_never_drops(self):
+        """走了但没落到下一层（例如两端高度区间重叠、其实是上行）：判失败并说明。"""
+        self.task.drop_on_walk = False
+
+        self.assertFalse(self._cross(self.link))
+
+        self.assertFalse(self.task.w_down, "失败路径也要松开 W")
+        self.assertTrue(any("绳索下行超时" in line for line in self.task.logs), self.task.logs[-3:])
+
+    def test_descent_without_a_height_range_falls_back_to_walking_distance(self):
+        """目标层没标高度区间时验不了高度，只能按走过的水平距离收尾，并记日志说明。"""
+        task, layered, ctx = self._make_task(main_regions=False)
+
+        self.assertTrue(task._cross_layered_link(ctx, layered.links[0]))
+
+        self.assertTrue(
+            any("没有标定高度区间" in line for line in task.logs),
+            task.logs[-4:],
+        )
+
+
+class LayeredCurrentGridTest(unittest.TestCase):
+    """起点的"当前网格"：首次靠高度 / X-Z 判层，之后靠拓扑记录（跨过连接点就换新网格）。
+
+    现场那次失败正是卡在这里：角色人在 tips_6 上，但 ``floor_regions`` 没覆盖那一处，
+    只按高度判就兜底成大地图；主图在那一格是未知格，于是重规划直接失败。
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        # 主图：只有右侧 4 格是可走的已知格，左侧一片未知（模拟"人其实在分层场景里"）
+        main = new_grid((1, 12), map_name="test", zoom="4")
+        main.cells = np.full((1, 12), CELL_UNKNOWN, dtype=np.uint8)
+        main.cells[0, 8:] = CELL_FREE
+        save_grid(self.root / f"test_4{GRID_SUFFIX}", main)
+        # 分层 lv1：整条都可走，但高度区间只标在最右端一小块（模拟稀疏标注）
+        upper = new_grid(
+            (1, 12),
+            map_name="test",
+            zoom="4",
+            tier="lv1",
+            floor_regions=[{"x0": 10.0, "x1": 12.0, "z0": 0.0, "z1": 1.0, "y_min": 100.0, "y_max": 110.0}],
+        )
+        upper.cells = _row(12)
+        save_grid(self.root / f"test__lv1_4{GRID_SUFFIX}", upper)
+        (self.root / "links.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "links": [
+                        {
+                            "id": "stairs1",
+                            "from": {
+                                "map": "test",
+                                "tier": "lv1",
+                                "zoom": "4",
+                                "rect": {"x0": 8.0, "z0": 0.0, "x1": 9.0, "z1": 1.0},
+                            },
+                            "to": {
+                                "map": "test",
+                                "tier": "",
+                                "zoom": "4",
+                                "rect": {"x0": 8.0, "z0": 0.0, "x1": 9.0, "z1": 1.0},
+                            },
+                            "bidirectional": True,
+                            "kind": "stairs",
+                            "cost": 1.0,
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        self.task = _LayeredTask(self.root)
+        self.task.y = 105.0
+        self.session = NavSession(
+            request=GridRouteRequest(goal=(10.5, 0.5), map_id="test"),
+            deadline=self.task.active_time() + 180.0,
+            limit=180.0,
+            tick=0.2,
+        )
+
+    def _plan(self, start, goal=(10.5, 0.5)):
+        ctx = self.task._grid_nav_poll(self.session)
+        self.assertIsInstance(ctx, NavTick)
+        return self.task._try_layered_route_on_plan(ctx, start, goal)
+
+    def test_start_falls_back_to_the_only_layer_with_a_walkable_cell(self):
+        """高度落在所有标定区间之外时，按 X/Z 上"哪一层有可走格"判层。"""
+        # 起点 (0.5, 0.5)：主图那一格是未知格，只有 lv1 标了可走格
+        self.assertEqual(self._plan((0.5, 0.5)), (True, True), self.task.logs[-4:])
+
+        self.assertEqual(self.session.start_tier, "lv1")
+        self.assertEqual(self.task._grid_nav_follower.grid.meta.tier, "lv1")
+        self.assertTrue(
+            any("只有 lv1 标了可走格" in line for line in self.task.logs),
+            self.task.logs[-4:],
+        )
+
+    def test_replan_keeps_the_current_grid_recorded_by_topology(self):
+        """跨过连接点后当前网格就是新的那一层；重规划不再被稀疏高度标注打回大地图。"""
+        self.assertEqual(self._plan((0.5, 0.5)), (True, True), self.task.logs[-4:])
+        self.assertEqual(self.session.active_tier, "lv1", "切到分段后应当记下当前网格")
+
+        # 挪到"主图也有可走格、高度又落在所有区间之外"的位置：X/Z 判不出唯一层，
+        # 只按高度会兜底成大地图；这时必须靠拓扑记录继续用 lv1。
+        self.task.x, self.task.z, self.task.y = 10.5, 0.5, 120.0
+        self.assertEqual(self._plan((10.5, 0.5)), (True, True), self.task.logs[-4:])
+
+        self.assertEqual(self.session.start_tier, "lv1")
+        self.assertEqual(self.task._grid_nav_follower.grid.meta.tier, "lv1")
+        self.assertTrue(
+            any("沿用当前正在使用的网格" in line for line in self.task.logs),
+            self.task.logs[-4:],
+        )
+
+    def test_topology_record_is_ignored_outside_that_grid(self):
+        """记录的那一层网格里根本没有这个位置时不能照用，否则等于把人钉在错层上。"""
+        self.session.active_tier = "lv1"
+        self.task.y = 120.0
+
+        # x=40 超出 12 格宽的网格：lv1 与主图都判不出，只能回大地图兜底
+        self.assertEqual(self._plan((40.0, 0.5)), (False, False))
+
+        self.assertTrue(any("按大地图处理" in line for line in self.task.logs), self.task.logs[-4:])
+
+
+class LayeredSameTierDetourTest(unittest.TestCase):
+    """起终点**都在大地图**、但主图被切成互不相通的块时，改用分层绕行。
+
+    现场那条 (-262,-386.4) → (-438,-390) 就是这个形状：起点在 674 格的块里、终点在
+    4757 格的块里（两块最近差 38.1m）。"进一层再绕出来"只有分层图能表达，单层网格不行；
+    所以单层规划失败后要给分层第二次机会。单层能走时仍按单层走（零回归）。
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        # 主图：左侧 674 格那种小块（0~3）+ 中间未知 + 右侧另一块（8~11）
+        main = new_grid((1, 12), map_name="test", zoom="4")
+        main.cells = np.full((1, 12), CELL_UNKNOWN, dtype=np.uint8)
+        main.cells[0, :4] = CELL_FREE
+        main.cells[0, 8:] = CELL_FREE
+        save_grid(self.root / f"test_4{GRID_SUFFIX}", main)
+        # 分层 lv1：整条可走，把主图两块桥起来
+        bridge = new_grid(
+            (1, 12),
+            map_name="test",
+            zoom="4",
+            tier="lv1",
+            floor_regions=[{"x0": 11.0, "x1": 12.0, "z0": 0.0, "z1": 1.0, "y_min": 100.0, "y_max": 110.0}],
+        )
+        bridge.cells = _row(12)
+        save_grid(self.root / f"test__lv1_4{GRID_SUFFIX}", bridge)
+        (self.root / "links.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "links": [
+                        self._link("a", "", 0.0, "lv1", 0.0),
+                        self._link("b", "lv1", 11.0, "", 11.0),
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        self.task = _LayeredTask(self.root)
+        self.task.y = 5.0  # 主图没标过高度区间 -> 起点判成大地图
+
+    @staticmethod
+    def _link(link_id, from_tier, from_x, to_tier, to_x):
+        def side(tier, x):
+            return {
+                "map": "test",
+                "tier": tier,
+                "zoom": "4",
+                "rect": {"x0": x, "z0": 0.0, "x1": x + 1.0, "z1": 1.0},
+            }
+
+        return {
+            "id": link_id,
+            "from": side(from_tier, from_x),
+            "to": side(to_tier, to_x),
+            "bidirectional": True,
+            "kind": "stairs",
+            "cost": 1.0,
+        }
+
+    def _run_plan(self, goal):
+        session = NavSession(
+            request=GridRouteRequest(goal=goal, map_id="test"),
+            deadline=self.task.active_time() + 180.0,
+            limit=180.0,
+            tick=0.2,
+        )
+        ctx = self.task._grid_nav_poll(session)
+        self.assertIsInstance(ctx, NavTick)
+        return session, self.task._grid_nav_state_plan(ctx)
+
+    def test_flat_route_is_preferred_when_it_works(self):
+        """单层能走到时仍旧走单层：同层行为不能被分层代价模型改写。"""
+        session, _outcome = self._run_plan((2.5, 0.5))  # 与起点同块
+
+        self.assertIsNone(session.route, "单层可走时不该接管分层")
+        self.assertEqual(self.task._grid_nav_follower.grid.meta.tier, "")
+
+    def test_flat_failure_falls_back_to_a_layer_detour(self):
+        """单层走不通（两块不连通）时，改用分层绕行而不是直接报失败。"""
+        session, _outcome = self._run_plan((10.5, 0.5))  # 终点在另一块
+
+        self.assertIsNotNone(session.route, self.task.logs[-6:])
+        self.assertTrue(any("改用分层绕行" in line for line in self.task.logs), self.task.logs[-8:])
+        self.assertIn("lv1", list(session.route.tiers), "绕行必须真的借了 lv1 那一层")
+
+    def test_same_tier_detour_is_not_planned_by_default(self):
+        """默认策略下起终点都在大地图仍旧交回单层——分层绕行只在单层失败后才启用。"""
+        session = NavSession(
+            request=GridRouteRequest(goal=(10.5, 0.5), map_id="test"),
+            deadline=self.task.active_time() + 180.0,
+            limit=180.0,
+            tick=0.2,
+        )
+        ctx = self.task._grid_nav_poll(session)
+
+        self.assertEqual(
+            self.task._try_layered_route_on_plan(ctx, (0.5, 0.5), (10.5, 0.5)),
+            (False, False),
+        )
 
 
 if __name__ == "__main__":

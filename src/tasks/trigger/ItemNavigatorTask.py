@@ -18,6 +18,7 @@ from src.data import item_map_query, map_mark_query, user_map_mark_store
 from src.icons import Icons
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
+from src.tasks.trigger.item_navigator_legacy import ItemNavigatorLegacyMixin
 
 logger = Logger.get_logger(__name__)
 # 特殊物品Y坐标修正
@@ -42,9 +43,18 @@ HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
 COMPASS_LABELS = ("北", "东北", "东", "东南", "南", "西南", "西", "西北")
 HEIGHT_SAME_THRESHOLD = 0.05
 OFFICIAL_MARKS_CACHE_TTL = 30.0
+POSITION_IMPLEMENTATION_KEY = "定位实现"
+POSITION_IMPLEMENTATION_LEGACY = "旧版兼容"
+POSITION_IMPLEMENTATION_UNIFIED = "统一定位"
 
 
-class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, TriggerTask):
+class ItemNavigatorTask(
+    InstructionsMixin,
+    ItemNavigatorLegacyMixin,
+    RuntimeStateMixin,
+    BaseEfTask,
+    TriggerTask,
+):
     """实时从本地 WebSocket 拿玩家位置，指向已选物品的最近点，并支持按键标记已获取。
 
     设计原则：
@@ -62,6 +72,8 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
         # 只把面向用户的选项放在 default_config
         self.default_config.update(
             {
+                # 存量配置没有这个键，默认继续走 master 的 WS/官方地图客户端路径。
+                POSITION_IMPLEMENTATION_KEY: POSITION_IMPLEMENTATION_LEGACY,
                 # 由用户在 UI 中配置要导航的物品名列表（可空）
                 "选择物品": [],
                 # 标记按键（UI 映射），例如 'f'，当玩家按下且目标在阈值内时标记为已获取
@@ -89,6 +101,10 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
             "options_available": item_map_query.get_supported_item_names(),
             "allow_duplication": False,
         }
+        self.config_type[POSITION_IMPLEMENTATION_KEY] = {
+            "type": "drop_down",
+            "options": [POSITION_IMPLEMENTATION_LEGACY, POSITION_IMPLEMENTATION_UNIFIED],
+        }
         self.config_type["油猴脚本帮助"] = {
             "type": "button",
             "text": "浏览器油猴脚本帮助",
@@ -97,6 +113,11 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
         }
         self.config_description.update(
             {
+                POSITION_IMPLEMENTATION_KEY: (
+                    "选择物品导航读取位置的方式。\n"
+                    "旧版兼容：沿用原有本地 WS / 官方地图客户端。\n"
+                    "统一定位：使用共享「小地图定位」和全局「导航配置」。"
+                ),
                 "选择物品": ("选择要参与导航的物品列表。\n只会在当前地图里匹配这些物品。"),
                 "标记按键": ("接近目标后用于标记“已获取”的键位。\n默认按键为 f。"),
                 "标记按住时长": ("按住标记按键并持续达到这个时长后，\n才会把当前目标标记为已获取。"),
@@ -112,7 +133,7 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
         )
         self.default_config_group.update(
             {
-                "网页地图同步": ["油猴脚本帮助"],
+                "网页地图同步": [POSITION_IMPLEMENTATION_KEY, "油猴脚本帮助"],
                 "浮层显示": ["浮层信息", "浮层文字透明度", "浮层背景透明度", "浮层字号"],
             }
         )
@@ -121,6 +142,7 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
         self.needs_frame = False  # 纯 WS 驱动，不识别画面
 
         # internal constants (not user-facing)
+        self._init_item_navigator_legacy()
         self._init_runtime_state_mixin()
         cfg_folder = Path(config_folder())
         self._marked_store = cfg_folder / "marked_points.json"
@@ -205,6 +227,19 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
         """
         marked_display = str(self._marked_store).replace("\\", "/")
         # 「获取 content」的分步说明。地址经 .format() 注入，避免把 URL 写进 msgid 收集池。
+        unified = self._use_unified_navigation()
+        source_summary = (
+            self.tr("位置来源：由「小地图定位」和全局「导航配置」统一提供")
+            if unified
+            else self.tr(
+                "地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"
+            )
+        )
+        account_line = (
+            self.tr("定位服务：首次读取坐标时会自动启用「小地图定位」触发任务")
+            if unified
+            else self.tr("地图账号：仅在「地图数据来源 = 账号配置」时使用，选项来自账号配置页")
+        )
         content_steps = [
             inst_line(f"└─ {self.tr('1. 打开浏览器，按 F12 打开开发者工具')}", indent=1),
             inst_line(
@@ -219,7 +254,11 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
                 f"└─ {self.tr('4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值')}", indent=1
             ),
             inst_line(
-                f"└─ {self.tr('5. 把该值填入全局「导航配置」的「真值content」；或填入账号配置页后用「真值地图账号」选择')}",
+                (
+                    f"└─ {self.tr('5. 把该值填入全局「导航配置」的「真值content」；或填入账号配置页后用「真值地图账号」选择')}"
+                    if unified
+                    else f"└─ {self.tr('5. 使用「手动 content」时把该值填入本任务 content；使用「账号配置」时把它保存到账号配置页并选择对应地图账号')}"
+                ),
                 indent=1,
             ),
         ]
@@ -227,7 +266,7 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
             [
                 inst_line("📍 " + self.tr("物品导航配置说明"), "#FF5555", bold=True),
                 inst_line(
-                    "⚙️ " + self.tr("位置来源：由「小地图定位」和全局「导航配置」统一提供"),
+                    "⚙️ " + source_summary,
                     "#FF5555",
                     bold=True,
                 ),
@@ -236,7 +275,7 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
                 inst_line(
                     f"└─ {self.tr('选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标')}", indent=1
                 ),
-                inst_line(f"└─ {self.tr('定位服务：首次读取坐标时会自动启用「小地图定位」触发任务')}", indent=1),
+                inst_line(f"└─ {account_line}", indent=1),
                 inst_line(f"└─ {self.tr('标记按键：接近目标后用于标记已获取的键位，仅支持单个字符')}", indent=1),
                 inst_line(f"└─ {self.tr('标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）')}", indent=1),
                 inst_gap(),
@@ -301,7 +340,27 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
             return False
 
     def _cleanup_navigator_runtime(self):
+        self._stop_item_navigator_legacy_sources()
         self.clear_window_arrows()
+
+    def _use_unified_navigation(self) -> bool:
+        return (
+            str(self.config.get(POSITION_IMPLEMENTATION_KEY, POSITION_IMPLEMENTATION_LEGACY)).strip()
+            == POSITION_IMPLEMENTATION_UNIFIED
+        )
+
+    def _read_navigation_position(self):
+        if not self._use_unified_navigation():
+            return self._read_item_navigator_legacy_position()
+
+        position = self.world_pose(max_age=1.5)
+        if position is None:
+            return None, "运行时定位状态待接收..."
+        map_id = str(position.get("map_id") or "")
+        px, py, pz = self._world_position_xyz(position)
+        if not map_id or px is None or pz is None:
+            return None, "定位坐标待锚定..."
+        return (map_id, px, py, pz), ""
 
     @staticmethod
     def _world_position_xyz(position: dict) -> tuple[float | None, float, float | None]:
@@ -477,6 +536,8 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
         if not selected_items:
             return {}
         static_items = item_map_query.get_item_map(selected_items).get(map_id, {})
+        if not self._use_unified_navigation():
+            return static_items
         official_items = self._official_marks_for_map(map_id)
         if official_items:
             selected = set(selected_items)
@@ -738,17 +799,12 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
             self._navigator_window_missing_logged = False
             # read current selected items from task config (this is user-facing)
             selected_items = list(self.config.get("选择物品") or [])
-            position = self.world_pose(max_age=1.5)
+            position, status = self._read_navigation_position()
             if position is None:
-                self.info_set("导航", "运行时定位状态待接收...")
+                self.info_set("导航", status)
                 self.sleep(1.0)
                 return
-            map_id = str(position.get("map_id") or "")
-            px, py, pz = self._world_position_xyz(position)
-            if not map_id or px is None or pz is None:
-                self.info_set("导航", "定位坐标待锚定...")
-                self.sleep(1.0)
-                return
+            map_id, px, py, pz = position
 
             # build candidates for this map and selected items
             candidates = self._get_candidates_for_map(map_id, selected_items)

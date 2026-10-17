@@ -868,12 +868,23 @@ class WsPositionMixin:
             return False
 
     def _get_account_map_content(self) -> str:
-        """按配置优先级解析地图同步 content（与 ItemNavigatorTask 一致）。"""
+        """按配置优先级解析地图同步 content，兼容旧任务配置与全局导航配置。"""
+
         direct_content = str(self.config.get("content") or "").strip()
+        task_account = str(self.config.get("地图账号") or "").strip()
+
+        if not direct_content:
+            from src.core.global_config_store import NAV_CONFIG_NAME, get_global_config
+            from src.core.NavConfig import NAV_CONTENT_KEY, NAV_WS_ACCOUNT_KEY
+
+            nav_config = get_global_config(NAV_CONFIG_NAME)
+            direct_content = str(nav_config.get(NAV_CONTENT_KEY) or "").strip()
+            task_account = task_account or str(nav_config.get(NAV_WS_ACCOUNT_KEY) or "").strip()
+
         if direct_content:
             return direct_content
 
-        selected_account = str(self.config.get("地图账号") or "").strip()
+        selected_account = task_account
         if selected_account:
             account_id = resolve_account_id(selected_account, create_if_missing=False) or selected_account
             return get_account_map_content(account_id, account_name=selected_account)

@@ -34,7 +34,7 @@ class _FailingOnceInstructions(_DemoInstructions):
         return "EXTRA"
 
 
-def _navigator_stub(recorded=None, hold_seconds=2.0):
+def _navigator_stub(recorded=None, hold_seconds=2.0, unified=True):
     """构造只暴露 build_instructions 所需属性的物品导航替身。"""
 
     def tr(text, *args, **kwargs):
@@ -48,6 +48,7 @@ def _navigator_stub(recorded=None, hold_seconds=2.0):
         _near_xz_threshold=20.0,
         _format_seconds=ItemNavigatorTask._format_seconds,
         _mark_hold_seconds=lambda: hold_seconds,
+        _use_unified_navigation=lambda: unified,
     )
 
 
@@ -145,6 +146,13 @@ class TestItemNavigatorInstructions(unittest.TestCase):
 
         html = ItemNavigatorTask.build_instructions(_navigator_stub(hold_seconds=1.0))
         self.assertIn("水平距离 20 以内连续按住标记键 1 秒", html)
+
+    def test_legacy_position_mode_keeps_master_instructions(self):
+        html = ItemNavigatorTask.build_instructions(_navigator_stub(unified=False))
+
+        self.assertIn("手动 content 使用本任务 content", html)
+        self.assertIn("地图账号：仅在「地图数据来源 = 账号配置」时使用", html)
+        self.assertNotIn("定位服务：首次读取坐标时会自动启用「小地图定位」触发任务", html)
 
     def test_runtime_values_are_not_passed_to_tr(self):
         """运行时数据只能经 .format() 注入；直接喂给 tr() 会污染 gettext 收集池。"""

@@ -90,7 +90,7 @@ CAPTURE_HEALTH_NO_CONNECTION = "no_connection"
 CAPTURE_HEALTH_HANDSHAKE_PENDING = "handshake_pending"
 #: 握手成功，正在解码（等第一条坐标）
 CAPTURE_HEALTH_DECODING = "decoding"
-#: **抓包晚于连接建立** —— 唯一一种值得逼一条新连接来救的状态
+#: **抓包晚于连接建立** —— 这条连接救不回来，只能换新连接（``no_connection`` 同理）
 CAPTURE_HEALTH_MISSED_HANDSHAKE = "missed_handshake"
 
 #: ``scene_num_id`` → 网格名。**只是近似，别当权威**。
@@ -141,9 +141,10 @@ def _flow_status_is_terminal(status: str) -> bool:
 def _flow_status_is_missed_handshake(status: str) -> bool:
     """这条连接是不是「抓包晚于它建立」。
 
-    这是所有终态里**唯一能靠新建一条连接救回来**的那种：后端没看到 SYN，所以推不出密钥流，
-    但它自己并没有坏——换一条连接、让它从头抓握手就行。``连接已结束``（人家正常结束）与
-    ``解码停止``（这条流真出问题了）都不属于这一类，重建连接对它们没有意义。
+    这条连接**救不回来、只能换新连接**：后端没看到 SYN，所以推不出密钥流，但它自己并没有坏
+    ——换一条连接、让它从头抓握手就行。``连接已结束``（人家正常结束）与 ``解码停止``（这条流
+    真出问题了）都不属于这一类，重建连接对它们没有意义。判定"该不该重进"的口径还包含
+    ``no_connection``，见 ``MinimapPositionMixin.ensure_capture_session``。
     """
 
     return str(status or "").strip().startswith(_NO_CONNECTION_START)
@@ -250,11 +251,11 @@ class CaptureHealth:
 
     @property
     def needs_new_connection(self) -> bool:
-        """是否属于「逼一条新连接就能救」的情形。
+        """这条连接是否属于「握手已经救不回来」的情形（看到过连接，但没抓到 SYN）。
 
-        只有这一种状态值得动手重建连接。其余状态要么是在等（后端刚起、握手进行中、刚握上
-        还没走到坐标），要么重建也没用（后端根本没起来）——对它们做"退出重进"只会白白打断
-        玩家。
+        只回答"这条连接还能不能解码"，**不回答"该不该重建"**：调用方
+        （``MinimapPositionMixin.ensure_capture_session``）把 ``no_connection``（连一条游戏连接
+        都没看到）也算作"需要重进"的一种。
         """
 
         return self.state == CAPTURE_HEALTH_MISSED_HANDSHAKE
@@ -387,7 +388,8 @@ class CapturePositionSource:
 
         **只看连接，不看坐标**——坐标缺失有好几种成因，混在一起就没法决定该做什么。关键区分：
 
-        * 后端没看到任何连接（刚启动）→ 等，不要动游戏；
+        * 后端没看到任何连接 → 这一局已经没有位置源，逼一条新连接（见
+          ``MinimapPositionMixin.ensure_capture_session``）；
         * 有连接但握手没完成 / 握手完成还没走到坐标 → 等；
         * 有连接停在「缺少连接起点」→ 这次抓包**已经失败了**，只有新连接能救；
         * 有任何一条连接走到了解码 → 正常。

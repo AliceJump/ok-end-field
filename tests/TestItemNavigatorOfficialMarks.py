@@ -1,6 +1,9 @@
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
+from src.core.NavConfig import NAV_CONTENT_KEY
+from src.localization.ws_position_mixin import WsPositionMixin
 from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
 
 
@@ -21,6 +24,7 @@ class _Service:
 class _Stub:
     def __init__(self, service):
         self.service = service
+        self.unified = True
         self.now = 100.0
         self.logs = []
         self._official_marks_cache = {}
@@ -36,8 +40,35 @@ class _Stub:
     def get_runtime_position_service(self):
         return self.service
 
+    def _use_unified_navigation(self):
+        return self.unified
+
 
 class TestItemNavigatorOfficialMarks(unittest.TestCase):
+    def test_legacy_position_source_reads_migrated_global_content(self):
+        task = SimpleNamespace(config={})
+
+        with mock.patch(
+            "src.core.global_config_store.get_global_config",
+            return_value={NAV_CONTENT_KEY: "migrated-content"},
+        ):
+            self.assertEqual(WsPositionMixin._get_account_map_content(task), "migrated-content")
+
+    def test_legacy_candidate_lookup_does_not_query_official_marks(self):
+        service = _Service({})
+        stub = _Stub(service)
+        stub.unified = False
+        static = {"map01": {"晶锥天使": [{"x": 1.0, "z": 2.0}]}}
+
+        with mock.patch(
+            "src.tasks.trigger.ItemNavigatorTask.item_map_query.get_item_map",
+            return_value=static,
+        ):
+            result = ItemNavigatorTask._get_candidates_for_map(stub, "map01", ["晶锥天使"])
+
+        self.assertEqual(result, static["map01"])
+        self.assertEqual(service.calls, 0)
+
     def test_fetches_and_caches_current_map_official_marks(self):
         payload = {
             "code": 0,

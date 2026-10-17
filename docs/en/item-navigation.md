@@ -6,7 +6,7 @@ Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-
 
 This document covers two trigger/debug tasks:
 
-- `ItemNavigatorTask` (UI name: Item Navigation): reads the shared `world.pose` runtime state to point to the nearest gathering point of the selected item, and supports pressing a key to mark it as collected.
+- `ItemNavigatorTask` (UI name: Item Navigation): points to the nearest gathering point of the selected item and supports pressing a key to mark it as collected. Existing configurations use the master-compatible local WS / official map client path by default; shared `world.pose` is used only when Unified Localization is selected.
 - `RealtimeDetectTask` (UI name: Realtime Detection): runs YOLO detection in a loop for observing model, target-class, and confidence performance online.
 
 ---
@@ -15,9 +15,9 @@ This document covers two trigger/debug tasks:
 
 ### Prerequisites
 
-- It is recommended to save the official-map sync `content` on the account configuration page and select its `真值地图账号` in the global Nav Config, or fill in `真值content` there directly.
-- When official truth is not configured, the Tampermonkey relay pushes position data to the local `ws://127.0.0.1:3001`.
-- Item Navigation automatically requests the Minimap Positioning trigger task and does not start a second positioning source.
+- Legacy Compatible starts this task's own official-map client or local WS server; legacy `content` / `地图账号` values are migrated to the global Nav Config first.
+- Unified Localization recommends saving the official-map sync `content` on the account configuration page and selecting its `真值地图账号` in the global Nav Config, or filling in `真值content` there directly. Without official truth, the Tampermonkey relay uses the local `ws://127.0.0.1:3001`.
+- Unified Localization automatically requests the Minimap Positioning trigger task; Legacy Compatible does not touch it.
 - Item point data comes from `assets/items/map/summary.json` and `assets/items/map/item_names.json`.
 - Mark results are written to `configs/marked_points.json`, used to avoid re-pointing to already-marked points.
 
@@ -25,6 +25,7 @@ This document covers two trigger/debug tasks:
 
 | Config item | Default | Description |
 |---|---:|---|
+| `定位实现` (Position implementation) | `旧版兼容` | `旧版兼容` keeps the original WS / official map client. `统一定位` uses the shared Minimap Positioning service and global Nav Config. |
 | `选择物品` (Select item) | `[]` | List of item names to navigate; no target is filtered when empty. |
 | `标记按键` (Mark key) | `f` | The key pressed to mark an item as "collected" when close to the target. |
 | `标记按住时长` (Mark hold duration) | `2.0` | Seconds the mark key must be held. Timing starts only within a horizontal distance of 20 of the target; reaching the duration marks it as collected. `0`, negative, or non-numeric values fall back to the default 2 seconds. |
@@ -65,7 +66,7 @@ When no `content` is configured, a browser userscript can relay position data to
 
 > If no position data arrives, check that the local firewall allows port `3001` and that Tampermonkey permits the script to run on the target site.
 
-### Data flow
+### Data flow (Unified Localization)
 
 ```mermaid
 flowchart TD
@@ -85,7 +86,7 @@ flowchart TD
 
 - Item Navigation depends on the current map ID and coordinate data; without point data it cannot produce a valid direction.
 - The task draws a direction arrow on the window; if you cannot see the arrow, first check whether the WebSocket position data is working.
-- "Local WS fallback" only happens when the global Nav Config has no `content`. If `content` is configured but the official auth or connection fails, the current run does not automatically switch to local WS; clear the global `真值content` and `真值地图账号` to use local mode.
+- For Unified Localization, "Local WS fallback" only happens when the global Nav Config has no `content`. If `content` is configured but the official auth or connection fails, the current run does not automatically switch to local WS; clear the global `真值content` and `真值地图账号` to use local mode.
 - Marking requires holding the key for the duration set by `标记按住时长` (default 2 seconds) within a horizontal distance of 20; releasing the key early or leaving the range cancels the current timing. The value is re-read every cycle, so changes apply without restarting the task.
 - The Tampermonkey-script help button opens the official Item Navigation guide and the script directory.
 
