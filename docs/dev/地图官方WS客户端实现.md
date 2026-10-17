@@ -21,10 +21,10 @@
 ### 凭证解析优先级
 1. 全局「真值content」非空 → 直接使用
 2. 全局「真值地图账号」非空 → 从 `map_contents` 读取该账号的 content
-3. `MinimapPositionTask` 当前账号 context → 从 `map_contents` 读取
+3. `WorldPoseService` 当前账号 context → 从 `map_contents` 读取
 
 ### 不带凭证时的回退
-官方真值为空时，`MinimapPositionTask` 自动启动本地 WS 服务端模式
+官方真值为空时，`WorldPoseService` 自动启动本地 WS 服务端模式
 （监听 `ws://127.0.0.1:3001`），兼容油猴脚本或其他外部来源。
 
 ## OAuth → WebSocket 登录全链路
@@ -111,7 +111,7 @@ flowchart TD
     B --> C[configs/account_scoped_overrides.json]
     C --> D[map_contents account_id -> content]
     E[Nav Config 真值地图账号] --> F[get_account_map_content]
-    G[MinimapPositionTask 账号上下文] --> F
+    G[WorldPoseService 账号上下文] --> F
     D --> F
     F --> H[官方地图 WS 凭证解析]
 ```
@@ -175,7 +175,7 @@ flowchart TD
 | 文件 | 职责 |
 |------|------|
 | `src/localization/ws_position_mixin.py` | WS 客户端核心：OAuth 换取、HTTP 签名、WS 协议、退出控制 |
-| `src/tasks/localization/MinimapPositionTask.py` | 共享定位生产者：凭证解析、WS 生命周期、`world.pose` 发布 |
+| `src/localization/position_service.py` | 应用级定位服务：凭证解析、WS 生命周期、`world.pose` 按需采样 |
 | `src/tasks/mixin/runtime_state_mixin.py` | 任务侧状态读取与定位采样控制面 |
 | `src/tasks/trigger/ItemNavigatorTask.py` | 物品导航：读取 `world.pose`、箭头渲染、标记逻辑 |
 | `src/tasks/account/account_scope_store.py` | 持久化：`map_contents` 字段的读写、账号解析 |

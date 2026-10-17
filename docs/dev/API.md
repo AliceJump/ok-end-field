@@ -96,7 +96,7 @@ def runtime_state(topic, *, max_age=None, now=None) -> dict | None
 def publish_runtime_state(topic, value, *, source="", ttl=None, now=None)
 ```
 
-`world_pose()` 会通过控制面请求 `MinimapPositionTask` 采样一帧并发布
+`world_pose()` 会通过控制面请求应用级 `WorldPoseService` 采样一帧并发布
 `RuntimeTopic.WORLD_POSE`。返回 `None` 表示没有快照或快照已超过 `max_age`。
 完整主题和扩展规则见[运行时状态总线](运行时状态总线.md)。
 

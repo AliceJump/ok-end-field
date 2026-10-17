@@ -101,6 +101,11 @@ def _notify_confirmed(task, key: str) -> None:
     也不该让一个任务没实现这个钩子就报错。
     """
 
+    if task is None:
+        from src.localization.position_service import get_world_pose_service
+
+        task = get_world_pose_service()
+
     hook = getattr(task, "on_danger_switch_confirmed", None)
     if not callable(hook):
         return

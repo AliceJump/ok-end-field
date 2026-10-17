@@ -3,7 +3,17 @@
 import ast
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
+from ok import TriggerTask
+
+from src.config import config as app_config
+from src.localization.position_service import (
+    WorldPoseService,
+    get_world_pose_service,
+    shutdown_world_pose_service,
+)
 from src.tasks.trigger.ItemNavigatorTask import (
     POSITION_IMPLEMENTATION_KEY,
     POSITION_IMPLEMENTATION_UNIFIED,
@@ -18,10 +28,9 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
         self.assertTrue((root / "runtime_state" / "__init__.py").is_file())
         self.assertFalse((root / "runtime" / "__init__.py").exists())
 
-    def test_localization_tasks_live_in_the_localization_domain_package(self):
+    def test_localization_tasks_and_services_live_in_the_localization_domain_package(self):
         root = Path(__file__).parents[1] / "src" / "tasks"
         names = (
-            "MinimapPositionTask.py",
             "MinimapRealtimePosition.py",
             "MinimapRegionCheck.py",
             "MinimapScaleCapture.py",
@@ -33,6 +42,37 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
             self.assertFalse((root / "navigation" / name).exists())
             self.assertFalse((root / "test" / name).exists())
             self.assertFalse((root / "trigger" / name).exists())
+        self.assertTrue((root.parent / "localization" / "position_service.py").is_file())
+
+    def test_world_position_service_is_not_registered_as_a_trigger_task(self):
+        registered = {class_name for _module, class_name in app_config["trigger_tasks"]}
+        self.assertNotIn("MinimapPositionTask", registered)
+        self.assertFalse(issubclass(WorldPoseService, TriggerTask))
+
+    def test_world_position_service_is_lazy_and_executor_scoped(self):
+        created = []
+
+        class _Service:
+            def __init__(self, **kwargs):
+                created.append(kwargs)
+                self.destroyed = False
+
+            def after_init(self, **kwargs):
+                self.init = kwargs
+
+            def on_destroy(self):
+                self.destroyed = True
+
+        executor = SimpleNamespace(scene=None, app=SimpleNamespace())
+        with mock.patch("src.localization.position_service.WorldPoseService", _Service):
+            first = get_world_pose_service(executor)
+            second = get_world_pose_service(executor)
+
+        self.assertIs(first, second)
+        self.assertEqual(len(created), 1)
+        shutdown_world_pose_service(executor)
+        self.assertTrue(first.destroyed)
+        self.assertIsNone(getattr(executor, "_world_pose_service", None))
 
     def test_navigation_mixins_live_in_the_navigation_domain_package(self):
         root = Path(__file__).parents[1] / "src" / "tasks"

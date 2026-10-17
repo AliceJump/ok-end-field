@@ -38,6 +38,12 @@ from src.core.NavConfig import (
     NAV_YAW_PER_PIXEL_KEY,
 )
 from src.core.paths import config_path
+from src.core.PositionConfig import (
+    DEFAULT_POSITION_CONFIG,
+    POSITION_CONFIG_DESCRIPTION,
+    POSITION_CONFIG_NAME,
+    POSITION_CONFIG_TYPE,
+)
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 from src.icons import Icons
@@ -165,12 +171,21 @@ nav_config_option = ConfigOption(
     config_type=NAV_CONFIG_TYPE,
     icon=Icons.Navigation,
 )
+position_config_option = ConfigOption(
+    POSITION_CONFIG_NAME,
+    DEFAULT_POSITION_CONFIG,
+    description="应用级世界定位服务：WS、里程计、融合、视觉校正与抓包后端",
+    config_description=POSITION_CONFIG_DESCRIPTION,
+    config_type=POSITION_CONFIG_TYPE,
+    icon=Icons.Navigation,
+)
 GLOBAL_CONFIG_OPTIONS = [
     key_config_option,
     battle_config_option,
     ensure_main_once_action_sleep_option,
     zip_line_config_option,
     nav_config_option,
+    position_config_option,
 ]
 
 _LOCK = threading.Lock()
@@ -183,6 +198,20 @@ _NAV_LEGACY_TASK_CONFIGS = [
     "MinimapPositionTask",
     "MinimapNavigateToPoint",
     "ItemNavigatorTask",
+]
+_POSITION_LEGACY_TASK_CONFIGS = [
+    "MinimapPositionTask",
+    *sorted(
+        {
+            "MinimapNavigateToPoint",
+            "MinimapPositionRecorder",
+            "MinimapRealtimePosition",
+            "MinimapRegionCheck",
+            "MinimapScaleCapture",
+            "MinimapTurnToHeading",
+            "MinimapDisplacementCalibration",
+        }
+    ),
 ]
 _NAV_TASK_MIGRATION_KEYS = (
     NAV_CONTENT_KEY,
@@ -199,11 +228,22 @@ _NAV_TASK_KEY_ALIASES = {
         "地图账号": NAV_WS_ACCOUNT_KEY,
     },
 }
-_MINIMAP_POSITION_TASK_CONFIG_NAME = "MinimapPositionTask"
-#: 允许把「小地图定位」参数交给定位所有者的来源任务：小地图调试任务，排除所有者本身。
+_POSITION_KEY_ALIASES = {
+    "在线位姿图": "关键帧视觉锚定链校正",
+    "在线位姿图窗口(拍)": "关键帧视觉锚定链校正窗口(拍)",
+    "在线位姿图边间隔(拍)": "关键帧视觉锚定链校正边间隔(拍)",
+    "在线位姿图最小响应": "关键帧视觉锚定链校正最小响应",
+    "在线位姿图锚点权重": "关键帧视觉锚定链校正锚点权重",
+    "在线位姿图修正上限(米)": "关键帧视觉锚定链校正修正上限(米)",
+    "在线位姿图关键帧间隔(拍)": "关键帧视觉锚定链校正关键帧间隔(拍)",
+    "在线位姿图关键帧边数": "关键帧视觉锚定链校正关键帧边数",
+    "在线位姿图关键帧最小响应": "关键帧视觉锚定链校正关键帧最小响应",
+    "在线位姿图关键帧锚点权重": "关键帧视觉锚定链校正关键帧锚点权重",
+}
+#: 历史上曾保存过定位运行时参数的任务配置来源。
 #:
-#: 为什么需要白名单：所有者只有一个槽位，来源一多，"哪个任务先 ``load_config`` 谁的值生效"
-#: 就由加载顺序决定，而加载顺序不该是可观察行为。历史上确实带过这些键的是
+#: 这些值现在统一迁移到全局 ``Position Config``。白名单只列出确有历史来源的任务，
+#: 避免同名配置键从无关任务中被误搬。历史上确实带过这些键的是
 #: ``MinimapRealtimePosition`` / ``MinimapDisplacementCalibration``（后者已改名为
 #: ``MinimapScaleCapture``）与 ``MinimapNavigateToPoint``（通过当年还带定位参数的网格导航
 #: Mixin 间接拿到，``e496b602`` 之后该 Mixin 不再合并）。
@@ -306,6 +346,8 @@ def _iter_legacy_config_data(option: ConfigOption):
         task_config_names = _BATTLE_LEGACY_TASK_CONFIGS
     elif option.name == NAV_CONFIG_NAME:
         task_config_names = _NAV_LEGACY_TASK_CONFIGS
+    elif option.name == POSITION_CONFIG_NAME:
+        task_config_names = _POSITION_LEGACY_TASK_CONFIGS
     else:
         task_config_names = []
 
@@ -329,6 +371,10 @@ def _iter_legacy_zip_line_task_data():
 def _collect_legacy_values(option: ConfigOption) -> dict[str, Any]:
     candidates_by_key: dict[str, list[tuple[float, Any]]] = {}
     for data, mtime in _iter_legacy_config_data(option) or []:
+        if option.name == POSITION_CONFIG_NAME:
+            for old_key, new_key in _POSITION_KEY_ALIASES.items():
+                if old_key in data and new_key not in data:
+                    data[new_key] = data[old_key]
         for key, default_value in option.default_config.items():
             if key not in data:
                 continue
@@ -497,7 +543,7 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)
         _migrate_battle_mode_selector_in_file(BATTLE_CONFIG_NAME)
-    elif option.name == NAV_CONFIG_NAME:
+    elif option.name in {NAV_CONFIG_NAME, POSITION_CONFIG_NAME}:
         _backup_legacy_nav_task_configs(state)
 
     # Battle Config 键名迁移：幂等执行（旧键值复制到新键，旧键保留），
@@ -519,6 +565,21 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     if option.name == NAV_CONFIG_NAME:
         # 网格目录换过默认值，且旧目录已随本次改动删除：存量值必须跟着改，否则导航起不来
         _migrate_nav_grid_dir_value()
+        config_file = config_path(f"{option.name}.json")
+        config = read_json_file(config_file)
+        if not isinstance(config, dict):
+            config = {}
+        values = _collect_legacy_values(option)
+        modified = False
+        for key, value in values.items():
+            default_value = option.default_config.get(key)
+            if key not in config or config.get(key) == default_value:
+                config[key] = value
+                modified = True
+        if modified:
+            write_json_file(config_file, config)
+
+    if option.name == POSITION_CONFIG_NAME:
         config_file = config_path(f"{option.name}.json")
         config = read_json_file(config_file)
         if not isinstance(config, dict):
@@ -652,82 +713,6 @@ def migrate_task_nav_values_to_global(task_class_name: str) -> None:
         default_value = DEFAULT_NAV_CONFIG.get(key)
         if key not in nav_config or nav_config.get(key) == default_value:
             nav_config[key] = value
-
-
-def migrate_task_minimap_values_to_owner(task) -> None:
-    """把旧网格任务中的定位参数迁移到共享 ``MinimapPositionTask``。
-
-    网格任务只消费定位结果，WS 等待、位移提交和校准距离等参数属于定位任务。
-    本函数必须在框架 Config 校验删除旧键之前执行；若定位任务已经实例化，也同步
-    更新其内存配置，避免迁移要等下次启动才生效。
-
-    只有 :data:`MINIMAP_LEGACY_SOURCE_TASKS` 里的任务会被当作来源：所有者只有一个
-    槽位，来源越多结果越依赖"哪个任务先 ``load_config``"，而这种事不该由加载顺序决定。
-    每个键的落点都会写日志，冲突时也说明为什么没有采用本次的值。
-    """
-    task_class_name = type(task).__name__
-    if task_class_name == _MINIMAP_POSITION_TASK_CONFIG_NAME:
-        return
-    if task_class_name not in MINIMAP_LEGACY_SOURCE_TASKS:
-        return
-
-    config_file = config_path(f"{task_class_name}.json")
-    data = read_json_file(config_file)
-    if not isinstance(data, dict):
-        return
-
-    from src.localization.minimap_position_mixin import MinimapPositionMixin
-
-    defaults = MinimapPositionMixin.minimap_position_default_config()
-    candidates = {
-        key: data[key] for key, default_value in defaults.items() if key in data and data[key] != default_value
-    }
-    if not candidates:
-        return
-
-    logger = getattr(task, "log_info", None)
-    warn = getattr(task, "log_warning", None)
-
-    loaded_owner = None
-    executor = getattr(task, "_executor", None)
-    if executor is not None and hasattr(executor, "get_all_tasks"):
-        for candidate in executor.get_all_tasks():
-            if type(candidate).__name__ == _MINIMAP_POSITION_TASK_CONFIG_NAME:
-                loaded_owner = candidate
-                break
-    owner_config = getattr(loaded_owner, "config", None) if loaded_owner is not None else None
-    if not isinstance(owner_config, dict):
-        owner_config = None
-
-    owner_config_file = config_path(f"{_MINIMAP_POSITION_TASK_CONFIG_NAME}.json")
-    owner_data = read_json_file(owner_config_file)
-    if not isinstance(owner_data, dict):
-        owner_data = {}
-
-    modified = False
-    for key, value in candidates.items():
-        default_value = defaults[key]
-        file_value = owner_data.get(key, default_value)
-        memory_value = owner_config.get(key, default_value) if owner_config is not None else default_value
-        if file_value != default_value or memory_value != default_value:
-            authoritative = memory_value if memory_value != default_value else file_value
-            if callable(warn):
-                warn(
-                    f"「{_MINIMAP_POSITION_TASK_CONFIG_NAME}」已有定位参数 {key}={authoritative!r}，"
-                    f"不采用「{task_class_name}」的 {value!r}；要改请直接改定位任务的配置"
-                )
-            if owner_data.get(key) != authoritative:
-                owner_data[key] = authoritative
-                modified = True
-            continue
-        owner_data[key] = value
-        modified = True
-        if owner_config is not None:
-            owner_config[key] = value
-        if callable(logger):
-            logger(f"已迁移定位参数 {key}: {value!r}（{task_class_name} -> {_MINIMAP_POSITION_TASK_CONFIG_NAME}）")
-    if modified:
-        write_json_file(owner_config_file, owner_data)
 
 
 def get_global_config(name: str) -> Config:

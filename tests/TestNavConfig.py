@@ -11,7 +11,6 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from typing import ClassVar
 from unittest.mock import patch
 
@@ -60,6 +59,13 @@ from src.core.NavConfig import (
     NAV_YAW_PER_PIXEL_KEY,
     nav_profile_for_width,
     tier_for_width,
+)
+from src.core.PositionConfig import (
+    CONFIG_COMMIT_MIN_SHIFT,
+    CONFIG_USE_EXPERIMENTAL,
+    CONFIG_WS_WAIT,
+    DEFAULT_POSITION_CONFIG,
+    POSITION_CONFIG_NAME,
 )
 
 
@@ -209,7 +215,9 @@ class TestNavConfigShape(unittest.TestCase):
 
         names = [option.name for option in GLOBAL_CONFIG_OPTIONS]
         self.assertIn(NAV_CONFIG_NAME, names)
+        self.assertIn(POSITION_CONFIG_NAME, names)
         self.assertIn(NAV_CONFIG_NAME, [name for name, _c, _o in get_all_visible_configs()])
+        self.assertIn(POSITION_CONFIG_NAME, [name for name, _c, _o in get_all_visible_configs()])
 
     def test_global_config_exposes_nav_config_keys(self):
         """注册到全局配置的那份必须覆盖 NavConfig 定义的全部键。
@@ -232,6 +240,7 @@ class TestNavConfigShape(unittest.TestCase):
         from src.gui.GlobalConfigTab import GLOBAL_CONFIG_GROUPS
 
         self.assertIn(NAV_CONFIG_NAME, GLOBAL_CONFIG_GROUPS.get("导航配置", []))
+        self.assertIn(POSITION_CONFIG_NAME, GLOBAL_CONFIG_GROUPS.get("定位配置", []))
 
 
 class TestMixinUsesGlobalNavConfig(unittest.TestCase):
@@ -500,93 +509,68 @@ class TestNavConfigMigration(unittest.TestCase):
             self.assertEqual(config.get(NAV_CONTENT_KEY), "item-content")
             self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "item-account")
 
-    def test_grid_position_controls_migrate_to_owner_before_prune(self):
+    def test_position_config_migrates_runtime_and_backend_settings(self):
         legacy_values = {
-            "WS等待稳定秒数": 20.0,
-            "WS稳定最小位置数": 5,
-            "朝向最低分数": 0.8,
-            "航点校准最小距离(米)": 55.0,
-            "位移提交阈值(像素)": 3.0,
+            CONFIG_WS_WAIT: 20.0,
+            CONFIG_COMMIT_MIN_SHIFT: 3.0,
+            CONFIG_USE_EXPERIMENTAL: True,
+            "实验技术后端端口": 9876,
         }
         with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
-                    "MinimapNavigateToPoint.json": legacy_values,
-                    "MinimapPositionTask.json": {},
-                },
-            )
-            source = type("MinimapNavigateToPoint", (), {})()
-            owner = type("MinimapPositionTask", (), {})()
-            owner.config = {}
-            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+            self._write_configs(tmp, {"MinimapPositionTask.json": legacy_values})
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
 
-            with patch.object(
-                global_config_store,
-                "config_path",
-                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
-            ):
-                global_config_store.migrate_task_minimap_values_to_owner(source)
-
-            owner_data = read_json_file(os.path.join(tmp, "configs", "MinimapPositionTask.json"))
             for key, value in legacy_values.items():
-                self.assertEqual(owner_data[key], value)
-                self.assertEqual(owner.config[key], value)
+                self.assertEqual(config.get(key), value)
 
-    def test_loaded_owner_values_win_over_legacy_grid_values(self):
+    def test_existing_position_config_values_win_over_legacy_task_values(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._write_configs(
                 tmp,
                 {
                     "MinimapNavigateToPoint.json": {"位移提交阈值(像素)": 9.0},
-                    "MinimapPositionTask.json": {},
+                    "Position Config.json": {CONFIG_COMMIT_MIN_SHIFT: 4.0},
                 },
             )
-            source = type("MinimapNavigateToPoint", (), {})()
-            owner = type("MinimapPositionTask", (), {})()
-            owner.config = {"位移提交阈值(像素)": 4.0}
-            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
 
-            with patch.object(
-                global_config_store,
-                "config_path",
-                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
-            ):
-                global_config_store.migrate_task_minimap_values_to_owner(source)
+            self.assertEqual(config.get(CONFIG_COMMIT_MIN_SHIFT), 4.0)
 
-            owner_data = read_json_file(os.path.join(tmp, "configs", "MinimapPositionTask.json"))
-            self.assertEqual(owner.config["位移提交阈值(像素)"], 4.0)
-            self.assertEqual(owner_data["位移提交阈值(像素)"], 4.0)
-
-    def test_only_known_legacy_sources_are_migrated(self):
-        """来源白名单：只有历史上真的有过这些键的任务会被搬，其余一律不动。
-
-        否则所有者只有一个槽位，"谁先 ``load_config`` 谁的值生效"，结果由加载顺序决定。
-        """
+    def test_position_config_ignores_unrelated_task_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._write_configs(
                 tmp,
                 {
                     "DeliveryTask.json": {"位移提交阈值(像素)": 9.0},
-                    "MinimapPositionTask.json": {},
                 },
             )
-            source = type("DeliveryTask", (), {})()
-            owner = type("MinimapPositionTask", (), {})()
-            owner.config = {}
-            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
 
-            with patch.object(
-                global_config_store,
-                "config_path",
-                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
-            ):
-                global_config_store.migrate_task_minimap_values_to_owner(source)
-
-            owner_data = read_json_file(os.path.join(tmp, "configs", "MinimapPositionTask.json"))
-            self.assertEqual(owner_data, {})
-            self.assertEqual(owner.config, {})
-            self.assertNotIn("DeliveryTask", global_config_store.MINIMAP_LEGACY_SOURCE_TASKS)
+            self.assertEqual(config.get(CONFIG_COMMIT_MIN_SHIFT), DEFAULT_POSITION_CONFIG[CONFIG_COMMIT_MIN_SHIFT])
 
     def test_whitelist_covers_the_minimap_debug_tasks(self):
         """白名单是"小地图调试任务族（减所有者）"：只靠考古出的三个名字会漏掉来源。"""
@@ -612,63 +596,51 @@ class TestNavConfigMigration(unittest.TestCase):
         for name in ("DeliveryTask", "DailyDeliveryTask", "BattleTask", "DailyTask", "ItemNavigatorTask"):
             self.assertNotIn(name, MINIMAP_LEGACY_SOURCE_TASKS)
 
-    def test_conflicting_source_value_is_logged_not_silently_dropped(self):
-        """冲突时写日志：用户能看出"我改的值为什么没生效"，而不是被静默丢弃。"""
+    def test_position_config_migrates_renamed_visual_anchor_keys(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._write_configs(
                 tmp,
                 {
-                    "MinimapNavigateToPoint.json": {"位移提交阈值(像素)": 9.0},
-                    "MinimapPositionTask.json": {"位移提交阈值(像素)": 4.0},
+                    "MinimapPositionTask.json": {
+                        "在线位姿图": False,
+                        "在线位姿图窗口(拍)": 42,
+                    },
                 },
             )
-            source = type("MinimapNavigateToPoint", (), {})()
-            warnings: list[str] = []
-            source.log_warning = warnings.append
-            owner = type("MinimapPositionTask", (), {})()
-            owner.config = {"位移提交阈值(像素)": 4.0}
-            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
 
-            with patch.object(
-                global_config_store,
-                "config_path",
-                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
-            ):
-                global_config_store.migrate_task_minimap_values_to_owner(source)
+            self.assertFalse(config.get("关键帧视觉锚定链校正"))
+            self.assertEqual(config.get("关键帧视觉锚定链校正窗口(拍)"), 42)
 
-            line = next(text for text in warnings if "位移提交阈值(像素)" in text)
-            self.assertIn("MinimapPositionTask", line)
-            self.assertIn("9.0", line)
-            self.assertIn("MinimapNavigateToPoint", line)
-
-    def test_accepted_source_value_is_logged(self):
-        """采用旧值时也要留痕，否则用户不知道自己的旧配置被搬去了哪里。"""
+    def test_position_config_accepts_known_debug_task_sources(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._write_configs(
                 tmp,
                 {
-                    "MinimapNavigateToPoint.json": {"位移提交阈值(像素)": 9.0},
-                    "MinimapPositionTask.json": {},
+                    "MinimapNavigateToPoint.json": {
+                        "航点校准最小距离(米)": 55.0,
+                    },
                 },
             )
-            source = type("MinimapNavigateToPoint", (), {})()
-            infos: list[str] = []
-            source.log_info = infos.append
-            owner = type("MinimapPositionTask", (), {})()
-            owner.config = {}
-            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
 
-            with patch.object(
-                global_config_store,
-                "config_path",
-                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
-            ):
-                global_config_store.migrate_task_minimap_values_to_owner(source)
-
-            line = next(text for text in infos if "位移提交阈值(像素)" in text)
-            self.assertIn("MinimapNavigateToPoint", line)
-            self.assertIn("MinimapPositionTask", line)
-            self.assertIn("9.0", line)
+            self.assertEqual(config.get("航点校准最小距离(米)"), 55.0)
 
 
 class TestGridDirValueMigration(unittest.TestCase):

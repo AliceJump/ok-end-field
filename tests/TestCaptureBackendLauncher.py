@@ -395,7 +395,7 @@ class SharedLauncherTest(unittest.TestCase):
 class AutostartPatchTest(unittest.TestCase):
     """游戏启动前拉起后端——**这才是唯一来得及的时机**。
 
-    触发任务要等游戏窗口能截屏才会被执行（``can_capture()``），所以把拉起放在定位任务里
+    任务要等游戏窗口能截屏才会被执行（``can_capture()``），所以把拉起放在普通任务里
     永远晚于登录握手。补丁挂在 ``StartController.do_start`` 上。
     """
 
@@ -408,8 +408,8 @@ class AutostartPatchTest(unittest.TestCase):
             launcher.stop()
         launcher_mod._SHARED.clear()
 
-    class _Task:
-        """只实现被补丁用到的两个方法，省掉整条任务依赖链。"""
+    class _Service:
+        """只实现被补丁用到的两个方法，省掉整条服务依赖链。"""
 
         def __init__(self, enabled: bool, ready: bool = True):
             self.enabled = enabled
@@ -426,30 +426,30 @@ class AutostartPatchTest(unittest.TestCase):
     def test_does_nothing_when_the_switch_is_off(self):
         from src.patches import capture_backend_autostart_patch as patch_mod
 
-        task = self._Task(enabled=False)
-        with mock.patch.object(patch_mod, "_position_task", return_value=task):
+        service = self._Service(enabled=False)
+        with mock.patch.object(patch_mod, "_position_service", return_value=service):
             self.assertFalse(patch_mod.ensure_capture_backend_before_game())
-        self.assertEqual(task.calls, 0, "开关关着就不该去碰后端")
+        self.assertEqual(service.calls, 0, "开关关着就不该去碰后端")
 
     def test_ensures_the_backend_when_the_switch_is_on(self):
         from src.patches import capture_backend_autostart_patch as patch_mod
 
-        task = self._Task(enabled=True)
-        with mock.patch.object(patch_mod, "_position_task", return_value=task):
+        service = self._Service(enabled=True)
+        with mock.patch.object(patch_mod, "_position_service", return_value=service):
             self.assertTrue(patch_mod.ensure_capture_backend_before_game())
-        self.assertEqual(task.calls, 1)
+        self.assertEqual(service.calls, 1)
 
     def test_returns_false_when_the_backend_cannot_be_readied(self):
         from src.patches import capture_backend_autostart_patch as patch_mod
 
-        task = self._Task(enabled=True, ready=False)
-        with mock.patch.object(patch_mod, "_position_task", return_value=task):
+        service = self._Service(enabled=True, ready=False)
+        with mock.patch.object(patch_mod, "_position_service", return_value=service):
             self.assertFalse(patch_mod.ensure_capture_backend_before_game())
 
     def test_returns_false_when_no_task_can_be_found(self):
         from src.patches import capture_backend_autostart_patch as patch_mod
 
-        with mock.patch.object(patch_mod, "_position_task", return_value=None):
+        with mock.patch.object(patch_mod, "_position_service", return_value=None):
             self.assertFalse(patch_mod.ensure_capture_backend_before_game())
 
     def test_wrapped_do_start_runs_the_game_even_if_ensuring_fails(self):

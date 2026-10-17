@@ -6,7 +6,7 @@
 
 本 mixin 只负责编排，不拥有定位源：
 
-- ``MinimapPositionTask`` 提供共享的实时 ``(x, z)``、朝向和可信状态；
+- ``WorldPoseService`` 提供共享的实时 ``(x, z)``、朝向和可信状态；
 - ``GridPlanner`` 在 ``*.grid.npz`` 上做 A*；
 - ``GridRouteFollower`` 输出 ``TURN/WALK/WAIT/STUCK/REPLAN/DONE``；
 - 本层把动作转换为鼠标、键盘输入，并处理校准、重规划和脱困。
@@ -302,7 +302,7 @@ class ZipLineBoardAttempt(StrEnum):
 class GridNavigationMixin(RuntimeStateMixin):
     """在 ``*.grid.npz`` 上规划并驱动角色前往世界坐标 ``(x, z)``。
 
-    定位由共享的 ``MinimapPositionTask`` 提供；本类只消费状态、执行动作和维护本次
+    定位由共享的 ``WorldPoseService`` 提供；本类只消费状态、执行动作和维护本次
     导航的重规划/脱困/校准计数。各动作的纯决策逻辑在 ``GridRouteFollower``。
     """
 

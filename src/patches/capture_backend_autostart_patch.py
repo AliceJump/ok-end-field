@@ -1,14 +1,13 @@
 """在**游戏启动之前**把抓包后端拉起来。
 
-## 为什么必须挂在这里，而不是定位任务里
+## 为什么必须挂在这里，而不是定位服务里
 
 抓包后端的成败全在时机：游戏会话的密钥/nonce 只在连接开头出现一次（登录握手），
 抓包晚于它就拿不到，整条流都推不出正确的解密位置。所以后端必须**早于游戏的主连接**就绪。
 
-而 ok 框架的触发任务**在游戏窗口可截屏之前根本不会被执行**——``TaskExecutor.execute()``
+而任何依赖游戏画面的任务在窗口可截屏之前都不会被执行——``TaskExecutor.execute()``
 要先 ``next_frame()``，而 ``can_capture()`` 要求设备已连上且能抓帧。也就是说，把拉起放在
-``MinimapPositionTask.run()`` 里（哪怕放在 ``in_world()`` 判断之前）**永远太晚**：
-等它跑起来，玩家早就登录完了。
+普通任务里**永远太晚**：等它跑起来，玩家早就登录完了。
 
 ``StartController.do_start()`` 是"启动游戏"的唯一入口，``start_device()`` 里紧接着就
 ``execute(游戏路径)``。挂在它前面，正好是游戏进程存在之前的最后时机。
@@ -29,38 +28,26 @@ from __future__ import annotations
 _PATCH_INSTALLED = False
 
 
-def _position_task():
-    """找到带抓包直通能力的定位任务；没有就返回 ``None``。
+def _position_service():
+    from src.localization.position_service import get_world_pose_service
 
-    用鸭子类型（有没有那两个方法）而不是 ``isinstance``：本模块在启动补丁阶段被导入，
-    不想在这里拉进任务模块的整条依赖链。
-    """
-
-    from ok import og
-
-    executor = getattr(og, "executor", None)
-    if executor is None or not hasattr(executor, "get_all_tasks"):
-        return None
-    for task in executor.get_all_tasks():
-        if hasattr(task, "ensure_capture_backend") and hasattr(task, "experimental_capture_enabled"):
-            return task
-    return None
+    return get_world_pose_service()
 
 
 def ensure_capture_backend_before_game() -> bool:
-    """按定位任务的配置拉起后端；返回它当前是否可用。
+    """按应用级定位服务的配置拉起后端；返回它当前是否可用。
 
     开关或自动启动关着、找不到任务、拉起失败都返回 False——调用方据此决定是否提示，
     但**不因此中止**游戏启动。
     """
 
-    task = _position_task()
-    if task is None:
+    service = _position_service()
+    if service is None:
         return False
-    if not task.experimental_capture_enabled():
+    if not service.experimental_capture_enabled():
         return False
     # 关掉自动启动就只探活，留给"我自己管后端进程"的用法
-    return bool(task.ensure_capture_backend())
+    return bool(service.ensure_capture_backend())
 
 
 def install_capture_backend_autostart_patch():

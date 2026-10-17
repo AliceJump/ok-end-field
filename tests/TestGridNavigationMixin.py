@@ -1504,7 +1504,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         result = self.task.navigate_grid_to((1.0, 1.0), timeout=1.0)
 
         self.assertFalse(result)
-        self.assertTrue(any("未注册「小地图定位」" in msg for msg in self.task.logs))
+        self.assertTrue(any("应用级定位服务不可用" in msg for msg in self.task.logs))
 
     def test_done_does_not_require_extra_calibration(self):
         """静止校准由定位服务自动完成，导航只消费当前融合坐标。"""

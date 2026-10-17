@@ -107,7 +107,7 @@ class RuntimeStateMixin:
             self.sleep(min(interval, deadline - now))
 
     def get_runtime_position_service(self):
-        """获取共享定位任务；只在内部缓存，不启动资源。"""
+        """获取应用级定位服务；只在内部缓存，不启动资源。"""
 
         service = getattr(self, "_runtime_position_service", None)
         if service is not None:
@@ -116,27 +116,19 @@ class RuntimeStateMixin:
         if override is not None:
             self._runtime_position_service = override
             return override
-        getter = getattr(self, "get_task_by_class", None)
-        if callable(getter):
-            from src.tasks.localization.MinimapPositionTask import MinimapPositionTask
+        from src.localization.position_service import get_world_pose_service
 
-            self._runtime_position_service = getter(MinimapPositionTask)
+        self._runtime_position_service = get_world_pose_service(getattr(self, "executor", None))
         return self._runtime_position_service
 
     def ensure_runtime_position_service(self, *, force_start: bool = False):
-        """确保共享定位任务可用，并返回可采样的所有者。"""
+        """确保应用级定位服务可用，并返回可采样的所有者。"""
 
         service = self.get_runtime_position_service()
         if service is None:
             self._report_runtime_position_service_issue(
                 "missing",
-                "未注册「小地图定位」触发任务，无法获取实时位置",
-            )
-            return None
-        if not getattr(service, "enabled", True):
-            self._report_runtime_position_service_issue(
-                "disabled",
-                "「小地图定位」触发任务未启用，无法获取实时位置",
+                "应用级定位服务不可用，无法获取实时位置",
             )
             return None
         needs_start = (
@@ -177,13 +169,7 @@ class RuntimeStateMixin:
         if service is None:
             self._report_runtime_position_service_issue(
                 "missing",
-                "未注册「小地图定位」触发任务，无法重新启动定位",
-            )
-            return False
-        if not getattr(service, "enabled", True):
-            self._report_runtime_position_service_issue(
-                "disabled",
-                "「小地图定位」触发任务未启用，无法重新启动定位",
+                "应用级定位服务不可用，无法重新启动定位",
             )
             return False
         starter = getattr(service, "start_minimap_position", None)
@@ -206,7 +192,7 @@ class RuntimeStateMixin:
 
     def _report_runtime_position_service_issue(self, issue: str, message: str) -> None:
         """相同不可用状态只提示一次；恢复后再次故障可重新提示。"""
-        if self._runtime_position_service_issue == issue:
+        if getattr(self, "_runtime_position_service_issue", None) == issue:
             return
         self._runtime_position_service_issue = issue
         self.log_warning(message, notify=True)
@@ -276,7 +262,7 @@ class RuntimeStateMixin:
             return False
         sampler = getattr(service, "sample_world_pose", None)
         if not callable(sampler):
-            self.log_warning("定位任务未实现 sample_world_pose 接口", notify=True)
+            self.log_warning("定位服务未实现 sample_world_pose 接口", notify=True)
             return False
         sampler(frame=frame, now=self.active_time() if now is None else now)
         return True

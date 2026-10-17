@@ -43,7 +43,7 @@ def _state(*, rest=True, ws=(123.5, -456.25), x=123.4, z=-456.2, map_id="map02",
 
 
 class _FakePositionTask:
-    """MinimapPositionTask 的替身：按预设序列吐状态。"""
+    """WorldPoseService 的替身：按预设序列吐状态。"""
 
     enabled = True
     minimap_position_ready = True

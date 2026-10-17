@@ -17,7 +17,7 @@ This document covers two trigger/debug tasks:
 
 - Legacy Compatible starts this task's own official-map client or local WS server; legacy `content` / `地图账号` values are migrated to the global Nav Config first.
 - Unified Localization recommends saving the official-map sync `content` on the account configuration page and selecting its `真值地图账号` in the global Nav Config, or filling in `真值content` there directly. Without official truth, the Tampermonkey relay uses the local `ws://127.0.0.1:3001`.
-- Unified Localization automatically requests the Minimap Positioning trigger task; Legacy Compatible does not touch it.
+- Unified Localization starts the application-level position service on demand when coordinates are first read; Legacy Compatible does not touch it.
 - Item point data comes from `assets/items/map/summary.json` and `assets/items/map/item_names.json`.
 - Mark results are written to `configs/marked_points.json`, used to avoid re-pointing to already-marked points.
 
@@ -25,7 +25,7 @@ This document covers two trigger/debug tasks:
 
 | Config item | Default | Description |
 |---|---:|---|
-| `定位实现` (Position implementation) | `旧版兼容` | `旧版兼容` keeps the original WS / official map client. `统一定位` uses the shared Minimap Positioning service and global Nav Config. |
+| `定位实现` (Position implementation) | `旧版兼容` | `旧版兼容` keeps the original WS / official map client. `统一定位` uses the application-level position service and global Nav Config. |
 | `选择物品` (Select item) | `[]` | List of item names to navigate; no target is filtered when empty. |
 | `标记按键` (Mark key) | `f` | The key pressed to mark an item as "collected" when close to the target. |
 | `标记按住时长` (Mark hold duration) | `2.0` | Seconds the mark key must be held. Timing starts only within a horizontal distance of 20 of the target; reaching the duration marks it as collected. `0`, negative, or non-numeric values fall back to the default 2 seconds. |
@@ -71,7 +71,7 @@ When no `content` is configured, a browser userscript can relay position data to
 ```mermaid
 flowchart TD
     A[Nav Config 真值content / 真值地图账号] --> D{Has official truth}
-    B[Local WS port 3001] --> C[Minimap Positioning sole producer]
+    B[Local WS port 3001] --> C[WorldPoseService sole producer]
     D -->|Yes| E[Official map WS]
     D -->|No| B
     E --> C

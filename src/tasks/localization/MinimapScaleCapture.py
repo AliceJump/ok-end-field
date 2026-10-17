@@ -37,7 +37,7 @@
 
 **不要填 ``screenshots/``**：该目录每次启动会被清空（见 ``src/config.py`` 的注释）。
 
-定位能力由 ``MinimapPositionTask`` 统一维护，本任务只负责等待静止、采样与落盘。
+定位能力由应用级 ``WorldPoseService`` 统一维护，本任务只负责等待静止、采样与落盘。
 """
 
 from __future__ import annotations

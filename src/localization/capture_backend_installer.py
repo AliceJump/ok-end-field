@@ -5,7 +5,7 @@
 
 三条边界：
 
-* **下载是开关驱动的**：只有「使用实验技术」打开后才会走到这里（调用点在定位任务的
+* **下载是开关驱动的**：只有「使用实验技术」打开后才会走到这里（调用点在定位服务的
   :meth:`~src.localization.minimap_position_mixin.MinimapPositionMixin.ensure_capture_backend`）。
   关着的时候一次网络请求都不会发。
 * **安装位置避开 ``configs/``**：18 MB 的 exe 放进配置目录会让配置导出包超过导入侧的

@@ -108,14 +108,14 @@ class TestRuntimeStateMixin(unittest.TestCase):
 
         self.assertIsNone(self.task.ensure_runtime_position_service())
         self.assertIsNone(self.task.ensure_runtime_position_service())
-        self.assertEqual(sum("未注册「小地图定位」" in message for message in self.task.logs), 1)
+        self.assertEqual(sum("应用级定位服务不可用" in message for message in self.task.logs), 1)
 
         self.task._runtime_position_service = self.service
         self.assertIs(self.task.ensure_runtime_position_service(), self.service)
 
         self.task._runtime_position_service = None
         self.assertIsNone(self.task.ensure_runtime_position_service())
-        self.assertEqual(sum("未注册「小地图定位」" in message for message in self.task.logs), 2)
+        self.assertEqual(sum("应用级定位服务不可用" in message for message in self.task.logs), 2)
 
     def test_stop_and_start_position_service_rebuilds_anchor(self):
         self.assertTrue(self.task.start_runtime_position_service(wait_stable=True))

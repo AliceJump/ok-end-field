@@ -10,11 +10,13 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication
 
 from src.patches.conditional_rotation_patch import install_conditional_rotation_patch
+from src.patches.danger_switch_patch import install_danger_switch_patch
 
 # 必须先于 ConfigCard 导入（config_widget 为导入时绑定）。
 # 只安装本文件需要的补丁，不装 startup_patches 全量，
 # 避免污染后续用例的全局 ctypes / 模块状态。
 install_conditional_rotation_patch()
+install_danger_switch_patch()
 
 import sys as _sys  # noqa: E402
 

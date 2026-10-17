@@ -10,7 +10,7 @@
 WS 有传输延迟，只在两边都停住时才能安全地用它做基准。移动中收到的 WS 样本直接忽略、
 不做暂存：那是移动途中的旧坐标，静止后应用它只会把里程计已经推进的位置拽回去。
 
-定位状态由 ``MinimapPositionTask`` 这样的单一所有者维护。生产者每次采样后通过
+定位状态由应用级 ``WorldPoseService`` 维护。服务每次采样后通过
 ``sample_world_pose()`` 把稳定契约发布到 ``RuntimeStateHub``；导航等消费方使用
 ``RuntimeStateMixin.world_pose()``，禁止每个任务各自启动里程计和 WS 位置源。
 
@@ -80,11 +80,34 @@ from src.core.NavConfig import (
     NavProfile,
     nav_profile_for_width,
 )
-from src.localization.capture_backend_installer import CaptureBackendInstaller
-from src.localization.capture_backend_launcher import (
+from src.core.PositionConfig import (
+    CONFIG_COMMIT_MIN_SHIFT,
     CONFIG_EXPERIMENTAL_AUTOSTART,
     CONFIG_EXPERIMENTAL_EXE,
+    CONFIG_EXPERIMENTAL_PORT,
+    CONFIG_EXPERIMENTAL_RELOGIN,
     CONFIG_EXPERIMENTAL_STOP_ON_EXIT,
+    CONFIG_EXPERIMENTAL_UPDATE,
+    CONFIG_SYNC_DISTANCE,
+    CONFIG_USE_EXPERIMENTAL,
+    CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT,
+    CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION,
+    CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP,
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME,
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES,
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE,
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT,
+    CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION,
+    CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE,
+    CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW,
+    CONFIG_WS_MIN_HITS,
+    CONFIG_WS_WAIT,
+    DEFAULT_COMMIT_MIN_SHIFT_PX,
+    DEFAULT_POSITION_CONFIG,
+    POSITION_CONFIG_DESCRIPTION,
+)
+from src.localization.capture_backend_installer import CaptureBackendInstaller
+from src.localization.capture_backend_launcher import (
     BackendLauncher,
     probe_backend,
     shared_launcher,
@@ -99,10 +122,7 @@ from src.localization.capture_position_source import (
     CaptureHealth,
     CapturePositionSource,
 )
-from src.localization.minimap_heading_mixin import (
-    CONFIG_MIN_SCORE,
-    MinimapHeadingMixin,
-)
+from src.localization.minimap_heading_mixin import MinimapHeadingMixin
 from src.localization.minimap_odometry import MinimapOdometry
 from src.localization.minimap_position_fusion import MinimapPositionFusion
 from src.localization.minimap_sample_stitch import fused_map_px
@@ -146,30 +166,6 @@ __all__ = [
     "parse_map_to_world",
 ]
 
-CONFIG_WS_WAIT = "WS等待稳定秒数"
-CONFIG_WS_MIN_HITS = "WS稳定最小位置数"
-CONFIG_SYNC_DISTANCE = "航点校准最小距离(米)"
-CONFIG_COMMIT_MIN_SHIFT = "位移提交阈值(像素)"
-CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION = "关键帧视觉锚定链校正"
-CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW = "关键帧视觉锚定链校正窗口(拍)"
-CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP = "关键帧视觉锚定链校正边间隔(拍)"
-CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE = "关键帧视觉锚定链校正最小响应"
-CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT = "关键帧视觉锚定链校正锚点权重"
-CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION = "关键帧视觉锚定链校正修正上限(米)"
-CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME = "关键帧视觉锚定链校正关键帧间隔(拍)"
-CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES = "关键帧视觉锚定链校正关键帧边数"
-CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE = "关键帧视觉锚定链校正关键帧最小响应"
-CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT = "关键帧视觉锚定链校正关键帧锚点权重"
-#: 实验技术：改由外部抓包后端直接提供绝对坐标，绕开里程计/WS 融合与整条校准链。
-#: 默认关闭；打开需要过一遍风险确认（见 ``src/patches/danger_switch_patch.py``）。
-CONFIG_USE_EXPERIMENTAL = "使用实验技术"
-CONFIG_EXPERIMENTAL_PORT = "实验技术后端端口"
-#: 抓包错过登录握手时，是否自动退回登录界面重新进入
-CONFIG_EXPERIMENTAL_RELOGIN = "抓包失败时自动重新登录"
-#: 手动触发一次「检查并更新后端」。它不进 ``default_config``：按钮型配置只借 config_type 渲染，
-#: 值本身没有意义（框架的按钮控件不读也不写它）。
-CONFIG_EXPERIMENTAL_UPDATE = "检查并更新后端"
-
 #: 抓包错过握手时最多重建几次连接（每次都是一次"离开游戏再进入"）。用尽即停手——
 #: 无人值守时反复登出比不修更糟。
 CAPTURE_RELOGIN_ATTEMPTS = 3
@@ -178,11 +174,6 @@ CAPTURE_RELOGIN_WAIT_SECONDS = 90.0
 #: 两次重建之间的最小间隔。本方法每拍都被调，没有它就等于"连续猛试"，而每次都要把玩家
 #: 踢回登录界面——实测两次只隔了 14 秒，太激进。
 CAPTURE_RELOGIN_INTERVAL_SECONDS = 20.0
-
-#: 位移提交阈值默认值（1920 宽下约 1.8m）。0 = 关闭，回到"按时间提交"的旧行为。
-#: 误差按采样次数累积、每样本误差大致是绝对量，而每样本位移 = 速度 * 采样间隔，
-#: 所以慢走 / 原地小步走时每米提交次数暴涨、漂移更大。设阈值让每米提交次数与速度脱钩。
-DEFAULT_COMMIT_MIN_SHIFT_PX = 2.0
 
 
 def parse_map_to_world(value):
@@ -233,83 +224,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
     @staticmethod
     def minimap_position_default_config() -> dict:
         """返回小地图定位配置的默认值（不含比例尺/轴映射/真值——那些在全局导航配置）。"""
-        return {
-            CONFIG_WS_WAIT: 10.0,
-            CONFIG_WS_MIN_HITS: 3,
-            CONFIG_MIN_SCORE: 0.6,
-            CONFIG_SYNC_DISTANCE: 100.0,
-            CONFIG_COMMIT_MIN_SHIFT: DEFAULT_COMMIT_MIN_SHIFT_PX,
-            CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION: True,
-            CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW: 60,
-            CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP: 12,
-            CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE: 0.25,
-            CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT: 50.0,
-            CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION: 10.0,
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME: 10,
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: 8,
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: 0.3,
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: 25.0,
-            CONFIG_USE_EXPERIMENTAL: False,
-            CONFIG_EXPERIMENTAL_PORT: 8765,
-            CONFIG_EXPERIMENTAL_EXE: "",
-            CONFIG_EXPERIMENTAL_AUTOSTART: True,
-            CONFIG_EXPERIMENTAL_STOP_ON_EXIT: False,
-            CONFIG_EXPERIMENTAL_RELOGIN: True,
-        }
+        return dict(DEFAULT_POSITION_CONFIG)
 
     @staticmethod
     def minimap_position_config_description() -> dict:
         """返回定位配置键的用户说明，包含静止校准语义。"""
-        return {
-            CONFIG_WS_WAIT: "等 WS 位置流稳定（连续同一 mapId 的有效位置）的最大等待秒数",
-            CONFIG_WS_MIN_HITS: "判为稳定所需连续有效位置个数",
-            CONFIG_MIN_SCORE: "箭头角度检测最低置信度，低于该值朝向判为不可用",
-            CONFIG_SYNC_DISTANCE: "累计移动达到该距离后，请求导航暂停并等待静止自动校准",
-            CONFIG_COMMIT_MIN_SHIFT: "里程计位移提交阈值（像素）。误差是按采样次数累积的，"
-            "而每样本位移 = 速度 * 采样间隔，所以慢走 / 原地挪时每米要积更多样本、"
-            "漂移更大。设成 2~3 像素可让每米提交次数与速度脱钩（原地小步走几乎不提交），"
-            "同时位置仍连续（未提交部分照常计入位置）。"
-            "0 = 关闭，回到按时间提交的旧行为，便于 A/B 对比",
-            CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION: (
-                "用 WS 绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
-            ),
-            CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW: ("关键帧视觉锚定链校正保留的最近切片数；越大越稳但计算越多"),
-            CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP: "每拍新切片最多和之前多少拍建立相对平移边",
-            CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE: "切片对相位相关的最低响应；低于该值不建边",
-            CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT: "静止校准 WS 绝对锚点的权重；越大越贴近 WS",
-            CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION: (
-                "单拍关键帧视觉锚定链校正量的安全上限（米）；超过则回退原始融合值"
-            ),
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME: "每隔多少拍建立一个关键帧；每次静止校准也会建关键帧",
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: "每个关键帧最多和之前多少个关键帧建立直接视觉边",
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: "关键帧视觉边的最低相位相关响应",
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: ("关键帧优化位置作为局部关键帧视觉锚定链校正软锚点的权重"),
-            CONFIG_USE_EXPERIMENTAL: (
-                "改用外部抓包后端直接读取角色绝对坐标，绕开小地图里程计、地图 WS 与整条校准链。"
-                "该技术可能违反游戏服务条款、存在封禁风险，请自行判断是否使用"
-            ),
-            CONFIG_EXPERIMENTAL_PORT: "外部抓包后端的本地 HTTP 端口（自动启动用它拉起后端，也用它探活）",
-            CONFIG_EXPERIMENTAL_EXE: (
-                "后端可执行文件的路径（也可以是放着它的目录）。留空则自动探测："
-                "同级 endfield-capture-backend 仓库的 dist/ 目录、本仓库目录，以及系统 PATH"
-            ),
-            CONFIG_EXPERIMENTAL_AUTOSTART: (
-                "后端没在跑时自动把它拉起来。**后端必须在游戏建立主连接之前就绪**，"
-                "否则拿不到登录握手、解不出坐标；由本应用拉起可以保证这个顺序"
-            ),
-            CONFIG_EXPERIMENTAL_STOP_ON_EXIT: (
-                "停止定位时一并关闭由本应用拉起的后端。默认关：后端的状态绑在当前这一局连接上，"
-                "关掉再拉起等于丢了登录握手，必须重启游戏才能恢复"
-            ),
-            CONFIG_EXPERIMENTAL_UPDATE: (
-                "立刻检查并更新抓包后端程序，不等下次启动。用在自己的网络刚恢复、或想确认当前用的是哪个版本时"
-            ),
-            CONFIG_EXPERIMENTAL_RELOGIN: (
-                "抓包后端在跑、但当前没有可用坐标时（错过了登录握手，或还没看到游戏连接），"
-                "自动退回登录界面再进入一次，逼出一条新连接让后端重新抓握手。"
-                "**不会切换账号**；最多尝试 3 次，用尽即停手。关掉则只在日志里提示"
-            ),
-        }
+        return dict(POSITION_CONFIG_DESCRIPTION)
 
     # ------------------------------------------------------------------ #
     # 生命周期

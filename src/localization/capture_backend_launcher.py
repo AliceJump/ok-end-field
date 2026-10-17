@@ -5,7 +5,7 @@
 
 为什么需要自动拉起：后端的抓包必须在**游戏建立主连接之前**就开始，否则拿不到登录握手，
 整条流都推不出正确的解密位置（后端会明确报「缺少连接起点」）。让用户先手动开终端、再开
-游戏、再开本应用，顺序很容易搞错；挂在这里由定位任务负责拉起，顺序就由应用保证了。
+游戏、再开本应用，顺序很容易搞错；挂在这里由定位服务负责拉起，顺序就由应用保证了。
 
 三条刻意的边界：
 
@@ -28,6 +28,11 @@ import time
 from pathlib import Path
 from urllib import error, request
 
+from src.core.PositionConfig import (
+    CONFIG_EXPERIMENTAL_AUTOSTART,
+    CONFIG_EXPERIMENTAL_EXE,
+    CONFIG_EXPERIMENTAL_STOP_ON_EXIT,
+)
 from src.localization.capture_backend_installer import (
     ASSET_NAME,
     installed_executable,
@@ -56,7 +61,7 @@ ENV_OVERRIDE = "EF_CAPTURE_BACKEND"
 #: 拉起后**同步**等待后端开始应答的秒数。冷启动要先校验客户端哈希、读
 #: ``global-metadata.dat`` 与两份预存数据，实测 2~3 秒；等这么久既能让多数冷启动在
 #: 同一拍就绪，又能及时抓到「起来就退」（缺 Npcap 驱动时最常见的表现形式），同时不至于
-#: 把定位任务的一次采样卡住太久。超过这个时间就交给后续探活，不再阻塞。
+#: 把定位服务的一次采样卡住太久。超过这个时间就交给后续探活，不再阻塞。
 STARTUP_GRACE = 3.0
 
 #: 确认后端在跑之后的免检时长：这段时间内不再重复探活，省掉每个采样周期的 HTTP 往返。
@@ -82,13 +87,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 #: * ``--no-map-ws`` —— 官方地图 WS 对照要 ok-end-field 加 ok-script 的依赖，冻结出来的
 #:   后端带不了它；而地图名本来就走后端包内的场景表（``levelId`` / ``mapId``），够用。
 DEFAULT_SERVE_ARGS: tuple[str, ...] = ("serve", "--no-dashboard", "--no-map-ws")
-
-#: 任务配置键：后端 exe 路径；留空按 :func:`find_backend_executable` 自动探测
-CONFIG_EXPERIMENTAL_EXE = "实验技术后端程序路径"
-#: 任务配置键：后端连不上时是否自动拉起
-CONFIG_EXPERIMENTAL_AUTOSTART = "实验技术自动启动后端"
-#: 任务配置键：定位任务销毁时是否顺手停掉由本应用拉起的后端。默认关——见模块 docstring
-CONFIG_EXPERIMENTAL_STOP_ON_EXIT = "实验技术停止定位时关闭后端"
 
 
 def probe_backend(port: int, timeout: float = PROBE_TIMEOUT) -> bool:
@@ -375,7 +373,7 @@ class BackendLauncher:
 #: 进程内共享的拉起器，键是 ``(端口, exe 路径)``。
 #:
 #: **必须共享**：拉起后端的时机是「游戏启动前」（见
-#: ``src/patches/capture_backend_autostart_patch.py``），而使用它的是定位任务——两处各建一个
+#: ``src/patches/capture_backend_autostart_patch.py``），而使用它的是定位服务——两处各建一个
 #: 实例的话，探活会重复、``stop()`` 还会因为"不是我起的"而拒绝收尾。
 _SHARED: dict[tuple[int, str], BackendLauncher] = {}
 

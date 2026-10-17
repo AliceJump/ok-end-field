@@ -152,7 +152,7 @@ class TestItemNavigatorInstructions(unittest.TestCase):
 
         self.assertIn("手动 content 使用本任务 content", html)
         self.assertIn("地图账号：仅在「地图数据来源 = 账号配置」时使用", html)
-        self.assertNotIn("定位服务：首次读取坐标时会自动启用「小地图定位」触发任务", html)
+        self.assertNotIn("定位服务：首次读取坐标时会按需启动应用级定位服务", html)
 
     def test_runtime_values_are_not_passed_to_tr(self):
         """运行时数据只能经 .format() 注入；直接喂给 tr() 会污染 gettext 收集池。"""

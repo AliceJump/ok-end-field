@@ -145,12 +145,11 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 
 | 顺序 | 类                    | 模块                                    |
 | ---- | --------------------- | --------------------------------------- |
-| 1    | `MinimapPositionTask` | `src.tasks.localization.MinimapPositionTask` |
-| 2    | `AutoCombatTask`      | `src.tasks.trigger.AutoCombatTask`      |
-| 3    | `AutoInteractionTask` | `src.tasks.trigger.AutoInteractionTask` |
-| 4    | `AutoPickTask`        | `src.tasks.trigger.AutoPickTask`        |
-| 5    | `ItemNavigatorTask`   | `src.tasks.trigger.ItemNavigatorTask`   |
-| 6    | `TemplateMonitorTask` | `src.tasks.trigger.TemplateMonitorTask` |
+| 1    | `AutoCombatTask`      | `src.tasks.trigger.AutoCombatTask`      |
+| 2    | `AutoInteractionTask` | `src.tasks.trigger.AutoInteractionTask` |
+| 3    | `AutoPickTask`        | `src.tasks.trigger.AutoPickTask`        |
+| 4    | `ItemNavigatorTask`   | `src.tasks.trigger.ItemNavigatorTask`   |
+| 5    | `TemplateMonitorTask` | `src.tasks.trigger.TemplateMonitorTask` |
 
 当前没有 `AutoLoginTask.py` 或触发式自动登录注册。登录切换能力由 `LoginMixin`/`AccountMixin` 供多账号任务调用。
 
@@ -314,10 +313,13 @@ self.default_config_group.update({...})
 - `Ensure Main Once Action Sleep`
 - `Zip Line Config`
 - `Nav Config`
+- `Position Config`
 
 战斗任务通过 `BattleMixin.get_battle_config()` 读取。任务可通过「使用独立配置」开关选择全局或独立战斗配置；「使用独立配置」关闭时，`get_battle_config()` 直接返回全局配置，账号任务覆盖不会生效。仅当「使用独立配置」开启时，绑定账号上下文后，账号任务覆盖才为最高优先级。不要在多个任务中复制全局战斗默认值。
 
 网格导航的定位真值、分辨率档位比例尺与轴映射，以及网格规划、行走和脱困参数均由 `Nav Config` 统一提供；导航任务侧只保留目标 X/Z 等单次目标参数。定位链路见[小地图定位](小地图定位.md)，规划与执行见[网格导航](网格导航.md)。
+
+`Position Config` 保存应用级 `WorldPoseService` 的运行参数（WS、里程计、融合、视觉校正和抓包后端）。该服务不是 TriggerTask，首次有消费者读取 `world_pose` 时才创建和采样；没有消费者时不会后台取帧。
 
 ### 6.4 Feature 资源
 

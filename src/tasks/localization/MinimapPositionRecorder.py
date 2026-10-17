@@ -1,7 +1,7 @@
 """小地图定位采样记录（工具与调试）。
 
 本任务不参与导航，也不修改正式配置。它按固定节拍请求共享
-``MinimapPositionTask`` 采样一帧，并把每拍的必要信息落到磁盘：
+``WorldPoseService`` 采样一帧，并把每拍的必要信息落到磁盘：
 
 - 融合状态：``x/z``、WS、``error``、``position_trusted``、``sync_seq`` 等；
 - 原始里程计结果：``dx_px/dy_px``、``dmap_px``、``response``、``dt``、``reason``、
@@ -22,7 +22,7 @@
 - ``summary.json``：位移/残差/响应统计；
 - ``run.json``：本次运行配置、比例尺和轴映射。
 
-定位能力仍由 ``MinimapPositionTask`` 统一维护，本任务只负责采样、记录和离线参考。
+定位能力仍由应用级 ``WorldPoseService`` 统一维护，本任务只负责采样、记录和离线参考。
 """
 
 from __future__ import annotations

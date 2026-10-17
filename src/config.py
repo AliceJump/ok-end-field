@@ -176,7 +176,6 @@ config = {
         ["src.gui.AccountConfigTab", "AccountConfigTab"],
     ],
     "trigger_tasks": [  # 不断执行的触发式任务
-        ["src.tasks.localization.MinimapPositionTask", "MinimapPositionTask"],
         ["src.tasks.trigger.AutoCombatTask", "AutoCombatTask"],
         ["src.tasks.trigger.AutoInteractionTask", "AutoInteractionTask"],
         ["src.tasks.trigger.AutoPickTask", "AutoPickTask"],
