@@ -3098,3 +3098,6 @@ msgstr ""
 "Account list, one phone number per line.\n"
 "Only the content before the first comma is used; the remainder is ignored.\n"
 "Switching matches the first three and last four visible digits; duplicate numbers are disambiguated using the Recent marker and the account active before switching."
+
+msgid "窗口置顶"
+msgstr "Keep Windows on Top"

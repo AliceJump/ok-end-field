@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: windows-latest
     permissions:
-      contents: write
+      contents: read
 
     env:
       PYTHONIOENCODING: 'UTF-8'
@@ -89,47 +89,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install polib
-
-      - name: Sync topmost toggle translations
-        shell: pwsh
-        env:
-          BRANCH_NAME: ${{ steps.ref.outputs.branch }}
-        run: |
-          $script = @'
-          from pathlib import Path
-
-          translations = {
-              "en_US": "Keep Windows on Top",
-              "es_ES": "Mantener ventanas siempre encima",
-              "ja_JP": "ウィンドウを常に最前面",
-              "ko_KR": "창 항상 위에 표시",
-              "zh_CN": "窗口置顶",
-              "zh_TW": "視窗置頂",
-          }
-          msgid = 'msgid "窗口置顶"'
-          for locale, translation in translations.items():
-              path = Path("i18n") / locale / "LC_MESSAGES" / "ok.po"
-              text = path.read_text(encoding="utf-8")
-              if msgid in text:
-                  continue
-              suffix = "" if text.endswith("\n") else "\n"
-              text += f'{suffix}\nmsgid "窗口置顶"\nmsgstr "{translation}"\n'
-              path.write_text(text, encoding="utf-8", newline="\n")
-          '@
-          $script | Set-Content -LiteralPath .tmp_topmost_i18n.py -Encoding utf8
-          python .tmp_topmost_i18n.py
-          Remove-Item -LiteralPath .tmp_topmost_i18n.py
-          uv run --locked python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py check --i18n i18n
-          uv run --locked python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py compile --i18n i18n
-          uv run --locked python -m unittest tests.TestPoLocaleConsistency -v
-          git fetch origin master
-          git checkout origin/master -- .github/workflows/pr-test.yml
-          git add i18n .github/workflows/pr-test.yml
-          git diff --cached --quiet
-          if ($LASTEXITCODE -ne 0) {
-            git commit -m "i18n: translate topmost toggle"
-            git push origin "HEAD:$env:BRANCH_NAME"
-          }
 
       - name: Validate test responsibility groups
         id: test_manifest
