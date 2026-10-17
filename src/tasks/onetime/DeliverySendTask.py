@@ -135,7 +135,7 @@ class DeliverySendTask(Common):
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
                     (fL.fill_max, None, 0),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 1),
-                    (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
+                    (fL.skip_dialog_confirm, self.box_of_screen(0.82, 0.88, 0.98, 0.96), 0),
                     (fL.esc, None, 0),
                 ]
                 optional_steps = {3}
