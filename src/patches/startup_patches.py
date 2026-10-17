@@ -20,6 +20,7 @@ def install_startup_patches():
     from src.patches.process_execute_patch import install_process_execute_patch
     from src.patches.qfluent_navigation_patch import install_qfluent_navigation_patch
     from src.patches.screenshot_sidecar_patch import install_screenshot_sidecar_patch
+    from src.patches.special_combat_mechanics_patch import install_special_combat_mechanics_patch
     from src.patches.startup_window_patch import install_startup_window_patch
     from src.patches.task_config_lock_patch import install_task_config_lock_patch
     from src.patches.task_param_preview_patch import install_task_param_preview_patch
@@ -30,6 +31,7 @@ def install_startup_patches():
     install_no_frame_task_patch()
     install_cascade_dropdown_patch()
     install_enemy_direction_recovery_patch()
+    install_special_combat_mechanics_patch()
     install_timed_enemy_absence_stability_patch()
     install_combat_decision_trace_patch()
     install_config_transfer_patch()
