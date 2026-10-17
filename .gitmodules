@@ -1,6 +1,3 @@
 [submodule "ok_templates"]
 	path = ok_templates
 	url = https://github.com/AliceJump/ok-end-field-x-anylabeling-asset
-[submodule "remote-control"]
-	path = remote-control
-	url = https://github.com/AliceJump/remote-control
