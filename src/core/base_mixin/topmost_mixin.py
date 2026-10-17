@@ -196,6 +196,7 @@ class TopmostMixin:
         self._topmost_modified: set[int] = set()
         self._topmost_thread: threading.Thread | None = None
         self._topmost_prev_fg: int = 0
+        self._topmost_config_enabled = True
 
     # ── 生命周期 ────────────────────────────────────────────
 
@@ -274,12 +275,18 @@ class TopmostMixin:
             self._restore_all_modified(keep_records=True)
 
     def resume_topmost_monitor(self) -> None:
-        """恢复监测：对暂停前记录且仍存在的窗口重新置顶，然后重启监测线程。"""
+        """恢复监测：配置开启时重新置顶暂停前窗口，然后重启监测线程。"""
         with self._topmost_state_lock:
             self._topmost_paused = False
-            # 先对暂停前记录的窗口重新置顶（仅仍存在的）
-            self._reapply_modified()
-            # 清除暂停状态后重启监测线程
+            self._topmost_config_enabled = self._is_topmost_enabled()
+            if self._topmost_config_enabled:
+                # 先对暂停前记录的窗口重新置顶（仅仍存在的）
+                self._reapply_modified()
+            else:
+                # 暂停期间关闭置顶时，清掉保留记录，避免随后重新置顶。
+                self._restore_all_modified()
+            # 清除暂停状态后重启监测线程；即使当前关闭也保留轻量轮询，
+            # 这样运行中重新打开配置可以立即生效。
             self.start_topmost_monitor()
 
     def _reapply_modified(self) -> None:
@@ -311,6 +318,35 @@ class TopmostMixin:
         except Exception:
             return False
 
+    def _is_topmost_enabled(self) -> bool:
+        """读取全局窗口置顶开关；读取失败时保持历史默认行为。"""
+        try:
+            from src.core.global_config_store import (
+                ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
+                TOPMOST_ENABLED_KEY,
+                get_global_config,
+            )
+
+            return bool(get_global_config(ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME).get(TOPMOST_ENABLED_KEY, True))
+        except Exception:
+            return True
+
+    def _sync_topmost_config(self) -> bool:
+        """同步运行中的置顶开关，并在关闭时立即恢复已修改窗口。"""
+        enabled = self._is_topmost_enabled()
+        if enabled == self._topmost_config_enabled:
+            return enabled
+
+        self._topmost_config_enabled = enabled
+        # 重新开启后即使前台窗口没发生切换，也要重新检查当前窗口。
+        self._topmost_prev_fg = 0
+        if enabled:
+            logger.info("topmost 已通过配置开启")
+        else:
+            self._restore_all_modified()
+            logger.info("topmost 已通过配置关闭，窗口已恢复")
+        return enabled
+
     # ── 内部实现 ──────────────────────────────────────────────
 
     def _topmost_monitor_loop(self) -> None:
@@ -322,6 +358,10 @@ class TopmostMixin:
         self._topmost_executor_paused = False
         while not self._topmost_stop_event.is_set():
             try:
+                if not self._sync_topmost_config():
+                    self._topmost_stop_event.wait(timeout=0.2)
+                    continue
+
                 executor_paused = self._is_executor_paused()
                 if executor_paused:
                     if not self._topmost_executor_paused:
