@@ -70,6 +70,8 @@ class CreditCollectTask(Common):
                 if left_exchange_time <= 0 and left_help_time <= 0:
                     self.info_set("exchange_time", exchange_time)
                     self.info_set("help_time", help_time)
+                    self.info_set("visit_end_reason", "action_counts_completed")
+                    self.log_info("本轮交流、助力操作各执行 5 次，正常结束好友拜访")
                     return True
             if count >= 15:
                 self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
@@ -175,27 +177,48 @@ class CreditCollectTask(Common):
                 self.log_info("连续两位好友没有可执行操作，改用好友列表补查")
             quick_arrival = False
             if quick_enabled and count < 15 and (left_exchange_time > 0 or left_help_time > 0):
-                quick_arrival = self.try_quick_visit()
+                quick_result = self.try_quick_visit()
+                if quick_result is None:
+                    # 已确认处于好友船 HUD，但没有下位候选；不要重复搜索列表。
+                    self.info_set("visit_end_reason", "no_next_person")
+                    self.log_info("快速拜访无下位候选：可能次数已用完或没有合格好友，结束本轮拜访")
+                    if not self.safe_back(feature=fL.friend_page, time_out=10):
+                        self.log_info("拜访阶段结束，但未能安全返回好友列表")
+                        return False
+                    return True
+                quick_arrival = quick_result
             if not quick_arrival and not self.safe_back(feature=fL.friend_page, time_out=10):
                 self.log_info("未能安全返回好友列表")
                 return False
             is_first_time = False
 
+    def _friend_hud_visible(self):
+        """检查好友帝江号 HUD 是否仍在，不将单帧命中当作稳定状态。"""
+        return bool(self.find_one(feature=fL.left_button, vertical_variance=0.1, horizontal_variance=0.1))
+
     def try_quick_visit(self):
-        """仅凭可用按钮发起切换，按钮缺失不表示每日次数用完。"""
+        """返回 True 表示已切换，False 表示切换异常需恢复，None 表示稳定 HUD 下无候选。"""
         if not self.safe_back(feature=fL.left_button, time_out=10):
             return False
-        if not self.wait_feature(feature=fL.next_person, time_out=3, raise_if_not_found=False):
-            self.log_info("未检测到快速拜访按钮，返回好友列表补查")
+        # safe_back 只保证一次命中，先确认 HUD 连续存在再检查下位按钮。
+        if not self.wait_until(self._friend_hud_visible, time_out=3, settle_time=0.5):
+            self.log_info("好友船 HUD 未能稳定确认，返回好友列表补查")
+            return False
+        if not self.wait_feature(feature=fL.next_person, time_out=5, raise_if_not_found=False):
+            # 按钮缺失本身不是 Empty 证明；仅在 HUD 仍稳定时视作本轮无候选。
+            if self.wait_until(self._friend_hud_visible, time_out=2, settle_time=0.5):
+                self.log_info("稳定好友船 HUD 下未检测到快速拜访按钮，推定无剩余次数或无合格好友")
+                return None
+            self.log_info("快速拜访按钮未命中且好友船 HUD 不稳定，返回好友列表补查")
             return False
         self.press_key("tab")
-        # 先观察离开旧船，避免仍留在旧 HUD 时就误报到达下一位。
+        # 要求旧 HUD 连续消失，防止单帧漏检被当作传送开始。
         if not self.wait_until(
-            lambda: not self.find_one(feature=fL.left_button, vertical_variance=0.1, horizontal_variance=0.1),
+            lambda: not self._friend_hud_visible(),
             time_out=8,
-            settle_time=0,
+            settle_time=0.5,
         ):
-            self.log_info("快速拜访未观察到离开旧船，返回好友列表补查")
+            self.log_info("快速拜访未稳定观察到离开旧船，返回好友列表补查")
             return False
         return bool(self.wait_until(self.in_friend_boat, time_out=60, settle_time=0.5))
 
