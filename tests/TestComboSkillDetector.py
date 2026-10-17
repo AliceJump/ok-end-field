@@ -102,6 +102,7 @@ class TestComboSkillDetector(unittest.TestCase):
     def test_order_table_partial_transitive_conflict_and_duplicates(self):
         def slots(ids, scope="team"):
             return [SimpleNamespace(native_id=native, match_scope=scope) for native in ids]
+
         order = ComboOrder()
         order.learn(slots(("a", None, "b")))
         order.learn(slots(("b", "c")))

@@ -231,7 +231,7 @@ class ComboSkillDetector:
                 if len(scope) < len(candidates):
                     # History is a hint. A weak/unknown narrowed result must
                     # retry the whole team, and the head is never narrowed.
-                    if result.native_id and result.score >= .90 and result.margin >= .12:
+                    if result.native_id and result.score >= 0.90 and result.margin >= 0.12:
                         result = replace(result, match_scope="battle_order")
                     else:
                         result = self._match_slot(face, candidates, rendered_size, slot)
@@ -267,8 +267,11 @@ class ComboSkillDetector:
         if not candidates:
             return ComboObservation(ready, observed_at, team, size, slots, "unknown_team")
         scale = min(size[0] / 1920, size[1] / 1080)
-        full_audit = (self._last_full_audit is None or observed_at < self._last_full_audit
-                      or observed_at - self._last_full_audit >= .5)
+        full_audit = (
+            self._last_full_audit is None
+            or observed_at < self._last_full_audit
+            or observed_at - self._last_full_audit >= 0.5
+        )
         results = self._observe_slots(frame, slots, candidates, scale, full_audit=full_audit)
         if full_audit:
             self._last_full_audit = observed_at
