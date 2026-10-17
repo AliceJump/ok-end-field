@@ -144,11 +144,17 @@ class TestCreditQuickVisit(unittest.TestCase):
         self.assertEqual(task.stats["visit_end_reason"], "no_next_person")
         self.assertEqual((task.stats["exchange_time"], task.stats["help_time"]), (1, 1))
 
-    def test_two_empty_visits_disable_quick_path_and_remain_bounded(self):
+    def test_two_no_op_visits_do_not_disable_quick_path(self):
+        task = _VisitHarness([(False, False)] * 2 + [(True, True)] * 5)
+        self.assertTrue(task.collect_credit())
+        self.assertEqual((task.list_clicks, task.quick_calls), (1, 6))
+        self.assertEqual(task.stats["visit_end_reason"], "action_counts_completed")
+
+    def test_unproductive_visits_remain_bounded_without_list_fallback(self):
         task = _VisitHarness([(False, False)] * 15)
         self.assertFalse(task.collect_credit())
-        self.assertEqual(task.quick_calls, 1)
-        self.assertEqual(task.list_clicks, 14)
+        self.assertEqual(task.quick_calls, 14)
+        self.assertEqual(task.list_clicks, 1)
         self.assertEqual(task.stats["exchange_time"], 0)
 
     def test_help_search_runs_after_exchange_list_exhausted(self):
