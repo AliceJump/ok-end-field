@@ -68,7 +68,10 @@ def verify_launcher(path: str) -> None:
 
 
 def _cached_launcher() -> str:
-    data = read_json_file(get_launcher_cache_path())
+    try:
+        data = read_json_file(get_launcher_cache_path())
+    except OSError:
+        return ""
     if not isinstance(data, dict):
         return ""
     path = str(data.get("path") or "").strip()
