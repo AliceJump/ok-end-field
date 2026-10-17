@@ -171,9 +171,19 @@ class TestTimedMainControl(unittest.TestCase):
         self.assertEqual(task.keys, ["ult_1", "f1"])
         self.assertEqual(logic.forced_battle_token, "1")
         task.current = 0
+        task.battle_pulses.add("1")
         task.now += 0.1
         logic.step()
+        self.assertEqual(task.keys, ["ult_1", "f1"])
+        task.now = 3.2  # Reviewed stance and native ultimate action lock have both opened.
+        logic.step()
         self.assertEqual(task.keys, ["ult_1", "f1", "1"])
+        self.assertIsNotNone(logic.pending)
+        self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
+        task.battle_pulses.clear()
+        logic.step()
+        self.assertIsNone(logic.pending)
+        self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
 
     def test_zhuang_already_controlled_is_not_switched_away_during_her_battle(self):
         task, logic = _control_logic(["庄方宜", "洁尔佩塔"])
@@ -213,7 +223,8 @@ class TestTimedMainControl(unittest.TestCase):
         task.auto_switch_ults = {"1"}
         logic.ult_order = ["1"]
         logic.step()
-        self.assertEqual(logic.forced_main_control_until, task.now + 7.0)
+        self.assertEqual(logic.forced_main_control_until, 9.0)
+        self.assertGreater(task.now, 2.0)  # Feedback confirmation does not extend the HUD-based window.
         self.assertEqual(logic.main_control.preferred_until("1"), logic.forced_main_control_until)
         task.now = 8.0
         task.current = 1
@@ -272,11 +283,13 @@ class TestTimedMainControl(unittest.TestCase):
         self.assertFalse(task.switch_main_control(4))
         self.assertEqual(task.keys, ["f3"])
 
-    def test_no_control_policy_adds_no_arrow_scans_to_normal_teams(self):
+    def test_normal_teams_scan_once_per_step_for_the_burst_normal_beneficiary(self):
         task, logic = _control_logic(["佩丽卡", "狼卫"])
         for _ in range(4):
             logic.step()
-        self.assertEqual(task.arrow_reads, 0)
+        self.assertEqual(task.arrow_reads, 4)
+        self.assertEqual(logic._burst_main_control, "1")
+        self.assertEqual(task.switches, [])
 
 
 if __name__ == "__main__":

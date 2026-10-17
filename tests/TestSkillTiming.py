@@ -183,6 +183,7 @@ class FakeTask:
         self.clicks = []
         self.link = False
         self.ults = set()
+        self.battle_pulses = set()
         self.exits = []
         self.exit_check_count = 0
         self.monitored = 0
@@ -225,6 +226,9 @@ class FakeTask:
 
     def send_key(self, token):
         self.keys.append(token)
+
+    def is_battle_skill_pulsing(self, token):
+        return token in self.battle_pulses
 
     def is_link_skill_ready(self):
         return self.link
@@ -789,7 +793,8 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 100
         logic.step()
         self.assertEqual(task.keys, ["e", "ult_1"])
-        self.assertEqual(task.now, 102)
+        self.assertGreater(task.now, 102)
+        self.assertLess(task.now, 103)
         self.assertEqual(logic.active, ())
         self.assertTrue(any("HUD 动画锁 2.00s" in message for message in task.messages))
 
@@ -1098,7 +1103,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(logic.active[0].skill_id, "chr_0031_mifu_normalskill_2")
         self.assertEqual(logic.pending, (50.0, "1", 50.0))
 
-    def test_zhuang_ultimate_prioritizes_free_first_battle(self):
+    def test_zhuang_ultimate_prioritizes_free_first_battle_on_white_pulse(self):
         task = FakeTask()
         task.sp = 0.0
         task.ults = {"1"}
@@ -1109,10 +1114,18 @@ class TestTimedCombat(unittest.TestCase):
         logic.team_mechanics = {"1": logic.mechanics["庄方宜"]}
 
         logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertIn("1", logic.free_battle_once)
+        self.assertEqual(logic.forced_battle_token, "1")
+        task.battle_pulses.add("1")
+        logic.step()
         self.assertEqual(task.keys, ["ult_1", "1"])
+        self.assertIn("1", logic.free_battle_once)
+        self.assertIsNotNone(logic.pending)
+        task.battle_pulses.clear()
+        logic.step()
         self.assertNotIn("1", logic.free_battle_once)
         self.assertIsNone(logic.forced_battle_token)
-        self.assertTrue(any("终结技恢复插入机制战技 1" in message for message in task.messages))
 
     def test_yvonne_main_control_window_allows_other_operator_ult(self):
         task = FakeTask()

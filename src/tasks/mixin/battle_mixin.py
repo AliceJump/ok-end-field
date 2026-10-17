@@ -58,6 +58,7 @@ from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
 from src.core.sequence_parser import parse_sequence
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
+from src.data.combo_queue import fresh_combo_observation, same_combo_head
 from src.data.FeatureList import FeatureList as fL
 from src.image.combo_skill_detector import ComboSkillDetector
 from src.image.enemy_health_probe import probe_enemy_presence_fast
@@ -1085,13 +1086,27 @@ class BattleMixin(BaseEfTask):
             if detector is not None:
                 detector.reset()
 
-    def use_link_skill(self):
+    def use_link_skill(self, *, expected=None):
         """
         使用连携技能。
         """
+        self.link_skill_input_at = None
         if self.is_link_skill_ready():
             try:
-                self._observe_optional_link_skills(True)
+                if expected is not None:
+                    # A priced identity must still be the actual head at E.
+                    # Recognition failure cannot turn it into anonymous input.
+                    self.next_frame()
+                    self._observe_optional_link_skills(self.is_link_skill_ready())
+                    current = getattr(self, "link_skill_observation", None)
+                    team = getattr(self, "_battle_team", None) or ()
+                    if (not fresh_combo_observation(expected, team, time.monotonic())
+                            or not fresh_combo_observation(current, team, time.monotonic())
+                            or not same_combo_head(expected, current)):
+                        return False
+                else:
+                    self._observe_optional_link_skills(True)
+                self.link_skill_input_at = time.monotonic()
                 self.press_combat_key("e")
             finally:
                 # The queue can change even if its count/positions stay fixed.
@@ -1103,6 +1118,27 @@ class BattleMixin(BaseEfTask):
         if getattr(self, "_combo_skill_detector", None) is not None:
             self._observe_optional_link_skills(False)
         return False
+
+    def observe_battle_skill_highlights(self):
+        """Sample all fixed button rings together, without deciding any action."""
+        member_count = int(getattr(self, "_battle_member_count", 0) or 0)
+        if not 1 <= member_count <= len(RECOMMEND_SKILL_REGIONS):
+            return {}
+        unknown = dict.fromkeys((str(i) for i in range(1, member_count + 1)))
+        frame = self.frame
+        if frame is None or frame.size == 0:
+            return unknown
+        regions = RECOMMEND_SKILL_REGIONS[-member_count:]
+        detector = get_recommend_skill_detector()
+        ratios = [detector.white_ratio(frame, float(r["x"]), float(r["y"]), float(r["button_radius"]))
+                  for r in regions]
+        if len(regions) >= 3 and all(ratio >= PULSE_ON_RATIO for ratio in ratios):
+            return unknown
+        return {str(i): ratio >= PULSE_ON_RATIO for i, ratio in enumerate(ratios, 1)}
+
+    def is_battle_skill_pulsing(self, slot):
+        """Existing execution hook; sensing does not imply mechanism readiness."""
+        return BattleMixin.observe_battle_skill_highlights(self).get(str(slot))
 
     def use_recommend_skill(self):
         """检测推荐技能按钮的白色圆周脉冲，命中即按对应战技键（每周期按一次）。
