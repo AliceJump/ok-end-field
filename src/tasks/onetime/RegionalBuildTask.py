@@ -14,6 +14,7 @@ from src.icons import Icons
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.common import Common, GoodsInfo
 from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.mixin.region_scope_mixin import RegionScopeMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 
@@ -52,13 +53,14 @@ def _edit_distance(left: str, right: str, max_distance: int | None = None) -> in
 _DIGITS_ONLY_RE = re.compile(r"^\d+$")
 
 
-class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
+class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
     """地区建设子任务：据点兑换、买卖货与买物资的按地区编排，日常任务经 DailyFeature 接入。"""
 
     OPTIONS = ["据点兑换", "买物资", "买卖货"]
     DEFAULT_OPTIONS = ["据点兑换", "买卖货"]
     CFG_SHOP_WHITELIST = "购物白名单"
     CFG_BUY_GIFT = "是否买礼物"
+    migrate_legacy_region_bools = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,10 +84,12 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
         )
         buy_sell_dict = {}
         buy_sell_desc_dict = {}
+        price_keys = []
         for area in areas_list:
             buy_sell_dict[f"{area}买入价"] = 900
             buy_sell_dict[f"{area}卖出价"] = 4500
             buy_sell_dict[area] = True
+            price_keys.extend([f"{area}买入价", f"{area}卖出价"])
             buy_sell_desc_dict[f"{area}买入价"] = f"{area}物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
             buy_sell_desc_dict[f"{area}卖出价"] = f"{area}物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
             buy_sell_desc_dict[area] = f"是否启用「地区建设/{area}物资调度/弹性需求物资」交易。"
@@ -116,13 +120,12 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
             "sub_configs": {
                 "据点兑换": ["据点兑换仅购买优先商品"],
                 "买物资": [self.CFG_SHOP_WHITELIST, self.CFG_BUY_GIFT],
-                "买卖货": ["只买不卖", *areas_list],
+                "买卖货": ["只买不卖", *price_keys],
             },
         }
         for area in areas_list:
-            self.config_type[area] = {
-                "sub_configs": {True: [f"{area}买入价", f"{area}卖出价"]},
-            }
+            # 旧地区 bool 仅用于迁移兼容，不再作为买卖货的第二层开关。
+            self.config_type[area] = {"hidden": True}
         all_goods = []
         for goods_list in goods_dict.values():
             all_goods.extend(goods_list)
@@ -891,7 +894,7 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
         enabled_buy = "买物资" in selected
         enabled_trade = "买卖货" in selected
 
-        for area in areas_list:
+        for area in self.get_region_areas(areas_list):
             self.log_info(self.tr("开始处理地区建设: {area}").format(area=self.tr(area)))
             if enabled_outpost:
                 if not self.exchange_outpost_goods(
