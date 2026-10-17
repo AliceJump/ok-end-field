@@ -3193,3 +3193,6 @@ msgstr ""
 "Lista de cuentas, un teléfono por línea.\n"
 "Solo se utiliza el contenido anterior a la primera coma; se ignora el resto.\n"
 "El cambio compara los tres primeros y los cuatro últimos dígitos visibles; si hay duplicados, usa la marca Reciente y la cuenta activa antes del cambio para identificar el destino."
+
+msgid "窗口置顶"
+msgstr "Mantener ventanas siempre encima"
