@@ -40,5 +40,8 @@ class ComboOrder:
 
     def after(self, observed_left, candidates):
         """Exclude only known predecessors of an actually observed left face."""
-        return {key: value for key, value in candidates.items()
-                if not any((key, left) in self.before for left in observed_left)}
+        return {
+            key: value
+            for key, value in candidates.items()
+            if not any((key, left) in self.before for left in observed_left)
+        }
