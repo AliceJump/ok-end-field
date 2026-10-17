@@ -188,20 +188,26 @@ class TestCreditQuickVisit(unittest.TestCase):
         self.assertTrue(task.collect_credit())
         self.assertEqual(task.stats["help_time"], 5)
 
+    @staticmethod
+    def _run_standalone_business(task):
+        # TopmostMixin wraps run() on subclass creation. The lightweight harness
+        # intentionally skips runtime setup; exercise the original run() body here.
+        return CreditCollectTask.run.__wrapped__(task)
+
     def test_standalone_run_reports_incomplete_search_as_error(self):
         task = _VisitHarness([])
         task.find_feature = lambda **kwargs: []
         with self.assertRaisesRegex(RuntimeError, "收信用任务未完成"):
-            task.run()
+            self._run_standalone_business(task)
 
     def test_standalone_run_accepts_no_next_candidate(self):
         task = _VisitHarness([(False, False)], quick=None)
-        self.assertTrue(task.run())
+        self.assertTrue(self._run_standalone_business(task))
         self.assertEqual(task.stats["visit_end_reason"], "no_next_person")
 
     def test_standalone_run_accepts_completed_action_counts(self):
         task = _VisitHarness([(True, True)] * 5)
-        self.assertTrue(task.run())
+        self.assertTrue(self._run_standalone_business(task))
         self.assertEqual(task.stats["visit_end_reason"], "action_counts_completed")
 
     def transition_task(self, departed=True, arrived=True, hud_stable=True, hud_rechecked=True):
