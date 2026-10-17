@@ -1,5 +1,9 @@
-from src.patches.pre_config_patch import install_pre_config_patch
-from src.patches.qfluent_mute_promo_patch import install_mute_promo_patch
+from src.patches.customization_contract import validate_customization_contract
+
+validate_customization_contract()
+
+from src.patches.pre_config_patch import install_pre_config_patch  # noqa: E402
+from src.patches.qfluent_mute_promo_patch import install_mute_promo_patch  # noqa: E402
 
 install_pre_config_patch()
 install_mute_promo_patch()
