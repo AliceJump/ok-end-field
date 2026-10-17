@@ -115,6 +115,7 @@ class TestCreditQuickVisit(unittest.TestCase):
         self.assertEqual(task.stats["help_time"], 5)
         self.assertEqual(len(task.ocr_calls), 3)  # 仅保留原有商店和好友菜单入口。
         self.assertEqual(task.backs, [fL.friend_page])
+        self.assertEqual(task.stats["visit_end_reason"], "action_counts_completed")
 
     def test_missing_local_action_does_not_exhaust_daily_budget(self):
         task = _VisitHarness([(False, False)] + [(True, True)] * 5)
@@ -123,11 +124,25 @@ class TestCreditQuickVisit(unittest.TestCase):
         self.assertEqual(task.stats["help_time"], 5)
         self.assertEqual(task.visit, 5)
 
-    def test_unavailable_quick_button_falls_back_to_list(self):
+    def test_switch_failure_falls_back_to_list(self):
         task = _VisitHarness([(True, True)] * 5, quick=False)
         self.assertTrue(task.collect_credit())
         self.assertEqual(task.list_clicks, 5)
         self.assertEqual(task.backs, [fL.friend_page] * 5)
+
+    def test_no_next_person_ends_visit_without_scanning_more_friends(self):
+        task = _VisitHarness([(False, False)], quick=None)
+        self.assertTrue(task.collect_credit())
+        self.assertEqual((task.list_clicks, task.quick_calls), (1, 1))
+        self.assertEqual(task.backs, [fL.friend_page])
+        self.assertEqual(task.stats["visit_end_reason"], "no_next_person")
+        self.assertEqual((task.stats["exchange_time"], task.stats["help_time"]), (0, 0))
+
+    def test_partial_counts_and_no_candidate_are_not_reported_as_full(self):
+        task = _VisitHarness([(True, True)], quick=None)
+        self.assertTrue(task.collect_credit())
+        self.assertEqual(task.stats["visit_end_reason"], "no_next_person")
+        self.assertEqual((task.stats["exchange_time"], task.stats["help_time"]), (1, 1))
 
     def test_two_empty_visits_disable_quick_path_and_remain_bounded(self):
         task = _VisitHarness([(False, False)] * 15)
@@ -167,10 +182,17 @@ class TestCreditQuickVisit(unittest.TestCase):
         self.assertTrue(task.collect_credit())
         self.assertEqual(task.stats["help_time"], 5)
 
-    def transition_task(self, departed=True, arrived=True):
+    def transition_task(self, departed=True, arrived=True, hud_stable=True, hud_rechecked=True):
         task = _VisitHarness([])
         task.wait_feature = Mock(return_value=object())
-        task.find_one = Mock(return_value=None if departed else object())
+        initial_hud = [object() if hud_stable else None, object() if hud_rechecked else None]
+
+        def hud_match(*args, **kwargs):
+            if task.keys:  # Tab 已发送后，检查旧 HUD 是否离开。
+                return None if departed else object()
+            return initial_hud.pop(0) if initial_hud else object()
+
+        task.find_one = Mock(side_effect=hud_match)
         task.in_friend_boat = Mock(return_value=arrived)
         task.wait_until = Mock(side_effect=lambda condition, **kwargs: bool(condition()))
         return task
@@ -179,8 +201,8 @@ class TestCreditQuickVisit(unittest.TestCase):
         task = self.transition_task()
         self.assertTrue(CreditCollectTask.try_quick_visit(task))
         self.assertEqual(task.keys, ["tab"])
-        self.assertEqual(task.wait_until.call_count, 2)
-        self.assertEqual(task.wait_until.call_args_list[0].kwargs["settle_time"], 0)
+        self.assertEqual(task.wait_until.call_count, 3)
+        self.assertEqual([c.kwargs["settle_time"] for c in task.wait_until.call_args_list], [0.5] * 3)
 
     def test_stale_hud_cannot_be_accepted_as_new_boat(self):
         task = self.transition_task(departed=False)
@@ -191,12 +213,24 @@ class TestCreditQuickVisit(unittest.TestCase):
         task = self.transition_task(arrived=False)
         self.assertFalse(CreditCollectTask.try_quick_visit(task))
 
-    def test_missing_template_does_not_press_tab(self):
+    def test_missing_template_on_stable_hud_means_no_candidate(self):
         task = self.transition_task()
+        task.wait_feature.return_value = None
+        self.assertIsNone(CreditCollectTask.try_quick_visit(task))
+        self.assertEqual(task.keys, [])
+        self.assertEqual(task.wait_until.call_count, 2)
+        self.assertEqual(task.wait_feature.call_args.kwargs["time_out"], 5)
+
+    def test_missing_template_on_unstable_hud_falls_back(self):
+        task = self.transition_task(hud_rechecked=False)
         task.wait_feature.return_value = None
         self.assertFalse(CreditCollectTask.try_quick_visit(task))
         self.assertEqual(task.keys, [])
-        task.wait_until.assert_not_called()
+
+    def test_initial_hud_not_stable_falls_back_without_template_search(self):
+        task = self.transition_task(hud_stable=False)
+        self.assertFalse(CreditCollectTask.try_quick_visit(task))
+        task.wait_feature.assert_not_called()
 
     def test_terminal_must_close_before_switch(self):
         task = self.transition_task()
