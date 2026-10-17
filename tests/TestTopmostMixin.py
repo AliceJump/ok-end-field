@@ -179,6 +179,7 @@ class TestTopmostMixin(unittest.TestCase):
 
         with (
             patch.object(threading, "Timer", _DeferredTimer),
+            patch.object(task, "_is_topmost_enabled", return_value=True),
             patch.object(task, "_reapply_modified") as reapply_modified,
             patch.object(task, "start_topmost_monitor") as start_monitor,
             patch.object(task, "stop_topmost_monitor") as stop_monitor,
@@ -195,6 +196,7 @@ class TestTopmostMixin(unittest.TestCase):
         task._topmost_paused = True
 
         with (
+            patch.object(task, "_is_topmost_enabled", return_value=True),
             patch.object(task, "_reapply_modified") as reapply_modified,
             patch.object(task, "start_topmost_monitor") as start_monitor,
         ):
