@@ -158,10 +158,10 @@ config = {
         ["src.tasks.test.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
         ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],
-        ["src.tasks.test.PitchScanTestTask", "PitchScanTestTask"],
         ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
         ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],
+        ["src.tasks.test.PitchScanTestTask", "PitchScanTestTask"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],
