@@ -30,7 +30,7 @@ for _name in ("ok.ui.qt.tasks.ConfigCard", "ok.gui.tasks.ConfigCard"):
 from ok import og  # noqa: E402
 
 from src.gui.AccountConfigTab import AccountConfigTab  # noqa: E402
-from src.gui.GlobalConfigTab import GlobalConfigTab  # noqa: E402
+from src.gui.GlobalConfigTab import GLOBAL_CONFIG_GROUPS, GlobalConfigTab  # noqa: E402
 
 
 class _FakeApp:
@@ -98,6 +98,10 @@ def _dispose_tab(test, tab):
 
 
 class TestGlobalConfigTabBuild(TabTestCase):
+    @staticmethod
+    def _expected_card_count():
+        return sum(len(config_names) for config_names in GLOBAL_CONFIG_GROUPS.values())
+
     def _new_tab(self):
         tab = GlobalConfigTab()
         _register_tab_cleanup(self, tab)
@@ -112,7 +116,11 @@ class TestGlobalConfigTabBuild(TabTestCase):
 
         _drain_pending(self.app, tab)
         self.assertEqual(tab._pending_cards, [])
-        self.assertEqual(tab.vBoxLayout.count(), 4, "应构建全部 4 张配置卡片")
+        self.assertEqual(
+            tab.vBoxLayout.count(),
+            self._expected_card_count(),
+            "应构建全部已分组配置卡片",
+        )
 
     def test_build_only_scheduled_once(self):
         tab = self._new_tab()
@@ -130,7 +138,7 @@ class TestGlobalConfigTabBuild(TabTestCase):
         tab = self._new_tab()
         tab._prewarm_build()
         _drain_pending(self.app, tab)
-        self.assertEqual(tab.vBoxLayout.count(), 4)
+        self.assertEqual(tab.vBoxLayout.count(), self._expected_card_count())
 
 
 _ACCOUNT_STORE = {
