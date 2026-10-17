@@ -135,8 +135,6 @@ class DeliverySendTask(Common):
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
                     (fL.fill_max, None, 0),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 1),
-                    (fL.skip_dialog_confirm, self.box_of_screen(0.82, 0.88, 0.98, 0.96), 0),
-                    (fL.esc, None, 0),
                 ]
                 optional_steps = {3}
                 blind_spot_steps = {3, 4}
@@ -171,19 +169,26 @@ class DeliverySendTask(Common):
 
                         self.log_info(self.tr("步骤 {feature} 未找到，跳过本次活动").format(feature=feature))
                         break
-                self.ensure_main()
-                self.press_key("j", after_sleep=1)
-
-                if not self.wait_click_ocr(
-                    match=self.lang.daily_routine_mixin.k_1dd73947, box=self.box.bottom_left, time_out=5
+                # 报价列表页黄键的圆环图标与对话框确认按钮同款，可据此确认装货已完成；
+                # 该页白键是「快速转交」，先点它，其余弹窗交给 click_confirm。
+                if self.wait_feature(
+                    feature=fL.skip_dialog_confirm,
+                    box=self.box_of_screen(0.82, 0.88, 0.98, 0.96),
+                    time_out=time_out,
+                    raise_if_not_found=False,
                 ):
-                    self.log_info("未找到 '转交运送委托' 按钮，跳过本次活动")
-                    self.ensure_main()
-                    break
-                if not self.click_confirm():
-                    self.log_info("未找到 '确认' 按钮，跳过本次活动")
-                    self.ensure_main()
-                    break
+                    self.log_info("已进入报价列表页，点击「快速转交」")
+                    self.wait_click_feature(
+                        feature=fL.transfer_go,
+                        click_after_delay=0.5,
+                        box=self.box_of_screen(0.645, 0.885, 0.815, 0.955),
+                        time_out=time_out,
+                        raise_if_not_found=False,
+                    )
+                else:
+                    self.log_info("未找到报价列表页标识，跳过「快速转交」")
+                self.click_confirm()
+                self.ensure_main()
                 count += 1
                 send_count += 1
                 self.log_info(f"{area} 已完成 {count}/{activity_num} 次转交")

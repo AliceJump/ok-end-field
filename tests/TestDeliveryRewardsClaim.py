@@ -2,6 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.DeliverySendTask import DeliverySendTask
 
 
@@ -43,12 +44,12 @@ class TestClaimDeliveryRewardsStatus(unittest.TestCase):
 
 
 class TestDeliverySendOthersClaimRetry(unittest.TestCase):
-    """delivery_send_others 仅在领取成功时置位 claim_rewards_done（线程5）。
+    """delivery_send_others 的地区遍历与收尾（线程5）。
 
-    第一个地区领取失败时，后续地区应重试领取，而不是跳过。
+    领取失败在后续地区重试；到报价列表页才点「快速转交」。
     """
 
-    def make_send_feature(self, claim_results):
+    def make_send_feature(self, claim_results, quote_ready=True):
         feature = object.__new__(DeliverySendTask)
         feature.info_set = Mock()
         feature.log_info = Mock()
@@ -61,6 +62,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         feature.click_confirm = Mock(return_value=True)
         feature.blind_spot_speed_up = Mock(return_value=True)
         feature.wait_click_feature = Mock(return_value=True)
+        feature.wait_feature = Mock(return_value=object() if quote_ready else None)
         feature.box_of_screen = Mock(return_value=object())
         feature.box = SimpleNamespace(top_left=object(), bottom=object(), bottom_left=object())
         feature.lang = SimpleNamespace(
@@ -110,6 +112,17 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         self.assertTrue(result)
         # 两个地区都失败 → 每个地区都尝试领取一次
         self.assertEqual(feature._claim_delivery_rewards_in_current_node.call_count, 2)
+
+    def test_transfer_go_clicked_only_on_quote_page(self):
+        for quote_ready in (True, False):
+            with self.subTest(quote_ready=quote_ready):
+                feature = self.make_send_feature([True], quote_ready=quote_ready)
+
+                self.assertTrue(self.run_send_others(feature))
+
+                clicked = [item.kwargs.get("feature") for item in feature.wait_click_feature.call_args_list]
+                self.assertEqual(fL.transfer_go in clicked, quote_ready)
+                feature.click_confirm.assert_called()
 
 
 if __name__ == "__main__":
