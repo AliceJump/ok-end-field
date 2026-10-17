@@ -1,0 +1,10 @@
+{
+  "quick_visit": {
+    "zh_CN": { "pattern": "快速拜访下位" },
+    "zh_TW": { "pattern": "快速拜訪下一位" }
+  },
+  "no_next_visit": {
+    "zh_CN": { "pattern": "暂无下位可拜访" },
+    "zh_TW": { "pattern": "尚無下一位可拜訪" }
+  }
+}
