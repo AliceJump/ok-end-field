@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "distribution": "ok-script",
+    "version": "2.0.7b1"
+  },
+  "overlay_files": [
+    "src/patches/cascade_dropdown_patch.py",
+    "src/patches/combat_decision_trace_patch.py",
+    "src/patches/conditional_rotation_patch.py",
+    "src/patches/config_transfer_patch.py",
+    "src/patches/dynamic_config_patch.py",
+    "src/patches/enemy_direction_recovery_patch.py",
+    "src/patches/log_upload_patch.py",
+    "src/patches/log_zip_dedup.py",
+    "src/patches/no_frame_task_patch.py",
+    "src/patches/ocr_text_fix_patch.py",
+    "src/patches/pre_config_patch.py",
+    "src/patches/process_execute_patch.py",
+    "src/patches/qfluent_mute_promo_patch.py",
+    "src/patches/qfluent_navigation_patch.py",
+    "src/patches/screenshot_sidecar.py",
+    "src/patches/screenshot_sidecar_patch.py",
+    "src/patches/startup_patches.py",
+    "src/patches/startup_window_patch.py",
+    "src/patches/task_config_lock_patch.py",
+    "src/patches/task_param_preview_patch.py",
+    "src/patches/timed_enemy_absence_stability_patch.py",
+    "src/patches/timed_team_detection_patch.py",
+    "src/patches/win32_gdi_point_patch.py"
+  ]
+}
