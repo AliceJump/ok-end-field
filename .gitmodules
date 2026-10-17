@@ -4,3 +4,6 @@
 [submodule "assets/nav-grid-data"]
 	path = assets/nav-grid-data
 	url = https://github.com/luqing233/nav-grid-data.git
+[submodule "remote-control"]
+	path = remote-control
+	url = https://github.com/AliceJump/remote-control

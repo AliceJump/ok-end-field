@@ -15,6 +15,7 @@ class _ToEndTaskHarness:
         self.events = []
         self._now = 0.0
         self.width = 1920
+        self.height = 1080
         self.box = SimpleNamespace(bottom_right=object())
         self.lang = SimpleNamespace(
             daily_battle_mixin=SimpleNamespace(
@@ -67,6 +68,9 @@ class _ToEndTaskHarness:
 
     def active_time(self):
         return self._now
+
+    def scale_distance(self, value):
+        return value
 
     def log_info(self, *args, **kwargs):
         pass
@@ -215,6 +219,46 @@ class TestDailyBattleToEnd(unittest.TestCase):
         self.assertEqual(1, feature.events.count("mouse_delta"))
         self.assertIn(("seed", True), feature.events)
         self.assertEqual(1, feature.events.count(("click", "middle")))
+
+    def test_rotate_search_sine_path_uses_preview_defaults_and_keeps_legacy_yaw_budget(self):
+        feature = _make_impl(_ToEndTaskHarness())
+        feature._executor = SimpleNamespace(method=SimpleNamespace(width=1920, height=1080))
+        moves = []
+        sleeps = []
+        checks = 0
+
+        feature.active_and_send_mouse_delta = lambda **kwargs: moves.append(kwargs)
+        feature.sleep = lambda timeout: sleeps.append(timeout)
+
+        def check():
+            nonlocal checks
+            checks += 1
+            return False
+
+        result = SearchMixin.rotate_search(
+            feature,
+            check,
+            segments=40,
+            step_ratio=0.1,
+            between_delay=0.1,
+        )
+
+        self.assertIsNone(result)
+        self.assertEqual(80, checks)
+        self.assertEqual(80, len(moves))
+        self.assertEqual(40 * int(feature.width * 0.1), sum(move["dx"] for move in moves))
+        self.assertAlmostEqual(4.0, sum(sleeps))
+        self.assertAlmostEqual(40 * 2 * 0.005, sum(move["delay"] * move["steps"] for move in moves))
+
+        cumulative_pitch = 0
+        pitch_positions = []
+        for move in moves:
+            cumulative_pitch += move["dy"]
+            pitch_positions.append(cumulative_pitch)
+
+        self.assertEqual([0] * 10, [pitch_positions[index - 1] for index in range(8, 81, 8)])
+        self.assertEqual(240, max(pitch_positions))
+        self.assertEqual(-240, min(pitch_positions))
 
     def test_to_end_restores_methods_after_task_stop(self):
         feature = _make_impl(_ToEndTaskHarness())
