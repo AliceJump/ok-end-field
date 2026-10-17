@@ -129,6 +129,16 @@ class CharactersModule(_LangModuleBaseT):
     """祀"""
 
 
+class CreditCollectModule(_LangModuleBaseT):
+    """credit_collect — OCR 语言节点（值取自 zh_CN）"""
+
+    quick_visit: re.Pattern[str]
+    """快速拜访下位"""
+
+    no_next_visit: re.Pattern[str]
+    """暂无下位可拜访"""
+
+
 class DailyBattleMixinModule(_LangModuleBaseT):
     """daily_battle_mixin — OCR 语言节点（值取自 zh_CN）"""
 
@@ -1003,6 +1013,7 @@ class _LangAccessorTyped:
 
     AutoSkipDialogTask: AutoSkipDialogTaskModule
     characters: CharactersModule
+    credit_collect: CreditCollectModule
     daily_battle_mixin: DailyBattleMixinModule
     daily_buy_mixin: DailyBuyMixinModule
     daily_demo_mixin: DailyDemoMixinModule
