@@ -103,6 +103,45 @@ class TestTopmostMixin(unittest.TestCase):
         probe.join()
         self.assertEqual([False], acquired)
 
+    def test_config_disable_restores_windows_and_reenable_rechecks_foreground(self):
+        task = TopmostMixin.__new__(TopmostMixin)
+        task._init_topmost_mixin()
+        task._topmost_prev_fg = 123
+
+        with (
+            patch.object(task, "_is_topmost_enabled", side_effect=(False, True)),
+            patch.object(task, "_restore_all_modified") as restore,
+        ):
+            self.assertFalse(task._sync_topmost_config())
+            self.assertFalse(task._topmost_config_enabled)
+            self.assertEqual(0, task._topmost_prev_fg)
+            restore.assert_called_once_with()
+
+            task._topmost_prev_fg = 456
+            self.assertTrue(task._sync_topmost_config())
+            self.assertTrue(task._topmost_config_enabled)
+            self.assertEqual(0, task._topmost_prev_fg)
+            restore.assert_called_once_with()
+
+    def test_resume_while_config_disabled_clears_records_without_reapplying(self):
+        task = TopmostMixin.__new__(TopmostMixin)
+        task._init_topmost_mixin()
+        task._topmost_paused = True
+
+        with (
+            patch.object(task, "_is_topmost_enabled", return_value=False),
+            patch.object(task, "_reapply_modified") as reapply_modified,
+            patch.object(task, "_restore_all_modified") as restore_modified,
+            patch.object(task, "start_topmost_monitor") as start_monitor,
+        ):
+            task.resume_topmost_monitor()
+
+        self.assertFalse(task._topmost_paused)
+        self.assertFalse(task._topmost_config_enabled)
+        reapply_modified.assert_not_called()
+        restore_modified.assert_called_once_with()
+        start_monitor.assert_called_once_with()
+
     def test_delayed_start_does_not_restart_a_paused_task(self):
         task = _PausedDuringDelayTask()
         task._init_topmost_mixin()
