@@ -193,6 +193,7 @@ class FeatureList(str, Enum):
     monthly_card2 = "monthly_card2"
     move_to_the_target = "move_to_the_target"
     move_to_the_target_2 = "move_to_the_target_2"
+    next_person = "next_person"
     one_click_claim = "one_click_claim"
     one_task_to_map = "one_task_to_map"
     operation_report_icon = "operation_report_icon"
