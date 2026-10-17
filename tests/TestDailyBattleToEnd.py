@@ -164,7 +164,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
         self.assertIn(("seed", True), feature.events)
         self.assertEqual(1, feature.events.count(("click", "middle")))
 
-    def test_rotate_search_sine_path_keeps_legacy_yaw_budget(self):
+    def test_rotate_search_sine_path_uses_preview_defaults_and_keeps_legacy_yaw_budget(self):
         feature = _make_impl(_ToEndTaskHarness())
         feature._executor = SimpleNamespace(method=SimpleNamespace(width=1920, height=1080))
         moves = []
@@ -200,9 +200,9 @@ class TestDailyBattleToEnd(unittest.TestCase):
             cumulative_pitch += move["dy"]
             pitch_positions.append(cumulative_pitch)
 
-        self.assertEqual([0] * 8, [pitch_positions[index - 1] for index in range(10, 81, 10)])
-        self.assertGreater(max(pitch_positions), 0)
-        self.assertLess(min(pitch_positions), 0)
+        self.assertEqual([0] * 10, [pitch_positions[index - 1] for index in range(8, 81, 8)])
+        self.assertEqual(240, max(pitch_positions))
+        self.assertEqual(-240, min(pitch_positions))
 
     def test_to_end_restores_methods_after_task_stop(self):
         feature = _make_impl(_ToEndTaskHarness())
