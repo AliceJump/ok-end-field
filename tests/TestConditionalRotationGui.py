@@ -57,11 +57,11 @@ class TestConditionEditDialog(unittest.TestCase):
                 with self.subTest(dialog=dialog_type.__name__, result=result):
                     dlg = dialog_type(value, self.parent)
                     dlg.show()
-                    self.wait_for(lambda: isinstance(dlg.widget.graphicsEffect(), QGraphicsDropShadowEffect))
+                    self.wait_for(lambda dlg=dlg: isinstance(dlg.widget.graphicsEffect(), QGraphicsDropShadowEffect))
                     self.assertTrue(dlg.isVisible())
                     self.assertIsInstance(dlg.widget.graphicsEffect(), QGraphicsDropShadowEffect)
                     dlg.done(result)
-                    self.wait_for(lambda: not dlg.isVisible())
+                    self.wait_for(lambda dlg=dlg: not dlg.isVisible())
                     self.assertFalse(dlg.isVisible())
                     self.assertEqual(dlg.result(), result)
                     self.assertIsNone(dlg.widget.graphicsEffect())

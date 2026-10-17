@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import ClassVar
 
 from src.data.character_capabilities import (
     CharacterCapabilities,
@@ -62,7 +63,7 @@ class TestCapabilityRegistry(unittest.TestCase):
 class TestTeamAwareBaselineSelection(unittest.TestCase):
     """load_damage_baseline_for_team：满口径依赖回退与满连击口径。"""
 
-    _ENTRIES = [
+    _ENTRIES: ClassVar = [
         {
             "character": "提弗洛斯",
             "cycle_expect": 129661.5,
@@ -75,7 +76,7 @@ class TestTeamAwareBaselineSelection(unittest.TestCase):
         {"character": "弭弗", "cycle_expect": 500.0},
     ]
 
-    _CAPS = {
+    _CAPS: ClassVar = {
         "提弗洛斯": _caps("提弗洛斯"),
         "洁尔佩塔": _caps("洁尔佩塔", attach=("自然",)),
         "黎风": _caps("黎风", combo=True),

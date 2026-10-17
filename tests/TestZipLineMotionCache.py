@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.core.global_config_store import ZIP_LINE_TARGET_SELECT_OCR
 from src.tasks.mixin.zip_line_motion_cache import (
     build_zip_line_route_fingerprint,
     load_nearest_zip_line_segment_motion,
@@ -20,6 +20,7 @@ from src.tasks.mixin.zip_line_yaw_cache import (
     load_arrow_turn_motion,
     record_arrow_turn_motion,
 )
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 
 class TestZipLineMotionCache(unittest.TestCase):
@@ -200,8 +201,8 @@ class TestZipLineMotionCache(unittest.TestCase):
     def test_calibrated_turn_normalizes_and_learns_turn(self):
         stub = self._yaw_stub([(120.0, 0.9), (90.0, 0.9)])
         with (
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
-            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True) as record,
+            patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True) as record,
         ):
             result = ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90)
         self.assertEqual(result, (90.0, True))
@@ -211,8 +212,8 @@ class TestZipLineMotionCache(unittest.TestCase):
     def test_cached_turn_updates_memory_with_its_final_correction(self):
         stub = self._yaw_stub([(120.0, 0.9), (100.0, 0.9), (90.0, 0.9)])
         with (
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(240, 3)),
-            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True) as record,
+            patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(240, 3)),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True) as record,
         ):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, True))
         self.assertEqual([call.args[0] for call in stub._send_zip_line_yaw_delta.call_args_list], [240, 120])
@@ -222,8 +223,8 @@ class TestZipLineMotionCache(unittest.TestCase):
         stub = self._yaw_stub([(120.0, 0.9)])
         stub._send_zip_line_yaw_delta.return_value = False
         with (
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(240, 3)),
-            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion") as record,
+            patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(240, 3)),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.record_arrow_turn_motion") as record,
         ):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, False))
         stub._send_zip_line_yaw_delta.assert_called_once_with(240)
@@ -235,8 +236,8 @@ class TestZipLineMotionCache(unittest.TestCase):
                 with self.subTest(hint=hint, reading=reading):
                     stub = self._yaw_stub([(120.0, 0.9), reading])
                     with (
-                        patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=hint),
-                        patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion") as record,
+                        patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=hint),
+                        patch("src.tasks.navigation.mixin.zip_line_mixin.record_arrow_turn_motion") as record,
                     ):
                         result = ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90)
                     self.assertEqual(result, (90.0, False))
@@ -247,7 +248,7 @@ class TestZipLineMotionCache(unittest.TestCase):
 
     def test_multi_step_failure_rolls_back_all_input(self):
         stub = self._yaw_stub([(150.0, 0.9), (120.0, 0.9), None])
-        with patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None):
+        with patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, False))
         self.assertEqual([call.args[0] for call in stub._send_zip_line_yaw_delta.call_args_list], [361, 361, -722])
 
@@ -271,8 +272,8 @@ class TestZipLineMotionCache(unittest.TestCase):
         readings = [(120.0, 0.9)] * 3 + [(110.0, 0.9), (100.0, 0.9)] + [(90.0, 0.9)] * 3
         stub = self._settling_stub(readings)
         with (
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(361, 3)),
-            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(361, 3)),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True),
         ):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, True))
         stub._send_zip_line_yaw_delta.assert_called_once_with(361)
@@ -280,7 +281,7 @@ class TestZipLineMotionCache(unittest.TestCase):
 
     def test_unsettled_arrow_times_out_and_rolls_back(self):
         stub = self._settling_stub(chain([(120.0, 0.9)] * 3, cycle([(90.0, 0.9), (95.0, 0.9)])))
-        with patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(361, 3)):
+        with patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=(361, 3)):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, False))
         self.assertEqual([call.args[0] for call in stub._send_zip_line_yaw_delta.call_args_list], [361, -361])
 
@@ -315,7 +316,7 @@ class TestZipLineMotionCache(unittest.TestCase):
             active_and_send_mouse_delta=Mock(side_effect=lambda **kwargs: events.append("send") or True),
             _wait_zip_line_prefeed_settled=Mock(side_effect=lambda *args: events.append("settle") or settled),
             next_frame=Mock(side_effect=lambda: events.append("frame") or post_prefeed_frame),
-            _find_zip_line_template_target=Mock(side_effect=lambda *args: events.append("detect") or None),
+            _find_zip_line_template_target=Mock(side_effect=lambda *args, **kwargs: events.append("detect") or None),
             log_info=Mock(),
         )
 
@@ -360,14 +361,19 @@ class TestZipLineMotionCache(unittest.TestCase):
         stub._align_zip_line_distance = Mock(side_effect=align)
         stub._try_click_on_zip_line = Mock(return_value=(True, None))
         stub._align_and_activate_zip_line = lambda *a, **k: ZipLineMixin._align_and_activate_zip_line(stub, *a, **k)
+        # 合并后 zip_line_list_go 还会先选路（网格导航那套参数），这里的用例都走 OCR 那条
+        stub.zip_line_target_select_mode = lambda: ZIP_LINE_TARGET_SELECT_OCR
+        stub._normalize_values = ZipLineMixin._normalize_values
+        stub._value_for_index = ZipLineMixin._value_for_index
+        stub._zip_line_stop_state = lambda: ZipLineMixin._zip_line_stop_state(stub)
         return stub
 
     def test_borrow_nearest_history_then_learn_original_yaw_and_hit_it_next_time(self):
         with (
             tempfile.TemporaryDirectory() as directory,
             patch("src.tasks.mixin.zip_line_motion_cache._DEFAULT_CACHE_PATH", Path(directory) / "motion.json"),
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
-            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True),
         ):
             route = build_zip_line_route_fingerprint("route", [108])
             key90 = build_zip_line_motion_route_fingerprint(route, 1920, 1080, 90)
@@ -405,7 +411,7 @@ class TestZipLineMotionCache(unittest.TestCase):
         with (
             tempfile.TemporaryDirectory() as directory,
             patch("src.tasks.mixin.zip_line_motion_cache._DEFAULT_CACHE_PATH", Path(directory) / "motion.json"),
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
         ):
             route = build_zip_line_route_fingerprint("route", [108])
             record_zip_line_segment_motion(build_zip_line_motion_route_fingerprint(route, 1920, 1080, 90), 0, -400, 100)
@@ -419,7 +425,7 @@ class TestZipLineMotionCache(unittest.TestCase):
         with (
             tempfile.TemporaryDirectory() as directory,
             patch("src.tasks.mixin.zip_line_motion_cache._DEFAULT_CACHE_PATH", Path(directory) / "motion.json"),
-            patch("src.tasks.mixin.zip_line_mixin.record_zip_line_segment_motion") as record,
+            patch("src.tasks.navigation.mixin.zip_line_mixin.record_zip_line_segment_motion") as record,
         ):
             stub = self._route_stub([(30.0, 0.4)])
             ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
@@ -453,8 +459,8 @@ class TestZipLineMotionCache(unittest.TestCase):
 
         stub._align_and_activate_zip_line = recovered_alignment
         with (
-            patch("src.tasks.mixin.zip_line_mixin.load_zip_line_segment_motion", return_value=(160, 80, 1)),
-            patch("src.tasks.mixin.zip_line_mixin.record_zip_line_segment_motion") as record,
+            patch("src.tasks.navigation.mixin.zip_line_mixin.load_zip_line_segment_motion", return_value=(160, 80, 1)),
+            patch("src.tasks.navigation.mixin.zip_line_mixin.record_zip_line_segment_motion") as record,
         ):
             ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
         record.assert_not_called()

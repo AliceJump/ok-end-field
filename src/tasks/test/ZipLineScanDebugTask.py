@@ -1,6 +1,6 @@
 from qfluentwidgets import FluentIcon  # 工具与调试任务图标
 
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin  # 复用滑索任务运行环境
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 复用滑索任务运行环境
 from src.tasks.test.zip_line_scan_recording import (  # 独立诊断存储
     DEFAULT_SCAN_DIR,  # 复用扫描记录辅助
     ZipLineScanRecorder,  # 复用扫描记录辅助

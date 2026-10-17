@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import html
 import re
 import smtplib
@@ -293,20 +294,16 @@ def send_email(
         try:
             server.starttls(context=ssl_context)
         except smtplib.SMTPException as exc:
-            try:
+            with contextlib.suppress(Exception):
                 server.quit()
-            except Exception:
-                pass
             raise ValueError(f"STARTTLS 升级失败（服务器不支持加密连接），已中止发送: {exc}") from exc
 
     try:
         server.login(sender, password)
         server.sendmail(sender, [recipient], msg.as_string())
     finally:
-        try:
+        with contextlib.suppress(Exception):
             server.quit()
-        except Exception:
-            pass
 
     return recipient
 

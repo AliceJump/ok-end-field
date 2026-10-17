@@ -1,6 +1,7 @@
 """效果语义元数据表完整性测试。"""
 
 import unittest
+from typing import ClassVar
 
 from src.data.effect_semantics import (
     EFFECT_SEMANTICS,
@@ -47,7 +48,7 @@ class TestEffectSemantics(unittest.TestCase):
         self.assertEqual(EFFECT_SEMANTICS[EffectType.STACK_QINGTING_SWORD].cap, 3)
 
     # 上限未实测的池（文案无数字，待补 rank_stats/实测后移入 EFFECT_SEMANTICS）
-    POOLS_WITH_UNKNOWN_CAP = {
+    POOLS_WITH_UNKNOWN_CAP: ClassVar = {
         EffectType.STACK_IRON_OATH,
         EffectType.STACK_BLOOD_WING,
         EffectType.STACK_MORALE,

@@ -170,10 +170,7 @@ class CreditShopTask(Common):
             # 运行时未知名称不过 tr，避免污染 i18n 收集池。
             raw_name = getattr(item, "name", None)
             known_name = _PRIORITY_ITEM_NAMES.get(raw_name or "")
-            if known_name:
-                item_name = self.tr(known_name)
-            else:
-                item_name = raw_name or self.tr("未知商品#{idx}").format(idx=idx)
+            item_name = self.tr(known_name) if known_name else raw_name or self.tr("未知商品#{idx}").format(idx=idx)
             self.log_info(
                 self.tr("尝试购买优先商品: {name}，当前信用: {credit}").format(name=item_name, credit=sum_credit)
             )

@@ -5,8 +5,8 @@ from src.icons import Icons
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.demo_level_mixin import DemoLevelMixin
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 
 class DemoBattleTask(DemoLevelMixin, Common, MapMixin, ZipLineMixin, BattleMixin):

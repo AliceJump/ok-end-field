@@ -59,9 +59,11 @@ class TestLoadEntries(unittest.TestCase):
             config = root / "configs"
             config.mkdir()
             (root / "outside.jsonl").write_text("{}\n", encoding="utf-8")
-            with patch.object(mod, "default_log_path", return_value=config / "pulse_probe_log.jsonl"):
-                with self.assertRaises(ValueError):
-                    mod.load_entries(config / ".." / "outside.jsonl")
+            with (
+                patch.object(mod, "default_log_path", return_value=config / "pulse_probe_log.jsonl"),
+                self.assertRaises(ValueError),
+            ):
+                mod.load_entries(config / ".." / "outside.jsonl")
 
     def test_json_report_rejects_paths_outside_scratch_directory_before_reading(self):
         with patch.object(mod, "load_entries") as loader:

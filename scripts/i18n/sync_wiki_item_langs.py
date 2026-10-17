@@ -150,10 +150,7 @@ def merge_zh_cn(merged: dict[str, dict[str, str]], zhcn_batch: Path) -> dict:
     for iid, langs in merged.items():
         tw = (langs.get("zh_TW") or "").strip()
         if tw:
-            if zhconvert:
-                key = normalize_name(zhconvert(tw, "zh-cn"))
-            else:
-                key = normalize_name(tw)
+            key = normalize_name(zhconvert(tw, "zh-cn")) if zhconvert else normalize_name(tw)
             name_to_iids.setdefault(key, []).append(iid)
 
     # 用 by_lang 批次的 associate 信息建立 aid 索引
@@ -162,13 +159,13 @@ def merge_zh_cn(merged: dict[str, dict[str, str]], zhcn_batch: Path) -> dict:
         if code != "zh-Hant":
             continue
         items = load_items(batch)
-        for iid, (name, aid) in items.items():
+        for iid, (_name, aid) in items.items():
             if aid:
                 aid_to_iid.setdefault(aid, iid)
 
     matched = {}
     unmatched = []
-    for sl_iid, (name, aid) in zhcn_items.items():
+    for _sl_iid, (name, aid) in zhcn_items.items():
         hit = None
         if aid and aid in aid_to_iid:
             hit = aid_to_iid[aid]
@@ -257,7 +254,7 @@ def main():
     for code, batch in sorted(batches.items()):
         items = load_items(batch)
         lang_key = LANG_MAP[code]
-        for iid, (name, aid) in items.items():
+        for iid, (name, _aid) in items.items():
             merged.setdefault(iid, {})[lang_key] = name
         print(f"  {code}: {len(items)} items <- {batch.name}")
 

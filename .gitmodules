@@ -1,3 +1,6 @@
 [submodule "ok_templates"]
 	path = ok_templates
 	url = https://github.com/AliceJump/ok-end-field-x-anylabeling-asset
+[submodule "assets/nav-grid-data"]
+	path = assets/nav-grid-data
+	url = https://github.com/luqing233/nav-grid-data.git

@@ -3,6 +3,9 @@ import re
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 
+TRANSFER_ARRIVAL_TIMEOUT_S = 90.0
+TRANSFER_ARRIVAL_SETTLE_S = 2.0
+
 
 class MapMixin(BaseEfTask):
     def task_to_transfer_point(self, need_location_list=None):
@@ -63,7 +66,21 @@ class MapMixin(BaseEfTask):
         self.wait_ui_stable(refresh_interval=1)
 
         # 执行附近传送点传送
-        return self.to_near_transfer_point(need_track=False, need_location_list=need_location_list)
+        if not self.to_near_transfer_point(need_track=False, need_location_list=need_location_list):
+            return False
+        return self._wait_for_transfer_arrival()
+
+    def _wait_for_transfer_arrival(self):
+        """确认主界面 ESC 模板稳定出现，避免传送加载期间提前开始导航。"""
+        arrived = self.wait_until(
+            self.in_world,
+            time_out=TRANSFER_ARRIVAL_TIMEOUT_S,
+            settle_time=TRANSFER_ARRIVAL_SETTLE_S,
+            raise_if_not_found=False,
+        )
+        if not arrived:
+            self.log_warning("传送后未检测到主界面 ESC 模板")
+        return arrived
 
     def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False):
         """
@@ -152,14 +169,15 @@ class MapMixin(BaseEfTask):
         """
 
         # 地图右上角显示当前地区名，命中候选地名则记录到 self.location
-        if need_location_list:
-            if location := self.wait_ocr(
+        if need_location_list and (
+            location := self.wait_ocr(
                 match=need_location_list,
                 box=self.box.top_right,
                 time_out=4,
                 log=True,
-            ):
-                self.location = location[0].name
+            )
+        ):
+            self.location = location[0].name
 
         if need_track:
             # 需要追踪时：点击『追踪』按钮
