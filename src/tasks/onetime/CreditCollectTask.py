@@ -218,7 +218,11 @@ class CreditCollectTask(Common):
 
     def run(self):
         self.ensure_main(time_out=420)
-        self.run_credit_collect()
+        result = self.run_credit_collect()
+        if result is False:
+            # 一次性任务执行器忽略 run() 的返回值，必须通过异常报告独立执行失败。
+            raise RuntimeError("收信用任务未完成，请检查日志中的具体原因")
+        return result
 
     def run_credit_collect(self):
         """收信用流程，独立运行与被日常执行（DailyFeature）共用。"""
