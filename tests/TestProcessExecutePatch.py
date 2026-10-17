@@ -195,21 +195,26 @@ class TestOfficialLauncher(unittest.TestCase):
             patch.object(official_launcher, "installed_launcher") as installed,
             patch.object(official_launcher.subprocess, "Popen") as popen,
         ):
-            self.assertEqual(official_launcher.prepare_launcher(Mock(), Mock()), 123)
+            self.assertEqual(official_launcher.prepare_launcher(Mock(), Mock(), GAME_PATH), 123)
         installed.assert_not_called()
         popen.assert_not_called()
 
-    def test_prepare_opens_registered_launcher_and_waits_for_games(self):
+    def test_prepare_opens_discovered_launcher_and_waits_for_games(self):
         with (
             patch.object(official_launcher, "official_parent", side_effect=[None, None, 123]),
-            patch.object(official_launcher, "installed_launcher", return_value=r"D:\Launcher\Launcher.exe"),
-            patch.object(official_launcher, "verify_launcher") as verify,
+            patch.object(
+                official_launcher,
+                "installed_launcher",
+                return_value=r"D:\Launcher\Launcher.exe",
+            ),
             patch.object(official_launcher.subprocess, "Popen") as popen,
             patch.object(official_launcher.time, "sleep") as sleep,
         ):
-            self.assertEqual(official_launcher.prepare_launcher(Mock(), Mock()), 123)
-        verify.assert_called_once_with(r"D:\Launcher\Launcher.exe")
-        self.assertEqual(popen.call_args.args[0], [r"D:\Launcher\Launcher.exe", "--game=Endfield", "--reason=4"])
+            self.assertEqual(official_launcher.prepare_launcher(Mock(), Mock(), GAME_PATH), 123)
+        self.assertEqual(
+            popen.call_args.args[0],
+            [r"D:\Launcher\Launcher.exe", "--game=Endfield", "--reason=4"],
+        )
         self.assertEqual(popen.call_args.kwargs["stdout"], subprocess.DEVNULL)
         self.assertEqual(
             popen.call_args.kwargs["creationflags"],
@@ -220,23 +225,30 @@ class TestOfficialLauncher(unittest.TestCase):
     def test_prepare_missing_launcher_fails_without_spawning(self):
         with (
             patch.object(official_launcher, "official_parent", return_value=None),
-            patch.object(official_launcher, "installed_launcher", side_effect=RuntimeError("not installed")),
+            patch.object(
+                official_launcher,
+                "installed_launcher",
+                side_effect=RuntimeError("not installed"),
+            ),
             patch.object(official_launcher.subprocess, "Popen") as popen,
             self.assertRaisesRegex(RuntimeError, "not installed"),
         ):
-            official_launcher.prepare_launcher(Mock(), Mock())
+            official_launcher.prepare_launcher(Mock(), Mock(), GAME_PATH)
         popen.assert_not_called()
 
     def test_prepare_times_out_without_games_process(self):
         with (
             patch.object(official_launcher, "official_parent", return_value=None),
-            patch.object(official_launcher, "installed_launcher", return_value=r"D:\Launcher\Launcher.exe"),
-            patch.object(official_launcher, "verify_launcher"),
+            patch.object(
+                official_launcher,
+                "installed_launcher",
+                return_value=r"D:\Launcher\Launcher.exe",
+            ),
             patch.object(official_launcher.subprocess, "Popen"),
             patch.object(official_launcher.time, "monotonic", side_effect=[0, 31]),
             self.assertRaises(TimeoutError),
         ):
-            official_launcher.prepare_launcher(Mock(), Mock())
+            official_launcher.prepare_launcher(Mock(), Mock(), GAME_PATH)
 
     def test_parent_access_denied_is_reported_without_retrying_launcher(self):
         kernel = Mock()
@@ -246,9 +258,103 @@ class TestOfficialLauncher(unittest.TestCase):
             patch.object(official_launcher, "installed_launcher") as installed,
             self.assertRaisesRegex(RuntimeError, "privileges"),
         ):
-            official_launcher.prepare_launcher(kernel, Mock())
+            official_launcher.prepare_launcher(kernel, Mock(), GAME_PATH)
         installed.assert_not_called()
         kernel.CloseHandle.assert_not_called()
+
+    def test_installed_launcher_uses_persisted_verified_path(self):
+        logger = Mock()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            launcher = root / "Launcher.exe"
+            launcher.touch()
+            cache = root / "official_launcher.json"
+            cache.write_text(json.dumps({"path": str(launcher)}), encoding="utf-8")
+            with (
+                patch.object(
+                    official_launcher,
+                    "get_launcher_cache_path",
+                    return_value=str(cache),
+                ),
+                patch.object(official_launcher, "_registered_launchers") as registered,
+                patch.object(official_launcher, "_game_path_launchers") as inferred,
+                patch.object(official_launcher, "verify_launcher") as verify,
+            ):
+                self.assertEqual(
+                    official_launcher.installed_launcher("unused", logger),
+                    str(launcher),
+                )
+        verify.assert_called_once_with(str(launcher))
+        registered.assert_called_once_with()
+        inferred.assert_called_once_with("unused")
+
+    def test_installed_launcher_infers_from_game_path_and_persists(self):
+        logger = Mock()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            launcher = root / "Launcher.exe"
+            launcher.touch()
+            game = root / "games" / "EndField Game" / "Endfield.exe"
+            game.parent.mkdir(parents=True)
+            game.touch()
+            cache = root / "configs" / "official_launcher.json"
+            with (
+                patch.object(
+                    official_launcher,
+                    "get_launcher_cache_path",
+                    return_value=str(cache),
+                ),
+                patch.object(official_launcher, "_registered_launchers", return_value=[]),
+                patch.object(official_launcher, "verify_launcher") as verify,
+            ):
+                self.assertEqual(
+                    official_launcher.installed_launcher(str(game), logger),
+                    str(launcher),
+                )
+            self.assertEqual(
+                json.loads(cache.read_text(encoding="utf-8")),
+                {"path": os.path.abspath(launcher)},
+            )
+        verify.assert_called_once_with(str(launcher))
+
+    def test_invalid_cached_launcher_falls_back_and_replaces_cache(self):
+        logger = Mock()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stale = root / "stale" / "Launcher.exe"
+            stale.parent.mkdir()
+            stale.touch()
+            launcher = root / "Launcher.exe"
+            launcher.touch()
+            cache = root / "official_launcher.json"
+            cache.write_text(json.dumps({"path": str(stale)}), encoding="utf-8")
+            with (
+                patch.object(
+                    official_launcher,
+                    "get_launcher_cache_path",
+                    return_value=str(cache),
+                ),
+                patch.object(official_launcher, "_registered_launchers", return_value=[]),
+                patch.object(
+                    official_launcher,
+                    "_game_path_launchers",
+                    return_value=[str(launcher)],
+                ),
+                patch.object(
+                    official_launcher,
+                    "verify_launcher",
+                    side_effect=[RuntimeError("bad signature"), None],
+                ),
+            ):
+                self.assertEqual(
+                    official_launcher.installed_launcher("unused", logger),
+                    str(launcher),
+                )
+            self.assertEqual(
+                json.loads(cache.read_text(encoding="utf-8")),
+                {"path": os.path.abspath(launcher)},
+            )
+        logger.warning.assert_called_once()
 
     def test_launch_game_preserves_arguments_without_injecting_defaults(self):
         kernel = Mock()

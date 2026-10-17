@@ -12,14 +12,24 @@ import os
 import subprocess
 import time
 from ctypes import wintypes
+from pathlib import Path
 
 import psutil
+from ok.util.file import ensure_dir_for_file, read_json_file, write_json_file
+
+from src.core.paths import config_path
 
 OFFICIAL_SIGNERS = {
     "2B366F397E64A9494A553B70004E8CA1AAE02B9D",
     "FF4AF264C36A27F0C805936708EF8EC67B396225",
 }
 LAUNCHER_ID = "33a0a6296a20400d503c59ac0fd6341e"
+LAUNCHER_CACHE_FILE = "official_launcher.json"
+
+
+def get_launcher_cache_path() -> str:
+    """Return the persisted launcher-path cache location."""
+    return config_path(LAUNCHER_CACHE_FILE)
 
 
 def verify_launcher(path: str) -> None:
@@ -57,11 +67,33 @@ def verify_launcher(path: str) -> None:
         raise RuntimeError(f"Official launcher signature is invalid or unrecognized: {path}")
 
 
-def installed_launcher() -> str:
-    """Find the CN launcher through its installer registration, without fixed drives/versions."""
+def _cached_launcher() -> str:
+    try:
+        data = read_json_file(get_launcher_cache_path())
+    except OSError:
+        return ""
+    if not isinstance(data, dict):
+        return ""
+    path = str(data.get("path") or "").strip()
+    return path if path and os.path.isfile(path) else ""
+
+
+def _save_cached_launcher(path: str, logger) -> None:
+    """Persist a verified launcher path without making launch depend on cache I/O."""
+    try:
+        cache_path = get_launcher_cache_path()
+        ensure_dir_for_file(cache_path)
+        write_json_file(cache_path, {"path": os.path.abspath(path)})
+    except OSError as error:
+        logger.warning(f"Cannot persist official launcher path: {error}")
+
+
+def _registered_launchers() -> list[str]:
+    """Return launcher paths registered by the Hypergryph installer."""
     import winreg
 
     key_path = rf"Software\Microsoft\Windows\CurrentVersion\Uninstall\{LAUNCHER_ID}"
+    paths = []
     for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
         for view in (winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY):
             try:
@@ -69,10 +101,54 @@ def installed_launcher() -> str:
                     folder = winreg.QueryValueEx(key, "InstallLocation")[0]
                 path = os.path.join(folder, "Launcher.exe")
                 if os.path.isfile(path):
-                    return path
+                    paths.append(path)
             except OSError:
                 continue
-    raise RuntimeError("Official Hypergryph launcher not found; install or open the official launcher first")
+    return paths
+
+
+def _game_path_launchers(game_path: str) -> list[str]:
+    """Find Launcher.exe in ancestors of the configured Endfield executable."""
+    if not game_path:
+        return []
+    folder = Path(os.path.abspath(game_path)).parent
+    candidates = []
+    for parent in (folder, *folder.parents):
+        path = str(parent / "Launcher.exe")
+        if os.path.isfile(path):
+            candidates.append(path)
+    return candidates
+
+
+def installed_launcher(game_path: str, logger) -> str:
+    """Find and verify the CN launcher, then persist the working path."""
+    candidates = [("cache", _cached_launcher())]
+    candidates.extend(("registry", path) for path in _registered_launchers())
+    candidates.extend(("game path", path) for path in _game_path_launchers(game_path))
+
+    seen = set()
+    errors = []
+    for source, path in candidates:
+        if not path:
+            continue
+        normalized = os.path.normcase(os.path.abspath(path))
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        try:
+            verify_launcher(path)
+        except Exception as error:
+            logger.warning(f"Cannot use official launcher from {source}: path={path}, error={error}")
+            errors.append(error)
+            continue
+        _save_cached_launcher(path, logger)
+        logger.info(f"Verified official launcher: source={source}, path={path}")
+        return path
+
+    message = "Official Hypergryph launcher not found; install or open the official launcher first"
+    if errors:
+        raise RuntimeError(message) from errors[-1]
+    raise RuntimeError(message)
 
 
 def running_pids(name: str) -> list[int]:
@@ -204,12 +280,11 @@ def official_parent(kernel, logger):
     return None
 
 
-def prepare_launcher(kernel, logger):
+def prepare_launcher(kernel, logger, game_path: str):
     parent = official_parent(kernel, logger)
     if parent:
         return parent
-    path = installed_launcher()
-    verify_launcher(path)
+    path = installed_launcher(game_path, logger)
     subprocess.Popen(
         [path, "--game=Endfield", "--reason=4"],
         cwd=os.path.dirname(path),
@@ -280,7 +355,7 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
         logger.info("Endfield is already running; skipping launch")
         return True
     kernel = _kernel32()
-    parent = prepare_launcher(kernel, logger)
+    parent = prepare_launcher(kernel, logger, game_path)
     try:
         # The user may have started the game while the launcher was opening.
         if running_pids("Endfield.exe"):
