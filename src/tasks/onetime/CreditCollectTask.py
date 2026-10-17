@@ -57,8 +57,6 @@ class CreditCollectTask(Common):
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
         count = 0
         quick_arrival = False
-        quick_enabled = True
-        no_progress = 0
         self.log_info("开始好友拜访阶段")
         while True:
             temp_exchange_time = left_exchange_time
@@ -66,20 +64,12 @@ class CreditCollectTask(Common):
                 self.wait_click_ocr(
                     match=self.lang.daily_routine_mixin.k_e84c3ae9, box=self.box.right, time_out=7, recheck_time=1
                 )
-            else:
-                if left_exchange_time <= 0 and left_help_time <= 0:
-                    self.info_set("exchange_time", exchange_time)
-                    self.info_set("help_time", help_time)
-                    self.info_set("visit_end_reason", "action_counts_completed")
-                    self.log_info("本轮交流、助力操作各执行 5 次，正常结束好友拜访")
-                    return True
             if count >= 15:
                 self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
                 return False
             count += 1
 
             result = None
-            before_actions = exchange_time + help_time
             self.wait_ui_stable(refresh_interval=1)
             start_time = self.active_time()
             scroll_count = 0
@@ -171,12 +161,16 @@ class CreditCollectTask(Common):
                                 help_time += 1
             self.info_set("exchange_time", exchange_time)
             self.info_set("help_time", help_time)
-            no_progress = no_progress + 1 if exchange_time + help_time == before_actions else 0
-            if no_progress >= 2:
-                quick_enabled = False
-                self.log_info("连续两位好友没有可执行操作，改用好友列表补查")
+            if left_exchange_time <= 0 and left_help_time <= 0:
+                self.info_set("visit_end_reason", "action_counts_completed")
+                self.log_info("本轮交流、助力操作各执行 5 次，正常结束好友拜访")
+                if not self.safe_back(feature=fL.friend_page, time_out=10):
+                    self.log_info("操作次数已完成，但未能安全返回好友列表")
+                    return False
+                return True
+
             quick_arrival = False
-            if quick_enabled and count < 15 and (left_exchange_time > 0 or left_help_time > 0):
+            if count < 15:
                 quick_result = self.try_quick_visit()
                 if quick_result is None:
                     # 已确认处于好友船 HUD，但没有下位候选；不要重复搜索列表。
