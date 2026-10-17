@@ -31,6 +31,7 @@ from src.interaction.KeyConfig import DEFAULT_COMBAT_KEYS, DEFAULT_COMMON_KEYS, 
 
 KEY_CONFIG_NAME = "Game Hotkey Config"
 ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME = "Ensure Main Once Action Sleep"
+TOPMOST_ENABLED_KEY = "窗口置顶"
 ZIP_LINE_CONFIG_NAME = "Zip Line Config"
 ZIP_LINE_SCROLL_KEY = "是否启用滚动放大视角"
 ZIP_LINE_GROUP_KEY = "滑索配置分类"
@@ -96,8 +97,8 @@ battle_config_option = ConfigOption(
 )
 ensure_main_once_action_sleep_option = ConfigOption(
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
-    {"SingleActionWithDelay": 1.5},
-    description="主界面单次动作后延迟",
+    {"SingleActionWithDelay": 1.5, TOPMOST_ENABLED_KEY: True},
+    description="基础配置",
     icon=FluentIcon.DATE_TIME,
 )
 zip_line_config_option = ConfigOption(
