@@ -46,7 +46,7 @@ class _VisitHarness(CreditCollectTask):
         self.ocr_calls.append(kwargs)
         return [SimpleNamespace(name="无待领取信用")]
 
-    def ensure_main(self):
+    def ensure_main(self, **kwargs):
         pass
 
     def back(self):
@@ -187,6 +187,22 @@ class TestCreditQuickVisit(unittest.TestCase):
         task = _VisitHarness([(True, True)] * 5, prefer=False)
         self.assertTrue(task.collect_credit())
         self.assertEqual(task.stats["help_time"], 5)
+
+    def test_standalone_run_reports_incomplete_search_as_error(self):
+        task = _VisitHarness([])
+        task.find_feature = lambda **kwargs: []
+        with self.assertRaisesRegex(RuntimeError, "收信用任务未完成"):
+            task.run()
+
+    def test_standalone_run_accepts_no_next_candidate(self):
+        task = _VisitHarness([(False, False)], quick=None)
+        self.assertTrue(task.run())
+        self.assertEqual(task.stats["visit_end_reason"], "no_next_person")
+
+    def test_standalone_run_accepts_completed_action_counts(self):
+        task = _VisitHarness([(True, True)] * 5)
+        self.assertTrue(task.run())
+        self.assertEqual(task.stats["visit_end_reason"], "action_counts_completed")
 
     def transition_task(self, departed=True, arrived=True, hud_stable=True, hud_rechecked=True):
         task = _VisitHarness([])
