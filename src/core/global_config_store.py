@@ -140,7 +140,7 @@ def get_migration_state_path() -> str:
 
 
 def get_migration_backup_dir() -> str:
-    """全局配置迁移备份目录路径；目录名取 config_folder，避免写死 configs。"""
+    """全局配置迁移备份目录路径；目录名取 config_folder。"""
     return config_path("global_config_migration_backup")
 
 
