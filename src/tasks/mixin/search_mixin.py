@@ -103,7 +103,7 @@ class SearchMixin(BaseEfTask):
             duration: 每次按移动键的持续秒数。
             keys: 依次尝试的移动键，默认 W/A/S/D 前后左右。
             time_out: 总搜索时限（秒），<=0 表示不限制。
-            reset_position: 是否在每次检测失败后反向移动归正，默认 False。
+            reset_position: 是否在每次检测失败后反向移动归正回原位，默认 False。
 
         Returns:
             check_func 的命中结果；未命中返回 None。
