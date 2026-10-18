@@ -90,6 +90,19 @@ def _make_impl(task):
 
 
 class TestDailyBattleToEnd(unittest.TestCase):
+    def test_failed_gather_navigation_cannot_enter_activation(self):
+        task = SimpleNamespace(battle_ctx=BattleContext(), navigate_to_gather=Mock(return_value=False))
+        self.assertFalse(BattleTask.battle_gather(task))
+
+    def test_failed_gather_retry_navigation_cannot_claim_reward(self):
+        task = Mock()
+        task._navigate_via_zip_line.return_value = False
+        task.navigate_until_target.return_value = False
+        self.assertFalse(BattleTask._gather_retry_navigate(task))
+        task.navigate_until_target.assert_called_once()
+        task.wait_ocr.assert_not_called()
+        task.wait_click_ocr.assert_not_called()
+
     def test_to_battle_passes_recovery_and_only_starts_after_entry(self):
         for entered in (True, False):
             with self.subTest(entered=entered):

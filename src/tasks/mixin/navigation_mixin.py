@@ -4,6 +4,7 @@ from copy import copy
 import pyautogui
 
 from src.data.FeatureList import FeatureList as fL
+from src.image.navigation_arrival_detector import has_tracking_arrival_band
 from src.interaction.target_movement import ellipse_geometry, hud_direction_step, resolve_move_profile
 from src.tasks.mixin.navigation_detection_scope import get_navigation_detection_scope
 from src.tasks.mixin.navigation_learning import initial_alignment
@@ -86,6 +87,7 @@ class NavigationMixin(SearchMixin):
         max_run_time: float = -1,
         allow_rotate_search: bool = True,
         nav_move_profile=None,
+        arrival_slowdown: bool = False,
     ):
         """
         持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
@@ -110,6 +112,8 @@ class NavigationMixin(SearchMixin):
                 - 0：完全不奔跑，开局立即切换步行状态，全程按住 w 步行前进
                 - 大于0：允许累计奔跑指定秒数，达到后在本次导航中切换步行且不再恢复奔跑，函数结束时恢复奔跑状态
             allow_rotate_search (bool): 导航连续丢失时是否允许旋转视角整圈搜索，默认 True；送礼等不应转动视角的场景传 False。
+            arrival_slowdown (bool): 仅供到达时图标会消失的路线使用：顶部到达文本带出现后慢走并启用到达 OCR。
+                此前保持奔跑、仅用 CV/模板导航；图标丢失时停步重检，不盲目前进。
 
         Returns:
             bool | Any:
@@ -133,6 +137,7 @@ class NavigationMixin(SearchMixin):
         nav_missing_recovered = False
         nav_not_found_time_out = 5
         observations = get_navigation_detection_scope(self)
+        approaching = False
 
         def check_target():
             if target_is_ocr:
@@ -204,6 +209,19 @@ class NavigationMixin(SearchMixin):
                 return self.yolo_detect(name=nav, box=nav_box)
             return self.find_feature(nav, box=nav_box, threshold=0.7)
 
+        recovery_reached = False
+
+        def check_recovery():
+            nonlocal recovery_reached
+            if arrival_slowdown:
+                if self.active_time() - start_time > time_out:
+                    return True  # 中断底层搜索，交由主循环处理超时。
+                self.next_frame()
+                if check_target():
+                    recovery_reached = True
+                    return True  # 停止转向/后退，交由主循环原地确认。
+            return check_nav()
+
         # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
         # Task.send_key_down 不透传底层是否按下成功（ok-script 2.0.4 恒返回 None），
         # 按下后只能乐观标记为已按住；若底层置顶失败未实际按下，
@@ -214,11 +232,20 @@ class NavigationMixin(SearchMixin):
 
         try:
             while True:
-                if observations is not None and self.active_time() - start_time > time_out:
+                if (observations is not None or arrival_slowdown) and self.active_time() - start_time > time_out:
                     self.log_info("导航超时")
                     return False
                 enforce_max_run_time()
-                reached = check_target()
+                if arrival_slowdown:
+                    frame = self.next_frame()
+                    if frame is None:
+                        self.sleep(0.03)
+                        continue
+                    if not approaching and has_tracking_arrival_band(frame):
+                        approaching = True
+                        exit_run_mode()
+                        run_allowed = False
+                reached = check_target() if not arrival_slowdown or approaching else False
                 if observations is not None and not reached:
                     kind = "ocr" if target_is_ocr else "yolo" if target_is_yolo else "feature"
                     if observations.latest(kind, target):
@@ -304,6 +331,15 @@ class NavigationMixin(SearchMixin):
                     continue
 
                 nav_result = check_nav()
+                if arrival_slowdown and not nav_result and self._walk_key_held:
+                    self.send_key_up("w")
+                    self._walk_key_held = False
+                if arrival_slowdown and not nav_result and not approaching:
+                    # 到达提示漏检时也先停步，下一轮启用 OCR 查交互目标。
+                    approaching = True
+                    exit_run_mode()
+                    run_allowed = False
+                    continue
                 if observations is not None and not nav_result:
                     # 残影只用于停步找回方向，不允许旧坐标恢复前进。
                     if self._walk_key_held:
@@ -341,6 +377,10 @@ class NavigationMixin(SearchMixin):
                             self._walk_key_held = True
                         if self._walk_key_held and not run_bool and run_allowed:
                             enter_run_mode()
+                        if arrival_slowdown:
+                            # 已居中时保持连续前进，省去可能耗时数秒的重复对中。
+                            self.sleep(0.005)
+                            continue
                     elif self._walk_key_held:
                         self.send_key_up("w")
                         self._walk_key_held = False
@@ -356,6 +396,9 @@ class NavigationMixin(SearchMixin):
                         allow_random_move=False,
                         move_profile=nav_move_profile,
                     )
+                    if arrival_slowdown:
+                        # 对中期间保持停步；下一轮先检查交互提示，再恢复前进。
+                        continue
 
                     # 对中过程中实时门控行走：目标在中央附近就走，偏离就停
                     if align_pos:
@@ -382,13 +425,16 @@ class NavigationMixin(SearchMixin):
                     ):
                         self.log_info(f"导航目标连续丢失超过 {nav_not_found_time_out} 秒，进入兜底搜索")
                         self.send_key_up("w")
-                        if observations is not None:
+                        if observations is not None or arrival_slowdown:
                             self._walk_key_held = False
                         self.sleep(0.1)
                         nav_result = None
                         if allow_rotate_search:
                             self.log_info("旋转一圈搜索")
-                            nav_result = self.rotate_search(check_nav, between_delay=0.1)
+                            recovery_reached = False
+                            nav_result = self.rotate_search(check_recovery, between_delay=0.1)
+                            if arrival_slowdown and (recovery_reached or self.active_time() - start_time > time_out):
+                                continue
                             if nav_result:
                                 self.log_info("旋转搜索中重新找到导航")
                         else:
@@ -402,15 +448,19 @@ class NavigationMixin(SearchMixin):
                             self.log_info("按下中键后开始后退搜索")
                             self.send_key_down("s")  # 确认使用send_key：s为方向移动键，用于后退搜索
                             search_start = self.active_time()
-                            while self.active_time() - search_start < 10:
-                                if check_nav():
-                                    nav_result = True
-                                    self.log_info("后退搜索中重新找到导航")
-                                    break
-                                self.sleep(0.02)
-                            self.send_key_up("s")  # 确认使用send_key：释放方向键
-                        self.send_key_down("w")
-                        self._walk_key_held = True
+                            recovery_reached = False
+                            try:
+                                while self.active_time() - search_start < 10:
+                                    if check_recovery():
+                                        nav_result = True
+                                        self.log_info("后退搜索中重新找到导航")
+                                        break
+                                    self.sleep(0.02)
+                            finally:
+                                self.send_key_up("s")  # 确认使用send_key：释放方向键
+                        if not arrival_slowdown:
+                            self.send_key_down("w")
+                            self._walk_key_held = True
                         nav_missing_recovered = True
 
                     if need_v and self.active_time() - last_click_v_time > 5:
