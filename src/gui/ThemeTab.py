@@ -1,9 +1,18 @@
 """Opt-in project theme management; no upstream UI fork required."""
 
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout
-from qfluentwidgets import FluentIcon, NavigationItemPosition
 from ok.gui.widget.CustomTab import CustomTab
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
+from qfluentwidgets import FluentIcon, NavigationItemPosition
 
 from src.themes.theme_pack import ThemePackError, import_theme_pack, load_active_theme, select_theme
 
