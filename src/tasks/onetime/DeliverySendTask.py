@@ -188,6 +188,7 @@ class DeliverySendTask(Common):
                         self.click_confirm()
                     else:
                         self.log_info("未找到「快速转交」按钮，跳过「快速转交」")
+                else:
                     self.log_info("未找到报价列表页标识，跳过「快速转交」")
                 self.ensure_main()
                 count += 1

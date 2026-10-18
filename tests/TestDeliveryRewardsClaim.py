@@ -122,7 +122,8 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
 
                 clicked = [item.kwargs.get("feature") for item in feature.wait_click_feature.call_args_list]
                 self.assertEqual(fL.transfer_go in clicked, quote_ready)
-                feature.click_confirm.assert_called()
+                # 确认只在点到「快速转交」之后执行
+                self.assertEqual(feature.click_confirm.called, quote_ready)
 
 
 if __name__ == "__main__":
