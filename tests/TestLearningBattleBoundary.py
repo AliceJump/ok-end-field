@@ -1,4 +1,4 @@
-"""Combat and post-battle retries deny every learning path, but retain realtime movers."""
+"""Combat and unconfirmed post-battle movement deny learning, retaining realtime movers."""
 
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -90,9 +90,10 @@ class TestLearningBattleBoundary(unittest.TestCase):
         task.box = SimpleNamespace(bottom_right=None)
         task._open_index = Mock(side_effect=lambda: self.assertFalse(learning_allowed()))
         task.to_stage = Mock(return_value=True)
-        task._click_track_and_transfer = Mock(side_effect=lambda: self.assertFalse(learning_allowed()))
+        task._transfer_to_gather_stage = Mock(side_effect=lambda: self.assertFalse(learning_allowed()))
+        task._prepare_gather_navigation = lambda *a, **k: BattleTask._prepare_gather_navigation(task, *a, **k)
 
-        def zipline():
+        def zipline(**kwargs):
             self.assertFalse(learning_allowed())
             ZipLineMixin.zip_line_list_go(route, [108], config_key="route", stay_on_zip_line=True)
             return True

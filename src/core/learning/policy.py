@@ -21,7 +21,7 @@ def learning_epoch():
 
 @contextmanager
 def deny_learning(reason):
-    """A nested stable entry cannot undo its parent's deny; restore on every exit."""
+    """Ordinary nested entries cannot undo a deny; restore on every exit."""
     if not isinstance(reason, str) or not reason.strip():
         raise ValueError("A learning denial needs a reason")
     _EPOCH.set(_EPOCH.get() + 1)
@@ -29,6 +29,23 @@ def deny_learning(reason):
     try:
         yield
     finally:
+        _DENIALS.reset(token)
+
+
+@contextmanager
+def learning_after_verified_transfer(*, verified):
+    """A verified world reset may replace post-battle state, never an active battle."""
+    denials = _DENIALS.get()
+    if verified is not True or any(reason not in {"post_battle", "post_battle_retry"} for reason in denials):
+        yield False
+        return
+    _EPOCH.set(_EPOCH.get() + 1)
+    token = _DENIALS.set(())
+    try:
+        yield True
+    finally:
+        # Neither pre-transfer evidence nor a leaked reset session can be reused.
+        _EPOCH.set(_EPOCH.get() + 1)
         _DENIALS.reset(token)
 
 
