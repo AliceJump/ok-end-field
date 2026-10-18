@@ -1,11 +1,14 @@
 from qfluentwidgets import FluentIcon
 
+from src.core.learning.policy import learning_epoch
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.demo_level_mixin import DemoLevelMixin
 from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.mixin.navigation_learning import align_initial_target
+from src.tasks.mixin.workflow_learning import demo_entry_after_transfer, take_workflow_context
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 
@@ -145,12 +148,15 @@ class DemoBattleTask(DemoLevelMixin, Common, MapMixin, ZipLineMixin, BattleMixin
 
     def _demo_click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
+        epoch = learning_epoch()
         if not self.to_near_transfer_point(need_track=True, need_reserve_icon_name=fL.clear_page_demo_battle):
             self.mark_task_failure("未能找到传送点，无法继续")
             return False
         self.ensure_main()
-        if not self.align_ocr_or_find_target_to_center(
-            ocr_match_or_feature_name_list=fL.demographic_follow, ocr=False, raise_if_fail=False
+        entry = demo_entry_after_transfer(self, epoch=epoch)
+        context, confidence = take_workflow_context(self, entry, fL.demographic_follow)
+        if not align_initial_target(
+            self, context, fL.demographic_follow, confidence=confidence, ocr=False, raise_if_fail=False
         ):
             self.mark_task_failure("未找到『进入演算』目标，可能尚未找到正确路线")
             return False

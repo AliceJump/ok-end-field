@@ -3,17 +3,21 @@ from copy import copy
 
 import pyautogui
 
+from src.core.learning.policy import learning_epoch
 from src.data.FeatureList import FeatureList as fL
 from src.interaction.target_movement import ellipse_geometry, hud_direction_step, resolve_move_profile
 from src.tasks.mixin.navigation_detection_scope import get_navigation_detection_scope
+from src.tasks.mixin.navigation_learning import initial_alignment
 from src.tasks.mixin.search_mixin import SearchMixin
+from src.tasks.mixin.workflow_learning import take_workflow_context
 
 TOLERANCE = 50
 
 
 class NavigationMixin(SearchMixin):
-    def start_tracking_and_align_target(self, target_feature_in_map, target_feature_out_map):
+    def start_tracking_and_align_target(self, target_feature_in_map, target_feature_out_map, *, learning_entry=None):
         """在地图中开启追踪并在地图外完成朝向对齐。"""
+        context, confidence = take_workflow_context(self, learning_entry, target_feature_out_map)
         result = self.find_one(
             feature=target_feature_in_map,
             box=self.box_of_screen(0, 0, 1, 1),
@@ -29,18 +33,33 @@ class NavigationMixin(SearchMixin):
             feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False
         ):
             self.click(result, after_sleep=0.5)
+        else:
+            context = None
 
         self.press_key("m")
         self.log_info("关闭地图界面 (按下 M)")
-        start_time = self.active_time()
-        while not self.find_feature(feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1), threshold=0.7):
-            self.next_frame()
-            if self.active_time() - start_time > 5:
-                self.log_info("等待追踪图标超时")
-                return False
-        self.align_ocr_or_find_target_to_center(
-            ocr_match_or_feature_name_list=target_feature_out_map, only_x=True, threshold=0.7, ocr=False
-        )
+        if context is not None and learning_entry.epoch != learning_epoch():
+            context = None
+        with initial_alignment(self, context, confidence=confidence) as learning:
+            if learning is not None:
+                learning.replay()
+                self.sleep(0.08)
+            start_time = self.active_time()
+            while not self.find_feature(
+                feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1), threshold=0.7
+            ):
+                self.next_frame()
+                if self.active_time() - start_time > 5:
+                    self.log_info("等待追踪图标超时")
+                    if learning is not None:
+                        learning.fail()
+                    return False
+            kwargs = {"learning_session": learning} if learning is not None else {}
+            aligned = self.align_ocr_or_find_target_to_center(
+                ocr_match_or_feature_name_list=target_feature_out_map, only_x=True, threshold=0.7, ocr=False, **kwargs
+            )
+            if not aligned and learning is not None:
+                learning.fail()
         self.log_info("已对齐地图目标")
         return True
 
