@@ -3236,3 +3236,15 @@ msgid "淤积点导航测试结束：成功 {success} 次，失败 {failed} 次�
 msgstr ""
 "Prueba de navegación a puntos de acumulación finalizada: {success} éxitos y {failed} "
 "fallos."
+
+msgid "联络站重复对中测试"
+msgstr "Prueba repetida de alineación de la estación de enlace"
+
+msgid "每轮重新传送到舰桥，按实际走一步或两步分别学习联络站首次对中；不聊天、不送礼。"
+msgstr "Teletranspórtate al puente en cada ronda y aprende por separado la alineación inicial de la estación de enlace tras uno o dos avances reales. Sin conversar ni regalar."
+
+msgid "每轮重新传送并完成一次对中；0 表示持续循环，直到手动停止。"
+msgstr "Vuelve a teletransportarte y alinea una vez por ronda; 0 repite hasta detenerlo manualmente."
+
+msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
+msgstr "Prueba de alineación de enlace finalizada: {success} éxitos, {failed} fallos."

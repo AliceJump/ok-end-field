@@ -3138,3 +3138,15 @@ msgstr "Test progress"
 msgid "淤积点导航测试结束：成功 {success} 次，失败 {failed} 次。"
 msgstr ""
 "Energy Pool navigation test finished: {success} succeeded, {failed} failed."
+
+msgid "联络站重复对中测试"
+msgstr "Liaison station alignment loop test"
+
+msgid "每轮重新传送到舰桥，按实际走一步或两步分别学习联络站首次对中；不聊天、不送礼。"
+msgstr "Transfer to the bridge each round and learn the initial liaison station alignment separately for one or two actual forward steps. No chats or gifts."
+
+msgid "每轮重新传送并完成一次对中；0 表示持续循环，直到手动停止。"
+msgstr "Transfer again and align once per round; 0 repeats until manually stopped."
+
+msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
+msgstr "Liaison alignment test finished: {success} succeeded, {failed} failed."
