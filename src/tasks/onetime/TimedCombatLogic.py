@@ -686,8 +686,10 @@ class TimedCombatLogic:
         if previous_burst is not None and not reset_runtime:
             self.release_burst.preserve(previous_burst)
         for token, row in self.release_burst.rows.items():
-            if self.release_burst.cast_only_quote(token, "battle") and row["character"] in self.damage_quotes:
-                value = row["quotes"]["battle"]["crit_expect"]
+            battle_quote = row["quotes"].get("battle", {})
+            if (battle_quote.get("pricing_scope", "").startswith(("support_opener_only", "unconditional_cast_only;"))
+                    and row["character"] in self.damage_quotes):
+                value = battle_quote["crit_expect"]
                 self.damage_quotes[row["character"]] = replace(
                     self.damage_quotes[row["character"]], battle=value, conservative=value)
 

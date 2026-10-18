@@ -16,7 +16,7 @@ from pathlib import Path
 from reviewed_avywenna_recall import recall_quote
 from reviewed_release_stance import release_stance
 from reviewed_si_release import si_release_actor
-from reviewed_support_release import support_release
+from reviewed_support_release import liino_battle_release, support_release
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -69,7 +69,7 @@ def _actor_quotes(planner, index, row, store):
         if quote is None:
             continue
         quotes[kind] = {key: quote[key] for key in ("non_crit", "crit_expect", "bonus_pct", "quote_basis")}
-        if row["key"] == "liino" and kind == "ult":
+        if row["key"] == "liino" and kind in {"battle", "ult"}:
             # Ongoing pulses and the non-interrupted closing explosion are not
             # an immediate release quote. Do not invent hits.
             quotes[kind].update(non_crit=0.0, crit_expect=0.0,
@@ -90,6 +90,10 @@ def _collect_actors(rows, planner, store):
         rules, evidence = _actor_rules(planner, index, row, store)
         if evidence:
             supports.append(evidence)
+        battle_rules, battle_evidence = liino_battle_release(row, store)
+        rules.extend(battle_rules)
+        if battle_evidence:
+            supports.append(battle_evidence)
         actors.append({"character": row["character"], "key": row["key"], "profile": row["profile"],
                        "build": row["build"], "panel": row["panel"]["damage_basis"],
                        "attribute_basis": row["attribute_basis"], "quotes": _actor_quotes(planner, index, row, store),
@@ -131,7 +135,7 @@ def export(source, revision, destination):
     actors, supports = _collect_actors(rows, planner, store)
     # This export is a reviewed boundary, not automatic admission of new rules.
     expected = {"安塔尔": 2, "秋栗": 1, "佩丽卡": 1, "庄方宜": 1,
-                "莱万汀": 1, "艾维文娜": 1, "埃特拉": 1, "赛希": 2, "梨诺": 3}
+                "莱万汀": 1, "艾维文娜": 1, "埃特拉": 1, "赛希": 2, "梨诺": 4}
     actual = {row["character"]: len(row["rules"]) for row in actors if row["rules"]}
     if len(actors) != 32 or actual != expected:
         raise ValueError("Release-only export scope changed; review before widening it")
@@ -152,7 +156,7 @@ def export(source, revision, destination):
     manifest = {"schema_version": 1, "source_revision": head,
                 "source_repository": "https://github.com/AliceJump/ok-end-field",
                 "source_branch": "codex/effect-semantics-normalization", "source_hashes": hashes,
-                "snapshot_sha256": hashlib.sha256(payload).hexdigest(), "actors": 33, "rules": 15,
+                "snapshot_sha256": hashlib.sha256(payload).hexdigest(), "actors": 33, "rules": 16,
                 "supplement_source_hashes": {
                     **si_evidence["source_hashes"],
                     "assets/data/release_burst/si-release-contract.json": si_evidence["contract_sha256"]},

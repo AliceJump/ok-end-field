@@ -1,4 +1,4 @@
-"""Export-only review boundary for two fixed-build support ultimates.
+"""Export-only review boundary for fixed-build support release windows.
 
 This projection does not supply native attribute queries to the research world.
 The live layer has no four-stat/conversion producers: it prices the selected
@@ -8,6 +8,81 @@ fixed build, as its other quotes do. Do not generalise this to changed builds.
 from dataclasses import asdict
 
 VALUE = "$value"
+
+
+def _singing_records(store, native):
+    from src.data.native_gameplay import native_record
+
+    hashes = {
+        native: '207491edfff39062a18e8772b822acf3699441fae57244acbd9d47ff46d103fa',
+        'buff_chr_0035_liino_normalskill_music_tag': 'af58f479e7bc9bc433201f117fe99bc24a6f390c347ac36de8bc8566322e955f',
+        'buff_chr_0035_liino_normalskill_buff_atkup': 'c9c6f3531889d238986be31e7fff37a5061aa70d62c9a985dc210be35fe137a9',
+        'buff_chr_0035_liino_atkup': '4a696858d71d2a2cefec887ef199ef3f10bbe5bace6792b44731be384dc8bb27',
+        'buff_chr_0035_liino_atkup_owner': '771118ddafdff1e408c35ed54c3c802e9e1d5b0a743e39118f527e520212a6b2',
+    }
+    records = {key: native_record(store, key) for key in hashes}
+    if any(records[key]['source']['sha256'] != digest for key, digest in hashes.items()):
+        raise ValueError('Unreviewed singing attack aura')
+    return records, hashes
+
+
+def _validate_singing_origin(records, native):
+    block = records[native]['data']['actionGroupData']['timelineActions'][19]
+    creation = block['_sequenceActionData']['actionData'][0][VALUE]
+    owner = records['buff_chr_0035_liino_normalskill_music_tag']['data']
+    aura = owner['buffEventAction'][0]['actions'][0]['actionData'][0][VALUE]
+    assignments = {p['targetKey']: p['inputValueKey'] for p in creation['buffs'][0]['assignItems']
+                   if not p['useDirectValue']}
+    if (block['_startFrame'] != 15 or creation['serverActionIndex'] != 41
+            or creation['buffs'][0]['buffId'] != owner['id']
+            or creation['targetSettings']['targetSource'] != 1
+            or assignments.get('duration') != 'music_duration' or assignments.get('atk_up') != 'atk_up'
+            or owner['buffEventAction'][0]['buffEvent'] != 5
+            or aura['auraType'] != 1 or aura['shapeData']['_shape'] != 0
+            or aura['targetObjectType'] != 8 or not aura['targetFilter']['checkAlive']
+            or not aura['excludeOwner']):
+        raise ValueError('Singing source, duration or team selector changed')
+
+
+def _validate_singing_attack(records):
+    for key in ('buff_chr_0035_liino_atkup', 'buff_chr_0035_liino_atkup_owner'):
+        data = records[key]['data']
+        modifiers = data['attributeModifier']['attributeModifiers']
+        if (len(modifiers) != 1 or modifiers[0]['attributeType'] != 2
+                or modifiers[0]['formulaItem'] != 6 or modifiers[0]['modifyAttributeType'] != 0
+                or modifiers[0]['param']['blackboardKey'] != 'atk_up'
+                or not modifiers[0]['param']['useBlackboardKey']
+                or data['stackingSettings']['stackingKey'] != 'liino_atk_up'):
+            raise ValueError('Singing attack basis or shared stacking changed')
+
+
+def liino_battle_release(row, store):
+    """Project the singing ATK aura, separate from its spatial healing aura."""
+    from src.data.damage_modifiers import DamageBucket, DamageModifierSpec, ModifierMagnitude
+
+    if row['key'] != 'liino':
+        return [], None
+    _validate_build(row)
+    native = 'chr_0035_liino_normal_skill'
+    records, hashes = _singing_records(store, native)
+    _validate_singing_origin(records, native)
+    _validate_singing_attack(records)
+    ranked = store.ranked_skill(native, row['profile']['skill_rank'])
+    selected = {p['key']: p['value'] for p in ranked['blackboard']}
+    fps = store.index['frames_per_second']
+    spec = DamageModifierSpec('liino_battle:BUFF_ATTACK_UP', DamageBucket.ATTACK, ('all',), 'team',
+                              ModifierMagnitude(selected['atk_up']), 'battle_cast',
+                              duration=selected['music_duration'], sources=tuple(f'native:{key}' for key in hashes))
+    rule = asdict(spec)
+    rule.update(kind='battle', starts_after=15 / fps, ends_on_source_action=True,
+                blocks_source_actions=['battle', 'normal'])
+    evidence = {'character': row['character'], 'skill': native, 'release_frame': 15, 'fps': fps,
+                'native_record_sha256': hashes, 'ranked_parameters': selected,
+                'sp_cost': ranked['costValue'], 'duration': selected['music_duration'],
+                'attack': selected['atk_up'], 'input_policy': 'ranked_constant_without_dynamic_attributes',
+                'excluded': ['spatial_healing', 'sustained_projectile_hits', 'closing_damage',
+                             'posture_exit_afterglow', 'gear_heal_trigger']}
+    return [rule], evidence
 
 
 def _validate_build(row):

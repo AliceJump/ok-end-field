@@ -21,7 +21,7 @@ class TestReleaseBurstPlanner(unittest.TestCase):
     def test_export_scope_and_selected_builds(self):
         rows = read_snapshot()
         self.assertEqual(len(rows), 33)
-        self.assertEqual(sum(len(r["rules"]) for r in rows.values()), 15)
+        self.assertEqual(sum(len(r["rules"]) for r in rows.values()), 16)
         self.assertEqual(len([r for r in rows.values() if r["rules"]]), 10)
         self.assertEqual(rows["管理员"]["profile"]["potential"], 3)
         self.assertEqual(rows["余烬"]["profile"]["character_level"], 80)
@@ -241,7 +241,8 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         rows = read_snapshot()
         xai = rows["赛希"]["rules"][0]
         liino = next(r for r in rows["梨诺"]["rules"] if r["bucket"] == "amplification")
-        evidence = {r["character"]: r for r in json.loads((SNAPSHOT / "support-evidence.json").read_text(encoding="utf8"))}
+        evidence = {r["character"]: r for r in json.loads((SNAPSHOT / "support-evidence.json").read_text(encoding="utf8"))
+                    if r['skill'].endswith('_ultimate_skill')}
         self.assertEqual(evidence["赛希"]["input_domain"], "source.native.final_nonconverted.41")
         self.assertEqual(evidence["梨诺"]["input_domain"], "source.native.final_nonconverted.42")
         self.assertEqual(evidence["赛希"]["input_value"], 366)
@@ -285,6 +286,46 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertGreater(ratios[2], 1)
         self.assertLess(ratios[2], 1.2)
         self.assertEqual(planner.price("2", "battle", 2), before[0])
+
+    def test_liino_singing_starts_after_half_second_and_prices_white_attack_for_sixty_seconds(self):
+        planner = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
+        before = planner.price('2', 'battle', 0)
+        panel = planner.rows['2']['panel']
+        ratio = 1 + panel['attack_white'] * planner.rules['1', 'battle'][0]['magnitude']['base'] / (
+            panel['attack_white'] * (1 + panel['attack_percent']) + panel['attack_flat'])
+        planner.confirm('1', 'battle', 0)
+        self.assertEqual(planner.price('2', 'battle', .499), before)
+        for now in (.5, 30, 60.499):
+            self.assertAlmostEqual(planner.price('2', 'battle', now), before * ratio)
+        self.assertEqual(planner.price('2', 'battle', 60.5), before)
+        self.assertTrue(planner.action_blocked('1', 'battle', 30))
+        self.assertFalse(planner.action_blocked('2', 'battle', 30))
+        self.assertFalse(planner.action_blocked('1', 'battle', 60.5))
+
+    def test_liino_singing_replaces_ultimate_attack_instead_of_stacking_twice(self):
+        planner = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
+        base = planner.price('2', 'battle', 0)
+        planner.confirm('1', 'battle', 0)
+        planner.confirm('1', 'battle', 0)
+        singing = planner.price('2', 'battle', 1)
+        self.assertEqual(len(planner.bonuses), 2)
+        planner.confirm('1', 'ult', 2)
+        self.assertEqual(planner.price('2', 'battle', 2.1), base)
+        self.assertEqual(sum(b.spec['bucket'] == 'attack' for b in planner.bonuses), 2)
+        self.assertGreater(planner.price('2', 'battle', 5), singing)
+        planner.source_unavailable('1')
+        self.assertEqual(planner.price('2', 'battle', 5), base)
+
+    def test_liino_singing_changes_burst_order_only_with_budget_for_the_beneficiary(self):
+        planner = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
+        actions = (ReleaseBurstAction('1', 'battle', .55, 0, 25, 25),
+                   ReleaseBurstAction('2', 'battle', .5, planner.quote('2', 'battle')['crit_expect'], 100, 100))
+        decision = planner.choose(actions, 125, 0)
+        self.assertEqual(decision.sequence, (('1', 'battle'), ('2', 'battle')))
+        self.assertGreater(decision.gain, 0)
+        self.assertFalse(planner.bonuses)  # Forecasting does not activate the real aura.
+        self.assertIsNone(planner.choose(actions, 124, 0))
+        self.assertEqual(planner.price('1', 'battle', 0, value=17320.2), 0)
 
     def test_liino_channel_blocks_cancel_and_normal_but_not_teammates(self):
         planner = ReleaseBurstPlanner(["梨诺", "佩丽卡"])
@@ -356,7 +397,11 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         planner.confirm("2", "ult", 0)
         self.assertGreater(planner.price("3", "normal", 3) / before, 1.7)
         planner.confirm("2", "battle", 4)
-        self.assertAlmostEqual(planner.price("3", "normal", 5) / before, 1 + .38478, places=7)
+        panel = planner.rows['3']['panel']
+        attack = panel['attack_white'] * (1 + panel['attack_percent']) + panel['attack_flat']
+        singing = planner.rules['2', 'battle'][0]['magnitude']['base']
+        self.assertAlmostEqual(planner.price("3", "normal", 5) / before,
+                               (1 + .38478) * (1 + panel['attack_white'] * singing / attack), places=7)
 
     def test_zhuang_stance_replaces_base_multipliers_and_preserves_bonus_buckets(self):
         planner = ReleaseBurstPlanner(["庄方宜", "安塔尔"], store=load_skill_timings())
@@ -456,6 +501,40 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic._configure_team(["安塔尔", "莱万汀", "佩丽卡", "狼卫"], reset_runtime=True)
         return task, logic
+
+    def test_liino_singing_is_selected_by_real_step_using_existing_low_cost_acceptance(self):
+        task, logic = self.make_logic()
+        logic._configure_team(['梨诺', '佩丽卡'], reset_runtime=True)
+        self.assertEqual(logic.damage_quotes['梨诺'].battle, 0)
+        self.assertEqual(logic.damage_quotes['梨诺'].conservative, 0)
+        self.assertEqual(logic._overflow_score('1'), 0)
+        task.ults = set()
+        task.sp = 125
+        logic.step()
+        self.assertEqual(task.keys, ['1'])
+        # Existing <=35SP handling accepts after its failure-feedback probe;
+        # this change does not introduce stronger release-success recognition.
+        self.assertIsNone(logic.pending)
+        self.assertTrue(logic.release_burst.bonuses)
+        task.sp = 100
+        self.assertEqual(logic.release_burst.last_confirmed['1', 'battle'], 0)
+        task.now = 2
+        logic.step()
+        self.assertEqual(task.keys, ['1', '2'])
+        self.assertGreater(logic.release_burst.price('2', 'battle', 2),
+                           logic.release_burst.quote('2', 'battle')['crit_expect'])
+        self.assertIsNone(logic._release_battle_candidate('1', 100, 2, set()))
+
+    def test_liino_failure_feedback_does_not_activate_the_singing_window(self):
+        task, logic = self.make_logic()
+        logic._configure_team(['梨诺', '佩丽卡'], reset_runtime=True)
+        task.ults = set()
+        task.sp = 125
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+        logic.step()
+        self.assertFalse(logic.release_burst.bonuses)
+        self.assertFalse(logic.release_burst.last_confirmed)
+        self.assertIsNone(logic.pending)
 
     def test_observed_electric_team_spends_100_sp_on_pelica_without_assumed_spears(self):
         task, logic = self.make_logic()

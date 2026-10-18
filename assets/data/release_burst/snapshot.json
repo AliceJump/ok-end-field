@@ -2898,8 +2898,8 @@
           }
         },
         "battle": {
-          "non_crit": 16897.7,
-          "crit_expect": 17320.2,
+          "non_crit": 0.0,
+          "crit_expect": 0.0,
           "bonus_pct": 0.0,
           "quote_basis": {
             "skill_rank": 12,
@@ -2910,7 +2910,8 @@
             "multiplier": 3.6,
             "crit_policy": "baseline_expectation",
             "scope": "rank_row_sum_without_conditional_rows"
-          }
+          },
+          "pricing_scope": "support_opener_only; sustained_and_closing_damage_not_forecast"
         },
         "ult": {
           "non_crit": 0.0,
@@ -3056,6 +3057,46 @@
           "lifetime_scope": "timed",
           "kind": "ult",
           "starts_after": 2.566666666666667,
+          "ends_on_source_action": true,
+          "blocks_source_actions": [
+            "battle",
+            "normal"
+          ]
+        },
+        {
+          "key": "liino_battle:BUFF_ATTACK_UP",
+          "bucket": "attack",
+          "elements": [
+            "all"
+          ],
+          "recipient": "team",
+          "magnitude": {
+            "base": 0.10000000149011612,
+            "terms": [],
+            "by_count": [],
+            "count_input": null,
+            "accumulation": "linear"
+          },
+          "trigger": "battle_cast",
+          "damage_tags": [],
+          "permanent": false,
+          "condition_inputs": [],
+          "duration": 60.0,
+          "duration_input": null,
+          "evaluation": "application",
+          "max_stacks": 1,
+          "stack_policy": "replace",
+          "unresolved": null,
+          "sources": [
+            "native:chr_0035_liino_normal_skill",
+            "native:buff_chr_0035_liino_normalskill_music_tag",
+            "native:buff_chr_0035_liino_normalskill_buff_atkup",
+            "native:buff_chr_0035_liino_atkup",
+            "native:buff_chr_0035_liino_atkup_owner"
+          ],
+          "lifetime_scope": "timed",
+          "kind": "battle",
+          "starts_after": 0.5,
           "ends_on_source_action": true,
           "blocks_source_actions": [
             "battle",

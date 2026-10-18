@@ -148,6 +148,46 @@
     }
   },
   {
+    "character": "梨诺",
+    "skill": "chr_0035_liino_normal_skill",
+    "release_frame": 15,
+    "fps": 30,
+    "native_record_sha256": {
+      "chr_0035_liino_normal_skill": "207491edfff39062a18e8772b822acf3699441fae57244acbd9d47ff46d103fa",
+      "buff_chr_0035_liino_normalskill_music_tag": "af58f479e7bc9bc433201f117fe99bc24a6f390c347ac36de8bc8566322e955f",
+      "buff_chr_0035_liino_normalskill_buff_atkup": "c9c6f3531889d238986be31e7fff37a5061aa70d62c9a985dc210be35fe137a9",
+      "buff_chr_0035_liino_atkup": "4a696858d71d2a2cefec887ef199ef3f10bbe5bace6792b44731be384dc8bb27",
+      "buff_chr_0035_liino_atkup_owner": "771118ddafdff1e408c35ed54c3c802e9e1d5b0a743e39118f527e520212a6b2"
+    },
+    "ranked_parameters": {
+      "atk_scale": 0.4000000059604645,
+      "atk_scale_2": 0.20000000298023224,
+      "atk_scale_3": 0.6000000238418579,
+      "display_atk_scale": 2.4000000953674316,
+      "atk_up": 0.10000000149011612,
+      "display_atk_scale_2": 1.2000000476837158,
+      "heal_rate": 40.5,
+      "heal_value": 0.09000000357627869,
+      "music_trigger": 3.0,
+      "music_duration": 60.0,
+      "poise": 0.5,
+      "display_poise": 3.0,
+      "atk_trigger": 10.0,
+      "atb_return": 0.0
+    },
+    "sp_cost": 25.0,
+    "duration": 60.0,
+    "attack": 0.10000000149011612,
+    "input_policy": "ranked_constant_without_dynamic_attributes",
+    "excluded": [
+      "spatial_healing",
+      "sustained_projectile_hits",
+      "closing_damage",
+      "posture_exit_afterglow",
+      "gear_heal_trigger"
+    ]
+  },
+  {
     "character": "赛希",
     "skill": "chr_0011_seraph_ultimate_skill",
     "release_frame": 58,

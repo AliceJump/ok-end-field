@@ -1,5 +1,7 @@
 # 梨诺、赛希团队终结增益接入（2026-10-09）
 
+2026-10-19另补梨诺战技高歌的60秒团队白攻击+10%窗口，当前合计10角色16条；本文件下文保留终结批次，战技起点、25 SP预算、姿态替换、即时伤害撤回及验证边界见 [liino-singing-burst-integration.md](liino-singing-burst-integration.md)。
+
 2026-10-15 后续已加入祀终结的全队寒冷/灼热增幅，当前总范围10角色15条；本文件下文保留梨诺/赛希批次证据，祀的新客户端合同与真实调度验证单独见 [si-release-burst-integration.md](si-release-burst-integration.md)。旧32研究面板和13条规则未随祀补充而改写。
 
 仅扩展 codex/release-buffs-master 上的释放增益编排层，研究来源仍锁定 cc9b471b50cdd6bc8b3a148b4eca93deef4efa02。增加两位辅助、五条规则，合计九位角色十三条；32份固定面板未改，96份报价中仅梨诺终结改为辅助起手零直接伤害报价。开启现有「技能时间排轴」后，TimedCombatLogic.step 会因队友收益选择辅助终结起手，并在实际 use_ult 成功后记录窗口。预测状态不写回实际计时。

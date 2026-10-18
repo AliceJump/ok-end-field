@@ -93,9 +93,9 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "f3fa1ff23163713698128c893636ef1936d0c7e164604037b0c5d81a5510cda5",
+  "snapshot_sha256": "5e310576cd9f62cb8a98df7d169e4240f51bedb03fd84819d164af8ce251cbe4",
   "actors": 33,
-  "rules": 15,
+  "rules": 16,
   "supplement_source_hashes": {
     "assets/data/character_skills/si.json": "798dfac9d870b90d1c7cc41a65eb4803cfbb06ef52aadbaa79f85ece694ae37d",
     "assets/data/character_builds/si.json": "70d822ddbd3579344de91d0dc656b050eacf1a9ca835267d8111cf45864acb59",
@@ -104,10 +104,10 @@
     "assets/data/skill_timings/20261015-si/profiles.json": "471dadbec2a1e77381e3636b7954e94f3c7d650e4a6d17d684c85447586e8346",
     "assets/data/release_burst/si-release-contract.json": "86cb40dbec3fe5aa6b7d8d94d617e216b1ebc9e31dac61889556ffc1052accf6"
   },
-  "support_evidence_sha256": "3be2462a70add10cdd4f2302745a7d42858fcda059ff51d4bcab7c21291d7b5f",
+  "support_evidence_sha256": "8d9da1340d22b8cb8a2f7ca9e22b5d5dc277ba8c8ada18329281cb91babecf3b",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "fa9f448ed9efc2e4c1cf7142af01f6296110bdaab005ddb6fef10266f2ecc497",
-    "reviewed_support_release.py": "f2c26229742a99f6ee236d61d0ecf6747f11433ed86473ffd51bf07b33498458",
+    "export_release_burst_snapshot.py": "fb60773b37106eb04b6b11eb0183f76d8ace64567fc9c5871b0733f10013dfa6",
+    "reviewed_support_release.py": "85a13ee65dfc22bba017374894d1eb41da187c844de4839cb6ca1ee7aa0e7284",
     "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792",
     "reviewed_si_release.py": "807639a720cdfa6205b02887fde35aadc2409c554a6d0adab77b2f61d6286dfa",
     "reviewed_avywenna_recall.py": "ada2f76001729ca5d03d8ef885234af7925288521ad5ea2061ac2913f83e17f3"
