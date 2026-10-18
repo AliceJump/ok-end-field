@@ -89,9 +89,7 @@ class DeliverySendTask(Common):
             while True:
                 if 0 < activity_num <= count:
                     self.log_info(
-                        self.tr("{area}仓储节点已完成{count}次，停止继续").format(
-                            area=self.tr(area), count=activity_num
-                        )
+                        self.tr("{area}仓储节点已完成{count}次，停止继续").format(area=self.tr(area), count=count)
                     )
                     break
 
@@ -170,6 +168,7 @@ class DeliverySendTask(Common):
                         self.log_info(self.tr("步骤 {feature} 未找到，跳过本次活动").format(feature=feature))
                         break
                 # 检测到右下角的按钮说明进入报价列表页
+                sent = False
                 if self.wait_feature(
                     feature=fL.skip_dialog_confirm,
                     box=self.box_of_screen(0.82, 0.88, 0.98, 0.96),
@@ -186,11 +185,14 @@ class DeliverySendTask(Common):
                     ):
                         self.log_info("已点击「快速转交」")
                         self.click_confirm()
+                        sent = True
                     else:
-                        self.log_info("未找到「快速转交」按钮，跳过「快速转交」")
+                        self.log_info("未找到「快速转交」按钮，跳过本次转交")
                 else:
-                    self.log_info("未找到报价列表页标识，跳过「快速转交」")
+                    self.log_info("未找到报价列表页标识，跳过本次转交")
                 self.ensure_main()
+                if not sent:
+                    break
                 count += 1
                 send_count += 1
                 self.log_info(f"{area} 已完成 {count}/{activity_num} 次转交")

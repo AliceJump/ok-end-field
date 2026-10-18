@@ -118,12 +118,14 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
             with self.subTest(quote_ready=quote_ready):
                 feature = self.make_send_feature([True], quote_ready=quote_ready)
 
-                self.assertTrue(self.run_send_others(feature))
+                self.assertEqual(self.run_send_others(feature), quote_ready)
 
                 clicked = [item.kwargs.get("feature") for item in feature.wait_click_feature.call_args_list]
                 self.assertEqual(fL.transfer_go in clicked, quote_ready)
                 # 确认只在点到「快速转交」之后执行
                 self.assertEqual(feature.click_confirm.called, quote_ready)
+                # 未转交不计入完成数，任务按失败返回
+                self.assertEqual(feature.mark_task_failure.called, not quote_ready)
 
 
 if __name__ == "__main__":
