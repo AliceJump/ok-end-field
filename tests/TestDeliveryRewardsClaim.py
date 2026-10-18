@@ -62,6 +62,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         feature.click_confirm = Mock(return_value=True)
         feature.blind_spot_speed_up = Mock(return_value=quote_ready)
         feature.wait_click_feature = Mock(return_value=True)
+        feature.wait_pop_up = Mock(return_value=True)
         feature.box_of_screen = Mock(return_value=object())
         feature.box = SimpleNamespace(top_left=object(), bottom=object(), bottom_left=object())
         feature.lang = SimpleNamespace(
@@ -112,19 +113,24 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         # 两个地区都失败 → 每个地区都尝试领取一次
         self.assertEqual(feature._claim_delivery_rewards_in_current_node.call_count, 2)
 
-    def test_transfer_go_clicked_only_on_quote_page(self):
-        for quote_ready in (True, False):
-            with self.subTest(quote_ready=quote_ready):
+    def test_transfer_counted_only_on_reward_popup(self):
+        cases = [
+            (True, True, True),  # 进报价页且等到了奖励弹窗 → 成功
+            (False, None, False),  # 未进报价页 → 失败
+            (True, False, False),  # 奖励弹窗未出现 → 失败
+        ]
+        for quote_ready, pop_up, success in cases:
+            with self.subTest(quote_ready=quote_ready, pop_up=pop_up):
                 feature = self.make_send_feature([True], quote_ready=quote_ready)
+                if pop_up is not None:
+                    feature.wait_pop_up = Mock(return_value=pop_up)
 
-                self.assertEqual(self.run_send_others(feature), quote_ready)
+                self.assertEqual(self.run_send_others(feature), success)
 
                 clicked = [item.kwargs.get("feature") for item in feature.wait_click_feature.call_args_list]
                 self.assertEqual(fL.transfer_go in clicked, quote_ready)
-                # 确认只在点到「快速转交」之后执行
                 self.assertEqual(feature.click_confirm.called, quote_ready)
-                # 未转交不计入完成数，任务按失败返回
-                self.assertEqual(feature.mark_task_failure.called, not quote_ready)
+                self.assertEqual(feature.mark_task_failure.called, not success)
 
 
 if __name__ == "__main__":
