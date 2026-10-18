@@ -167,6 +167,7 @@ config = {
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],
         ["src.gui.AccountConfigTab", "AccountConfigTab"],
+        ["src.gui.ThemeTab", "ThemeTab"],
     ],
     "trigger_tasks": [  # 不断执行的触发式任务
         ["src.tasks.trigger.AutoCombatTask", "AutoCombatTask"],

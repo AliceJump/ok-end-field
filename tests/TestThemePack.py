@@ -1,0 +1,106 @@
+from __future__ import annotations
+
+import json
+import tempfile
+import unittest
+import zipfile
+from pathlib import Path
+
+from src.themes.theme_pack import ThemePackError, import_theme_pack, load_active_theme, read_theme_pack, select_theme
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class TestThemePack(unittest.TestCase):
+    def _archive(self, path, *, manifest=None, qss="QPushButton { color: #abcdef; }", extra=None):
+        """Create a small fixture ZIP with configurable invalid members."""
+        manifest = manifest or {"schema_version": 1, "id": "sample", "name": "Example", "version": "1.0"}
+        with zipfile.ZipFile(path, "w") as archive:
+            archive.writestr("theme.json", json.dumps(manifest))
+            archive.writestr("style.qss", qss)
+            if extra:
+                archive.writestr(extra, "unexpected")
+
+    def test_install_select_reload_and_reset(self):
+        """Verify that importing is opt-in and resetting removes selection."""
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory) / "themes"
+            archive = Path(directory) / "source.zip"
+            self._archive(archive)
+            self.assertIsNone(load_active_theme(home))
+            installed = import_theme_pack(archive, home)
+            self.assertEqual(installed.id, "sample")
+            self.assertIsNone(load_active_theme(home))
+            select_theme("sample", home)
+            active = load_active_theme(home)
+            self.assertEqual(active.fingerprint, installed.fingerprint)
+            self.assertIn("#abcdef", active.qss)
+            select_theme(None, home)
+            self.assertIsNone(load_active_theme(home))
+
+    def test_sample_theme_pack_sources_are_valid(self):
+        """Ensure the shipped sample sources are parseable as a theme."""
+        sample = ROOT / "theme-packs" / "aurora-night"
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "sample.zip"
+            with zipfile.ZipFile(archive, "w") as output:
+                for name in ("theme.json", "style.qss"):
+                    output.write(sample / name, arcname=name)
+            self.assertEqual(read_theme_pack(archive).id, "aurora-night")
+
+    def test_rejects_unexpected_zip_member(self):
+        """Reject any archive trying to add another file or traversal path."""
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "bad.zip"
+            self._archive(archive, extra="../hack.py")
+            with self.assertRaisesRegex(ThemePackError, "only theme.json"):
+                read_theme_pack(archive)
+
+    def test_rejects_unsafe_theme_ids_and_external_qss(self):
+        """Prevent path traversal IDs and QSS resource references."""
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "bad.zip"
+            self._archive(
+                archive,
+                manifest={"schema_version": 1, "id": "../escape", "name": "Example", "version": "1.0"},
+            )
+            with self.assertRaises(ThemePackError):
+                import_theme_pack(archive, Path(directory) / "installed")
+            self._archive(archive, qss="QWidget { image: url(file:///secret); }")
+            with self.assertRaisesRegex(ThemePackError, "external resources"):
+                read_theme_pack(archive)
+
+    def test_duplicate_members_are_rejected(self):
+        """Reject duplicate ZIP names instead of silently using one."""
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "duplicate.zip"
+            with zipfile.ZipFile(archive, "w") as output:
+                output.writestr("theme.json", '{"schema_version": 1, "id": "test", "name": "Test", "version": "1"}')
+                output.writestr("theme.json", '{"schema_version": 1, "id": "bad", "name": "Bad", "version": "1"}')
+                output.writestr("style.qss", "QLabel { color: red; }")
+            with self.assertRaisesRegex(ThemePackError, "only theme.json"):
+                read_theme_pack(archive)
+
+    def test_oversized_qss_is_rejected(self):
+        """Refuse declared decompressed QSS content beyond the size cap."""
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "oversized.zip"
+            self._archive(archive, qss="QLabel { color: red; }\n" * 7000)
+            with self.assertRaisesRegex(ThemePackError, "too large"):
+                read_theme_pack(archive)
+
+    def test_corrupt_selection_and_mismatched_id_fail_closed(self):
+        """Reject corrupt selections or renamed installed archives."""
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / "active.json").write_text('{"id":"../danger"}', encoding="utf-8")
+            with self.assertRaises(ThemePackError):
+                load_active_theme(home)
+            archive = home / "different.zip"
+            self._archive(archive)
+            with self.assertRaisesRegex(ThemePackError, "does not match"):
+                select_theme("different", home)
+
+
+if __name__ == "__main__":
+    unittest.main()

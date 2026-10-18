@@ -1,0 +1,30 @@
+/* Aurora Night — data-only, reversible, no external assets. */
+QWidget#view {
+    background-color: #12192b;
+    color: #e6eeff;
+}
+QFrame#ThemePreview {
+    background-color: #1a3150;
+    border: 2px solid #62ead4;
+    border-radius: 16px;
+}
+QFrame#ThemePreview QLabel {
+    color: #d9fff8;
+    font-size: 15px;
+    font-weight: 600;
+    background: transparent;
+}
+QPushButton {
+    color: #e8f6ff;
+    background-color: #253c60;
+    border: 1px solid #52799b;
+    border-radius: 8px;
+    padding: 7px 12px;
+}
+QPushButton:hover {
+    background-color: #315a75;
+    border: 1px solid #6befd8;
+}
+QPushButton:pressed {
+    background-color: #214253;
+}
