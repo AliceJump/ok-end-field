@@ -93,7 +93,7 @@ class TestThemePack(unittest.TestCase):
                 output.writestr("theme.json", '{"schema_version": 1, "id": "test", "name": "Test", "version": "1"}')
                 output.writestr("theme.json", '{"schema_version": 1, "id": "bad", "name": "Bad", "version": "1"}')
                 output.writestr("style.qss", "QLabel { color: red; }")
-            with self.assertRaisesRegex(ThemePackError, "only theme.json"):
+            with self.assertRaisesRegex(ThemePackError, "requires unique theme.json"):
                 read_theme_pack(archive)
 
     def test_oversized_qss_is_rejected(self):
