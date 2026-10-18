@@ -179,6 +179,10 @@
     "duration": 60.0,
     "attack": 0.10000000149011612,
     "input_policy": "ranked_constant_without_dynamic_attributes",
+    "preserves_source_actions": [
+      "link"
+    ],
+    "resume_event": "liino_comboskill_end",
     "excluded": [
       "spatial_healing",
       "sustained_projectile_hits",

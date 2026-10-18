@@ -42,6 +42,10 @@ def _validate_singing_origin(records, native):
             or aura['targetObjectType'] != 8 or not aura['targetFilter']['checkAlive']
             or not aura['excludeOwner']):
         raise ValueError('Singing source, duration or team selector changed')
+    resume = owner['abilityEventAction'][0]['actions'][0]['actionData']
+    if (resume[0][VALUE]['eventName']['value'] != 'liino_comboskill_end'
+            or resume[-1][VALUE]['skillId']['value'] != 'chr_0035_liino_normal_skill_combo'):
+        raise ValueError('Singing combo resume contract changed')
 
 
 def _validate_singing_attack(records):
@@ -75,11 +79,12 @@ def liino_battle_release(row, store):
                               duration=selected['music_duration'], sources=tuple(f'native:{key}' for key in hashes))
     rule = asdict(spec)
     rule.update(kind='battle', starts_after=15 / fps, ends_on_source_action=True,
-                blocks_source_actions=['battle', 'normal'])
+                blocks_source_actions=['battle', 'normal'], preserves_source_actions=['link'])
     evidence = {'character': row['character'], 'skill': native, 'release_frame': 15, 'fps': fps,
                 'native_record_sha256': hashes, 'ranked_parameters': selected,
                 'sp_cost': ranked['costValue'], 'duration': selected['music_duration'],
                 'attack': selected['atk_up'], 'input_policy': 'ranked_constant_without_dynamic_attributes',
+                'preserves_source_actions': ['link'], 'resume_event': 'liino_comboskill_end',
                 'excluded': ['spatial_healing', 'sustained_projectile_hits', 'closing_damage',
                              'posture_exit_afterglow', 'gear_heal_trigger']}
     return [rule], evidence

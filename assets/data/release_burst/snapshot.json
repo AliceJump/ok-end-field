@@ -3101,6 +3101,9 @@
           "blocks_source_actions": [
             "battle",
             "normal"
+          ],
+          "preserves_source_actions": [
+            "link"
           ]
         }
       ],

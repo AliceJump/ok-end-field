@@ -327,6 +327,28 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertIsNone(planner.choose(actions, 124, 0))
         self.assertEqual(planner.price('1', 'battle', 0, value=17320.2), 0)
 
+    def test_liino_combo_preserves_singing_without_refreshing_its_deadline(self):
+        planner = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
+        base = planner.price('2', 'battle', 0)
+        planner.confirm('1', 'battle', 0)
+        boosted = planner.price('2', 'battle', 1)
+        planner.confirm('1', 'link', 2)
+        self.assertGreater(boosted, base)
+        self.assertEqual(planner.price('2', 'battle', 3), boosted)
+        self.assertEqual(planner.price('2', 'battle', 60.5), base)
+        self.assertTrue(planner.action_blocked('1', 'battle', 3))
+
+    def test_liino_combo_forecast_keeps_team_singing_but_does_not_mutate_it(self):
+        planner = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
+        planner.confirm('1', 'battle', 0)
+        before = tuple(planner.bonuses)
+        link = ReleaseBurstAction('1', 'link', .4, 100, queue_position=1)
+        battle = ReleaseBurstAction('2', 'battle', .5, planner.quote('2', 'battle')['crit_expect'], 100, 100)
+        chosen = planner.choose((link, battle), 100, 1)
+        self.assertIsNotNone(chosen)
+        self.assertGreater(chosen.damage, link.value + battle.value)
+        self.assertEqual(tuple(planner.bonuses), before)
+
     def test_liino_channel_blocks_cancel_and_normal_but_not_teammates(self):
         planner = ReleaseBurstPlanner(["梨诺", "佩丽卡"])
         opener = ReleaseBurstAction("1", "ult", 3, 0, same_actor_duration=18.25)

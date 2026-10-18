@@ -58,7 +58,8 @@ def _validate_rule(spec):
             or not math.isfinite(spec["duration"]) or spec["duration"] <= 0):
         raise ValueError("Unconfirmed release rule cannot enter burst pricing")
     if (not math.isfinite(spec["starts_after"]) or spec["starts_after"] < 0
-            or not set(spec["blocks_source_actions"]) <= {"battle", "normal"}):
+            or not set(spec["blocks_source_actions"]) <= {"battle", "normal"}
+            or not set(spec.get("preserves_source_actions", ())) <= {"link"}):
         raise ValueError("Invalid release window")
 
 
@@ -233,7 +234,8 @@ class ReleaseBurstPlanner:
 
     def _release(self, bonuses, actor, kind, now):
         bonuses[:] = [b for b in bonuses if now < b.expires_at
-                      and not (b.source == actor and b.spec["ends_on_source_action"])]
+                      and not (b.source == actor and b.spec["ends_on_source_action"]
+                               and kind not in b.spec.get("preserves_source_actions", ()))]
         for spec in self.rules.get((actor, kind), ()):
             recipients = (actor,) if spec["recipient"] == "self" else tuple(str(i + 1) for i in range(len(self.team)))
             if spec["recipient"] == "other_allies":
