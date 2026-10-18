@@ -110,15 +110,29 @@ class LearningStore:
         """Commit only after a complete atomic write; failed writes keep previous memory/disk."""
         if not learning_allowed():
             return False
+        return self.update_many(lambda records: {**records, key: record})
+
+    def update_many(self, transform):
+        """Atomically update a related set of priors, including all-or-nothing imports.
+
+        The transform receives a copy. No intermediate state is visible to readers
+        or persisted if validation or the final replace fails.
+        """
+        if not learning_allowed():
+            return False
         temp_path = None
         with _STORE_LOCK:
             try:
-                self._validate_key(key)
-                if not isinstance(record, LearningRecord):
-                    return False
                 if not self._load():
                     return False
-                records = self._trim({**self._records, key: record})
+                records = transform(dict(self._records))
+                if not isinstance(records, dict):
+                    return False
+                for key, record in records.items():
+                    self._validate_key(key)
+                    if not isinstance(record, LearningRecord):
+                        return False
+                records = self._trim(records)
                 text = canonical_fingerprint(
                     {"schema_version": SCHEMA_VERSION, "records": {k: v.to_dict() for k, v in records.items()}}
                 )
