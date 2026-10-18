@@ -808,9 +808,7 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
                 # 已真正点击「前往」并到达好友帝江号：角色在野外，之后无论卖出是否
                 # 完成都只能 ensure_main 返回主界面（safe_back 逐层返回无法退回地区建设）
                 went_friend_boat = True
-                entry = trade_entry_after_visit(
-                    self, epoch=visit_epoch, area=area, friend_name=sell_good.friend_name_box.name
-                )
+                entry = trade_entry_after_visit(self, epoch=visit_epoch)
                 self.navigate_to_friend_exchange(learning_entry=entry)
                 self.wait_click_ocr(match=get_world_map_matcher(self.lang, area), box=self.box.top)
                 if not (

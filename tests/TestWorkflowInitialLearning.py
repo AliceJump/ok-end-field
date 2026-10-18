@@ -63,22 +63,19 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         )
         return task
 
-    def trade_entry(self, task, friend="friend-a", area="武陵"):
-        """Model a successful new visit, with a private observed friend identity."""
-        return trade_entry_after_visit(task, epoch=learning_epoch(), area=area, friend_name=friend)
+    def trade_entry(self, task):
+        """Model a successful visit to the common friend-boat spawn."""
+        return trade_entry_after_visit(task, epoch=learning_epoch())
 
-    def test_trade_context_separates_friend_area_and_workflow_without_raw_names(self):
+    def test_trade_spawn_is_separated_from_other_workflows_and_capture_profiles(self):
         task = self.task()
-        entries = [
-            self.trade_entry(task),
-            self.trade_entry(task, friend="friend-b"),
-            self.trade_entry(task, area="四号谷地"),
-        ]
+        entry = self.trade_entry(task)
         demo = demo_entry_after_transfer(task, epoch=learning_epoch())
-        self.assertEqual(len({entry.context.fingerprint for entry in [*entries, demo]}), 4)
-        self.assertNotIn("friend-a", entries[0].context.fingerprint)
-        self.assertEqual(entries[0].confidence, ContextConfidence.HIGH)
-        self.assertIsNone(self.trade_entry(task, friend=" "))
+        liaison = liaison_entry_after_transfer(task, epoch=learning_epoch())
+        task.width = 2560
+        wide = self.trade_entry(task)
+        self.assertEqual(len({item.context.fingerprint for item in (entry, demo, liaison, wide)}), 4)
+        self.assertEqual(entry.confidence, ContextConfidence.HIGH)
 
     def test_entry_is_single_use_and_rejects_wrong_owner_target_size_or_epoch(self):
         task = self.task()
@@ -243,6 +240,11 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         self.assertEqual(RegionalBuildTask.buy_sell(task, target_areas=[area]), (True, True))
         entry = task.navigate_to_friend_exchange.call_args.kwargs["learning_entry"]
         self.assertEqual(entry.context.task, "trade")
+        good.friend_name_box.name = "friend-b"
+        self.assertEqual(RegionalBuildTask.buy_sell(task, target_areas=[area]), (True, True))
+        other = task.navigate_to_friend_exchange.call_args.kwargs["learning_entry"]
+        self.assertIsNot(entry, other)
+        self.assertEqual(entry.context.fingerprint, other.context.fingerprint)
         task.navigate_to_friend_exchange.reset_mock()
         task.ensure_in_friend_boat.return_value = False
         self.assertEqual(RegionalBuildTask.buy_sell(task, target_areas=[area]), (False, False))

@@ -1,7 +1,6 @@
 """One-use entry evidence for trade, liaison and demo initial alignment."""
 
 from dataclasses import dataclass, replace
-from hashlib import sha256
 
 from src.core.learning.models import CaptureProfile, ContextConfidence, WorkflowContext
 from src.core.learning.policy import learning_allowed, learning_epoch
@@ -60,19 +59,14 @@ def _context(task, workflow, phase, area, location, entry, origin, target, *, ax
     )
 
 
-def trade_entry_after_visit(task, *, epoch, area, friend_name):
+def trade_entry_after_visit(task, *, epoch):
     """Only the caller that clicked Go and confirmed arrival may grant this entry."""
-    if not isinstance(friend_name, str) or not friend_name.strip():
-        return None
-    # OCR names may collide, but keep different observed friends isolated rather
-    # than presuming every friend's layout is identical. Do not persist raw names.
-    friend = sha256(friend_name.strip().encode("utf-8")).hexdigest()
     context = _context(
         task,
         "trade",
         "friend_boat_terminal_initial",
-        area,
-        friend,
+        "帝江号",
+        "物资调度终端",
         "new_friend_boat_visit",
         "friend_boat_spawn",
         "market_dispatch_terminal_out",
