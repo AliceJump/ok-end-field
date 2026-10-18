@@ -1081,17 +1081,22 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                         self.mark_task_failure("二次寻路失败：无法进入『能量淤积点』详情页")
                         return False
 
-                    if result := self.wait_feature(
+                    follow_button = self.wait_feature(
                         feature=fL.start_follow,
                         box=self.box.bottom_right,
                         time_out=5,
                         raise_if_not_found=False,
-                    ):
-                        self.click(result)
-                        self.ensure_main()
-                        observations.clear()
+                    )
+                    if follow_button:
+                        self.click(follow_button)
                     else:
-                        raise RuntimeError("未找到追踪按钮")
+                        self.log_info("未找到追踪按钮，返回主界面检查已有奖励目标")
+                    self.ensure_main()
+                    observations.clear()
+                    if not follow_button:
+                        self.next_frame()
+                        if not self.wait_until(detect_marker, time_out=5, raise_if_not_found=False):
+                            raise RuntimeError("未找到已追踪的奖励目标")
 
                 self.click(key="middle", after_sleep=0.3)
 
