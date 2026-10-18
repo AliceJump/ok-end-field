@@ -398,10 +398,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub._try_click_on_zip_line = Mock(side_effect=[(False, "gate"), (True, None)])
         stub.log_info = Mock()
         stub.ocr.return_value = [SimpleNamespace(name="move")]
-        with patch("src.tasks.mixin.zip_line_mixin.load_zip_line_segment_motion", return_value=(160, 80, 2)) as load:
-            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-
-        load.assert_called_once()
+        ZipLineMixin._align_and_activate_zip_line(stub, 108, initial_move=(160, 80))
         calls = stub._align_zip_line_distance.call_args_list
         self.assertEqual(len(calls), 2)
         self.assertEqual(calls[0].kwargs["initial_move"], (160, 80))

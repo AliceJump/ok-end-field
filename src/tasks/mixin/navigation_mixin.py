@@ -434,6 +434,7 @@ class NavigationMixin(SearchMixin):
         ocr_target_detector=None,
         ocr_target_mover=None,
         move_profile=None,
+        learning_session=None,
     ):
         """将OCR识别或图像特征检测的目标对准屏幕中心（自动移动视角/鼠标）
 
@@ -524,9 +525,14 @@ class NavigationMixin(SearchMixin):
                 break
             start_action_time = self.active_time()
             if need_scroll:
+                if learning_session is not None:
+                    learning_session.disturb("scroll_changed")
                 self.do_scroll(1, 400)
             if ocr and ocr_target_detector is not None:
-                result = ocr_target_detector(self.next_frame())
+                frame = self.next_frame()
+                if learning_session is not None:
+                    learning_session.frame_acquired(frame)
+                result = ocr_target_detector(frame)
                 if deadline is not None and self.active_time() >= deadline:
                     break
                 if result is None:
@@ -540,6 +546,8 @@ class NavigationMixin(SearchMixin):
                     if deadline is not None and self.active_time() >= deadline:
                         break
                     frame = self.next_frame()
+                    if learning_session is not None:
+                        learning_session.frame_acquired(frame)
                     if not isinstance(ocr_frame_processor_list, list):
                         ocr_frame_processor_list = [ocr_frame_processor_list]
                     for ocr_frame_processor in ocr_frame_processor_list:
@@ -568,6 +576,8 @@ class NavigationMixin(SearchMixin):
                     if self.active_time() - start_time >= 1:
                         break
                     frame = self.next_frame()
+                    if learning_session is not None:
+                        learning_session.frame_acquired(frame)
                     if use_yolo:
                         result = self.yolo_detect(
                             name=ocr_match_or_feature_name_list,
@@ -586,6 +596,7 @@ class NavigationMixin(SearchMixin):
                                 feature=feature_name,
                                 threshold=threshold,
                                 box=feature_box,
+                                **({"frame": frame} if learning_session is not None else {}),
                             )
                             if result:
                                 break
@@ -604,6 +615,7 @@ class NavigationMixin(SearchMixin):
                 result = copy(result)
                 if is_num and (not ocr or ocr_target_detector is None):
                     result.y = result.y - int(self.height * ((525 - 486) / 1080))
+                observed_center = (result.x + result.width // 2, result.y + result.height // 2)
                 if only_y:
                     result.x = self.screen_center()[0] - result.width // 2
                 if only_x:
@@ -623,6 +635,8 @@ class NavigationMixin(SearchMixin):
 
                 # 如果目标在容忍范围内
                 if abs(dx) <= scaled_tolerance and abs(dy) <= scaled_tolerance:
+                    if learning_session is not None:
+                        learning_session.confirm_alignment(observed_center)
                     return target_center
                 else:
                     move_target(result)
@@ -676,6 +690,8 @@ class NavigationMixin(SearchMixin):
                         dy = random.randint(-max_offset, max_offset)
 
                     # 移动鼠标
+                    if learning_session is not None:
+                        learning_session.disturb("random_search")
                     self.active_and_send_mouse_delta(
                         0 if only_y else dx,
                         0 if only_x else dy,

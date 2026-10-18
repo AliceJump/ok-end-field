@@ -123,6 +123,15 @@ class RouteContext:
         _identity(*self.family)
 
     @property
+    def target_id(self):
+        return f"zipline-distance:{self.distances[self.segment_index]}"
+
+    @property
+    def allows_learning(self):
+        # Combat restrictions come from the enclosing deny scope, including retries.
+        return True
+
+    @property
     def route_prefix(self):
         return self.distances[: self.segment_index + 1]
 

@@ -54,7 +54,8 @@ class TestDeliveryFullCycle(unittest.TestCase):
                 [
                     call.transfer(),
                     call.outbound(only_zip_line=True),
-                    call.npc(target, need_v=False, need_scroll=False, stay_on_zip_line=True),
+                    call.npc(target, need_v=False, need_scroll=False, stay_on_zip_line=True,
+                             route_family=("武陵", "试验园区", "delivery_dispatch_board", "outbound", "delivery")),
                 ]
             )
         self.assertEqual(events.mock_calls, expected)

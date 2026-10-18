@@ -1,14 +1,22 @@
 """Initial alignment learns from its own fresh verification, before navigation begins."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
-from src.core.learning.models import ContextConfidence, TargetPrior, VerificationEvidence, WorkflowContext, _finite
+from src.core.learning.models import (
+    ContextConfidence,
+    RouteContext,
+    TargetPrior,
+    VerificationEvidence,
+    WorkflowContext,
+    _finite,
+)
 from src.core.learning.policy import choose_hint, learning_allowed, learning_epoch
+from src.core.learning.routes import RouteLearning
 
 
 @dataclass
 class LearningSession:
-    context: WorkflowContext
+    context: WorkflowContext | RouteContext
     store: object
     started_at: float
     confidence: ContextConfidence = ContextConfidence.HIGH
@@ -22,10 +30,12 @@ class LearningSession:
     _epoch: int = field(init=False)
     _last_action_frame: int = -1
     _action_attempted: bool = False
+    _prior_context: object = field(default=None, init=False)
+    _prior_source: str | None = field(default=None, init=False)
 
     def __post_init__(self):
-        if not isinstance(self.context, WorkflowContext):
-            raise ValueError("Workflow learning requires a semantic WorkflowContext")
+        if not isinstance(self.context, (WorkflowContext, RouteContext)):
+            raise ValueError("Alignment learning requires a semantic context")
         _finite(self.started_at)
         self.confidence = ContextConfidence(self.confidence)
         self._last_action_at = self.started_at
@@ -37,23 +47,42 @@ class LearningSession:
             return False
         return self.confidence != ContextConfidence.INVALID
 
-    def hint(self):
+    def hint(self, lookup_context=None):
         if not self._allowed() or self.replay_used:
             return None
+        if isinstance(self.context, RouteContext):
+            context = lookup_context or self.context
+            if (
+                not isinstance(context, RouteContext)
+                or replace(context, start_yaw_bucket=self.context.start_yaw_bucket) != self.context
+            ):
+                raise ValueError("Only the verified yaw may change during route lookup")
+            return RouteLearning(self.store).lookup(context, self.confidence)
+        if lookup_context is not None:
+            raise ValueError("Workflow alignment cannot borrow another context")
         return choose_hint(self.store.get(self.context.fingerprint), self.confidence)
 
-    def take_action_prior(self):
+    def take_action_prior(self, lookup_context=None):
         if self.replay_used:
             return None
-        hint = self.hint()
+        hint = self.hint(lookup_context)
         # Claim before returning, so retries cannot accidentally replay twice.
         self.replay_used = True
         action = hint.action if hint else None
         if action is not None:
             axes = self.context.capture_profile.axes
             action = (0 if axes == "y" else action[0], 0 if axes == "x" else action[1])
+            if not any(action):
+                action = None
         self._action_attempted = action is not None
+        self._prior_context = lookup_context or self.context
+        self._prior_source = hint.source if hint is not None else None
         return action
+
+    def nearest_yaw(self):
+        if not self._allowed() or self.replay_used or not isinstance(self.context, RouteContext):
+            return None
+        return RouteLearning(self.store).nearest_yaw(self.context, self.confidence)
 
     def observe_input(self, dx, dy, *, accepted, observed_at, after_frame_id):
         if not self._allowed():
@@ -84,7 +113,12 @@ class LearningSession:
         """Finish this sample at a fresh centered detection; arrival is a separate concern."""
         allowed = self._allowed()
         self.closed = True
-        if not allowed or self.contaminated or not isinstance(evidence, VerificationEvidence):
+        if (
+            not allowed
+            or self.contaminated
+            or self.confidence not in (ContextConfidence.HIGH, ContextConfidence.MEDIUM)
+            or not isinstance(evidence, VerificationEvidence)
+        ):
             return False
         if (
             evidence.target_id != self.context.target_id
@@ -96,6 +130,8 @@ class LearningSession:
             return False
         if target is not None and not isinstance(target, TargetPrior):
             return False
+        if isinstance(self.context, RouteContext):
+            return RouteLearning(self.store).record_success(self.context, self.dx, self.dy, now=now)
         return self.store.update(
             self.context.fingerprint,
             lambda record: record.successful(
@@ -110,9 +146,12 @@ class LearningSession:
     def fail(self, *, now):
         allowed = self._allowed()
         self.closed = True
-        if not allowed or not self._action_attempted:
+        if not allowed or self.contaminated or not self._action_attempted:
             return False
-        return self.store.update(self.context.fingerprint, lambda record: record.failed(now=now))
+        context = self._prior_context or self.context
+        if isinstance(context, RouteContext) and self._prior_source == "shared-prefix":
+            return RouteLearning(self.store).reject_shared(context, now=now)
+        return self.store.update(context.fingerprint, lambda record: record.failed(now=now))
 
     def close(self):
         self.closed = True
@@ -122,8 +161,8 @@ def create_learning_session(context, store, *, started_at, confidence=ContextCon
     """Hard-invalid entries must not create a session or context record."""
     if not learning_allowed():
         return None
-    if not isinstance(context, WorkflowContext):
-        raise ValueError("Workflow learning requires a semantic WorkflowContext")
+    if not isinstance(context, (WorkflowContext, RouteContext)):
+        raise ValueError("Alignment learning requires a semantic context")
     if not context.allows_learning or ContextConfidence(confidence) == ContextConfidence.INVALID:
         return None
     return LearningSession(context, store, started_at, confidence)
