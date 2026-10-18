@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import shutil
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from ok import ConfigOption
 from ok.util.config import Config
@@ -28,8 +28,7 @@ DEFAULT_REGION_CONFIG = {
 
 REGION_CONFIG_DESCRIPTION = {
     REGION_SCOPE_MODE_KEY: (
-        "「排除所选地区」会执行当前及未来新增的全部地区，但跳过列表中的地区；"
-        "「仅执行所选地区」只执行列表中的地区。"
+        "「排除所选地区」会执行当前及未来新增的全部地区，但跳过列表中的地区；「仅执行所选地区」只执行列表中的地区。"
     ),
     REGION_SCOPE_AREAS_KEY: "选择要排除或仅执行的地区；地区列表由当前主数据自动生成。",
 }

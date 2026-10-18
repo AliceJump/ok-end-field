@@ -4,8 +4,8 @@ from PySide6.QtCore import QTimer
 from qfluentwidgets import FluentIcon, NavigationItemPosition
 
 from src.core.BattleConfig import BATTLE_CONFIG_NAME
-from src.core.RegionConfig import REGION_CONFIG_NAME, get_region_config, region_config_option
 from src.core.global_config_store import ZIP_LINE_CONFIG_NAME, get_all_visible_configs
+from src.core.RegionConfig import REGION_CONFIG_NAME, get_region_config, region_config_option
 
 GLOBAL_CONFIG_GROUPS = {
     "战斗配置": [BATTLE_CONFIG_NAME],
