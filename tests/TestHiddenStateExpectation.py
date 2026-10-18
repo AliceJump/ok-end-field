@@ -42,14 +42,18 @@ class TestHiddenDamageExpectation(unittest.TestCase):
     def _battle_transition(self, actor):
         return next(item for item in self.mechanics[actor].transitions if item.action == "battle")
 
-    def test_zhuang_free_battle_adds_to_preexisting_swords_instead_of_erasing_them(self):
+    def test_zhuang_free_battle_preserves_existing_swords_and_records_pending_creation(self):
         hidden = HiddenStateExpectation(["庄方宜"], self.mechanics)
         hidden.resources["1", "qingting_sword"] = DiscreteBelief.certain(6, 9)
         free = next(t for t in self.mechanics["庄方宜"].transitions if t.phase == "天理合真首次惊霆诀")
-        # Supply the nominal transition only; no live reach/count observation is invented.
+        # A request is neither a confirmed arrival nor an immediate final hit.
+        old_attachment = hidden.attachments["ATTACH_ELECTROMAGNETIC"]
         hidden.apply_tokens("1", consumes=free.consumes, produces=free.produces)
         self.assertEqual(hidden.resources["1", "qingting_sword"].probabilities,
-                         DiscreteBelief.certain(9, 9).probabilities)
+                         DiscreteBelief.certain(6, 9).probabilities)
+        self.assertIn(("1", "STACK_QINGTING_SWORD:3_requested"), hidden.unresolved_productions)
+        self.assertIn(("1", "ATTACH_ELECTROMAGNETIC:on_final_hit"), hidden.unresolved_productions)
+        self.assertEqual(hidden.attachments["ATTACH_ELECTROMAGNETIC"], old_attachment)
 
     def test_zhuang_no_conduct_at_three_swords_does_not_invent_uniform_extra_swords(self):
         hidden = HiddenStateExpectation(["庄方宜"], self.mechanics)
@@ -169,6 +173,10 @@ class TestHiddenDamageExpectation(unittest.TestCase):
         hidden.apply_tokens("1", consumes=ordinary.consumes, produces=ordinary.produces)
         self.assertNotIn(("1", "qingting_sword"), hidden.resources)
         self.assertIn(("1", "STACK_QINGTING_SWORD:0..3_conditional"), hidden.unresolved_productions)
+        free = next(t for t in self.mechanics["庄方宜"].transitions if t.phase == "天理合真首次惊霆诀")
+        hidden.apply_tokens("1", consumes=free.consumes, produces=free.produces)
+        self.assertNotIn(("1", "qingting_sword"), hidden.resources)
+        self.assertIn(("1", "STACK_QINGTING_SWORD:3_requested"), hidden.unresolved_productions)
 
 
 if __name__ == "__main__":

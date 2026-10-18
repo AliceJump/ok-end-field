@@ -334,15 +334,24 @@ class HiddenStateExpectation:
                     self.conditions[effect] = self.attachments[effect].probability_at_least(1)
 
         for token in produces:
+            if token.endswith(":on_final_hit"):
+                self.unresolved_productions.add((slot, token))
+                continue
             if token.startswith("STACK_") and ":" in token:
                 effect, raw = token.split(":", 1)
-                if raw.endswith("_conditional"):
+                if raw.endswith(("_conditional", "_requested")):
                     # A conditional range is not a sampled or uniform gain.
                     # Retain the open producer even when no prior count exists.
                     self.unresolved_productions.add((slot, token))
                     continue
                 key, belief = self._resource(slot, effect)
-                if key is None or belief is None:
+                if key is None:
+                    continue
+                if belief is None:
+                    # A known nominal gain does not determine a total whose
+                    # initial field inventory is unknown. Keep that update
+                    # visible instead of silently dropping it or starting at 0.
+                    self.unresolved_productions.add((slot, token))
                     continue
                 if ".." in raw:
                     low, high = raw.split("..", 1)

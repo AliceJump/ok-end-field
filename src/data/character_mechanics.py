@@ -358,7 +358,7 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
                 sp_gate=0,
                 sp_cost=0,
                 requires=("ult_state", "first_battle_in_ult"),
-                produces=("STACK_QINGTING_SWORD:3", "ATTACH_ELECTROMAGNETIC"),
+                produces=("STACK_QINGTING_SWORD:3_requested", "ATTACH_ELECTROMAGNETIC:on_final_hit"),
                 notes=("有目标才请求生成三剑，投射物到达建剑不等于释放时已计入区域快照",
                        "未声明消费既有剑；实际计数与寿命清理仍待执行"),
             ),

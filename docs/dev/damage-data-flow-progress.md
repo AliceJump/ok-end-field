@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-17来源清理续批：SetSource→父ListSet.Add→订阅子ClearSource→父_OnChildDetach/Remove关系已核，26方法/4字段组/6helper/6usage链/22锚点独立验证，使用真实callsite上下文和同方法共享泛型body而非要求每个实例独立注册。VBHit52等13字段枚举也已核。研究纸面首次免费改为3_requested，末击附着为on_final_hit，未把请求或未知库存变成已生成/已命中；到达、计数、区域快照仍未执行闭合，不提高2/111。见[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)。
+
 > 2026-10-17执行证据与旧假设修正：已核Bezier2D按float32中点采样/进度累积及严格force-reach边界、移动→几何检查→碰撞→到达派发顺序、Controller读取36/3寿命并用PeriodicTimer进入Die。158窗口/10字段组/2常量/48锚点核验与388次原始指令标量回放通过，不当实际delta、到达或剑数。canonical/机制表撤回青霆剑全量消费，initial_count=None，条件生成不再均分，旧纸面全伤害估价保留未知；相关回归及32面板/128报价数值比较通过，真实producer仍待接。详见[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)。
 
 > 2026-10-17模板续批：客户端VFS更新已独立捕获8728项/缺失0，6323份技能/buff重新EOF/ID/逐字节回编码，庄方宜70份解码语义未变。三份真实造剑/剑/区域模板核准；剑寿命读输入BB而非字面45秒，造剑实际是Bezier2D，不能把邻近travelDuration=0.2直接当到达时间。真实生成到区域快照仍未执行，不提高运行收益或2/111。见[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)。

@@ -70,11 +70,33 @@ canonical惊霆诀的基础effects原来含`STACK_QINGTING_SWORD/count=-1`，机
 
 普通分支改为显式`0..3_conditional`生产合同：已有至少3剑而未消费导电时允许零生成，其余生成取决于条件。旧期望层记录该未闭合producer，不按范围均分新增剑；它也不据此得到了一个新的精确总数。青霆剑资源的initial_count明确为None，未提供已知旧剑时不初始化成0；给定已有剑的名义转移不再先清空它们。
 
+续批进一步把首次免费输出标为`3_requested`，记录到未闭合生产链，连给定旧剑数时也不立即加3；最后电磁附着标为`on_final_hit`，不因释放便更新附着分布。已知字面增量遇到未知总库存同样登记开放更新，不静默忽略或从0起算。canonical里的3仍表示有目标时该分支的语义生成数量，不是运行时立即已有3剑的事实。这些限定通过现有纸面转移消费者落实，保留旧剑、未知库存与待实现的到达/末击事件，而非只在旁边另记一份数据。
+
 旧HiddenStateExpectation还曾把首次免费资格直接定价为完整高端伤害并标为概率1。该纸面包络没有到达、创建时剑数或逐雷输入，本批将这类剑依赖战技的完整包络保留为未定价，传递到本来就不可执行的纸面爆发计划。PR489使用独立的释放层报价，未受此研究层修正影响；没有阻止其中既有免费战技执行，也没有将未确认剑数塞入它的真实调度。
 
 三项新增回归分别覆盖给定已有剑的名义转移不清零、零生成场景不捏造均匀增量、未知初始剑数及开放producer保留；原纸面免费完整伤害断言改为未知，并验证传播到计划层。70相关回归及全仓1738项（162.194秒）通过，164测试文件/16组登记、Ruff I/F、AST和diff-check通过。重生成固定基线后32面板/profile/build和128技能报价逐项完全相同，只有庄方宜canonical来源摘要变化；数据流审计仍32角色/128重放、128项待语义核查，不据此减少全任务缺口。
 
+## 来源集合的清理不是动画结束
+
+真实字段枚举已核13项：LaunchProjectile.emitMountPoint属于`Beyond.Gameplay.MountPoint`，52是`VBHit`，不是Foot54或None0；FindTargetAction.center2属于ActionTargetType.InputTarget。它们说明应解析哪个输入/骨点，不能提供具体骨点高度、导航投点或第一cast的到达结论。
+
+默认源关系的实际集合是`Beyond.ListSet<T>`，不是随意假定的普通List或HashSet。SetSource将新来源写入子AbilitySystem后，调用父的_OnSetAsSource；后者向父m_children（+0x1a0）添加子句柄，仅Add成功才向子m_onClearSource（+0x1f8）订阅父的_OnChildDetach。ClearSource先重置source句柄和BB相关引用，再经MultiAction.Invoke通知，并调用MultiDelegate.Clear；已核回调以子句柄调用父ListSet.Remove。因此计数输入应跟随这条来源成员关系，不可按角色槽号或根技能动画结束直接清空场地剑。
+
+Entity.Die（85929）先标记m_markDie，再通知组件死亡并_DoFinish。默认_DoFinish路径标记m_markFinished，并在所核组件容器状态/挂起条件成立时调用_FinishAllComponents；AbilitySystem.OnFinish（59244）后续调用ClearSource。Entity.Release另走_DoFinish再_DoRelease，不能把表现对象回收与来源脱离混成同一操作。组件完成的实际相位、回调重入、标签变化和被动计数刷新仍需绑定；以上不是“36秒一到当前缓存数立即减少”的证明。
+
+独立复核覆盖26个方法窗口、4组字段、6段helper窗口、6条委托/泛型上下文usage链和22个锚点。_OnChildDetach的tag3 usage直接指向当前方法59259；Add/Remove的tag6上下文均来自classInst5645，分别绑定ListSet.Add/Remove。当前调用目标通过同方法定义的已注册共享泛型body别名核准；callsite实例没有独立的函数表行，不能把exact-instance查询为空解释成方法地址不存在。MultiAction订阅/Invoke及MultiDelegate.Clear也按实际MethodInfo上下文与共享body对应验证，没有借旧版本或只凭函数名字定性。
+
+原始证据在主仓忽略目录`zhuang-source-cleanup-20261017`，初始exact-instance校验假设失败的尝试另外保留；最终verification明确记录共享别名与空的exact-instance结果。源实例对应的实际字段内容、组件完成时刻、重入及IFix选路仍不由静态校验授权，尚未开启新的原生实体执行器。
+
+## 导电最低档的输入也需区分
+
+普通/姿态战技索引47是GetTargetBuffBBAdvanced：按导电标签`bf9d6e57`找到目标buff，读取其私有黑板`count`到`conductCnt`。它不是读取“有几个导电buff”或堆叠层数，更不是读取剑数。标准`buff_common_pulse_pulse_conduct_triggered_do`模板的count默认1，但模板默认值不能替代全部赋值、重置和实际消费结果的来源核验。
+
+用户批准最低导电等级的策略仅适用于已确立的导电消费分支；首次免费OR白圈不能直接变成这个输入。后续消费者应从正确的目标buff私有BB或明确标注的最低档策略取值，不把通用buff计数查询当作同一数据。四份当前记录的raw/decoded摘要及该读取链保存在主仓忽略目录`zhuang-projectile-motion-20261017/conduct-input-audit.json`；尚未宣称该producer或完整条件收益已接入。
+
 ## 接入顺序与验收边界
+
+来源清理与请求阶段续批的56项专项、全仓1738项（384.982秒）通过；Ruff I/F、AST、diff-check和164文件/16职责组登记通过。该轮验证覆盖`3_requested`与`on_final_hit`的实际纸面消费者，没有增加真实齐射收益或完整原生覆盖。
 
 先把可核准的生成、到达、登记、计数和创建快照连成模型事件，再将其作为预测输入进入真实报价；模型预测不得写成 UI 观测或敌方事实。未知初始剑数保持未知，导电最低等级仅用于确立的导电分支。未核准的部分不以固定0.2秒、上限9剑、首次立即3剑或默认命中补齐。
 
