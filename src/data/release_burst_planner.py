@@ -13,8 +13,20 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
-from src.data.battle_conditions import ConditionRequirement, ConditionTransition, ForecastConditions
+from src.data.battle_conditions import (
+    BattleConditionAssessment,
+    ConditionRequirement,
+    ConditionTransition,
+    ForecastConditions,
+)
 from src.data.highlight_damage import HighlightDamageBinding, HighlightDamageComponent
+from src.data.mechanism_prediction import (
+    MechanismQuote,
+    MechanismState,
+    after_action,
+    branch_quote,
+    validate_contract,
+)
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "assets/data/release_burst"
 ELEMENTS = {"all", "物理", "寒冷", "灼热", "电磁", "自然"}
@@ -68,6 +80,7 @@ def _validate_actor(row):
         if not math.isfinite(row["panel"][key]):
             raise ValueError("Invalid fixed attack basis")
     _validate_stance(row)
+    validate_contract(row.get('mechanism'))
     quotes = list(row["quotes"].values())
     if row.get("stance") is not None:
         quotes.extend(row["stance"]["quotes"].values())
@@ -115,6 +128,7 @@ class ReleaseBurstAction:
     condition: ConditionRequirement | None = None
     queue_position: int = 0
     damage_duration: float | None = None
+    mechanism_assessment: BattleConditionAssessment | None = None
 
 
 @dataclass(frozen=True)
@@ -123,6 +137,7 @@ class ReleaseBurstDecision:
     sequence: tuple[tuple[str, str], ...]
     damage: float
     gain: float
+    mechanism: MechanismQuote | None = None
 
 
 @dataclass(frozen=True)
@@ -151,6 +166,13 @@ class ReleaseBurstPlanner:
         self.bonuses = []
         self.stances = {}
         self.last_confirmed = {}
+        self.mechanism_state = MechanismState()
+        self.mechanism_assessments = {}
+        if store is not None:
+            for row in self.rows.values():
+                for skill, digest in (row.get('mechanism') or {}).get('native_hashes', {}).items():
+                    if store.record(skill)['source']['sha256'] != digest:
+                        raise ValueError('Unreviewed live mechanism record')
         self.normal_durations = {}
         self.normal_entries = {}
         self.stance_normal_entries = {}
@@ -193,6 +215,23 @@ class ReleaseBurstPlanner:
         self.bonuses = [b for b in previous.bonuses if b.source in unchanged]
         self.last_confirmed = {key: time for key, time in previous.last_confirmed.items() if key[0] in unchanged}
         self.stances = {actor: stance for actor, stance in previous.stances.items() if actor in unchanged}
+        self.mechanism_state = previous.mechanism_state.keep(unchanged)
+
+    def observe_conditions(self, assessments):
+        self.mechanism_assessments = dict(assessments)
+        for owner, row in self.rows.items():
+            spec = row.get('mechanism')
+            if spec is not None:
+                self.mechanism_state = self.mechanism_state.observe(owner, assessments.get(owner), spec)
+
+    def mechanism_quote(self, actor, now, assessment=None, *, state=None, stances=None, forecast=False):
+        row = self.rows.get(actor)
+        if row is None:
+            return None
+        if assessment is None and not forecast:
+            assessment = self.mechanism_assessments.get(actor)
+        return branch_quote(row, actor, now, assessment, self.mechanism_state if state is None else state,
+                            stance=self.stance_at(actor, now, stances=stances), forecast=forecast)
 
     def stance_at(self, actor, now, *, stances=None):
         current = (self.stances if stances is None else stances).get(actor)
@@ -260,11 +299,18 @@ class ReleaseBurstPlanner:
         # Channel-dependent windows end with the source; timed ally buffs do not.
         self.bonuses[:] = [b for b in self.bonuses if b.source != actor or not b.spec["blocks_source_actions"]]
         self.stances.pop(actor, None)
+        self.mechanism_state = self.mechanism_state.keep(set(self.rows)-{actor})
+        self.mechanism_assessments.pop(actor, None)
 
-    def confirm(self, actor, kind, started):
+    def confirm(self, actor, kind, started, *, mechanism=None):
         if self.last_confirmed.get((actor, kind)) == started:
             return
         self.last_confirmed[actor, kind] = started
+        row = self.rows.get(actor)
+        if row is not None:
+            quote = mechanism if mechanism is not None else self.mechanism_quote(actor, started)
+            self.mechanism_state = after_action(self.mechanism_state, row, actor, kind, started,
+                                                quote=quote, stance=self.stance_at(actor, started))
         self._release(self.bonuses, actor, kind, started)
         self._advance_stance(self.stances, actor, kind, started)
 
@@ -276,7 +322,11 @@ class ReleaseBurstPlanner:
         quote = self.quote(actor, kind)
         return quote is not None and quote.get("pricing_scope", "").startswith("unconditional_cast_only;")
 
-    def battle_values(self, actor, assessment=None):
+    def battle_values(self, actor, assessment=None, *, now=None):
+        timestamp = now if now is not None else assessment.observed_at if assessment is not None else 0
+        mechanism = self.mechanism_quote(actor, timestamp, assessment)
+        if mechanism is not None:
+            return mechanism.value, 0.0
         binding = self.highlight_damage.get(actor)
         if binding is not None:
             return binding.values(assessment)
@@ -292,16 +342,20 @@ class ReleaseBurstPlanner:
                   for c in components]
         return sum(values) if all(v is not None for v in values) else None
 
-    def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None):
+    def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None, mechanism=None):
         quote = self.quote(actor, kind)
         if quote is None:
             return None
+        if kind == 'battle' and mechanism is None:
+            mechanism = self.mechanism_quote(actor, now, stances=stances)
         if self.stance_at(actor, now, stances=stances) is not None:
             enhanced = self.stance_spec(actor)["quotes"].get(kind)
             if enhanced is not None:
                 quote = enhanced
                 value = None  # A base master value cannot undo an action replacement.
-        if quote.get("pricing_scope", "").startswith(("support_opener_only", "unconditional_cast_only;")):
+        if mechanism is not None:
+            value = mechanism.value
+        elif quote.get("pricing_scope", "").startswith(("support_opener_only", "unconditional_cast_only;")):
             value = quote["crit_expect"]
         return self._price_value(actor, now, quote["quote_basis"]["element"],
                                  set(quote["quote_basis"]["damage_tags"]), quote["bonus_pct"],
@@ -329,7 +383,7 @@ class ReleaseBurstPlanner:
         return value * ratio
 
     def _forecast_step(self, node, action, index, now, *, releases, horizon, predecessors):
-        damage, time, budget, indices, current, actor_locks, stances, conditions, queue_delay = node
+        damage, time, budget, indices, current, actor_locks, stances, conditions, queue_delay, mechanism_state = node
         if index in indices or any(i not in indices for i in predecessors[index]):
             return None
         if indices and predecessors.get("normal", -1) in indices:
@@ -362,13 +416,17 @@ class ReleaseBurstPlanner:
         # Scene evidence survives only reviewed state-preserving actions.
         # Unscoped legacy valuations still apply solely to the first action.
         enhanced = conditions.supports(action.condition) if action.condition is not None else not indices
+        mechanism = (self.mechanism_quote(action.slot, started,
+                                          action.mechanism_assessment if enhanced else None,
+                                          state=mechanism_state, stances=stances, forecast=True)
+                     if action.kind == 'battle' else None)
         value = action.value + (action.observed_bonus if enhanced else 0)
         if action.base_components:
             components = action.base_components + (action.observed_components if enhanced else ())
             priced = self.price_components(action.slot, end, components, bonuses=pricing_bonuses)
         else:
             priced = self.price(action.slot, action.kind, end, value=value,
-                                bonuses=pricing_bonuses, stances=stances)
+                                bonuses=pricing_bonuses, stances=stances, mechanism=mechanism)
         if priced is None:
             return None
         if releases:
@@ -376,9 +434,13 @@ class ReleaseBurstPlanner:
         locks = dict(actor_locks)
         locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
         next_conditions = conditions.after(action.slot, action.kind, self.condition_transitions.get((action.slot, action.kind)))
+        row = self.rows.get(action.slot)
+        if row is not None:
+            mechanism_state = after_action(mechanism_state, row, action.slot, action.kind, started,
+                                            quote=mechanism, stance=stance, forecast=True)
         return (damage + priced, end, min(300.0, budget - action.sp_cost),
                 (*indices, index), forecast, locks, next_stances, next_conditions,
-                queue_delay + (started - now if action.kind == "link" else 0))
+                queue_delay + (started - now if action.kind == "link" else 0), mechanism_state)
 
     @staticmethod
     def _select_beam(expanded, quota):
@@ -397,7 +459,8 @@ class ReleaseBurstPlanner:
                         if action.kind == "link" else () for i, action in enumerate(actions)}
         predecessors["normal"] = (next((i for i, a in enumerate(actions) if a.kind == "normal"), -1)
                                   if any(a.kind == "link" for a in actions) else -1)
-        beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions, 0.0)]
+        beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions, 0.0,
+                 self.mechanism_state)]
         best = beam[0]
         for _ in actions:
             expanded = [entry for node in beam for index, action in enumerate(actions)
@@ -437,7 +500,10 @@ class ReleaseBurstPlanner:
         has_links = any(a.kind == "link" for a in actions)
         # A corrected conditional cast must not fall back to the old row-sum
         # ordering merely because a different, unbuffed action wins.
-        needs_cast_pricing = has_links or any(self.cast_only_quote(a.slot, a.kind) for a in actions)
+        mechanism_quotes = [self.mechanism_quote(a.slot, now, a.mechanism_assessment)
+                            for a in actions if a.kind == 'battle']
+        needs_cast_pricing = (has_links or any(self.cast_only_quote(a.slot, a.kind) for a in actions)
+                              or any(q is not None and (q.sources or q.minimum_recall) for q in mechanism_quotes))
         if (not needs_cast_pricing and not self.bonuses and not self.stances
                 and not any(self.rules.get((a.slot, a.kind)) for a in actions)):
             return None
@@ -450,4 +516,7 @@ class ReleaseBurstPlanner:
             return None  # Normals are an existing held-output tail, not a new input.
         return ReleaseBurstDecision(actions[best[3][0]],
                                     tuple((actions[i].slot, actions[i].kind) for i in best[3]),
-                                    best[0], best[0] - plain[0])
+                                    best[0], best[0] - plain[0],
+                                    self.mechanism_quote(actions[best[3][0]].slot, now,
+                                                         actions[best[3][0]].mechanism_assessment)
+                                    if actions[best[3][0]].kind == 'battle' else None)

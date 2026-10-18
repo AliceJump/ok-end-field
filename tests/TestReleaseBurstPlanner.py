@@ -558,15 +558,18 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertFalse(logic.release_burst.last_confirmed)
         self.assertIsNone(logic.pending)
 
-    def test_observed_electric_team_spends_100_sp_on_pelica_without_assumed_spears(self):
+    def test_observed_electric_team_prices_minimum_untyped_recall_without_inventing_three_spears(self):
         task, logic = self.make_logic()
         logic._configure_team(["庄方宜", "佩丽卡", "艾维文娜", "梨诺"], reset_runtime=True)
         task.ults = set()
         task.sp = 100
         task.battle_pulses = {"3"}  # An entity/distance hint is not a typed count or path hit.
         logic.step()
-        self.assertEqual(task.keys, ["2"])
-        self.assertEqual(logic.pending[1], "2")
+        self.assertEqual(task.keys, ["3"])
+        self.assertEqual(logic.pending[1], "3")
+        self.assertTrue(logic._attempt_mechanism.minimum_recall)
+        self.assertIsNone(logic._attempt_mechanism.normal_spears)
+        self.assertIsNone(logic._attempt_mechanism.strong_spears)
         self.assertFalse(logic.release_burst.last_confirmed)
 
     def test_avywenna_cycle_and_overflow_use_the_same_cast_only_quote(self):

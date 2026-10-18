@@ -93,7 +93,7 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "927ca91100062037a82135cefcbf7734e3a5bc7d1adb94af62768ea18676be6d",
+  "snapshot_sha256": "7a1837af5bf72a0223dcb333b77c468bc708502cb12b689cef4a48d14ece388d",
   "actors": 33,
   "rules": 16,
   "supplement_source_hashes": {
@@ -106,11 +106,12 @@
   },
   "support_evidence_sha256": "63fb997a727426f190cbecf6379a0e60ee50cd5ffa5b90f2c8ef4f2c9b23f5ba",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "fb60773b37106eb04b6b11eb0183f76d8ace64567fc9c5871b0733f10013dfa6",
+    "export_release_burst_snapshot.py": "f5d89e703a8e4bf56cbe132f7667f3a6c9d154daac4d80f934da4589d25c2a85",
     "reviewed_support_release.py": "4275d1fbaa903c83431cf992c67a5cd010383456ae2135c45a7fd88368b689de",
     "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792",
     "reviewed_si_release.py": "807639a720cdfa6205b02887fde35aadc2409c554a6d0adab77b2f61d6286dfa",
-    "reviewed_avywenna_recall.py": "ada2f76001729ca5d03d8ef885234af7925288521ad5ea2061ac2913f83e17f3"
+    "reviewed_avywenna_recall.py": "ada2f76001729ca5d03d8ef885234af7925288521ad5ea2061ac2913f83e17f3",
+    "reviewed_mechanism_quotes.py": "9841ac8476a1d9cdf36162bc69f843efe7f0f654fd50a237108c30d9b0dc8cab"
   },
   "stances": 1
 }

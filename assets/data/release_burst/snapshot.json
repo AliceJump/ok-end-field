@@ -170,7 +170,8 @@
           "blocks_source_actions": []
         }
       ],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "阿列什",
@@ -305,7 +306,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "安塔尔",
@@ -511,7 +513,8 @@
           "blocks_source_actions": []
         }
       ],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "诀",
@@ -644,7 +647,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "弧光",
@@ -779,7 +783,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "艾尔黛拉",
@@ -912,7 +917,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "艾维文娜",
@@ -1126,7 +1132,45 @@
           "blocks_source_actions": []
         }
       ],
-      "stance": null
+      "stance": null,
+      "mechanism": {
+        "type": "spear_recall",
+        "skills": [
+          "chr_0012_avywen_normal_skill"
+        ],
+        "ordinary": {
+          "atk_scale": 1.5,
+          "atk_scale_lance": 1.6799999475479126,
+          "atk_scale_lance_ult": 4.320000171661377
+        },
+        "productions": {
+          "link": {
+            "kind": "normal_spear",
+            "count": 3,
+            "duration": 30.0,
+            "launch_after": 0.4666666666666667
+          },
+          "ult": {
+            "kind": "strong_spear",
+            "count": 1,
+            "duration": 30.0,
+            "launch_after": 1.5
+          }
+        },
+        "minimum_nominal_recall": 1,
+        "canonical_sha256": "21d30452b9eb8b6f6ec8d11245c72dd30ce8ecc64c0ea32009eeefaeec920f6b",
+        "scope": "conditional_nominal_projection; not_observed_inventory_or_hit",
+        "native_hashes": {
+          "chr_0012_avywen_normal_skill": "dfadd90a92539712513bfcfe93e59add3e134abc455b6056fdaa200948970e3c",
+          "chr_0012_avywen_combo_skill": "533999c78e4539690b9888207fddaa29e9417b22c437e99d167f0c2c5ed2696c",
+          "chr_0012_avywen_ultimate_skill": "0940cbb746d6cc88a82db4853c76022eed0db1ef04a2406b755cf75ea88fa9a1",
+          "chr_0012_avywen_combo_skill_lance_gene": "f7269976a92ef4fd83bf456558169e758105ea80308516df6ede25ec532153e5",
+          "chr_0012_avywen_ultimate_skill_lance_gene": "af59eb8e05369fff65782c2814eb0962c43591c78fe2be064898ea4997bde8e1"
+        },
+        "condition_hashes": {
+          "chr_0012_avywen_normal_skill": "256ab217501e0cd17498cc5ed7707e63ede6086105e7a97d7758759aa3e98976"
+        }
+      }
     },
     {
       "character": "卡缪",
@@ -1259,7 +1303,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "卡契尔",
@@ -1394,7 +1439,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "陈千语",
@@ -1531,7 +1577,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "大潘",
@@ -1666,7 +1713,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "余烬",
@@ -1799,7 +1847,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "管理员",
@@ -1932,7 +1981,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "埃特拉",
@@ -2104,7 +2154,8 @@
           "blocks_source_actions": []
         }
       ],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "萤石",
@@ -2239,7 +2290,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "洁尔佩塔",
@@ -2372,7 +2424,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "莱万汀",
@@ -2541,7 +2594,8 @@
           "blocks_source_actions": []
         }
       ],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "别礼",
@@ -2674,7 +2728,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "黎风",
@@ -2812,7 +2867,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "梨诺",
@@ -3107,7 +3163,8 @@
           ]
         }
       ],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "弭弗",
@@ -3240,7 +3297,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "佩丽卡",
@@ -3415,7 +3473,8 @@
           "blocks_source_actions": []
         }
       ],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "骏卫",
@@ -3548,7 +3607,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "噗切娜",
@@ -3683,7 +3743,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "洛茜",
@@ -3816,7 +3877,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "昼雪",
@@ -3951,7 +4013,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "汤汤",
@@ -4084,7 +4147,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "提弗洛斯",
@@ -4217,7 +4281,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "狼卫",
@@ -4352,7 +4417,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "赛希",
@@ -4564,7 +4630,8 @@
           "blocks_source_actions": []
         }
       ],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "伊冯",
@@ -4697,7 +4764,8 @@
         }
       },
       "rules": [],
-      "stance": null
+      "stance": null,
+      "mechanism": null
     },
     {
       "character": "庄方宜",
@@ -4970,6 +5038,46 @@
             "combo_dispatch",
             "native_extend_buff_lifetime"
           ]
+        }
+      },
+      "mechanism": {
+        "type": "sword_salvo",
+        "skills": [
+          "chr_0030_zhuangfy_normal_skill",
+          "chr_0030_zhuangfy_normal_skill_ult"
+        ],
+        "ordinary": {
+          "atk_scale": 0.44999998807907104,
+          "atk_up_per_conduct": 0.09000000357627869,
+          "final_rate": 6.0
+        },
+        "enhanced": {
+          "atk_scale": 0.8100000023841858,
+          "atk_up_per_conduct": 0.18000000715255737,
+          "final_rate": 6.0
+        },
+        "count_cap": 9,
+        "duration": 36.0,
+        "free_requests": 3,
+        "conduct_requests_cap": 3,
+        "launch_after": {
+          "ordinary": 0.2,
+          "enhanced": 0.16666666666666666
+        },
+        "conduct_tag": "bf9d6e57",
+        "scope": "conditional_nominal_projection; not_observed_inventory_or_hit",
+        "native_hashes": {
+          "chr_0030_zhuangfy_normal_skill": "06a61a8b2630fbe792294c3a0dc0a9a24080d8c8be45cb5895d2f16f0f05a9fd",
+          "chr_0030_zhuangfy_normal_skill_ult": "33483a4c247260eb69cdd90ab80a604c113fb8e57a79817d3a39f54dbf971ccf",
+          "chr_0030_zhuangfy_normal_skill_ult_abilityrange": "d8c052a17e9f1332ba95277d19027e5df67af4e747fc601b4b171744f7daa6a2",
+          "buff_chr_0030_zhuangfy_sword_triggerd": "789e3e86447639ddaa63c03e405aa91f1f29e2dbe2b037bb3adfca174e6abb2b",
+          "chr_0030_zhuangfy_normal_skill_gene_sword_projhit": "8ffa9d0b679002efa96c3f92d809e1afb60c377bd0d1751256817fb9c66385c7",
+          "chr_0030_zhuangfy_check_sword_passive": "7c8a4b2434cbbcca3be9a049d958a023661770cd5fa3c68be3fd2bc1e89f93ee",
+          "buff_chr_0030_zhuangfy_passive_check_sword": "42cbce96f4b0f4aa9150067c43c36005a51cb9230e1cf45fd4edc6bd82f0014c"
+        },
+        "condition_hashes": {
+          "chr_0030_zhuangfy_normal_skill": "ef3b1e6e1fcc1074e0a9def7d36a1d07614b720a3641de730419ce84f9f7c758",
+          "chr_0030_zhuangfy_normal_skill_ult": "ef3b1e6e1fcc1074e0a9def7d36a1d07614b720a3641de730419ce84f9f7c758"
         }
       }
     },

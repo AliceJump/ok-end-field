@@ -14,6 +14,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from reviewed_avywenna_recall import recall_quote
+from reviewed_mechanism_quotes import mechanism_contract
 from reviewed_release_stance import release_stance
 from reviewed_si_release import si_release_actor
 from reviewed_support_release import liino_battle_release, support_release
@@ -84,7 +85,7 @@ def _actor_quotes(planner, index, row, store):
     return quotes
 
 
-def _collect_actors(rows, planner, store):
+def _collect_actors(rows, planner, store, source):
     actors, supports = [], []
     for index, row in enumerate(rows, 1):
         rules, evidence = _actor_rules(planner, index, row, store)
@@ -97,7 +98,8 @@ def _collect_actors(rows, planner, store):
         actors.append({"character": row["character"], "key": row["key"], "profile": row["profile"],
                        "build": row["build"], "panel": row["panel"]["damage_basis"],
                        "attribute_basis": row["attribute_basis"], "quotes": _actor_quotes(planner, index, row, store),
-                       "rules": rules, "stance": release_stance(row, store)})
+                       "rules": rules, "stance": release_stance(row, store),
+                       "mechanism": mechanism_contract(row, store, source)})
     return actors, supports
 
 
@@ -132,7 +134,7 @@ def export(source, revision, destination):
     names = [row["character"] for row in rows]
     planner = ReleaseBurstPlanner(names, store=load_skill_timings())
     store = load_skill_timings()
-    actors, supports = _collect_actors(rows, planner, store)
+    actors, supports = _collect_actors(rows, planner, store, source)
     # This export is a reviewed boundary, not automatic admission of new rules.
     expected = {"安塔尔": 2, "秋栗": 1, "佩丽卡": 1, "庄方宜": 1,
                 "莱万汀": 1, "艾维文娜": 1, "埃特拉": 1, "赛希": 2, "梨诺": 4}
@@ -168,6 +170,8 @@ def export(source, revision, destination):
         (ROOT / "scripts/skill-data/reviewed_si_release.py").read_bytes()).hexdigest()
     manifest["exporter_hashes"]["reviewed_avywenna_recall.py"] = hashlib.sha256(
         (ROOT / "scripts/skill-data/reviewed_avywenna_recall.py").read_bytes()).hexdigest()
+    manifest["exporter_hashes"]["reviewed_mechanism_quotes.py"] = hashlib.sha256(
+        (ROOT / "scripts/skill-data/reviewed_mechanism_quotes.py").read_bytes()).hexdigest()
     (destination / "index.json").write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf8"))
     print(f"Exported 32 research panels from {head}, one reviewed master Si projection, "
           f"and {sum(actual.values())} release rules")

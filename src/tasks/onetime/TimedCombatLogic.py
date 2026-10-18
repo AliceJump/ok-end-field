@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import time
 from collections import deque
-from dataclasses import replace
+from dataclasses import asdict, replace
 
 from ok import FinishedException, TaskDisabledException
 
@@ -69,6 +70,7 @@ class TimedCombatLogic:
         self.started = 0.0
         self.cooldowns = {}
         self.pending = None
+        self._attempt_mechanism = None
         self.unconfirmed = False
         self._holding = False
         self.damage_quotes = {}
@@ -191,6 +193,7 @@ class TimedCombatLogic:
 
     def _clear_action_attempt_feedback(self):
         self.last_action_attempt = None
+        self._attempt_mechanism = None
         reset = getattr(self.task, "reset_combat_action_feedback_probe", None)
         if callable(reset):
             reset()
@@ -474,10 +477,16 @@ class TimedCombatLogic:
             self.task.log_info(f"时间排轴: 战技 {token} 条件段未确认，重置到首段状态")
 
     def _accept_battle_skill(self, token, advance_cursor=True):
+        mechanism = self._attempt_mechanism
         if self.release_burst is not None:
-            self.release_burst.confirm(token, "battle", self.started)
+            self.release_burst.confirm(token, "battle", self.started, mechanism=mechanism)
         self._clear_action_attempt_feedback()
         self._observe_battle()
+        if mechanism is not None and self._cycle_start is not None:
+            base = self.damage_quotes.get(self.team[int(token)-1])
+            priced = self.release_burst.price(token, 'battle', self.started, mechanism=mechanism)
+            if base is not None and priced is not None:
+                self._cycle_bonus += priced-base.battle
         self._set_cooldowns()
         repeat_guard = max((profile.repeat_guard for profile in self.active), default=0.0)
         if repeat_guard:
@@ -999,6 +1008,8 @@ class TimedCombatLogic:
             else:
                 self.battle_highlights.observations.pop(token, None)
         if not bound:
+            if self.release_burst is not None:
+                self.release_burst.observe_conditions({})
             return
         monitor = getattr(self.task, "observe_battle_skill_highlights", None)
         samples = monitor() if callable(monitor) else None
@@ -1006,6 +1017,8 @@ class TimedCombatLogic:
             samples = {}
         for token in bound:
             self._battle_pulse_state(token, samples=samples)
+        if self.release_burst is not None:
+            self.release_burst.observe_conditions({token: self._battle_condition(token) for token in bound})
 
     def _try_battle_token(self, token, sp, overflow=False, advance_cursor=True):
         now = self._clock()
@@ -1040,6 +1053,11 @@ class TimedCombatLogic:
         self.phase_planner.start_if_ready(token, "battle")
         started = self._clock()
         self._arm_action_feedback()
+        self._attempt_mechanism = (self.release_burst.mechanism_quote(token, started, self._battle_condition(token))
+                                   if self.release_burst is not None else None)
+        if self._attempt_mechanism is not None:
+            self.task.log_info('时间排轴机制报价: '+json.dumps(
+                {'slot': token, 'kind': 'battle', 'started': started, **asdict(self._attempt_mechanism)}, ensure_ascii=False))
         self.task.send_key(token)
         self._note_action_attempt("battle", token)
         self._begin(profiles, started, slot=token, kind="battle")
@@ -1102,10 +1120,12 @@ class TimedCombatLogic:
         if not self._slot_available(token):
             return float("-inf")
         mechanic = self._mechanic_for_token(token)
-        if mechanic is not None and not mechanic.generic_cycle_safe:
+        mechanism = (self.release_burst.mechanism_quote(token, self._clock(), self._battle_condition(token))
+                     if self.release_burst is not None else None)
+        if mechanic is not None and not mechanic.generic_cycle_safe and not (mechanism and mechanism.sources):
             return float("-inf")
         name = self.team[int(token) - 1]
-        profiles = self.store.profiles(name, "battle")
+        profiles, _, _ = self._battle_context(token)
         if not profiles:
             return float("-inf")
         quote = self.damage_quotes.get(name)
@@ -1226,7 +1246,9 @@ class TimedCombatLogic:
                 damage_duration=max(max(p.duration, p.handoff) for p in combo.profiles)))
         conditions = self._scene_conditions()
         decision = self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions)
-        if decision is not None and decision.gain <= 1e-6 and not self._combo_queue and self.order:
+        mechanism_gain = (decision is not None and decision.mechanism is not None
+                          and (decision.mechanism.sources or decision.mechanism.minimum_recall))
+        if decision is not None and decision.gain <= 1e-6 and not mechanism_gain and not self._combo_queue and self.order:
             # Cast-only valuation also compares unbuffed damage. That new path
             # must not indefinitely bypass an available, retained support in the
             # existing cycle (for example Xaihi's zero-damage crystal skill).
@@ -1319,13 +1341,14 @@ class TimedCombatLogic:
                 or (not self.phase_planner.can_spend(token, "battle", sp, cost) and token not in future_free)):
             return None
         assessment = self._battle_condition(token)
-        base, extra = self.release_burst.battle_values(token, assessment)
+        base, extra = self.release_burst.battle_values(token, assessment, now=now)
         base_components, extra_components = self.release_burst.battle_components(token, assessment)
         return ReleaseBurstAction(token, "battle", max(p.handoff for p in profiles),
                                   base, gate, cost, same_actor_duration=max(p.actionable for p in profiles),
                                   observed_bonus=extra, base_components=base_components,
                                   observed_components=extra_components,
-                                  condition=ConditionRequirement.from_assessment(token, assessment))
+                                  condition=ConditionRequirement.from_assessment(token, assessment),
+                                  mechanism_assessment=assessment)
 
     def _release_normal_candidate(self, now):
         main = self._burst_main_control
@@ -1355,6 +1378,8 @@ class TimedCombatLogic:
             # Recovery advanced the scene; the pre-animation batch is no
             # longer current evidence for the immediate overflow check.
             self.battle_highlights.observations.clear()
+            if self.release_burst is not None:
+                self.release_burst.observe_conditions({})
         if self._wait_assumed_success_feedback():
             return True
         self._clear_action_attempt_feedback()
