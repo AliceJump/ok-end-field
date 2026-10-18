@@ -12,6 +12,7 @@ from src.core.global_config_store import (
     ZIP_LINE_SCROLL_KEY,
     get_global_config,
 )
+from src.core.learning.policy import learning_allowed
 from src.core.sequence_parser import parse_int_sequence
 from src.image.hsv_config import HSVRange as hR
 from src.interaction.target_movement import ellipse_geometry, ellipse_move_profile, ellipse_radius, hud_direction_step
@@ -562,7 +563,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         if max_time <= 0 or (deadline is not None and self.active_time() >= deadline):
             return self._zip_line_alignment_failed(raise_if_fail)
 
-        prefeed_move = initial_move
+        prefeed_move = initial_move if learning_allowed() else None
 
         misses = 0
         pattern = self._zip_line_distance_pattern(zip_line)
@@ -830,7 +831,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return current_yaw, True
 
         total_dx = 0
-        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw)
+        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw) if learning_allowed() else None
         if hint is not None:
             hint_dx, hint_samples = hint
             if self._send_zip_line_yaw_delta(hint_dx):
@@ -897,7 +898,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return target_yaw, False
 
         if total_dx:
-            record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx)
+            if learning_allowed():
+                record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx)
         self.log_info(
             f"[zipline-yaw] normalized {initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
         )
@@ -966,6 +968,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     ):
         """Reuse a matching/nearest yaw history and learn the full action under its original yaw."""
         route_fingerprint = self._zip_line_motion_route_fingerprint(zip_line_list, config_key=config_key)
+        if not learning_allowed():
+            route_fingerprint = None
         for segment_index, zip_line in enumerate(zip_line_list):
             reading = self._read_zip_line_settled_arrow_angle() if route_fingerprint else None
             start_yaw = reading[0] if reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE else None

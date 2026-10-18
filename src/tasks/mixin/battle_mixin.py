@@ -56,6 +56,7 @@ from src.core.BattleConfig import (
 )
 from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
+from src.core.learning.policy import without_learning
 from src.core.sequence_parser import parse_sequence
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.FeatureList import FeatureList as fL
@@ -1664,6 +1665,7 @@ class BattleMixin(BaseEfTask):
                 last_log = now
             self.sleep(0.1)
 
+    @without_learning("battle")
     def auto_battle(self, no_battle: bool = False):
         """
         自动战斗主循环
