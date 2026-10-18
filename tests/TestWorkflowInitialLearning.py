@@ -12,6 +12,7 @@ from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list
 from src.tasks.mixin.common import LiaisonResult
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
+from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.workflow_learning import (
     demo_entry_after_transfer,
@@ -491,6 +492,20 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         record = self.store.get(context.fingerprint)
         self.assertEqual((record.motion.samples, record.failure_count), (4, 0))
         self.assertNotIn("learning_session", task.navigate_until_target.call_args.kwargs)
+
+    def test_demo_missing_tracking_button_still_transfers_and_saves_before_navigation_failure(self):
+        task = self.task()
+        task.to_near_transfer_point = lambda **kwargs: MapMixin.to_near_transfer_point(task, **kwargs)
+        task.wait_feature.return_value = None
+        task._wait_click_transfer_go = Mock(return_value=True)
+        task.clear_icon_in_map = Mock(side_effect=AssertionError("no new tracking map"))
+        task.navigate_until_target.return_value = False
+        self.assertFalse(DemoBattleTask._demo_click_track_and_transfer(task))
+        self.assertEqual(task._wait_click_transfer_go.call_count, 2)
+        task.clear_icon_in_map.assert_not_called()
+        records = list(self.store.snapshot().values())
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].motion.samples, 1)
 
     def test_failed_demo_transfer_and_denied_tracking_do_not_access_learning_store(self):
         task = self.task()
