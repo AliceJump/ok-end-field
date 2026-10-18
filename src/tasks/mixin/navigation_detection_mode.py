@@ -25,6 +25,8 @@ class ParallelNavigationDetection:
         self._target_after = self._nav_after = float("-inf")
         self._sequence = self._seen_target = 0
         self._nav_sequence_after = 0
+        self._observed_nav = 0
+        self._nav_missing = False
 
     def start(self):
         self.arrival.start()
@@ -33,11 +35,15 @@ class ParallelNavigationDetection:
     def poll(self, frame=None):
         # Check failures even when the next capture is not due yet.
         self.arrival.snapshot()
-        self.marker.snapshot()
+        nav_result, _ = self.marker.snapshot()
+        if self._fresh(nav_result, after=self._nav_after, age=0.8) and nav_result.sequence > self._observed_nav:
+            self._observed_nav = nav_result.sequence
+            self._nav_missing = not nav_result.boxes
         now = self.task.active_time()
-        priority = self.approaching or self.target_priority
+        nav_slow = self.approaching or self.target_priority
+        target_fast = nav_slow or self._nav_missing
         if frame is None:
-            if now - self._last_capture < (0.03 if priority else 0.05):
+            if now - self._last_capture < (0.03 if target_fast else 0.05):
                 return
             frame = self.task.next_frame()
         self._last_capture = self.task.active_time()
@@ -49,13 +55,15 @@ class ParallelNavigationDetection:
         snapshot.flags.writeable = False
         if self.nav_disappears_on_arrival and not self.approaching and has_tracking_arrival_band(snapshot):
             self.approaching = True
-        priority = self.approaching or self.target_priority
+        nav_slow = self.approaching or self.target_priority
+        target_fast = nav_slow or self._nav_missing
         self._sequence += 1
         captured = NavigationFrame(self._sequence, self.task.active_time(), snapshot)
-        if captured.captured_at - self._last_target >= (0.03 if priority else 0.5):
+        # 丢标立即提高目标检测频率；未出现到达文本带时，模板也保持高频找回。
+        if captured.captured_at - self._last_target >= (0.03 if target_fast else 0.5):
             self.arrival.submit(captured)
             self._last_target = captured.captured_at
-        if captured.captured_at - self._last_nav >= (0.5 if priority else 0.05):
+        if captured.captured_at - self._last_nav >= (0.5 if nav_slow else 0.05):
             self.marker.submit(captured)
             self._last_nav = captured.captured_at
 

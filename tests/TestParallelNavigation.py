@@ -299,6 +299,38 @@ class TestParallelNavigation(unittest.TestCase):
         self.assertGreaterEqual(stopped_at, 0.5)
         self.assertGreaterEqual(task.now - stopped_at, 2)
 
+    def test_lost_marker_boosts_target_without_band_and_recovery_restores_normal_budget(self):
+        task = _Task()
+        target_frames, nav_frames = [], []
+
+        def target(frame):
+            target_frames.append(frame.captured_at)
+            return []
+
+        def nav(frame):
+            nav_frames.append(frame.captured_at)
+            return [] if 0.2 <= frame.captured_at < 0.8 else [detection()]
+
+        self.assertFalse(self.run_replay(task, target, nav, timeout=1.4))
+        self.assertGreater(len([stamp for stamp in target_frames if 0.3 <= stamp < 0.8]), 8)
+        self.assertGreater(len([stamp for stamp in nav_frames if 0.3 <= stamp < 0.8]), 5)
+        self.assertLessEqual(len([stamp for stamp in target_frames if 0.9 <= stamp < 1.3]), 1)
+        self.assertFalse(any(event[0] == "step" for event in task.events))
+
+    def test_lost_marker_enables_fast_target_detection_even_for_an_undeclared_route(self):
+        task = _Task()
+        self.assertTrue(
+            self.run_replay(
+                task,
+                lambda frame: [detection()] if frame.captured_at >= 0.25 else [],
+                lambda frame: [detection()] if frame.captured_at < 0.1 else [],
+                disappearing=False,
+            )
+        )
+        stopped_at = next(event[2] for event in task.events if event[0] == "up")
+        self.assertGreaterEqual(stopped_at, 0.25)
+        self.assertLess(stopped_at, 0.4)
+
     def test_parallel_navigation_reuses_existing_alignment_with_async_template_results(self):
         task = _Task()
 
