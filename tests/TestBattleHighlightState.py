@@ -149,6 +149,33 @@ class TestBattleHighlightState(unittest.TestCase):
         self.assertTrue(zhuang.confirms_release(False))
         self.assertFalse(zhuang.confirms_release(None))
 
+    def test_ultimate_recovery_discards_old_ring_before_overflow_without_another_batch(self):
+        task = FakeTask()
+        task.sp = 300
+        task.ults = {'1'}
+        task.observe_battle_skill_highlights = Mock(return_value={'2': True})
+        logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
+        logic._configure_team(['佩丽卡', '弧光'], reset_runtime=True)
+        scores = {}
+
+        def overflow(_sp, checkpoint):
+            scores[checkpoint] = logic._overflow_score('2')
+            return False
+
+        # Exercise the non-burst ultimate path and its immediate overflow check.
+        with patch.object(logic, '_release_burst_decision', return_value=None), \
+                patch.object(logic, '_try_overflow_battle_skill', side_effect=overflow):
+            logic.step()
+        self.assertEqual(task.keys, ['ult_1'])
+        task.observe_battle_skill_highlights.assert_called_once_with()
+        self.assertGreater(scores['主循环'], scores['终结技恢复'])
+        self.assertIsNone(logic._battle_condition('2'))
+        self.assertFalse(logic._scene_conditions().facts())
+        # Clearing is unknown, not a negative condition; the next ordinary
+        # batch may establish the same ring afresh.
+        logic._observe_battle_highlights()
+        self.assertTrue(logic._battle_condition('2').satisfied)
+
 
 if __name__ == '__main__':
     unittest.main()

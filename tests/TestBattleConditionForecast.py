@@ -242,8 +242,14 @@ class TestBattleConditionForecast(unittest.TestCase):
         logic._configure_team(['赛希', '弧光', '狼卫', '伊冯'], reset_runtime=True)
         with patch.object(task, 'detect_current_char_index', return_value=3, create=True):
             logic.step()
-        self.assertEqual(task.keys, ['ult_1'])
-        self.assertTrue(logic._scene_conditions().facts())
+            self.assertEqual(task.keys, ['ult_1'])
+            # Forecast preservation selected the support first, but it is not
+            # permission to reuse a pre-animation observation in the live scene.
+            self.assertFalse(logic._scene_conditions().facts())
+            task.battle_pulses.clear()
+            logic.step()
+        self.assertFalse(logic._battle_condition('2').satisfied)
+        self.assertFalse(logic._scene_conditions().facts())
 
 
 if __name__ == '__main__':

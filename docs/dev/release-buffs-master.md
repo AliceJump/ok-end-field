@@ -1,8 +1,10 @@
 # 释放确定增益接入 master 排轴
 
+2026-10-19审阅续修：终结恢复后清空动画前白圈观察，避免同一步防溢出读旧条件；下一普通step再统一采样，不新增第二批扫描。补全原始观察unknown与连携身份范围文档。新增1项回归并修正旧的跨动画观测断言，119相关/同步master `6fe39082`后全仓1670项（32.002秒）通过，133文件/16职责组、Ruff I/F及diff-check通过。原32补丁重放全部相等；数据快照未随此次清理修正变化。
+
 2026-10-19：新增梨诺战技高歌期间的全队白攻击+10%，第15帧后60秒，释放层现为10角色16条。真实step按25 SP成本比较辅助起手与队友后续输出；姿态替换、同源去重、到期和来源失效清理沿现有合同。持续/结束命中不预支，梨诺战技即时伤害由旧17320.2改为辅助起手0；其余131报价、33面板/配装、已有15条规则和庄方宜姿态不变。详细来源、低消耗动作接受限制与电队剩余缺口见 [liino-singing-burst-integration.md](liino-singing-burst-integration.md)。
 
-2026-10-16白圈解耦：现有BattleMixin按当前帧一次采样全部固定按钮小框，原始观察只保留visible/来源/时间。独立BattleConditionEvaluator生成场景判定，强化报价与后续编排只接受判定结果；原始亮圈对象不能直接启用伤害。庄方宜此前批准的白色按键/消失确认保留为单独执行合同，普通战技不以白圈为许可。5新增专项、143相关及全仓1472项（30.940秒）通过；122测试文件/16组、Ruff I/F与diff-check通过。固定面板/15规则/132报价/姿态数据未改，未现场验证。详见[white-ring-observation-boundary.md](white-ring-observation-boundary.md)。
+2026-10-16白圈解耦：现有BattleMixin按当前帧一次采样全部固定按钮小框，原始观察只保留visible=true/false/unknown、来源和时间。独立BattleConditionEvaluator生成场景判定，强化报价与后续编排只接受判定结果；原始亮圈对象不能直接启用伤害。庄方宜此前批准的白色按键/消失确认保留为单独执行合同，普通战技不以白圈为许可。5新增专项、143相关及全仓1472项（30.940秒）通过；122测试文件/16组、Ruff I/F与diff-check通过。固定面板/15规则/132报价/姿态数据未改，未现场验证。详见[white-ring-observation-boundary.md](white-ring-observation-boundary.md)。
 
 2026-10-16收枪修正：同步master `228372ed`，原27提交range-diff全部相等。艾维文娜战技按名义旋风150%报价，普通/强雷枪168%/432%分开保存为尚未计入的条件伤害，未知枪数不再隐含各一次回收命中。真实候选、防溢出及周期规划均消费修正值，无增益贡献的获胜动作也不会退回旧顺序。33面板/配装/15规则及其他131份报价、庄方宜姿态不变。来源、验证及尚未接入的铺枪计数边界见 [avywenna-recall-pricing.md](avywenna-recall-pricing.md)。
 
@@ -62,7 +64,7 @@ assets/data/release_burst/snapshot.json 保存已解析规则、固定面板及�
 uv run --locked python scripts/skill-data/export_release_burst_snapshot.py --source-worktree <research-checkout> --source-ref cc9b471b50cdd6bc8b3a148b4eca93deef4efa02 --out assets/data/release_burst
 ```
 
-导出器核验源码提交和工作树，复用研究已核准生产合同，检查32面板和7角色8规则边界；后续新规则须重新审查，不自动接纳。赛希 FinalNonConverted 智识、梨诺光环、场内/命中脆弱、伊冯暴击层、四维百分比/转换 producer、连携身份以及完整原生模拟不随本层接入。最终四维差值消费者也没有作为无生产者的额外接口移入；固定属性系数已在面板里。
+导出器核验源码提交和工作树，复用已审核合同；当前为32份研究面板加1份独立审核的祀投影，以及10角色16条释放规则，后续新规则须重新审查，不自动接纳。梨诺光环和固定属性投影已纳入，身份/按钮变体明确的连携已绑定报价并进入实际爆发搜索。仍未纳入真实 FinalNonConverted 智识生产者、场内/命中脆弱、伊冯暴击层、四维百分比/转换 producer、连携产生的新buff/资源/条件收益以及完整原生模拟。最终四维差值消费者也没有作为无生产者的额外接口移入；固定属性系数已在面板里。
 
 ## 验证
 

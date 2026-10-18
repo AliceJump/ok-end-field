@@ -1351,6 +1351,10 @@ class TimedCombatLogic:
         hud_frozen = max(0.0, float(getattr(self.task, "_last_ult_hud_frozen_seconds", 0.0) or 0.0))
         self._excluded_hud_seconds += hud_frozen
         ended = self._clock()
+        if self.battle_highlights is not None:
+            # Recovery advanced the scene; the pre-animation batch is no
+            # longer current evidence for the immediate overflow check.
+            self.battle_highlights.observations.clear()
         if self._wait_assumed_success_feedback():
             return True
         self._clear_action_attempt_feedback()
