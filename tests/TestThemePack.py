@@ -152,6 +152,19 @@ class TestThemePack(unittest.TestCase):
             with self.assertRaisesRegex(ThemePackError, "qproperty"):
                 read_theme_pack(archive)
 
+    def test_qss_hex_escapes_cannot_hide_sensitive_properties(self):
+        """Reject Qt hex escapes before the QSS parser expands them."""
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "escaped.zip"
+            for qss in (
+                r"QPushButton { qpropert\79-enabled: false; }",
+                r"QWidget { image: \75rl(file:///secret); }",
+            ):
+                with self.subTest(qss=qss):
+                    self._archive(archive, qss=qss)
+                    with self.assertRaisesRegex(ThemePackError, "external resources"):
+                        read_theme_pack(archive)
+
     def test_unimplemented_compression_is_rejected(self):
         """Unsupported ZIP codecs report a normal theme validation error."""
         with tempfile.TemporaryDirectory() as directory:
