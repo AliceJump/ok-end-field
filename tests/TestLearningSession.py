@@ -4,7 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock
 
-from src.core.learning.models import ContextConfidence, VerificationEvidence
+from src.core.learning.models import ContextConfidence, TargetPrior, VerificationEvidence
 from src.core.learning.policy import deny_learning
 from src.core.learning.session import create_learning_session
 from src.core.learning.store import LearningStore
@@ -25,7 +25,7 @@ class TestLearningSession(unittest.TestCase):
         self.assertTrue(session.fail(now=4))
         store.update.assert_called_once()
 
-    def test_only_verified_total_including_replay_and_correction_is_persisted(self):
+    def test_fresh_alignment_commits_replay_and_correction_without_arrival(self):
         with tempfile.TemporaryDirectory() as directory:
             store = LearningStore(Path(directory) / "learning.json")
             context = workflow_context()
@@ -33,30 +33,29 @@ class TestLearningSession(unittest.TestCase):
             session.observe_input(100, 20, accepted=True, observed_at=1, after_frame_id=1)
             session.observe_input(5, -2, accepted=True, observed_at=2, after_frame_id=2)
             self.assertIsNone(store.get(context.fingerprint))
-            self.assertFalse(session.aligned(self.evidence(at=1, frame=1)))
-            self.assertFalse(session.aligned(self.evidence(at=3, frame=2)))
-            self.assertFalse(session.aligned(self.evidence(at=3, frame=3, target="wrong")))
-            self.assertTrue(session.aligned(self.evidence(at=3, frame=3)))
-            self.assertTrue(session.confirm(self.evidence("arrived", 4, 4), now=10))
+            target = TargetPrior(initial_position=(0.8, 0.5), aligned_position=(0.5, 0.5))
+            self.assertTrue(session.confirm_alignment(self.evidence(at=3, frame=3), now=10, target=target))
             record = store.get(context.fingerprint)
             self.assertEqual((record.motion.mean_dx, record.motion.mean_dy), (105, 18))
-            self.assertFalse(session.confirm(self.evidence("arrived", 5, 5), now=11))
+            self.assertEqual(record.target, target)
+            self.assertIn("aligned", record.provenance)
+            self.assertTrue(session.closed)
+            self.assertFalse(session.confirm_alignment(self.evidence(at=4, frame=4), now=11))
             self.assertEqual(store.get(context.fingerprint).success_count, 1)
 
     def test_unverified_same_frame_and_wrong_target_never_commit(self):
-        for kind, at, frame, target, aligned in (
-            ("arrived", 2, 2, "pickup", False),
-            ("arrived", 2, 2, "pickup", True),
-            ("arrived", 1, 3, "pickup", True),
-            ("arrived", 3, 3, "wrong", True),
-            ("aligned", 3, 3, "pickup", True),
+        for kind, at, frame, target in (
+            ("aligned", 0, 2, "pickup"),
+            ("aligned", 2, 1, "pickup"),
+            ("aligned", 3, 3, "wrong"),
+            ("arrived", 3, 3, "pickup"),
+            ("interacted", 3, 3, "pickup"),
         ):
-            with self.subTest(kind=kind, at=at, frame=frame, target=target, aligned=aligned):
+            with self.subTest(kind=kind, at=at, frame=frame, target=target):
                 store = Mock()
                 session = create_learning_session(workflow_context(), store, started_at=0)
-                if aligned:
-                    session.aligned(self.evidence())
-                self.assertFalse(session.confirm(self.evidence(kind, at, frame, target), now=10))
+                session.observe_input(100, 20, accepted=True, observed_at=1, after_frame_id=1)
+                self.assertFalse(session.confirm_alignment(self.evidence(kind, at, frame, target), now=10))
                 store.update.assert_not_called()
 
     def test_incomplete_input_and_disturbed_context_cannot_strengthen(self):
@@ -67,8 +66,7 @@ class TestLearningSession(unittest.TestCase):
                 session.observe_input(100, 20, accepted=False, observed_at=1, after_frame_id=1)
             else:
                 session.disturb(disturbance, position_changed=disturbance == "extra_walk")
-            session.aligned(self.evidence())
-            self.assertFalse(session.confirm(self.evidence("arrived", 3, 3), now=10))
+            self.assertFalse(session.confirm_alignment(self.evidence(), now=10))
             store.update.assert_not_called()
 
     def test_confidence_downgrades_never_upgrade_and_axes_are_enforced(self):
@@ -93,13 +91,13 @@ class TestLearningSession(unittest.TestCase):
         store.assert_not_called()
         self.assertEqual(store.method_calls, [])
 
-    def test_battle_invalidates_preexisting_pending_sample_after_scope_restores(self):
+    def test_battle_invalidates_unconfirmed_sample_after_scope_restores(self):
         store = Mock()
         session = create_learning_session(workflow_context(), store, started_at=0)
-        session.aligned(self.evidence())
+        session.observe_input(100, 20, accepted=True, observed_at=1, after_frame_id=1)
         with deny_learning("battle"):
             pass
-        self.assertFalse(session.confirm(self.evidence("arrived", 3, 3), now=10))
+        self.assertFalse(session.confirm_alignment(self.evidence(), now=10))
         store.update.assert_not_called()
         fresh = create_learning_session(workflow_context(), store, started_at=4)
         self.assertIsNotNone(fresh)
@@ -113,12 +111,28 @@ class TestLearningSession(unittest.TestCase):
         store.update.assert_not_called()
         session = create_learning_session(workflow_context(), store, started_at=0)
         session.close()
-        self.assertFalse(session.confirm(self.evidence("arrived", 3, 3), now=10))
+        self.assertFalse(session.confirm_alignment(self.evidence(), now=10))
 
-    def test_additional_input_invalidates_previous_alignment(self):
-        store = Mock()
-        session = create_learning_session(workflow_context(), store, started_at=0)
-        self.assertTrue(session.aligned(self.evidence()))
-        session.observe_input(5, 0, accepted=True, observed_at=3, after_frame_id=2)
-        self.assertFalse(session.confirm(self.evidence("arrived", 4, 4), now=10))
-        store.update.assert_not_called()
+    def test_navigation_input_and_failure_cannot_change_completed_alignment_sample(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = LearningStore(Path(directory) / "learning.json")
+            context = workflow_context()
+            session = create_learning_session(context, store, started_at=0)
+            session.observe_input(100, 20, accepted=True, observed_at=1, after_frame_id=1)
+            self.assertTrue(session.confirm_alignment(self.evidence(), now=10))
+            before = store.get(context.fingerprint)
+            session.observe_input(999, 999, accepted=True, observed_at=3, after_frame_id=3)
+            self.assertFalse(session.fail(now=11))
+            self.assertFalse(session.confirm_alignment(self.evidence(at=4, frame=4), now=12))
+            self.assertEqual(store.get(context.fingerprint), before)
+
+    def test_unverified_close_never_creates_record_and_zero_motion_alignment_can_learn(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = LearningStore(Path(directory) / "learning.json")
+            context = workflow_context()
+            session = create_learning_session(context, store, started_at=0)
+            session.close()
+            self.assertIsNone(store.get(context.fingerprint))
+            session = create_learning_session(context, store, started_at=0)
+            self.assertTrue(session.confirm_alignment(self.evidence(), now=10))
+            self.assertEqual(store.get(context.fingerprint).motion.samples, 1)

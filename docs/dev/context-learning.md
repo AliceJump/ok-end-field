@@ -33,9 +33,11 @@ YOLO 始终使用普通对中，角色名字 OCR 显式使用世界投影。`nav
 `tmp/context_learning_cache.json`，不改变用户任务配置。
 
 `create_learning_session()` 是流程会话入口。调用者提供同一 active clock 域的时间，按
-接受的输入记录包含 replay 与 correction 的总量，并提供输入前的单调 frame ID。只有
-输入后的真实新帧对中证据，加上更晚的新帧到达/交互证据，才可提交样本；一个会话只能
-领取一次 Action Prior。`confirm()`/`fail()`/`close()` 均为终态；异常和停止时调用者应
+接受的输入记录包含 replay 与 correction 的总量，并提供输入前的单调 frame ID。取得
+输入后的真实新帧对中证据，即通过 `confirm_alignment()` 提交样本并结束会话，不等待到达。
+学习只覆盖 Initial Align，后续 `navigate_until_target()` 不接收学习会话、不读写持久动作先验，
+导航动作或到达失败不反向修改已经自验证成功的对中样本。一个会话只能领取一次 Action Prior。
+`confirm_alignment()`/`fail()`/`close()` 均为终态；异常和停止时调用者应
 在 finally 中 close，未确认的样本不会自动写入。搜索、额外步行和不完整输入污染本次
 动作样本，可信度只降不升。profile 的轴约束同样约束 replay 与记录。
 

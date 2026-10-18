@@ -1,4 +1,4 @@
-"""Pending samples require fresh alignment and terminal evidence before persistence."""
+"""Initial alignment learns from its own fresh verification, before navigation begins."""
 
 from dataclasses import dataclass, field
 
@@ -18,8 +18,6 @@ class LearningSession:
     contaminated: bool = False
     closed: bool = False
     reasons: list[str] = field(default_factory=list)
-    target: TargetPrior | None = None
-    _aligned: VerificationEvidence | None = None
     _last_action_at: float = field(init=False)
     _epoch: int = field(init=False)
     _last_action_frame: int = -1
@@ -74,18 +72,19 @@ class LearningSession:
         self.dy += dy
         self._last_action_at = observed_at
         self._last_action_frame = after_frame_id
-        self._aligned = None
 
     def disturb(self, reason, *, position_changed=False):
         self.reasons.append(reason)
         self.contaminated = True
-        self._aligned = None
         levels = list(ContextConfidence)
         downgrade = ContextConfidence.LOW if position_changed else ContextConfidence.MEDIUM
         self.confidence = levels[max(levels.index(self.confidence), levels.index(downgrade))]
 
-    def aligned(self, evidence, *, target=None):
-        if not self._allowed() or not isinstance(evidence, VerificationEvidence):
+    def confirm_alignment(self, evidence, *, now, target=None):
+        """Finish this sample at a fresh centered detection; arrival is a separate concern."""
+        allowed = self._allowed()
+        self.closed = True
+        if not allowed or self.contaminated or not isinstance(evidence, VerificationEvidence):
             return False
         if (
             evidence.target_id != self.context.target_id
@@ -97,32 +96,12 @@ class LearningSession:
             return False
         if target is not None and not isinstance(target, TargetPrior):
             return False
-        self._aligned = evidence
-        self.target = target
-        return True
-
-    def confirm(self, evidence, *, now):
-        if not self._allowed():
-            self.closed = True
-            return False
-        self.closed = True
-        aligned = self._aligned
-        if self.contaminated or aligned is None or not isinstance(evidence, VerificationEvidence):
-            return False
-        if evidence.target_id != self.context.target_id or evidence.kind not in (
-            "arrived",
-            "interacted",
-            "zipline_arrived",
-        ):
-            return False
-        if evidence.observed_at < aligned.observed_at or evidence.frame_id <= aligned.frame_id:
-            return False
         return self.store.update(
             self.context.fingerprint,
             lambda record: record.successful(
                 self.dx,
                 self.dy,
-                target=self.target,
+                target=target,
                 now=now,
                 provenance=(self.context.task, self.context.phase, evidence.kind),
             ),
