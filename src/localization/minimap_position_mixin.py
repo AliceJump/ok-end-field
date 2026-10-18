@@ -63,7 +63,6 @@ from __future__ import annotations
 import math
 import os
 import threading
-from typing import ClassVar
 
 import numpy as np
 
@@ -203,20 +202,6 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
     任务侧不再配置：比例尺随画面宽变化（``比例尺 = C / 画面宽``），配在任务里必然会在
     换分辨率时过期——历史上 2560 宽量出的 0.6703 被拿到 1920 下用，距离就系统性偏了 27%。
     """
-
-    # 旧键只用于一次性迁移；运行时、UI、诊断字段统一使用“关键帧视觉锚定链校正”。
-    config_key_migrations: ClassVar[dict[str, str]] = {
-        "在线位姿图": CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION,
-        "在线位姿图窗口(拍)": CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW,
-        "在线位姿图边间隔(拍)": CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP,
-        "在线位姿图最小响应": CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE,
-        "在线位姿图锚点权重": CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT,
-        "在线位姿图修正上限(米)": CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION,
-        "在线位姿图关键帧间隔(拍)": CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME,
-        "在线位姿图关键帧边数": CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES,
-        "在线位姿图关键帧最小响应": CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE,
-        "在线位姿图关键帧锚点权重": CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT,
-    }
 
     # ------------------------------------------------------------------ #
     # 配置（任务把这两个 dict merge 进自己的 default_config / config_description）

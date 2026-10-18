@@ -157,7 +157,9 @@ def get_world_pose_service(executor=_UNSET):
         if app is None:
             from ok import og
 
-            app = og
+            # BaseTask.tr() delegates to the UI/headless app. ``og`` is only the
+            # global container and does not implement translation.
+            app = getattr(og, "app", None) or og
         service = WorldPoseService(executor=executor, app=app)
         service.after_init(executor=executor, scene=getattr(executor, "scene", None))
         setattr(executor, _SERVICE_ATTR, service)

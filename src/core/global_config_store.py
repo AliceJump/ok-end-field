@@ -24,18 +24,13 @@ from src.core.BattleConfig import (
     infer_legacy_combat_mode,
 )
 from src.core.config_migration import copy_migrated_config_keys
-from src.core.GridNavConfig import CONFIG_GRID_DIR, GRID_NAV_CONFIG_KEYS
 from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
     NAV_CONFIG_DESCRIPTION,
     NAV_CONFIG_NAME,
     NAV_CONFIG_TYPE,
     NAV_CONTENT_KEY,
-    NAV_MAP_ID_KEY,
-    NAV_PLAN_ONLY_KEY,
-    NAV_WAIT_POSITION_TIMEOUT_KEY,
     NAV_WS_ACCOUNT_KEY,
-    NAV_YAW_PER_PIXEL_KEY,
 )
 from src.core.paths import config_path
 from src.core.PositionConfig import (
@@ -194,79 +189,13 @@ _OPTIONS = {option.name: option for option in GLOBAL_CONFIG_OPTIONS}
 _MIGRATION_MARKER = "global_config_store_v2_task_scoped"
 _BATTLE_LEGACY_TASK_CONFIGS = ["DailyTask", "AutoCombatTask", "BattleTask"]
 _ZIP_LINE_LEGACY_TASK_CONFIGS = ["DeliveryTask", "DailyTask", "BattleTask"]
-_NAV_LEGACY_TASK_CONFIGS = [
-    "MinimapPositionTask",
-    "MinimapNavigateToPoint",
-    "ItemNavigatorTask",
-]
-_POSITION_LEGACY_TASK_CONFIGS = [
-    "MinimapPositionTask",
-    *sorted(
-        {
-            "MinimapNavigateToPoint",
-            "MinimapPositionRecorder",
-            "MinimapRealtimePosition",
-            "MinimapRegionCheck",
-            "MinimapScaleCapture",
-            "MinimapTurnToHeading",
-            "MinimapDisplacementCalibration",
-        }
-    ),
-]
-_NAV_TASK_MIGRATION_KEYS = (
-    NAV_CONTENT_KEY,
-    NAV_WS_ACCOUNT_KEY,
-    NAV_MAP_ID_KEY,
-    NAV_PLAN_ONLY_KEY,
-    NAV_WAIT_POSITION_TIMEOUT_KEY,
-    NAV_YAW_PER_PIXEL_KEY,
-    *GRID_NAV_CONFIG_KEYS,
-)
-_NAV_TASK_KEY_ALIASES = {
-    "ItemNavigatorTask": {
-        "content": NAV_CONTENT_KEY,
-        "地图账号": NAV_WS_ACCOUNT_KEY,
-    },
-}
-_POSITION_KEY_ALIASES = {
-    "在线位姿图": "关键帧视觉锚定链校正",
-    "在线位姿图窗口(拍)": "关键帧视觉锚定链校正窗口(拍)",
-    "在线位姿图边间隔(拍)": "关键帧视觉锚定链校正边间隔(拍)",
-    "在线位姿图最小响应": "关键帧视觉锚定链校正最小响应",
-    "在线位姿图锚点权重": "关键帧视觉锚定链校正锚点权重",
-    "在线位姿图修正上限(米)": "关键帧视觉锚定链校正修正上限(米)",
-    "在线位姿图关键帧间隔(拍)": "关键帧视觉锚定链校正关键帧间隔(拍)",
-    "在线位姿图关键帧边数": "关键帧视觉锚定链校正关键帧边数",
-    "在线位姿图关键帧最小响应": "关键帧视觉锚定链校正关键帧最小响应",
-    "在线位姿图关键帧锚点权重": "关键帧视觉锚定链校正关键帧锚点权重",
-}
-#: 历史上曾保存过定位运行时参数的任务配置来源。
-#:
-#: 这些值现在统一迁移到全局 ``Position Config``。白名单只列出确有历史来源的任务，
-#: 避免同名配置键从无关任务中被误搬。历史上确实带过这些键的是
-#: ``MinimapRealtimePosition`` / ``MinimapDisplacementCalibration``（后者已改名为
-#: ``MinimapScaleCapture``）与 ``MinimapNavigateToPoint``（通过当年还带定位参数的网格导航
-#: Mixin 间接拿到，``e496b602`` 之后该 Mixin 不再合并）。
-#:
-#: 这里按"整个小地图调试任务族"取，而不是只列考古出来的那三个：名称清单是从 git 历史推的，
-#: 漏一个的后果是用户旧配置被静默丢弃，而多一个只是允许一次本来也不会发生的搬运。
-MINIMAP_LEGACY_SOURCE_TASKS = frozenset(
-    {
-        "MinimapDisplacementCalibration",
-        "MinimapNavigateToPoint",
-        "MinimapPositionRecorder",
-        "MinimapRealtimePosition",
-        "MinimapRegionCheck",
-        "MinimapScaleCapture",
-        "MinimapTurnToHeading",
-    }
-)
+_ITEM_NAVIGATOR_TASK = "ItemNavigatorTask"
+_ITEM_NAVIGATOR_MAP_SOURCE_KEY = "地图数据来源"
+_ITEM_NAVIGATOR_MAP_SOURCE_ACCOUNT = "账号配置"
+_ITEM_NAVIGATOR_MAP_SOURCE_MANUAL = "手动 content"
+_ITEM_NAVIGATOR_CONTENT_KEY = "content"
+_ITEM_NAVIGATOR_ACCOUNT_KEY = "地图账号"
 _ZIP_LINE_ACCOUNT_MIGRATION_MARKER = "zip_line_account_overrides_v1"
-_NAV_LEGACY_BACKUP_MARKER = "nav_legacy_task_config_backup_v1"
-#: 「网格目录」的旧默认值。网格数据源已从主仓自带的 ``assets/nav`` 换成 nav-grid-editor
-#: 的产出（``assets/nav-grid-data``，子模块）；旧目录里的三张单层网格已删除，所以存量
-#: 配置里若还写着旧默认，必须一并改掉——否则导航会报"网格目录不存在"。
-_NAV_LEGACY_GRID_DIR = "assets/nav"
 _ZIP_LINE_KEY_MIGRATIONS = {
     # 历史任务配置中的固定键名，保留明确映射以确保迁移稳定。
     "通向送货点": "通向武陵城送货点",
@@ -325,31 +254,8 @@ def _backup_legacy_task_configs(state: dict[str, Any]) -> None:
     _write_migration_state(state)
 
 
-def _backup_legacy_nav_task_configs(state: dict[str, Any]) -> None:
-    """备份旧小地图定位任务配置，保留无法自动判定分辨率的比例尺/矩阵。"""
-    if state.get(_NAV_LEGACY_BACKUP_MARKER):
-        return
-
-    backup_dir = Path(get_migration_backup_dir())
-    backup_dir.mkdir(parents=True, exist_ok=True)
-    for task_config_name in _NAV_LEGACY_TASK_CONFIGS:
-        source_path = Path(config_path(f"{task_config_name}.json"))
-        if source_path.is_file():
-            shutil.copy2(source_path, backup_dir / source_path.name)
-
-    state[_NAV_LEGACY_BACKUP_MARKER] = True
-    _write_migration_state(state)
-
-
 def _iter_legacy_config_data(option: ConfigOption):
-    if option.name == BATTLE_CONFIG_NAME:
-        task_config_names = _BATTLE_LEGACY_TASK_CONFIGS
-    elif option.name == NAV_CONFIG_NAME:
-        task_config_names = _NAV_LEGACY_TASK_CONFIGS
-    elif option.name == POSITION_CONFIG_NAME:
-        task_config_names = _POSITION_LEGACY_TASK_CONFIGS
-    else:
-        task_config_names = []
+    task_config_names = _BATTLE_LEGACY_TASK_CONFIGS if option.name == BATTLE_CONFIG_NAME else []
 
     for task_config_name in task_config_names:
         legacy_path = Path(config_path(f"{task_config_name}.json"))
@@ -371,10 +277,6 @@ def _iter_legacy_zip_line_task_data():
 def _collect_legacy_values(option: ConfigOption) -> dict[str, Any]:
     candidates_by_key: dict[str, list[tuple[float, Any]]] = {}
     for data, mtime in _iter_legacy_config_data(option) or []:
-        if option.name == POSITION_CONFIG_NAME:
-            for old_key, new_key in _POSITION_KEY_ALIASES.items():
-                if old_key in data and new_key not in data:
-                    data[new_key] = data[old_key]
         for key, default_value in option.default_config.items():
             if key not in data:
                 continue
@@ -442,26 +344,6 @@ def _migrate_legacy_zip_line_account_overrides() -> None:
         return data
 
     update_overrides(apply)
-
-
-def _migrate_nav_grid_dir_value() -> None:
-    """把存量「网格目录」从旧默认 ``assets/nav`` 改到当前默认。
-
-    **只在存量值仍等于旧默认时才改**：用户自己指定过目录的（自定义路径、网络盘等）
-    一律保留——把用户的选择覆盖成默认值比不改更糟。
-
-    独立于迁移标记执行（与真值 content 的兜底迁移同理）：标记可能早在旧版本就写过了，
-    挂在标记后面会让升级用户永远拿不到这次修正。
-    """
-    config_file = config_path(f"{NAV_CONFIG_NAME}.json")
-    config = read_json_file(config_file)
-    if not isinstance(config, dict):
-        return
-    new_default = DEFAULT_NAV_CONFIG.get(CONFIG_GRID_DIR)
-    if not new_default or config.get(CONFIG_GRID_DIR) != _NAV_LEGACY_GRID_DIR:
-        return
-    config[CONFIG_GRID_DIR] = new_default
-    write_json_file(config_file, config)
 
 
 def _migrate_key_names_in_file(option_name: str, migrations: dict[str, str], defaults: dict[str, Any]) -> None:
@@ -543,8 +425,6 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)
         _migrate_battle_mode_selector_in_file(BATTLE_CONFIG_NAME)
-    elif option.name in {NAV_CONFIG_NAME, POSITION_CONFIG_NAME}:
-        _backup_legacy_nav_task_configs(state)
 
     # Battle Config 键名迁移：幂等执行（旧键值复制到新键，旧键保留），
     # 放在迁移状态标记检查之前，保证已迁移过的安装也能完成本次键名重命名。
@@ -559,40 +439,6 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
         _migrate_legacy_zip_line_account_overrides()
         state[_ZIP_LINE_ACCOUNT_MIGRATION_MARKER] = True
         _write_migration_state(state)
-
-    # Nav Config 的迁移标记可能已经由旧版新配置代码写入；真值 source 的
-    # 兜底迁移必须独立于标记执行，否则升级用户会永久丢失 content/账号。
-    if option.name == NAV_CONFIG_NAME:
-        # 网格目录换过默认值，且旧目录已随本次改动删除：存量值必须跟着改，否则导航起不来
-        _migrate_nav_grid_dir_value()
-        config_file = config_path(f"{option.name}.json")
-        config = read_json_file(config_file)
-        if not isinstance(config, dict):
-            config = {}
-        values = _collect_legacy_values(option)
-        modified = False
-        for key, value in values.items():
-            default_value = option.default_config.get(key)
-            if key not in config or config.get(key) == default_value:
-                config[key] = value
-                modified = True
-        if modified:
-            write_json_file(config_file, config)
-
-    if option.name == POSITION_CONFIG_NAME:
-        config_file = config_path(f"{option.name}.json")
-        config = read_json_file(config_file)
-        if not isinstance(config, dict):
-            config = {}
-        values = _collect_legacy_values(option)
-        modified = False
-        for key, value in values.items():
-            default_value = option.default_config.get(key)
-            if key not in config or config.get(key) == default_value:
-                config[key] = value
-                modified = True
-        if modified:
-            write_json_file(config_file, config)
 
     if option.name in migrated_options:
         return
@@ -660,13 +506,9 @@ def migrate_task_zip_line_values_to_global(task_class_name: str) -> None:
 
 
 def migrate_task_nav_values_to_global(task_class_name: str) -> None:
-    """在任务 Config 构造前转存旧导航配置到全局 Nav Config。
+    """Migrate published item-navigation map credentials into global Nav Config."""
 
-    比例尺和轴映射受分辨率影响，缺少历史分辨率时不能安全映射到某个档位；
-    它们由 :func:`_backup_legacy_nav_task_configs` 原样备份。真值来源、地图选择、
-    网格目录以及规划/执行参数不受历史分辨率影响，可在旧键被框架删除前可靠迁移。
-    """
-    if task_class_name not in _NAV_LEGACY_TASK_CONFIGS:
+    if task_class_name != _ITEM_NAVIGATOR_TASK:
         return
 
     config_file = config_path(f"{task_class_name}.json")
@@ -674,44 +516,32 @@ def migrate_task_nav_values_to_global(task_class_name: str) -> None:
     if not isinstance(data, dict):
         return
 
-    # 先加载全局配置以触发任务配置备份；即使只有分辨率相关的旧标定，
-    # 也必须保留原文件，不能让框架 verify_config 直接删掉。
     nav_config = get_global_config(NAV_CONFIG_NAME)
 
-    candidates = {}
-    aliases = _NAV_TASK_KEY_ALIASES.get(task_class_name, {})
-    for raw_key, key in aliases.items():
-        if raw_key not in data:
-            continue
-        default_value = DEFAULT_NAV_CONFIG.get(key)
-        value = data[raw_key]
-        if not _same_type(value, default_value):
-            continue
-        if isinstance(default_value, str):
-            value = str(value).strip()
-            if value:
-                candidates[key] = value
-        elif value != default_value:
-            candidates[key] = value
+    source = str(data.get(_ITEM_NAVIGATOR_MAP_SOURCE_KEY) or "").strip()
+    content = str(data.get(_ITEM_NAVIGATOR_CONTENT_KEY) or "").strip()
+    account = str(data.get(_ITEM_NAVIGATOR_ACCOUNT_KEY) or "").strip()
 
-    for key in _NAV_TASK_MIGRATION_KEYS:
-        if key not in data:
-            continue
-        default_value = DEFAULT_NAV_CONFIG.get(key)
-        value = data[key]
-        if not _same_type(value, default_value):
-            continue
-        if isinstance(default_value, str):
-            if str(value).strip():
-                candidates[key] = str(value).strip()
-        elif value != default_value:
-            candidates[key] = value
+    # Master treated the selected source as authoritative and ignored stale values
+    # hidden under the other branches. Only migrate the branch that was active.
+    candidates: dict[str, str] = {}
+    if source == _ITEM_NAVIGATOR_MAP_SOURCE_MANUAL:
+        if content:
+            candidates[NAV_CONTENT_KEY] = content
+    elif source == _ITEM_NAVIGATOR_MAP_SOURCE_ACCOUNT:
+        if account:
+            candidates[NAV_WS_ACCOUNT_KEY] = account
+    elif not source:
+        if content:
+            candidates[NAV_CONTENT_KEY] = content
+        if account:
+            candidates[NAV_WS_ACCOUNT_KEY] = account
+
     if not candidates:
         return
 
     for key, value in candidates.items():
-        default_value = DEFAULT_NAV_CONFIG.get(key)
-        if key not in nav_config or nav_config.get(key) == default_value:
+        if key not in nav_config or nav_config.get(key) == DEFAULT_NAV_CONFIG.get(key):
             nav_config[key] = value
 
 

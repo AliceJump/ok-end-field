@@ -8,7 +8,7 @@ from typing import ClassVar
 from ok import TaskDisabledException
 from qfluentwidgets import FluentIcon
 
-from src.core.config_migration import _NO_MIGRATION, rename_choice_value
+from src.core.config_migration import _NO_MIGRATION
 from src.core.paths import config_path
 from src.core.sequence_parser import parse_int_sequence
 from src.data.delivery_area import (
@@ -104,7 +104,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
     }
     config_value_migrations: ClassVar[dict[str, object]] = {
         CFG_RUN_MODE: _legacy_delivery_run_mode,
-        CFG_ARRIVAL_MODE: rename_choice_value("原流程", "仅滑索"),
     }
 
     account_config_blacklist: ClassVar[set[str]] = {

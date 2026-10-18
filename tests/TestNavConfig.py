@@ -6,7 +6,6 @@
 """
 
 import ast
-import json
 import os
 import tempfile
 import unittest
@@ -15,7 +14,7 @@ from typing import ClassVar
 from unittest.mock import patch
 
 from ok.util import config as config_module
-from ok.util.file import read_json_file, write_json_file
+from ok.util.file import write_json_file
 
 from src.core import global_config_store
 from src.core.GridNavConfig import (
@@ -31,8 +30,6 @@ from src.core.GridNavConfig import (
     CONFIG_GRID_SHORTCUT_RADIUS,
     CONFIG_GRID_STUCK_DISTANCE,
     CONFIG_GRID_STUCK_WINDOW,
-    CONFIG_GRID_TIMEOUT,
-    CONFIG_GRID_USE_ZIP_LINES,
     CONFIG_GRID_WALL_PENALTY,
     CONFIG_GRID_WAYPOINT_RADIUS,
     CONFIG_GRID_WAYPOINT_TOLERANCE,
@@ -48,25 +45,16 @@ from src.core.NavConfig import (
     NAV_CONFIG_NAME,
     NAV_CONFIG_TYPE,
     NAV_CONTENT_KEY,
-    NAV_MAP_ID_KEY,
     NAV_MATRIX_SUFFIX,
-    NAV_PLAN_ONLY_KEY,
     NAV_RESOLUTION_TIERS,
     NAV_SCALE_CONSTANT_KEY,
     NAV_SCALE_SUFFIX,
-    NAV_WAIT_POSITION_TIMEOUT_KEY,
     NAV_WS_ACCOUNT_KEY,
     NAV_YAW_PER_PIXEL_KEY,
     nav_profile_for_width,
     tier_for_width,
 )
-from src.core.PositionConfig import (
-    CONFIG_COMMIT_MIN_SHIFT,
-    CONFIG_USE_EXPERIMENTAL,
-    CONFIG_WS_WAIT,
-    DEFAULT_POSITION_CONFIG,
-    POSITION_CONFIG_NAME,
-)
+from src.core.PositionConfig import CONFIG_COMMIT_MIN_SHIFT, DEFAULT_POSITION_CONFIG, POSITION_CONFIG_NAME
 
 
 def _tier_keys() -> list[str]:
@@ -289,8 +277,8 @@ class TestMixinUsesGlobalNavConfig(unittest.TestCase):
         self.assertIsNone(self._task_at(0)._nav_profile())
 
 
-class TestNavConfigMigration(unittest.TestCase):
-    """旧任务配置升级：真值可靠迁移，分辨率相关旧标定完整备份。"""
+class TestPublishedConfigMigration(unittest.TestCase):
+    """Only migrate credentials that the published ItemNavigatorTask produced."""
 
     def _write_configs(self, root: str, files: dict):
         configs_dir = os.path.join(root, "configs")
@@ -298,24 +286,12 @@ class TestNavConfigMigration(unittest.TestCase):
         for name, data in files.items():
             write_json_file(os.path.join(configs_dir, name), data)
 
-    def _patched_store(self, tmp: str):
-        state_path = os.path.join(tmp, "configs", "_global_config_migrations.json")
-        backup_dir = os.path.join(tmp, "configs", "global_config_migration_backup")
+    def _patches(self, tmp: str):
         return (
             patch.object(
                 global_config_store,
                 "config_path",
                 side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
-            ),
-            patch.object(
-                global_config_store,
-                "get_migration_state_path",
-                return_value=state_path,
-            ),
-            patch.object(
-                global_config_store,
-                "get_migration_backup_dir",
-                return_value=backup_dir,
             ),
             patch.object(
                 config_module.Config,
@@ -324,376 +300,105 @@ class TestNavConfigMigration(unittest.TestCase):
             ),
         )
 
-    def test_global_init_migrates_legacy_truth_and_backs_up_calibration(self):
+    def _migrate(self, task_config: dict, nav_config: dict | None = None):
         with tempfile.TemporaryDirectory() as tmp:
             self._write_configs(
                 tmp,
                 {
-                    "MinimapPositionTask.json": {
-                        NAV_CONTENT_KEY: "legacy-content",
-                        NAV_WS_ACCOUNT_KEY: "legacy-account",
-                        "比例尺(米/像素)": 0.6712,
-                        "轴映射(逗号4值)": "0.6712,0,0,-0.6710",
-                    },
+                    "Nav Config.json": dict(DEFAULT_NAV_CONFIG) if nav_config is None else nav_config,
+                    "ItemNavigatorTask.json": task_config,
                 },
             )
             previous = global_config_store._CONFIGS.copy()
             global_config_store._CONFIGS.clear()
             try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
-
-            self.assertEqual(config.get(NAV_CONTENT_KEY), "legacy-content")
-            self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "legacy-account")
-
-            backup = read_json_file(
-                os.path.join(
-                    tmp,
-                    "configs",
-                    "global_config_migration_backup",
-                    "MinimapPositionTask.json",
-                )
-            )
-            self.assertEqual(backup["比例尺(米/像素)"], 0.6712)
-            self.assertEqual(backup["轴映射(逗号4值)"], "0.6712,0,0,-0.6710")
-
-    def test_task_side_fallback_copies_truth_after_global_was_loaded(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
-                    "Nav Config.json": dict(DEFAULT_NAV_CONFIG),
-                    "MinimapPositionTask.json": {
-                        NAV_CONTENT_KEY: "late-content",
-                        NAV_WS_ACCOUNT_KEY: "late-account",
-                    },
-                },
-            )
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
-                    config[NAV_CONTENT_KEY] = ""
-                    config[NAV_WS_ACCOUNT_KEY] = ""
-                    global_config_store.migrate_task_nav_values_to_global("MinimapPositionTask")
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
-
-            self.assertEqual(config.get(NAV_CONTENT_KEY), "late-content")
-            self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "late-account")
-
-    def test_task_side_fallback_backs_up_calibration_without_truth_keys(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
-                    "MinimapPositionTask.json": {
-                        "比例尺(米/像素)": 0.6712,
-                        "轴映射(逗号4值)": "0.6712,0,0,-0.6710",
-                    },
-                },
-            )
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    global_config_store.migrate_task_nav_values_to_global("MinimapPositionTask")
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
-
-            backup = read_json_file(
-                os.path.join(
-                    tmp,
-                    "configs",
-                    "global_config_migration_backup",
-                    "MinimapPositionTask.json",
-                )
-            )
-            self.assertEqual(backup["比例尺(米/像素)"], 0.6712)
-            self.assertEqual(backup["轴映射(逗号4值)"], "0.6712,0,0,-0.6710")
-
-    def test_global_init_migrates_grid_navigation_and_task_controls(self):
-        legacy_values = {
-            NAV_MAP_ID_KEY: "map06",
-            NAV_PLAN_ONLY_KEY: True,
-            NAV_WAIT_POSITION_TIMEOUT_KEY: 45.0,
-            CONFIG_GRID_DIR: "custom/nav",
-            CONFIG_GRID_MAX_EXPAND: 800_000,
-            CONFIG_GRID_USE_ZIP_LINES: False,
-            CONFIG_GRID_TIMEOUT: 900.0,
-        }
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
-                    "Nav Config.json": {},
-                    "MinimapNavigateToPoint.json": legacy_values,
-                },
-            )
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
-
-            for key, value in legacy_values.items():
-                self.assertEqual(config.get(key), value)
-
-    def test_task_side_fallback_copies_grid_options_after_global_was_loaded(self):
-        legacy_values = {
-            CONFIG_GRID_DIR: "late/nav",
-            CONFIG_GRID_MAX_EXPAND: 900_000,
-            CONFIG_GRID_USE_ZIP_LINES: False,
-            NAV_YAW_PER_PIXEL_KEY: 0.091,
-        }
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
-                    "Nav Config.json": dict(DEFAULT_NAV_CONFIG),
-                    "MinimapNavigateToPoint.json": legacy_values,
-                },
-            )
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
-                    for key, _value in legacy_values.items():
-                        config[key] = DEFAULT_NAV_CONFIG[key]
-                    global_config_store.migrate_task_nav_values_to_global("MinimapNavigateToPoint")
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
-
-            for key, value in legacy_values.items():
-                self.assertEqual(config.get(key), value)
-
-    def test_item_navigator_truth_keys_migrate_to_global_nav_config(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
-                    "Nav Config.json": dict(DEFAULT_NAV_CONFIG),
-                    "ItemNavigatorTask.json": {
-                        "content": "item-content",
-                        "地图账号": "item-account",
-                    },
-                },
-            )
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
+                patches = self._patches(tmp)
+                with patches[0], patches[1]:
                     config = global_config_store.get_global_config(NAV_CONFIG_NAME)
                     global_config_store.migrate_task_nav_values_to_global("ItemNavigatorTask")
             finally:
                 global_config_store._CONFIGS.clear()
                 global_config_store._CONFIGS.update(previous)
+            return config
 
-            self.assertEqual(config.get(NAV_CONTENT_KEY), "item-content")
-            self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "item-account")
+    def test_manual_content_wins_over_stale_account(self):
+        config = self._migrate(
+            {
+                "地图数据来源": "手动 content",
+                "content": "item-content",
+                "地图账号": "stale-account",
+            }
+        )
 
-    def test_position_config_migrates_runtime_and_backend_settings(self):
-        legacy_values = {
-            CONFIG_WS_WAIT: 20.0,
-            CONFIG_COMMIT_MIN_SHIFT: 3.0,
-            CONFIG_USE_EXPERIMENTAL: True,
-            "实验技术后端端口": 9876,
-        }
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(tmp, {"MinimapPositionTask.json": legacy_values})
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
+        self.assertEqual(config.get(NAV_CONTENT_KEY), "item-content")
+        self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "")
 
-            for key, value in legacy_values.items():
-                self.assertEqual(config.get(key), value)
+    def test_account_source_wins_over_stale_content(self):
+        config = self._migrate(
+            {
+                "地图数据来源": "账号配置",
+                "content": "stale-content",
+                "地图账号": "item-account",
+            }
+        )
 
-    def test_existing_position_config_values_win_over_legacy_task_values(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
-                    "MinimapNavigateToPoint.json": {"位移提交阈值(像素)": 9.0},
-                    "Position Config.json": {CONFIG_COMMIT_MIN_SHIFT: 4.0},
-                },
-            )
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
+        self.assertEqual(config.get(NAV_CONTENT_KEY), "")
+        self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "item-account")
 
-            self.assertEqual(config.get(CONFIG_COMMIT_MIN_SHIFT), 4.0)
+    def test_auto_source_does_not_import_hidden_values(self):
+        config = self._migrate(
+            {
+                "地图数据来源": "自动当前账号",
+                "content": "stale-content",
+                "地图账号": "stale-account",
+            }
+        )
 
-    def test_position_config_ignores_unrelated_task_files(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
-                    "DeliveryTask.json": {"位移提交阈值(像素)": 9.0},
-                },
-            )
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
+        self.assertEqual(config.get(NAV_CONTENT_KEY), "")
+        self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "")
 
-            self.assertEqual(config.get(CONFIG_COMMIT_MIN_SHIFT), DEFAULT_POSITION_CONFIG[CONFIG_COMMIT_MIN_SHIFT])
+    def test_existing_global_value_wins(self):
+        config = self._migrate(
+            {"地图数据来源": "手动 content", "content": "new-content"},
+            nav_config={NAV_CONTENT_KEY: "existing-content"},
+        )
 
-    def test_whitelist_covers_the_minimap_debug_tasks(self):
-        """白名单是"小地图调试任务族（减所有者）"：只靠考古出的三个名字会漏掉来源。"""
-        from src.core.global_config_store import MINIMAP_LEGACY_SOURCE_TASKS
+        self.assertEqual(config.get(NAV_CONTENT_KEY), "existing-content")
 
-        expected = {
-            "MinimapNavigateToPoint",
-            "MinimapPositionRecorder",
-            "MinimapRealtimePosition",
-            "MinimapRegionCheck",
-            "MinimapScaleCapture",
-            "MinimapTurnToHeading",
-            # 改名前（MinimapScaleCapture 之前）的旧类名：旧安装的配置文件仍以此为名。
-            "MinimapDisplacementCalibration",
-        }
-        self.assertEqual(set(MINIMAP_LEGACY_SOURCE_TASKS), expected)
-        self.assertNotIn("MinimapPositionTask", MINIMAP_LEGACY_SOURCE_TASKS)
-
-    def test_whitelist_excludes_unrelated_tasks(self):
-        """送货 / 战斗 / 日常这些任务从未有过定位键，也不能来抢所有者那一个槽位。"""
-        from src.core.global_config_store import MINIMAP_LEGACY_SOURCE_TASKS
-
-        for name in ("DeliveryTask", "DailyDeliveryTask", "BattleTask", "DailyTask", "ItemNavigatorTask"):
-            self.assertNotIn(name, MINIMAP_LEGACY_SOURCE_TASKS)
-
-    def test_position_config_migrates_renamed_visual_anchor_keys(self):
+    def test_intermediate_navigation_task_is_ignored(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._write_configs(
                 tmp,
                 {
                     "MinimapPositionTask.json": {
-                        "在线位姿图": False,
-                        "在线位姿图窗口(拍)": 42,
+                        "真值content": "intermediate-content",
+                        "网格目录": "assets/nav",
                     },
-                },
-            )
-            previous = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous)
-
-            self.assertFalse(config.get("关键帧视觉锚定链校正"))
-            self.assertEqual(config.get("关键帧视觉锚定链校正窗口(拍)"), 42)
-
-    def test_position_config_accepts_known_debug_task_sources(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            self._write_configs(
-                tmp,
-                {
                     "MinimapNavigateToPoint.json": {
-                        "航点校准最小距离(米)": 55.0,
+                        "网格目录": "late/nav",
+                        "使用滑索路径": False,
                     },
                 },
             )
             previous = global_config_store._CONFIGS.copy()
             global_config_store._CONFIGS.clear()
             try:
-                patches = self._patched_store(tmp)
-                with patches[0], patches[1], patches[2], patches[3]:
-                    config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
+                patches = self._patches(tmp)
+                with patches[0], patches[1]:
+                    nav_config = global_config_store.get_global_config(NAV_CONFIG_NAME)
+                    position_config = global_config_store.get_global_config(POSITION_CONFIG_NAME)
+                    global_config_store.migrate_task_nav_values_to_global("MinimapPositionTask")
+                    global_config_store.migrate_task_nav_values_to_global("MinimapNavigateToPoint")
             finally:
                 global_config_store._CONFIGS.clear()
                 global_config_store._CONFIGS.update(previous)
 
-            self.assertEqual(config.get("航点校准最小距离(米)"), 55.0)
-
-
-class TestGridDirValueMigration(unittest.TestCase):
-    """「网格目录」的存量值迁移：旧默认要改到新默认，用户自定义必须保留。
-
-    背景：网格数据源从主仓自带的 ``assets/nav``（三张单层网格，已删除）换成
-    nav-grid-editor 的产出 ``assets/nav-grid-data``（子模块）。存量配置里若还写着旧默认，
-    导航会直接报"网格目录不存在"——所以这次改默认值必须带上值迁移，且同一次提交发布。
-    """
-
-    def _run(self, stored):
-        with tempfile.TemporaryDirectory() as tmp:
-            configs = Path(tmp) / "configs"
-            configs.mkdir(parents=True)
-            (configs / "Nav Config.json").write_text(
-                json.dumps({CONFIG_GRID_DIR: stored}, ensure_ascii=False), encoding="utf-8"
+            self.assertEqual(nav_config.get(NAV_CONTENT_KEY), "")
+            self.assertEqual(nav_config.get(CONFIG_GRID_DIR), DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR])
+            self.assertEqual(
+                position_config.get(CONFIG_COMMIT_MIN_SHIFT),
+                DEFAULT_POSITION_CONFIG[CONFIG_COMMIT_MIN_SHIFT],
             )
-            with patch.object(global_config_store, "config_path", side_effect=lambda *parts: str(configs / parts[-1])):
-                global_config_store._migrate_nav_grid_dir_value()
-            return json.loads((configs / "Nav Config.json").read_text(encoding="utf-8"))[CONFIG_GRID_DIR]
-
-    def test_old_default_is_migrated_to_the_new_one(self):
-        self.assertEqual(self._run("assets/nav"), DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR])
-
-    def test_current_value_is_left_alone(self):
-        self.assertEqual(self._run("assets/nav-grid-data"), "assets/nav-grid-data")
-
-    def test_custom_directory_is_never_overwritten(self):
-        """用户自己指定的目录一律保留——覆盖用户的选择比不改更糟。"""
-        self.assertEqual(self._run("D:/my/grids"), "D:/my/grids")
-        self.assertEqual(self._run(""), "")
-
-    def test_missing_config_file_is_a_noop(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            configs = Path(tmp) / "configs"
-            configs.mkdir(parents=True)
-            with patch.object(global_config_store, "config_path", side_effect=lambda *parts: str(configs / parts[-1])):
-                global_config_store._migrate_nav_grid_dir_value()  # 不该抛错
-            self.assertFalse((configs / "Nav Config.json").exists())
-
-    def test_migration_is_idempotent(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            configs = Path(tmp) / "configs"
-            configs.mkdir(parents=True)
-            (configs / "Nav Config.json").write_text(
-                json.dumps({CONFIG_GRID_DIR: "assets/nav"}, ensure_ascii=False), encoding="utf-8"
-            )
-            with patch.object(global_config_store, "config_path", side_effect=lambda *parts: str(configs / parts[-1])):
-                global_config_store._migrate_nav_grid_dir_value()
-                first = (configs / "Nav Config.json").read_text(encoding="utf-8")
-                global_config_store._migrate_nav_grid_dir_value()
-                second = (configs / "Nav Config.json").read_text(encoding="utf-8")
-            self.assertEqual(first, second)
 
 
 class TestFollowerDefaultsMatchGlobalConfig(unittest.TestCase):

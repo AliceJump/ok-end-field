@@ -185,7 +185,6 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestMinimapSampleStitch.py",
             "TestMinimapScaleCapture.py",
             "TestMinimapVisualAnchorChain.py",
-            "TestMinimapVisualAnchorChainConfig.py",
         ),
     ),
     "vision-models": (

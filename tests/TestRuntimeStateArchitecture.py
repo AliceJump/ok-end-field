@@ -9,6 +9,7 @@ from unittest import mock
 from ok import TriggerTask
 
 from src.config import config as app_config
+from src.core.BaseEfTask import BaseEfTask
 from src.localization.position_service import (
     WorldPoseService,
     get_world_pose_service,
@@ -73,6 +74,26 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
         shutdown_world_pose_service(executor)
         self.assertTrue(first.destroyed)
         self.assertIsNone(getattr(executor, "_world_pose_service", None))
+
+    def test_world_position_service_uses_translation_capable_app(self):
+        created = []
+
+        class _Service:
+            def __init__(self, **kwargs):
+                created.append(kwargs)
+
+            def after_init(self, **_kwargs):
+                pass
+
+        translation_app = SimpleNamespace(tr=lambda text: text)
+        executor = SimpleNamespace(scene=None)
+        with (
+            mock.patch("src.localization.position_service.WorldPoseService", _Service),
+            mock.patch("ok.og", SimpleNamespace(app=translation_app)),
+        ):
+            get_world_pose_service(executor)
+
+        self.assertIs(created[0]["app"], translation_app)
 
     def test_navigation_mixins_live_in_the_navigation_domain_package(self):
         root = Path(__file__).parents[1] / "src" / "tasks"
@@ -139,6 +160,26 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
         task.config = {POSITION_IMPLEMENTATION_KEY: POSITION_IMPLEMENTATION_UNIFIED}
         task.world_pose = lambda **_kwargs: {"map_id": "unified", "x": 1.0, "y": 2.0, "z": 3.0}
         self.assertEqual(task._read_navigation_position()[0][0], "unified")
+
+    def test_item_navigator_migrates_published_config_before_base_load(self):
+        task = object.__new__(ItemNavigatorTask)
+        calls = []
+
+        with (
+            mock.patch(
+                "src.tasks.trigger.ItemNavigatorTask.migrate_task_nav_values_to_global",
+                side_effect=lambda class_name: calls.append(("migration", class_name)),
+            ),
+            mock.patch.object(
+                BaseEfTask,
+                "load_config",
+                autospec=True,
+                side_effect=lambda _task: calls.append(("base", None)),
+            ),
+        ):
+            ItemNavigatorTask.load_config(task)
+
+        self.assertEqual(calls, [("migration", "ItemNavigatorTask"), ("base", None)])
 
 
 if __name__ == "__main__":

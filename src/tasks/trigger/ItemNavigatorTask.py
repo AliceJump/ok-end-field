@@ -13,6 +13,7 @@ from ok import Logger, TriggerTask
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
+from src.core.global_config_store import migrate_task_nav_values_to_global
 from src.core.paths import config_folder
 from src.data import item_map_query, map_mark_query, user_map_mark_store
 from src.icons import Icons
@@ -61,6 +62,12 @@ class ItemNavigatorTask(
     - `default_config` 只放面向用户的配置（见初始化），不把内部服务端口等放在 default_config
     - 轮询使用固定内部 WS 端点（可在部署时改代码），物品选择从任务配置读取
     """
+
+    def load_config(self):
+        # Preserve the published task's map credentials before the framework removes
+        # keys that are no longer declared in default_config.
+        migrate_task_nav_values_to_global(self.__class__.__name__)
+        super().load_config()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

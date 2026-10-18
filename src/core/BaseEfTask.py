@@ -19,20 +19,14 @@ from src.core.base_mixin.process_manager import ProcessManager
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.base_mixin.topmost_mixin import TopmostMixin
 from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
-from src.core.config_migration import (
-    migrate_account_task_config_keys,
-    migrate_config_file_keys,
-    migrate_config_values,
-)
+from src.core.config_migration import migrate_config_file_keys, migrate_config_values
 from src.core.game_window import find_game_hwnd
 from src.core.global_config_store import (
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
     KEY_CONFIG_NAME,
-    POSITION_CONFIG_NAME,
     get_global_config,
     migrate_account_battle_mode_selectors,
     migrate_task_battle_mode_selector,
-    migrate_task_nav_values_to_global,
     migrate_task_zip_line_values_to_global,
 )
 from src.data.lang import get_lang_accessor
@@ -292,16 +286,11 @@ class BaseEfTask(
             if vtable:
                 value_migrations.update(vtable)
         migrate_config_file_keys(self.__class__.__name__, key_migrations)
-        migrate_account_task_config_keys(self.__class__.__name__, key_migrations)
         migrate_config_values(self.__class__.__name__, value_migrations)
         # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的旧键）之前，
-        # 把战斗模式、共享小地图参数、导航真值与滑索旧值转存到对应所有者，避免数据被提前删除。
+        # 把战斗模式与滑索旧值转存到对应所有者，避免数据被提前删除。
         migrate_task_battle_mode_selector(self.__class__.__name__)
         migrate_account_battle_mode_selectors()
-        # Position settings are application-level now. Load their migration before
-        # legacy task configs are pruned by the framework.
-        get_global_config(POSITION_CONFIG_NAME)
-        migrate_task_nav_values_to_global(self.__class__.__name__)
         migrate_task_zip_line_values_to_global(self.__class__.__name__)
         super().load_config()
 
