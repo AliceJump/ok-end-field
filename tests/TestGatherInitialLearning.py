@@ -38,6 +38,8 @@ class TestGatherInitialLearning(unittest.TestCase):
         task._read_zip_line_settled_arrow_angle = Mock(return_value=(90, 0.9))
         task._ZIP_LINE_ARROW_MIN_SCORE = 0.6
         task._click_track_and_transfer = lambda: BattleTask._click_track_and_transfer(task)
+        task._transfer_to_gather_stage = lambda: BattleTask._transfer_to_gather_stage(task)
+        task._prepare_gather_navigation = lambda *a, **k: BattleTask._prepare_gather_navigation(task, *a, **k)
         task._navigate_via_zip_line = lambda **kwargs: BattleTask._navigate_via_zip_line(task, **kwargs)
         task.navigate_to_gather = lambda: BattleTask.navigate_to_gather(task)
         task.get_zip_line_config_value = Mock(return_value="")

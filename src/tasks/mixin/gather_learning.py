@@ -1,9 +1,12 @@
-"""Private, single-transfer identities for pre-battle gather initial alignment."""
+"""Private, single-transfer identities for gather initial alignment."""
 
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 
+from ok import TaskDisabledException
+
 from src.core.learning.models import CaptureProfile, ContextConfidence, WorkflowContext, yaw_bucket
-from src.core.learning.policy import learning_allowed, learning_epoch
+from src.core.learning.policy import learning_after_verified_transfer, learning_allowed, learning_epoch
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 
 
@@ -18,9 +21,9 @@ class GatherEntry:
     scroll: bool
 
 
-def gather_entry_after_transfer(task, transferred):
-    """Confirm the index -> selected gather stage -> fast-transfer entry."""
-    if not learning_allowed() or transferred is not True:
+def _confirmed_transfer_entry(task, transferred):
+    """Observe only the physical entry; callers decide whether learning is allowed."""
+    if transferred is not True:
         return None
     stage = task.battle_ctx.stage_name
     if stage not in stages_dict[STAGE_CATEGORY_ENERGY_POOLING]:
@@ -28,14 +31,50 @@ def gather_entry_after_transfer(task, transferred):
     # The caller has already completed ensure_main(). Stability is evidence about
     # the loaded entry, not a requirement that the gather target be detectable.
     epoch = learning_epoch()
+    profile = (task.width, task.height, bool(task.zip_line_scroll_enabled()))
     if not task.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1):
         task.log_info(f"[gather-learning] stage={stage} entry=after_transfer unstable; visual only")
         return None
-    if not learning_allowed() or epoch != learning_epoch():
+    if (
+        epoch != learning_epoch()
+        or stage != task.battle_ctx.stage_name
+        or profile != (task.width, task.height, bool(task.zip_line_scroll_enabled()))
+    ):
         return None
-    entry = GatherEntry(stage, learning_epoch(), task.width, task.height, bool(task.zip_line_scroll_enabled()))
-    task.log_info(f"[gather-learning] stage={stage} entry=after_transfer confirmed=True")
+    return GatherEntry(stage, epoch, *profile)
+
+
+def gather_entry_after_transfer(task, transferred):
+    """Confirm the index -> selected gather stage -> fast-transfer entry."""
+    if not learning_allowed():
+        return None
+    entry = _confirmed_transfer_entry(task, transferred)
+    if entry is None or not learning_allowed():
+        return None
+    task.log_info(f"[gather-learning] stage={entry.stage} entry=after_transfer confirmed=True")
     return entry
+
+
+@contextmanager
+def gather_retransfer_learning(task, transferred):
+    """Rebuild the same entry after a real stable transfer, not merely F8 tracking."""
+    try:
+        entry = _confirmed_transfer_entry(task, transferred)
+    except TaskDisabledException:
+        raise
+    except Exception as error:
+        task.log_info(f"[gather-learning] retransfer unconfirmed; visual only: {error}")
+        entry = None
+    if entry is None:
+        yield None
+        return
+    with learning_after_verified_transfer(verified=True) as restored:
+        if not restored:
+            yield None
+            return
+        entry = replace(entry, epoch=learning_epoch())
+        task.log_info(f"[gather-learning] stage={entry.stage} retransfer_learning=True")
+        yield entry
 
 
 def gather_initial_context(task, entry, *, distances=()):
