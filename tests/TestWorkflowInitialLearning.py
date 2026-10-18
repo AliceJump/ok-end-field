@@ -137,6 +137,15 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         self.assertEqual(self.store.get(context.fingerprint).failure_count, 0)
         self.assertTrue(entry.consumed)
 
+    def test_entry_stability_error_falls_back_and_stop_is_never_swallowed(self):
+        task = self.task()
+        task.wait_ui_stable.side_effect = OSError("frame")
+        self.assertIsNone(self.trade_entry(task))
+        task.wait_ui_stable.side_effect = TaskDisabledException()
+        with self.assertRaises(TaskDisabledException):
+            self.trade_entry(task)
+        self.assertEqual(self.store.snapshot(), {})
+
     def test_arbitrary_friend_boat_call_and_failed_confirmation_never_look_up_history(self):
         task = self.task()
         entry = self.trade_entry(task)
@@ -230,6 +239,39 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                                 "map", fL.market_dispatch_terminal_out, learning_entry=entry
                             )
                         )
+                task.active_and_send_mouse_delta.assert_not_called()
+                self.assertEqual(self.store.get(entry.context.fingerprint), before)
+
+    def test_learning_world_confirmation_errors_fall_back_but_main_stop_propagates(self):
+        for operation, error in (
+            ("ensure_main", RuntimeError("not main")),
+            ("wait_ui_stable", OSError("frame")),
+            ("ensure_main", TaskDisabledException()),
+        ):
+            with self.subTest(operation=operation, error=type(error).__name__):
+                task = self.task()
+                entry = self.trade_entry(task)
+                self.fixtures.seed(entry.context, dx=100, dy=0)
+                before = self.store.get(entry.context.fingerprint)
+                getattr(task, operation).side_effect = error
+                with patch(
+                    "src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")
+                ):
+                    if isinstance(error, TaskDisabledException):
+                        with self.assertRaises(TaskDisabledException):
+                            task.start_tracking_and_align_target(
+                                "map", fL.market_dispatch_terminal_out, learning_entry=entry
+                            )
+                    else:
+                        self.assertTrue(
+                            task.start_tracking_and_align_target(
+                                "map", fL.market_dispatch_terminal_out, learning_entry=entry
+                            )
+                        )
+                if operation == "ensure_main":
+                    # Only the pre-map entry check ran; failed world confirmation
+                    # must not start a second stability wait or touch experience.
+                    self.assertEqual(task.wait_ui_stable.call_count, 1)
                 task.active_and_send_mouse_delta.assert_not_called()
                 self.assertEqual(self.store.get(entry.context.fingerprint), before)
 

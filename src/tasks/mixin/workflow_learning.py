@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass, replace
 
+from ok import TaskDisabledException
+
 from src.core.learning.models import CaptureProfile, ContextConfidence, WorkflowContext
 from src.core.learning.policy import learning_allowed, learning_epoch
 
@@ -21,7 +23,14 @@ def confirmed_workflow_entry(task, *, epoch, context, confidence=ContextConfiden
     """Require fresh stable frames after the caller's successful entry transition."""
     if not learning_allowed() or epoch != learning_epoch():
         return None
-    if not task.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1):
+    try:
+        stable = task.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1)
+    except TaskDisabledException:
+        raise
+    except Exception as error:
+        task.log_info(f"[workflow-learning] entry unconfirmed; visual only: {error}")
+        return None
+    if not stable:
         return None
     if not learning_allowed() or epoch != learning_epoch():
         return None
@@ -43,6 +52,23 @@ def take_workflow_context(task, entry, target_id):
     ):
         return None, ContextConfidence.INVALID
     return context, entry.confidence
+
+
+def confirm_tracking_context(task, context, entry):
+    """Failed learning-only world confirmation must retain the original visual path."""
+    if context is None:
+        return None
+    try:
+        task.ensure_main()
+        stable = task.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1)
+    except TaskDisabledException:
+        raise
+    except Exception as error:
+        task.log_info(f"[workflow-learning] tracking entry unconfirmed; visual only: {error}")
+        return None
+    if not stable or entry.epoch != learning_epoch() or not learning_allowed():
+        return None
+    return context
 
 
 def _context(task, workflow, phase, area, location, entry, origin, target, *, axes="x"):

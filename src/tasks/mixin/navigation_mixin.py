@@ -3,13 +3,12 @@ from copy import copy
 
 import pyautogui
 
-from src.core.learning.policy import learning_epoch
 from src.data.FeatureList import FeatureList as fL
 from src.interaction.target_movement import ellipse_geometry, hud_direction_step, resolve_move_profile
 from src.tasks.mixin.navigation_detection_scope import get_navigation_detection_scope
 from src.tasks.mixin.navigation_learning import initial_alignment
 from src.tasks.mixin.search_mixin import SearchMixin
-from src.tasks.mixin.workflow_learning import take_workflow_context
+from src.tasks.mixin.workflow_learning import confirm_tracking_context, take_workflow_context
 
 TOLERANCE = 50
 
@@ -38,12 +37,7 @@ class NavigationMixin(SearchMixin):
 
         self.press_key("m")
         self.log_info("关闭地图界面 (按下 M)")
-        if context is not None:
-            self.ensure_main()
-            if not self.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1):
-                context = None
-        if context is not None and learning_entry.epoch != learning_epoch():
-            context = None
+        context = confirm_tracking_context(self, context, learning_entry)
         with initial_alignment(self, context, confidence=confidence) as learning:
             if learning is not None:
                 learning.replay()
