@@ -3,13 +3,59 @@
 from __future__ import annotations
 
 import math
+import os
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
-from src.gui.NailongWidget import EYES, MAX_PUPIL_TRAVEL, eye_offset, task_is_running
+# The GUI test must work without a Windows display session.
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+from PySide6.QtCore import Qt  # noqa: E402
+from PySide6.QtWidgets import QApplication, QStackedWidget, QWidget  # noqa: E402
+
+from src.gui.NailongWidget import EYES, MAX_PUPIL_TRAVEL, NailongBackdrop, eye_offset, task_is_running  # noqa: E402
+from src.themes.theme_pack import read_theme_pack  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class TestNailongWidget(unittest.TestCase):
+    def test_wallpaper_persists_when_navigation_changes_and_resizes(self):
+        """Keep the real face alive and input-transparent across page switches."""
+        app = QApplication.instance() or QApplication([])
+        window = QWidget()
+        window.resize(900, 600)
+        pages = QStackedWidget(window)
+        pages.setGeometry(window.rect())
+        pages.addWidget(QWidget())
+        pages.addWidget(QWidget())
+        face = NailongBackdrop(window)
+        pack = read_theme_pack(ROOT / "theme-packs" / "nailong" / "nailong.okef-theme.zip")
+        try:
+            window.show()
+            face.set_theme(pack)
+            app.processEvents()
+            self.assertFalse(face._background.isNull(), "Qt must decode the bundled WebP face")
+            self.assertTrue(face.isVisible())
+            self.assertTrue(face.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents))
+            self.assertEqual(face.geometry(), window.rect())
+
+            pages.setCurrentIndex(1)
+            app.processEvents()
+            self.assertTrue(face.isVisible(), "Switching to another tab must not hide the face")
+            self.assertTrue(face._eye_timer.isActive())
+
+            window.resize(1100, 740)
+            app.processEvents()
+            self.assertEqual(face.geometry(), window.rect())
+
+            face.set_theme(None)
+            self.assertFalse(face.isVisible())
+            self.assertFalse(face._eye_timer.isActive())
+        finally:
+            window.close()
+
     def test_stationary_cursor_returns_centered_pupil(self):
         """Avoid drift when the pointer lies at the center of an iris."""
         for eye in EYES:
