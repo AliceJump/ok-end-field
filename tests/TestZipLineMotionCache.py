@@ -1,7 +1,6 @@
 import json
 import tempfile
 import unittest
-from contextlib import suppress
 from itertools import chain, cycle
 from pathlib import Path
 from types import SimpleNamespace
@@ -362,102 +361,6 @@ class TestZipLineMotionCache(unittest.TestCase):
         stub._align_and_activate_zip_line = lambda *a, **k: ZipLineMixin._align_and_activate_zip_line(stub, *a, **k)
         return stub
 
-    def test_borrow_nearest_history_then_learn_original_yaw_and_hit_it_next_time(self):
-        with (
-            tempfile.TemporaryDirectory() as directory,
-            patch("src.tasks.mixin.zip_line_motion_cache._DEFAULT_CACHE_PATH", Path(directory) / "motion.json"),
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
-            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True),
-        ):
-            route = build_zip_line_route_fingerprint("route", [108])
-            key90 = build_zip_line_motion_route_fingerprint(route, 1920, 1080, 90)
-            key30 = build_zip_line_motion_route_fingerprint(route, 1920, 1080, 30)
-            record_zip_line_segment_motion(key90, 0, -400, 100)
-            stub = self._route_stub([(30.0, 0.9), (60.0, 0.9), (90.0, 0.9), (30.0, 0.9)])
-            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-            self.assertEqual(load_zip_line_segment_motion(key30, 0), (-1082, 120, 1))
-            self.assertEqual(load_zip_line_segment_motion(key90, 0), (-400, 100, 1))
-            stub._normalize_zip_line_segment_yaw.assert_called_once_with(90.0, initial_reading=(30.0, 0.9))
-            stub._normalize_zip_line_segment_yaw.reset_mock()
-            stub._align_zip_line_distance.reset_mock()
-            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-            stub._normalize_zip_line_segment_yaw.assert_not_called()
-            self.assertEqual(stub._align_zip_line_distance.call_args.kwargs["initial_move"], (-1082, 120))
-            self.assertEqual(load_zip_line_segment_motion(key30, 0), (-1062, 130, 2))
-
-    def test_empty_history_uses_visual_alignment_and_gate_retries_are_in_the_total(self):
-        with (
-            tempfile.TemporaryDirectory() as directory,
-            patch("src.tasks.mixin.zip_line_motion_cache._DEFAULT_CACHE_PATH", Path(directory) / "motion.json"),
-        ):
-            stub = self._route_stub([(150.0, 0.9)])
-            stub._try_click_on_zip_line.side_effect = [(False, "gate"), (True, None)]
-            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-            key = build_zip_line_motion_route_fingerprint(
-                build_zip_line_route_fingerprint("route", [108]), 1920, 1080, 150
-            )
-            self.assertEqual(load_zip_line_segment_motion(key, 0), (80, 40, 1))
-            stub._normalize_zip_line_segment_yaw.assert_not_called()
-            self.assertIsNone(stub._align_zip_line_distance.call_args_list[0].kwargs["initial_move"])
-            self.assertNotIn("initial_move", stub._align_zip_line_distance.call_args_list[1].kwargs)
-
-    def test_failed_nearest_yaw_verification_uses_visual_and_learns_net_motion(self):
-        with (
-            tempfile.TemporaryDirectory() as directory,
-            patch("src.tasks.mixin.zip_line_motion_cache._DEFAULT_CACHE_PATH", Path(directory) / "motion.json"),
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
-        ):
-            route = build_zip_line_route_fingerprint("route", [108])
-            record_zip_line_segment_motion(build_zip_line_motion_route_fingerprint(route, 1920, 1080, 90), 0, -400, 100)
-            stub = self._route_stub([(30.0, 0.9), (30.0, 0.9)])
-            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-            self.assertIsNone(stub._align_zip_line_distance.call_args.kwargs["initial_move"])
-            key30 = build_zip_line_motion_route_fingerprint(route, 1920, 1080, 30)
-            self.assertEqual(load_zip_line_segment_motion(key30, 0), (40, 20, 1))
-
-    def test_unreliable_initial_yaw_and_failed_segment_do_not_learn(self):
-        with (
-            tempfile.TemporaryDirectory() as directory,
-            patch("src.tasks.mixin.zip_line_motion_cache._DEFAULT_CACHE_PATH", Path(directory) / "motion.json"),
-            patch("src.tasks.mixin.zip_line_mixin.record_zip_line_segment_motion") as record,
-        ):
-            stub = self._route_stub([(30.0, 0.4)])
-            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-            record.assert_not_called()
-            stub = self._route_stub([(30.0, 0.9)])
-            stub._align_zip_line_distance.side_effect = RuntimeError("alignment failed")
-            with self.assertRaises(RuntimeError):
-                ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-            record.assert_not_called()
-
-    def test_nearest_replay_uses_confirmed_yaw_not_requested_yaw(self):
-        with (
-            tempfile.TemporaryDirectory() as directory,
-            patch("src.tasks.mixin.zip_line_motion_cache._DEFAULT_CACHE_PATH", Path(directory) / "motion.json"),
-        ):
-            route = build_zip_line_route_fingerprint("route", [108])
-            record_zip_line_segment_motion(build_zip_line_motion_route_fingerprint(route, 1920, 1080, 90), 0, -400, 100)
-            stub = self._route_stub([(30.0, 0.9)])
-            stub._normalize_zip_line_segment_yaw = Mock(return_value=(95.0, True))
-            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-            self.assertIsNone(stub._align_zip_line_distance.call_args.kwargs["initial_move"])
-
-    def test_partial_input_exception_prevents_learning_even_if_visual_recovery_succeeds(self):
-        stub = self._route_stub([(30.0, 0.9)])
-        stub.active_and_send_mouse_delta.side_effect = [OSError("partial input"), True]
-
-        def recovered_alignment(*args, **kwargs):
-            with suppress(OSError):
-                stub.active_and_send_mouse_delta(160, 80)
-            stub.active_and_send_mouse_delta(40, 20)
-
-        stub._align_and_activate_zip_line = recovered_alignment
-        with (
-            patch("src.tasks.mixin.zip_line_mixin.load_zip_line_segment_motion", return_value=(160, 80, 1)),
-            patch("src.tasks.mixin.zip_line_mixin.record_zip_line_segment_motion") as record,
-        ):
-            ZipLineMixin.zip_line_list_go(stub, [108], config_key="route", stay_on_zip_line=True)
-        record.assert_not_called()
 
 
 if __name__ == "__main__":

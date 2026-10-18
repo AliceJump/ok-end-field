@@ -153,6 +153,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestNavigationMixin.py",
             "TestLearningCore.py",
             "TestLearningSession.py",
+            "TestInitialAlignmentLearning.py",
             "TestRouteLearning.py",
             "TestRouteMigration.py",
             "TestNavigationMovement.py",
