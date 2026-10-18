@@ -364,9 +364,39 @@ class TestOfficialLauncher(unittest.TestCase):
             patch.object(official_launcher, "_kernel32", return_value=kernel),
             patch.object(official_launcher, "prepare_launcher", return_value=321),
             patch.object(official_launcher, "create_process", return_value=456) as create,
+            patch.object(official_launcher, "LauncherCleanup", side_effect=OSError("unavailable")),
         ):
             self.assertTrue(official_launcher.launch_game(game_path, "-force-d3d11", Mock()))
         create.assert_called_once_with(kernel, game_path, "-force-d3d11", 321)
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_launch_game_transfers_parent_handle_to_cleanup_after_creation(self):
+        kernel = Mock()
+        logger = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+        ):
+            self.assertTrue(official_launcher.launch_game(GAME_PATH, "", logger))
+        cleanup.assert_called_once_with(kernel, 321, logger)
+        cleanup.return_value.start.assert_called_once_with(456)
+        create.assert_called_once_with(kernel, GAME_PATH, "", 321)
+        kernel.CloseHandle.assert_not_called()
+
+    def test_cleanup_start_failure_preserves_launch_and_releases_handle(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_process", return_value=456),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+        ):
+            cleanup.return_value.start.side_effect = RuntimeError("thread unavailable")
+            self.assertTrue(official_launcher.launch_game(GAME_PATH, "", Mock()))
         kernel.CloseHandle.assert_called_once_with(321)
 
     def test_running_game_skips_launcher(self):
@@ -396,10 +426,12 @@ class TestOfficialLauncher(unittest.TestCase):
             patch.object(official_launcher, "_kernel32", return_value=kernel),
             patch.object(official_launcher, "prepare_launcher", return_value=321),
             patch.object(official_launcher, "create_process", side_effect=OSError("denied")),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
             self.assertRaises(OSError),
         ):
             official_launcher.launch_game("unused", "", Mock())
         kernel.CloseHandle.assert_called_once_with(321)
+        cleanup.return_value.start.assert_not_called()
 
     def test_signature_requires_valid_official_signer(self):
         signer = next(iter(official_launcher.OFFICIAL_SIGNERS))

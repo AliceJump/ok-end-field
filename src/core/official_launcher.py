@@ -17,6 +17,7 @@ from pathlib import Path
 import psutil
 from ok.util.file import ensure_dir_for_file, read_json_file, write_json_file
 
+from src.core.launcher_cleanup import LauncherCleanup
 from src.core.paths import config_path
 
 OFFICIAL_SIGNERS = {
@@ -203,6 +204,8 @@ def _kernel32():
     signatures = {
         "OpenProcess": ([wintypes.DWORD, wintypes.BOOL, wintypes.DWORD], wintypes.HANDLE),
         "CloseHandle": ([wintypes.HANDLE], wintypes.BOOL),
+        "GetProcessId": ([wintypes.HANDLE], wintypes.DWORD),
+        "GetExitCodeProcess": ([wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)], wintypes.BOOL),
         "QueryFullProcessImageNameW": (
             [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD)],
             wintypes.BOOL,
@@ -360,8 +363,20 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
         # The user may have started the game while the launcher was opening.
         if running_pids("Endfield.exe"):
             return True
+        cleanup = None
+        try:
+            cleanup = LauncherCleanup(kernel, parent, logger)
+        except Exception as error:
+            logger.warning(f"Cannot monitor game startup logs; launcher will stay open: {error}")
         pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
         logger.info(f"Created Endfield with official launcher parent: pid={pid}")
+        if cleanup is not None:
+            try:
+                cleanup.start(pid)
+                parent = None  # The bounded watcher now owns this handle.
+            except Exception as error:
+                logger.warning(f"Cannot start launcher cleanup; launcher will stay open: {error}")
         return True
     finally:
-        kernel.CloseHandle(parent)
+        if parent:
+            kernel.CloseHandle(parent)

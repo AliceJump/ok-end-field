@@ -191,6 +191,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
     "runtime-platform": (
         "Runtime and platform patches",
         (
+            "TestLauncherCleanup.py",
             "TestInstructionsMixin.py",
             "TestLogZipDedup.py",
             "TestNoFrameTaskPatch.py",
