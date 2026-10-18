@@ -20,7 +20,7 @@ YOLO 始终使用普通对中，角色名字 OCR 显式使用世界投影。`nav
 `src/core/learning/` 不依赖 Task、Qt 或识别器。`WorkflowContext` 使用流程、阶段、大区/
 小区、入口锚点、canonical target ID、入站路线、捕获/相机 profile 和可选起始 yaw 建立
 版本化身份。`RouteContext` 同时提供完整 private key 与包含当前段目标的 prefix key；
-未知 family 只有 private key。路径查询和迁移的数据层见下文，业务调用接线仍在后续阶段。
+未知 family 只有 private key。路径查询和迁移的数据层见下文，业务接入范围见“实际接入与实测”。
 
 `LearningRecord` 将动作统计与归一化 `TargetPrior` 分开。动作采用可合并 Welford 均值/M2，
 样本不足时不提供方差估计。legacy 数据的方差标为 unknown，不按零方差使用；开始收集
