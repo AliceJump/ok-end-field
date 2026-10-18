@@ -358,21 +358,26 @@ class TestOfficialLauncher(unittest.TestCase):
 
     def test_launch_game_preserves_arguments_without_injecting_defaults(self):
         kernel = Mock()
+        logger = Mock()
         game_path = os.path.abspath("Endfield.exe")
         with (
             patch.object(official_launcher, "running_pids", side_effect=[[], []]),
             patch.object(official_launcher, "_kernel32", return_value=kernel),
-            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
             patch.object(official_launcher, "create_process", return_value=456) as create,
         ):
-            self.assertTrue(official_launcher.launch_game(game_path, "-force-d3d11", Mock()))
+            self.assertTrue(official_launcher.launch_game(game_path, "-force-d3d11", logger))
         create.assert_called_once_with(kernel, game_path, "-force-d3d11", 321)
-        kernel.CloseHandle.assert_called_once_with(321)
+        cleanup.assert_called_once_with(kernel, 321, logger)
+        cleanup.return_value.start.assert_called_once_with(456)
+        kernel.TerminateProcess.assert_not_called()
+        kernel.CloseHandle.assert_not_called()  # Background watcher owns it.
 
     def test_running_game_skips_launcher(self):
         with (
             patch.object(official_launcher, "running_pids", return_value=[123]),
-            patch.object(official_launcher, "prepare_launcher") as prepare,
+            patch.object(official_launcher, "create_temporary_parent") as prepare,
         ):
             self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
             prepare.assert_not_called()
@@ -382,11 +387,13 @@ class TestOfficialLauncher(unittest.TestCase):
         with (
             patch.object(official_launcher, "running_pids", side_effect=[[], [123]]),
             patch.object(official_launcher, "_kernel32", return_value=kernel),
-            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup"),
             patch.object(official_launcher, "create_process") as create,
         ):
             self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
             create.assert_not_called()
+        kernel.TerminateProcess.assert_called_once_with(321, 0)
         kernel.CloseHandle.assert_called_once_with(321)
 
     def test_create_failure_closes_parent(self):
@@ -394,12 +401,61 @@ class TestOfficialLauncher(unittest.TestCase):
         with (
             patch.object(official_launcher, "running_pids", return_value=[]),
             patch.object(official_launcher, "_kernel32", return_value=kernel),
-            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
             patch.object(official_launcher, "create_process", side_effect=OSError("denied")),
             self.assertRaises(OSError),
         ):
             official_launcher.launch_game("unused", "", Mock())
+        cleanup.return_value.start.assert_not_called()
+        kernel.TerminateProcess.assert_called_once_with(321, 0)
         kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_watcher_unavailable_never_terminates_live_child_parent(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+            patch.object(official_launcher, "create_process", return_value=456),
+        ):
+            cleanup.return_value.start.side_effect = RuntimeError("thread unavailable")
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        kernel.TerminateProcess.assert_not_called()
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_find_official_games_uses_newest_signed_version(self):
+        with tempfile.TemporaryDirectory() as root:
+            base = Path(root)
+            (base / "Launcher.exe").touch()
+            for name in ("1.0.0", "2.4.9"):
+                (base / name).mkdir()
+                (base / name / "Games.exe").touch()
+            logger = Mock()
+            with (
+                patch.object(official_launcher, "installed_launcher", return_value=str(base / "Launcher.exe")),
+                patch.object(official_launcher, "verify_launcher") as verify,
+            ):
+                exe = official_launcher.find_official_games_exe("unused", logger)
+            self.assertEqual(exe, base / "2.4.9" / "Games.exe")
+            verify.assert_called_once_with(str(exe))
+
+    def test_temporary_parent_uses_suspended_native_creation_and_owns_handle(self):
+        import ctypes
+        kernel = Mock()
+        def created(*args):
+            info = ctypes.cast(args[-1], ctypes.POINTER(official_launcher._ProcessInfo))
+            info.contents.dwProcessId = 111
+            info.contents.hProcess = 222
+            info.contents.hThread = 333
+            return True
+        kernel.CreateProcessW.side_effect = created
+        with patch.object(official_launcher, "find_official_games_exe", return_value=Path(r"C:\\Launcher\\2.4.9\\Games.exe")):
+            handle = official_launcher.create_temporary_parent(kernel, "Endfield.exe", Mock())
+        self.assertEqual(handle, 222)
+        self.assertTrue(kernel.CreateProcessW.call_args.args[5] & 0x00000004)
+        kernel.CloseHandle.assert_called_once_with(333)
 
     def test_signature_requires_valid_official_signer(self):
         signer = next(iter(official_launcher.OFFICIAL_SIGNERS))
