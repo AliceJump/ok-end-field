@@ -6,11 +6,10 @@
 
 运行 **包含 PR #555 的 OKEF**（当前正式版不支持），在侧边栏底部选择「奶龙主题」→「导入主题 ZIP 并应用」，选择同目录的 [nailong.okef-theme.zip](./nailong.okef-theme.zip)。主题页可见大脸和追视瞳孔；Qt 使用全局指针位置，鼠标移出窗口仍可追视。主窗口右下角显示奶龙陪伴角色，执行器存在运行中的真实任务时显示工作形象。退出重进会保持选择；「恢复默认主题」恢复标准外观。
 
-也可以从本目录自行重新压缩（请先进入本目录）：
+也可以从仓库根目录使用打包脚本重新生成（保留 ZIP 内的 assets/ 目录层级）：
 
 ```sh
-cd theme-packs/nailong
-python -m zipfile -c nailong.okef-theme.zip theme.json style.qss assets/background.webp assets/standing.webp assets/working.webp
+python scripts/themes/build_nailong_theme.py
 ```
 
 ZIP 的根目录必须包含 `theme.json`、`style.qss` 和 `assets/background.webp`、`assets/standing.webp`、`assets/working.webp`；不可把整个 `nailong/` 文件夹作为 ZIP 的顶层目录。

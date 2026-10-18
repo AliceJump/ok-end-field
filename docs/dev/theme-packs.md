@@ -4,11 +4,10 @@
 
 ## 奶龙主题示例
 
-[源码与具体打包操作](../../theme-packs/nailong/README.md)。示例 ZIP 已放在 `theme-packs/nailong/nailong.okef-theme.zip`，并且可以在本项目目录下用下面的命令重新生成：
+[源码与具体打包操作](../../theme-packs/nailong/README.md)。示例 ZIP 已放在 `theme-packs/nailong/nailong.okef-theme.zip`，并且可以在仓库根目录下用下面的命令重新生成（保留 ZIP 内文件路径）：
 
 ```sh
-cd theme-packs/nailong
-python -m zipfile -c nailong.okef-theme.zip theme.json style.qss assets/background.webp assets/standing.webp assets/working.webp
+python scripts/themes/build_nailong_theme.py
 ```
 
 导入必须使用本功能分支编译的 OKEF；旧版软件没有「奶龙主题」入口。启用后可在主题页看到追视的大脸，同时在主界面右下角看到随真实任务运行状态变化的小奶龙。用户可以一键清除主题，恢复原有 Qt 样式。

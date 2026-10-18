@@ -118,6 +118,17 @@ class TestThemePack(unittest.TestCase):
             installed = import_theme_pack(archive, Path(directory))
             self.assertEqual(installed.fingerprint, pack.fingerprint)
 
+    def test_builder_preserves_asset_directories(self):
+        """Rebuilding from checked-in sources yields a loadable theme ZIP."""
+        from scripts.themes.build_nailong_theme import MEMBERS, SOURCE, build_theme_zip
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "nailong.zip"
+            build_theme_zip(path, SOURCE)
+            with zipfile.ZipFile(path) as archive:
+                self.assertEqual(tuple(archive.namelist()), MEMBERS)
+            self.assertEqual(read_theme_pack(path).id, "nailong")
+
     def test_nailong_package_needs_all_images(self):
         """Reject half-installed mascot packages before changing UI state."""
         manifest = {
