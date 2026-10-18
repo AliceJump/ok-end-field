@@ -522,5 +522,95 @@ class TestOfficialLauncher(unittest.TestCase):
             parent.wait(timeout=10)
 
 
+class TestTemporaryParentLogWatcher(unittest.TestCase):
+    """Same two-event completion gate as PR #558, but only terminate an owned parent."""
+
+    def setUp(self):
+        from src.core import launcher_cleanup
+        self.cleanup_mod = launcher_cleanup
+        self.folder_handle = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder_handle.cleanup)
+        folder = self.folder_handle.name
+        patcher = patch.object(launcher_cleanup.shell, "SHGetKnownFolderPath", return_value=folder)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.logs = Path(folder) / "Hypergryph" / "Endfield" / "sdklogs"
+        self.logs.mkdir(parents=True)
+        self.kernel = Mock()
+        self.kernel.GetProcessId.return_value = 123
+        self.logger = Mock()
+
+    def _new_cleanup(self):
+        return self.cleanup_mod.LauncherCleanup(self.kernel, 999, self.logger)
+
+    def _write(self, name, text, cleanup, age=0):
+        from datetime import timedelta
+        stamp = (cleanup.started + timedelta(seconds=age)).strftime("%m-%d %H:%M:%S.%f")[:-3]
+        with (self.logs / name).open("ab") as out:
+            out.write(f"[{stamp}] [info] {text}\n".encode())
+
+    def _watch(self, cleanup, game=None, ticks=(0, 0, 121)):
+        with (
+            patch.object(cleanup, "_parent_running", return_value=True),
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=ticks),
+            patch.object(self.cleanup_mod.time, "sleep"),
+        ):
+            cleanup._watch(game or Mock(is_running=Mock(return_value=True)))
+
+    def test_both_current_sdk_signals_terminate_only_owned_parent(self):
+        cleanup = self._new_cleanup()
+        self._write("OneChannelLC.log", "Parent process check success:123", cleanup)
+        self._write("u8sdk_pc.log", "OnU8V2InitCallback status :0", cleanup)
+        self._watch(cleanup, ticks=(0, 0))
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_one_signal_wrong_pid_or_error_status_never_terminates(self):
+        for check, sdk in (
+            ("Parent process check success:456", "OnU8V2InitCallback status :0"),
+            ("Parent process check success:123", "OnU8V2InitCallback status :1"),
+        ):
+            with self.subTest(check=check, sdk=sdk):
+                for name in ("OneChannelLC.log", "u8sdk_pc.log"):
+                    (self.logs / name).unlink(missing_ok=True)
+                self.kernel.reset_mock()
+                cleanup = self._new_cleanup()
+                self._write("OneChannelLC.log", check, cleanup)
+                self._write("u8sdk_pc.log", sdk, cleanup)
+                self._watch(cleanup)
+                self.kernel.TerminateProcess.assert_not_called()
+                self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_old_records_cannot_authorize_cleanup(self):
+        cleanup = self._new_cleanup()
+        self._write("OneChannelLC.log", "Parent process check success:123", cleanup, age=-3)
+        self._write("u8sdk_pc.log", "OnU8V2InitCallback status :0", cleanup)
+        self._watch(cleanup)
+        self.kernel.TerminateProcess.assert_not_called()
+
+    def test_no_cleanup_when_game_exits_or_log_read_fails(self):
+        cleanup = self._new_cleanup()
+        self._watch(cleanup, game=Mock(is_running=Mock(return_value=False)))
+        self.kernel.TerminateProcess.assert_not_called()
+        self.kernel.CloseHandle.assert_called_once_with(999)
+        self.kernel.reset_mock()
+        cleanup = self._new_cleanup()
+        with patch.object(cleanup.check_log, "read", side_effect=PermissionError("denied")):
+            self._watch(cleanup)
+        self.kernel.TerminateProcess.assert_not_called()
+        self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_tail_skips_old_partial_and_survives_rotation(self):
+        path = self.logs / "OneChannelLC.log"
+        path.write_bytes(b"previous complete\\nold half")
+        tail = self.cleanup_mod._LogTail(path)
+        with path.open("ab") as stream:
+            stream.write(b" line\\nnew complete\\n")
+        self.assertEqual(tail.read(), [b"new complete"])
+        path.rename(path.with_suffix(".old"))
+        path.write_bytes(b"next complete\\n")
+        self.assertEqual(tail.read(), [b"next complete"])
+
+
 if __name__ == "__main__":
     unittest.main()
