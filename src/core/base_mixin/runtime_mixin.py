@@ -18,12 +18,10 @@ from src.interaction.Mouse import (
     active_and_send_mouse_delta as send_mouse_delta,
 )
 from src.interaction.Mouse import (
-    move_to_target_once as move_to_target_once_impl,
-)
-from src.interaction.Mouse import (
     run_at_window_pos,
     smooth_drag,
 )
+from src.interaction.target_movement import calc_direction_step
 from src.yolo.loader import YoloModelLoader
 
 feature_values = [f.value for f in fL]
@@ -1133,21 +1131,25 @@ class RuntimeMixin:
             deadzone: 误差死区。
 
         Returns:
-            Any: move_to_target_once_impl 的返回值。
+            tuple[int, int] | None: 实际接受的位移；无目标返回 None，激活失败返回 (0, 0)。
         """
         scaled_max_step = self.scale_distance(max_step)
         scaled_min_step = min(scaled_max_step, self.scale_distance(min_step))
         scaled_slow_radius = self.scale_distance(slow_radius)
         scaled_deadzone = self.scale_distance(deadzone)
-        return move_to_target_once_impl(
-            self.get_game_hwnd(),
-            ocr_obj,
-            self.screen_center,
+        if ocr_obj is None:
+            return None
+        dx, dy = calc_direction_step(
+            self.screen_center(),
+            (ocr_obj.x + ocr_obj.width // 2, ocr_obj.y + ocr_obj.height // 2),
             max_step=scaled_max_step,
             min_step=scaled_min_step,
             slow_radius=scaled_slow_radius,
             deadzone=scaled_deadzone,
         )
+        if (dx or dy) and not self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005):
+            return 0, 0
+        return dx, dy
 
     def active_and_send_mouse_delta(self, dx=1, dy=1, activate=True, only_activate=False, delay=0.02, steps=3) -> bool:
         """
