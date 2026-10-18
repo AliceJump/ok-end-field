@@ -19,11 +19,11 @@ Check the following in order:
 
 ### CN game requires the official launcher or times out
 
-Recent CN SDK versions check the game's immediate parent process. The app verifies the official Hypergryph launcher's digital signature and creates the game with its running `Games.exe` as the parent. If necessary, it opens the launcher using its installation registration. No click on "Start Game" is required. Keep the official launcher installed and keep the game executable selected as the game path.
+Recent CN SDK versions check the game's immediate parent process. In this **experimental alternative to PR #558**, the app locates and verifies the official Hypergryph `Games.exe` and creates its **own suspended temporary instance** as the game's parent. It does not stop or reuse existing user launcher processes, and does not click "Start Game". Keep the official launcher installed and the game executable selected as the game path.
 
 The app does not inject CN language or channel arguments into `Endfield.exe`; existing custom launch arguments, including DX11 options, are preserved unchanged. This launch method targets the official CN launcher; international and other channel versions have not been validated. An already running game is left running.
 
-The app waits up to 120 seconds for the game window during SDK initialization. On failure, check `logs/ok-script.log` for signature, process access, or Windows process creation errors. If the launcher cannot be located, open the official launcher manually and retry.
+After creating the game, the app reads only fresh complete lines from `OneChannelLC.log` and `u8sdk_pc.log` under `LocalAppDataLow/Hypergryph/Endfield/sdklogs`. It terminates **only its own temporary `Games.exe`** after observing both `Parent process check success:<temporary PID>` and `OnU8V2InitCallback status :0`. It does not use a fixed delay to claim success. If logs are missing or invalid after the 120-second observation window, it leaves the temporary process suspended and logs a warning (no forced cleanup on timeout). Errors before game creation discard only the owned temporary process. For startup failures check `logs/ok-script.log` and ensure the official launcher installation is intact.
 
 ## Bug reports and feedback
 
