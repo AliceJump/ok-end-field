@@ -550,8 +550,8 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         finally:
             self.release_yolo_detector()
 
-    def battle_gather(self):
-        self.battle_ctx.enter_text = "挑战"
+    def navigate_to_gather(self):
+        """Use the production pre-battle navigation without activating the challenge."""
         # 点击追踪按钮，进入地图并传送
         initial_entry = self._click_track_and_transfer()
         via_zipline = self._navigate_via_zip_line(initial_entry=initial_entry)
@@ -575,13 +575,19 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 threshold=0.7,
                 tolerance=100,
             )
-            self.navigate_until_target(
-                target=self.lang.daily_battle_mixin.k_bfe73e18,
-                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
-                nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
-                time_out=60,
+            return bool(
+                self.navigate_until_target(
+                    target=self.lang.daily_battle_mixin.k_bfe73e18,
+                    box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                    nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
+                    time_out=60,
+                )
             )
+        return True
 
+    def battle_gather(self):
+        self.battle_ctx.enter_text = "挑战"
+        self.navigate_to_gather()
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
             self.log_info("放弃未领取的奖励")
             self.wait_click_ocr(
