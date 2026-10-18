@@ -17,6 +17,7 @@ class CustomizationContractError(RuntimeError):
 
 
 def load_customization_manifest(path: Path = MANIFEST_PATH) -> dict[str, Any]:
+    """Parse the owned manifest and reject unsupported or malformed schemas."""
     try:
         manifest = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -45,6 +46,7 @@ def load_customization_manifest(path: Path = MANIFEST_PATH) -> dict[str, Any]:
 
 
 def _declared_overlay_paths(manifest: dict[str, Any], repo_root: Path) -> dict[str, Path]:
+    """Resolve all declared patch sources without allowing repository escape."""
     resolved_root = repo_root.resolve()
     paths: dict[str, Path] = {}
     for relative in manifest["overlay_files"]:
@@ -58,6 +60,7 @@ def _declared_overlay_paths(manifest: dict[str, Any], repo_root: Path) -> dict[s
 
 
 def _discover_patch_sources(repo_root: Path, patch_dir: Path) -> set[str]:
+    """Discover project patch modules that the manifest must account for."""
     return {
         path.resolve().relative_to(repo_root.resolve()).as_posix()
         for path in patch_dir.glob("*.py")
@@ -66,6 +69,7 @@ def _discover_patch_sources(repo_root: Path, patch_dir: Path) -> set[str]:
 
 
 def _validate_overlay_coverage(manifest: dict[str, Any], repo_root: Path, patch_dir: Path) -> dict[str, Path]:
+    """Reject absent, stale, or untracked patch entries before hashing."""
     declared = _declared_overlay_paths(manifest, repo_root)
     discovered = _discover_patch_sources(repo_root, patch_dir)
     declared_names = set(declared)
@@ -82,6 +86,7 @@ def _validate_overlay_coverage(manifest: dict[str, Any], repo_root: Path, patch_
 
 
 def _hash_component(hasher: Any, name: str, payload: bytes) -> None:
+    """Add an unambiguous length-prefixed component to the digest."""
     name_bytes = name.encode("utf-8")
     hasher.update(len(name_bytes).to_bytes(8, "big"))
     hasher.update(name_bytes)
@@ -95,6 +100,7 @@ def customization_fingerprint(
     repo_root: Path = REPO_ROOT,
     patch_dir: Path = PATCH_DIR,
 ) -> str:
+    """Fingerprint the manifest and the exact bytes of every owned patch."""
     manifest = load_customization_manifest(manifest_path)
     overlay_paths = _validate_overlay_coverage(manifest, repo_root, patch_dir)
 
@@ -121,6 +127,7 @@ def validate_customization_contract(
     repo_root: Path = REPO_ROOT,
     patch_dir: Path = PATCH_DIR,
 ) -> str:
+    """Check the installed upstream version and full overlay consistency."""
     manifest = load_customization_manifest(manifest_path)
     upstream = manifest["upstream"]
     distribution = upstream["distribution"]
@@ -147,6 +154,7 @@ def validate_customization_contract(
 
 
 def main() -> int:
+    """Print a compact, reproducible fingerprint for manual verification."""
     manifest = load_customization_manifest()
     fingerprint = validate_customization_contract()
     upstream = manifest["upstream"]

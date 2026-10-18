@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class TestCustomizationContract(unittest.TestCase):
     def test_manifest_matches_project_and_release_ok_script_pins(self):
+        """Ensure declared upstream matches project dependencies and the lockfile."""
         manifest = load_customization_manifest()
         expected = f'{manifest["upstream"]["distribution"]}=={manifest["upstream"]["version"]}'
 
@@ -35,6 +36,7 @@ class TestCustomizationContract(unittest.TestCase):
         self.assertEqual(upstream_versions, {manifest["upstream"]["version"]})
 
     def test_manifest_tracks_every_patch_source(self):
+        """Ensure new or removed runtime patches update the owned manifest."""
         manifest = load_customization_manifest()
         declared = set(manifest["overlay_files"])
         actual = {
@@ -45,6 +47,7 @@ class TestCustomizationContract(unittest.TestCase):
         self.assertEqual(actual, declared)
 
     def test_entrypoints_validate_contract_before_installing_patches(self):
+        """Ensure validation precedes every startup patch import and install."""
         for name in ("main.py", "main_debug.py"):
             source = (ROOT / name).read_text(encoding="utf-8")
             with self.subTest(name=name):
@@ -62,15 +65,18 @@ class TestCustomizationContract(unittest.TestCase):
                         self.assertLess(validation_index, source.index(marker))
 
     def test_current_contract_validates_with_declared_version(self):
+        """Ensure the declared project overlay computes a valid fingerprint."""
         manifest = load_customization_manifest()
         fingerprint = validate_customization_contract(installed_version=manifest["upstream"]["version"])
         self.assertRegex(fingerprint, r"^[0-9a-f]{64}$")
 
     def test_rejects_upstream_version_mismatch(self):
+        """Reject startup against an unsupported upstream release."""
         with self.assertRaisesRegex(CustomizationContractError, "Unsupported ok-script version"):
             validate_customization_contract(installed_version="0.0.0")
 
     def test_fingerprint_is_stable_for_manifest_order_and_changes_with_source(self):
+        """Ensure ordering is stable while a byte change updates the digest."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             patch_dir = root / "src/patches"
