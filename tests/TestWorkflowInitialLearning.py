@@ -339,7 +339,7 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
         entry = task._liaison_station_entry
         self.assertEqual(entry.context.entry_route_signature, (1000, 1000))
-        self.assertEqual(entry.confidence, ContextConfidence.MEDIUM)
+        self.assertEqual(entry.confidence, ContextConfidence.HIGH)
         self.assertEqual(task.move_keys.call_count, 2)
         other = liaison_entry_after_walk(task, liaison_entry_after_transfer(task, epoch=learning_epoch()), 1)
         self.assertNotEqual(entry.context.fingerprint, other.context.fingerprint)
@@ -380,7 +380,37 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         with patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")):
             self.assertEqual(LiaisonMixin.navigate_to_operator_liaison_station(task), LiaisonResult.FIND_CHAT_ICON)
         self.assertEqual(self.store.snapshot(), before)
-        self.assertEqual(task.active_and_send_mouse_delta.call_args.args[:2], (50, 0))
+        self.assertEqual(task.active_and_send_mouse_delta.call_args.args[:2], (100, 0))
+
+    def test_liaison_one_and_two_walks_replay_only_their_own_full_motion_before_detection(self):
+        contexts = {}
+        for attempts, dx in ((1, 100), (2, 300)):
+            task = self.task()
+            entry = liaison_entry_after_walk(task, liaison_entry_after_transfer(task, epoch=learning_epoch()), attempts)
+            contexts[attempts] = entry.context
+            self.fixtures.seed(entry.context, dx=dx, dy=0)
+        for attempts, dx in ((1, 100), (2, 300)):
+            with self.subTest(attempts=attempts):
+                task = self.task()
+                task._liaison_transfer_entry = liaison_entry_after_transfer(task, epoch=learning_epoch())
+                task.wait_ocr.side_effect = ([[]] if attempts == 2 else []) + [[box()]]
+                self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
+                self.assertEqual(task.move_keys.call_count, attempts)
+                self.assertEqual(task._liaison_station_entry.context.entry_route_signature, (1000,) * attempts)
+                self.assertEqual(task._liaison_station_entry.context, contexts[attempts])
+                other_before = self.store.get(contexts[3 - attempts].fingerprint)
+                events = []
+                task.active_and_send_mouse_delta.side_effect = lambda *a, _events=events, **k: (
+                    _events.append("replay") or True
+                )
+                task.find_feature.side_effect = lambda _events=events, **k: _events.append("detect") or box()
+                task.navigate_until_target.return_value = False
+                self.assertFalse(LiaisonMixin.navigate_to_operator_liaison_station(task))
+                self.assertEqual(events[:2], ["replay", "detect"])
+                self.assertEqual(task.active_and_send_mouse_delta.call_args.args[:2], (dx, 0))
+                record = self.store.get(contexts[attempts].fingerprint)
+                self.assertEqual((record.motion.samples, record.motion.mean_dx, record.failure_count), (4, dx, 0))
+                self.assertEqual(self.store.get(contexts[3 - attempts].fingerprint), other_before)
 
     def test_demo_full_replay_and_save_do_not_wait_for_navigation_success(self):
         task = self.task()

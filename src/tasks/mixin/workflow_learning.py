@@ -127,12 +127,13 @@ def liaison_entry_after_walk(task, entry, attempts):
         entry="bridge_walk_confirmed",
         entry_route_signature=(1000,) * attempts,
     )
-    # Timed walking proves the route but not an exact physical stopping position.
+    # Each confirmed walk count is a separate stable entry. Statistical sample
+    # reliability still gates replay; never borrow the other walk count's motion.
     return confirmed_workflow_entry(
         task,
         epoch=entry.epoch,
         context=context,
-        confidence=ContextConfidence.MEDIUM,
+        confidence=ContextConfidence.HIGH,
     )
 
 
