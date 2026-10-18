@@ -249,6 +249,27 @@ class TestGatherInitialLearning(unittest.TestCase):
         self.assertEqual(self.store.get(context.fingerprint).motion.samples, 3)
         task.active_and_send_mouse_delta.assert_not_called()
 
+    def test_reboarding_cannot_borrow_a_gather_on_board_pose(self):
+        task = self.board_task()
+        context = replace(gather_initial_context(task, self.entry(task), distances=(108,)), start_yaw_bucket=18)
+        self.fixtures.seed(context)
+        task.box = SimpleNamespace(bottom_right=None)
+        task.wait_ocr.side_effect = [[box()], []]
+        task.strafe_search = lambda check, **kwargs: check()
+        task.press_key = Mock()
+        task.click_with_alt = Mock()
+        ZipLineMixin.zip_line_list_go(
+            task,
+            [108],
+            config_key="武陵城",
+            need_v=True,
+            target=("gather", "feature"),
+            target_learning_context=context,
+        )
+        task.press_key.assert_called_once_with("v", after_sleep=1)
+        task.active_and_send_mouse_delta.assert_not_called()
+        self.assertEqual(self.store.get(context.fingerprint).motion.samples, 3)
+
     def test_after_zipline_fallback_alignment_cannot_learn_transfer_entry(self):
         task = self.entry_task([box(1500, 800), box()])
         task._navigate_via_zip_line = Mock(return_value=True)

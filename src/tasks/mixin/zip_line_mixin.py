@@ -1066,7 +1066,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     and (
                         (need_v and target_learning_context.entry != "after_zipline_on_board")
                         or (
-                            target_learning_context.task == "gather"
+                            not need_v
+                            and target_learning_context.task == "gather"
                             and target_learning_context.phase == "after_zipline"
                             and target_learning_context.entry == "after_zipline_on_board"
                             and bool(zip_line_list)
