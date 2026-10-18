@@ -568,6 +568,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                     nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
                     time_out=60,
                     nav_disappears_on_arrival=True,
+                    detection_mode="parallel",
                 )
             )
         return True
@@ -683,6 +684,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
                 time_out=60,
                 nav_disappears_on_arrival=True,
+                detection_mode="parallel",
             ):
                 return False
         result = self.wait_ocr(match=re.compile(click_key), box=self.box.bottom_right, time_out=5)
