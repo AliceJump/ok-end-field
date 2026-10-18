@@ -4,9 +4,11 @@ import json
 import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from src.core.learning.models import (
     CaptureProfile,
@@ -42,6 +44,20 @@ def reliable_record():
     for dx in (100, 102, 98):
         record = record.successful(dx, 20, now=1, provenance=("delivery",))
     return record
+
+
+@contextmanager
+def fixed_cache_metadata(path):
+    """Simulate timestamp/size collisions without changing directory metadata."""
+    original_stat = Path.stat
+
+    def stat(candidate, *args, **kwargs):
+        if candidate.name == path.name:
+            return SimpleNamespace(st_mtime_ns=123, st_size=456)
+        return original_stat(candidate, *args, **kwargs)
+
+    with patch.object(Path, "stat", stat):
+        yield
 
 
 class TestLearningCore(unittest.TestCase):
@@ -189,13 +205,81 @@ class TestLearningCore(unittest.TestCase):
             self.assertEqual(first.get(key).failure_count, 1)
             self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["schema_version"], 1)
 
+    def test_same_metadata_replace_invalidates_other_instances_and_path_aliases(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "learning.json"
+            (path.parent / "unused").mkdir()
+            first = LearningStore(path)
+            second = LearningStore(path.parent / "unused" / ".." / path.name)
+            key = workflow_context().fingerprint
+            other_key = workflow_context(target_id="other").fingerprint
+            self.assertTrue(first.put(key, reliable_record()))
+            with fixed_cache_metadata(path):
+                self.assertEqual(first.get(key).failure_count, 0)
+                self.assertTrue(second.update(key, lambda record: record.failed(now=2)))
+                self.assertEqual(first.get(key).failure_count, 1)
+                self.assertTrue(first.put(other_key, reliable_record()))
+            records = LearningStore(path).snapshot()
+            self.assertEqual(records[key].failure_count, 1)
+            self.assertIn(other_key, records)
+
+    def test_unknown_schema_is_preserved_until_readable_schema_returns(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "learning.json"
+            original = '{"schema_version":99,"records":{"future":"keep me"}}'
+            path.write_text(original, encoding="utf-8")
+            store = LearningStore(path)
+            key = workflow_context().fingerprint
+            transform = Mock()
+            with fixed_cache_metadata(path):
+                self.assertEqual(store.snapshot(), {})
+                self.assertFalse(store.put(key, reliable_record()))
+                self.assertFalse(store.update(key, transform))
+                transform.assert_not_called()
+                self.assertEqual(path.read_text(encoding="utf-8"), original)
+                path.write_text('{"schema_version":1,"records":{}}', encoding="utf-8")
+                self.assertTrue(store.put(key, reliable_record()))
+            self.assertEqual(LearningStore(path).get(key), reliable_record())
+
+    def test_read_failure_preserves_file_and_retries_same_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "learning.json"
+            key = workflow_context().fingerprint
+            writer, reader = LearningStore(path), LearningStore(path)
+            self.assertTrue(writer.put(key, reliable_record()))
+            original = path.read_bytes()
+            with fixed_cache_metadata(path):
+                with patch.object(Path, "read_text", side_effect=PermissionError("temporarily locked")):
+                    self.assertIsNone(reader.get(key))
+                    self.assertFalse(reader.put(key, reliable_record().failed(now=2)))
+                self.assertEqual(path.read_bytes(), original)
+                self.assertEqual(reader.get(key), reliable_record())
+                self.assertTrue(reader.update(key, lambda record: record.failed(now=2)))
+            self.assertEqual(LearningStore(path).get(key).failure_count, 1)
+
+    def test_stat_failure_cannot_be_treated_as_missing_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "learning.json"
+            key = workflow_context().fingerprint
+            store = LearningStore(path)
+            self.assertTrue(store.put(key, reliable_record()))
+            original = path.read_bytes()
+            with patch.object(Path, "stat", side_effect=PermissionError("stat denied")):
+                self.assertIsNone(store.get(key))
+                self.assertFalse(store.put(key, reliable_record().failed(now=2)))
+            self.assertEqual(path.read_bytes(), original)
+            self.assertEqual(store.get(key), reliable_record())
+
     def test_store_corrupt_payloads_and_records_fail_soft(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "learning.json"
             key = workflow_context().fingerprint
             for contents in ("broken", "[]", '{"schema_version":99,"records":{}}', '{"schema_version":1,"records":[]}'):
                 path.write_text(contents, encoding="utf-8")
-                self.assertIsNone(LearningStore(path).get(key))
+                store = LearningStore(path)
+                self.assertIsNone(store.get(key))
+                self.assertFalse(store.put(key, reliable_record()))
+                self.assertEqual(path.read_text(encoding="utf-8"), contents)
             path.write_text(
                 json.dumps(
                     {
@@ -224,8 +308,10 @@ class TestLearningCore(unittest.TestCase):
             key = workflow_context().fingerprint
             self.assertTrue(store.put(key, reliable_record()))
             before = path.read_bytes()
+            signature = store._stamp()
             with patch("src.core.learning.store.os.replace", side_effect=PermissionError("locked")):
                 self.assertFalse(store.update(key, lambda record: record.failed(now=2)))
+            self.assertEqual(store._stamp(), signature)
             self.assertEqual(path.read_bytes(), before)
             self.assertEqual(store.get(key).failure_count, 0)
             self.assertEqual(list(Path(directory).glob("*.tmp")), [])

@@ -12,6 +12,8 @@ from src.core.learning.policy import learning_allowed
 
 SCHEMA_VERSION = 1
 _STORE_LOCK = RLock()
+_GENERATIONS = {}
+_UNREADABLE = object()
 
 
 class LearningStore:
@@ -20,23 +22,40 @@ class LearningStore:
     def __init__(self, path=None, *, max_records=4096):
         if type(max_records) is not int or max_records <= 0:
             raise ValueError("Learning store capacity must be positive")
-        self.path = Path(path) if path is not None else Path("tmp/context_learning_cache.json")
+        self.path = Path(os.path.abspath(path if path is not None else "tmp/context_learning_cache.json"))
+        self._path_key = os.path.normcase(str(self.path))
         self.max_records = max_records
         self._signature = None
         self._records = {}
 
     def _stamp(self):
+        generation = _GENERATIONS.get(self._path_key, 0)
         try:
             stat = self.path.stat()
-            return stat.st_mtime_ns, stat.st_size
+            return generation, stat.st_mtime_ns, stat.st_size
+        except FileNotFoundError:
+            return generation, None, None
         except OSError:
-            return None
+            return _UNREADABLE
+
+    def _unavailable(self):
+        self._records = {}
+        self._signature = None
+        return False
 
     def _load(self):
+        """Return whether this snapshot is safe to update; retry failures on the next call."""
         signature = self._stamp()
+        if signature is _UNREADABLE:
+            return self._unavailable()
         if signature == self._signature:
-            return
+            return True
         records = {}
+        if signature[1] is None:
+            # Only a confirmed missing file can be initialized from an empty snapshot.
+            self._records = records
+            self._signature = signature
+            return True
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
             if (
@@ -55,9 +74,10 @@ class LearningStore:
                 except (TypeError, ValueError, KeyError, OverflowError, RecursionError):
                     continue
         except (OSError, TypeError, ValueError, KeyError, OverflowError, RecursionError):
-            pass
+            return self._unavailable()
         self._records = self._trim(records)
         self._signature = signature
+        return True
 
     @staticmethod
     def _validate_key(key):
@@ -96,7 +116,8 @@ class LearningStore:
                 self._validate_key(key)
                 if not isinstance(record, LearningRecord):
                     return False
-                self._load()
+                if not self._load():
+                    return False
                 records = self._trim({**self._records, key: record})
                 text = canonical_fingerprint(
                     {"schema_version": SCHEMA_VERSION, "records": {k: v.to_dict() for k, v in records.items()}}
@@ -115,6 +136,7 @@ class LearningStore:
                     stream.flush()
                     os.fsync(stream.fileno())
                 os.replace(temp_path, self.path)
+                _GENERATIONS[self._path_key] = _GENERATIONS.get(self._path_key, 0) + 1
                 self._records = records
                 self._signature = self._stamp()
                 return True
@@ -130,7 +152,9 @@ class LearningStore:
         if not learning_allowed():
             return False
         with _STORE_LOCK:
-            previous = self.get(key) or LearningRecord()
+            if not self._load():
+                return False
+            previous = self._records.get(key) or LearningRecord()
             try:
                 record = transform(previous)
             except (TypeError, ValueError, OverflowError):
