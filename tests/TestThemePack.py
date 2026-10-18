@@ -68,7 +68,7 @@ class TestThemePack(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             archive = Path(directory) / "bad.zip"
             self._archive(archive, extra="../hack.py")
-            with self.assertRaisesRegex(ThemePackError, "only theme.json"):
+            with self.assertRaisesRegex(ThemePackError, "unsupported member"):
                 read_theme_pack(archive)
 
     def test_rejects_unsafe_theme_ids_and_external_qss(self):
@@ -102,6 +102,59 @@ class TestThemePack(unittest.TestCase):
             archive = Path(directory) / "oversized.zip"
             self._archive(archive, qss="QLabel { color: red; }\n" * 7000)
             with self.assertRaisesRegex(ThemePackError, "too large"):
+                read_theme_pack(archive)
+
+    def test_nailong_pack_contains_real_images_and_correct_digest(self):
+        """Verify the shipped Nailong ZIP includes all three embedded WebPs."""
+        archive = ROOT / "theme-packs" / "nailong" / "nailong.okef-theme.zip"
+        pack = read_theme_pack(archive)
+        self.assertEqual(pack.kind, "nailong")
+        self.assertEqual(pack.id, "nailong")
+        self.assertEqual(len(pack.assets), 3)
+        for image in pack.assets.values():
+            self.assertTrue(image.startswith(b"RIFF"))
+            self.assertEqual(image[8:12], b"WEBP")
+        with tempfile.TemporaryDirectory() as directory:
+            installed = import_theme_pack(archive, Path(directory))
+            self.assertEqual(installed.fingerprint, pack.fingerprint)
+
+    def test_nailong_package_needs_all_images(self):
+        """Reject half-installed mascot packages before changing UI state."""
+        manifest = {
+            "schema_version": 1,
+            "id": "nailong",
+            "name": "Nailong",
+            "version": "1.0",
+            "kind": "nailong",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "bad.zip"
+            self._archive(archive, manifest=manifest)
+            with self.assertRaisesRegex(ThemePackError, "require background"):
+                read_theme_pack(archive)
+
+    def test_qproperty_cannot_disable_the_reset_button(self):
+        """Do not allow QSS to change runtime widget state via qproperty."""
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "bad.zip"
+            self._archive(archive, qss="QPushButton { qproperty-enabled: false; }")
+            with self.assertRaisesRegex(ThemePackError, "qproperty"):
+                read_theme_pack(archive)
+
+    def test_unimplemented_compression_is_rejected(self):
+        """Unsupported ZIP codecs report a normal theme validation error."""
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "bad.zip"
+            self._archive(archive)
+            payload = bytearray(archive.read_bytes())
+            import struct
+
+            local = payload.find(b"PK\x03\x04")
+            central = payload.find(b"PK\x01\x02")
+            struct.pack_into("<H", payload, local + 8, 99)
+            struct.pack_into("<H", payload, central + 10, 99)
+            archive.write_bytes(payload)
+            with self.assertRaisesRegex(ThemePackError, "compression"):
                 read_theme_pack(archive)
 
     def test_corrupt_selection_and_mismatched_id_fail_closed(self):

@@ -177,6 +177,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestTopmostMixin.py",
             "TestWindowOverlayTextRendering.py",
             "TestThemePack.py",
+            "TestNailongWidget.py",
         ),
     ),
     "runtime-platform": (

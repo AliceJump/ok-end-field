@@ -1,0 +1,23 @@
+/* Nailong: warm cream and bright yellow, no qproperty or remote references. */
+QWidget#view {
+    color: #473523;
+    background-color: #fff3c7;
+}
+QPushButton {
+    color: #3c2b16;
+    background-color: #ffe78c;
+    border: 2px solid #efbe46;
+    border-radius: 12px;
+    padding: 7px 13px;
+    font-weight: 600;
+}
+QPushButton:hover {
+    background-color: #fff5b6;
+    border-color: #d4a237;
+}
+QPushButton:pressed {
+    background-color: #f3d46d;
+}
+QLabel {
+    color: #523b24;
+}
