@@ -14,7 +14,7 @@ from src.core.global_config_store import (
 )
 from src.core.sequence_parser import parse_int_sequence
 from src.image.hsv_config import HSVRange as hR
-from src.interaction.Mouse import calc_direction_step
+from src.interaction.target_movement import ellipse_geometry, ellipse_move_profile, ellipse_radius, hud_direction_step
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.zip_line_motion_cache import (
@@ -220,16 +220,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _zip_line_ellipse_geometry(self):
         """返回屏幕中心与滑索边缘提示所在椭圆的半径。"""
-        center_x, center_y = self.screen_center()
-        scale = self.resolution_scale()
-        radius_x = max(1, int(round(self._ZIP_LINE_ELLIPSE_RX * scale)))
-        radius_y = max(1, int(round(self._ZIP_LINE_ELLIPSE_RY * scale)))
-        return center_x, center_y, radius_x, radius_y
+        return ellipse_geometry(
+            self.screen_center(), self.resolution_scale(), self._ZIP_LINE_ELLIPSE_RX, self._ZIP_LINE_ELLIPSE_RY
+        )
 
     def _zip_line_ellipse_radius(self, x, y):
         """返回点在滑索椭圆中的归一化半径，1.0 为椭圆边缘。"""
-        center_x, center_y, radius_x, radius_y = self._zip_line_ellipse_geometry()
-        return math.hypot((x - center_x) / radius_x, (y - center_y) / radius_y)
+        return ellipse_radius(x, y, self._zip_line_ellipse_geometry())
 
     def _zip_line_has_gold_ring(self, gold_mask, center_x, center_y):
         """用图标四周均有金黄色像素来识别当前锁定态，避免环境黄色误判。"""
@@ -454,19 +451,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _zip_line_move_profile(self, ellipse_radius):
         """椭圆内半径正常对中，外半圈随离中心程度平滑加速。"""
-        profile = {
-            "max_step": 120,
-            "min_step": 20,
-            "slow_radius": 350,
-            "deadzone": 8,
-        }
-        if ellipse_radius <= self._ZIP_LINE_INNER_RADIUS:
-            return profile
-        progress = min(1.0, (ellipse_radius - self._ZIP_LINE_INNER_RADIUS) / (1.0 - self._ZIP_LINE_INNER_RADIUS))
-        boost = 1.0 + (self._ZIP_LINE_OUTER_MAX_BOOST - 1.0) * progress
-        profile["max_step"] = int(round(profile["max_step"] * boost))
-        profile["min_step"] = int(round(profile["min_step"] * boost))
-        return profile
+        return ellipse_move_profile(
+            ellipse_radius, inner_radius=self._ZIP_LINE_INNER_RADIUS, outer_boost=self._ZIP_LINE_OUTER_MAX_BOOST
+        )
 
     @staticmethod
     def _zip_line_alignment_failed(raise_if_fail):
@@ -477,16 +464,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _move_to_zip_line_target(self, target):
         """在椭圆坐标中计算方向与距离，以屏幕宽度统一缩放横纵步长。"""
-        cx, cy, rx, ry = self._zip_line_ellipse_geometry()
-        nx = (target.x + target.width // 2 - cx) / rx
-        ny = (target.y + target.height // 2 - cy) / ry
-        profile = self._zip_line_move_profile(math.hypot(nx, ny))
-        width_scale = self.width / 1920
-        width_radius = self._ZIP_LINE_ELLIPSE_RX * width_scale
-        dx, dy = calc_direction_step(
-            (0, 0),
-            (nx * width_radius, ny * width_radius),
-            **{key: max(1, round(value * width_scale)) for key, value in profile.items()},
+        dx, dy = hud_direction_step(
+            (target.x + target.width // 2, target.y + target.height // 2),
+            self._zip_line_ellipse_geometry(),
+            self.width,
+            reference_radius_x=self._ZIP_LINE_ELLIPSE_RX,
+            inner_radius=self._ZIP_LINE_INNER_RADIUS,
+            outer_boost=self._ZIP_LINE_OUTER_MAX_BOOST,
         )
         if (dx or dy) and not self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005):
             return 0, 0
@@ -1087,6 +1071,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     use_yolo=yolo_bool,
                     raise_if_fail=False,
                     ocr_target_mover=self._move_to_zip_line_target if ocr_bool else None,
+                    move_profile="world_projection" if yolo_bool else "hud_direction",
                 )
                 self.click(key="right")
         if self.wait_ocr(

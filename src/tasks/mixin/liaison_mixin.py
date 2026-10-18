@@ -357,6 +357,7 @@ class LiaisonMixin(NavigationMixin):
 
             find_flag = self.align_ocr_or_find_target_to_center(
                 ocr_match_or_feature_name_list=find_name_patterns,
+                move_profile="world_projection",
                 raise_if_fail=False,
                 only_x=True,
                 max_time=14,

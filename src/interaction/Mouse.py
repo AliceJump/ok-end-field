@@ -5,6 +5,8 @@ import time
 
 import win32gui
 
+from src.interaction.target_movement import calc_direction_step
+
 user32 = ctypes.windll.user32
 
 # Windows 鼠标事件：相对移动
@@ -57,42 +59,6 @@ def _safe_print(message):
         print(message)
     except OSError:
         pass
-
-
-def calc_direction_step(
-    from_pos,
-    to_pos,
-    max_step=100,
-    min_step=5,
-    slow_radius=200,
-    deadzone=8,
-):
-    """
-    平滑版移动计算
-
-    特点：
-    - 指数减速
-    - 不容易过冲
-    - 中心区域更稳定
-    """
-
-    dx_raw = to_pos[0] - from_pos[0]
-    dy_raw = to_pos[1] - from_pos[1]
-
-    dist = math.hypot(dx_raw, dy_raw)
-
-    if dist <= deadzone:
-        return 0, 0
-
-    # 指数减速
-    step = min_step + (max_step - min_step) * (1 - math.exp(-dist / slow_radius))
-
-    step = min(step, max_step)
-
-    dx = round(dx_raw / dist * step)
-    dy = round(dy_raw / dist * step)
-
-    return dx, dy
 
 
 def click_down(hwnd, x, y, key="left"):
