@@ -50,6 +50,13 @@ class TestNailongWidget(unittest.TestCase):
             app.processEvents()
             self.assertEqual(face.geometry(), window.rect())
 
+            window.hide()
+            app.processEvents()
+            self.assertFalse(face._eye_timer.isActive(), "A hidden window must not poll the cursor")
+            window.show()
+            app.processEvents()
+            self.assertTrue(face._eye_timer.isActive(), "Eye tracking must resume after restoring the window")
+
             face.set_theme(None)
             self.assertFalse(face.isVisible())
             self.assertFalse(face._eye_timer.isActive())
