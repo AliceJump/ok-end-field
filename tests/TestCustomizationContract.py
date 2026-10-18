@@ -24,8 +24,15 @@ class TestCustomizationContract(unittest.TestCase):
         pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         self.assertIn(expected, pyproject["project"]["dependencies"])
 
-        requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines()
-        self.assertIn(expected, requirements)
+        # CI rewrites requirements.txt during inline_ok_requirements. Validate the
+        # immutable dependency lock instead of that mutable installation artifact.
+        locked = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
+        upstream_versions = {
+            package["version"]
+            for package in locked["package"]
+            if package["name"] == manifest["upstream"]["distribution"]
+        }
+        self.assertEqual(upstream_versions, {manifest["upstream"]["version"]})
 
     def test_manifest_tracks_every_patch_source(self):
         manifest = load_customization_manifest()
