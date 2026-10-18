@@ -18,4 +18,4 @@ python scripts/themes/build_nailong_theme.py
 {"schema_version": 1, "id": "sample", "name": "My Theme", "version": "1.0"}
 ```
 
-名称、ID 和版本有长度限制；ZIP 拒绝额外未知文件、目录穿越、重复成员、特殊 ZIP 压缩方法、符号链接、超过大小限制或包含 `qproperty-`、`url(...)`、`@import` 的样式。外部主题是**纯数据**而不是 Python 插件。更复杂的交互必须由 OKEF 主程序受控实现。
+名称、ID 和版本有长度限制；ZIP 拒绝额外未知文件、目录穿越、重复成员、特殊 ZIP 压缩方法、符号链接、超过大小限制或包含 `qproperty-`、`url(...)`、`@import` 或 Qt 反斜杠转义 的样式。外部主题是**纯数据**而不是 Python 插件。更复杂的交互必须由 OKEF 主程序受控实现。
