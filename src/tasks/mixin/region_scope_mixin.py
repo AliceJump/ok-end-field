@@ -39,9 +39,7 @@ class RegionScopeMixin(BaseEfTask):
             }
         )
         self.config_description.update(REGION_CONFIG_DESCRIPTION)
-        self.config_description[REGION_CONFIG_MODE_KEY] = (
-            "勾选后使用当前任务的独立地区范围，否则使用全局地区配置。"
-        )
+        self.config_description[REGION_CONFIG_MODE_KEY] = "勾选后使用当前任务的独立地区范围，否则使用全局地区配置。"
         self.config_type.update(REGION_CONFIG_TYPE)
         self.config_type[REGION_CONFIG_MODE_KEY] = {
             "sub_configs": {
