@@ -110,6 +110,47 @@ class NailongScene(QWidget):
         painter.end()
 
 
+
+
+class NailongBackdrop(NailongScene):
+    """Keep the interactive face behind every page of the main window.
+
+    Unlike the theme-tab preview, this is a sibling of the navigation and
+    page stack, not a child of any particular page. It never accepts input.
+    """
+
+    def __init__(self, window: QWidget):
+        super().__init__(window)
+        self.setMinimumHeight(0)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+        self.setAutoFillBackground(False)
+        self.setObjectName("NailongBackdrop")
+        window.installEventFilter(self)
+        self.setGeometry(window.rect())
+        self.hide()
+
+    def set_theme(self, pack: ThemePack | None) -> None:
+        """Show the background across navigation tabs only for Nailong packs."""
+        super().set_theme(pack)
+        if pack is not None and pack.kind == "nailong" and not self._background.isNull():
+            parent = self.parentWidget()
+            if parent is not None:
+                self.setGeometry(parent.rect())
+            self.show()
+            self.lower()
+        else:
+            self.hide()
+
+    def eventFilter(self, obj, event):
+        """Track root-window resizing without replacing upstream page widgets."""
+        if obj is self.parentWidget() and event.type() in {QEvent.Type.Resize, QEvent.Type.Show}:
+            self.setGeometry(obj.rect())
+            if self.isVisible():
+                self.lower()
+        return super().eventFilter(obj, event)
+
+
 class NailongCompanion(QWidget):
     """Small floating character visible across application pages when enabled."""
 
