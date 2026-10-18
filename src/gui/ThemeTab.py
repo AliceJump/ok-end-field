@@ -16,27 +16,34 @@ from PySide6.QtWidgets import (
 )
 from qfluentwidgets import FluentIcon, NavigationItemPosition
 
-from src.gui.NailongWidget import NailongCompanion, NailongScene
+from src.gui.NailongWidget import NailongBackdrop, NailongCompanion
 from src.themes.theme_pack import ThemePackError, import_theme_pack, load_active_theme, select_theme
+
+# Qt's default scroll-area/page canvases are otherwise opaque, which would
+# hide a native wallpaper below the page stack. Limit transparency to those
+# page surfaces, leaving cards, controls and the navigation visually intact.
+_NAILONG_PAGE_QSS = """
+QStackedWidget, QScrollArea, QAbstractScrollArea, QWidget#view {
+    background: transparent;
+}
+"""
 
 
 class ThemeTab(CustomTab):
     """Native theme manager with an always-safe return to the standard UI."""
 
     def __init__(self):
-        """Build the importer, the live pupil-tracking preview and reset control."""
+        """Build theme controls; the face itself belongs to the main window."""
         super().__init__()
         self._companion = None
+        self._backdrop = None
         container = QFrame(self)
         layout = QVBoxLayout(container)
         layout.setSpacing(14)
         title = QLabel("奶龙主题 · Nailong Theme")
         title.setStyleSheet("font-size: 22px; font-weight: 650;")
         layout.addWidget(title)
-        layout.addWidget(QLabel("支持导入奶龙素材 ZIP、动态眼睛追视、空闲与任务运行形象。"))
-        self.preview = NailongScene(container)
-        self.preview.setMinimumHeight(330)
-        layout.addWidget(self.preview)
+        layout.addWidget(QLabel("奶龙大脸作为全窗口背景，切换任务、配置或设置页面时仍会跟随鼠标追视。"))
         actions = QHBoxLayout()
         import_button = QPushButton("导入主题 ZIP 并应用")
         import_button.clicked.connect(self._import_clicked)
@@ -46,7 +53,7 @@ class ThemeTab(CustomTab):
         actions.addWidget(reset_button)
         actions.addStretch(1)
         layout.addLayout(actions)
-        self.status = QLabel("当前：默认主题；导入奶龙 ZIP 后可在此预览。")
+        self.status = QLabel("当前：默认主题；导入奶龙 ZIP 后全窗口显示动态大脸。")
         layout.addWidget(self.status)
         self.add_widget(container)
         QTimer.singleShot(0, self._load_saved_theme)
@@ -71,6 +78,16 @@ class ThemeTab(CustomTab):
         """Use an icon shipped with the existing Fluent UI dependency."""
         return FluentIcon.PHOTO
 
+    def _ensure_backdrop(self):
+        """Attach one non-interactive face below all main-window pages."""
+        if self._backdrop is not None:
+            return self._backdrop
+        parent = self.window()
+        if parent is self or parent is None:
+            return None
+        self._backdrop = NailongBackdrop(parent)
+        return self._backdrop
+
     def _ensure_companion(self):
         """Attach one non-interactive mascot to the real main window."""
         if self._companion is not None:
@@ -82,7 +99,7 @@ class ThemeTab(CustomTab):
         return self._companion
 
     def _apply(self, pack):
-        """Apply the style, face and companion, or restore the original appearance."""
+        """Apply global wallpaper and QSS, or restore the original interface."""
         app = QApplication.instance()
         if app is None:
             raise ThemePackError("Qt application is not available.")
@@ -90,9 +107,14 @@ class ThemeTab(CustomTab):
             app._okef_base_style_sheet = app.styleSheet()
         original = app._okef_base_style_sheet
         if pack is not None or getattr(app, "_okef_theme_applied", False):
-            app.setStyleSheet(original + ("\n" + pack.qss if pack is not None else ""))
+            style = original + ("\n" + pack.qss if pack is not None else "")
+            if pack is not None and pack.kind == "nailong":
+                style += "\n" + _NAILONG_PAGE_QSS
+            app.setStyleSheet(style)
         app._okef_theme_applied = pack is not None
-        self.preview.set_theme(pack)
+        backdrop = self._ensure_backdrop() if pack is not None and pack.kind == "nailong" else self._backdrop
+        if backdrop is not None:
+            backdrop.set_theme(pack)
         companion = self._ensure_companion() if pack is not None else self._companion
         if companion is not None:
             companion.set_theme(pack)
@@ -120,7 +142,7 @@ class ThemeTab(CustomTab):
             QMessageBox.warning(self, "主题加载失败", str(exc))
 
     def _reset_clicked(self):
-        """Restore the original stylesheet, face and idle/working mascot state."""
+        """Restore the original stylesheet, wallpaper and companion state."""
         try:
             select_theme(None)
             self._apply(None)
