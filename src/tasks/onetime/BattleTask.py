@@ -21,8 +21,14 @@ from src.data.world_map_utils import get_stage_category, get_world_map_matcher, 
 from src.icons import Icons
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
+from src.tasks.mixin.gather_learning import (
+    gather_entry_after_transfer,
+    gather_initial_context,
+    gather_transfer_alignment,
+)
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.navigation_detection_scope import NavigationDetectionScope, get_navigation_detection_scope
+from src.tasks.mixin.navigation_learning import align_initial_target
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 MAX_STORAGE_TICKET = 1000
@@ -228,10 +234,11 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
 
     def _click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
-        self.to_near_transfer_point(need_track=True, need_reserve_icon_name=fL.clear_page_gather)
+        transferred = self.to_near_transfer_point(need_track=True, need_reserve_icon_name=fL.clear_page_gather)
         self.ensure_main()
+        return gather_entry_after_transfer(self, transferred)
 
-    def _navigate_via_zip_line(self):
+    def _navigate_via_zip_line(self, initial_entry=None):
         """若配置了滑索路线，则通过滑索移动至目标。"""
         zip_line_str = self.get_zip_line_config_value(self.battle_ctx.stage_name)
         if zip_line_str:
@@ -245,10 +252,16 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 alt=True,
             )
             zip_line_list = parse_int_sequence(zip_line_str)
+            context = gather_initial_context(self, initial_entry, distances=zip_line_list)
             self.zip_line_list_go(
                 zip_line_list,
                 need_scroll=self.zip_line_scroll_enabled(),
                 target=([fL.gather_icon_out_map, fL.gather_icon_out_map2], "feature"),
+                config_key=self.battle_ctx.stage_name,
+                **(
+                    {"target_learning_context": context, "target_learning_epoch": initial_entry.epoch}
+                    if context is not None else {}
+                ),
             )
             return True
         return False
@@ -537,12 +550,13 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         finally:
             self.release_yolo_detector()
 
-    def battle_gather(self):
-        self.battle_ctx.enter_text = "挑战"
+    def navigate_to_gather(self):
+        """Use the production pre-battle navigation without activating the challenge."""
         # 点击追踪按钮，进入地图并传送
-        self._click_track_and_transfer()
+        initial_entry = self._click_track_and_transfer()
+        via_zipline = self._navigate_via_zip_line(initial_entry=initial_entry)
 
-        if (not self._navigate_via_zip_line()) or (
+        if (not via_zipline) or (
             not self.wait_ocr(
                 match=self.lang.daily_battle_mixin.k_bfe73e18,
                 box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
@@ -550,20 +564,30 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 raise_if_not_found=False,
             )
         ):
-            self.align_ocr_or_find_target_to_center(
+            context, confidence = gather_transfer_alignment(self, initial_entry if not via_zipline else None)
+            align_initial_target(
+                self,
+                context,
                 [fL.gather_icon_out_map, fL.gather_icon_out_map2],
+                confidence=confidence,
                 ocr=False,
                 only_x=True,
                 threshold=0.7,
                 tolerance=100,
             )
-            self.navigate_until_target(
-                target=self.lang.daily_battle_mixin.k_bfe73e18,
-                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
-                nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
-                time_out=60,
+            return bool(
+                self.navigate_until_target(
+                    target=self.lang.daily_battle_mixin.k_bfe73e18,
+                    box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                    nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
+                    time_out=60,
+                )
             )
+        return True
 
+    def battle_gather(self):
+        self.battle_ctx.enter_text = "挑战"
+        self.navigate_to_gather()
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
             self.log_info("放弃未领取的奖励")
             self.wait_click_ocr(

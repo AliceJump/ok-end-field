@@ -3196,3 +3196,43 @@ msgstr ""
 
 msgid "窗口置顶"
 msgstr "Mantener ventanas siempre encima"
+
+msgid "淤积点重复导航测试"
+msgstr "Prueba de navegación repetida a puntos de acumulación"
+
+msgid "按编排顺序循环导航到淤积点，使用正式学习流程，不激发、不挑战、不战斗。"
+msgstr ""
+"Repite la navegación a los puntos de acumulación en el orden indicado con el aprendizaje"
+" normal, sin activar, iniciar desafíos ni combatir."
+
+msgid "淤积点序列"
+msgstr "Secuencia de puntos de acumulación"
+
+msgid "循环次数"
+msgstr "Número de ciclos"
+
+msgid "按顺序执行，可重复添加同一淤积点；滑索路线沿用全局滑索配置。"
+msgstr ""
+"Se ejecuta en orden; se puede repetir un punto de acumulación. Las rutas de tirolina usan"
+" la configuración global."
+
+msgid "完整执行序列的次数，0 表示持续循环，直到手动停止。"
+msgstr ""
+"Veces que se ejecuta la secuencia completa. Usa 0 para repetir hasta "
+"detenerla manualmente."
+
+msgid "请编排有效的淤积点序列。"
+msgstr "Configura una secuencia válida de puntos de acumulación."
+
+msgid "循环次数必须为非负整数，0 表示持续循环。"
+msgstr ""
+"El número de ciclos debe ser un entero no negativo; 0 repite "
+"indefinidamente."
+
+msgid "测试进度"
+msgstr "Progreso de prueba"
+
+msgid "淤积点导航测试结束：成功 {success} 次，失败 {failed} 次。"
+msgstr ""
+"Prueba de navegación a puntos de acumulación finalizada: {success} éxitos y {failed} "
+"fallos."

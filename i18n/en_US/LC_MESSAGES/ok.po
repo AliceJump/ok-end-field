@@ -3101,3 +3101,40 @@ msgstr ""
 
 msgid "窗口置顶"
 msgstr "Keep Windows on Top"
+
+msgid "淤积点重复导航测试"
+msgstr "Energy Pool navigation loop test"
+
+msgid "按编排顺序循环导航到淤积点，使用正式学习流程，不激发、不挑战、不战斗。"
+msgstr ""
+"Repeat Energy Pool navigation in the planned order using the normal learning "
+"flow, without activation, challenges or combat."
+
+msgid "淤积点序列"
+msgstr "Energy Pool sequence"
+
+msgid "循环次数"
+msgstr "Loop count"
+
+msgid "按顺序执行，可重复添加同一淤积点；滑索路线沿用全局滑索配置。"
+msgstr ""
+"Run in order; the same Energy Pool may appear more than once. Zipline routes "
+"use the global zipline settings."
+
+msgid "完整执行序列的次数，0 表示持续循环，直到手动停止。"
+msgstr ""
+"Number of times to run the entire sequence. Use 0 to repeat until manually "
+"stopped."
+
+msgid "请编排有效的淤积点序列。"
+msgstr "Set a valid Energy Pool sequence."
+
+msgid "循环次数必须为非负整数，0 表示持续循环。"
+msgstr "Loop count must be a non-negative integer; 0 repeats indefinitely."
+
+msgid "测试进度"
+msgstr "Test progress"
+
+msgid "淤积点导航测试结束：成功 {success} 次，失败 {failed} 次。"
+msgstr ""
+"Energy Pool navigation test finished: {success} succeeded, {failed} failed."

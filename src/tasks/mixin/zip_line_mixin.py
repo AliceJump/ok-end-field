@@ -14,7 +14,7 @@ from src.core.global_config_store import (
     get_global_config,
 )
 from src.core.learning.models import yaw_bucket
-from src.core.learning.policy import learning_allowed
+from src.core.learning.policy import learning_allowed, learning_epoch
 from src.core.sequence_parser import parse_int_sequence
 from src.image.hsv_config import HSVRange as hR
 from src.interaction.target_movement import ellipse_geometry, ellipse_move_profile, ellipse_radius, hud_direction_step
@@ -978,6 +978,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         config_key=None,
         route_family=(),
         target_learning_context=None,
+        target_learning_epoch=None,
     ):
         """Learn only initial alignment under its original yaw, before activation or riding."""
         route_fingerprint = self._zip_line_motion_route_fingerprint(zip_line_list, config_key=config_key)
@@ -1058,10 +1059,20 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 result = True
             if result:
                 context = target_learning_context if (
-                    need_v
-                    and learning_allowed()
+                    learning_allowed()
+                    and (target_learning_epoch is None or target_learning_epoch == learning_epoch())
                     and target_learning_context is not None
                     and target_learning_context.entry_route_signature == tuple(zip_line_list)
+                    and (
+                        (need_v and target_learning_context.entry != "after_zipline_on_board")
+                        or (
+                            not need_v
+                            and target_learning_context.task == "gather"
+                            and target_learning_context.phase == "after_zipline"
+                            and target_learning_context.entry == "after_zipline_on_board"
+                            and bool(zip_line_list)
+                        )
+                    )
                 ) else None
                 confidence = "high"
                 if context is not None:
@@ -1069,6 +1080,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     verified_yaw = reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE
                     context = replace(context, start_yaw_bucket=yaw_bucket(reading[0]) if verified_yaw else None)
                     confidence = "high" if verified_yaw else "medium"
+                    if target_learning_epoch is not None and target_learning_epoch != learning_epoch():
+                        context = None
                 align_initial_target(
                     self, context, result_name,
                     confidence=confidence,
