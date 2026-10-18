@@ -4,6 +4,7 @@ from copy import copy
 import pyautogui
 
 from src.data.FeatureList import FeatureList as fL
+from src.interaction.target_movement import ellipse_geometry, hud_direction_step, resolve_move_profile
 from src.tasks.mixin.navigation_detection_scope import get_navigation_detection_scope
 from src.tasks.mixin.search_mixin import SearchMixin
 
@@ -59,6 +60,7 @@ class NavigationMixin(SearchMixin):
         need_v: bool = False,
         max_run_time: float = -1,
         allow_rotate_search: bool = True,
+        nav_move_profile=None,
     ):
         """
         持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
@@ -291,6 +293,7 @@ class NavigationMixin(SearchMixin):
                             max_time=1,
                             raise_if_fail=False,
                             allow_random_move=False,
+                            move_profile=nav_move_profile,
                         )
                         self.sleep(0.005)
                         continue
@@ -324,6 +327,7 @@ class NavigationMixin(SearchMixin):
                         max_time=1,
                         raise_if_fail=False,
                         allow_random_move=False,
+                        move_profile=nav_move_profile,
                     )
 
                     # 对中过程中实时门控行走：目标在中央附近就走，偏离就停
@@ -427,6 +431,7 @@ class NavigationMixin(SearchMixin):
         max_iterations=None,
         ocr_target_detector=None,
         ocr_target_mover=None,
+        move_profile=None,
     ):
         """将OCR识别或图像特征检测的目标对准屏幕中心（自动移动视角/鼠标）
 
@@ -455,6 +460,8 @@ class NavigationMixin(SearchMixin):
             max_iterations: 可选的底层循环次数上限；传入时覆盖 max_time * 2 的循环预算。
             ocr_target_detector: 可选单帧 OCR 检测器，返回已校正坐标的目标；None 表示等待，空列表表示识别失败。
             ocr_target_mover: 可选 OCR 目标移动函数，也用于短暂丢失后的目标跟踪；非 OCR 路径不使用。
+            move_profile: hud_direction 使用椭圆加速，world_projection 使用普通对中。
+                默认 Feature 使用 HUD，OCR/YOLO 使用普通对中；YOLO 始终使用普通对中。
 
         Returns:
             tuple[int,int] | bool: 成功对中返回对中前的目标中心坐标 (x, y)，失败返回 False(当raise_if_fail=False时)
@@ -467,7 +474,40 @@ class NavigationMixin(SearchMixin):
         scaled_tolerance = self.scale_distance(tolerance)
         observations = get_navigation_detection_scope(self)
         detection_kind = "ocr" if ocr else "yolo" if use_yolo else "feature"
-        feature_box = box or self.box_of_screen((1920 - 1550) / 1920, 150 / 1080, 1550 / 1920, (1080 - 150) / 1080)
+        profile = resolve_move_profile(move_profile, ocr=ocr, use_yolo=use_yolo)
+
+        def move_target(target):
+            target = copy(target)
+            if only_x:
+                target.y = self.screen_center()[1] - target.height // 2
+            if only_y:
+                target.x = self.screen_center()[0] - target.width // 2
+            if ocr and ocr_target_mover is not None:
+                return ocr_target_mover(target)
+            if profile == "world_projection":
+                return self.move_to_target_once(
+                    target, max_step=max_step, min_step=min_step, slow_radius=slow_radius, deadzone=deadzone
+                )
+            geometry = ellipse_geometry(self.screen_center(), min(self.width / 1920, self.height / 1080))
+            dx, dy = hud_direction_step(
+                (target.x + target.width // 2, target.y + target.height // 2),
+                geometry,
+                self.width,
+                max_step=max_step,
+                min_step=min_step,
+                slow_radius=slow_radius,
+                deadzone=deadzone,
+            )
+            if (dx or dy) and not self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005):
+                return 0, 0
+            return dx, dy
+
+        feature_box = box or self.box_of_screen(
+            (1920 - 1550) / 1920,
+            150 / 1080,
+            1550 / 1920,
+            (1080 - 150) / 1080,
+        )
         last_target = None
         last_target_fail_count = 0
         success = False
@@ -556,8 +596,7 @@ class NavigationMixin(SearchMixin):
                 # OCR 成功
                 if isinstance(result, list):
                     result = result[0]
-                if observations is not None:
-                    result = copy(result)
+                result = copy(result)
                 if is_num and (not ocr or ocr_target_detector is None):
                     result.y = result.y - int(self.height * ((525 - 486) / 1080))
                 if only_y:
@@ -581,16 +620,7 @@ class NavigationMixin(SearchMixin):
                 if abs(dx) <= scaled_tolerance and abs(dy) <= scaled_tolerance:
                     return target_center
                 else:
-                    if ocr and ocr_target_mover is not None:
-                        ocr_target_mover(result)
-                    else:
-                        self.move_to_target_once(
-                            result,
-                            max_step=max_step,
-                            min_step=min_step,
-                            slow_radius=slow_radius,
-                            deadzone=deadzone,
-                        )
+                    move_target(result)
 
             else:
                 if observations is not None:
@@ -622,10 +652,7 @@ class NavigationMixin(SearchMixin):
                     last_target.y = screen_center_y - offset_y
                     last_target.width = offset_width
                     last_target.height = offset_height
-                    if ocr and ocr_target_mover is not None:
-                        ocr_target_mover(last_target)
-                    else:
-                        self.move_to_target_once(last_target)
+                    move_target(last_target)
                     last_target_fail_count += 1
                     random_move_count = 0
                     move_count += 1
@@ -642,8 +669,8 @@ class NavigationMixin(SearchMixin):
 
                     # 移动鼠标
                     self.active_and_send_mouse_delta(
-                        dx,
-                        dy,
+                        0 if only_y else dx,
+                        0 if only_x else dy,
                         activate=True,
                         steps=5,
                         delay=0.003,

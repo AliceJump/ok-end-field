@@ -327,9 +327,10 @@ class TestZipLineGoldGate(unittest.TestCase):
         )
         detector.assert_not_called()
         mover.assert_not_called()
-        stub.move_to_target_once.assert_called_once()
+        stub.move_to_target_once.assert_not_called()
+        stub.active_and_send_mouse_delta.assert_called_once()
 
-    def test_zipline_arrival_target_only_uses_ellipse_mover_for_ocr(self):
+    def test_zipline_arrival_target_selects_profile_by_coordinate_semantics(self):
         for kind in ("ocr", "yolo", "feature"):
             with self.subTest(kind=kind):
                 stub = self._stub()
@@ -341,6 +342,7 @@ class TestZipLineGoldGate(unittest.TestCase):
                 ZipLineMixin.zip_line_list_go(stub, [], target=("destination", kind))
                 kwargs = stub.align_ocr_or_find_target_to_center.call_args.kwargs
                 self.assertIs(kwargs["ocr_target_mover"], stub._move_to_zip_line_target if kind == "ocr" else None)
+                self.assertEqual(kwargs["move_profile"], "world_projection" if kind == "yolo" else "hud_direction")
 
     def test_history_runs_after_scroll_once_and_detects_a_fresh_frame(self):
         stub = self._alignment_stub()

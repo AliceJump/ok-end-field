@@ -7,9 +7,11 @@ from src.core.BattleConfig import BATTLE_CONFIG_NAME
 from src.core.global_config_store import ZIP_LINE_CONFIG_NAME, get_all_visible_configs
 from src.core.NavConfig import NAV_CONFIG_NAME
 from src.core.PositionConfig import POSITION_CONFIG_NAME
+from src.core.RegionConfig import REGION_CONFIG_NAME, get_region_config, region_config_option
 
 GLOBAL_CONFIG_GROUPS = {
     "战斗配置": [BATTLE_CONFIG_NAME],
+    "地区配置": [REGION_CONFIG_NAME],
     "键位配置": ["Game Hotkey Config"],
     "基础配置": ["Ensure Main Once Action Sleep"],
     "滑索配置": [ZIP_LINE_CONFIG_NAME],
@@ -65,6 +67,7 @@ class GlobalConfigTab(CustomTab):
 
     def _collect_cards(self):
         visible_configs = {name: (config, option) for name, config, option in get_all_visible_configs()}
+        visible_configs[REGION_CONFIG_NAME] = (get_region_config(), region_config_option)
         shown = set()
         cards = []
         for group_name, config_names in GLOBAL_CONFIG_GROUPS.items():

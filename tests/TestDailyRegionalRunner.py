@@ -1,8 +1,22 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from typing import ClassVar
 from unittest.mock import Mock, patch
 
+from src.core.RegionConfig import (
+    REGION_CONFIG_MODE_KEY,
+    REGION_SCOPE_AREAS_KEY,
+    REGION_SCOPE_EXCLUDE,
+    REGION_SCOPE_INCLUDE,
+    REGION_SCOPE_MODE_KEY,
+    _migrate_region_segment,
+    migrate_legacy_region_scope,
+    resolve_region_areas,
+)
+from src.tasks.mixin.region_scope_mixin import RegionScopeMixin
 from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 
@@ -54,6 +68,7 @@ class TestDailyRegionalRunner(unittest.TestCase):
         runner.info_set.assert_called_once_with("current_task", "buy_staple_goods")
 
     def run_runner(self, runner):
+        runner.get_region_areas = Mock(return_value=list(self.AREAS))
         with patch("src.tasks.onetime.RegionalBuildTask.areas_list", self.AREAS):
             return runner.run_regional()
 
@@ -173,6 +188,174 @@ class TestDailyRegionalRunner(unittest.TestCase):
         self.assertEqual(runner.exchange_outpost_goods.call_count, 2)
         self.assertEqual(runner.buy_staple_goods.call_count, 2)
         runner.to_model_area.assert_not_called()
+
+
+class TestRegionScopeConfig(unittest.TestCase):
+    def test_exclude_mode_keeps_future_regions_enabled(self):
+        self.assertEqual(
+            resolve_region_areas(
+                REGION_SCOPE_EXCLUDE,
+                ["四号谷地"],
+                ["武陵", "四号谷地", "新地区"],
+            ),
+            ["武陵", "新地区"],
+        )
+
+    def test_include_mode_only_runs_selected_regions(self):
+        self.assertEqual(
+            resolve_region_areas(
+                REGION_SCOPE_INCLUDE,
+                ["武陵"],
+                ["武陵", "四号谷地", "新地区"],
+            ),
+            ["武陵"],
+        )
+
+    def test_legacy_disabled_area_becomes_independent_exclusion(self):
+        segment = {"武陵": True, "四号谷地": False}
+        self.assertTrue(_migrate_region_segment(segment, ["武陵", "四号谷地"]))
+        self.assertTrue(segment[REGION_CONFIG_MODE_KEY])
+        self.assertEqual(segment[REGION_SCOPE_MODE_KEY], REGION_SCOPE_EXCLUDE)
+        self.assertEqual(segment[REGION_SCOPE_AREAS_KEY], ["四号谷地"])
+        self.assertTrue(segment["四号谷地"])
+
+    def test_existing_scope_wins_while_legacy_gate_is_neutralized(self):
+        segment = {
+            "武陵": True,
+            "四号谷地": False,
+            REGION_CONFIG_MODE_KEY: True,
+            REGION_SCOPE_MODE_KEY: REGION_SCOPE_INCLUDE,
+            REGION_SCOPE_AREAS_KEY: ["武陵"],
+        }
+        self.assertTrue(_migrate_region_segment(segment, ["武陵", "四号谷地"]))
+        self.assertEqual(segment[REGION_SCOPE_MODE_KEY], REGION_SCOPE_INCLUDE)
+        self.assertEqual(segment[REGION_SCOPE_AREAS_KEY], ["武陵"])
+        self.assertTrue(segment["四号谷地"])
+
+    def test_all_true_legacy_flags_do_not_pin_current_region_set(self):
+        segment = {"武陵": True, "四号谷地": True}
+        self.assertFalse(_migrate_region_segment(segment, ["武陵", "四号谷地"]))
+        self.assertNotIn(REGION_CONFIG_MODE_KEY, segment)
+        self.assertNotIn(REGION_SCOPE_AREAS_KEY, segment)
+
+    def test_migration_failure_does_not_block_config_load(self):
+        scope = object.__new__(RegionScopeMixin)
+        scope.migrate_legacy_region_bools = True
+        scope.log_warning = Mock()
+
+        with (
+            patch(
+                "src.tasks.mixin.region_scope_mixin.migrate_legacy_region_scope",
+                side_effect=OSError("disk full"),
+            ),
+            patch("src.core.BaseEfTask.BaseEfTask.load_config", return_value="loaded") as base_load,
+        ):
+            self.assertEqual(RegionScopeMixin.load_config(scope), "loaded")
+
+        base_load.assert_called_once_with()
+        scope.log_warning.assert_called_once()
+        self.assertIn("旧地区配置迁移失败", scope.log_warning.call_args.args[0])
+
+    def test_persisted_migration_updates_task_and_account_and_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            task_file = root / "RegionalBuildTask.json"
+            account_file = root / "account_scoped_overrides.json"
+            task_file.write_text(
+                json.dumps({"武陵": True, "四号谷地": False}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            account_file.write_text(
+                json.dumps(
+                    {
+                        "accounts": {
+                            "acc-a": {
+                                "RegionalBuildTask": {
+                                    "武陵": True,
+                                    "四号谷地": False,
+                                }
+                            }
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            def fake_config_path(*parts):
+                return str(root.joinpath(*parts))
+
+            def fake_update_overrides(transform):
+                data = json.loads(account_file.read_text(encoding="utf-8"))
+                data = transform(data)
+                account_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+                return data
+
+            with (
+                patch("src.core.RegionConfig.config_path", side_effect=fake_config_path),
+                patch("src.tasks.account.account_scope_store.get_store_path", return_value=str(account_file)),
+                patch("src.tasks.account.account_scope_store.update_overrides", side_effect=fake_update_overrides),
+            ):
+                migrate_legacy_region_scope("RegionalBuildTask", ["武陵", "四号谷地"])
+                first_task = json.loads(task_file.read_text(encoding="utf-8"))
+                first_account = json.loads(account_file.read_text(encoding="utf-8"))
+                migrate_legacy_region_scope("RegionalBuildTask", ["武陵", "四号谷地"])
+                second_task = json.loads(task_file.read_text(encoding="utf-8"))
+                second_account = json.loads(account_file.read_text(encoding="utf-8"))
+
+            self.assertEqual(first_task, second_task)
+            self.assertEqual(first_account, second_account)
+            self.assertTrue(first_task[REGION_CONFIG_MODE_KEY])
+            self.assertEqual(first_task[REGION_SCOPE_MODE_KEY], REGION_SCOPE_EXCLUDE)
+            self.assertEqual(first_task[REGION_SCOPE_AREAS_KEY], ["四号谷地"])
+            self.assertTrue(first_task["四号谷地"])
+
+            account_segment = first_account["accounts"]["acc-a"]["RegionalBuildTask"]
+            self.assertTrue(account_segment[REGION_CONFIG_MODE_KEY])
+            self.assertEqual(account_segment[REGION_SCOPE_AREAS_KEY], ["四号谷地"])
+            self.assertTrue(account_segment["四号谷地"])
+
+            backup_dir = root / "region_scope_migration_backup" / "v1"
+            self.assertTrue((backup_dir / "RegionalBuildTask.json").is_file())
+            self.assertTrue((backup_dir / "account_scoped_overrides.json").is_file())
+
+    def _make_scoped_runner(self, scoped_areas):
+        runner = object.__new__(RegionalBuildTask)
+        runner.DEFAULT_OPTIONS = ["据点兑换", "买卖货"]
+        runner._buy_ran = False
+        runner.config = SimpleNamespace(
+            get=lambda key, default=None: ["据点兑换", "买物资", "买卖货"] if key == "⭐地区建设" else default
+        )
+        runner.get_region_areas = Mock(return_value=list(scoped_areas))
+        runner.exchange_outpost_goods = Mock(return_value=True)
+        runner.buy_sell = Mock(return_value=(True, False))
+        runner._buy_staple_in_area = Mock(return_value=True)
+        runner.safe_back = Mock()
+        runner.ensure_main = Mock()
+        runner.log_info = Mock()
+        runner.tr = lambda message, **kwargs: message
+        return runner
+
+    def test_scoped_runner_applies_same_area_to_all_regional_operations(self):
+        runner = self._make_scoped_runner(["武陵"])
+
+        self.assertTrue(runner.run_regional())
+        runner.exchange_outpost_goods.assert_called_once_with(
+            target_areas=["武陵"],
+            keep_area_context=True,
+        )
+        self.assertEqual(runner.buy_sell.call_count, 1)
+        self.assertEqual(runner.buy_sell.call_args.kwargs["target_areas"], ["武陵"])
+        runner._buy_staple_in_area.assert_called_once_with("武陵")
+
+    def test_empty_scope_is_clean_noop(self):
+        runner = self._make_scoped_runner([])
+
+        self.assertTrue(runner.run_regional())
+        runner.exchange_outpost_goods.assert_not_called()
+        runner.buy_sell.assert_not_called()
+        runner._buy_staple_in_area.assert_not_called()
+        runner.safe_back.assert_not_called()
 
 
 if __name__ == "__main__":

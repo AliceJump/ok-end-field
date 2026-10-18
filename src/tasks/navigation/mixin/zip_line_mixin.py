@@ -27,10 +27,11 @@ from src.core.global_config_store import (
     ZIP_LINE_TARGET_SELECT_OCR,
     get_global_config,
 )
+from src.core.learning.policy import learning_allowed
 from src.core.sequence_parser import parse_int_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
-from src.interaction.Mouse import calc_direction_step
+from src.interaction.target_movement import ellipse_geometry, ellipse_move_profile, ellipse_radius, hud_direction_step
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.zip_line_motion_cache import (
     build_zip_line_route_fingerprint,
@@ -623,16 +624,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _zip_line_ellipse_geometry(self):
         """返回屏幕中心与滑索边缘提示所在椭圆的半径。"""
-        center_x, center_y = self.screen_center()
-        scale = self.resolution_scale()
-        radius_x = max(1, round(self._ZIP_LINE_ELLIPSE_RX * scale))
-        radius_y = max(1, round(self._ZIP_LINE_ELLIPSE_RY * scale))
-        return center_x, center_y, radius_x, radius_y
+        return ellipse_geometry(
+            self.screen_center(), self.resolution_scale(), self._ZIP_LINE_ELLIPSE_RX, self._ZIP_LINE_ELLIPSE_RY
+        )
 
     def _zip_line_ellipse_radius(self, x, y):
         """返回点在滑索椭圆中的归一化半径，1.0 为椭圆边缘。"""
-        center_x, center_y, radius_x, radius_y = self._zip_line_ellipse_geometry()
-        return math.hypot((x - center_x) / radius_x, (y - center_y) / radius_y)
+        return ellipse_radius(x, y, self._zip_line_ellipse_geometry())
 
     def _zip_line_has_gold_ring(self, gold_mask, center_x, center_y):
         """用图标四周均有金黄色像素来识别当前锁定态，避免环境黄色误判。"""
@@ -861,19 +859,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _zip_line_move_profile(self, ellipse_radius):
         """椭圆内半径正常对中，外半圈随离中心程度平滑加速。"""
-        profile = {
-            "max_step": 120,
-            "min_step": 20,
-            "slow_radius": 350,
-            "deadzone": 8,
-        }
-        if ellipse_radius <= self._ZIP_LINE_INNER_RADIUS:
-            return profile
-        progress = min(1.0, (ellipse_radius - self._ZIP_LINE_INNER_RADIUS) / (1.0 - self._ZIP_LINE_INNER_RADIUS))
-        boost = 1.0 + (self._ZIP_LINE_OUTER_MAX_BOOST - 1.0) * progress
-        profile["max_step"] = round(profile["max_step"] * boost)
-        profile["min_step"] = round(profile["min_step"] * boost)
-        return profile
+        return ellipse_move_profile(
+            ellipse_radius, inner_radius=self._ZIP_LINE_INNER_RADIUS, outer_boost=self._ZIP_LINE_OUTER_MAX_BOOST
+        )
 
     @staticmethod
     def _zip_line_alignment_failed(raise_if_fail):
@@ -884,16 +872,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _move_to_zip_line_target(self, target):
         """在椭圆坐标中计算方向与距离，以屏幕宽度统一缩放横纵步长。"""
-        cx, cy, rx, ry = self._zip_line_ellipse_geometry()
-        nx = (target.x + target.width // 2 - cx) / rx
-        ny = (target.y + target.height // 2 - cy) / ry
-        profile = self._zip_line_move_profile(math.hypot(nx, ny))
-        width_scale = self.width / 1920
-        width_radius = self._ZIP_LINE_ELLIPSE_RX * width_scale
-        dx, dy = calc_direction_step(
-            (0, 0),
-            (nx * width_radius, ny * width_radius),
-            **{key: max(1, round(value * width_scale)) for key, value in profile.items()},
+        dx, dy = hud_direction_step(
+            (target.x + target.width // 2, target.y + target.height // 2),
+            self._zip_line_ellipse_geometry(),
+            self.width,
+            reference_radius_x=self._ZIP_LINE_ELLIPSE_RX,
+            inner_radius=self._ZIP_LINE_INNER_RADIUS,
+            outer_boost=self._ZIP_LINE_OUTER_MAX_BOOST,
         )
         if (dx or dy) and not self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005):
             return 0, 0
@@ -995,7 +980,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         if max_time <= 0 or (deadline is not None and self.active_time() >= deadline):
             return self._zip_line_alignment_failed(raise_if_fail)
 
-        prefeed_move = initial_move
+        prefeed_move = initial_move if learning_allowed() else None
 
         misses = 0
         pattern = (
@@ -1280,7 +1265,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return current_yaw, True
 
         total_dx = 0
-        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw)
+        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw) if learning_allowed() else None
         if hint is not None:
             hint_dx, hint_samples = hint
             if self._send_zip_line_yaw_delta(hint_dx):
@@ -1346,7 +1331,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             )
             return target_yaw, False
 
-        if total_dx:
+        if total_dx and learning_allowed():
             record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx)
         self.log_info(
             f"[zipline-yaw] normalized {initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
@@ -1480,16 +1465,18 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         target_mode = self.zip_line_target_select_mode()
         route_fingerprint = self._zip_line_motion_route_fingerprint(zip_line_list, config_key=config_key)
         stop_match, stop_box = self._zip_line_stop_state()
-        for index, zip_line in enumerate(zip_line_list):
+        if not learning_allowed():
+            route_fingerprint = None
+        for segment_index, zip_line in enumerate(zip_line_list):
             tolerance = self._value_for_index(
                 tolerances,
-                index,
+                segment_index,
                 default=distance_tolerance,
             )
-            bearing = self._value_for_index(bearings, index)
-            target_position = self._value_for_index(positions, index)
-            source_xyz = self._value_for_index(source_positions_3d, index)
-            target_xyz = self._value_for_index(target_positions_3d, index)
+            bearing = self._value_for_index(bearings, segment_index)
+            target_position = self._value_for_index(positions, segment_index)
+            source_xyz = self._value_for_index(source_positions_3d, segment_index)
+            target_xyz = self._value_for_index(target_positions_3d, segment_index)
             if target_mode == ZIP_LINE_TARGET_SELECT_DIRECT and bearing is not None:
                 try:
                     if not self._direct_zip_line_go(bearing, target_position):
@@ -1508,9 +1495,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 if start_yaw is not None
                 else None
             )
-            hint = load_zip_line_segment_motion(motion_key, index) if motion_key else None
+            hint = load_zip_line_segment_motion(motion_key, segment_index) if motion_key else None
             nearest = (
-                load_nearest_zip_line_segment_motion(route_fingerprint, index, self.width, self.height, start_yaw)
+                load_nearest_zip_line_segment_motion(
+                    route_fingerprint, segment_index, self.width, self.height, start_yaw
+                )
                 if motion_key and hint is None
                 else None
             )
@@ -1523,11 +1512,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                         matched_key = build_zip_line_motion_route_fingerprint(
                             route_fingerprint, self.width, self.height, actual_yaw
                         )
-                        hint = load_zip_line_segment_motion(matched_key, index)
+                        hint = load_zip_line_segment_motion(matched_key, segment_index)
                 initial_move = hint[:2] if hint is not None else None
                 if hint is not None:
                     self.log_info(
-                        f"[zipline-motion-cache] segment={index + 1}/{len(zip_line_list)} "
+                        f"[zipline-motion-cache] segment={segment_index + 1}/{len(zip_line_list)} "
                         f"start_yaw={start_yaw:.1f} samples={hint[2]} prefeed={initial_move}"
                     )
                 self._align_and_activate_zip_line(
@@ -1548,10 +1537,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             if (
                 motion_key
                 and motion.complete
-                and record_zip_line_segment_motion(motion_key, index, motion.dx, motion.dy)
+                and record_zip_line_segment_motion(motion_key, segment_index, motion.dx, motion.dy)
             ):
                 self.log_info(
-                    f"[zipline-motion-cache] segment={index + 1}/{len(zip_line_list)} "
+                    f"[zipline-motion-cache] segment={segment_index + 1}/{len(zip_line_list)} "
                     f"start_yaw={start_yaw:.1f} learned=({motion.dx},{motion.dy})"
                 )
 
@@ -1599,6 +1588,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     use_yolo=yolo_bool,
                     raise_if_fail=False,
                     ocr_target_mover=self._move_to_zip_line_target if ocr_bool else None,
+                    move_profile="world_projection" if yolo_bool else "hud_direction",
                 )
                 self.click(key="right")
         stop_match, stop_box = self._zip_line_stop_state()

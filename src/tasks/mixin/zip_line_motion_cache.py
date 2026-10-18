@@ -7,6 +7,7 @@ from contextlib import suppress
 from pathlib import Path
 from threading import RLock
 
+from src.core.learning.policy import learning_allowed
 from src.tasks.mixin.zip_line_yaw_cache import build_zip_line_motion_route_fingerprint
 
 _CACHE_VERSION = 4
@@ -121,7 +122,7 @@ def load_zip_line_segment_motion(route_fingerprint: str | None, segment_index):
     The cache is only eligible when both the config key and the complete configured
     distance list match, and the requested segment index has its own learned entry.
     """
-    if not route_fingerprint:
+    if not learning_allowed() or not route_fingerprint:
         return None
     key = _segment_key(segment_index)
     if key is None:
@@ -138,6 +139,8 @@ def load_nearest_zip_line_segment_motion(route_fingerprint, segment_index, width
     Returns ``(yaw, raw_dx, raw_dy, samples)``. The caller must physically turn to
     this yaw and verify the actual bucket before replaying the displacement.
     """
+    if not learning_allowed():
+        return None
     fingerprint = build_zip_line_motion_route_fingerprint(route_fingerprint, width, height, start_yaw)
     key = _segment_key(segment_index)
     if fingerprint is None or key is None:
@@ -176,7 +179,7 @@ def record_zip_line_segment_motion(
     total_dy: float,
 ) -> bool:
     """Update the rolling raw mouse total for one successful route segment."""
-    if not route_fingerprint:
+    if not learning_allowed() or not route_fingerprint:
         return False
     key = _segment_key(segment_index)
     if key is None:

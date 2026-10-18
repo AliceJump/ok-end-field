@@ -7,6 +7,7 @@ from typing import ClassVar
 
 from ok import TaskDisabledException
 
+from src.core.learning.policy import without_learning
 from src.core.sequence_parser import parse_int_sequence, parse_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import (
@@ -612,6 +613,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         self._switch_team_before_reenter()
         return self.battle_recycle()
 
+    @without_learning("post_battle_retry")
     def _gather_retry_navigate(self):
         """
         能量淤积点的二次寻路：重新打开索引 → 进入副本详情 → 追踪传送 → 滑索 → 领取奖励。
@@ -922,6 +924,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             return False
         return True
 
+    @without_learning("battle")
     def to_battle(self, transition_recovery=None):
         if not is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
             self.wait_pop_up(time_out=4)
@@ -943,11 +946,13 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             self.wait_pop_up(time_out=4)
         return self.auto_battle(no_battle=self.battle_ctx.no_battle)
 
+    @without_learning("post_battle")
     def to_end(self):
         # 仅在战斗后的终点寻找中启用；return、异常和任务停止都会自动关闭。
         with NavigationDetectionScope(self):
             return self._find_end()
 
+    @without_learning("post_battle")
     def _find_end(self):
         click_key = (
             self.lang.daily_battle_mixin.k_b8a81b7a

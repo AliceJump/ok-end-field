@@ -12,6 +12,7 @@ from src.core.BattleConfig import (
     KEY_SKILL_ALLOWLIST,
     KEY_TIMING_ROTATION,
 )
+from src.core.learning.policy import without_learning
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
 from src.data.skill_allowlist import generate_skill_sequence
@@ -490,6 +491,11 @@ class AutoCombatLogic:
             task.sleep(0.5)
             return False
 
+        return self._run_confirmed_combat(start_sleep, no_battle, deadline)
+
+    @without_learning("battle")
+    def _run_confirmed_combat(self, start_sleep, no_battle, deadline):
+        task = self.task
         # 已确认进入战斗，记录进入时刻（用于“秒退”判定）
         combat_enter_time = task.active_time()
         self.protocol_space_detected = False
