@@ -49,10 +49,17 @@ class TestCustomizationContract(unittest.TestCase):
             source = (ROOT / name).read_text(encoding="utf-8")
             with self.subTest(name=name):
                 self.assertIn("validate_customization_contract()", source)
-                self.assertLess(
-                    source.index("validate_customization_contract()"),
-                    source.index("install_pre_config_patch()"),
-                )
+                validation_index = source.index("validate_customization_contract()")
+                for marker in (
+                    "from src.patches.pre_config_patch import",
+                    "from src.patches.qfluent_mute_promo_patch import",
+                    "from src.patches.startup_patches import",
+                    "install_pre_config_patch()",
+                    "install_mute_promo_patch()",
+                    "install_startup_patches()",
+                ):
+                    with self.subTest(marker=marker):
+                        self.assertLess(validation_index, source.index(marker))
 
     def test_current_contract_validates_with_declared_version(self):
         manifest = load_customization_manifest()
