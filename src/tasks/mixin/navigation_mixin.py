@@ -28,16 +28,24 @@ class NavigationMixin(SearchMixin):
         self.log_info(f"找到{target_feature_in_map}图标，点击进入")
         self.click(result)
 
-        if result := self.wait_feature(
+        follow_button = self.wait_feature(
             feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False
-        ):
-            self.click(result, after_sleep=0.5)
+        )
+        if follow_button:
+            self.click(follow_button, after_sleep=0.5)
         else:
-            context = None
+            # An already tracked target may have no Start Tracking button.
+            # Stable workflow evidence remains valid; only fresh HUD alignment
+            # after actual input can commit a sample.
+            self.log_info("未匹配到开始追踪按钮，继续关闭地图并检查场外目标")
 
         self.press_key("m")
         self.log_info("关闭地图界面 (按下 M)")
         context = confirm_tracking_context(self, context, learning_entry)
+        self.log_info(
+            f"[workflow-learning] tracking target={target_feature_out_map} "
+            f"context_confirmed={context is not None} start_follow_clicked={bool(follow_button)}"
+        )
         with initial_alignment(self, context, confidence=confidence) as learning:
             if learning is not None:
                 learning.replay()

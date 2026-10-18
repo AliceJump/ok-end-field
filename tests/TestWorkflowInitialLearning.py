@@ -167,28 +167,42 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         self.assertTrue(entry.consumed)
         task.active_and_send_mouse_delta.assert_not_called()
 
-    def test_missing_tracking_button_and_epoch_change_on_map_close_disable_learning(self):
-        for failure in ("tracking", "epoch"):
-            with self.subTest(failure=failure):
-                task = self.task()
-                entry = self.trade_entry(task)
-                if failure == "tracking":
-                    task.wait_feature.return_value = None
-                else:
+    def test_missing_tracking_button_preserves_stable_entry_and_replays_before_detection(self):
+        task = self.task()
+        entry = self.trade_entry(task)
+        self.fixtures.seed(entry.context, dx=100, dy=0)
+        task.wait_feature.return_value = None
+        events = []
+        task.active_and_send_mouse_delta.side_effect = lambda *a, **k: events.append("replay") or True
+        task.find_feature.side_effect = lambda **k: events.append("detect") or box()
+        self.assertTrue(
+            task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
+        )
+        self.assertEqual(events[:2], ["replay", "detect"])
+        self.assertEqual(task.active_and_send_mouse_delta.call_args.args[:2], (100, 0))
+        self.assertEqual(self.store.get(entry.context.fingerprint).motion.samples, 4)
+        self.assertEqual(task.click.call_count, 1)
 
-                    def close_map(*args, **kwargs):
-                        with deny_learning("battle"):
-                            pass
+    def test_epoch_change_on_map_close_still_disables_learning_without_tracking_button(self):
+        task = self.task()
+        entry = self.trade_entry(task)
+        task.wait_feature.return_value = None
 
-                    task.press_key.side_effect = close_map
-                with patch(
-                    "src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")
-                ):
-                    self.assertTrue(
-                        task.start_tracking_and_align_target(
-                            "map", fL.market_dispatch_terminal_out, learning_entry=entry
-                        )
-                    )
+        def close_map(*args, **kwargs):
+            with deny_learning("battle"):
+                pass
+
+        task.press_key.side_effect = close_map
+        with patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")):
+            self.assertTrue(
+                task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
+            )
+
+    def test_missing_tracking_button_cannot_create_context_without_entry(self):
+        task = self.task()
+        task.wait_feature.return_value = None
+        with patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")):
+            self.assertTrue(task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out))
 
     def test_missing_world_marker_fails_prior_without_saving_a_sample(self):
         task = self.task()
@@ -216,11 +230,25 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         )
         self.assertEqual(events[:4], ["main", "stable", "replay", "detect"])
 
+    def test_missing_tracking_button_and_missing_world_target_cannot_save(self):
+        task = self.task()
+        entry = self.trade_entry(task)
+        self.fixtures.seed(entry.context, dx=100, dy=0)
+        task.wait_feature.return_value = None
+        task.find_feature.return_value = None
+        task.next_frame.side_effect = lambda: task.sleep(1) or object()
+        self.assertFalse(
+            task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
+        )
+        record = self.store.get(entry.context.fingerprint)
+        self.assertEqual((record.motion.samples, record.failure_count), (3, 1))
+
     def test_unstable_map_close_or_cancel_cannot_replay(self):
         for failure in (False, TaskDisabledException()):
             with self.subTest(failure=failure):
                 task = self.task()
                 entry = self.trade_entry(task)
+                task.wait_feature.return_value = None
                 self.fixtures.seed(entry.context, dx=100, dy=0)
                 before = self.store.get(entry.context.fingerprint)
                 task.wait_ui_stable.side_effect = failure if isinstance(failure, Exception) else None

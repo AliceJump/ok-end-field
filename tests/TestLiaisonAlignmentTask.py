@@ -146,6 +146,7 @@ class TestLiaisonAlignmentTask(unittest.TestCase):
     def test_first_outside_visit_then_inside_retransfers_accumulate_and_replay(self):
         task, fixtures = self.production_task()
         task.wait_click_feature.side_effect = [box(), None, None, None]
+        task.wait_feature.side_effect = lambda **kwargs: None if kwargs["feature"] == fL.start_follow else box()
         task.wait_ocr.side_effect = [[], [box()]] * 4
         task.find_feature.side_effect = None
         original_send = task.active_and_send_mouse_delta
