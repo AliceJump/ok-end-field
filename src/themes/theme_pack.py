@@ -23,7 +23,8 @@ _MASCOT_ASSETS = {"assets/background.webp", "assets/standing.webp", "assets/work
 _MAX_MANIFEST_BYTES = 16 * 1024
 _MAX_QSS_BYTES = 128 * 1024
 _ID_PATTERN = re.compile(r"[a-z][a-z0-9_-]{0,63}\Z")
-_UNSAFE_QSS = re.compile(r"(?:\burl\s*\(|@import\b|\bqproperty\s*-)", re.IGNORECASE)
+# Qt expands backslash escapes before parsing selectors and property names.
+_UNSAFE_QSS = re.compile(r"(?:\\|\burl\s*\(|@import\b|\bqproperty\s*-)", re.IGNORECASE)
 
 
 class ThemePackError(ValueError):
