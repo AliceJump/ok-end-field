@@ -7,6 +7,8 @@ from contextlib import suppress
 from pathlib import Path
 from threading import RLock
 
+from src.core.learning.policy import learning_allowed
+
 _CACHE_VERSION = 1
 _DEFAULT_CACHE_PATH = Path("tmp") / "zipline_yaw_cache.json"
 _CACHE_LOCK = RLock()
@@ -106,6 +108,8 @@ def _turn_key(width, height, start_yaw, target_yaw) -> str | None:
 
 def load_arrow_turn_motion(width, height, start_yaw, target_yaw):
     """Return ``(raw_dx, samples)`` for the same size and yaw buckets."""
+    if not learning_allowed():
+        return None
     key = _turn_key(width, height, start_yaw, target_yaw)
     if key is None:
         return None
@@ -128,6 +132,8 @@ def load_arrow_turn_motion(width, height, start_yaw, target_yaw):
 
 def record_arrow_turn_motion(width, height, start_yaw, target_yaw, total_dx) -> bool:
     """Learn a successful horizontal raw-mouse turn for matching size/yaw buckets."""
+    if not learning_allowed():
+        return False
     key = _turn_key(width, height, start_yaw, target_yaw)
     dx = _finite_number(total_dx)
     if key is None or dx is None or dx == 0:
