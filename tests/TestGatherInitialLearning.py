@@ -149,37 +149,45 @@ class TestGatherInitialLearning(unittest.TestCase):
             pass
         self.assertIsNone(gather_initial_context(task, entry))
 
-    def test_transfer_uses_conservative_replay_and_preserves_real_yaw(self):
+    def test_index_fast_transfer_is_high_confidence_and_yaw_is_optional(self):
         task = self.entry_task()
         entry = self.entry(task)
         context, confidence = gather_transfer_alignment(task, entry)
-        self.assertEqual((context.start_yaw_bucket, confidence), (18, ContextConfidence.MEDIUM))
+        self.assertEqual((context.start_yaw_bucket, confidence), (18, ContextConfidence.HIGH))
         task._read_zip_line_settled_arrow_angle.return_value = None
         unknown, confidence = gather_transfer_alignment(task, entry)
         self.assertIsNone(unknown.start_yaw_bucket)
+        self.assertEqual(confidence, ContextConfidence.HIGH)
         self.assertNotEqual(unknown.fingerprint, context.fingerprint)
 
     def test_no_route_replays_before_detection_then_saves_before_navigation_failure(self):
-        task = self.entry_task()
-        context, _ = gather_transfer_alignment(task, self.entry(task))
-        self.fixtures.seed(context, dx=100, dy=0)
-        events = []
-        task.active_and_send_mouse_delta.side_effect = lambda *a, **k: events.append("replay") or True
-        task.find_feature.side_effect = lambda **kwargs: events.append("detect") or box()
+        for reading in ((90, 0.9), None, (90, 0.2)):
+            with self.subTest(reading=reading):
+                task = self.entry_task()
+                task._read_zip_line_settled_arrow_angle.return_value = reading
+                context, _ = gather_transfer_alignment(task, self.entry(task))
+                self.fixtures.seed(context, dx=100, dy=0)
+                before = self.store.get(context.fingerprint).motion.samples
+                events = []
+                task.active_and_send_mouse_delta.side_effect = lambda *a, _events=events, **k: (
+                    _events.append("replay") or True
+                )
+                task.find_feature.side_effect = lambda _events=events, **kwargs: _events.append("detect") or box()
 
-        def navigate(**kwargs):
-            self.assertNotIn("learning_session", kwargs)
-            self.assertEqual(self.store.get(context.fingerprint).motion.samples, 4)
-            events.append("nav")
-            task.active_and_send_mouse_delta(500, 0)
-            raise RuntimeError("navigation failed later")
+                def navigate(_context=context, _before=before, _events=events, _task=task, **kwargs):
+                    self.assertNotIn("learning_session", kwargs)
+                    self.assertEqual(self.store.get(_context.fingerprint).motion.samples, _before + 1)
+                    _events.append("nav")
+                    _task.active_and_send_mouse_delta(500, 0)
+                    raise RuntimeError("navigation failed later")
 
-        task.navigate_until_target.side_effect = navigate
-        with self.assertRaisesRegex(RuntimeError, "later"):
-            BattleTask.battle_gather(task)
-        self.assertEqual(events[:3], ["replay", "detect", "nav"])
-        self.assertEqual(task.active_and_send_mouse_delta.call_args_list[0].args[:2], (50, 0))
-        self.assertEqual(self.store.get(context.fingerprint).motion.samples, 4)
+                task.navigate_until_target.side_effect = navigate
+                with self.assertRaisesRegex(RuntimeError, "later"):
+                    BattleTask.battle_gather(task)
+                self.assertEqual(events[:3], ["replay", "detect", "nav"])
+                self.assertEqual(task.active_and_send_mouse_delta.call_args_list[0].args[:2], (100, 0))
+                self.assertEqual(self.store.get(context.fingerprint).motion.samples, before + 1)
+                self.assertEqual(self.store.get(context.fingerprint).motion.mean_dx, 100)
 
     def test_failed_transfer_retains_visual_alignment_without_store_access(self):
         task = self.entry_task([box(1500, 800), box()])

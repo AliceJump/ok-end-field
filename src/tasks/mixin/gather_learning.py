@@ -19,7 +19,7 @@ class GatherEntry:
 
 
 def gather_entry_after_transfer(task, transferred):
-    """Require a clicked transfer, confirmed world UI and newly settled frames."""
+    """Confirm the index -> selected gather stage -> fast-transfer entry."""
     if not learning_allowed() or transferred is not True:
         return None
     stage = task.battle_ctx.stage_name
@@ -59,8 +59,9 @@ def gather_initial_context(task, entry, *, distances=()):
         "hud-initial-v1",
         "xy" if on_board else "x",
     )
-    # These fields are semantic private identities, not inferred geographic areas
-    # or a claimed visual recognition of the physical transfer-point name.
+    # The persisted stage-nearest-transfer identity denotes the index -> selected
+    # stage -> fast-transfer chain. Retain its key so verified totals remain usable;
+    # neither a named physical transfer point nor target detection is required.
     return WorkflowContext(
         "gather",
         phase,
@@ -84,6 +85,6 @@ def gather_transfer_alignment(task, entry):
         return None, ContextConfidence.INVALID
     if reading is not None and reading[1] >= task._ZIP_LINE_ARROW_MIN_SCORE:
         context = replace(context, start_yaw_bucket=yaw_bucket(reading[0]))
-    # The nearest transfer has no verified physical name/camera pose. Keep its
-    # private replay conservative even when a reliable character arrow is available.
-    return context, ContextConfidence.MEDIUM
+    # A completed index/stage/fast-transfer chain establishes the stable entry.
+    # Reliability still comes from verified sample count/variance, not a point name.
+    return context, ContextConfidence.HIGH
