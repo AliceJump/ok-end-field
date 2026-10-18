@@ -143,6 +143,26 @@ class TestLiaisonAlignmentTask(unittest.TestCase):
         self.assertEqual(task.move_keys.call_count, 2)
         self.assertEqual(len(fixtures.store.snapshot()), 1)
 
+    def test_first_outside_visit_then_inside_retransfers_accumulate_and_replay(self):
+        task, fixtures = self.production_task()
+        task.wait_click_feature.side_effect = [box(), None, None, None]
+        task.wait_ocr.side_effect = [[], [box()]] * 4
+        task.find_feature.side_effect = None
+        original_send = task.active_and_send_mouse_delta
+        for cycle in range(4):
+            task.find_feature.side_effect = [box(), box(), box(1500), box()]
+            self.assertTrue(LiaisonAlignmentTestTask._align_once(task))
+            records = list(fixtures.store.snapshot().values())
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0].motion.samples, cycle + 1)
+            self.assertEqual(task._liaison_walk_attempts, 1)
+            self.assertTrue(task._liaison_hall_confirmed)
+        replays = [
+            item.args[0] for item in task.log_info.call_args_list if "[initial-align-learning] replay " in item.args[0]
+        ]
+        self.assertEqual(len(replays), 1)
+        self.assertGreater(original_send.call_count, 0)
+
     def test_unconfirmed_hall_can_align_visually_without_saving(self):
         task, fixtures = self.production_task()
         task.wait_ocr.return_value = []

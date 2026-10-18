@@ -104,7 +104,10 @@ class LiaisonMixin(NavigationMixin):
                 # 已在帝江号区域即视为已确认，后续共享帝江号状态的任务不必重复传送确认。
                 self._daily_boat_state_confirmed = True
                 return True
-        self.log_info("找到帝江号区域，点击进入")
+        if target_area:
+            self.log_info("找到帝江号区域，点击进入")
+        else:
+            self.log_info("未出现帝江号区域入口，继续选择当前地图传送点")
 
         # 查找传送点
         tp_icon = self.find_feature(feature=fL.transfer_point, box=box, threshold=0.7)
@@ -145,7 +148,9 @@ class LiaisonMixin(NavigationMixin):
         self.ensure_main()
         self.log_info("传送完成，已到达帝江号舰桥")
         self._daily_boat_state_confirmed = True
-        if default_point and target_area:
+        # Re-entering from the boat map does not expose boat_entrance_icon.
+        # The actual default transfer and later hall OCR establish the entry.
+        if default_point:
             self._liaison_transfer_entry = liaison_entry_after_transfer(self, epoch=epoch)
         return True
 
@@ -190,6 +195,8 @@ class LiaisonMixin(NavigationMixin):
         self.log_info("开始前往中央环厅")
         entry = vars(self).pop("_liaison_transfer_entry", None)
         self._liaison_station_entry = None
+        self._liaison_walk_attempts = 0
+        self._liaison_hall_confirmed = False
 
         max_attempts = 2
 
@@ -197,9 +204,11 @@ class LiaisonMixin(NavigationMixin):
             self.log_info(f"第 {attempt}/{max_attempts} 次尝试移动前进")
 
             self.move_keys("w", duration=1)
+            self._liaison_walk_attempts = attempt
 
             if self.wait_ocr(match=self.lang.liaison_mixin.k_80b758b9, box=self.box.left, log=True):
                 self.log_info("已到达中央环厅")
+                self._liaison_hall_confirmed = True
                 self._liaison_station_entry = liaison_entry_after_walk(self, entry, attempt)
                 return True
 

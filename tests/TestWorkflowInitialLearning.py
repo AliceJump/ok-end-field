@@ -353,6 +353,47 @@ class TestWorkflowInitialLearning(unittest.TestCase):
             self.assertIsNone(task._liaison_transfer_entry)
             self.assertIsNone(task._liaison_station_entry)
 
+    def test_liaison_default_retransfer_inside_boat_still_grants_confirmed_walk_entry(self):
+        for walks in (1, 2):
+            with self.subTest(walks=walks):
+                task = self.task()
+                task._daily_boat_state_confirmed = True
+                task.wait_click_feature.return_value = None
+                self.assertTrue(LiaisonMixin.transfer_to_home_point(task))
+                self.assertIsNotNone(task._liaison_transfer_entry)
+                task.wait_ocr.side_effect = [[]] * (walks - 1) + [[box()]]
+                self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
+                self.assertEqual(task._liaison_station_entry.context.entry_route_signature, (1000,) * walks)
+                self.assertEqual(task._liaison_walk_attempts, walks)
+                self.assertTrue(task._liaison_hall_confirmed)
+
+    def test_liaison_missing_default_transfer_target_or_button_cannot_grant_entry(self):
+        for missing in ("point", "button"):
+            with self.subTest(missing=missing):
+                task = self.task()
+                task.wait_click_feature.return_value = None
+                if missing == "point":
+                    task.find_feature.return_value = None
+                else:
+                    task.wait_feature.return_value = None
+                self.assertFalse(LiaisonMixin.transfer_to_home_point(task))
+                self.assertIsNone(task._liaison_transfer_entry)
+                self.assertIsNone(task._liaison_station_entry)
+
+    def test_liaison_retransfer_still_requires_stable_world_and_confirmed_hall(self):
+        task = self.task()
+        task.wait_click_feature.return_value = None
+        task.wait_ui_stable.return_value = False
+        self.assertTrue(LiaisonMixin.transfer_to_home_point(task))
+        self.assertIsNone(task._liaison_transfer_entry)
+        task.wait_ui_stable.return_value = True
+        self.assertTrue(LiaisonMixin.transfer_to_home_point(task))
+        task.wait_ocr.return_value = []
+        self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
+        self.assertIsNone(task._liaison_station_entry)
+        self.assertEqual(task._liaison_walk_attempts, 2)
+        self.assertFalse(task._liaison_hall_confirmed)
+
     def test_unconfirmed_hall_keeps_legacy_flow_but_does_not_create_learning_entry(self):
         task = self.task()
         task._liaison_transfer_entry = liaison_entry_after_transfer(task, epoch=learning_epoch())

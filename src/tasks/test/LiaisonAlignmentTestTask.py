@@ -38,7 +38,8 @@ class LiaisonAlignmentTestTask(Common, LiaisonMixin):
         entry = vars(self).pop("_liaison_station_entry", None)
         context = entry.context if entry is not None else None
         self.log_info(
-            f"[liaison-align-test] walk={len(context.entry_route_signature) if context else 'unconfirmed'} "
+            f"[liaison-align-test] walk={self._liaison_walk_attempts} "
+            f"hall_confirmed={self._liaison_hall_confirmed} "
             f"fingerprint={context.fingerprint if context else 'none'} learning_entry={entry is not None}"
         )
         self.ensure_main()

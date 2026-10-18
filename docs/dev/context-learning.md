@@ -215,9 +215,12 @@ learning epoch、目标及捕获尺寸，不写入缓存；消耗后不能拿它
 “循环次数”默认 5，设为 0 持续循环至手动停止。无需选择或人为强制一步／两步：按正式
 流程实际执行的次数选指纹，两种入口各自积累可靠样本并完整重放。
 
-日志 `[liaison-align-test] walk=1/2 fingerprint=... learning_entry=True` 可关联本轮入口与
+日志 `[liaison-align-test] walk=1/2 hall_confirmed=True fingerprint=... learning_entry=True` 可关联本轮入口与
 紧接着的 `[initial-align-learning] replay`／`verified ... saved=True`。未确认环厅时记录
-`walk=unconfirmed learning_entry=False`，仍可视觉对中但不保存。汇总的 `aligned=True` 只代表
+实际执行步数与 `hall_confirmed=False learning_entry=False`，仍可视觉对中但不保存。入口证明
+缺失但环厅已确认时会记录 `hall_confirmed=True learning_entry=False`，不再混淆走动与学习资格。
+已经在船内时无需再次点击区域入口图标；本次默认传送确实执行、世界画面稳定、随后环厅
+OCR确认，仍可建立相同步数的学习入口。汇总的 `aligned=True` 只代表
 正式对中函数成功，是否保存以 `saved=True` 为准；搜索或输入异常不制造学习成功。
 每轮异常记录失败后继续，退出时释放方向键，手动停止向外传播。任务与正式联络使用相同
 上下文和缓存，已有经验无需清除；重启插件执行器加载此版本后可发现任务。
