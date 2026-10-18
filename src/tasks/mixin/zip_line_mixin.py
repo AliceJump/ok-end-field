@@ -1035,11 +1035,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 yolo_bool = False
             if need_v:
                 self.ensure_main()
-                board_checks = 0
 
                 def check_board():
-                    nonlocal board_checks
-                    board_checks += 1
                     return self.wait_ocr(
                         match=self.lang.zip_line_mixin.k_b0e3a2da,
                         box=self.box.bottom_right,
@@ -1062,7 +1059,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             if result:
                 context = target_learning_context if (
                     need_v
-                    and board_checks == 1
                     and learning_allowed()
                     and target_learning_context is not None
                     and target_learning_context.entry_route_signature == tuple(zip_line_list)

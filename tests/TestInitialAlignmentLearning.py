@@ -359,29 +359,52 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task.align_ocr_or_find_target_to_center("blue", ocr=False, only_x=True)
         self.assertEqual(self.store.get(context.fingerprint), before)
 
-    def test_reboard_after_wasd_recovery_disables_workflow_prior_and_sample(self):
+    def test_reboard_after_wasd_recovery_starts_learning_at_the_reboarded_entry(self):
         task = self.zip_task([gold_tests.TestZipLineGoldGate._matched_icon()])
         context = replace(workflow_context(), entry_route_signature=(108,), start_yaw_bucket=18)
         self.seed(context)
-        before = self.store.get(context.fingerprint)
-        task.find_feature = Mock(return_value=box())
+        events = []
+        task.find_feature = Mock(side_effect=lambda **kwargs: events.append("blue") or box())
+        task.active_and_send_mouse_delta.side_effect = lambda *a, **k: events.append("replay") or True
         task.ensure_main = Mock()
         task.box = SimpleNamespace(bottom_right=None)
         task.wait_ocr = Mock(side_effect=[[], [box()], []])
 
         def search(check, **kwargs):
             check()
+            events.append("walk")
             task.send_key("s")
             return check()
 
         task.strafe_search = search
-        task.press_key = Mock()
-        task.click_with_alt = Mock()
+        task.press_key = Mock(side_effect=lambda *a, **k: events.append("v"))
+        task.click_with_alt = Mock(side_effect=lambda *a, **k: events.append("board"))
         ZipLineMixin.zip_line_list_go(
             task, [108], config_key="route", target=("blue", "feature"), need_v=True, target_learning_context=context
         )
-        self.assertEqual(self.store.get(context.fingerprint), before)
+        self.assertEqual(events, ["walk", "v", "board", "replay", "blue"])
+        record = self.store.get(context.fingerprint)
+        self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (4, 100, 20))
+        self.assertEqual(task.active_and_send_mouse_delta.call_count, 1)
+
+    def test_terminal_without_reboarding_cannot_borrow_a_reboarded_entry_prior(self):
+        task = self.zip_task([gold_tests.TestZipLineGoldGate._matched_icon()])
+        context = replace(workflow_context(), entry_route_signature=(108,), start_yaw_bucket=18)
+        self.seed(context)
+        before = self.store.get(context.fingerprint)
+        task.find_feature = Mock(return_value=box())
+        task.ensure_main = Mock()
+        task.wait_ocr = Mock(return_value=[])
+        ZipLineMixin.zip_line_list_go(
+            task,
+            [108],
+            config_key="route",
+            target=("blue", "feature"),
+            need_v=False,
+            target_learning_context=context,
+        )
         task.active_and_send_mouse_delta.assert_not_called()
+        self.assertEqual(self.store.get(context.fingerprint), before)
 
     def test_initial_scope_disturbances_invalidate_and_restore_all_methods(self):
         context = workflow_context()
