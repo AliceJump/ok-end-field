@@ -38,6 +38,10 @@ class NavigationMixin(SearchMixin):
 
         self.press_key("m")
         self.log_info("关闭地图界面 (按下 M)")
+        if context is not None:
+            self.ensure_main()
+            if not self.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1):
+                context = None
         if context is not None and learning_entry.epoch != learning_epoch():
             context = None
         with initial_alignment(self, context, confidence=confidence) as learning:

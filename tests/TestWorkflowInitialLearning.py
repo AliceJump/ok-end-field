@@ -193,6 +193,46 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         record = self.store.get(entry.context.fingerprint)
         self.assertEqual((record.motion.samples, record.failure_count), (3, 1))
 
+    def test_map_close_waits_for_stable_main_before_replay_without_requiring_target(self):
+        task = self.task()
+        entry = self.trade_entry(task)
+        self.fixtures.seed(entry.context, dx=100, dy=0)
+        events = []
+        task.ensure_main.side_effect = lambda: events.append("main")
+        task.wait_ui_stable.side_effect = lambda **kwargs: events.append("stable") or True
+        task.active_and_send_mouse_delta.side_effect = lambda *a, **k: events.append("replay") or True
+        task.find_feature.side_effect = lambda **kwargs: events.append("detect") or box()
+        self.assertTrue(
+            task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
+        )
+        self.assertEqual(events[:4], ["main", "stable", "replay", "detect"])
+
+    def test_unstable_map_close_or_cancel_cannot_replay(self):
+        for failure in (False, TaskDisabledException()):
+            with self.subTest(failure=failure):
+                task = self.task()
+                entry = self.trade_entry(task)
+                self.fixtures.seed(entry.context, dx=100, dy=0)
+                before = self.store.get(entry.context.fingerprint)
+                task.wait_ui_stable.side_effect = failure if isinstance(failure, Exception) else None
+                task.wait_ui_stable.return_value = failure
+                with patch(
+                    "src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")
+                ):
+                    if isinstance(failure, TaskDisabledException):
+                        with self.assertRaises(TaskDisabledException):
+                            task.start_tracking_and_align_target(
+                                "map", fL.market_dispatch_terminal_out, learning_entry=entry
+                            )
+                    else:
+                        self.assertTrue(
+                            task.start_tracking_and_align_target(
+                                "map", fL.market_dispatch_terminal_out, learning_entry=entry
+                            )
+                        )
+                task.active_and_send_mouse_delta.assert_not_called()
+                self.assertEqual(self.store.get(entry.context.fingerprint), before)
+
     def test_partial_replay_keeps_history_and_stop_restores_input_sender(self):
         for failure in (OSError("partial"), TaskDisabledException()):
             with self.subTest(failure=type(failure).__name__):
