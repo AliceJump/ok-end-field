@@ -38,6 +38,21 @@ class TestThemePack(unittest.TestCase):
             select_theme(None, home)
             self.assertIsNone(load_active_theme(home))
 
+    def test_invalid_install_does_not_overwrite_an_existing_theme(self):
+        """Retain the valid theme when an invalid replacement is rejected."""
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory) / "themes"
+            archive = Path(directory) / "source.zip"
+            self._archive(archive)
+            import_theme_pack(archive, home)
+            installed = home / "sample.zip"
+            original = installed.read_bytes()
+            self._archive(archive, qss="QWidget { image: url(file:///secret); }")
+            with self.assertRaises(ThemePackError):
+                import_theme_pack(archive, home)
+            self.assertEqual(installed.read_bytes(), original)
+            self.assertEqual(list(home.glob(".install-*.zip")), [])
+
     def test_sample_theme_pack_sources_are_valid(self):
         """Ensure the shipped sample sources are parseable as a theme."""
         sample = ROOT / "theme-packs" / "aurora-night"
