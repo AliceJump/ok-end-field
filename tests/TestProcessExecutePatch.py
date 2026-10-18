@@ -602,13 +602,13 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
 
     def test_tail_skips_old_partial_and_survives_rotation(self):
         path = self.logs / "OneChannelLC.log"
-        path.write_bytes(b"previous complete\\nold half")
+        path.write_bytes(b"previous complete\nold half")
         tail = self.cleanup_mod._LogTail(path)
         with path.open("ab") as stream:
-            stream.write(b" line\\nnew complete\\n")
+            stream.write(b" line\nnew complete\n")
         self.assertEqual(tail.read(), [b"new complete"])
         path.rename(path.with_suffix(".old"))
-        path.write_bytes(b"next complete\\n")
+        path.write_bytes(b"next complete\n")
         self.assertEqual(tail.read(), [b"next complete"])
 
 
