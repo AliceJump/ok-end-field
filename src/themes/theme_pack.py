@@ -91,22 +91,27 @@ def read_theme_pack(path: Path) -> ThemePack:
 
 def import_theme_pack(source: Path, theme_home: Path = THEME_HOME) -> ThemePack:
     """Install the validated archive atomically; do not activate it implicitly."""
-    pack = read_theme_pack(source)
     theme_home = Path(theme_home)
-    theme_home.mkdir(parents=True, exist_ok=True)
-    destination = theme_home / f"{pack.id}.zip"
     temporary = None
     try:
+        # Validate the staged bytes before publishing rather than re-reading
+        # an untrusted source after validation (TOCTOU).
+        with Path(source).open("rb") as input_file:
+            contents = input_file.read(_MAX_ARCHIVE_BYTES + 1)
+        if len(contents) > _MAX_ARCHIVE_BYTES:
+            raise ThemePackError("Theme ZIP is too large.")
+        theme_home.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(
             dir=theme_home, prefix=".install-", suffix=".zip", delete=False
         ) as output:
             temporary = Path(output.name)
-            output.write(Path(source).read_bytes())
-        os.replace(temporary, destination)
+            output.write(contents)
+        pack = read_theme_pack(temporary)
+        os.replace(temporary, theme_home / f"{pack.id}.zip")
+        return pack
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-    return pack
 
 
 def select_theme(theme_id: str | None, theme_home: Path = THEME_HOME) -> None:
