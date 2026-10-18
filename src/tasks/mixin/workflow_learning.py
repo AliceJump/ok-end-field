@@ -100,8 +100,24 @@ def trade_entry_after_visit(task, *, epoch):
     return confirmed_workflow_entry(task, epoch=epoch, context=context)
 
 
-def liaison_entry_after_transfer(task, *, epoch):
+def liaison_entry_after_transfer(task, *, epoch, verify_bridge=False):
     """Record the default bridge transfer, not merely being somewhere on the boat."""
+    if verify_bridge:
+        try:
+            arrived = task.wait_ocr(
+                match=task.lang.daily_liaison_mixin.k_27d2b829,
+                box=task.box.left,
+                time_out=2,
+                raise_if_not_found=False,
+            )
+        except TaskDisabledException:
+            raise
+        except Exception as error:
+            task.log_info(f"[workflow-learning] bridge unconfirmed; visual only: {error}")
+            return None
+        if not arrived:
+            task.log_info("[workflow-learning] bridge unconfirmed; visual only")
+            return None
     context = _context(
         task,
         "liaison",

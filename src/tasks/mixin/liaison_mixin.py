@@ -149,9 +149,11 @@ class LiaisonMixin(NavigationMixin):
         self.log_info("传送完成，已到达帝江号舰桥")
         self._daily_boat_state_confirmed = True
         # Re-entering from the boat map does not expose boat_entrance_icon.
-        # The actual default transfer and later hall OCR establish the entry.
+        # In that case verify the landed Bridge location, then still require hall OCR.
         if default_point:
-            self._liaison_transfer_entry = liaison_entry_after_transfer(self, epoch=epoch)
+            self._liaison_transfer_entry = liaison_entry_after_transfer(
+                self, epoch=epoch, verify_bridge=not target_area
+            )
         return True
 
     def prepare_liaison_station_entry(self):
@@ -173,7 +175,10 @@ class LiaisonMixin(NavigationMixin):
         if self.wait_ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left, time_out=5):
             while self.ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left):
                 if self.active_time() - start_time > 10:
-                    self.log_info("等待 '信赖' 弹窗超时，进行下一步")
+                    self.log_info("等待 '信赖' 弹窗超时，本轮准备失败")
+                    self._liaison_transfer_entry = None
+                    self._liaison_station_entry = None
+                    return False
                 self.next_frame()
                 self.sleep(0.5)
         self.log_info("前往中央环厅")

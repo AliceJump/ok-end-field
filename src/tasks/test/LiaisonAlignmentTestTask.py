@@ -33,15 +33,22 @@ class LiaisonAlignmentTestTask(Common, LiaisonMixin):
 
     def _align_once(self):
         self._test_alignment_result = False
-        if not self.prepare_liaison_station_entry():
+        self._liaison_walk_attempts = 0
+        self._liaison_hall_confirmed = False
+        self._liaison_transfer_entry = None
+        self._liaison_station_entry = None
+        try:
+            prepared = self.prepare_liaison_station_entry()
+        finally:
+            entry = vars(self).pop("_liaison_station_entry", None)
+            context = entry.context if entry is not None else None
+            self.log_info(
+                f"[liaison-align-test] walk={self._liaison_walk_attempts} "
+                f"hall_confirmed={self._liaison_hall_confirmed} "
+                f"fingerprint={context.fingerprint if context else 'none'} learning_entry={entry is not None}"
+            )
+        if not prepared:
             return False
-        entry = vars(self).pop("_liaison_station_entry", None)
-        context = entry.context if entry is not None else None
-        self.log_info(
-            f"[liaison-align-test] walk={self._liaison_walk_attempts} "
-            f"hall_confirmed={self._liaison_hall_confirmed} "
-            f"fingerprint={context.fingerprint if context else 'none'} learning_entry={entry is not None}"
-        )
         self.ensure_main()
         self.ensure_map()
         tracked = self.start_tracking_and_align_target(

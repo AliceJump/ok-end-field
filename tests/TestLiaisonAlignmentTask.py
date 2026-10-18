@@ -147,7 +147,7 @@ class TestLiaisonAlignmentTask(unittest.TestCase):
         task, fixtures = self.production_task()
         task.wait_click_feature.side_effect = [box(), None, None, None]
         task.wait_feature.side_effect = lambda **kwargs: None if kwargs["feature"] == fL.start_follow else box()
-        task.wait_ocr.side_effect = [[], [box()]] * 4
+        task.wait_ocr.side_effect = [[], [box()]] + [[box()], [], [box()]] * 3
         task.find_feature.side_effect = None
         original_send = task.active_and_send_mouse_delta
         for cycle in range(4):
@@ -179,11 +179,50 @@ class TestLiaisonAlignmentTask(unittest.TestCase):
 
     def test_failed_transfer_never_opens_tracking_or_uses_old_entry(self):
         task, fixtures = self.production_task()
+        task._liaison_walk_attempts = 2
+        task._liaison_hall_confirmed = True
+        task._liaison_station_entry = object()
         task.find_feature.return_value = None
         self.assertFalse(LiaisonAlignmentTestTask._align_once(task))
         self.assertEqual(fixtures.store.snapshot(), {})
         task.move_keys.assert_not_called()
         task.find_one.assert_not_called()
+        logs = [item.args[0] for item in task.log_info.call_args_list if "[liaison-align-test]" in item.args[0]]
+        self.assertEqual(
+            logs, ["[liaison-align-test] walk=0 hall_confirmed=False fingerprint=none learning_entry=False"]
+        )
+
+    def test_preparation_exception_or_stop_still_logs_reset_round_state(self):
+        for error in (OSError("frame"), TaskDisabledException()):
+            task, _ = self.production_task()
+            task.prepare_liaison_station_entry = Mock(side_effect=error)
+            task._liaison_walk_attempts = 2
+            task._liaison_station_entry = object()
+            with self.subTest(error=type(error).__name__), self.assertRaises(type(error)):
+                LiaisonAlignmentTestTask._align_once(task)
+            self.assertEqual(task._liaison_walk_attempts, 0)
+            self.assertNotIn("_liaison_station_entry", vars(task))
+            self.assertTrue(
+                any(
+                    "walk=0 hall_confirmed=False fingerprint=none" in item.args[0]
+                    for item in task.log_info.call_args_list
+                )
+            )
+
+    def test_trust_popup_timeout_ends_round_and_discards_entry_before_walking(self):
+        task, fixtures = self.production_task()
+        task.wait_ocr.return_value = [box()]
+        task.ocr.side_effect = [[], [box()]]
+        task.active_time = Mock(side_effect=[0, 11])
+        task.navigate_to_main_hall = Mock(side_effect=AssertionError("must not move after timeout"))
+        task._liaison_transfer_entry = object()
+        self.assertFalse(LiaisonAlignmentTestTask._align_once(task))
+        task.navigate_to_main_hall.assert_not_called()
+        self.assertIsNone(task._liaison_transfer_entry)
+        self.assertEqual(fixtures.store.snapshot(), {})
+        self.assertTrue(
+            any("walk=0 hall_confirmed=False fingerprint=none" in item.args[0] for item in task.log_info.call_args_list)
+        )
 
     def test_shared_preparation_preserves_bridge_popup_wait_before_walk(self):
         task, _ = self.production_task()

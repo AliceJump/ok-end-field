@@ -58,6 +58,7 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         task.lang = SimpleNamespace(
             daily_trade_mixin=SimpleNamespace(k_fa04e4df="terminal"),
             liaison_mixin=SimpleNamespace(k_80b758b9="hall"),
+            daily_liaison_mixin=SimpleNamespace(k_27d2b829="bridge", k_933056f0="trust"),
         )
         task.start_tracking_and_align_target = lambda *a, **k: NavigationMixin.start_tracking_and_align_target(
             task, *a, **k
@@ -408,6 +409,31 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                 self.assertFalse(LiaisonMixin.transfer_to_home_point(task))
                 self.assertIsNone(task._liaison_transfer_entry)
                 self.assertIsNone(task._liaison_station_entry)
+
+    def test_missing_boat_entrance_and_wrong_destination_cannot_grant_station_entry(self):
+        task = self.task()
+        task.wait_click_feature.return_value = None
+        task.wait_ocr.return_value = []
+        self.assertTrue(LiaisonMixin.transfer_to_home_point(task))
+        self.assertIsNone(task._liaison_transfer_entry)
+        task.wait_ocr.return_value = [box()]
+        self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
+        self.assertIsNone(task._liaison_station_entry)
+        self.assertEqual(self.store.snapshot(), {})
+
+    def test_inside_boat_destination_confirmation_error_is_visual_only_but_stop_propagates(self):
+        for error in (OSError("frame"), TaskDisabledException()):
+            task = self.task()
+            task.wait_click_feature.return_value = None
+            task.wait_ocr.side_effect = error
+            with self.subTest(error=type(error).__name__):
+                if isinstance(error, TaskDisabledException):
+                    with self.assertRaises(TaskDisabledException):
+                        LiaisonMixin.transfer_to_home_point(task)
+                else:
+                    self.assertTrue(LiaisonMixin.transfer_to_home_point(task))
+                self.assertIsNone(task._liaison_transfer_entry)
+                self.assertEqual(self.store.snapshot(), {})
 
     def test_liaison_retransfer_still_requires_stable_world_and_confirmed_hall(self):
         task = self.task()
