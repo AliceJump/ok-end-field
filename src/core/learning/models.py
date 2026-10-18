@@ -16,6 +16,7 @@ from src.core.learning.samples import (
     classify_samples,
     history_weights,
 )
+from src.core.learning.target_prior import merge_target_prior
 
 CONTEXT_VERSION = 1
 
@@ -369,7 +370,7 @@ class LearningRecord:
         result = replace(
             updated,
             motion=updated.motion_for(environment),
-            target=target if target is not None else self.target,
+            target=merge_target_prior(self.target, target),
             success_count=self.success_count + 1,
             consecutive_failures=0,
             updated_at=now,

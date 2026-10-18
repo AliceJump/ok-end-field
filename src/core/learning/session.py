@@ -7,6 +7,7 @@ from src.core.learning.legacy import ready_hint
 from src.core.learning.lookup import workflow_hint, workflow_record
 from src.core.learning.models import (
     ContextConfidence,
+    LearningHint,
     RouteContext,
     TargetPrior,
     VerificationEvidence,
@@ -39,6 +40,7 @@ class LearningSession:
     _action_attempted: bool = False
     _prior_context: object = field(default=None, init=False)
     _prior_source: str | None = field(default=None, init=False)
+    _target_hint: LearningHint | None = field(default=None, init=False)
 
     def __post_init__(self):
         if not isinstance(self.context, (WorkflowContext, RouteContext)):
@@ -75,6 +77,7 @@ class LearningSession:
         if self.replay_used:
             return None
         hint = self.hint(lookup_context)
+        self._target_hint = hint
         # Claim before returning, so retries cannot accidentally replay twice.
         self.replay_used = True
         action = hint.action if hint else None
@@ -87,6 +90,12 @@ class LearningSession:
         self._prior_context = lookup_context or self.context
         self._prior_source = hint.source if hint is not None else None
         return action
+
+    def target_hint(self):
+        """The claimed hint remains usable for detection, subject to the same epoch/deny."""
+        if not self._allowed() or self.contaminated:
+            return None
+        return self._target_hint if self.replay_used else self.hint()
 
     def nearest_yaw(self):
         if not self._allowed() or self.replay_used or not isinstance(self.context, RouteContext):
@@ -145,6 +154,7 @@ class LearningSession:
                 self.context,
                 self.dx,
                 self.dy,
+                target=target,
                 now=now,
                 environment=self.environment,
                 inputs=tuple(self.inputs),

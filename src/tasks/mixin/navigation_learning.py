@@ -11,6 +11,7 @@ from src.core.learning.models import ContextConfidence, TargetPrior, Verificatio
 from src.core.learning.policy import learning_allowed
 from src.core.learning.session import create_learning_session
 from src.core.learning.store import LearningStore
+from src.core.learning.target_prior import direction_towards, roi_around
 
 
 def capture_learning_environment(task, context):
@@ -56,6 +57,11 @@ class InitialAlignment:
         self.require_gold_gate = False
         self.allow_tracked_random_search = False
         self._pending_center = None
+        self._input_count = 0
+        self._initial_position = None
+        self._roi_used = False
+        self._search_used = False
+        self._full_replay = False
 
     def frame_acquired(self, frame):
         profile = self.session.context.capture_profile
@@ -96,7 +102,72 @@ class InitialAlignment:
         self.task.log_info(
             f"[initial-align-learning] replay target={self.session.context.target_id} move={action} accepted={bool(sent)}"
         )
+        hint = self.session.target_hint()
+        self._full_replay = bool(sent and hint is not None and hint.confidence == ContextConfidence.HIGH)
         return action if sent else None
+
+    def observe_target(self, center):
+        """Only a fresh detection before any input belongs to the original entry pose."""
+        if not self._has_frame or self._input_count or self._initial_position is not None:
+            return
+        position = center[0] / self.task.width, center[1] / self.task.height
+        if all(0 <= value <= 1 for value in position):
+            self._initial_position = position
+
+    def detect_target(self, detector, *, box=None):
+        """Try one bounded historical ROI; on miss use the original box in the same frame."""
+        if self._roi_used:
+            return detector(box)
+        self._roi_used = True
+        hint = self.session.target_hint()
+        prior = hint.target if hint is not None else None
+        if prior is None:
+            return detector(box)
+        if not self._input_count:
+            roi = prior.roi
+        elif self._input_count == 1 and self._full_replay:
+            roi = roi_around(prior.aligned_position)
+        else:
+            roi = None
+        if roi is None:
+            return detector(box)
+        left, top, right, bottom = roi
+        if box is not None:
+            left, top = max(left, box.x / self.task.width), max(top, box.y / self.task.height)
+            right = min(right, (box.x + box.width) / self.task.width)
+            bottom = min(bottom, (box.y + box.height) / self.task.height)
+        if left >= right or top >= bottom:
+            return detector(box)
+        try:
+            search_box = self.task.box_of_screen(left, top, right, bottom)
+            if search_box is None:
+                return detector(box)
+            result = detector(search_box)
+        except TaskDisabledException:
+            raise
+        except Exception as error:
+            self.task.log_info(f"[initial-align-learning] roi unavailable; original search: {error}")
+            return detector(box)
+        self.task.log_info(f"[initial-align-learning] roi target={self.session.context.target_id} hit={bool(result)}")
+        return result if result else detector(box)
+
+    def search_step(self, max_offset, *, only_x=False, only_y=False):
+        """One original-pose directional probe; callers still contaminate search samples."""
+        if self._search_used or self._input_count:
+            return None
+        self._search_used = True
+        hint = self.session.target_hint()
+        direction = hint.target.search_direction if hint is not None and hint.target is not None else None
+        directions = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
+        if direction not in directions:
+            return None
+        dx, dy = directions[direction]
+        if (only_x and dy) or (only_y and dx):
+            return None
+        self.task.log_info(
+            f"[initial-align-learning] search target={self.session.context.target_id} direction={direction}"
+        )
+        return dx * max_offset, dy * max_offset
 
     def confirm_alignment(self, center):
         if not self._has_frame:
@@ -110,7 +181,16 @@ class InitialAlignment:
         if current != self.session.environment:
             self.disturb("environment_changed")
         position = center[0] / width, center[1] / height
-        target = TargetPrior(aligned_position=position) if all(0 <= value <= 1 for value in position) else None
+        target = (
+            TargetPrior(
+                initial_position=self._initial_position,
+                aligned_position=position,
+                roi=roi_around(self._initial_position),
+                search_direction=direction_towards(self._initial_position, self.session.context.capture_profile.axes),
+            )
+            if all(0 <= value <= 1 for value in position)
+            else None
+        )
         saved = self.session.confirm_alignment(
             VerificationEvidence(self.session.context.target_id, "aligned", self.observed_at, self.frame_id),
             now=time.time(),
@@ -213,6 +293,7 @@ def initial_alignment(task, context, *, confidence=ContextConfidence.HIGH):
             raise
         only_activate = kwargs.get("only_activate", args[3] if len(args) > 3 else False)
         if not only_activate:
+            learning._input_count += 1
             session.observe_input(
                 kwargs.get("dx", args[0] if args else 1),
                 kwargs.get("dy", args[1] if len(args) > 1 else 1),
