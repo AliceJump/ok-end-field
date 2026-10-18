@@ -60,9 +60,8 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         feature.press_key = Mock()
         feature.click = Mock()
         feature.click_confirm = Mock(return_value=True)
-        feature.blind_spot_speed_up = Mock(return_value=True)
+        feature.blind_spot_speed_up = Mock(return_value=quote_ready)
         feature.wait_click_feature = Mock(return_value=True)
-        feature.wait_feature = Mock(return_value=object() if quote_ready else None)
         feature.box_of_screen = Mock(return_value=object())
         feature.box = SimpleNamespace(top_left=object(), bottom=object(), bottom_left=object())
         feature.lang = SimpleNamespace(
