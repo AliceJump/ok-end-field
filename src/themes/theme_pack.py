@@ -111,6 +111,11 @@ def read_theme_pack(path: Path) -> ThemePack:
         raise ThemePackError("Unsupported theme kind.")
     if kind == "nailong" and set(assets) != _MASCOT_ASSETS:
         raise ThemePackError("Nailong themes require background, standing and working WebP assets.")
+    if kind == "nailong" and any(
+        len(image) < 12 or image[:4] != b"RIFF" or image[8:12] != b"WEBP"
+        for image in assets.values()
+    ):
+        raise ThemePackError("Nailong image data must be WebP.")
     if kind != "nailong" and assets:
         raise ThemePackError("QSS themes cannot include image assets.")
     if not qss.strip() or _UNSAFE_QSS.search(qss):
