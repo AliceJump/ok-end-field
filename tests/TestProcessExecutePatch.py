@@ -636,6 +636,56 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
         sleep.assert_called_once_with(2)
         self.kernel.TerminateProcess.assert_called_once_with(999, 0)
 
+    def test_failed_parent_status_query_waits_for_game_exit_before_termination(self):
+        cleanup = self._new_cleanup()
+        game = Mock()
+        game.is_running.side_effect = [True, False]
+
+        def terminate_after_exit(*args):
+            self.assertEqual(game.is_running.call_count, 2)
+            return True
+
+        self.kernel.TerminateProcess.side_effect = terminate_after_exit
+        with (
+            patch.object(cleanup, "_parent_running", side_effect=OSError("Cannot query parent")) as status_query,
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=[0, 0]),
+            patch.object(self.cleanup_mod.time, "sleep") as sleep,
+        ):
+            cleanup._watch(game)
+
+        self.assertEqual(status_query.call_count, 2)
+        sleep.assert_called_once_with(2)
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_failed_parent_status_query_preserves_parent_when_game_status_unknown(self):
+        cleanup = self._new_cleanup()
+        game = Mock()
+        game.is_running.side_effect = OSError("Cannot query game")
+        with (
+            patch.object(cleanup, "_parent_running", side_effect=OSError("Cannot query parent")),
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=[0, 0]),
+        ):
+            cleanup._watch(game)
+
+        self.kernel.TerminateProcess.assert_not_called()
+        self.kernel.CloseHandle.assert_called_once_with(999)
+        self.logger.warning.assert_called()
+
+    def test_failed_parent_status_query_logs_termination_failure_and_closes_handle(self):
+        cleanup = self._new_cleanup()
+        self.kernel.TerminateProcess.return_value = False
+        game = Mock(is_running=Mock(return_value=False))
+        with (
+            patch.object(cleanup, "_parent_running", side_effect=OSError("Cannot query parent")),
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=[0, 0]),
+        ):
+            cleanup._watch(game)
+
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+        self.logger.warning.assert_called()
+
     def test_tail_skips_old_partial_and_survives_rotation(self):
         path = self.logs / "OneChannelLC.log"
         path.write_bytes(b"previous complete\nold half")
