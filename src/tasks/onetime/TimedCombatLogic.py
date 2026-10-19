@@ -45,8 +45,12 @@ class TimedCombatLogic:
     def __init__(self, task, store=None, clock=None, wall_clock=None):
         self.task = task
         self.store = store
-        self._clock = clock or time.monotonic
-        self._sp_wall_clock = wall_clock or time.monotonic
+        self._raw_clock = clock or time.monotonic
+        self._raw_sp_wall_clock = wall_clock or time.monotonic
+        self._excluded_hud_seconds = 0.0
+        # Gameplay time excludes confirmed ultimate cutscene freezes, not script pauses.
+        self._clock = self._combat_time
+        self._sp_wall_clock = self._sp_combat_time
         self.team = []
         self.order = []
         self.ult_order = ["1", "2", "3", "4"]
@@ -93,6 +97,12 @@ class TimedCombatLogic:
         self.phase_planner = TeamPhasePlanner()
         self._last_phase_log = None
         self.main_control = TimedMainControl(self)
+
+    def _combat_time(self):
+        return self._raw_clock() - self._excluded_hud_seconds
+
+    def _sp_combat_time(self):
+        return self._raw_sp_wall_clock() - self._excluded_hud_seconds
 
     def _hold(self, enabled, force=False):
         if enabled:
@@ -253,7 +263,7 @@ class TimedCombatLogic:
         return value
 
     def _project_probe_expected(self, wall_now=None):
-        """Add natural regen once for the full visual-to-visual wall-clock window."""
+        """Project natural regen over gameplay time, excluding confirmed HUD freezes."""
         base = self.expected_sp
         anchor = self.last_visual_sp_wall_time
         if base < 0 or anchor is None:
@@ -1108,9 +1118,14 @@ class TimedCombatLogic:
         ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
             started = self._clock()
+            raw_started = self._raw_clock()
             self._arm_action_feedback()
+            # A failed or overridden release must never reuse a previous HUD interval.
+            self.task._last_ult_hud_frozen_seconds = 0.0
             if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
                 self._note_action_attempt("ult", token)
+                hud_frozen = max(0.0, float(getattr(self.task, "_last_ult_hud_frozen_seconds", 0.0) or 0.0))
+                self._excluded_hud_seconds += hud_frozen
                 ended = self._clock()
                 self._observe_bonus("ult", token)
                 self._observe_phase_action(token, "ult")
@@ -1119,7 +1134,11 @@ class TimedCombatLogic:
                 self.main_control.record_cast(token, "ult", profiles, started, recovered_at=ended)
                 self._after_ultimate_mechanic(token, ended)
                 self._clear_active(ended)
-                self.task.log_info(f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s")
+                self.task.log_info(
+                    f"时间排轴: 终结技 {token} 动画结束后继续，"
+                    f"HUD 动画锁 {self._raw_clock() - raw_started:.2f}s，"
+                    f"确认时停扣除 {hud_frozen:.2f}s"
+                )
 
                 if self.main_control.update(force=True):
                     return
