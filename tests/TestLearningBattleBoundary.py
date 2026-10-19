@@ -11,7 +11,7 @@ from src.core.learning.policy import deny_learning, learning_allowed, learning_e
 from src.tasks.mixin import zip_line_motion_cache as motion_cache
 from src.tasks.mixin import zip_line_yaw_cache as yaw_cache
 from src.tasks.mixin.battle_mixin import BattleMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 from tests import TestNavigationMovement as movement_tests
@@ -66,8 +66,14 @@ class TestLearningBattleBoundary(unittest.TestCase):
     def test_realtime_yaw_calibration_can_run_without_yaw_learning(self):
         task = zip_tests.TestZipLineMotionCache()._yaw_stub([(30, 0.9), (60, 0.9)])
         with (
-            patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", side_effect=AssertionError("lookup")),
-            patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", side_effect=AssertionError("record")),
+            patch(
+                "src.tasks.navigation.mixin.zip_line_mixin.load_arrow_turn_motion",
+                side_effect=AssertionError("lookup"),
+            ),
+            patch(
+                "src.tasks.navigation.mixin.zip_line_mixin.record_arrow_turn_motion",
+                side_effect=AssertionError("record"),
+            ),
             deny_learning("post_battle"),
         ):
             _yaw, ready = ZipLineMixin._normalize_zip_line_segment_yaw(task, 60)

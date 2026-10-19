@@ -185,14 +185,18 @@ class LauncherCleanup:
                 self._request_exit()
                 return
             time.sleep(_INTERVAL)
-        self.logger.warning("Game startup not verified in 120 seconds; keeping temporary Games.exe until the game exits")
+        self.logger.warning(
+            "Game startup not verified in 120 seconds; keeping temporary Games.exe until the game exits"
+        )
         self._wait_for_game_exit(game)
 
     def _watch(self, game) -> None:
         try:
             self._watch_startup(game)
         except Exception as error:
-            self.logger.warning(f"Cannot verify SDK startup; retaining temporary Games.exe while the game runs: {error}")
+            self.logger.warning(
+                f"Cannot verify SDK startup; retaining temporary Games.exe while the game runs: {error}"
+            )
             try:
                 self._wait_for_game_exit(game)
             except Exception as wait_error:

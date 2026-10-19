@@ -18,10 +18,10 @@ from src.core.learning.store import LearningStore
 from src.data.navigation_contexts import DELIVERY_DISPATCH_BOARD, DELIVERY_TRANSFER_BOARD
 from src.tasks.mixin.delivery_learning import delivery_learning_kwargs
 from src.tasks.mixin.navigation_learning import align_initial_target, initial_alignment
-from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.route_learning import route_context_for
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.mixin.zip_line_motion_cache import build_zip_line_route_fingerprint
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 from tests import TestNavigationMovement as movement_tests
 from tests import TestZipLineGoldGate as gold_tests
 from tests.TestLearningCore import workflow_context
@@ -80,6 +80,11 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task.ocr.return_value = [box()]
         task.send_key = Mock()
         task.click = Mock()
+        task._normalize_values = ZipLineMixin._normalize_values
+        task._value_for_index = ZipLineMixin._value_for_index
+        task._zip_line_distance_matcher = ZipLineMixin._zip_line_distance_matcher
+        task.zip_line_target_select_mode = lambda: "OCR"
+        task._zip_line_stop_state = lambda: ZipLineMixin._zip_line_stop_state(task)
         return task
 
     def zip_context(self, task, *, yaw=90, config_key="route", distances=(108,), scroll=False, family=()):
@@ -89,6 +94,34 @@ class TestInitialAlignmentLearning(unittest.TestCase):
 
     def run_zip(self, task, **kwargs):
         return ZipLineMixin.zip_line_list_go(task, [108], config_key="route", stay_on_zip_line=True, **kwargs)
+
+    def test_grid_distance_tolerance_reaches_initial_learning_and_gate_retry(self):
+        task = self.zip_task(
+            [
+                gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
+                gold_tests.TestZipLineGoldGate._matched_icon(),
+                gold_tests.TestZipLineGoldGate._matched_icon(),
+            ]
+        )
+        task._try_click_on_zip_line.side_effect = [(False, "gate"), (True, None)]
+        align = task._align_zip_line_distance
+        task._align_zip_line_distance = Mock(side_effect=align)
+        self.run_zip(task, distance_tolerance=7)
+        calls = task._align_zip_line_distance.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertEqual([call.kwargs["distance_tolerance"] for call in calls], [7, 7])
+        self.assertIn("learning_session", calls[0].kwargs)
+        self.assertNotIn("learning_session", calls[1].kwargs)
+        self.assertEqual(self.store.get(self.zip_context(task).fingerprint).success_count, 1)
+
+    def test_grid_distance_tolerance_survives_disabled_learning(self):
+        task = self.zip_task()
+        align = task._align_zip_line_distance
+        task._align_zip_line_distance = Mock(side_effect=align)
+        with deny_learning("post_battle"):
+            self.run_zip(task, distance_tolerance=7)
+        self.assertEqual(task._align_zip_line_distance.call_args.kwargs["distance_tolerance"], 7)
+        self.assertNotIn("learning_session", task._align_zip_line_distance.call_args.kwargs)
 
     def test_workflow_replays_before_first_detection_then_commits_without_arrival(self):
         events = []
@@ -197,7 +230,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task = self.zip_task()
         context = self.zip_context(task)
 
-        def activate(*args):
+        def activate(*args, **kwargs):
             self.assertEqual(self.store.get(context.fingerprint).motion.mean_dx, 40)
             return True, None
 

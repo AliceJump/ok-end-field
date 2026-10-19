@@ -486,6 +486,7 @@ class TestOfficialLauncher(unittest.TestCase):
 
     def test_journal_failure_discards_unattached_suspended_parent(self):
         import ctypes
+
         kernel = Mock()
 
         def created(*args):
@@ -497,7 +498,9 @@ class TestOfficialLauncher(unittest.TestCase):
 
         kernel.CreateProcessW.side_effect = created
         with (
-            patch.object(official_launcher, "find_official_games_exe", return_value=Path("C:/Launcher/2.4.9/Games.exe")),
+            patch.object(
+                official_launcher, "find_official_games_exe", return_value=Path("C:/Launcher/2.4.9/Games.exe")
+            ),
             patch.object(official_launcher, "register_owned_parent", side_effect=OSError("disk full")),
         ):
             logger = Mock()
@@ -508,15 +511,20 @@ class TestOfficialLauncher(unittest.TestCase):
 
     def test_temporary_parent_uses_suspended_native_creation_and_owns_handle(self):
         import ctypes
+
         kernel = Mock()
+
         def created(*args):
             info = ctypes.cast(args[-1], ctypes.POINTER(official_launcher._ProcessInfo))
             info.contents.dwProcessId = 111
             info.contents.hProcess = 222
             info.contents.hThread = 333
             return True
+
         kernel.CreateProcessW.side_effect = created
-        with patch.object(official_launcher, "find_official_games_exe", return_value=Path(r"C:\\Launcher\\2.4.9\\Games.exe")):
+        with patch.object(
+            official_launcher, "find_official_games_exe", return_value=Path(r"C:\\Launcher\\2.4.9\\Games.exe")
+        ):
             handle = official_launcher.create_temporary_parent(kernel, "Endfield.exe", Mock())
         self.assertEqual(handle, 222)
         self.assertTrue(kernel.CreateProcessW.call_args.args[5] & 0x00000004)
@@ -592,6 +600,7 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
 
     def setUp(self):
         from src.core import launcher_cleanup
+
         self.cleanup_mod = launcher_cleanup
         self.folder_handle = tempfile.TemporaryDirectory()
         self.addCleanup(self.folder_handle.cleanup)
@@ -613,6 +622,7 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
 
     def _write(self, name, text, cleanup, age=0):
         from datetime import timedelta
+
         stamp = (cleanup.started + timedelta(seconds=age)).strftime("%m-%d %H:%M:%S.%f")[:-3]
         with (self.logs / name).open("ab") as out:
             out.write(f"[{stamp}] [info] {text}\n".encode())

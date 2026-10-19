@@ -86,6 +86,50 @@ class LoginMixin(BaseEfTask):
         if not self._confirm_logged_in():
             raise RuntimeError("登录失败")
 
+    def relogin_same_account(self, time_out: int = 120) -> bool:
+        """
+        游戏内登出后用同一账号重新进入，不切换账号、不杀游戏进程。
+
+        与 :meth:`login_flow` 的区别：本方法只打开登出入口并点确认，之后交给游戏
+        自己退回到登录界面；``fL.logout`` 是登录界面的标志（此时会显示“点击任意
+        位置继续”），因此只点屏幕中央继续进入，不点 ``fL.logout`` 本身，也不点
+        「最近 / 账号后四位 / 登录」。所以它不需要账号信息，也不经过账号列表与账号覆盖。
+
+        Args:
+            time_out (int): 等待回到登录界面的超时时间（秒）。
+
+        Returns:
+            bool: 成功重新进入返回 True；窗口无法激活返回 False。
+
+        Raises:
+            RuntimeError: 找不到主界面退出按钮（可能不在游戏内）或未回到登录界面。
+        """
+        self.ensure_main()
+        self.back()
+        result = self.wait_feature(
+            feature=fL.main_out,
+            vertical_variance=0.05,
+            horizontal_variance=0.1,
+            threshold=0.6,
+            time_out=5,
+            raise_if_not_found=False,
+        )
+        if not result:
+            raise RuntimeError("未找到主界面退出按钮，可能不在游戏内")
+        self.click(result)
+        self.click_confirm()  # 退出登录确认
+        if not self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True):
+            self.log_error("无法激活游戏窗口，已取消登录以避免误点其他窗口")
+            return False
+        self._logged_in = False
+        # 回到登录界面后能匹配到 fL.logout，此时游戏显示“点击任意位置继续”，
+        # 点一下屏幕中央才会进入游戏。
+        if not self.wait_feature(feature=fL.logout, time_out=time_out, raise_if_not_found=False):
+            raise RuntimeError("未回到登录界面")
+        run_at_window_pos(self.get_game_hwnd(), super().click, *self.screen_center(), 1, 0.5, 0.5)
+        self.ensure_main()
+        return True
+
     @staticmethod
     def _ocr_box_text(box: Box) -> str:
         """Normalize OCR text for local prefix/suffix matching."""
@@ -160,7 +204,7 @@ class LoginMixin(BaseEfTask):
             if not eligible:
                 continue
 
-            def pair_score(suffix_box: Box):
+            def pair_score(suffix_box: Box, prefix_box: Box = prefix_box):
                 if suffix_box is prefix_box:
                     return (-1, -1)
                 prefix_center_y = prefix_box.y + prefix_box.height / 2

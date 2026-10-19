@@ -38,18 +38,18 @@ def _pointer_frame(
         ).astype(np.int32)
         cv2.fillConvexPoly(frame, triangle, (235, 235, 235), cv2.LINE_AA)
 
-    cv2.circle(frame, center_point, max(1, int(round(20.0 * scale))), (12, 12, 12), -1, cv2.LINE_AA)
+    cv2.circle(frame, center_point, max(1, round(20.0 * scale)), (12, 12, 12), -1, cv2.LINE_AA)
     if pointer:
-        cv2.circle(frame, center_point, max(1, int(round(4.0 * scale))), (245, 245, 245), -1, cv2.LINE_AA)
+        cv2.circle(frame, center_point, max(1, round(4.0 * scale)), (245, 245, 245), -1, cv2.LINE_AA)
 
     if white_distractor:
         distractor_angle = np.deg2rad(angle_deg + 90.0)
         direction = np.array([np.cos(distractor_angle), np.sin(distractor_angle)], dtype=np.float32)
         start = tuple(np.rint(center - direction * (48.0 * scale)).astype(int))
         end = tuple(np.rint(center + direction * (48.0 * scale)).astype(int))
-        cv2.line(frame, start, end, (250, 250, 250), max(2, int(round(5.0 * scale))), cv2.LINE_AA)
+        cv2.line(frame, start, end, (250, 250, 250), max(2, round(5.0 * scale)), cv2.LINE_AA)
         if pointer:
-            cv2.circle(frame, center_point, max(1, int(round(4.0 * scale))), (245, 245, 245), -1, cv2.LINE_AA)
+            cv2.circle(frame, center_point, max(1, round(4.0 * scale)), (245, 245, 245), -1, cv2.LINE_AA)
 
     return frame
 
@@ -81,7 +81,7 @@ class TestTargetLockPointerProbe(unittest.TestCase):
     def test_center_dot_without_direction_wedge_is_rejected(self):
         frame = _pointer_frame(0.0)
         center_x = frame.shape[1] // 2
-        center_y = int(round(frame.shape[0] * _POINTER_CENTER_Y_RATIO))
+        center_y = round(frame.shape[0] * _POINTER_CENTER_Y_RATIO)
         cv2.circle(frame, (center_x, center_y), 42, (60, 60, 60), -1, cv2.LINE_AA)
         cv2.circle(frame, (center_x, center_y), 20, (12, 12, 12), -1, cv2.LINE_AA)
         cv2.circle(frame, (center_x, center_y), 4, (245, 245, 245), -1, cv2.LINE_AA)

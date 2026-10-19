@@ -106,10 +106,7 @@ def _owner_still_alive(record: dict) -> bool:
     """Never collect a temporary parent managed by a live OK-EF process."""
     try:
         owner = psutil.Process(record["owner_pid"])
-        return (
-            owner.is_running()
-            and abs(owner.create_time() - record["owner_created"]) <= _TIME_TOLERANCE
-        )
+        return owner.is_running() and abs(owner.create_time() - record["owner_created"]) <= _TIME_TOLERANCE
     except psutil.NoSuchProcess:
         return False
 
@@ -121,9 +118,7 @@ def _recorded_game_alive(record: dict) -> bool:
     try:
         game = psutil.Process(game_pid)
         created = record.get("game_created")
-        return game.is_running() and (
-            created is None or abs(game.create_time() - created) <= _TIME_TOLERANCE
-        )
+        return game.is_running() and (created is None or abs(game.create_time() - created) <= _TIME_TOLERANCE)
     except psutil.NoSuchProcess:
         return False
 
@@ -138,8 +133,11 @@ def _recover_record(path: Path, logger) -> None:
     started = record["parent_created"]
     executable = record["parent_exe"]
     if (
-        not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0
-        or not isinstance(started, (int, float)) or isinstance(started, bool)
+        not isinstance(pid, int)
+        or isinstance(pid, bool)
+        or pid <= 0
+        or not isinstance(started, (int, float))
+        or isinstance(started, bool)
         or not isinstance(executable, str)
         or not executable
         or path.name != f"{pid}.json"

@@ -44,7 +44,7 @@ type_to_key_map = {"common": DEFAULT_COMMON_KEYS, "industry": DEFAULT_INDUSTRY_K
 class KeyConfigManager:
     """游戏热键配置管理器，负责替换逻辑"""
 
-    def __init__(self, key_config: dict = None):
+    def __init__(self, key_config: dict | None = None):
         """
         初始化热键配置管理器。
 

@@ -113,14 +113,14 @@ def build_official(langs):
     levels = []
 
     for i, m_zh in enumerate(zh_data["maps"]):
-        m = {l: langs[l]["maps"][i] for l in langs}
+        m = {lang: langs[lang]["maps"][i] for lang in langs}
         name_map.setdefault(m_zh["name"].strip(), {})["en"] = m["en"]["name"].strip()
         name_map[m_zh["name"].strip()]["ja"] = m["ja"]["name"].strip()
         name_map[m_zh["name"].strip()]["ko"] = m["ko"]["name"].strip()
 
         level_list = []
         for j, lv_zh in enumerate(m_zh.get("levels", [])):
-            lv = {l: m[l]["levels"][j] for l in langs}
+            lv = {lang: m[lang]["levels"][j] for lang in langs}
             name_map.setdefault(lv_zh["name"].strip(), {})["en"] = lv["en"]["name"].strip()
             name_map[lv_zh["name"].strip()]["ja"] = lv["ja"]["name"].strip()
             name_map[lv_zh["name"].strip()]["ko"] = lv["ko"]["name"].strip()
@@ -128,14 +128,14 @@ def build_official(langs):
             sites = []
             for k2, s_zh in enumerate(lv_zh.get("subLevels", [])):
                 s = {}
-                for l in langs:
-                    subs = lv[l].get("subLevels", [])
-                    s[l] = subs[k2]["name"].strip() if k2 < len(subs) else "?"
+                for lang in langs:
+                    subs = lv[lang].get("subLevels", [])
+                    s[lang] = subs[k2]["name"].strip() if k2 < len(subs) else "?"
                 if s_zh["name"].strip():
                     name_map.setdefault(s_zh["name"].strip(), {})
-                    for l in ("en", "ja", "ko"):
-                        if s[l] != "?":
-                            name_map[s_zh["name"].strip()][l] = s[l]
+                    for lang in ("en", "ja", "ko"):
+                        if s[lang] != "?":
+                            name_map[s_zh["name"].strip()][lang] = s[lang]
                 sites.append(
                     {
                         "id": s_zh["id"],
@@ -148,22 +148,22 @@ def build_official(langs):
             level_list.append(
                 {
                     "id": lv_zh["id"],
-                    "name": {l: lv[l]["name"] for l in langs},
+                    "name": {lang: lv[lang]["name"] for lang in langs},
                     "sites": sites,
                 }
             )
-        levels.append({"id": m_zh["id"], "name": {l: m[l]["name"] for l in langs}, "levels": level_list})
+        levels.append({"id": m_zh["id"], "name": {lang: m[lang]["name"] for lang in langs}, "levels": level_list})
 
     # catalog: 按 mainType/subType 顺序对齐（四语 subType id 一致）
     zh_cats = zh_data["mainTypes"]
     for i, mt_zh in enumerate(zh_cats):
-        subs = {l: langs[l]["mainTypes"][i].get("subTypes", []) for l in langs}
+        subs = {lang: langs[lang]["mainTypes"][i].get("subTypes", []) for lang in langs}
         for j, st_zh in enumerate(mt_zh.get("subTypes", [])):
-            st = {l: subs[l][j]["name"] if j < len(subs[l]) else "?" for l in langs}
+            st = {lang: subs[lang][j]["name"] if j < len(subs[lang]) else "?" for lang in langs}
             entry = {"zh": st_zh["name"]}
-            for l in ("en", "ja", "ko"):
-                if st[l] != "?":
-                    entry[l] = st[l]
+            for lang in ("en", "ja", "ko"):
+                if st[lang] != "?":
+                    entry[lang] = st[lang]
             catalog_map[st_zh["id"]] = entry
 
     return name_map, catalog_map, levels
@@ -178,7 +178,6 @@ def fetch_es_sites():
     data = get_json(ATLOS_REGION, {})
     es_site_by_slug = {}
     es_sub_by_lv = {}
-    es_main_by_en = {}
     es_main_by_key = {}
     es_sites_by_key = {}
     for main_key, main_v in data.items():

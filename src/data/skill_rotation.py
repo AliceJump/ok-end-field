@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 from pathlib import Path
 
@@ -241,10 +242,8 @@ def load_team_baseline_entries(
             # 回退保守口径；保守口径不与满连击口径叠加（后者基于满口径计算）
             conservative = entry.get("cycle_expect_conservative")
             if conservative is not None:
-                try:
+                with contextlib.suppress(TypeError, ValueError):
                     value = float(conservative)
-                except (TypeError, ValueError):
-                    pass
             requires: list[str] | None = None
         else:
             requires = required_elements or None
@@ -257,10 +256,8 @@ def load_team_baseline_entries(
                 else:
                     link4 = entry.get("cycle_expect_link4")
                     if link4 is not None:
-                        try:
+                        with contextlib.suppress(TypeError, ValueError):
                             value = float(link4)
-                        except (TypeError, ValueError):
-                            pass
         result[name] = {"value": value, "requires_attach": requires}
     _cached_team_entries[cache_key] = result
     return result

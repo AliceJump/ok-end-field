@@ -14,8 +14,8 @@ from src.tasks.mixin.gather_learning import (
     gather_initial_context,
     gather_transfer_alignment,
 )
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 from tests import TestInitialAlignmentLearning as initial_tests
 from tests import TestZipLineGoldGate as gold_tests
@@ -325,7 +325,7 @@ class TestGatherInitialLearning(unittest.TestCase):
     def test_search_during_gather_alignment_continues_without_saving(self):
         task = self.entry_task()
         task.find_feature.side_effect = lambda **kwargs: box() if task.active_time() > 1.2 else None
-        with patch("src.tasks.mixin.navigation_mixin.random.randint", return_value=20):
+        with patch("src.tasks.navigation.mixin.navigation_mixin.random.randint", return_value=20):
             self.assertFalse(BattleTask.battle_gather(task))
         task.navigate_until_target.assert_called_once()
         self.assertEqual(self.store.snapshot(), {})

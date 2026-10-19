@@ -57,7 +57,7 @@ def get_physical_dpr(px: int, py: int) -> float:
         return 1.0
 
 
-def screen_for_physical(px: int, py: int, dpr_hint: float = None):
+def screen_for_physical(px: int, py: int, dpr_hint: float | None = None):
     """把物理像素点映射到对应的 QScreen。
 
     QGuiApplication.screenAt 接受的是**逻辑坐标**。这里先用 物理坐标/该屏DPR 粗算
@@ -65,12 +65,12 @@ def screen_for_physical(px: int, py: int, dpr_hint: float = None):
     """
     try:
         dpr = dpr_hint if dpr_hint and dpr_hint > 0 else get_physical_dpr(px, py)
-        guess = QPoint(int(round(px / dpr)), int(round(py / dpr)))
+        guess = QPoint(round(px / dpr), round(py / dpr))
         screen = QGuiApplication.screenAt(guess)
         if screen is not None:
             return screen
         # 兜底：直接尝试物理坐标（在单屏 / 主屏 DPR=1 时等价）
-        screen = QGuiApplication.screenAt(QPoint(int(round(px)), int(round(py))))
+        screen = QGuiApplication.screenAt(QPoint((px), (py)))
         if screen is not None:
             return screen
     except Exception:
@@ -78,7 +78,7 @@ def screen_for_physical(px: int, py: int, dpr_hint: float = None):
     return QGuiApplication.primaryScreen()
 
 
-def physical_rect_to_logical(px: int, py: int, pw: int, ph: int, dpr_hint: float = None):
+def physical_rect_to_logical(px: int, py: int, pw: int, ph: int, dpr_hint: float | None = None):
     """把物理像素窗口 rect 换算为 Qt 逻辑坐标 (lx, ly, lw, lh)，正确处理混合 DPI 多屏。
 
     Args:

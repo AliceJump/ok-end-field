@@ -11,7 +11,7 @@ class ProcessManager:
         try:
             hwnd = self.get_game_hwnd()
             if hwnd:
-                tid, pid = win32process.GetWindowThreadProcessId(hwnd)
+                _tid, pid = win32process.GetWindowThreadProcessId(hwnd)
                 handle = win32api.OpenProcess(win32con.PROCESS_TERMINATE, False, pid)
                 win32api.TerminateProcess(handle, 0)
                 win32api.CloseHandle(handle)
@@ -29,7 +29,7 @@ class ProcessManager:
         try:
             hwnd = self.get_game_hwnd()
             if hwnd:
-                tid, pid = win32process.GetWindowThreadProcessId(hwnd)
+                _tid, pid = win32process.GetWindowThreadProcessId(hwnd)
                 handle = win32api.OpenProcess(win32con.PROCESS_TERMINATE, False, pid)
                 win32api.TerminateProcess(handle, 0)
                 win32api.CloseHandle(handle)

@@ -23,7 +23,7 @@ class TestCombatStartupWait(unittest.TestCase):
                 task = _FakeTask({"技能时间排轴": True}, skill=3)
                 detector = task._combo_skill_detector = ComboSkillDetector()
                 detector.order.before = {("a", "b")}
-                task.in_combat = lambda **kwargs: in_combat
+                task.in_combat = lambda _in_combat=in_combat, **kwargs: _in_combat
                 with patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic.run", return_value=True):
                     AutoCombatLogic(task).run()
                 self.assertFalse(detector.order.before)

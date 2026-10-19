@@ -47,10 +47,13 @@ def _migrate_once(store):
         store._zip_line_migration_done = True
 
 
-def align_initial_zipline(task, context, distance, *, need_scroll=None):
+def align_initial_zipline(task, context, distance, *, need_scroll=None, distance_tolerance=None):
+    alignment_kwargs = {"distance_tolerance": distance_tolerance} if distance_tolerance is not None else {}
     with initial_alignment(task, context) as learning:
         if learning is None:
-            return task._align_zip_line_distance(distance, need_scroll=need_scroll, tolerance=50, initial_move=None)
+            return task._align_zip_line_distance(
+                distance, need_scroll=need_scroll, tolerance=50, initial_move=None, **alignment_kwargs
+            )
         _migrate_once(learning.session.store)
         lookup_context = context
         hint = learning.session.hint()
@@ -77,6 +80,7 @@ def align_initial_zipline(task, context, distance, *, need_scroll=None):
             tolerance=50,
             initial_move=None,
             learning_session=learning,
+            **alignment_kwargs,
         )
         if not result:
             learning.fail()

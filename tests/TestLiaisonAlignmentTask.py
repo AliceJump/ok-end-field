@@ -12,8 +12,8 @@ from src.config import config as app_config
 from src.core.learning.policy import learning_epoch
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.workflow_learning import liaison_entry_after_transfer, liaison_entry_after_walk
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 from src.tasks.test.LiaisonAlignmentTestTask import LiaisonAlignmentTestTask
 from tests import TestWorkflowInitialLearning as workflow_tests
 from tests.TestInitialAlignmentLearning import box

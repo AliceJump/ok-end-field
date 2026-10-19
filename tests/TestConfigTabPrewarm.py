@@ -10,11 +10,13 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication
 
 from src.patches.conditional_rotation_patch import install_conditional_rotation_patch
+from src.patches.danger_switch_patch import install_danger_switch_patch
 
 # 必须先于 ConfigCard 导入（config_widget 为导入时绑定）。
 # 只安装本文件需要的补丁，不装 startup_patches 全量，
 # 避免污染后续用例的全局 ctypes / 模块状态。
 install_conditional_rotation_patch()
+install_danger_switch_patch()
 
 import sys as _sys  # noqa: E402
 
@@ -29,8 +31,10 @@ for _name in ("ok.ui.qt.tasks.ConfigCard", "ok.gui.tasks.ConfigCard"):
 
 from ok import og  # noqa: E402
 
+from src.core.global_config_store import get_all_visible_configs  # noqa: E402
+from src.core.RegionConfig import REGION_CONFIG_NAME  # noqa: E402
 from src.gui.AccountConfigTab import AccountConfigTab  # noqa: E402
-from src.gui.GlobalConfigTab import GLOBAL_CONFIG_GROUPS, GlobalConfigTab  # noqa: E402
+from src.gui.GlobalConfigTab import GlobalConfigTab  # noqa: E402
 
 
 class _FakeApp:
@@ -100,7 +104,9 @@ def _dispose_tab(test, tab):
 class TestGlobalConfigTabBuild(TabTestCase):
     @staticmethod
     def _expected_card_count():
-        return sum(len(config_names) for config_names in GLOBAL_CONFIG_GROUPS.values())
+        names = {name for name, _config, _option in get_all_visible_configs()}
+        names.add(REGION_CONFIG_NAME)
+        return len(names)
 
     def _new_tab(self):
         tab = GlobalConfigTab()

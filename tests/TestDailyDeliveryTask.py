@@ -21,12 +21,13 @@ class TestDailyDeliveryTask(unittest.TestCase):
 
         self.assertEqual(
             set(task.default_config),
-            {"_enabled", "目标券数", "地区切换"},
+            {"_enabled", "目标券数", "地区切换", "到达方式"},
         )
-        self.assertEqual(set(task.config_type), {"目标券数", "地区切换"})
+        self.assertEqual(set(task.config_type), {"目标券数", "地区切换", "到达方式"})
         self.assertNotIn("多账户独立配置", task.default_config)
         self.assertIn("选择测试对象", standalone.default_config)
         self.assertIn("运行模式", standalone.default_config)
+        self.assertIn("到达方式", standalone.default_config)
         self.assertNotIn("仅接取", standalone.default_config)
         self.assertNotIn("仅送货", standalone.default_config)
 
@@ -97,6 +98,14 @@ class TestDailyDeliveryTask(unittest.TestCase):
         )
         stub._delivery_fail = lambda message: DeliveryTask._delivery_fail(stub, message)
         stub._confirm_delivery_success = lambda evidence: DeliveryTask._confirm_delivery_success(stub, evidence)
+        # 送达确认已抽成共享方法（旧流程与网格提交路径共用），桩里一并接上
+        stub._confirm_delivery_submit_evidence = lambda pattern, end_target_box=None: (
+            DeliveryTask._confirm_delivery_submit_evidence(stub, pattern, end_target_box)
+        )
+        # 提交模式解析已抽成复用方法（网格导航的提交路径也要用），桩里一并接上
+        stub._resolve_delivery_submit_pattern = lambda pattern: DeliveryTask._resolve_delivery_submit_pattern(
+            stub, pattern
+        )
         return stub, pattern
 
     def test_daily_cycle_ignores_legacy_debug_flags(self):
@@ -153,6 +162,19 @@ class TestDailyDeliveryTask(unittest.TestCase):
         self.assertEqual(task.to_end_and_submit.call_count, 3)
         for call_args in task.to_end_and_submit.call_args_list:
             self.assertIs(call_args.kwargs["end_target_box"], target_result)
+        self.assertEqual(task._delivery_stage, "第3单：送达成功")
+
+    def test_daily_cycle_uses_grid_navigation_when_selected(self):
+        task = self._make_cycle({"到达方式": "网格导航"}, daily_mode=True)
+        task.task_to_transfer_point.return_value = True
+        task._run_grid_delivery_state_machine = Mock(return_value=True)
+        task._run_legacy_delivery_leg = Mock(return_value=True)
+
+        with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
+            self.assertIs(task._run_single_delivery_cycle(), True)
+
+        self.assertEqual(task._run_grid_delivery_state_machine.call_count, 3)
+        task._run_legacy_delivery_leg.assert_not_called()
         self.assertEqual(task._delivery_stage, "第3单：送达成功")
 
     def test_daily_cycle_fails_when_submit_cannot_be_confirmed_and_marks_cargo_fatal(self):
