@@ -345,3 +345,17 @@ class TestMechanismPrediction(unittest.TestCase):
         state = state.request('1', 'future', 'sword', 1, .6, 36, cap=9, requested_at=.2)
         self.assertEqual([r.source for r in state.available('1', .3)], ['old'])
         self.assertEqual([r.source for r in state.available('1', .7)], ['future'])
+
+    def test_overflow_and_burst_use_the_same_current_cast_weapon_and_bone_quote(self):
+        task = FakeTask()
+        task.sp = 100
+        task.now = 1
+        task.battle_pulses = {'1'}
+        logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
+        logic._configure_team(['艾维文娜'], reset_runtime=True)
+        logic.release_burst.confirm('1', 'link', 0)
+        logic._observe_battle_highlights()
+        action = logic._release_battle_candidate('1', 100, 1, set())
+        decision = logic.release_burst.choose((action,), 100, 1, conditions=logic._scene_conditions())
+        self.assertAlmostEqual(logic._overflow_score('1')*max(action.duration, .3), decision.damage)
+        self.assertAlmostEqual(decision.damage, 116032.0, delta=1)

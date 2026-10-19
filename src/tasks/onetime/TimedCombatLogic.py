@@ -1134,19 +1134,26 @@ class TimedCombatLogic:
         quote = self.damage_quotes.get(name)
         damage = quote.battle if quote is not None else 0.0
         if self.release_burst is not None:
-            components = ()
-            if token in self.release_burst.highlight_damage:
-                assessment = self._battle_condition(token)
-                base, extra = self.release_burst.battle_values(token, assessment)
-                damage = base + extra
-                base_components, extra_components = self.release_burst.battle_components(token, assessment)
-                components = base_components + extra_components
-            priced = (self.release_burst.price_components(token, self._clock(), components) if components
-                      else self.release_burst.price(token, "battle", self._clock(), value=damage))
+            priced = self._overflow_damage(token, profiles, damage, mechanism)
             if priced is not None:
                 damage = priced
         handoff = max(max(profile.handoff, 0.3) for profile in profiles)
         return damage / handoff
+
+    def _overflow_damage(self, token, profiles, damage, mechanism):
+        components = ()
+        if token in self.release_burst.highlight_damage:
+            assessment = self._battle_condition(token)
+            base, extra = self.release_burst.battle_values(token, assessment)
+            damage = base+extra
+            base_components, extra_components = self.release_burst.battle_components(token, assessment)
+            components = base_components+extra_components
+        if components:
+            return self.release_burst.price_components(token, self._clock(), components)
+        if mechanism is not None:
+            return self.release_burst.preview_release_price(
+                token, 'battle', self._clock(), max(max(p.handoff, .3) for p in profiles), mechanism=mechanism)
+        return self.release_burst.price(token, 'battle', self._clock(), value=damage)
 
     def _try_overflow_battle_skill(self, sp, checkpoint):
         if sp < self.sp_pressure_threshold or not self.order:

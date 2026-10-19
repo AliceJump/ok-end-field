@@ -582,10 +582,11 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertEqual(logic.damage_quotes["艾维文娜"].battle, value)
         self.assertEqual(logic.damage_quotes["艾维文娜"].conservative, value)
         profile = logic.store.profiles("艾维文娜", "battle")[0]
-        self.assertAlmostEqual(logic._overflow_score("1") * max(profile.handoff, .3), value)
+        # The attempted battle opens its own JET window; a previous battle
+        # only refreshes the same window and must not add a second copy.
+        self.assertAlmostEqual(logic._overflow_score("1") * max(profile.handoff, .3), 22054.401292237948)
         logic.release_burst.confirm("1", "battle", 0)
-        self.assertGreater(logic._overflow_score("1") * max(profile.handoff, .3), value)
-        self.assertLess(logic._overflow_score("1") * max(profile.handoff, .3), 30000)
+        self.assertAlmostEqual(logic._overflow_score("1") * max(profile.handoff, .3), 22054.401292237948)
 
     def test_cast_only_comparison_preserves_available_zero_damage_support_in_cycle(self):
         task, logic = self.make_logic()
