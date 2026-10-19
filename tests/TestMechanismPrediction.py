@@ -359,3 +359,84 @@ class TestMechanismPrediction(unittest.TestCase):
         decision = logic.release_burst.choose((action,), 100, 1, conditions=logic._scene_conditions())
         self.assertAlmostEqual(logic._overflow_score('1')*max(action.duration, .3), decision.damage)
         self.assertAlmostEqual(decision.damage, 116032.0, delta=1)
+
+    def test_rangliu_requires_consumption_not_a_bare_ring_or_first_free_cast(self):
+        p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
+        obs = self.observed('庄方宜')
+        q = p.mechanism_quote('1', 0, obs)
+        p.confirm('1', 'battle', 0, mechanism=q)
+        self.assertFalse(p.mechanism_state.consumption_stacks)
+        p.confirm('1', 'ult', 1)
+        q = p.mechanism_quote('1', 4, self.observed('庄方宜', enhanced=True))
+        self.assertEqual(q.conduct, 0)
+        p.confirm('1', 'battle', 4, mechanism=q)
+        self.assertFalse(p.mechanism_state.consumption_stacks)
+
+    def test_rangliu_is_future_owner_only_and_does_not_reprice_its_own_cast(self):
+        p = ReleaseBurstPlanner(['庄方宜', '佩丽卡'], store=self.store)
+        p.confirm('1', 'ult', 0)
+        obs = self.observed('庄方宜', enhanced=True)
+        p.confirm('1', 'battle', 3, mechanism=p.mechanism_quote('1', 3, obs))
+        q = p.mechanism_quote('1', 10, obs)
+        before = p.preview_release_price('1', 'battle', 10, 1, mechanism=q)
+        self.assertEqual(p.mechanism_state.consumption_stacks, ())
+        p.confirm('1', 'battle', 10, mechanism=q)
+        p.confirm('1', 'battle', 10, mechanism=q)  # Repeated confirmation is idempotent.
+        self.assertEqual(len(p.mechanism_state.consumption_stacks), 1)
+        self.assertAlmostEqual(p.price('1', 'battle', 11, mechanism=q), before)
+        state = p.mechanism_state
+        amount = p.rows['1']['mechanism']['consumption_equipment']['amount_per_stack']
+        self.assertEqual(state.consumption_bonus('1', 16, '电磁'), 0)
+        self.assertEqual(state.consumption_bonus('1', 17, '电磁'), amount)
+        self.assertEqual(state.consumption_bonus('2', 18, '电磁'), 0)
+        self.assertEqual(state.consumption_bonus('1', 18, '灼热'), 0)
+        self.assertEqual(state.consumption_bonus('1', 18, '自然'), amount)
+        self.assertEqual(state.consumption_bonus('1', 18, '电磁', until=35), 0)
+        later = p.mechanism_quote('1', 18, obs)
+        self.assertEqual(later.model_consumption_bonus, amount)
+        without = replace(state, consumption_stacks=())
+        price = p.price('1', 'battle', 18, mechanism=later)
+        base = p.price('1', 'battle', 18, mechanism=later, mechanism_state=without)
+        self.assertAlmostEqual(price, 189660.94483946325)
+        bonus = p.quote('1', 'battle')['bonus_pct']/100
+        self.assertAlmostEqual(price/base, (1+bonus+amount)/(1+bonus))
+
+    def test_rangliu_independent_expiry_cap_does_not_invent_refresh(self):
+        p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
+        equipment = p.rows['1']['mechanism']['consumption_equipment']
+        state = MechanismState()
+        for started in (0, 1, 2, 3):
+            state = state.after_consumption('1', str(started), equipment, started, started+7, 1)
+        self.assertEqual(len(state.consumption_stacks), 3)
+        self.assertEqual([w.expires for w in state.consumption_stacks], [25, 26, 27])
+        self.assertAlmostEqual(state.consumption_bonus('1', 24, '电磁'), 3*equipment['amount_per_stack'])
+        self.assertAlmostEqual(state.consumption_bonus('1', 25, '电磁'), 2*equipment['amount_per_stack'])
+        state = state.after_consumption('1', 'new', equipment, 25, 32, 1)
+        self.assertEqual([w.expires for w in state.consumption_stacks], [26, 27, 50])
+        self.assertEqual(state.consumption_bonus('1', 30, '电磁'), 0)
+        self.assertAlmostEqual(state.consumption_bonus('1', 32, '电磁'), equipment['amount_per_stack'])
+        self.assertEqual(state.keep({'2'}).consumption_stacks, ())
+
+    def test_rangliu_forecast_keeps_real_state_and_failed_attempt_unchanged(self):
+        task = FakeTask()
+        task.sp = 100
+        logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
+        logic._configure_team(['庄方宜'], reset_runtime=True)
+        p = logic.release_burst
+        p.confirm('1', 'ult', 0)
+        obs = self.observed('庄方宜', enhanced=True)
+        p.confirm('1', 'battle', 3, mechanism=p.mechanism_quote('1', 3, obs))
+        task.now = 10
+        task.battle_pulses = {'1'}
+        logic._observe_battle_highlights()
+        action = logic._release_battle_candidate('1', 100, 10, set())
+        before = p.mechanism_state
+        decision = p.choose((action,), 100, 10, conditions=logic._scene_conditions())
+        self.assertIsNotNone(decision)
+        self.assertEqual(p.mechanism_state, before)
+        self.assertTrue(logic._try_battle_token('1', 100))
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+        logic._probe_action_feedback()
+        self.assertEqual(p.mechanism_state, before)
+        p.source_unavailable('1')
+        self.assertFalse(p.mechanism_state.consumption_stacks)

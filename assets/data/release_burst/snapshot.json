@@ -5106,6 +5106,18 @@
         "condition_hashes": {
           "chr_0030_zhuangfy_normal_skill": "ef3b1e6e1fcc1074e0a9def7d36a1d07614b720a3641de730419ce84f9f7c758",
           "chr_0030_zhuangfy_normal_skill_ult": "ef3b1e6e1fcc1074e0a9def7d36a1d07614b720a3641de730419ce84f9f7c758"
+        },
+        "consumption_equipment": {
+          "amount_per_stack": 0.15000000596046448,
+          "duration": 25.0,
+          "max_stacks": 3,
+          "elements": [
+            "电磁",
+            "自然"
+          ],
+          "scope": "nominal_conduct_consumption; future_quotes_only",
+          "contract_sha256": "9e403cf95e17e6c9137c62badff4f9c296de4d4830d0595ee8f65358b139935d",
+          "gear_sha256": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170"
         }
       }
     },

@@ -14,6 +14,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from reviewed_avywenna_recall import recall_quote
+from reviewed_mechanism_equipment import RANGLIU_SHA256
 from reviewed_mechanism_quotes import mechanism_contract
 from reviewed_release_stance import release_stance
 from reviewed_si_release import si_release_actor
@@ -162,6 +163,7 @@ def export(source, revision, destination):
                 "snapshot_sha256": hashlib.sha256(payload).hexdigest(), "actors": 33, "rules": 16,
                 "supplement_source_hashes": {
                     **si_evidence["source_hashes"],
+                    "assets/data/release_burst/rangliu-contract.json": RANGLIU_SHA256,
                     "assets/data/release_burst/si-release-contract.json": si_evidence["contract_sha256"]},
                 "support_evidence_sha256": hashlib.sha256(support_payload).hexdigest(),
                 "exporter_hashes": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in

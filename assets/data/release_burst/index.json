@@ -94,7 +94,7 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "403d06fa556aab87d8998df513ce80c936f523590112a6db81d92efedf5fdd94",
+  "snapshot_sha256": "030c1abecef3ec980513583b6df308f4fd64ea26274c56d60af39cc673edde49",
   "actors": 33,
   "rules": 16,
   "supplement_source_hashes": {
@@ -103,17 +103,18 @@
     "assets/data/damage_baseline.json": "121c0168fd705047b2f924db85d4dcde882178c5fcab44af2e829e7e7099d6bc",
     "assets/data/skill_timings/20261015-si/index.json": "929af3f81d717124bbeebf1c608d9b7908ea6f56f96b87cb7f66535b9b7e2395",
     "assets/data/skill_timings/20261015-si/profiles.json": "471dadbec2a1e77381e3636b7954e94f3c7d650e4a6d17d684c85447586e8346",
+    "assets/data/release_burst/rangliu-contract.json": "9e403cf95e17e6c9137c62badff4f9c296de4d4830d0595ee8f65358b139935d",
     "assets/data/release_burst/si-release-contract.json": "86cb40dbec3fe5aa6b7d8d94d617e216b1ebc9e31dac61889556ffc1052accf6"
   },
   "support_evidence_sha256": "63fb997a727426f190cbecf6379a0e60ee50cd5ffa5b90f2c8ef4f2c9b23f5ba",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "12e4834a724f4a611a52d8633b4298e1c8dd893bc07061334faa9edf9e1ade08",
+    "export_release_burst_snapshot.py": "cd569566f05c6c1eeb52bc9a4d0e25d15f0a8104d30863306af49dd7879a5520",
     "reviewed_support_release.py": "4275d1fbaa903c83431cf992c67a5cd010383456ae2135c45a7fd88368b689de",
     "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792",
     "reviewed_si_release.py": "807639a720cdfa6205b02887fde35aadc2409c554a6d0adab77b2f61d6286dfa",
     "reviewed_avywenna_recall.py": "ada2f76001729ca5d03d8ef885234af7925288521ad5ea2061ac2913f83e17f3",
-    "reviewed_mechanism_quotes.py": "63377483de5ba6738c558a21f770c76c5fac5bc9d02c8e7781383bd5285fa76c",
-    "reviewed_mechanism_equipment.py": "e6dcfb2f6331debbfb8be9acbd85d6e1a659f44662f35afa215fe258950a83a6"
+    "reviewed_mechanism_quotes.py": "8066535b9b46b2e24ef8a3fce77eda33a7aedc417f429d612ac5470e52c325ad",
+    "reviewed_mechanism_equipment.py": "f1cbfe9ed13d6a6d302a90b6bb2e1e6b49a626afb0c1589ccd738990d1b9f4bc"
   },
   "stances": 1
 }

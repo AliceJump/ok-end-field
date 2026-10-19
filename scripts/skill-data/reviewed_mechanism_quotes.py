@@ -3,7 +3,7 @@
 import hashlib
 import json
 
-from reviewed_mechanism_equipment import spear_equipment
+from reviewed_mechanism_equipment import spear_equipment, sword_equipment
 
 VALUE = '$value'
 HASHES = {
@@ -125,4 +125,6 @@ def mechanism_contract(row, store, source):
                                     for key in result['skills']})
     if row['key']=='avywenna':
         result['equipment'] = spear_equipment(row, source)
+    else:
+        result['consumption_equipment'] = sword_equipment(row, source)
     return result

@@ -378,8 +378,11 @@ class ReleaseBurstPlanner:
                        and mechanism.damage_until < b.expires_at]
             extra = model.weapon_bonus(actor, mechanism.quote_started, quote['quote_basis']['element'],
                                         until=mechanism.damage_until)
+            extra += model.consumption_bonus(actor, mechanism.quote_started, quote['quote_basis']['element'],
+                                              until=mechanism.damage_until)
         else:
             extra = model.weapon_bonus(actor, now, quote['quote_basis']['element'])
+            extra += model.consumption_bonus(actor, now, quote['quote_basis']['element'])
         return bonuses, extra+(mechanism.extra_damage_bonus if mechanism is not None else 0)
 
     def _price_value(self, actor, now, element, tags, bonus_pct, value, bonuses, extra_damage_bonus=0):

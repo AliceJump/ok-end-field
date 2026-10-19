@@ -3,6 +3,31 @@
 import hashlib
 import json
 import re
+from pathlib import Path
+
+RANGLIU_SHA256 = '9e403cf95e17e6c9137c62badff4f9c296de4d4830d0595ee8f65358b139935d'
+
+
+def sword_equipment(row, source):
+    """Admit only the selected build and the separately reviewed rank contract."""
+    gear_path = source/'assets/data/equipments.json'
+    gear = json.loads(gear_path.read_text(encoding='utf8'))
+    if sum(gear[name]['set']=='壤流装备组' for name in row['build']['pieces']) < 3:
+        raise ValueError('Selected sword build no longer activates Rangliu')
+    path = Path(__file__).resolve().parents[2]/'assets/data/release_burst/rangliu-contract.json'
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != RANGLIU_SHA256:
+        raise ValueError('Changed reviewed Rangliu evidence')
+    evidence = json.loads(raw)
+    if (evidence['event'] != {'name':'OnConsumeBuff', 'value':208, 'tags':['bf9d6e57', 'edaee3e6']}
+            or evidence['recipient']['source']!='Owner' or evidence['recipient']['value']!=4
+            or evidence['skill_rank']!=1 or evidence['attributes']!={'52':'PulseDamageIncrease', '54':'NaturalDamageIncrease'}):
+        raise ValueError('Changed Rangliu producer or recipient')
+    return {'amount_per_stack': evidence['damage_bonus_per_stack'], 'duration': evidence['duration'],
+            'max_stacks': evidence['max_stacks'], 'elements': evidence['elements'],
+            'scope':'nominal_conduct_consumption; future_quotes_only',
+            'contract_sha256': RANGLIU_SHA256,
+            'gear_sha256': hashlib.sha256(gear_path.read_bytes()).hexdigest()}
 
 
 def spear_equipment(row, source):
