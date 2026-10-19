@@ -150,8 +150,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return self.get_zip_line_config_value(ZIP_LINE_SCROLL_KEY, False)
 
     def on_zip_line_start(
-        self, delivery_to, need_scroll=None, target=None, need_v=True, stay_on_zip_line=False,
-        route_family=(), target_learning_context=None,
+        self,
+        delivery_to,
+        need_scroll=None,
+        target=None,
+        need_v=True,
+        stay_on_zip_line=False,
+        route_family=(),
+        target_learning_context=None,
     ):
         """进入滑索后，根据配置对齐并滑行至送货点
 
@@ -992,11 +998,17 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             reading = self._read_zip_line_settled_arrow_angle() if route_fingerprint else None
             start_yaw = reading[0] if reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE else None
             context = route_context_for(
-                self, route_fingerprint, segment_index, start_yaw,
-                need_scroll=need_scroll, family=route_family,
+                self,
+                route_fingerprint,
+                segment_index,
+                start_yaw,
+                need_scroll=need_scroll,
+                family=route_family,
             )
             self._align_and_activate_zip_line(
-                zip_line, need_scroll=need_scroll, initial_move=None,
+                zip_line,
+                need_scroll=need_scroll,
+                initial_move=None,
                 **({"learning_context": context} if context is not None else {}),
             )
 
@@ -1058,22 +1070,26 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             else:
                 result = True
             if result:
-                context = target_learning_context if (
-                    learning_allowed()
-                    and (target_learning_epoch is None or target_learning_epoch == learning_epoch())
-                    and target_learning_context is not None
-                    and target_learning_context.entry_route_signature == tuple(zip_line_list)
-                    and (
-                        (need_v and target_learning_context.entry != "after_zipline_on_board")
-                        or (
-                            not need_v
-                            and target_learning_context.task == "gather"
-                            and target_learning_context.phase == "after_zipline"
-                            and target_learning_context.entry == "after_zipline_on_board"
-                            and bool(zip_line_list)
+                context = (
+                    target_learning_context
+                    if (
+                        learning_allowed()
+                        and (target_learning_epoch is None or target_learning_epoch == learning_epoch())
+                        and target_learning_context is not None
+                        and target_learning_context.entry_route_signature == tuple(zip_line_list)
+                        and (
+                            (need_v and target_learning_context.entry != "after_zipline_on_board")
+                            or (
+                                not need_v
+                                and target_learning_context.task == "gather"
+                                and target_learning_context.phase == "after_zipline"
+                                and target_learning_context.entry == "after_zipline_on_board"
+                                and bool(zip_line_list)
+                            )
                         )
                     )
-                ) else None
+                    else None
+                )
                 confidence = "high"
                 if context is not None:
                     reading = self._read_zip_line_settled_arrow_angle()
@@ -1083,7 +1099,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     if target_learning_epoch is not None and target_learning_epoch != learning_epoch():
                         context = None
                 align_initial_target(
-                    self, context, result_name,
+                    self,
+                    context,
+                    result_name,
                     confidence=confidence,
                     threshold=0.8,
                     ocr=ocr_bool,
