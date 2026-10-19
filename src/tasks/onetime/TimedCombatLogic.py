@@ -1389,6 +1389,7 @@ class TimedCombatLogic:
         self.task._last_ult_hud_frozen_seconds = 0.0
         if not self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
             return False
+        raw_recovered_at = self._raw_clock()
         self._note_action_attempt("ult", token)
         hud_frozen = max(0.0, float(getattr(self.task, "_last_ult_hud_frozen_seconds", 0.0) or 0.0))
         self._excluded_hud_seconds += hud_frozen
@@ -1414,7 +1415,7 @@ class TimedCombatLogic:
         self._clear_active(ended)
         self.task.log_info(
             f"时间排轴: 终结技 {token} 动画结束后继续，"
-            f"HUD 动画锁 {self._raw_clock() - raw_started:.2f}s，确认时停扣除 {hud_frozen:.2f}s"
+            f"HUD 动画锁 {raw_recovered_at - raw_started:.2f}s，确认时停扣除 {hud_frozen:.2f}s"
         )
         if self.main_control.update(force=True):
             return True

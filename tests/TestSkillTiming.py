@@ -820,10 +820,12 @@ class TestTimedCombat(unittest.TestCase):
         logic.cooldowns[battle.skill_id] = 105.0
 
         logic.step()  # Fake ultimate spends two seconds in a confirmed HUD freeze.
-        self.assertEqual(task.now, 102.0)
-        self.assertEqual(logic._clock(), 100.0)
-        self.assertEqual(logic._sp_wall_clock(), 100.0)
-        self.assertEqual(logic.state_until["2"] - logic._clock(), 5.0)
+        # This PR retains its 0.1s post-recovery failure probe. That script
+        # pause is gameplay time, unlike the confirmed two-second HUD freeze.
+        self.assertAlmostEqual(task.now, 102.1)
+        self.assertAlmostEqual(logic._clock(), 100.1)
+        self.assertAlmostEqual(logic._sp_wall_clock(), 100.1)
+        self.assertAlmostEqual(logic.state_until["2"] - logic._clock(), 4.9)
         self.assertFalse(logic._ready((battle,), slot="2", kind="battle"))
         self.assertAlmostEqual(logic._project_probe_expected(), 100.0)
         self.assertTrue(any("确认时停扣除 2.00s" in msg for msg in task.messages))
@@ -831,7 +833,7 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 105.0  # Gameplay advances three seconds after HUD recovery.
         self.assertEqual(logic._clock(), 103.0)
         self.assertEqual(logic.state_until["2"] - logic._clock(), 2.0)
-        self.assertAlmostEqual(logic._project_probe_expected(), 124.0)
+        self.assertAlmostEqual(logic._project_probe_expected(), 123.2)
         task.now = 107.0
         self.assertTrue(logic._ready((battle,), slot="2", kind="battle"))
 
