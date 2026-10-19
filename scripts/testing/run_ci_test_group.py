@@ -151,6 +151,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
     "navigation-zipline": (
         "Navigation and zipline",
         (
+            "TestCameraInputConfig.py",
             "TestAutoPick.py",
             "TestEfInteraction.py",
             "TestFindZipLineBoardButton.py",
