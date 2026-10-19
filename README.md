@@ -80,7 +80,7 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 ## 运行要求与推荐设置
 
 - 系统：Windows
-- 游戏分辨率：要求 16:9 且 1920×1080（1080P）及以上；低于 1080P 不保证正常运行
+- 游戏分辨率：要求 16:9 且 1600×900（900P）及以上；低于 900P 不保证正常运行
 - 语言：当前部分功能仅支持简体中文
 - 运行权限：建议管理员权限运行（源码模式必须）
 - 路径：安装/运行路径尽量使用纯英文

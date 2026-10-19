@@ -1,5 +1,7 @@
 import traceback
 
+from src.config import config as app_config
+
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
     KEY_BATTLE_INITIAL_WAIT,
@@ -447,15 +449,17 @@ class AutoCombatLogic:
             return
 
     def _is_low_resolution(self) -> bool:
-        """当前画面分辨率是否低于 1080p。"""
+        """当前画面分辨率是否低于配置中的最低游戏分辨率。"""
         try:
             height = self.task.height
+            width = getattr(self.task, "width", None)
         except (AttributeError, TypeError):
             return False
-        return bool(height) and height < 1080
+        min_w, min_h = app_config["supported_resolution"]["min_size"]
+        return bool(height) and (height < min_h or (width is not None and width < min_w))
 
     def _warn_low_resolution_if_due(self):
-        """分辨率低于 1080p 且处于“未进入战斗”（含秒退）状态时，每 5 秒警告一次。
+        """分辨率低于配置最低值且处于“未进入战斗”（含秒退）状态时，每 5 秒警告一次。
 
         计时状态挂在 task 上，保证触发式调度（AutoCombatTask）与 auto_battle 循环
         （每次新建本实例）都能跨次持续计时。
@@ -467,7 +471,10 @@ class AutoCombatLogic:
         last_warn = getattr(task, "_last_low_res_warn_time", 0.0)
         if now - last_warn >= self._LOW_RES_WARN_INTERVAL:
             task._last_low_res_warn_time = now
-            task.log_warning("1080p以下自动战斗匹配不良，请切换1080p以及以上分辨率", notify=True)
+            min_w, min_h = app_config["supported_resolution"]["min_size"]
+            task.log_warning(
+                f"低于{min_w}x{min_h}自动战斗匹配不良，请切换{min_w}x{min_h}及以上分辨率", notify=True
+            )
 
     def run(self, start_sleep: float | None = None, no_battle: bool = False, deadline: float | None = None):
         self._last_exit_check_time = 0
@@ -486,7 +493,7 @@ class AutoCombatLogic:
             last = getattr(task, "_last_no_combat_log_time", 0)
             if now - last >= 5:
                 task._last_no_combat_log_time = now
-            # 一直未进入战斗：分辨率低于 1080p 时每 5 秒警告一次
+            # 一直未进入战斗：低于最低支持分辨率时每 5 秒警告一次
             self._warn_low_resolution_if_due()
             task.sleep(0.5)
             return False
