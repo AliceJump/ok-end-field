@@ -116,6 +116,24 @@ class LauncherCleanup:
             daemon=True,
         ).start()
 
+    def start_exit_watch(self, game_pid: int) -> None:
+        """Recover watcher ownership when the primary monitor could not start."""
+        game = psutil.Process(game_pid)
+        game.create_time()
+        try:
+            threading.Thread(
+                target=self._watch,
+                args=(game,),
+                name="endfield-launcher-fallback",
+                daemon=True,
+            ).start()
+        except Exception as error:
+            # A thread-start failure must not leave an unowned suspended parent.
+            # In this exceptional case, prefer blocking until verified startup
+            # or game exit to silently abandoning the process handle.
+            self.logger.warning(f"Cannot start fallback launcher watcher; waiting in caller: {error}")
+            self._watch(game)
+
     def _parent_running(self) -> bool:
         exit_code = wintypes.DWORD()
         if not self.kernel.GetExitCodeProcess(self.parent, byref(exit_code)):
