@@ -1,7 +1,12 @@
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
+from ok import TaskDisabledException
+
+from src.core.learning.policy import learning_allowed
 from src.tasks.mixin.navigation_detection_scope import NavigationDetectionScope, get_navigation_detection_scope
+from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 from tests.TestNavigationMixin import NavigationMixin
 
 
@@ -65,6 +70,82 @@ class _Task:
 
 
 class TestNavigationDetectionScope(unittest.TestCase):
+    def reward_task(self, *, follow_button=None, marker=True):
+        task = _Task()
+        task.battle_ctx = BattleContext()
+        task.lang = SimpleNamespace(daily_battle_mixin=SimpleNamespace(k_b8a81b7a="abandon", k_39d12e73_1="claim"))
+        state = {"world": False, "claim": False}
+        task.wait_ocr = Mock(side_effect=lambda **kwargs: [task.detection] if state["claim"] else [])
+        task.find_feature = Mock(side_effect=lambda **kwargs: task.detection if state["world"] and marker else None)
+        task.rotate_search = Mock(return_value=None)
+        task._open_index = Mock()
+        task.to_stage = Mock(return_value=True)
+        task.wait_feature = Mock(return_value=follow_button)
+
+        def ensure_main():
+            self.assertFalse(learning_allowed())
+            state["world"] = True
+
+        task.ensure_main = Mock(side_effect=ensure_main)
+        task.wait_until = Mock(side_effect=lambda condition, **kwargs: bool(condition()))
+        task.align_ocr_or_find_target_to_center = Mock(return_value=True)
+
+        def navigate(**kwargs):
+            self.assertFalse(learning_allowed())
+            self.assertNotIn("learning_session", kwargs)
+            state["claim"] = True
+            return True
+
+        task.navigate_until_target = Mock(side_effect=navigate)
+        task.click_with_alt = Mock()
+        task._gather_retry_navigate = Mock(return_value=False)
+        task.mark_task_failure = Mock()
+        task._find_end = lambda: BattleTask._find_end(task)
+        return task
+
+    def test_reward_existing_tracking_without_button_continues_using_fresh_marker(self):
+        task = self.reward_task()
+        with (
+            patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=True),
+            patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("learning")),
+        ):
+            self.assertTrue(BattleTask.to_end(task))
+        task.ensure_main.assert_called_once()
+        self.assertEqual(task.wait_until.call_args.kwargs, {"time_out": 5, "raise_if_not_found": False})
+        task.navigate_until_target.assert_called_once()
+        task.click_with_alt.assert_called_once()
+        task._gather_retry_navigate.assert_not_called()
+        self.assertNotIn(("click", "middle"), task.events[1:])
+        self.assertTrue(learning_allowed())
+
+    def test_reward_missing_button_and_marker_retains_retry_instead_of_false_success(self):
+        task = self.reward_task(marker=False)
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=True):
+            self.assertFalse(BattleTask.to_end(task))
+        task._gather_retry_navigate.assert_called_once()
+        task.align_ocr_or_find_target_to_center.assert_not_called()
+        task.navigate_until_target.assert_not_called()
+        task.click_with_alt.assert_not_called()
+
+    def test_reward_visible_tracking_button_keeps_original_click_path(self):
+        task = self.reward_task(follow_button=object())
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=True):
+            self.assertTrue(BattleTask.to_end(task))
+        task.ensure_main.assert_called_once()
+        task.wait_until.assert_not_called()
+        task._gather_retry_navigate.assert_not_called()
+
+    def test_stop_while_checking_existing_reward_marker_propagates(self):
+        task = self.reward_task()
+        task.wait_until.side_effect = TaskDisabledException()
+        with (
+            patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=True),
+            self.assertRaises(TaskDisabledException),
+        ):
+            BattleTask.to_end(task)
+        task._gather_retry_navigate.assert_not_called()
+        self.assertTrue(learning_allowed())
+
     def test_methods_are_restored_and_other_tasks_are_unaffected(self):
         task, other = _Task(), _Task()
         before = dict(vars(task))

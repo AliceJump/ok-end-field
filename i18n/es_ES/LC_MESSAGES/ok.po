@@ -3164,6 +3164,98 @@ msgid "截图路径中没有可回放图片。"
 msgstr "No hay imágenes para reproducir en la ruta indicada."
 
 msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号列表每行填写一个手机号；若一行包含逗号，只使用逗号前的账号内容。切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
+msgstr ""
+"Configura los parámetros por cuenta y tarea. Selecciona una cuenta y después"
+" una tarea para mostrar sus controles. Introduce un teléfono por línea; solo"
+" se utiliza el contenido anterior a la primera coma. El cambio de cuenta "
+"compara los tres primeros y los cuatro últimos dígitos visibles; si hay "
+"duplicados, usa la marca Reciente y la cuenta activa antes del cambio para "
+"identificar el destino."
+
+msgid "每行一个手机号；逗号后内容忽略"
+msgstr "Un teléfono por línea; se ignora el contenido posterior a la coma"
+
+msgid "；账号名（手机号）是唯一ID，账号名变化会新建ID"
+msgstr ""
+"; el nombre de cuenta (teléfono) es su ID único; cambiarlo crea un ID nuevo"
+
+msgid "；若输入包含逗号，只保存逗号前的账号内容"
+msgstr ""
+"; si hay una coma, solo se guarda el contenido de cuenta anterior a ella"
+
+msgid ""
+"账号列表，每行一个手机号。\n"
+"若一行包含逗号，只使用逗号前的账号内容，逗号后内容会直接忽略。\n"
+"切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
+msgstr ""
+"Lista de cuentas, un teléfono por línea.\n"
+"Solo se utiliza el contenido anterior a la primera coma; se ignora el resto.\n"
+"El cambio compara los tres primeros y los cuatro últimos dígitos visibles; si hay duplicados, usa la marca Reciente y la cuenta activa antes del cambio para identificar el destino."
+
+msgid "窗口置顶"
+msgstr "Mantener ventanas siempre encima"
+
+msgid "淤积点重复导航测试"
+msgstr "Prueba de navegación repetida a puntos de acumulación"
+
+msgid "按编排顺序循环导航到淤积点，使用正式学习流程，不激发、不挑战、不战斗。"
+msgstr ""
+"Repite la navegación a los puntos de acumulación en el orden indicado con el"
+" aprendizaje normal, sin activar, iniciar desafíos ni combatir."
+
+msgid "淤积点序列"
+msgstr "Secuencia de puntos de acumulación"
+
+msgid "循环次数"
+msgstr "Número de ciclos"
+
+msgid "按顺序执行，可重复添加同一淤积点；滑索路线沿用全局滑索配置。"
+msgstr ""
+"Se ejecuta en orden; se puede repetir un punto de acumulación. Las rutas de "
+"tirolina usan la configuración global."
+
+msgid "完整执行序列的次数，0 表示持续循环，直到手动停止。"
+msgstr ""
+"Veces que se ejecuta la secuencia completa. Usa 0 para repetir hasta "
+"detenerla manualmente."
+
+msgid "请编排有效的淤积点序列。"
+msgstr "Configura una secuencia válida de puntos de acumulación."
+
+msgid "循环次数必须为非负整数，0 表示持续循环。"
+msgstr ""
+"El número de ciclos debe ser un entero no negativo; 0 repite "
+"indefinidamente."
+
+msgid "测试进度"
+msgstr "Progreso de prueba"
+
+msgid "淤积点导航测试结束：成功 {success} 次，失败 {failed} 次。"
+msgstr ""
+"Prueba de navegación a puntos de acumulación finalizada: {success} éxitos y "
+"{failed} fallos."
+
+msgid "联络站重复对中测试"
+msgstr "Prueba repetida de alineación de la estación de enlace"
+
+msgid "每轮重新传送到舰桥，按实际走一步或两步分别学习联络站首次对中；不聊天、不送礼。"
+msgstr ""
+"Teletranspórtate al puente en cada ronda y aprende por separado la "
+"alineación inicial de la estación de enlace tras uno o dos avances reales. "
+"Sin conversar ni regalar."
+
+msgid "每轮重新传送并完成一次对中；0 表示持续循环，直到手动停止。"
+msgstr ""
+"Vuelve a teletransportarte y alinea una vez por ronda; 0 repite hasta "
+"detenerlo manualmente."
+
+msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
+msgstr ""
+"Prueba de alineación de enlace finalizada: {success} éxitos, {failed} "
+"fallos."
+
+msgid ""
 "可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
 "账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
 msgstr ""
@@ -3641,8 +3733,9 @@ msgstr ""
 "coordenadas utilizables (se perdió el handshake de inicio de sesión, o "
 "todavía no se ha visto ninguna conexión del juego), vuelve a la pantalla de "
 "inicio de sesión y entra de nuevo para forzar una conexión nueva y que el "
-"backend capture el handshake. **No se cambia de cuenta**; intenta como máximo "
-"3 veces y luego se detiene. Desactivado, solo escribe una línea en el registro"
+"backend capture el handshake. **No se cambia de cuenta**; intenta como "
+"máximo 3 veces y luego se detiene. Desactivado, solo escribe una línea en el"
+" registro"
 
 msgid "测试重新进入游戏"
 msgstr "Prueba de reingreso al juego"
@@ -3651,39 +3744,6 @@ msgid "游戏内登出后用同一账号重新进入，不切换账号、不杀�
 msgstr ""
 "Cierra sesión dentro del juego y vuelve a entrar con la misma cuenta; no "
 "cambia de cuenta ni cierra el proceso del juego"
-
-msgid ""
-"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号列表每行填写一个手机号；若一行包含逗号，只使用逗号前的账号内容。切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
-msgstr ""
-"Configura los parámetros por cuenta y tarea. Selecciona una cuenta y después"
-" una tarea para mostrar sus controles. Introduce un teléfono por línea; solo"
-" se utiliza el contenido anterior a la primera coma. El cambio de cuenta "
-"compara los tres primeros y los cuatro últimos dígitos visibles; si hay "
-"duplicados, usa la marca Reciente y la cuenta activa antes del cambio para "
-"identificar el destino."
-
-msgid "每行一个手机号；逗号后内容忽略"
-msgstr "Un teléfono por línea; se ignora el contenido posterior a la coma"
-
-msgid "；账号名（手机号）是唯一ID，账号名变化会新建ID"
-msgstr ""
-"; el nombre de cuenta (teléfono) es su ID único; cambiarlo crea un ID nuevo"
-
-msgid "；若输入包含逗号，只保存逗号前的账号内容"
-msgstr ""
-"; si hay una coma, solo se guarda el contenido de cuenta anterior a ella"
-
-msgid ""
-"账号列表，每行一个手机号。\n"
-"若一行包含逗号，只使用逗号前的账号内容，逗号后内容会直接忽略。\n"
-"切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
-msgstr ""
-"Lista de cuentas, un teléfono por línea.\n"
-"Solo se utiliza el contenido anterior a la primera coma; se ignora el resto.\n"
-"El cambio compara los tres primeros y los cuatro últimos dígitos visibles; si hay duplicados, usa la marca Reciente y la cuenta activa antes del cambio para identificar el destino."
-
-msgid "窗口置顶"
-msgstr "Mantener ventanas siempre encima"
 
 msgid "定位实现"
 msgstr "Implementación de posicionamiento"

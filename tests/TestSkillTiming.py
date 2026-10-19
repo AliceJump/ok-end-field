@@ -183,6 +183,7 @@ class FakeTask:
         self.clicks = []
         self.link = False
         self.ults = set()
+        self.ult_frozen_seconds = 0.0
         self.exits = []
         self.exit_check_count = 0
         self.monitored = 0
@@ -240,6 +241,7 @@ class FakeTask:
     def use_ult(self, ult_sequence=None, wait_for_team_recovery=True):
         self.keys.append("ult_" + ult_sequence)
         self.ults.remove(ult_sequence)
+        self._last_ult_hud_frozen_seconds = self.ult_frozen_seconds if wait_for_team_recovery else 0.0
         if wait_for_team_recovery:
             self.now += 2
         return True
@@ -792,6 +794,41 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.now, 102)
         self.assertEqual(logic.active, ())
         self.assertTrue(any("HUD 动画锁 2.00s" in message for message in task.messages))
+
+    def test_confirmed_ultimate_hud_freeze_preserves_preexisting_gameplay_timers(self):
+        task = FakeTask()
+        task.now = 100.0
+        task.sp = 100.0
+        task.ults = {"1"}
+        task.ult_frozen_seconds = 2.0
+        logic = TimedCombatLogic(
+            task,
+            load_skill_timings(),
+            clock=lambda: task.now,
+            wall_clock=lambda: task.now,
+        )
+        logic.team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
+        logic.order = []
+        logic.ult_order = ["1"]
+        (battle,) = logic.store.profiles("狼卫", "battle")
+        logic.state_until["2"] = 105.0
+        logic.cooldowns[battle.skill_id] = 105.0
+
+        logic.step()  # Fake ultimate spends two seconds in a confirmed HUD freeze.
+        self.assertEqual(task.now, 102.0)
+        self.assertEqual(logic._clock(), 100.0)
+        self.assertEqual(logic._sp_wall_clock(), 100.0)
+        self.assertEqual(logic.state_until["2"] - logic._clock(), 5.0)
+        self.assertFalse(logic._ready((battle,), slot="2", kind="battle"))
+        self.assertAlmostEqual(logic._project_probe_expected(), 100.0)
+        self.assertTrue(any("确认时停扣除 2.00s" in msg for msg in task.messages))
+
+        task.now = 105.0  # Gameplay advances three seconds after HUD recovery.
+        self.assertEqual(logic._clock(), 103.0)
+        self.assertEqual(logic.state_until["2"] - logic._clock(), 2.0)
+        self.assertAlmostEqual(logic._project_probe_expected(), 124.0)
+        task.now = 107.0
+        self.assertTrue(logic._ready((battle,), slot="2", kind="battle"))
 
     def test_no_battle_sends_no_inputs(self):
         task = FakeTask()

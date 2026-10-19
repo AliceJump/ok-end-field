@@ -22,7 +22,14 @@ from src.data.world_map_utils import get_stage_category, get_world_map_matcher, 
 from src.icons import Icons
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
+from src.tasks.mixin.gather_learning import (
+    gather_entry_after_transfer,
+    gather_initial_context,
+    gather_retransfer_learning,
+    gather_transfer_alignment,
+)
 from src.tasks.mixin.navigation_detection_scope import NavigationDetectionScope, get_navigation_detection_scope
+from src.tasks.mixin.navigation_learning import align_initial_target
 from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
@@ -227,12 +234,18 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         self.press_key("f8")
         self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_79f91106, time_out=7, box=self.box.top, log=True)
 
+    def _transfer_to_gather_stage(self):
+        """Perform the same physical transfer for challenge and reward recovery."""
+        transferred = self.to_near_transfer_point(need_track=True, need_reserve_icon_name=fL.clear_page_gather)
+        self.ensure_main()
+        return transferred
+
     def _click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
-        self.to_near_transfer_point(need_track=True, need_reserve_icon_name=fL.clear_page_gather)
-        self.ensure_main()
+        transferred = self._transfer_to_gather_stage()
+        return gather_entry_after_transfer(self, transferred)
 
-    def _navigate_via_zip_line(self):
+    def _navigate_via_zip_line(self, initial_entry=None):
         """若配置了滑索路线，则通过滑索移动至目标。"""
         zip_line_str = self.get_zip_line_config_value(self.battle_ctx.stage_name)
         if zip_line_str:
@@ -246,10 +259,17 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 alt=True,
             )
             zip_line_list = parse_int_sequence(zip_line_str)
+            context = gather_initial_context(self, initial_entry, distances=zip_line_list)
             self.zip_line_list_go(
                 zip_line_list,
                 need_scroll=self.zip_line_scroll_enabled(),
                 target=([fL.gather_icon_out_map, fL.gather_icon_out_map2], "feature"),
+                config_key=self.battle_ctx.stage_name,
+                **(
+                    {"target_learning_context": context, "target_learning_epoch": initial_entry.epoch}
+                    if context is not None
+                    else {}
+                ),
             )
             return True
         return False
@@ -536,33 +556,49 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         finally:
             self.release_yolo_detector()
 
-    def battle_gather(self):
-        self.battle_ctx.enter_text = "挑战"
-        # 点击追踪按钮，进入地图并传送
-        self._click_track_and_transfer()
+    def navigate_to_gather(self):
+        """Use the production pre-battle navigation without activating the challenge."""
+        initial_entry = self._click_track_and_transfer()
+        if self._prepare_gather_navigation(initial_entry, arrival_match=self.lang.daily_battle_mixin.k_bfe73e18):
+            return bool(
+                self.navigate_until_target(
+                    target=self.lang.daily_battle_mixin.k_bfe73e18,
+                    box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                    nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
+                    time_out=60,
+                )
+            )
+        return True
 
-        if (not self._navigate_via_zip_line()) or (
+    def _prepare_gather_navigation(self, initial_entry, *, arrival_match):
+        """Shared zipline and first HUD alignment; return whether walking is needed."""
+        via_zipline = self._navigate_via_zip_line(initial_entry=initial_entry)
+
+        if (not via_zipline) or (
             not self.wait_ocr(
-                match=self.lang.daily_battle_mixin.k_bfe73e18,
+                match=arrival_match,
                 box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
                 time_out=3,
                 raise_if_not_found=False,
             )
         ):
-            self.align_ocr_or_find_target_to_center(
+            context, confidence = gather_transfer_alignment(self, initial_entry if not via_zipline else None)
+            align_initial_target(
+                self,
+                context,
                 [fL.gather_icon_out_map, fL.gather_icon_out_map2],
+                confidence=confidence,
                 ocr=False,
                 only_x=True,
                 threshold=0.7,
                 tolerance=100,
             )
-            self.navigate_until_target(
-                target=self.lang.daily_battle_mixin.k_bfe73e18,
-                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
-                nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
-                time_out=60,
-            )
+            return True
+        return False
 
+    def battle_gather(self):
+        self.battle_ctx.enter_text = "挑战"
+        self.navigate_to_gather()
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
             self.log_info("放弃未领取的奖励")
             self.wait_click_ocr(
@@ -628,35 +664,22 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         if not self.to_stage():
             self.mark_task_failure("二次寻路失败：无法进入『能量淤积点』详情页")
             return False
-        # 点击追踪按钮，进入地图并传送
-        self._click_track_and_transfer()
-
-        if (not self._navigate_via_zip_line()) or (
-            not self.wait_ocr(
-                match=self.lang.daily_battle_mixin.k_bfe73e18,
-                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
-                time_out=3,
-                raise_if_not_found=False,
-            )
-        ):
-            self.align_ocr_or_find_target_to_center(
-                [fL.gather_icon_out_map, fL.gather_icon_out_map2],
-                ocr=False,
-                only_x=True,
-                threshold=0.7,
-                tolerance=100,
-            )
+        click_key = (
+            self.lang.daily_battle_mixin.k_b8a81b7a
+            if self.battle_ctx.is_extra_mode
+            else self.lang.daily_battle_mixin.k_39d12e73_1
+        )
+        transferred = self._transfer_to_gather_stage()
+        with gather_retransfer_learning(self, transferred) as initial_entry:
+            need_navigation = self._prepare_gather_navigation(initial_entry, arrival_match=click_key)
+        # The reset window covers initialization only. Navigation/reward stay denied.
+        if need_navigation:
             self.navigate_until_target(
                 target=self.lang.daily_battle_mixin.k_39d12e73_1,
                 nav=[fL.gather_icon_out_map, fL.gather_icon_out_map2],
                 box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
                 time_out=60,
             )
-        click_key = (
-            self.lang.daily_battle_mixin.k_b8a81b7a
-            if self.battle_ctx.is_extra_mode
-            else self.lang.daily_battle_mixin.k_39d12e73_1
-        )
         result = self.wait_ocr(match=re.compile(click_key), box=self.box.bottom_right, time_out=5)
         if not result:
             self.mark_task_failure(f"二次寻路失败：没有找到『{click_key}』按钮")
@@ -1056,17 +1079,22 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                         self.mark_task_failure("二次寻路失败：无法进入『能量淤积点』详情页")
                         return False
 
-                    if result := self.wait_feature(
+                    follow_button = self.wait_feature(
                         feature=fL.start_follow,
                         box=self.box.bottom_right,
                         time_out=5,
                         raise_if_not_found=False,
-                    ):
-                        self.click(result)
-                        self.ensure_main()
-                        observations.clear()
+                    )
+                    if follow_button:
+                        self.click(follow_button)
                     else:
-                        raise RuntimeError("未找到追踪按钮")
+                        self.log_info("未找到追踪按钮，返回主界面检查已有奖励目标")
+                    self.ensure_main()
+                    observations.clear()
+                    if not follow_button:
+                        self.next_frame()
+                        if not self.wait_until(detect_marker, time_out=5, raise_if_not_found=False):
+                            raise RuntimeError("未找到已追踪的奖励目标")
 
                 self.click(key="middle", after_sleep=0.3)
 

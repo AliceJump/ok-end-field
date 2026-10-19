@@ -1,4 +1,4 @@
-"""Combat and post-battle retries deny every learning path, but retain realtime movers."""
+"""Combat and unconfirmed post-battle movement deny learning, retaining realtime movers."""
 
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -38,18 +38,12 @@ class TestLearningBattleBoundary(unittest.TestCase):
     def test_disabled_zipline_does_not_even_call_history_adapters(self):
         task = zip_tests.TestZipLineMotionCache()._route_stub([(30, 0.9)])
         with (
+            patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")),
             patch(
-                "src.tasks.navigation.mixin.zip_line_mixin.load_zip_line_segment_motion",
-                side_effect=AssertionError("lookup"),
-            ),
-            patch(
-                "src.tasks.navigation.mixin.zip_line_mixin.load_nearest_zip_line_segment_motion",
+                "src.core.learning.routes.RouteLearning.nearest_yaw",
                 side_effect=AssertionError("nearest"),
             ),
-            patch(
-                "src.tasks.navigation.mixin.zip_line_mixin.record_zip_line_segment_motion",
-                side_effect=AssertionError("record"),
-            ),
+            patch("src.tasks.mixin.route_learning._migrate_once", side_effect=AssertionError("migration")),
             deny_learning("post_battle"),
         ):
             ZipLineMixin.zip_line_list_go(task, [108], config_key="route", stay_on_zip_line=True)
@@ -100,9 +94,10 @@ class TestLearningBattleBoundary(unittest.TestCase):
         task.box = SimpleNamespace(bottom_right=None)
         task._open_index = Mock(side_effect=lambda: self.assertFalse(learning_allowed()))
         task.to_stage = Mock(return_value=True)
-        task._click_track_and_transfer = Mock(side_effect=lambda: self.assertFalse(learning_allowed()))
+        task._transfer_to_gather_stage = Mock(side_effect=lambda: self.assertFalse(learning_allowed()))
+        task._prepare_gather_navigation = lambda *a, **k: BattleTask._prepare_gather_navigation(task, *a, **k)
 
-        def zipline():
+        def zipline(**kwargs):
             self.assertFalse(learning_allowed())
             ZipLineMixin.zip_line_list_go(route, [108], config_key="route", stay_on_zip_line=True)
             return True
@@ -115,14 +110,8 @@ class TestLearningBattleBoundary(unittest.TestCase):
             NavigationMixin.align_ocr_or_find_target_to_center(task, *args, **kwargs)
         )
         with (
-            patch(
-                "src.tasks.navigation.mixin.zip_line_mixin.load_zip_line_segment_motion",
-                side_effect=AssertionError("lookup"),
-            ),
-            patch(
-                "src.tasks.navigation.mixin.zip_line_mixin.record_zip_line_segment_motion",
-                side_effect=AssertionError("record"),
-            ),
+            patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")),
+            patch("src.tasks.mixin.route_learning._migrate_once", side_effect=AssertionError("migration")),
         ):
             self.assertTrue(BattleTask._gather_retry_navigate(task))
         self.assertTrue(learning_allowed())

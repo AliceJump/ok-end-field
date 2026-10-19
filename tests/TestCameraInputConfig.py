@@ -1,0 +1,195 @@
+"""Verify signed camera gains, orbit geometry and version/settings boundaries."""
+
+import hashlib
+import json
+import struct
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+from src.core import camera_input_config as camera
+
+
+class TestCameraInputConfig(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.profile = json.loads(camera._PROFILE_PATH.read_text(encoding="utf-8"))
+
+    def yaw(self, width=1920, speed=0.0, reverse=False, **kwargs):
+        with (
+            patch.object(camera, "_load_profile", return_value=self.profile),
+            patch.object(camera, "_read_settings", return_value=(speed, reverse)),
+        ):
+            return camera.get_default_camera_yaw_ratio(width, game_dir="unused", **kwargs)
+
+    def vertical(self, height=1080, speed=0.0, reverse=False):
+        with (
+            patch.object(camera, "_load_profile", return_value=self.profile),
+            patch.object(camera, "_read_settings", return_value=(speed, reverse)),
+        ):
+            return camera.get_default_camera_vertical_track(height, game_dir="unused")
+
+    def test_yaw_width_scaling(self):
+        for width, expected in ((1920, 0.084375), (2560, 0.06328125), (3840, 0.0421875)):
+            with self.subTest(width=width):
+                self.assertAlmostEqual(self.yaw(width), expected, places=12)
+
+    def test_sensitivity_endpoints_and_interior(self):
+        for speed, factor in ((-5, 0.5), (0, 1), (5, 1.5), (2, 1.2)):
+            with self.subTest(speed=speed):
+                self.assertAlmostEqual(self.yaw(speed=speed), 0.084375 * factor, places=9)
+
+    def test_reverse_and_minimap_signs(self):
+        self.assertAlmostEqual(self.yaw(reverse=True), -0.084375)
+        self.assertAlmostEqual(self.yaw(minimap=True), -0.084375)
+        self.assertAlmostEqual(self.yaw(reverse=True, minimap=True), 0.084375)
+
+    def test_vertical_track_units_and_height_scaling(self):
+        first = self.vertical()
+        self.assertAlmostEqual(first["linear_track_units_per_received_y"], 0.0002916666666666667, places=14)
+        self.assertAlmostEqual(
+            self.vertical(2160)["linear_track_units_per_received_y"],
+            first["linear_track_units_per_received_y"] / 2,
+            places=14,
+        )
+        self.assertEqual((first["min_vertical_value"], first["max_vertical_value"]), (0, 1))
+        self.assertEqual(first["vertical_tween_speed"], 16)
+        self.assertAlmostEqual(first["acceleration_threshold_received_counts_per_second"], 3428571.4285714286)
+
+    def test_vertical_geometry_and_inverse_endpoint(self):
+        track = self.vertical()
+        samples = track["geometry_samples"]
+        self.assertAlmostEqual(samples[0]["arm_height"], -2)
+        self.assertAlmostEqual(samples[0]["distance"], 0.2)
+        self.assertAlmostEqual(samples[0]["nominal_pitch_degrees"], -84.28940686, places=6)
+        self.assertAlmostEqual(samples[-1]["nominal_pitch_degrees"], 55.713123, places=5)
+        self.assertAlmostEqual(track["pitch_to_track_range"]["max_track"], 0.99)
+
+    def test_vertical_sensitivity_and_reverse(self):
+        ratio = self.vertical()["linear_track_units_per_received_y"]
+        self.assertAlmostEqual(self.vertical(speed=5)["linear_track_units_per_received_y"], ratio * 1.5)
+        self.assertAlmostEqual(self.vertical(reverse=True)["linear_track_units_per_received_y"], -ratio)
+
+    def test_invalid_screen_size_or_speed_rejected(self):
+        for value in (0, -1, True, 1920.0):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    self.yaw(value)
+                with self.assertRaises(ValueError):
+                    self.vertical(value)
+        for speed in (-5.1, 5.1, float("nan"), float("inf")):
+            with self.subTest(speed=speed), self.assertRaises(ValueError):
+                self.yaw(speed=speed)
+
+    def test_registry_float_bits_and_fresh_reads(self):
+        import winreg
+
+        bits = struct.unpack("<I", struct.pack("<f", 2.5))[0]
+        with (
+            patch.object(winreg, "OpenKey", return_value=MagicMock()),
+            patch.object(
+                winreg,
+                "QueryValueEx",
+                side_effect=[
+                    (bits, winreg.REG_DWORD),
+                    (1, winreg.REG_DWORD),
+                    (0, winreg.REG_DWORD),
+                    (0, winreg.REG_DWORD),
+                ],
+            ),
+        ):
+            self.assertEqual(camera._read_settings(self.profile, "x"), (2.5, True))
+            self.assertEqual(camera._read_settings(self.profile, "x"), (0.0, False))
+
+    def test_reads_y_registry_keys(self):
+        import winreg
+
+        with (
+            patch.object(winreg, "OpenKey", return_value=MagicMock()),
+            patch.object(winreg, "QueryValueEx", side_effect=[(0, winreg.REG_DWORD), (0, winreg.REG_DWORD)]) as query,
+        ):
+            self.assertEqual(camera._read_settings(self.profile, "y"), (0, False))
+            self.assertEqual(
+                [c.args[1] for c in query.call_args_list],
+                ["controller_camera_speed_y_h2607638913", "controller_camera_reverse_y_h1335373510"],
+            )
+
+    def test_invalid_registry_values_rejected(self):
+        import winreg
+
+        for speed, reverse in (
+            ((0, winreg.REG_SZ), (0, winreg.REG_DWORD)),
+            ((0, winreg.REG_DWORD), (2, winreg.REG_DWORD)),
+            ((0x7FC00000, winreg.REG_DWORD), (0, winreg.REG_DWORD)),
+        ):
+            with (
+                patch.object(winreg, "OpenKey", return_value=MagicMock()),
+                patch.object(winreg, "QueryValueEx", side_effect=[speed, reverse]),
+                self.assertRaises(ValueError),
+            ):
+                camera._read_settings(self.profile, "x")
+
+    def test_missing_setting_propagates(self):
+        import winreg
+
+        with patch.object(winreg, "OpenKey", side_effect=FileNotFoundError), self.assertRaises(FileNotFoundError):
+            camera._read_settings(self.profile, "x")
+
+    def test_changed_client_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "client.bin").write_bytes(b"new build")
+            profile_path = root / "profile.json"
+            profile_path.write_text(
+                json.dumps(
+                    {
+                        "schema": 1,
+                        "installed_files": {"client.bin": hashlib.sha256(b"old build").hexdigest()},
+                        "bundle_slices": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with (
+                patch.object(camera, "_PROFILE_PATH", profile_path),
+                self.assertRaisesRegex(ValueError, "client audit"),
+            ):
+                camera._load_profile(root)
+
+    def test_bundle_slice_verification(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "chunk.bin").write_bytes(b"prefixcamerasuffix")
+            profile_path = root / "profile.json"
+            profile_path.write_text(
+                json.dumps(
+                    {
+                        "schema": 1,
+                        "installed_files": {},
+                        "bundle_slices": [
+                            {
+                                "path": "chunk.bin",
+                                "offset": 6,
+                                "length": 6,
+                                "sha256": hashlib.sha256(b"camera").hexdigest(),
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(camera, "_PROFILE_PATH", profile_path):
+                self.assertEqual(camera._load_profile(root)["schema"], 1)
+                for data in (b"prefixchanged", b"prefix"):
+                    (root / "chunk.bin").write_bytes(data)
+                    with self.assertRaisesRegex(ValueError, "resource audit"):
+                        camera._load_profile(root)
+
+    def test_weighted_curve_rejected(self):
+        with self.assertRaisesRegex(ValueError, "nonweighted"):
+            camera._evaluate_curve([{"weightedMode": 1}, {"weightedMode": 0}], 0)
+
+
+if __name__ == "__main__":
+    unittest.main()

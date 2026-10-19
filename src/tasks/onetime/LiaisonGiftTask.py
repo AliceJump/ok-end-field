@@ -74,29 +74,7 @@ class LiaisonGiftTask(Common, LiaisonMixin):
 
     def execute_gift_to_liaison(self):
         """传送至帝江号后执行联络与送礼链路。"""
-        self.log_info("传送至帝江号指定点")
-        if not self.transfer_to_home_point():
-            self.mark_task_failure("传送失败，无法开始送礼任务")
-            return False
-        wait_bridge_disappear_count = 0
-        while self.ocr(match=self.lang.daily_liaison_mixin.k_27d2b829, box=self.box.left):
-            wait_bridge_disappear_count += 1
-            if wait_bridge_disappear_count >= 120:
-                self.log_info("等待 '舰桥' 文案消失次数超限，送礼任务中断")
-                return False
-            self.next_frame()
-            self.sleep(0.5)
-        self.log_info("舰桥提示已经消失，等待信赖弹窗并消失")
-        start_time = self.active_time()
-        if self.wait_ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left, time_out=5):
-            while self.ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left):
-                if self.active_time() - start_time > 10:
-                    self.log_info("等待 '信赖' 弹窗超时，进行下一步")
-                self.next_frame()
-                self.sleep(0.5)
-        self.log_info("前往中央环厅")
-        if not self.navigate_to_main_hall():
-            self.log_info("未到达中央环厅，送礼任务中断")
+        if not self.prepare_liaison_station_entry():
             return False
 
         self.log_info("前往干员联络站")

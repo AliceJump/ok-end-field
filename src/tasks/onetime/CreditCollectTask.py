@@ -55,31 +55,26 @@ class CreditCollectTask(Common):
         help_time = 0
         is_first_time = True
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
-        exchange_not_found = False
         count = 0
+        quick_arrival = False
         self.log_info("开始好友拜访阶段")
         while True:
             temp_exchange_time = left_exchange_time
-            if count >= 10:
-                self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
-                return False
             if is_first_time:
                 self.wait_click_ocr(
                     match=self.lang.daily_routine_mixin.k_e84c3ae9, box=self.box.right, time_out=7, recheck_time=1
                 )
-            else:
-                if left_exchange_time <= 0 and left_help_time <= 0:
-                    if exchange_not_found:
-                        self.log_info("未完全找满交流对象，可能存在部分交流次数未完成")
-                    self.info_set("exchange_time", exchange_time)
-                    self.info_set("help_time", help_time)
-                    return True
+            if count >= 15:
+                self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
+                return False
+            count += 1
 
             result = None
             self.wait_ui_stable(refresh_interval=1)
             start_time = self.active_time()
             scroll_count = 0
-            while not result:
+            search_exchange = left_exchange_time > 0
+            while not quick_arrival and not result:
                 if is_first_time or scroll_count > 0:
                     span_box = self.box_of_screen(3400 / 3840, 301 / 2160, 3692 / 3840, 1883 / 2160)
                 else:
@@ -87,26 +82,31 @@ class CreditCollectTask(Common):
                 if self.active_time() - start_time > 40:
                     self.log_info("找不到可交流或助力的玩家")
                     return False
-                if left_exchange_time > 0:
+                if search_exchange:
                     result = self.find_feature(feature=fL.can_exchange_info_icon, box=span_box)
-                    if scroll_count >= 7:
-                        self.back()
-                        self.ensure_in_friend_boat()
-                        self.press_key("f")
+                    if not result and scroll_count >= 7:
+                        if left_help_time <= 0:
+                            self.log_info("列表补查未找到可交流的好友，本次未确认完成全部次数")
+                            return False
+                        search_exchange = False
+                        scroll_count = 0
+                        self.scroll_relative(0.5, 0.5, 40)
                         self.wait_ui_stable(refresh_interval=1)
-                        left_exchange_time = 0
-                        exchange_not_found = True
                         continue
                 elif left_help_time > 0:
                     result = self.find_feature(feature=fL.can_help_icon, box=span_box)
+                    if not result and scroll_count >= 7:
+                        self.log_info("列表补查未找到可助力的好友，本次未确认完成全部次数")
+                        return False
                 if not result:
                     scroll_count += 1
                     self.scroll_relative(0.5, 0.5, -4)
                     self.wait_ui_stable(refresh_interval=1)
 
-            self.click(result)
-            self.click_confirm(time_out=5, recheck_time=1)
-            if not self.ensure_in_friend_boat():
+            if not quick_arrival:
+                self.click(result)
+                self.click_confirm(time_out=5, recheck_time=1)
+            if not quick_arrival and not self.ensure_in_friend_boat():
                 self.log_info("未能进入好友帝江号")
                 if self.wait_click_ocr(
                     match=self.lang.daily_routine_mixin.k_a730d877, box=self.box.top_left, time_out=1
@@ -126,24 +126,20 @@ class CreditCollectTask(Common):
             )
             self.press_key("y")
             self.wait_ui_stable(refresh_interval=1)
-            if left_exchange_time > 0:
-                if not self.wait_click_feature(
-                    feature=fL.info_exchange,
-                    box=exchange_help_box,
-                    time_out=5,
-                    click_after_delay=0.5,
-                    raise_if_not_found=False,
-                    after_sleep=0.5,
-                ):
-                    left_exchange_time = 0
-                else:
-                    left_exchange_time -= 1
-                    exchange_time += 1
+            if left_exchange_time > 0 and self.wait_click_feature(
+                feature=fL.info_exchange,
+                box=exchange_help_box,
+                time_out=5,
+                click_after_delay=0.5,
+                raise_if_not_found=False,
+                after_sleep=0.5,
+            ):
+                left_exchange_time -= 1
+                exchange_time += 1
             if left_help_time > 0:
                 result = self.find_feature(feature=fL.assist_friend, box=exchange_help_box)
                 if not result and temp_exchange_time <= 0:
                     self.log_info("未找到可助力的对象")
-                    left_help_time = 0
                 if result:
                     for res in result:
                         if not self.config.get("尝试仅收培育室"):
@@ -163,15 +159,70 @@ class CreditCollectTask(Common):
                                     self.wait_pop_up(time_out=5)
                                 left_help_time -= 1
                                 help_time += 1
-            if not self.safe_back(feature=fL.friend_page, time_out=10):
+            self.info_set("exchange_time", exchange_time)
+            self.info_set("help_time", help_time)
+            if left_exchange_time <= 0 and left_help_time <= 0:
+                self.info_set("visit_end_reason", "action_counts_completed")
+                self.log_info("本轮交流、助力操作各执行 5 次，正常结束好友拜访")
+                if not self.safe_back(feature=fL.friend_page, time_out=10):
+                    self.log_info("操作次数已完成，但未能安全返回好友列表")
+                    return False
+                return True
+
+            quick_arrival = False
+            if count < 15:
+                quick_result = self.try_quick_visit()
+                if quick_result is None:
+                    # 已确认处于好友船 HUD，但没有下位候选；不要重复搜索列表。
+                    self.info_set("visit_end_reason", "no_next_person")
+                    self.log_info("快速拜访无下位候选：可能次数已用完或没有合格好友，结束本轮拜访")
+                    if not self.safe_back(feature=fL.friend_page, time_out=10):
+                        self.log_info("拜访阶段结束，但未能安全返回好友列表")
+                        return False
+                    return True
+                quick_arrival = quick_result
+            if not quick_arrival and not self.safe_back(feature=fL.friend_page, time_out=10):
                 self.log_info("未能安全返回好友列表")
                 return False
             is_first_time = False
-            count += 1
+
+    def _friend_hud_visible(self):
+        """检查好友帝江号 HUD 是否仍在，不将单帧命中当作稳定状态。"""
+        return bool(self.find_one(feature=fL.left_button, vertical_variance=0.1, horizontal_variance=0.1))
+
+    def try_quick_visit(self):
+        """返回 True 表示已切换，False 表示切换异常需恢复，None 表示稳定 HUD 下无候选。"""
+        if not self.safe_back(feature=fL.left_button, time_out=10):
+            return False
+        # safe_back 只保证一次命中，先确认 HUD 连续存在再检查下位按钮。
+        if not self.wait_until(self._friend_hud_visible, time_out=3, settle_time=0.5):
+            self.log_info("好友船 HUD 未能稳定确认，返回好友列表补查")
+            return False
+        if not self.wait_feature(feature=fL.next_person, time_out=5, raise_if_not_found=False):
+            # 按钮缺失本身不是 Empty 证明；仅在 HUD 仍稳定时视作本轮无候选。
+            if self.wait_until(self._friend_hud_visible, time_out=2, settle_time=0.5):
+                self.log_info("稳定好友船 HUD 下未检测到快速拜访按钮，推定无剩余次数或无合格好友")
+                return None
+            self.log_info("快速拜访按钮未命中且好友船 HUD 不稳定，返回好友列表补查")
+            return False
+        self.press_key("tab")
+        # 要求旧 HUD 连续消失，防止单帧漏检被当作传送开始。
+        if not self.wait_until(
+            lambda: not self._friend_hud_visible(),
+            time_out=8,
+            settle_time=0.5,
+        ):
+            self.log_info("快速拜访未稳定观察到离开旧船，返回好友列表补查")
+            return False
+        return bool(self.wait_until(self.in_friend_boat, time_out=60, settle_time=0.5))
 
     def run(self):
         self.ensure_main(time_out=420)
-        self.run_credit_collect()
+        result = self.run_credit_collect()
+        if result is False:
+            # 一次性任务执行器忽略 run() 的返回值，必须通过异常报告独立执行失败。
+            raise RuntimeError("收信用任务未完成，请检查日志中的具体原因")
+        return result
 
     def run_credit_collect(self):
         """收信用流程，独立运行与被日常执行（DailyFeature）共用。"""

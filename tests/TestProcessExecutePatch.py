@@ -189,6 +189,14 @@ class TestZProcessExecutePatchStateRestored(unittest.TestCase):
 
 
 class TestOfficialLauncher(unittest.TestCase):
+    def setUp(self):
+        # These tests use fabricated process handles; the real journal is
+        # covered separately with an isolated temporary config directory.
+        for name in ("recover_owned_parents", "register_owned_parent", "note_game_started", "forget_owned_parent"):
+            patcher = patch.object(official_launcher, name)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
     def test_prepare_reuses_running_launcher(self):
         with (
             patch.object(official_launcher, "official_parent", return_value=123),
@@ -358,21 +366,26 @@ class TestOfficialLauncher(unittest.TestCase):
 
     def test_launch_game_preserves_arguments_without_injecting_defaults(self):
         kernel = Mock()
+        logger = Mock()
         game_path = os.path.abspath("Endfield.exe")
         with (
             patch.object(official_launcher, "running_pids", side_effect=[[], []]),
             patch.object(official_launcher, "_kernel32", return_value=kernel),
-            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
             patch.object(official_launcher, "create_process", return_value=456) as create,
         ):
-            self.assertTrue(official_launcher.launch_game(game_path, "-force-d3d11", Mock()))
+            self.assertTrue(official_launcher.launch_game(game_path, "-force-d3d11", logger))
         create.assert_called_once_with(kernel, game_path, "-force-d3d11", 321)
-        kernel.CloseHandle.assert_called_once_with(321)
+        cleanup.assert_called_once_with(kernel, 321, logger)
+        cleanup.return_value.start.assert_called_once_with(456)
+        kernel.TerminateProcess.assert_not_called()
+        kernel.CloseHandle.assert_not_called()  # Background watcher owns it.
 
     def test_running_game_skips_launcher(self):
         with (
             patch.object(official_launcher, "running_pids", return_value=[123]),
-            patch.object(official_launcher, "prepare_launcher") as prepare,
+            patch.object(official_launcher, "create_temporary_parent") as prepare,
         ):
             self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
             prepare.assert_not_called()
@@ -382,11 +395,13 @@ class TestOfficialLauncher(unittest.TestCase):
         with (
             patch.object(official_launcher, "running_pids", side_effect=[[], [123]]),
             patch.object(official_launcher, "_kernel32", return_value=kernel),
-            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup"),
             patch.object(official_launcher, "create_process") as create,
         ):
             self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
             create.assert_not_called()
+        kernel.TerminateProcess.assert_called_once_with(321, 0)
         kernel.CloseHandle.assert_called_once_with(321)
 
     def test_create_failure_closes_parent(self):
@@ -394,12 +409,126 @@ class TestOfficialLauncher(unittest.TestCase):
         with (
             patch.object(official_launcher, "running_pids", return_value=[]),
             patch.object(official_launcher, "_kernel32", return_value=kernel),
-            patch.object(official_launcher, "prepare_launcher", return_value=321),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
             patch.object(official_launcher, "create_process", side_effect=OSError("denied")),
             self.assertRaises(OSError),
         ):
             official_launcher.launch_game("unused", "", Mock())
+        cleanup.return_value.start.assert_not_called()
+        kernel.TerminateProcess.assert_called_once_with(321, 0)
         kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_watcher_unavailable_never_terminates_live_child_parent(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+            patch.object(official_launcher, "create_process", return_value=456),
+            patch.object(official_launcher.psutil, "pid_exists", return_value=True),
+        ):
+            cleanup.return_value.start.side_effect = RuntimeError("thread unavailable")
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        cleanup.return_value.start_exit_watch.assert_called_once_with(456)
+        kernel.TerminateProcess.assert_not_called()
+        kernel.CloseHandle.assert_not_called()  # Fallback now owns the handle.
+
+    def test_watcher_failure_and_fallback_setup_failure_waits_for_child_exit(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+            patch.object(official_launcher, "create_process", return_value=456),
+            patch.object(official_launcher.psutil, "pid_exists", side_effect=[True, True, False]),
+            patch.object(official_launcher.time, "sleep") as sleep,
+        ):
+            cleanup.return_value.start.side_effect = RuntimeError("no primary thread")
+            cleanup.return_value.start_exit_watch.side_effect = RuntimeError("no backup thread")
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        sleep.assert_called_once_with(2)
+        kernel.TerminateProcess.assert_called_once_with(321, 0)
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_watcher_unavailable_after_game_exit_discards_owned_parent(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+            patch.object(official_launcher, "create_process", return_value=456),
+            patch.object(official_launcher.psutil, "pid_exists", return_value=False),
+        ):
+            cleanup.return_value.start.side_effect = psutil.NoSuchProcess(456)
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        kernel.TerminateProcess.assert_called_once_with(321, 0)
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_find_official_games_uses_newest_signed_version(self):
+        with tempfile.TemporaryDirectory() as root:
+            base = Path(root)
+            (base / "Launcher.exe").touch()
+            for name in ("1.0.0", "2.4.9"):
+                (base / name).mkdir()
+                (base / name / "Games.exe").touch()
+            logger = Mock()
+            with (
+                patch.object(official_launcher, "installed_launcher", return_value=str(base / "Launcher.exe")),
+                patch.object(official_launcher, "verify_launcher") as verify,
+            ):
+                exe = official_launcher.find_official_games_exe("unused", logger)
+            self.assertEqual(exe, base / "2.4.9" / "Games.exe")
+            verify.assert_called_once_with(str(exe))
+
+    def test_journal_failure_discards_unattached_suspended_parent(self):
+        import ctypes
+
+        kernel = Mock()
+
+        def created(*args):
+            info = ctypes.cast(args[-1], ctypes.POINTER(official_launcher._ProcessInfo))
+            info.contents.dwProcessId = 111
+            info.contents.hProcess = 222
+            info.contents.hThread = 333
+            return True
+
+        kernel.CreateProcessW.side_effect = created
+        with (
+            patch.object(
+                official_launcher, "find_official_games_exe", return_value=Path("C:/Launcher/2.4.9/Games.exe")
+            ),
+            patch.object(official_launcher, "register_owned_parent", side_effect=OSError("disk full")),
+        ):
+            logger = Mock()
+            with self.assertRaisesRegex(OSError, "disk full"):
+                official_launcher.create_temporary_parent(kernel, "Endfield.exe", logger)
+        kernel.TerminateProcess.assert_called_once_with(222, 0)
+        self.assertIn((222,), [call.args for call in kernel.CloseHandle.call_args_list])
+
+    def test_temporary_parent_uses_suspended_native_creation_and_owns_handle(self):
+        import ctypes
+
+        kernel = Mock()
+
+        def created(*args):
+            info = ctypes.cast(args[-1], ctypes.POINTER(official_launcher._ProcessInfo))
+            info.contents.dwProcessId = 111
+            info.contents.hProcess = 222
+            info.contents.hThread = 333
+            return True
+
+        kernel.CreateProcessW.side_effect = created
+        with patch.object(
+            official_launcher, "find_official_games_exe", return_value=Path(r"C:\\Launcher\\2.4.9\\Games.exe")
+        ):
+            handle = official_launcher.create_temporary_parent(kernel, "Endfield.exe", Mock())
+        self.assertEqual(handle, 222)
+        self.assertTrue(kernel.CreateProcessW.call_args.args[5] & 0x00000004)
+        kernel.CloseHandle.assert_called_once_with(333)
 
     def test_signature_requires_valid_official_signer(self):
         signer = next(iter(official_launcher.OFFICIAL_SIGNERS))
@@ -464,6 +593,380 @@ class TestOfficialLauncher(unittest.TestCase):
                 kernel.CloseHandle(handle)
             parent.stdin.close()
             parent.wait(timeout=10)
+
+
+class TestTemporaryParentLogWatcher(unittest.TestCase):
+    """Same two-event completion gate as PR #558, but only terminate an owned parent."""
+
+    def setUp(self):
+        from src.core import launcher_cleanup
+
+        self.cleanup_mod = launcher_cleanup
+        self.folder_handle = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder_handle.cleanup)
+        folder = self.folder_handle.name
+        patcher = patch.object(launcher_cleanup.shell, "SHGetKnownFolderPath", return_value=folder)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.logs = Path(folder) / "Hypergryph" / "Endfield" / "sdklogs"
+        self.logs.mkdir(parents=True)
+        self.kernel = Mock()
+        self.kernel.GetProcessId.return_value = 123
+        self.logger = Mock()
+        journal_patcher = patch.object(launcher_cleanup, "forget_owned_parent")
+        journal_patcher.start()
+        self.addCleanup(journal_patcher.stop)
+
+    def _new_cleanup(self):
+        return self.cleanup_mod.LauncherCleanup(self.kernel, 999, self.logger)
+
+    def _write(self, name, text, cleanup, age=0):
+        from datetime import timedelta
+
+        stamp = (cleanup.started + timedelta(seconds=age)).strftime("%m-%d %H:%M:%S.%f")[:-3]
+        with (self.logs / name).open("ab") as out:
+            out.write(f"[{stamp}] [info] {text}\n".encode())
+
+    def _watch(self, cleanup, game=None, ticks=(0, 0, 121)):
+        game = game or Mock(is_running=Mock(return_value=True))
+        with (
+            patch.object(cleanup, "_parent_running", return_value=True),
+            patch.object(cleanup, "_wait_for_game_exit") as wait_for_exit,
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=ticks),
+            patch.object(self.cleanup_mod.time, "sleep"),
+        ):
+            cleanup._watch(game)
+        return wait_for_exit
+
+    def test_both_current_sdk_signals_terminate_only_owned_parent(self):
+        cleanup = self._new_cleanup()
+        self._write("OneChannelLC.log", "Parent process check success:123", cleanup)
+        self._write("u8sdk_pc.log", "OnU8V2InitCallback status :0", cleanup)
+        self._watch(cleanup, ticks=(0, 0))
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_one_signal_wrong_pid_or_error_status_never_terminates(self):
+        for check, sdk in (
+            ("Parent process check success:456", "OnU8V2InitCallback status :0"),
+            ("Parent process check success:123", "OnU8V2InitCallback status :1"),
+        ):
+            with self.subTest(check=check, sdk=sdk):
+                for name in ("OneChannelLC.log", "u8sdk_pc.log"):
+                    (self.logs / name).unlink(missing_ok=True)
+                self.kernel.reset_mock()
+                cleanup = self._new_cleanup()
+                self._write("OneChannelLC.log", check, cleanup)
+                self._write("u8sdk_pc.log", sdk, cleanup)
+                self._watch(cleanup)
+                self.kernel.TerminateProcess.assert_not_called()
+                self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_old_records_cannot_authorize_cleanup(self):
+        cleanup = self._new_cleanup()
+        self._write("OneChannelLC.log", "Parent process check success:123", cleanup, age=-3)
+        self._write("u8sdk_pc.log", "OnU8V2InitCallback status :0", cleanup)
+        self._watch(cleanup)
+        self.kernel.TerminateProcess.assert_not_called()
+
+    def test_game_exit_discards_owned_parent_and_log_error_preserves_live_game(self):
+        cleanup = self._new_cleanup()
+        self._watch(cleanup, game=Mock(is_running=Mock(return_value=False)))
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+        self.kernel.reset_mock()
+        cleanup = self._new_cleanup()
+        with patch.object(cleanup.check_log, "read", side_effect=PermissionError("denied")):
+            wait = self._watch(cleanup)
+        self.kernel.TerminateProcess.assert_not_called()
+        wait.assert_called_once()
+        self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_timeout_keeps_parent_for_live_game_then_discards_on_exit(self):
+        cleanup = self._new_cleanup()
+        game = Mock(is_running=Mock(return_value=True))
+        wait = self._watch(cleanup, game=game)
+        self.kernel.TerminateProcess.assert_not_called()
+        wait.assert_called_once_with(game)
+        self.kernel.reset_mock()
+        game.is_running.side_effect = [True, False]
+        with (
+            patch.object(cleanup, "_parent_running", return_value=True),
+            patch.object(self.cleanup_mod.time, "sleep") as sleep,
+        ):
+            cleanup._wait_for_game_exit(game)
+        sleep.assert_called_once_with(2)
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+
+    def test_fallback_thread_failure_watches_inline_and_releases_owned_handle(self):
+        cleanup = self._new_cleanup()
+        game = Mock(is_running=Mock(return_value=False))
+        with (
+            patch.object(self.cleanup_mod.psutil, "Process", return_value=game),
+            patch.object(self.cleanup_mod.threading, "Thread") as worker,
+            patch.object(cleanup, "_parent_running", return_value=True),
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=[0, 0]),
+        ):
+            worker.return_value.start.side_effect = RuntimeError("thread creation failed")
+            cleanup.start_exit_watch(456)
+        worker.assert_called_once()
+        self.assertEqual(worker.call_args.kwargs["name"], "endfield-launcher-fallback")
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_failed_parent_status_query_waits_for_game_exit_before_termination(self):
+        cleanup = self._new_cleanup()
+        game = Mock()
+        game.is_running.side_effect = [True, False]
+
+        def terminate_after_exit(*args):
+            self.assertEqual(game.is_running.call_count, 2)
+            return True
+
+        self.kernel.TerminateProcess.side_effect = terminate_after_exit
+        with (
+            patch.object(cleanup, "_parent_running", side_effect=OSError("Cannot query parent")) as status_query,
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=[0, 0]),
+            patch.object(self.cleanup_mod.time, "sleep") as sleep,
+        ):
+            cleanup._watch(game)
+
+        self.assertEqual(status_query.call_count, 2)
+        sleep.assert_called_once_with(2)
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_failed_parent_status_query_preserves_parent_when_game_status_unknown(self):
+        cleanup = self._new_cleanup()
+        game = Mock()
+        game.is_running.side_effect = OSError("Cannot query game")
+        with (
+            patch.object(cleanup, "_parent_running", side_effect=OSError("Cannot query parent")),
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=[0, 0]),
+        ):
+            cleanup._watch(game)
+
+        self.kernel.TerminateProcess.assert_not_called()
+        self.kernel.CloseHandle.assert_called_once_with(999)
+        self.logger.warning.assert_called()
+
+    def test_failed_parent_status_query_logs_termination_failure_and_closes_handle(self):
+        cleanup = self._new_cleanup()
+        self.kernel.TerminateProcess.return_value = False
+        game = Mock(is_running=Mock(return_value=False))
+        with (
+            patch.object(cleanup, "_parent_running", side_effect=OSError("Cannot query parent")),
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=[0, 0]),
+        ):
+            cleanup._watch(game)
+
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+        self.logger.warning.assert_called()
+
+    def test_tail_skips_old_partial_and_survives_rotation(self):
+        path = self.logs / "OneChannelLC.log"
+        path.write_bytes(b"previous complete\nold half")
+        tail = self.cleanup_mod._LogTail(path)
+        with path.open("ab") as stream:
+            stream.write(b" line\nnew complete\n")
+        self.assertEqual(tail.read(), [b"new complete"])
+        path.rename(path.with_suffix(".old"))
+        path.write_bytes(b"next complete\n")
+        self.assertEqual(tail.read(), [b"next complete"])
+
+
+class TestTemporaryParentRecovery(unittest.TestCase):
+    """Recovery must never terminate a user-owned launcher or a live game."""
+
+    def setUp(self):
+        from src.core import temporary_parent_recovery as recovery
+
+        self.recovery = recovery
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.path = Path(self.folder.name)
+        patcher = patch.object(recovery, "_records_dir", return_value=self.path)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.logger = Mock()
+        self.parent_pid = 231
+        self.parent_started = 100.0
+        self.executable = os.path.normcase(os.path.abspath("Games.exe"))
+
+    def _write(self, **changes):
+        record = {
+            "version": 1,
+            "parent_pid": self.parent_pid,
+            "parent_created": self.parent_started,
+            "parent_exe": self.executable,
+            "owner_pid": 1000,
+            "owner_created": 10.0,
+        }
+        record.update(changes)
+        path = self.path / f"{self.parent_pid}.json"
+        path.write_text(json.dumps(record), encoding="utf-8")
+        return path
+
+    def _parent(self):
+        parent = Mock()
+        parent.is_running.return_value = True
+        parent.create_time.return_value = self.parent_started
+        parent.exe.return_value = self.executable
+        parent.children.return_value = []
+        return parent
+
+    def _owner(self, alive=False):
+        owner = Mock(pid=1000)
+        owner.is_running.return_value = alive
+        owner.create_time.return_value = 10.0
+        return owner
+
+    def _recover(self, parent, owner=None, game=None):
+        owner = owner or self._owner()
+        mapping = {self.parent_pid: parent, 1000: owner}
+        if game:
+            mapping[501] = game
+
+        def get_process(pid):
+            if pid not in mapping:
+                raise psutil.NoSuchProcess(pid)
+            return mapping[pid]
+
+        with patch.object(self.recovery.psutil, "Process", side_effect=get_process):
+            self.recovery.recover_owned_parents(self.logger)
+
+    def test_register_and_forget_parent_identity(self):
+        parent, owner = self._parent(), self._owner(alive=True)
+        with (
+            patch.object(self.recovery.psutil, "Process", side_effect=lambda pid: parent if pid == 231 else owner),
+            patch.object(self.recovery.os, "getpid", return_value=1000),
+        ):
+            self.recovery.register_owned_parent(231)
+        record = json.loads((self.path / "231.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["parent_created"], 100.0)
+        self.assertEqual(record["parent_exe"], self.executable)
+        self.assertEqual(record["owner_pid"], 1000)
+        self.recovery.forget_owned_parent(231, self.logger)
+        self.assertFalse((self.path / "231.json").exists())
+
+    def test_register_uses_reported_image_path_for_recovery(self):
+        parent, owner = self._parent(), self._owner(alive=True)
+        reported = os.path.abspath("Resolved Launcher/2.4.9/Games.exe")
+        parent.exe.return_value = reported
+        with (
+            patch.object(self.recovery.psutil, "Process", side_effect=lambda pid: parent if pid == 231 else owner),
+            patch.object(self.recovery.os, "getpid", return_value=1000),
+        ):
+            self.recovery.register_owned_parent(231)
+        path = self.path / "231.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["parent_exe"], os.path.normcase(reported))
+        self._recover(parent)
+        parent.terminate.assert_called_once()
+        self.assertFalse(path.exists())
+
+    def test_register_rejects_unexpected_image_name(self):
+        parent = self._parent()
+        parent.exe.return_value = os.path.abspath("Launcher.exe")
+        with (
+            patch.object(self.recovery.psutil, "Process", return_value=parent),
+            self.assertRaisesRegex(RuntimeError, "Cannot identify"),
+        ):
+            self.recovery.register_owned_parent(231)
+        self.assertFalse((self.path / "231.json").exists())
+
+    def test_abandoned_parent_without_game_is_recovered(self):
+        path = self._write()
+        parent = self._parent()
+        self._recover(parent)
+        parent.terminate.assert_called_once()
+        self.assertFalse(path.exists())
+
+    def test_current_owner_alive_is_preserved(self):
+        path = self._write()
+        parent = self._parent()
+        self._recover(parent, owner=self._owner(alive=True))
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_recorded_live_game_preserves_parent(self):
+        path = self._write(game_pid=501, game_created=50.0)
+        parent = self._parent()
+        game = Mock()
+        game.is_running.return_value = True
+        game.create_time.return_value = 50.0
+        self._recover(parent, game=game)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_live_child_preserves_parent_even_if_game_record_was_not_written(self):
+        path = self._write()
+        parent = self._parent()
+        child = Mock()
+        child.is_running.return_value = True
+        parent.children.return_value = [child]
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_reused_parent_pid_cannot_terminate_unrelated_process(self):
+        path = self._write()
+        parent = self._parent()
+        parent.create_time.return_value = 200.0
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertFalse(path.exists())
+
+    def test_changed_parent_executable_cannot_terminate_unrelated_launcher(self):
+        path = self._write()
+        parent = self._parent()
+        parent.exe.return_value = os.path.normcase(os.path.abspath("Another/Games.exe"))
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertFalse(path.exists())
+
+    def test_parent_access_denied_preserves_record(self):
+        path = self._write()
+        parent = self._parent()
+        parent.exe.side_effect = psutil.AccessDenied(self.parent_pid)
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_recorded_game_status_unknown_preserves_parent(self):
+        path = self._write(game_pid=501, game_created=50.0)
+        parent = self._parent()
+        game = Mock()
+        game.is_running.side_effect = psutil.AccessDenied(501)
+        self._recover(parent, game=game)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_dead_parent_drops_stale_record(self):
+        path = self._write()
+        parent = self._parent()
+        parent.is_running.return_value = False
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertFalse(path.exists())
+
+    def test_invalid_record_is_never_used_to_terminate(self):
+        path = self._write(parent_exe="C:/NotTheOfficialExecutable.exe")
+        parent = self._parent()
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_game_identity_is_persisted(self):
+        path = self._write()
+        game = Mock()
+        game.create_time.return_value = 50.0
+        with patch.object(self.recovery.psutil, "Process", return_value=game):
+            self.recovery.note_game_started(self.parent_pid, 501, self.logger)
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["game_pid"], 501)
+        self.assertEqual(record["game_created"], 50.0)
 
 
 if __name__ == "__main__":

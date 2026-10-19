@@ -3068,6 +3068,93 @@ msgid "截图路径中没有可回放图片。"
 msgstr "No replayable images were found at the screenshot path."
 
 msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号列表每行填写一个手机号；若一行包含逗号，只使用逗号前的账号内容。切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
+msgstr ""
+"Configure parameters separately for each account and task. Select an "
+"account, then a task to display its controls. Enter one phone number per "
+"line; only the content before the first comma is used. Switching matches the"
+" first three and last four visible digits; duplicate numbers are "
+"disambiguated using the Recent marker and the account active before "
+"switching."
+
+msgid "每行一个手机号；逗号后内容忽略"
+msgstr "One phone number per line; content after the comma is ignored"
+
+msgid "；账号名（手机号）是唯一ID，账号名变化会新建ID"
+msgstr ""
+"; the account name (phone number) is its unique ID; changing the name "
+"creates a new ID"
+
+msgid "；若输入包含逗号，只保存逗号前的账号内容"
+msgstr ""
+"; if the input contains a comma, only the account content before it is saved"
+
+msgid ""
+"账号列表，每行一个手机号。\n"
+"若一行包含逗号，只使用逗号前的账号内容，逗号后内容会直接忽略。\n"
+"切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
+msgstr ""
+"Account list, one phone number per line.\n"
+"Only the content before the first comma is used; the remainder is ignored.\n"
+"Switching matches the first three and last four visible digits; duplicate numbers are disambiguated using the Recent marker and the account active before switching."
+
+msgid "窗口置顶"
+msgstr "Keep Windows on Top"
+
+msgid "淤积点重复导航测试"
+msgstr "Energy Pool navigation loop test"
+
+msgid "按编排顺序循环导航到淤积点，使用正式学习流程，不激发、不挑战、不战斗。"
+msgstr ""
+"Repeat Energy Pool navigation in the planned order using the normal learning"
+" flow, without activation, challenges or combat."
+
+msgid "淤积点序列"
+msgstr "Energy Pool sequence"
+
+msgid "循环次数"
+msgstr "Loop count"
+
+msgid "按顺序执行，可重复添加同一淤积点；滑索路线沿用全局滑索配置。"
+msgstr ""
+"Run in order; the same Energy Pool may appear more than once. Zipline routes"
+" use the global zipline settings."
+
+msgid "完整执行序列的次数，0 表示持续循环，直到手动停止。"
+msgstr ""
+"Number of times to run the entire sequence. Use 0 to repeat until manually "
+"stopped."
+
+msgid "请编排有效的淤积点序列。"
+msgstr "Set a valid Energy Pool sequence."
+
+msgid "循环次数必须为非负整数，0 表示持续循环。"
+msgstr "Loop count must be a non-negative integer; 0 repeats indefinitely."
+
+msgid "测试进度"
+msgstr "Test progress"
+
+msgid "淤积点导航测试结束：成功 {success} 次，失败 {failed} 次。"
+msgstr ""
+"Energy Pool navigation test finished: {success} succeeded, {failed} failed."
+
+msgid "联络站重复对中测试"
+msgstr "Liaison station alignment loop test"
+
+msgid "每轮重新传送到舰桥，按实际走一步或两步分别学习联络站首次对中；不聊天、不送礼。"
+msgstr ""
+"Transfer to the bridge each round and learn the initial liaison station "
+"alignment separately for one or two actual forward steps. No chats or gifts."
+
+msgid "每轮重新传送并完成一次对中；0 表示持续循环，直到手动停止。"
+msgstr ""
+"Transfer again and align once per round; 0 repeats until manually stopped."
+
+msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
+msgstr ""
+"Liaison alignment test finished: {success} succeeded, {failed} failed."
+
+msgid ""
 "可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
 "账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
 msgstr ""
@@ -3321,8 +3408,8 @@ msgstr ""
 
 msgid "定位服务：首次读取坐标时会按需启动应用级定位服务"
 msgstr ""
-"Positioning service: the application-level position service starts on demand "
-"when coordinates are first requested"
+"Positioning service: the application-level position service starts on demand"
+" when coordinates are first requested"
 
 msgid "在滑索上发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
 msgstr ""
@@ -3513,8 +3600,8 @@ msgstr ""
 "coordinates (the login handshake was missed, or no game connection has been "
 "seen yet), return to the login screen and enter again to force a new "
 "connection so the backend can capture the handshake. **Your account is not "
-"switched**; it tries at most 3 times, then stops. When off, it only writes a "
-"log line"
+"switched**; it tries at most 3 times, then stops. When off, it only writes a"
+" log line"
 
 msgid "测试重新进入游戏"
 msgstr "Test Re-enter Game"
@@ -3523,40 +3610,6 @@ msgid "游戏内登出后用同一账号重新进入，不切换账号、不杀�
 msgstr ""
 "Log out in-game and re-enter with the same account; does not switch accounts"
 " or kill the game process"
-
-msgid ""
-"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号列表每行填写一个手机号；若一行包含逗号，只使用逗号前的账号内容。切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
-msgstr ""
-"Configure parameters separately for each account and task. Select an "
-"account, then a task to display its controls. Enter one phone number per "
-"line; only the content before the first comma is used. Switching matches the"
-" first three and last four visible digits; duplicate numbers are "
-"disambiguated using the Recent marker and the account active before "
-"switching."
-
-msgid "每行一个手机号；逗号后内容忽略"
-msgstr "One phone number per line; content after the comma is ignored"
-
-msgid "；账号名（手机号）是唯一ID，账号名变化会新建ID"
-msgstr ""
-"; the account name (phone number) is its unique ID; changing the name "
-"creates a new ID"
-
-msgid "；若输入包含逗号，只保存逗号前的账号内容"
-msgstr ""
-"; if the input contains a comma, only the account content before it is saved"
-
-msgid ""
-"账号列表，每行一个手机号。\n"
-"若一行包含逗号，只使用逗号前的账号内容，逗号后内容会直接忽略。\n"
-"切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
-msgstr ""
-"Account list, one phone number per line.\n"
-"Only the content before the first comma is used; the remainder is ignored.\n"
-"Switching matches the first three and last four visible digits; duplicate numbers are disambiguated using the Recent marker and the account active before switching."
-
-msgid "窗口置顶"
-msgstr "Keep Windows on Top"
 
 msgid "定位实现"
 msgstr "Position Implementation"

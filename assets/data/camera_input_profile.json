@@ -1,0 +1,201 @@
+{
+  "schema": 1,
+  "verified_on": "2026-10-19",
+  "scope": "CN default keyboard camera; RawInput MouseAxis Normal; persisted settings, not live state",
+  "registry_path": "Software\\Hypergryph\\Endfield",
+  "native_mouse_factor": 0.5,
+  "degrees_per_turn": 360.0,
+  "installed_files": {
+    "GameAssembly.dll": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "Endfield_Data/level0": "cfcf2fd3958b4935f65a11da220b227e25b67265a7e169b55523782c68dbd083",
+    "Endfield_Data/globalgamemanagers.assets": "c5f519ccb8d739c8d2f64b7d2baedf8a31b9ac9a654de7efb32bc7958fc25d8b",
+    "Endfield_Data/StreamingAssets/VFS/7064D8E2/7064D8E2.blc": "3ae0e9c431d81a7e9edf96c85188447f395c41dd2e6f67008ef9b1c3b5059639",
+    "Endfield_Data/Persistent/VFS/7064D8E2/7064D8E2.blc": "07b08d755d3137de82947a4aaca086b8c59afc3f1e3c9591d4217062f7d485ed",
+    "Endfield_Data/StreamingAssets/VFS/1CDDBF1F/1CDDBF1F.blc": "acd2048d81fbeb736edf1830602597550c623f389b2c1a6d811fe424ca8260b6",
+    "Endfield_Data/Persistent/VFS/1CDDBF1F/1CDDBF1F.blc": "e50cd8c795286ef860687e0d5c5226ee88697cd3f657fe962d8827e5ac2f53ec",
+    "Endfield_Data/StreamingAssets/VFS/D6E622F7/D6E622F7.blc": "3b83e1dfe2e6f2b66ac04d481300b2654147a01add74c45f0c036830ef1a6583",
+    "Endfield_Data/Persistent/VFS/D6E622F7/D6E622F7.blc": "4b44fc816b8910ac8e68bf337703ed5672b54b641e96a931bc4393e40e7be4c9",
+    "Endfield_Data/StreamingAssets/VFS/19E3AE45/19E3AE45.blc": "ac904036b62dee84c299d8133114527de16514b98729da1494f363c64f497376",
+    "Endfield_Data/Persistent/VFS/19E3AE45/19E3AE45.blc": "3fef619a6f03e8acb9d200ffaaa0ab294f21d0c3611aabc63efb536013dcd1bf"
+  },
+  "bundle_slices": [
+    {
+      "path": "Endfield_Data/StreamingAssets/VFS/7064D8E2/849A069068610108190BA5411D121F07.chk",
+      "offset": 268576356,
+      "length": 6260,
+      "sha256": "1f3374dcc97ebbfae908f1edba6e0ecad9ab4acf27b41304f1e56b0cdf94defc"
+    },
+    {
+      "path": "Endfield_Data/StreamingAssets/VFS/7064D8E2/849A069068610108190BA5411D121F07.chk",
+      "offset": 59171456,
+      "length": 3362,
+      "sha256": "7e16d7775b434af31800aefc130f43a0807d7dd524ed2193d7f1cd78963b164c"
+    },
+    {
+      "path": "Endfield_Data/StreamingAssets/VFS/7064D8E2/849A069068610108190BA5411D121F07.chk",
+      "offset": 487006557,
+      "length": 9413,
+      "sha256": "2cc98f7d2f0434d2c35a4d585f8b19c35ab20dfb72bd45571eafbd8affb42ae7"
+    }
+  ],
+  "axes": {
+    "x": {
+      "speed_key": "controller_camera_speed_x_h2607638912",
+      "reverse_key": "controller_camera_reverse_x_h1335373511",
+      "lua_speed": 0.9,
+      "mouse_sensitivity": 1.0,
+      "binding_inverted": false,
+      "input_sign": 1,
+      "drag_speed": 1.0,
+      "speed_factor": 1.0,
+      "speed_curve": [
+        {
+          "time": -5.0,
+          "value": 0.5,
+          "inSlope": 0.10000000149011612,
+          "outSlope": 0.10000000149011612,
+          "weightedMode": 0
+        },
+        {
+          "time": 5.0,
+          "value": 1.5,
+          "inSlope": 0.10000000149011612,
+          "outSlope": 0.10000000149011612,
+          "weightedMode": 0
+        }
+      ]
+    },
+    "y": {
+      "speed_key": "controller_camera_speed_y_h2607638913",
+      "reverse_key": "controller_camera_reverse_y_h1335373510",
+      "lua_speed": 0.63,
+      "mouse_sensitivity": 1.0,
+      "binding_inverted": false,
+      "input_sign": 1,
+      "drag_speed": 1.0,
+      "speed_factor": 1.0,
+      "speed_curve": [
+        {
+          "time": -5.0,
+          "value": 0.5,
+          "inSlope": 0.10000000149011612,
+          "outSlope": 0.10000000149011612,
+          "weightedMode": 0
+        },
+        {
+          "time": 5.0,
+          "value": 1.5,
+          "inSlope": 0.10000000149011612,
+          "outSlope": 0.10000000149011612,
+          "weightedMode": 0
+        }
+      ]
+    }
+  },
+  "vertical_track": {
+    "min_value": 0.0,
+    "max_value": 1.0,
+    "tween_speed": 16.0,
+    "acceleration": {
+      "_minAcceleration": 1.399999976158142,
+      "_maxAcceleration": 1.850000023841858,
+      "_accelerationChangeRate": 0.4000000059604645,
+      "_speedMinThreshold": 1000.0
+    },
+    "height_curve": [
+      {
+        "time": 0.0,
+        "value": -2.0,
+        "inSlope": 0.7190402150154114,
+        "outSlope": 0.7190402150154114,
+        "weightedMode": 0
+      },
+      {
+        "time": 0.20000000298023224,
+        "value": -1.600000023841858,
+        "inSlope": 3.874100685119629,
+        "outSlope": 3.874100685119629,
+        "weightedMode": 0
+      },
+      {
+        "time": 0.4000000059604645,
+        "value": -0.30000001192092896,
+        "inSlope": 8.56081485748291,
+        "outSlope": 8.56081485748291,
+        "weightedMode": 0
+      },
+      {
+        "time": 0.6000000238418579,
+        "value": 1.7000000476837158,
+        "inSlope": 11.087004661560059,
+        "outSlope": 11.087004661560059,
+        "weightedMode": 0
+      },
+      {
+        "time": 0.8399999737739563,
+        "value": 4.5,
+        "inSlope": 12.75688648223877,
+        "outSlope": 12.75688648223877,
+        "weightedMode": 0
+      },
+      {
+        "time": 1.0,
+        "value": 6.599999904632568,
+        "inSlope": 13.762898445129395,
+        "outSlope": 13.762898445129395,
+        "weightedMode": 0
+      }
+    ],
+    "distance_curve": [
+      {
+        "time": 0.0,
+        "value": 0.20000000298023224,
+        "inSlope": 16.089914321899414,
+        "outSlope": 16.089914321899414,
+        "weightedMode": 0
+      },
+      {
+        "time": 0.20000000298023224,
+        "value": 3.0,
+        "inSlope": 12.938835144042969,
+        "outSlope": 12.938835144042969,
+        "weightedMode": 0
+      },
+      {
+        "time": 0.4000000059604645,
+        "value": 5.210000038146973,
+        "inSlope": 8.778640747070312,
+        "outSlope": 8.778640747070312,
+        "weightedMode": 0
+      },
+      {
+        "time": 0.6000000238418579,
+        "value": 6.375,
+        "inSlope": 2.6647071838378906,
+        "outSlope": 2.6647071838378906,
+        "weightedMode": 0
+      },
+      {
+        "time": 0.8399999737739563,
+        "value": 6.0,
+        "inSlope": -5.488189220428467,
+        "outSlope": -5.488189220428467,
+        "weightedMode": 0
+      },
+      {
+        "time": 1.0,
+        "value": 4.5,
+        "inSlope": -15.091877937316895,
+        "outSlope": -15.091877937316895,
+        "weightedMode": 0
+      }
+    ],
+    "pitch_lookup_range": {
+      "min_pitch": -84.2894058227539,
+      "max_pitch": 54.287208557128906,
+      "min_track": 0.0,
+      "max_track": 0.9900000095367432
+    }
+  }
+}

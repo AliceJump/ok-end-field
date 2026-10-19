@@ -13,6 +13,7 @@
 import math
 import re
 from copy import copy
+from dataclasses import replace
 
 import cv2
 import numpy as np
@@ -27,21 +28,17 @@ from src.core.global_config_store import (
     ZIP_LINE_TARGET_SELECT_OCR,
     get_global_config,
 )
-from src.core.learning.policy import learning_allowed
+from src.core.learning.models import yaw_bucket
+from src.core.learning.policy import learning_allowed, learning_epoch
 from src.core.sequence_parser import parse_int_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
 from src.interaction.target_movement import ellipse_geometry, ellipse_move_profile, ellipse_radius, hud_direction_step
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
-from src.tasks.mixin.zip_line_motion_cache import (
-    build_zip_line_route_fingerprint,
-    load_nearest_zip_line_segment_motion,
-    load_zip_line_segment_motion,
-    record_zip_line_segment_motion,
-)
-from src.tasks.mixin.zip_line_motion_tracking import track_zip_line_mouse_motion
+from src.tasks.mixin.navigation_learning import align_initial_target
+from src.tasks.mixin.route_learning import align_initial_zipline, route_context_for
+from src.tasks.mixin.zip_line_motion_cache import build_zip_line_route_fingerprint
 from src.tasks.mixin.zip_line_yaw_cache import (
-    build_zip_line_motion_route_fingerprint,
     load_arrow_turn_motion,
     record_arrow_turn_motion,
 )
@@ -539,7 +536,16 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         self.log_info("已按 F 登上滑索架")
         return True
 
-    def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True, stay_on_zip_line=False):
+    def on_zip_line_start(
+        self,
+        delivery_to,
+        need_scroll=None,
+        target=None,
+        need_v=True,
+        stay_on_zip_line=False,
+        route_family=(),
+        target_learning_context=None,
+    ):
         """进入滑索后，根据配置对齐并滑行至送货点
 
         Args:
@@ -548,6 +554,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             target: 目标信息，包含名称和类型(例如：("登上滑索架", "ocr"))
             need_v: 是否需要按V键追踪
             stay_on_zip_line: 路线结束后留在滑索上，供下一段路线继续测试
+            route_family: 调用者已确认的物理路线族；未知入口保持私有。
+            target_learning_context: 末端重新登架后的首次目标对中上下文。
         Raises:
             Exception: 滑索超时时抛出异常
         """
@@ -571,6 +579,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             need_v=need_v,
             stay_on_zip_line=stay_on_zip_line,
             config_key=delivery_to,
+            **({"route_family": route_family} if route_family else {}),
+            **({"target_learning_context": target_learning_context} if target_learning_context is not None else {}),
         )
 
     @staticmethod
@@ -922,6 +932,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         max_iterations=None,
         ocr_target_detector=None,
         ocr_target_mover=None,
+        learning_session=None,
     ):
         """统一模板/全屏 OCR 对中入口，并允许调用方观察实际鼠标位移。"""
 
@@ -941,6 +952,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 max_iterations=helper_max_iterations,
                 ocr_target_detector=ocr_target_detector,
                 ocr_target_mover=ocr_target_mover or self._move_to_zip_line_target,
+                **({"learning_session": learning_session} if learning_session is not None else {}),
             )
 
         if deadline is None and max_iterations is None:
@@ -971,6 +983,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         *,
         distance_tolerance=None,
         initial_move=None,
+        learning_session=None,
     ):
         """先用历史位移预送一次，再让模板与 OCR fallback 共用同一个可观测移动闭环。
 
@@ -1070,6 +1083,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             deadline=deadline,
             max_iterations=max_time * 2,
             ocr_target_detector=detect_target,
+            **({"learning_session": learning_session} if learning_session is not None else {}),
         )
 
     def _zip_line_stop_state(self):
@@ -1338,15 +1352,26 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         )
         return current_yaw, True
 
-    def _align_and_activate_zip_line(self, zip_line, need_scroll=None, initial_move=None, *, distance_tolerance=None):
-        """对齐并激活一段滑索，只在第一次尝试时重放历史位移。"""
-        self._align_zip_line_distance(
-            zip_line,
-            need_scroll=need_scroll,
-            tolerance=50,
-            initial_move=initial_move,
-            distance_tolerance=distance_tolerance,
-        )
+    def _align_and_activate_zip_line(
+        self, zip_line, need_scroll=None, initial_move=None, learning_context=None, *, distance_tolerance=None
+    ):
+        """Close initial learning before activation; gate retries use only realtime alignment."""
+        if learning_context is not None:
+            align_initial_zipline(
+                self,
+                learning_context,
+                zip_line,
+                need_scroll=need_scroll,
+                **({"distance_tolerance": distance_tolerance} if distance_tolerance is not None else {}),
+            )
+        else:
+            self._align_zip_line_distance(
+                zip_line,
+                need_scroll=need_scroll,
+                tolerance=50,
+                initial_move=initial_move,
+                **({"distance_tolerance": distance_tolerance} if distance_tolerance is not None else {}),
+            )
         self.log_info(f"成功将滑索调整到{zip_line}的中心")
 
         gate_retry_start = self.active_time()
@@ -1433,13 +1458,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         target_positions_xyz=None,
         stay_on_zip_line=False,
         config_key=None,
+        route_family=(),
+        target_learning_context=None,
+        target_learning_epoch=None,
     ):
         """按顺序对齐滑索并执行滑行
 
         每段先选路：网格导航给了世界方位角就走**直接对准**（只转视角、不产生位移），否则走
-        模板/OCR 对中。两条路都会记一段历史位移——读起始朝向 → 按 (路线, 分辨率, 起始朝向,
-        段号) 取回上一次的鼠标位移 → 只在本段第一次对中时预送 → 整段完成后把实际位移记回去。
-        滑索的起步朝向每次都不同，同一整段动作只在相同起始朝向下才可复用，所以朝向进键。
+        模板/OCR 对中。仅模板/OCR 初次对中使用主线的上下文学习；激活、骑乘和直接对准不记录样本。
 
         Args:
             zip_line_list: 滑索距离列表
@@ -1488,43 +1514,28 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                         exc.failed_target_position = tuple(float(value) for value in target_xyz)
                     raise
                 continue
+            if route_fingerprint and need_scroll:
+                # Make zoom a reproducible entry before measuring the original yaw/input.
+                self.do_scroll(1, 400)
+                self.next_frame()
             reading = self._read_zip_line_settled_arrow_angle() if route_fingerprint else None
             start_yaw = reading[0] if reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE else None
-            motion_key = (
-                build_zip_line_motion_route_fingerprint(route_fingerprint, self.width, self.height, start_yaw)
-                if start_yaw is not None
-                else None
+            context = route_context_for(
+                self,
+                route_fingerprint,
+                segment_index,
+                start_yaw,
+                need_scroll=need_scroll,
+                family=route_family,
             )
-            hint = load_zip_line_segment_motion(motion_key, segment_index) if motion_key else None
-            nearest = (
-                load_nearest_zip_line_segment_motion(
-                    route_fingerprint, segment_index, self.width, self.height, start_yaw
-                )
-                if motion_key and hint is None
-                else None
+            self._align_and_activate_zip_line(
+                zip_line,
+                need_scroll=need_scroll,
+                initial_move=None,
+                **({"learning_context": context} if context is not None else {}),
+                **({"distance_tolerance": tolerance} if tolerance is not None else {}),
             )
-            with track_zip_line_mouse_motion(self) as motion:
-                if nearest is not None:
-                    matched_yaw, _dx, _dy, _samples = nearest
-                    actual_yaw, ready = self._normalize_zip_line_segment_yaw(matched_yaw, initial_reading=reading)
-                    if ready:
-                        # 用确认过的朝向回查缓存，而不是只用请求时那个朝向
-                        matched_key = build_zip_line_motion_route_fingerprint(
-                            route_fingerprint, self.width, self.height, actual_yaw
-                        )
-                        hint = load_zip_line_segment_motion(matched_key, segment_index)
-                initial_move = hint[:2] if hint is not None else None
-                if hint is not None:
-                    self.log_info(
-                        f"[zipline-motion-cache] segment={segment_index + 1}/{len(zip_line_list)} "
-                        f"start_yaw={start_yaw:.1f} samples={hint[2]} prefeed={initial_move}"
-                    )
-                self._align_and_activate_zip_line(
-                    zip_line,
-                    need_scroll=need_scroll,
-                    initial_move=initial_move,
-                    distance_tolerance=tolerance,
-                )
+
             start = self.active_time()
             while True:
                 self.next_frame()
@@ -1534,16 +1545,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     break
                 if self.active_time() - start > 240:
                     raise RuntimeError("滑索超时，强制退出")
-            if (
-                motion_key
-                and motion.complete
-                and record_zip_line_segment_motion(motion_key, segment_index, motion.dx, motion.dy)
-            ):
-                self.log_info(
-                    f"[zipline-motion-cache] segment={segment_index + 1}/{len(zip_line_list)} "
-                    f"start_yaw={start_yaw:.1f} learned=({motion.dx},{motion.dy})"
-                )
-
         if stay_on_zip_line:
             self.log_info("滑索路线结束，留在滑索上继续测试")
             return
@@ -1563,14 +1564,18 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 yolo_bool = False
             if need_v:
                 self.ensure_main()
-                result = self.strafe_search(
-                    lambda: self.wait_ocr(
+
+                def check_board():
+                    return self.wait_ocr(
                         match=self.lang.zip_line_mixin.k_b0e3a2da,
                         box=self.box.bottom_right,
                         settle_time=1,
                         time_out=4,
                         log=True,
-                    ),
+                    )
+
+                result = self.strafe_search(
+                    check_board,
                     passes=1,
                     duration=0.1,
                     keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
@@ -1581,8 +1586,39 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             else:
                 result = True
             if result:
-                self.align_ocr_or_find_target_to_center(
-                    ocr_match_or_feature_name_list=result_name,
+                context = (
+                    target_learning_context
+                    if (
+                        learning_allowed()
+                        and (target_learning_epoch is None or target_learning_epoch == learning_epoch())
+                        and target_learning_context is not None
+                        and target_learning_context.entry_route_signature == tuple(zip_line_list)
+                        and (
+                            (need_v and target_learning_context.entry != "after_zipline_on_board")
+                            or (
+                                not need_v
+                                and target_learning_context.task == "gather"
+                                and target_learning_context.phase == "after_zipline"
+                                and target_learning_context.entry == "after_zipline_on_board"
+                                and bool(zip_line_list)
+                            )
+                        )
+                    )
+                    else None
+                )
+                confidence = "high"
+                if context is not None:
+                    reading = self._read_zip_line_settled_arrow_angle()
+                    verified_yaw = reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE
+                    context = replace(context, start_yaw_bucket=yaw_bucket(reading[0]) if verified_yaw else None)
+                    confidence = "high" if verified_yaw else "medium"
+                    if target_learning_epoch is not None and target_learning_epoch != learning_epoch():
+                        context = None
+                align_initial_target(
+                    self,
+                    context,
+                    result_name,
+                    confidence=confidence,
                     threshold=ZIP_LINE_TEMPLATE_THRESHOLD,
                     ocr=ocr_bool,
                     use_yolo=yolo_bool,

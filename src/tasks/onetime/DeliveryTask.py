@@ -27,9 +27,11 @@ from src.data.delivery_area_service import (
     get_full_cycle_targets,
 )
 from src.data.FeatureList import FeatureList as fL
+from src.data.navigation_contexts import DELIVERY_DISPATCH_BOARD, DELIVERY_TRANSFER_BOARD
 from src.icons import Icons
 from src.nav.route_follower import bearing_to_point
 from src.tasks.account.account_mixin import AccountMixin
+from src.tasks.mixin.delivery_learning import delivery_learning_kwargs
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
 from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
@@ -438,6 +440,13 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                 target=None if only_zip_line else (secondary_objective_direction_dot, "feature"),
                 need_v=not only_zip_line,
                 stay_on_zip_line=only_zip_line,
+                **delivery_learning_kwargs(
+                    self,
+                    to_delivery_point_key,
+                    DELIVERY_TRANSFER_BOARD,
+                    phase=None if only_zip_line else "pickup_initial",
+                    distances=zip_line_list,
+                ),
             )  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
             if only_zip_line:
                 return True
@@ -821,6 +830,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
             end_name,
             need_scroll=self.zip_line_scroll_enabled(),
             target=(secondary_objective_direction_dot, "feature"),
+            **delivery_learning_kwargs(self, end_name, DELIVERY_DISPATCH_BOARD, phase="dropoff_initial"),
         )
 
         self._set_delivery_stage(f"{label}已取货，提交委托")
@@ -995,6 +1005,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                         need_v=False,
                         need_scroll=self.zip_line_scroll_enabled(),
                         stay_on_zip_line=True,
+                        **delivery_learning_kwargs(self, end, DELIVERY_DISPATCH_BOARD),
                     )
                     self.sleep(2)
                 except TaskDisabledException:
