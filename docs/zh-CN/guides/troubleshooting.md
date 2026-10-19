@@ -23,7 +23,7 @@
 
 程序不会额外为 `Endfield.exe` 注入国服语言或渠道参数；已有的自定义启动参数（如 DX11）会原样保留。此自动启动方式针对国服官方启动器，尚未验证国际服或其他渠道。游戏已经运行时不会重复启动。
 
-创建游戏后只读取 `LocalAppDataLow/Hypergryph/Endfield/sdklogs` 中本次新增的完整日志行；仅当 `OneChannelLC.log` 出现 `Parent process check success:<临时进程 PID>`，且 `u8sdk_pc.log` 出现 `OnU8V2InitCallback status :0`，才结束**本次创建的临时 `Games.exe`**。不靠固定等待判定成功。120 秒内没有得到完整证据时不会强行结束仍在运行的游戏对应的临时父进程，而是继续监视游戏退出，退出后清理本次创建的临时进程；若创建游戏前失败，或启动监视前确认游戏已经退出，也会清理。若游戏仍在运行而监视器无法启动，挂起的临时进程可能残留，需在游戏退出后手动清理。启动异常请查看 `logs/ok-script.log`，并检查官方启动器文件是否完整。
+创建游戏后只读取 `LocalAppDataLow/Hypergryph/Endfield/sdklogs` 中本次新增的完整日志行；仅当 `OneChannelLC.log` 出现 `Parent process check success:<临时进程 PID>`，且 `u8sdk_pc.log` 出现 `OnU8V2InitCallback status :0`，才结束**本次创建的临时 `Games.exe`**。不靠固定等待判定成功。120 秒内没有得到完整证据时不会强行结束仍在运行的游戏对应的临时父进程，而是继续监视游戏退出，退出后清理本次创建的临时进程；若创建游戏前失败，或启动监视前确认游戏已经退出，也会清理。若游戏仍在运行而主监视器无法启动，会尝试启动备用监视器并移交进程句柄；若线程创建也失败，启动调用可能同步等待启动验证或游戏退出，而不直接丢失清理所有权。若无法获取游戏存活状态，仍可能需要手动清理。启动异常请查看 `logs/ok-script.log`，并检查官方启动器文件是否完整。
 
 ## 反馈问题
 
