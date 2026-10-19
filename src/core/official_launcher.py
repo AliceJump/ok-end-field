@@ -441,7 +441,24 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
                 except Exception as discard_error:
                     logger.warning(f"Cannot discard temporary Games.exe after game exit: {discard_error}")
             else:
-                logger.warning(f"Cannot monitor SDK startup; preserving temporary Games.exe: {error}")
+                logger.warning(f"Cannot start initial SDK monitor; starting fallback for owned Games.exe: {error}")
+                try:
+                    cleanup.start_exit_watch(pid)
+                    parent = None  # The fallback watcher took ownership (or completed inline).
+                except Exception as fallback_error:
+                    # Only a verified child exit permits cleanup. If no worker
+                    # can be started, keep ownership and wait here rather than
+                    # close the sole handle of an indefinitely suspended parent.
+                    logger.warning(
+                        f"Cannot start fallback cleanup; waiting for game exit in caller: {fallback_error}"
+                    )
+                    try:
+                        while psutil.pid_exists(pid):
+                            time.sleep(2)
+                        if not kernel.TerminateProcess(parent, 0):
+                            logger.warning("Could not terminate owned temporary Games.exe after game exit")
+                    except Exception as exit_error:
+                        logger.warning(f"Cannot complete emergency temporary launcher cleanup: {exit_error}")
         return True
     finally:
         if parent:
