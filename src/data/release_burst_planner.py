@@ -132,12 +132,21 @@ class ReleaseBurstAction:
 
 
 @dataclass(frozen=True)
+class BurstSpValue:
+    direct_damage: float
+    followup_contribution: float
+    sp_cost: float
+    damage_per_sp: float | None
+
+
+@dataclass(frozen=True)
 class ReleaseBurstDecision:
     action: ReleaseBurstAction
     sequence: tuple[tuple[str, str], ...]
     damage: float
     gain: float
     mechanism: MechanismQuote | None = None
+    sp_value: BurstSpValue | None = None
 
 
 @dataclass(frozen=True)
@@ -476,7 +485,7 @@ class ReleaseBurstPlanner:
 
     @staticmethod
     def _select_beam(expanded, quota):
-        expanded.sort(key=lambda entry: (-entry[0], entry[8], entry[1], entry[3]))
+        expanded.sort(key=lambda entry: (-entry[0], -entry[2], entry[8], entry[1], entry[3]))
         per_start, beam = {}, []
         for entry in expanded:
             first = entry[3][0]
@@ -485,7 +494,7 @@ class ReleaseBurstPlanner:
                 per_start[first] = per_start.get(first, 0) + 1
         return beam
 
-    def _search(self, actions, sp, now, *, releases, bonuses, horizon, width, conditions):
+    def _search(self, actions, sp, now, *, releases, bonuses, horizon, width, conditions, by_start=False):
         predecessors = {i: tuple(j for j, a in enumerate(actions) if a.kind == "link"
                                  and a.queue_position < action.queue_position)
                         if action.kind == "link" else () for i, action in enumerate(actions)}
@@ -494,6 +503,7 @@ class ReleaseBurstPlanner:
         beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions, 0.0,
                  self.mechanism_state)]
         best = beam[0]
+        starts = {}
         for _ in actions:
             expanded = [entry for node in beam for index, action in enumerate(actions)
                         if (entry := self._forecast_step(node, action, index, now,
@@ -501,11 +511,55 @@ class ReleaseBurstPlanner:
                                                         predecessors=predecessors)) is not None]
             if not expanded:
                 break
-            candidate = max(expanded, key=lambda entry: (entry[0], -entry[8], -entry[1]))
-            if (candidate[0], -candidate[8], -candidate[1]) > (best[0], -best[8], -best[1]):
+            candidate = max(expanded, key=lambda entry: (entry[0], entry[2], -entry[8], -entry[1]))
+            if (candidate[0], candidate[2], -candidate[8], -candidate[1]) > (best[0], best[2], -best[8], -best[1]):
                 best = candidate
+            if by_start:
+                for entry in expanded:
+                    first = entry[3][0]
+                    old = starts.get(first)
+                    if old is None or (entry[0], entry[2], -entry[8], -entry[1]) > (old[0], old[2], -old[8], -old[1]):
+                        starts[first] = entry
             beam = self._select_beam(expanded, max(1, width // len(actions)))
-        return best
+        return (best, starts, predecessors) if by_start else best
+
+    def _opener_sp_value(self, plan, actions, sp, now, *, horizon, conditions, predecessors):
+        """Remove the opener and replay its actual feasible followers, without retiming earlier.
+
+        This is a marginal comparison for this candidate, not a second damage
+        sum. Missing queue predecessors, stance unlocks, SP and actor locks
+        still apply in the counterfactual.
+        """
+        initial = (0.0, now, sp, (), list(self.bonuses), {}, dict(self.stances), conditions, 0.0,
+                   self.mechanism_state)
+        original = initial
+        schedule = []
+        first_value = first_cost = 0.0
+        for i in plan[3]:
+            action = actions[i]
+            started = max(original[1], original[5].get(action.slot, now))
+            pending = original[6].get(action.slot)
+            if pending is not None and action.kind in {'battle', 'normal'}:
+                started = max(started, pending.starts_at)
+            step = self._forecast_step(original, action, i, now, releases=True,
+                                       horizon=horizon, predecessors=predecessors)
+            if step is None:
+                raise ValueError('Stored burst route cannot be replayed')
+            if not schedule:
+                first_value, first_cost = step[0], sp-step[2]
+            schedule.append((i, started, step[1]))
+            original = step
+        without = (*initial[:1], schedule[0][2], *initial[2:])
+        for i, started, end in schedule[1:]:
+            without = (without[0], max(without[1], started), *without[2:])
+            step = self._forecast_step(without, actions[i], i, now, releases=True,
+                                       horizon=horizon, predecessors=predecessors)
+            if step is not None:
+                without = step
+            without = (without[0], max(without[1], end), *without[2:])
+        contribution = original[0]-without[0]-first_value
+        return BurstSpValue(first_value, contribution, first_cost,
+                            (first_value+contribution)/first_cost if first_cost>0 else None)
 
     def choose(self, actions, sp, now, *, horizon=12.0, width=16, conditions=ForecastConditions()):
         actions = tuple(actions)
@@ -517,6 +571,7 @@ class ReleaseBurstPlanner:
                 or any(a.kind not in {"normal", "battle", "ult", "link"} or a.duration <= 0
                        or not all(math.isfinite(v) for v in (a.duration, a.value, a.sp_gate, a.sp_cost))
                        or a.value < 0 or (a.kind != "link" and a.queue_position != 0)
+                       or a.sp_gate < 0 or a.sp_cost < 0
                        or (a.damage_duration is not None and (not math.isfinite(a.damage_duration)
                                                              or a.damage_duration < a.duration))
                        for a in actions)):
@@ -536,11 +591,35 @@ class ReleaseBurstPlanner:
                             for a in actions if a.kind == 'battle']
         needs_cast_pricing = (has_links or any(self.cast_only_quote(a.slot, a.kind) for a in actions)
                               or any(q is not None and (q.sources or q.minimum_recall) for q in mechanism_quotes))
+        needs_sp_pricing = sum(a.kind=='battle' and a.sp_cost>0 for a in actions)>1
+        needs_cast_pricing = needs_cast_pricing or needs_sp_pricing
         if (not needs_cast_pricing and not self.bonuses and not self.stances
                 and not any(self.rules.get((a.slot, a.kind)) for a in actions)):
             return None
-        best = self._search(actions, min(sp, 300), now, releases=True,
-                            bonuses=list(self.bonuses), horizon=horizon, width=width, conditions=conditions)
+        best, starts, predecessors = self._search(actions, min(sp, 300), now, releases=True,
+                            bonuses=list(self.bonuses), horizon=horizon, width=width, conditions=conditions, by_start=True)
+        values = {}
+        def opener_value(plan):
+            first = plan[3][0]
+            if first not in values:
+                values[first] = self._opener_sp_value(plan, actions, min(sp,300), now, horizon=horizon,
+                                                       conditions=conditions, predecessors=predecessors)
+            return values[first]
+        if best[3]:
+            opener_value(best)
+        if best[3] and values[best[3][0]].sp_cost>0:
+            # Only compare like-for-like paid openers. Actual free casts and
+            # energy/queue actions retain the existing finite-horizon comparison;
+            # zero SP never supplies infinity or turns a cancel into a producer.
+            # Keep a beneficial support before its recipients and preserve real
+            # burst deadlines. Do not trade away known sequence damage merely
+            # to display a larger ratio for one isolated hit.
+            paid = [plan for i, plan in starts.items()
+                    if plan[0]>=best[0]-1e-6 and plan[2]>=best[2]-1e-6
+                    and opener_value(plan).damage_per_sp is not None and values[i].damage_per_sp>0]
+            if paid:
+                best = max(paid, key=lambda plan: (values[plan[3][0]].damage_per_sp,
+                                                   plan[0], -plan[8], -plan[1]))
         plain = self._search(actions, min(sp, 300), now, releases=False, bonuses=[], horizon=horizon, width=width,
                              conditions=conditions)
         if (not best[3] or (not needs_cast_pricing and (best[0] <= plain[0] + 1e-6
@@ -551,4 +630,5 @@ class ReleaseBurstPlanner:
                                     best[0], best[0] - plain[0],
                                     self.mechanism_quote(actions[best[3][0]].slot, now,
                                                          actions[best[3][0]].mechanism_assessment)
-                                    if actions[best[3][0]].kind == 'battle' else None)
+                                    if actions[best[3][0]].kind == 'battle' else None,
+                                    values[best[3][0]])

@@ -260,9 +260,15 @@ class TestTimedMainControl(unittest.TestCase):
         task.sp = 100.0
         logic.step()
         self.assertEqual(task.keys, ["1"])
+        self.assertEqual(task.switches, [])
+        self.assertEqual(task.current, 0)
         task.now = 1.3
         logic.step()
-        self.assertEqual(task.keys, ["1"])
+        # An unconfirmed source must not hand off control. The new paid-cast
+        # comparison may still select an available teammate after rejection.
+        self.assertEqual(task.keys, ["1", "2"])
+        self.assertEqual(task.switches, [])
+        self.assertEqual(task.current, 0)
 
     def test_reentering_combat_clears_old_control_windows(self):
         task, logic = _control_logic(["庄方宜", "佩丽卡"])

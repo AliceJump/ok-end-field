@@ -327,7 +327,9 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertEqual(decision.sequence, (('1', 'battle'), ('2', 'battle')))
         self.assertGreater(decision.gain, 0)
         self.assertFalse(planner.bonuses)  # Forecasting does not activate the real aura.
-        self.assertIsNone(planner.choose(actions, 124, 0))
+        under_budget = planner.choose(actions, 124, 0)
+        self.assertEqual(under_budget.sequence, (('2', 'battle'),))
+        self.assertEqual(under_budget.gain, 0)
         self.assertEqual(planner.price('1', 'battle', 0, value=17320.2), 0)
 
     def test_liino_combo_preserves_singing_without_refreshing_its_deadline(self):
@@ -1022,6 +1024,105 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         with patch.object(logic.release_burst, "choose", return_value=None) as choose:
             logic._release_burst_decision([], 0, task.now)
             self.assertTrue(any(a.kind == "normal" and a.slot == "1" for a in choose.call_args.args[0]))
+
+
+class TestBurstSpValue(unittest.TestCase):
+    def test_real_step_prices_actual_paid_profiles_and_dispatches_the_higher_value(self):
+        task = FakeTask()
+        task.sp = 200
+        task.ults = set()
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(['余烬', '佩丽卡'], reset_runtime=True)
+        with patch.object(task, 'log_info') as log:
+            logic.step()
+        self.assertEqual(task.keys, ['2'])
+        rows = [json.loads(call.args[0].split(': ', 1)[1]) for call in log.call_args_list
+                if call.args[0].startswith('时间排轴单位技力收益: ')]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['sp_cost'], 100)
+        self.assertEqual(rows[0]['followup_contribution'], 0)
+        self.assertAlmostEqual(rows[0]['direct_damage'], 24472.4)
+        self.assertAlmostEqual(rows[0]['damage_per_sp'], 244.724)
+
+    def test_more_damage_per_sp_moves_interchangeable_paid_cast_first(self):
+        p = ReleaseBurstPlanner(['佩丽卡', '余烬'])
+        actions = (ReleaseBurstAction('1', 'battle', 1, 1500, 100, 100),
+                   ReleaseBurstAction('2', 'battle', 1, 1000, 25, 25))
+        decision = p.choose(actions, 125, 0)
+        self.assertEqual(decision.sequence, (('2', 'battle'), ('1', 'battle')))
+        self.assertEqual(decision.damage, 2500)
+        self.assertEqual(decision.sp_value.direct_damage, 1000)
+        self.assertEqual(decision.sp_value.followup_contribution, 0)
+        self.assertEqual(decision.sp_value.damage_per_sp, 40)
+
+    def test_support_gets_only_its_marginal_followup_gain_not_all_recipient_damage(self):
+        p = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
+        support = ReleaseBurstAction('1', 'battle', .55, 0, 25, 25)
+        recipient = ReleaseBurstAction('2', 'battle', .5, 1000, 100, 100)
+        decision = p.choose((support, recipient), 125, 0)
+        self.assertEqual(decision.sequence, (('1', 'battle'), ('2', 'battle')))
+        self.assertEqual(decision.sp_value.direct_damage, 0)
+        self.assertEqual(decision.sp_value.sp_cost, 25)
+        self.assertAlmostEqual(decision.sp_value.followup_contribution, decision.damage-1000)
+        self.assertAlmostEqual(decision.sp_value.damage_per_sp, (decision.damage-1000)/25)
+        self.assertGreater(decision.sp_value.damage_per_sp, 0)
+        self.assertLess(decision.sp_value.followup_contribution, recipient.value)
+        self.assertFalse(p.bonuses)
+
+    def test_no_recipient_no_invented_future_sp_or_sixty_seconds_of_damage(self):
+        p = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
+        support = ReleaseBurstAction('1', 'battle', .55, 0, 25, 25)
+        recipient = ReleaseBurstAction('2', 'battle', .5, 1000, 100, 100)
+        self.assertIsNone(p.choose((support,), 25, 0))
+        decision = p.choose((support,recipient), 100, 0)
+        self.assertEqual(decision.sequence, (('2', 'battle'),))
+        self.assertEqual(decision.sp_value.followup_contribution, 0)
+
+    def test_stance_cancel_zero_sp_is_blocked_and_does_not_refresh_the_team_buff(self):
+        task = FakeTask()
+        task.sp, task.now = 100, 2
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(['梨诺', '佩丽卡'], reset_runtime=True)
+        p = logic.release_burst
+        p.confirm('1', 'battle', 0)
+        before = tuple(p.bonuses)
+        self.assertIsNone(logic._release_battle_candidate('1', 100, 2, set()))
+        cancel = ReleaseBurstAction('1', 'battle', .55, 0, 0, 0)
+        recipient = ReleaseBurstAction('2', 'battle', .5, 1000, 100, 100)
+        decision = p.choose((cancel, recipient), 100, 2)
+        self.assertEqual(decision.action.slot, '2')
+        self.assertEqual(tuple(p.bonuses), before)
+        self.assertEqual(decision.sp_value.sp_cost, 100)
+
+    def test_same_actor_lock_prevents_crediting_an_unreachable_followup(self):
+        p = ReleaseBurstPlanner(['佩丽卡'])
+        ult = ReleaseBurstAction('1', 'ult', .5, 500, same_actor_duration=10)
+        battle = ReleaseBurstAction('1', 'battle', 1, 1000, 100, 100)
+        decision = p.choose((ult,battle), 100, 0, horizon=4)
+        self.assertEqual(decision.sequence, (('1', 'battle'), ('1', 'ult')))
+        self.assertAlmostEqual(decision.sp_value.followup_contribution, 0)
+
+    def test_true_free_battle_is_finite_and_keeps_time_and_stance_constraints(self):
+        p = ReleaseBurstPlanner(['庄方宜', '佩丽卡'])
+        p.confirm('1', 'ult', 0)
+        free = ReleaseBurstAction('1', 'battle', .55, 1, 100, 100)
+        paid = ReleaseBurstAction('2', 'battle', .5, 1000, 100, 100)
+        decision = p.choose((free, paid), 100, 3)
+        self.assertEqual(decision.action.slot, '1')
+        self.assertEqual(decision.sp_value.sp_cost, 0)
+        self.assertIsNone(decision.sp_value.damage_per_sp)
+        self.assertGreater(decision.sp_value.direct_damage, 21000)
+
+    def test_queue_predecessor_value_is_not_replayed_as_if_the_head_were_cleared(self):
+        p = ReleaseBurstPlanner(['佩丽卡', '余烬'])
+        actions = (ReleaseBurstAction('1', 'link', .5, 500, queue_position=1),
+                   ReleaseBurstAction('2', 'link', .5, 1000, queue_position=2))
+        decision = p.choose(actions, 0, 0)
+        self.assertEqual(decision.sequence, (('1', 'link'), ('2', 'link')))
+        self.assertEqual(decision.sp_value.direct_damage, 500)
+        self.assertEqual(decision.sp_value.followup_contribution, 1000)
+        self.assertIsNone(decision.sp_value.damage_per_sp)
+        self.assertEqual(decision.damage, 1500)
 
 
 class TestReleaseSnapshotExportBoundary(unittest.TestCase):

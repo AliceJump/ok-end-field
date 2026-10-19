@@ -1334,6 +1334,8 @@ class TimedCombatLogic:
                                   same_actor_duration=max(p.actionable for p in profiles))
 
     def _release_battle_candidate(self, token, sp, now, future_free):
+        if self.release_burst.action_blocked(token, 'battle', now):
+            return None  # A stance-end button is not another free buff opener.
         if not self._slot_available(token) or now < self.state_until.get(token, 0) or now < self.battle_retry_after.get(token, 0):
             return None
         if token == self.forced_main_control_slot and now < self.forced_main_control_until:
@@ -1459,6 +1461,8 @@ class TimedCombatLogic:
         if decision is not None:
             action = decision.action
             self.task.log_info(f"时间排轴增益爆发: {decision.sequence}，预测伤害 {decision.damage:.0f}，增益贡献 {decision.gain:.0f}")
+            if decision.sp_value is not None:
+                self.task.log_info('时间排轴单位技力收益: '+json.dumps(asdict(decision.sp_value), ensure_ascii=False))
             if action.kind == "ult":
                 profiles = next(profiles for _, token, profiles in ready_ults if token == action.slot)
                 if self._use_timed_ultimate(action.slot, profiles, burst_selected=True):
