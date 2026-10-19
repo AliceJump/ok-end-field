@@ -15,7 +15,7 @@ from dataclasses import dataclass, replace
 from src.data.battle_conditions import BattleConditionAssessment
 
 
-def validate_contract(spec):
+def validate_contract(spec, *, actor=None):
     if spec is None:
         return
     if (spec['type'] not in {'sword_salvo', 'spear_recall'}
@@ -23,6 +23,8 @@ def validate_contract(spec):
             or not spec['native_hashes'] or not spec['skills']
             or set(spec['condition_hashes']) != set(spec['skills'])):
         raise ValueError('Unreviewed mechanism quote contract')
+    if actor is not None and actor != {'sword_salvo':'zhuang_fangyi', 'spear_recall':'avywenna'}[spec['type']]:
+        raise ValueError('Mechanism contract belongs to another actor')
     if spec['type'] == 'sword_salvo':
         if (any(type(spec[k]) is not int for k in ('count_cap', 'free_requests', 'conduct_requests_cap'))
                 or set(spec['ordinary']) != {'atk_scale', 'atk_up_per_conduct', 'final_rate'}
@@ -30,14 +32,34 @@ def validate_contract(spec):
             raise ValueError('Invalid sword contract counts or parameters')
         values = [spec[k] for k in ('count_cap', 'duration', 'free_requests', 'conduct_requests_cap')]
         values += [v for p in ('ordinary', 'enhanced') for v in spec[p].values()]
+        values += list(spec['damage_duration'].values())
+        delays = spec['launch_after'].values()
     else:
         if (set(spec['productions']) != {'link', 'ult'}
                 or any(type(p['count']) is not int for p in spec['productions'].values())):
             raise ValueError('Invalid spear production contract')
         values = [*spec['ordinary'].values(), spec['minimum_nominal_recall']]
         values += [p[k] for p in spec['productions'].values() for k in ('count', 'duration')]
+        values += [spec['damage_duration']]
+        delays = [p['launch_after'] for p in spec['productions'].values()]
     if any(type(v) not in (int, float) or not math.isfinite(v) or v <= 0 for v in values):
         raise ValueError('Invalid mechanism quote parameters')
+    if any(type(v) not in (int,float) or not math.isfinite(v) or v<0 for v in delays):
+        raise ValueError('Invalid nominal request launch phase')
+    _validate_equipment(spec)
+
+
+def _validate_equipment(spec):
+    equipment = spec.get('equipment')
+    if equipment is not None:
+        next_battle, weapon = equipment['next_battle'], equipment['link_weapon']
+        if (spec['type']!='spear_recall' or not equipment['sources'] or not equipment['native_records']
+                or next_battle['consume']!='all_on_accepted_battle' or next_battle['duration'] is not None
+                or next_battle['scope']!='cast_quote_only; no_native_SkillAffix_lifecycle_claim'
+                or type(next_battle['max_stacks']) is not int or next_battle['max_stacks']<=0
+                or any(not math.isfinite(v) or v<=0 for v in
+                       (next_battle['amount_per_stack'], weapon['amount'], weapon['duration']))):
+            raise ValueError('Unreviewed mechanism equipment')
 
 
 def matches(spec, assessment):
@@ -59,15 +81,43 @@ class EntityRequest:
 
 
 @dataclass(frozen=True)
+class ModelWeaponWindow:
+    owner: str
+    amount: float
+    starts: float
+    expires: float
+
+
+@dataclass(frozen=True)
 class MechanismState:
     requests: tuple[EntityRequest, ...] = ()
     minimum_spent: frozenset[str] = frozenset()
     known_free_until: tuple[tuple[str, float], ...] = ()
+    bone_stacks: tuple[tuple[str, int], ...] = ()
+    combo_weapon: tuple[ModelWeaponWindow, ...] = ()
 
     def keep(self, owners):
         return replace(self, requests=tuple(r for r in self.requests if r.owner in owners),
                        minimum_spent=self.minimum_spent & set(owners),
-                       known_free_until=tuple((owner, end) for owner, end in self.known_free_until if owner in owners))
+                       known_free_until=tuple((owner, end) for owner, end in self.known_free_until if owner in owners),
+                       bone_stacks=tuple((owner, n) for owner, n in self.bone_stacks if owner in owners),
+                       combo_weapon=tuple(w for w in self.combo_weapon if w.owner in owners))
+
+    def weapon_bonus(self, owner, now, element, *, until=None):
+        if element not in {'寒冷', '灼热', '电磁', '自然'}:
+            return 0.0
+        end = now if until is None else until
+        return sum(w.amount for w in self.combo_weapon if w.owner == owner and w.starts <= now and end < w.expires)
+
+    def after_combo_equipment(self, owner, equipment, started):
+        if equipment is None:
+            return self
+        counts = dict(self.bone_stacks)
+        counts[owner] = min(counts.get(owner, 0)+1, equipment['next_battle']['max_stacks'])
+        weapon = equipment['link_weapon']
+        window = ModelWeaponWindow(owner, weapon['amount'], started, started+weapon['duration'])
+        return replace(self, bone_stacks=tuple(sorted(counts.items())),
+                       combo_weapon=tuple(w for w in self.combo_weapon if w.owner != owner)+(window,))
 
     def observe(self, owner, assessment, spec):
         if matches(spec, assessment) and assessment.satisfied is False:
@@ -78,12 +128,14 @@ class MechanismState:
         return tuple(r for r in self.requests if r.owner == owner and r.phase == 'requested'
                      and r.launch_at <= now < r.quote_until)
 
-    def request(self, owner, source, kind, count, launch_at, duration, *, cap=None, forecast=False):
-        kept = tuple(r for r in self.requests if launch_at < r.quote_until)
+    def request(self, owner, source, kind, count, launch_at, duration, *, cap=None, forecast=False, requested_at=None):
+        now = launch_at if requested_at is None else requested_at
+        kept = tuple(r for r in self.requests if now < r.quote_until)
         if any(r.source == source for r in kept):
             return self
         if cap is not None:
-            used = sum(r.nominal_count for r in kept if r.owner == owner and r.kind == kind and r.phase == 'requested')
+            used = sum(r.nominal_count for r in kept if r.owner == owner and r.kind == kind and r.phase == 'requested'
+                       and r.launch_at <= launch_at < r.quote_until)
             count = min(count, max(0, cap-used))
         additions = (EntityRequest(owner, source, kind, count, launch_at, launch_at+duration,
                                    forecast_only=forecast),) if count > 0 else ()
@@ -101,6 +153,10 @@ class MechanismQuote:
     sources: tuple[str, ...] = ()
     assumptions: tuple[str, ...] = ()
     minimum_recall: bool = False
+    tracked_bone_stacks: int = 0
+    extra_damage_bonus: float = 0.0
+    quote_started: float = 0.0
+    damage_until: float | None = None
 
 
 def _unit(row):
@@ -122,13 +178,21 @@ def branch_quote(row, owner, now, assessment, state, *, stance=None, forecast=Fa
     requests = state.available(owner, now)
     projected = forecast and any(r.forecast_only for r in requests)
     if spec['type'] == 'spear_recall':
-        return _spear_quote(row, owner, spec, positive, projected, requests, state)
+        result = _spear_quote(row, owner, spec, positive, projected, requests, state)
+        equipment = spec.get('equipment')
+        stacks = dict(state.bone_stacks).get(owner, 0)
+        return replace(result, tracked_bone_stacks=stacks,
+                       extra_damage_bonus=stacks*equipment['next_battle']['amount_per_stack'] if equipment else 0,
+                       quote_started=now,
+                       damage_until=now+spec['damage_duration'] if result.sources or result.minimum_recall else None)
     known_end = dict(state.known_free_until).get(owner)
     free_excluded = ((stance is not None and not stance.free_battle)
                      or (known_end is not None and now >= known_end))
     # A direct, explicitly observed Conduct tag does not need OR narrowing.
     observed_conduct = (positive and assessment.inference.confirms('tag', spec['conduct_tag']))
-    return _sword_quote(row, spec, positive, requests, stance, free_excluded or observed_conduct)
+    result = _sword_quote(row, spec, positive, requests, stance, free_excluded or observed_conduct)
+    duration = spec['damage_duration']['enhanced' if stance is not None else 'ordinary']
+    return replace(result, quote_started=now, damage_until=now+duration if result.sources else None)
 
 
 def _spear_quote(row, owner, spec, positive, projected, requests, state):
@@ -198,15 +262,18 @@ def after_action(state, row, owner, kind, started, *, quote=None, stance=None, f
             min(quote.conduct+1, spec['conduct_requests_cap']) if quote and quote.conduct else 0)
         phase = 'enhanced' if stance is not None else 'ordinary'
         return state.request(owner, source, 'sword', count, started+spec['launch_after'][phase],
-                             spec['duration'], cap=spec['count_cap'], forecast=forecast)
+                             spec['duration'], cap=spec['count_cap'], forecast=forecast, requested_at=started)
     production = spec.get('productions', {}).get(kind)
     if production is not None:
+        if kind == 'link':
+            state = state.after_combo_equipment(owner, spec.get('equipment'), started)
         return state.request(owner, source, production['kind'], production['count'],
-                             started+production['launch_after'], production['duration'], forecast=forecast)
+                             started+production['launch_after'], production['duration'], forecast=forecast, requested_at=started)
     if spec['type'] == 'spear_recall' and kind == 'battle':
         selected = quote.sources if quote else ()
         requests = tuple(replace(r, phase='returning' if r.source in selected else 'recall_unknown')
                          if r.owner == owner and r.phase == 'requested' and r.launch_at <= started < r.quote_until
                          else r for r in state.requests)
-        return replace(state, requests=requests, minimum_spent=state.minimum_spent | {owner})
+        return replace(state, requests=requests, minimum_spent=state.minimum_spent | {owner},
+                       bone_stacks=tuple((key,n) for key,n in state.bone_stacks if key != owner))
     return state

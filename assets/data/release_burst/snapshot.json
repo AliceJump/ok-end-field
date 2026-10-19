@@ -1158,6 +1158,7 @@
           }
         },
         "minimum_nominal_recall": 1,
+        "damage_duration": 10.2,
         "canonical_sha256": "21d30452b9eb8b6f6ec8d11245c72dd30ce8ecc64c0ea32009eeefaeec920f6b",
         "scope": "conditional_nominal_projection; not_observed_inventory_or_hit",
         "native_hashes": {
@@ -1169,6 +1170,29 @@
         },
         "condition_hashes": {
           "chr_0012_avywen_normal_skill": "256ab217501e0cd17498cc5ed7707e63ede6086105e7a97d7758759aa3e98976"
+        },
+        "equipment": {
+          "link_weapon": {
+            "amount": 0.336,
+            "duration": 15.0
+          },
+          "next_battle": {
+            "amount_per_stack": 0.30000001192092896,
+            "max_stacks": 2,
+            "consume": "all_on_accepted_battle",
+            "duration": null,
+            "scope": "cast_quote_only; no_native_SkillAffix_lifecycle_claim"
+          },
+          "sources": {
+            "weapons.json": "ad2f99d179c8ae460361ee8a7c3af2cf64b801c28f2d93673acff97313badbc1",
+            "equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
+            "next_skill_sets.json": "3d6dbaa2c49b3713dd860c644d583286dd5f67c7da247f0f57526d77f7fc3465"
+          },
+          "native_records": {
+            "buff_equipsuit_attrisuit_01": "9ce0657521fd6d513fc7127dfd55e1b888a4a9fbed3cc311b55b6466db6f0f36",
+            "buff_equipsuit_attrisuitup_01": "4a80db11850f3b09738e7e2da3237bd25a31b0a23baf0f519f53c4efb5fadde2",
+            "buff_equipsuit_attrisuitup_02": "5a6649dbb4d898e98090fcefea0d2095405dc652e7402f516283533275a80517"
+          }
         }
       }
     },
@@ -5063,6 +5087,10 @@
         "launch_after": {
           "ordinary": 0.2,
           "enhanced": 0.16666666666666666
+        },
+        "damage_duration": {
+          "ordinary": 9.666666666666666,
+          "enhanced": 7.0
         },
         "conduct_tag": "bf9d6e57",
         "scope": "conditional_nominal_projection; not_observed_inventory_or_hit",

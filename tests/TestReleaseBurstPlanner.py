@@ -195,7 +195,10 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         base = planner.price("1", "battle", 0)
         planner.confirm("1", "link", 0)
         planner.confirm("1", "ult", 1)
-        self.assertEqual(planner.price("1", "battle", 2), base)
+        self.assertGreater(planner.price("1", "battle", 2), base)
+        self.assertIsNone(planner.mechanism_quote('1', 2).normal_spears)
+        self.assertIsNone(planner.mechanism_quote('1', 2).strong_spears)
+        self.assertEqual(planner.mechanism_quote('1', 2).tracked_bone_stacks, 1)
         self.assertTrue(all(c["actual_count"] is None for c in planner.quote("1", "battle")["deferred_components"]))
 
     def test_attack_window_uses_white_attack_and_source_action_cleanup(self):

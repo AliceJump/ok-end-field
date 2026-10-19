@@ -80,7 +80,7 @@ def _validate_actor(row):
         if not math.isfinite(row["panel"][key]):
             raise ValueError("Invalid fixed attack basis")
     _validate_stance(row)
-    validate_contract(row.get('mechanism'))
+    validate_contract(row.get('mechanism'), actor=row['key'])
     quotes = list(row["quotes"].values())
     if row.get("stance") is not None:
         quotes.extend(row["stance"]["quotes"].values())
@@ -318,6 +318,14 @@ class ReleaseBurstPlanner:
         row = self.rows.get(actor)
         return row["quotes"].get(kind) if row is not None else None
 
+    def preview_release_price(self, actor, kind, started, duration, *, mechanism=None):
+        bonuses = list(self.bonuses)
+        self._release(bonuses, actor, kind, started)
+        row = self.rows.get(actor)
+        model = (after_action(self.mechanism_state, row, actor, kind, started, quote=mechanism,
+                               stance=self.stance_at(actor, started), forecast=True) if row else self.mechanism_state)
+        return self.price(actor, kind, started+duration, bonuses=bonuses, mechanism=mechanism, mechanism_state=model)
+
     def cast_only_quote(self, actor, kind):
         quote = self.quote(actor, kind)
         return quote is not None and quote.get("pricing_scope", "").startswith("unconditional_cast_only;")
@@ -342,7 +350,7 @@ class ReleaseBurstPlanner:
                   for c in components]
         return sum(values) if all(v is not None for v in values) else None
 
-    def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None, mechanism=None):
+    def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None, mechanism=None, mechanism_state=None):
         quote = self.quote(actor, kind)
         if quote is None:
             return None
@@ -357,17 +365,30 @@ class ReleaseBurstPlanner:
             value = mechanism.value
         elif quote.get("pricing_scope", "").startswith(("support_opener_only", "unconditional_cast_only;")):
             value = quote["crit_expect"]
+        model = self.mechanism_state if mechanism_state is None else mechanism_state
+        bonuses, extra = self._mechanism_windows(actor, now, quote, model, mechanism, bonuses)
         return self._price_value(actor, now, quote["quote_basis"]["element"],
                                  set(quote["quote_basis"]["damage_tags"]), quote["bonus_pct"],
-                                 quote["crit_expect"] if value is None else value, bonuses)
+                                 quote["crit_expect"] if value is None else value, bonuses, extra)
 
-    def _price_value(self, actor, now, element, tags, bonus_pct, value, bonuses):
+    def _mechanism_windows(self, actor, now, quote, model, mechanism, bonuses):
+        if mechanism is not None and mechanism.damage_until is not None:
+            current = self.bonuses if bonuses is None else bonuses
+            bonuses = [b for b in current if mechanism.quote_started >= b.starts_at
+                       and mechanism.damage_until < b.expires_at]
+            extra = model.weapon_bonus(actor, mechanism.quote_started, quote['quote_basis']['element'],
+                                        until=mechanism.damage_until)
+        else:
+            extra = model.weapon_bonus(actor, now, quote['quote_basis']['element'])
+        return bonuses, extra+(mechanism.extra_damage_bonus if mechanism is not None else 0)
+
+    def _price_value(self, actor, now, element, tags, bonus_pct, value, bonuses, extra_damage_bonus=0):
         panel = self.rows[actor]["panel"]
         # The exported quote already includes fixed weapon/gear/type bonuses.
         # Adding panel.damage_bonus again would dilute each dynamic increment.
         base_bonus = bonus_pct / 100
         base_amp = panel["amplification"].get(element, 0)
-        additions = {"attack": 0.0, "damage_bonus": 0.0, "amplification": 0.0}
+        additions = {"attack": 0.0, "damage_bonus": extra_damage_bonus, "amplification": 0.0}
         for bonus in self.bonuses if bonuses is None else bonuses:
             spec = bonus.spec
             if (bonus.recipient == actor and bonus.starts_at <= now < bonus.expires_at
@@ -420,13 +441,23 @@ class ReleaseBurstPlanner:
                                           action.mechanism_assessment if enhanced else None,
                                           state=mechanism_state, stances=stances, forecast=True)
                      if action.kind == 'battle' else None)
+        row = self.rows.get(action.slot)
+        next_mechanism = (after_action(mechanism_state, row, action.slot, action.kind, started,
+                                       quote=mechanism, stance=stance, forecast=True)
+                          if row is not None else mechanism_state)
+        pricing_mechanism = next_mechanism
+        if action.kind == 'link':
+            pricing_mechanism = replace(next_mechanism, combo_weapon=tuple(
+                w for w in next_mechanism.combo_weapon if w.starts <= started
+                and started+(action.damage_duration or action.duration) < w.expires))
         value = action.value + (action.observed_bonus if enhanced else 0)
         if action.base_components:
             components = action.base_components + (action.observed_components if enhanced else ())
             priced = self.price_components(action.slot, end, components, bonuses=pricing_bonuses)
         else:
             priced = self.price(action.slot, action.kind, end, value=value,
-                                bonuses=pricing_bonuses, stances=stances, mechanism=mechanism)
+                                bonuses=pricing_bonuses, stances=stances, mechanism=mechanism,
+                                mechanism_state=pricing_mechanism)
         if priced is None:
             return None
         if releases:
@@ -434,13 +465,9 @@ class ReleaseBurstPlanner:
         locks = dict(actor_locks)
         locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
         next_conditions = conditions.after(action.slot, action.kind, self.condition_transitions.get((action.slot, action.kind)))
-        row = self.rows.get(action.slot)
-        if row is not None:
-            mechanism_state = after_action(mechanism_state, row, action.slot, action.kind, started,
-                                            quote=mechanism, stance=stance, forecast=True)
         return (damage + priced, end, min(300.0, budget - action.sp_cost),
                 (*indices, index), forecast, locks, next_stances, next_conditions,
-                queue_delay + (started - now if action.kind == "link" else 0), mechanism_state)
+                queue_delay + (started - now if action.kind == "link" else 0), next_mechanism)
 
     @staticmethod
     def _select_beam(expanded, quota):

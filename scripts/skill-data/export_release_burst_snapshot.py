@@ -107,6 +107,7 @@ def _evidence_hashes(source, rows):
     paths = {"assets/data/fixed_damage_baseline.json", "src/data/release_burst_planner.py",
              "src/data/damage_release_rules.py", "src/data/native_attribute_modifiers.py",
              "src/data/reviewed_weapon_release.py", "assets/data/skill_timings/20261002/index.json",
+             "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
              "assets/data/skill_timings/20261002/records.json.gz",
              "assets/data/skill_timings/20261002/ranked_blackboards.json.gz"}
     for row in rows:
@@ -172,6 +173,8 @@ def export(source, revision, destination):
         (ROOT / "scripts/skill-data/reviewed_avywenna_recall.py").read_bytes()).hexdigest()
     manifest["exporter_hashes"]["reviewed_mechanism_quotes.py"] = hashlib.sha256(
         (ROOT / "scripts/skill-data/reviewed_mechanism_quotes.py").read_bytes()).hexdigest()
+    manifest["exporter_hashes"]["reviewed_mechanism_equipment.py"] = hashlib.sha256(
+        (ROOT / "scripts/skill-data/reviewed_mechanism_equipment.py").read_bytes()).hexdigest()
     (destination / "index.json").write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf8"))
     print(f"Exported 32 research panels from {head}, one reviewed master Si projection, "
           f"and {sum(actual.values())} release rules")

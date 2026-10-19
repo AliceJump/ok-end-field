@@ -255,3 +255,93 @@ class TestMechanismPrediction(unittest.TestCase):
                                     mechanism_assessment=obs)
         self.assertIsNone(p.choose((action,), 99, 0))
         self.assertEqual(p.mechanism_state, MechanismState())
+
+    def test_combo_weapon_and_bone_are_independent_of_ring_and_not_final_multipliers(self):
+        p = ReleaseBurstPlanner(['艾维文娜'], store=self.store)
+        p.confirm('1', 'link', 0)
+        # No ring supplies no spear hits, but confirmed release equipment is valid.
+        q = p.mechanism_quote('1', 1)
+        self.assertIsNone(q.normal_spears)
+        self.assertEqual(q.tracked_bone_stacks, 1)
+        self.assertAlmostEqual(p.price('1', 'battle', 1), 24204.65174741518)
+        self.assertAlmostEqual(p.preview_release_price('1', 'battle', 1, .7, mechanism=q), 26612.932161517212)
+        self.assertEqual(p.mechanism_state.bone_stacks, (('1', 1),))
+
+    def test_bone_survives_weapon_expiry_and_consumes_all_on_accepted_battle(self):
+        p = ReleaseBurstPlanner(['艾维文娜'], store=self.store)
+        for at in (0, 1, 2):
+            p.confirm('1', 'link', at)
+        self.assertEqual(p.mechanism_state.bone_stacks, (('1', 2),))
+        self.assertEqual(len(p.mechanism_state.combo_weapon), 1)
+        self.assertEqual(p.mechanism_quote('1', 40).tracked_bone_stacks, 2)
+        self.assertEqual(p.mechanism_state.weapon_bonus('1', 17, '电磁'), 0)
+        q = p.mechanism_quote('1', 40)
+        p.confirm('1', 'battle', 40, mechanism=q)
+        self.assertEqual(p.mechanism_state.bone_stacks, ())
+        self.assertEqual(p.mechanism_quote('1', 41).tracked_bone_stacks, 0)
+
+    def test_two_cast_windows_and_two_bone_stacks_match_the_detailed_recall_quote(self):
+        p = ReleaseBurstPlanner(['艾维文娜'], store=self.store)
+        p.confirm('1', 'link', 0)
+        p.confirm('1', 'link', 2)
+        p.confirm('1', 'ult', 3)
+        q = p.mechanism_quote('1', 5, self.observed('艾维文娜', now=5))
+        self.assertEqual((q.normal_spears, q.strong_spears, q.tracked_bone_stacks), (3, 1, 2))
+        value = p.preview_release_price('1', 'battle', 5, .7, mechanism=q)
+        self.assertAlmostEqual(value, 208245.2914289281, delta=1)
+        p.confirm('1', 'battle', 5, mechanism=q)
+        self.assertAlmostEqual(p.price('1', 'battle', 5.7, mechanism=q), value)
+        self.assertEqual(p.mechanism_state.bone_stacks, ())
+
+    def test_failed_battle_keeps_pending_bone_and_source_requests(self):
+        task = FakeTask()
+        task.sp = 100
+        logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
+        logic._configure_team(['艾维文娜'], reset_runtime=True)
+        logic.release_burst.confirm('1', 'link', 0)
+        task.now = 2
+        task.battle_pulses = {'1'}
+        before = logic.release_burst.mechanism_state
+        self.assertTrue(logic._try_battle_token('1', 100))
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+        logic._probe_action_feedback()
+        self.assertEqual(logic.release_burst.mechanism_state, before)
+
+    def test_combo_preview_prices_current_combo_window_and_consumes_next_battle_only_in_branch(self):
+        p = ReleaseBurstPlanner(['艾维文娜'], store=self.store)
+        link = ReleaseBurstAction('1', 'link', 1, p.quote('1', 'link')['crit_expect'], queue_position=1)
+        battle = ReleaseBurstAction('1', 'battle', .7, p.quote('1', 'battle')['crit_expect'], 100, 100)
+        decision = p.choose((battle, link), 100, 0)
+        self.assertEqual(decision.sequence, (('1', 'link'), ('1', 'battle')))
+        self.assertEqual(p.mechanism_state, MechanismState())
+        p.confirm('1', 'link', 0)
+        q = p.mechanism_quote('1', 1, self.observed('艾维文娜', now=1))
+        expected = p.price('1', 'link', 1)+p.preview_release_price('1', 'battle', 1, .7, mechanism=q)
+        self.assertAlmostEqual(decision.damage, expected)
+
+    def test_recall_does_not_credit_a_combo_weapon_window_that_expires_during_the_quote(self):
+        p = ReleaseBurstPlanner(['艾维文娜'], store=self.store)
+        p.confirm('1', 'link', 0)
+        obs = self.observed('艾维文娜')
+        early = p.mechanism_quote('1', 4, obs)
+        later = p.mechanism_quote('1', 10, obs)
+        with_both = p.preview_release_price('1', 'battle', 4, .7, mechanism=early)
+        with_battle_only = p.preview_release_price('1', 'battle', 10, .7, mechanism=later)
+        self.assertGreater(with_both, 116000)
+        self.assertLess(with_battle_only, 106000)
+        self.assertGreater(with_battle_only, 105000)
+        self.assertLess(with_battle_only, with_both)
+        self.assertEqual(p.mechanism_state.bone_stacks, (('1', 1),))
+
+    def test_actor_swapped_mechanism_contract_is_rejected(self):
+        from src.data.mechanism_prediction import validate_contract
+
+        p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
+        with self.assertRaisesRegex(ValueError, 'another actor'):
+            validate_contract(p.rows['1']['mechanism'], actor='avywenna')
+
+    def test_future_launch_does_not_remove_a_previous_request_before_its_own_deadline(self):
+        state = MechanismState().request('1', 'old', 'sword', 1, 0, .5)
+        state = state.request('1', 'future', 'sword', 1, .6, 36, cap=9, requested_at=.2)
+        self.assertEqual([r.source for r in state.available('1', .3)], ['old'])
+        self.assertEqual([r.source for r in state.available('1', .7)], ['future'])

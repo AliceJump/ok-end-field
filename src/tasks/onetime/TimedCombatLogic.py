@@ -1057,7 +1057,10 @@ class TimedCombatLogic:
                                    if self.release_burst is not None else None)
         if self._attempt_mechanism is not None:
             self.task.log_info('时间排轴机制报价: '+json.dumps(
-                {'slot': token, 'kind': 'battle', 'started': started, **asdict(self._attempt_mechanism)}, ensure_ascii=False))
+                {'slot': token, 'kind': 'battle', 'started': started,
+                 'quoted_damage': self.release_burst.preview_release_price(
+                     token, 'battle', started, max(p.handoff for p in profiles), mechanism=self._attempt_mechanism),
+                 **asdict(self._attempt_mechanism)}, ensure_ascii=False))
         self.task.send_key(token)
         self._note_action_attempt("battle", token)
         self._begin(profiles, started, slot=token, kind="battle")

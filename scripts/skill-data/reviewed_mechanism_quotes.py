@@ -3,6 +3,8 @@
 import hashlib
 import json
 
+from reviewed_mechanism_equipment import spear_equipment
+
 VALUE = '$value'
 HASHES = {
     'chr_0030_zhuangfy_normal_skill': '06a61a8b2630fbe792294c3a0dc0a9a24080d8c8be45cb5895d2f16f0f05a9fd',
@@ -60,6 +62,7 @@ def _sword_contract(store, records):
             'conduct_requests_cap': int(ordinary['max_conduct_sword']),
             'launch_after': {'ordinary': _launch_frame(records[base]['data'], 59)/30,
                              'enhanced': _launch_frame(records[enhanced]['data'], 59)/30},
+            'damage_duration': {'ordinary': store.profile(base).duration, 'enhanced': store.profile(enhanced).duration},
             'conduct_tag': 'bf9d6e57'}
 
 
@@ -97,6 +100,7 @@ def _spear_contract(store, records, source):
                         'duration': _params(store, ult)['lance_duration_ult'],
                         'launch_after': _launch_frame(records[ult]['data'], 23)/30}},
             'minimum_nominal_recall': 1,
+            'damage_duration': store.profile(base).duration,
             'canonical_sha256': hashlib.sha256((source/'assets/data/character_skills/avywenna.json').read_bytes()).hexdigest()}
 
 
@@ -119,4 +123,6 @@ def mechanism_contract(row, store, source):
                   condition_hashes={key: hashlib.sha256(json.dumps(records[key]['data']['skillHighlightCondition'],
                                     sort_keys=True,separators=(',',':')).encode()).hexdigest()
                                     for key in result['skills']})
+    if row['key']=='avywenna':
+        result['equipment'] = spear_equipment(row, source)
     return result
