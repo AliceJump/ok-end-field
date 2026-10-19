@@ -4,7 +4,7 @@ Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-
 
 ## Configuration requirements
 
-> Make sure the resolution is at least **1600x900 (900P)**; below 900P is not guaranteed to work
+> Make sure the game uses a **16:9** aspect ratio and a resolution of at least **1600x900 (900P)**; below 900P is not guaranteed to work
 
 ## Combat logic
 
