@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
@@ -19,6 +19,7 @@ from src.data.battle_conditions import (
     ConditionTransition,
     ForecastConditions,
 )
+from src.data.burst_decision_table import BurstDecisionTable
 from src.data.highlight_damage import HighlightDamageBinding, HighlightDamageComponent
 from src.data.mechanism_prediction import (
     MechanismQuote,
@@ -193,6 +194,8 @@ class ReleaseBurstPlanner:
                                  if (binding := HighlightDamageBinding.for_actor(row, store)) is not None}
         self.condition_transitions = {(actor, kind): transition for actor, row in self.rows.items()
                                       for kind, transition in ConditionTransition.for_actor(row, store).items()}
+        self.table_profile_key = BurstDecisionTable.profile_key(self.rows)
+        self.decision_table = BurstDecisionTable.load()
 
     @staticmethod
     def _basic_normal_profiles(store, character):
@@ -551,14 +554,19 @@ class ReleaseBurstPlanner:
                 per_start[first] = per_start.get(first, 0) + 1
         return beam
 
-    def _search(self, actions, sp, now, *, releases, bonuses, horizon, width, conditions, by_start=False,
-                repeat_normals=False):
+    @staticmethod
+    def _predecessors(actions, repeat_normals):
         predecessors = {i: tuple(j for j, a in enumerate(actions) if a.kind == "link"
                                  and a.queue_position < action.queue_position)
                         if action.kind == "link" else () for i, action in enumerate(actions)}
         predecessors["normal"] = (next((i for i, a in enumerate(actions) if a.kind == "normal"), -1)
                                   if any(a.kind == "link" for a in actions) else -1)
         predecessors['repeat_normals'] = repeat_normals
+        return predecessors
+
+    def _search(self, actions, sp, now, *, releases, bonuses, horizon, width, conditions, by_start=False,
+                repeat_normals=False):
+        predecessors = self._predecessors(actions, repeat_normals)
         beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions, 0.0,
                  self.mechanism_state)]
         best = beam[0]
@@ -624,6 +632,46 @@ class ReleaseBurstPlanner:
                             (first_value+contribution)/first_cost if first_cost>0 else None)
 
     def choose(self, actions, sp, now, *, horizon=12.0, width=16, conditions=ForecastConditions(), repeat_normals=False):
+        actions = tuple(actions)
+        key = self.decision_table.key(self, actions, sp, now, horizon, width, conditions, repeat_normals)
+        stored = self.decision_table.get(key)
+        if stored is not None:
+            cached = self._table_decision(stored, actions, sp, now, horizon, conditions, repeat_normals)
+            if cached is not None:
+                self.decision_table.hits += 1
+                return cached
+            self.decision_table.misses += 1
+        decision = self._choose_uncached(actions, sp, now, horizon=horizon, width=width,
+                                          conditions=conditions, repeat_normals=repeat_normals)
+        if decision is not None and decision.sp_value is not None:
+            key = self.decision_table.key(self, actions, sp, now, horizon, width, conditions, repeat_normals)
+            self.decision_table.put(key, {'sequence': decision.sequence, 'damage': decision.damage,
+                                         'gain': decision.gain, 'sp_value': asdict(decision.sp_value)})
+        return decision
+
+    def _table_decision(self, stored, actions, sp, now, horizon, conditions, repeat_normals):
+        if not self.decision_table.valid(stored):
+            return None
+        sequence = tuple(tuple(pair) for pair in stored['sequence'])
+        positions = {(a.slot, a.kind): index for index, a in enumerate(actions)}
+        if len(positions) != len(actions) or any(pair not in positions for pair in sequence):
+            return None
+        node = (0., now, min(sp, 300), (), list(self.bonuses), {}, dict(self.stances), conditions, 0., self.mechanism_state)
+        predecessors = self._predecessors(actions, repeat_normals)
+        for pair in sequence:
+            index = positions[pair]
+            node = self._forecast_step(node, actions[index], index, now, releases=True,
+                                       horizon=horizon, predecessors=predecessors)
+            if node is None:
+                return None
+        if not math.isclose(node[0], stored['damage'], rel_tol=1e-12, abs_tol=1e-6):
+            return None  # Reject stale/corrupt numerical results without another full-search requirement.
+        first = actions[positions[sequence[0]]]
+        mechanism = self.mechanism_quote(first.slot, now, first.mechanism_assessment) if first.kind == 'battle' else None
+        return ReleaseBurstDecision(first, sequence, node[0], stored['gain'], mechanism, BurstSpValue(**stored['sp_value']))
+
+    def _choose_uncached(self, actions, sp, now, *, horizon=12.0, width=16,
+                          conditions=ForecastConditions(), repeat_normals=False):
         actions = tuple(actions)
         positions = sorted(a.queue_position for a in actions if a.kind == "link")
         if (not actions or len(actions) > 13 or sum(a.kind == "normal" for a in actions) > 1

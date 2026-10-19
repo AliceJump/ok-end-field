@@ -6,9 +6,11 @@ import json
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
+from src.data.burst_decision_table import BurstDecisionTable, budget_cell
 from src.data.combat_observation import ActionBlockReason
 from src.data.release_burst_planner import SNAPSHOT, ReleaseBurstAction, ReleaseBurstPlanner, read_snapshot
 from src.data.skill_timing import load_skill_timings
@@ -1133,6 +1135,149 @@ class TestUltimateOutputWindow(unittest.TestCase):
         enhanced = p._stance_action(normal, 3, p.stances)
         restored = p._stance_action(enhanced, 28, p.stances)
         self.assertAlmostEqual(restored.duration, p.normal_durations['1'])
+
+
+class TestBurstDecisionTable(unittest.TestCase):
+    def example(self):
+        p = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
+        p.decision_table = BurstDecisionTable()
+        actions = (ReleaseBurstAction('1', 'battle', .55, 0, 25, 25),
+                   ReleaseBurstAction('2', 'battle', .5, 1000, 100, 100))
+        return p, actions
+
+    def test_identical_inputs_hit_and_replay_without_beam_search(self):
+        p, actions = self.example()
+        first = p.choose(actions, 125, 0)
+        with patch.object(p, '_search', side_effect=AssertionError('Unexpected full search')):
+            cached = p.choose(actions, 125, 0)
+        self.assertEqual(cached, first)
+        self.assertEqual(p.decision_table.hits, 1)
+        self.assertFalse(p.bonuses)
+
+    def test_sp_feasibility_cell_reuses_only_the_same_affordable_routes(self):
+        p, actions = self.example()
+        first = p.choose(actions, 125, 0)
+        self.assertEqual(budget_cell(actions, 125), budget_cell(actions, 149.9))
+        self.assertNotEqual(budget_cell(actions, 124.9), budget_cell(actions, 125))
+        fractional = (replace(actions[0], sp_cost=25.5), actions[1])
+        self.assertNotEqual(budget_cell(fractional, 126), budget_cell(fractional, 127))
+        with patch.object(p, '_search', side_effect=AssertionError('Unexpected full search')):
+            self.assertEqual(p.choose(actions, 149.9, 0).sequence, first.sequence)
+        with patch.object(p, '_search', wraps=p._search) as search:
+            below = p.choose(actions, 124.9, 0)
+        self.assertTrue(search.called)
+        self.assertEqual(below.sequence, (('2', 'battle'),))
+
+    def test_translated_empty_scene_with_fresh_observations_can_hit(self):
+        task, logic = TestUltimateOutputWindow().make_logic()
+        p = logic.release_burst
+        p.decision_table = BurstDecisionTable()
+        first = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 0)
+        task.now = 100
+        logic._observe_battle_highlights()
+        with patch.object(p, '_search', side_effect=AssertionError('Unexpected full search')):
+            second = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 100)
+        self.assertEqual(second.sequence, first.sequence)
+        self.assertAlmostEqual(second.damage, first.damage)
+
+    def test_ring_changes_do_not_hit_an_old_scene(self):
+        task, logic = TestUltimateOutputWindow().make_logic(ready=False)
+        p = logic.release_burst
+        p.decision_table = BurstDecisionTable()
+        first = logic._release_burst_decision([], 225, 0)
+        task.battle_pulses.clear()
+        logic._observe_battle_highlights()
+        with patch.object(p, '_search', wraps=p._search) as search:
+            second = logic._release_burst_decision([], 225, 0)
+        self.assertTrue(search.called)
+        self.assertNotEqual(first.damage, second.damage)
+
+    def test_active_window_aging_and_rule_changes_do_not_hit(self):
+        p, actions = self.example()
+        p.confirm('1', 'battle', 0)
+        p.choose(actions, 100, 2)
+        with patch.object(p, '_search', wraps=p._search) as search:
+            p.choose(actions, 100, 2.1)
+        self.assertTrue(search.called)
+        p.rules['2', 'battle'] = p.rules['1', 'battle']
+        with patch.object(p, '_search', wraps=p._search) as search:
+            p.choose(actions, 100, 2.1)
+        self.assertTrue(search.called)
+
+    def test_offline_table_load_has_no_runtime_file_read_and_validates_its_path(self):
+        p, actions = self.example()
+        first = p.choose(actions, 125, 0)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'policy.json'
+            p.decision_table.save(path)
+            table = BurstDecisionTable.load(path)
+            self.assertEqual(len(table.entries), 1)
+            p.decision_table = table
+            with patch.object(Path, 'read_bytes', side_effect=AssertionError('No per-frame disk I/O')):
+                with patch.object(p, '_search', side_effect=AssertionError('No search on a hit')):
+                    self.assertEqual(p.choose(actions, 125, 0), first)
+            data = json.loads(path.read_bytes())
+            data['algorithm_sha256'] = 'changed'
+            path.write_text(json.dumps(data), encoding='utf8')
+            self.assertFalse(BurstDecisionTable.load(path).entries)
+
+    def test_corrupt_checksum_and_impossible_cached_sequence_fall_back(self):
+        p, actions = self.example()
+        first = p.choose(actions, 125, 0)
+        key = next(iter(p.decision_table.entries))
+        original = dict(p.decision_table.entries[key])
+        p.decision_table.entries[key] = {**original, 'sequence': [('4', 'battle')]}
+        with patch.object(p, '_search', wraps=p._search) as search:
+            result = p.choose(actions, 125, 0)
+        self.assertTrue(search.called)
+        self.assertEqual(result.sequence, first.sequence)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'policy.json'
+            p.decision_table.save(path)
+            data = json.loads(path.read_bytes())
+            data['entries'][key]['damage'] += 1
+            path.write_text(json.dumps(data), encoding='utf8')
+            self.assertFalse(BurstDecisionTable.load(path).entries)
+
+    def test_numeric_corruption_cannot_override_the_replayed_route(self):
+        p, actions = self.example()
+        first = p.choose(actions, 125, 0)
+        key = next(iter(p.decision_table.entries))
+        p.decision_table.entries[key]['damage'] += 1000000
+        with patch.object(p, '_search', wraps=p._search) as search:
+            second = p.choose(actions, 125, 0)
+        self.assertTrue(search.called)
+        self.assertEqual(second.damage, first.damage)
+
+    def test_local_table_is_bounded_and_does_not_publish_scene_state(self):
+        p, actions = self.example()
+        for i in range(300):
+            p.decision_table.put(f'{i:064x}', {'not': 'an executable policy'})
+        self.assertEqual(len(p.decision_table.entries), 256)
+        before = p.mechanism_state
+        p.choose(actions, 125, 0)
+        p.choose(actions, 125, 0)
+        self.assertEqual(p.mechanism_state, before)
+        self.assertFalse(p.bonuses)
+
+    def test_offline_opening_generator_produces_a_table_for_actual_runtime_inputs(self):
+        script = Path(__file__).resolve().parents[1]/'scripts/skill-data/prepare_burst_decision_table.py'
+        spec = importlib.util.spec_from_file_location('prepare_burst_table_test', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        scenario = {'team': ['庄方宜', '佩丽卡', '艾维文娜', '梨诺'], 'sp': 225,
+                    'ultimate_slots': ['1', '2', '3', '4'], 'rings': {'1': True, '3': True}, 'main_slot': '1'}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'table.json'
+            result = module.prepare([scenario], path)
+            self.assertEqual(result['stored_results'], 1)
+            _, logic = TestUltimateOutputWindow().make_logic()
+            p = logic.release_burst
+            p.decision_table = BurstDecisionTable.load(path)
+            with patch.object(p, '_search', side_effect=AssertionError('Precomputed scene must hit')):
+                decision = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 0)
+            self.assertEqual((decision.action.slot, decision.action.kind), ('1', 'ult'))
+            self.assertEqual(p.decision_table.hits, 1)
 
 
 class TestBurstSpValue(unittest.TestCase):
