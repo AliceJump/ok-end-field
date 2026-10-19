@@ -1,7 +1,7 @@
-"""Start Endfield with the real, signed official launcher as its parent.
+"""Start Endfield with a signed, temporary, suspended official Games.exe parent.
 
-The CN 1.6.3 SDK checks the immediate parent, so adding command line arguments
-to a shell launch is insufficient. No game files or SDK checks are modified.
+This is an alternative to the live-launcher startup/cleanup proposal in PR #558.
+The temporary parent is terminated only after matching SDK success log entries.
 """
 
 from __future__ import annotations
@@ -17,6 +17,13 @@ from pathlib import Path
 import psutil
 from ok.util.file import ensure_dir_for_file, read_json_file, write_json_file
 
+from src.core.launcher_cleanup import LauncherCleanup
+from src.core.temporary_parent_recovery import (
+    forget_owned_parent,
+    note_game_started,
+    recover_owned_parents,
+    register_owned_parent,
+)
 from src.core.paths import config_path
 
 OFFICIAL_SIGNERS = {
@@ -203,6 +210,9 @@ def _kernel32():
     signatures = {
         "OpenProcess": ([wintypes.DWORD, wintypes.BOOL, wintypes.DWORD], wintypes.HANDLE),
         "CloseHandle": ([wintypes.HANDLE], wintypes.BOOL),
+        "GetProcessId": ([wintypes.HANDLE], wintypes.DWORD),
+        "GetExitCodeProcess": ([wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)], wintypes.BOOL),
+        "TerminateProcess": ([wintypes.HANDLE, wintypes.UINT], wintypes.BOOL),
         "QueryFullProcessImageNameW": (
             [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD)],
             wintypes.BOOL,
@@ -302,6 +312,68 @@ def prepare_launcher(kernel, logger, game_path: str):
     raise TimeoutError("Official Games.exe did not become ready within 30 seconds")
 
 
+
+def find_official_games_exe(game_path: str, logger) -> Path:
+    """Choose the newest signed Games.exe within the verified official launcher."""
+    launcher = Path(installed_launcher(game_path, logger))
+    candidates = []
+    for folder in launcher.parent.iterdir():
+        if not folder.is_dir():
+            continue
+        try:
+            version = tuple(int(part) for part in folder.name.split("."))
+        except ValueError:
+            continue
+        exe = folder / "Games.exe"
+        if exe.is_file():
+            candidates.append((version, exe))
+    if not candidates:
+        raise RuntimeError(f"No versioned official Games.exe found under {launcher.parent}")
+    failures = []
+    for _, exe in sorted(candidates, reverse=True):
+        try:
+            verify_launcher(str(exe))
+            return exe
+        except Exception as error:
+            failures.append(error)
+            logger.warning(f"Cannot use official Games.exe {exe}: {error}")
+    raise RuntimeError("Cannot find a signed official Games.exe") from failures[-1]
+
+
+def create_temporary_parent(kernel, game_path: str, logger):
+    """Create our own suspended Games.exe, without touching running launcher processes."""
+    executable = find_official_games_exe(game_path, logger)
+    startup = _StartupInfoEx()
+    startup.StartupInfo.cb = ctypes.sizeof(_StartupInfo)
+    process = _ProcessInfo()
+    command = ctypes.create_unicode_buffer(subprocess.list2cmdline([str(executable)]))
+    _check(
+        kernel.CreateProcessW(
+            str(executable),
+            command,
+            None,
+            None,
+            False,
+            0x00000004 | subprocess.CREATE_NO_WINDOW,  # CREATE_SUSPENDED
+            None,
+            str(executable.parent),
+            ctypes.byref(startup),
+            ctypes.byref(process),
+        )
+    )
+    kernel.CloseHandle(process.hThread)
+    try:
+        # A crash after this point must leave sufficient identity evidence for
+        # the next OK-EF launch to safely recognize our suspended process.
+        register_owned_parent(process.dwProcessId)
+    except Exception:
+        kernel.TerminateProcess(process.hProcess, 0)
+        kernel.CloseHandle(process.hProcess)
+        raise
+    logger.info(f"Created owned suspended official Games.exe parent PID {process.dwProcessId}")
+    return process.hProcess
+
+
 def create_process(kernel, game_path: str, arguments: str, parent) -> int:
     """Create without a shell or inherited output pipes; release every native handle."""
     size = ctypes.c_size_t()
@@ -350,18 +422,85 @@ def create_process(kernel, game_path: str, arguments: str, parent) -> int:
         kernel.DeleteProcThreadAttributeList(attributes)
 
 
+def _start_fallback_cleanup(cleanup, pid: int, kernel, parent, logger) -> bool:
+    """Return whether a fallback watcher took ownership of the parent handle."""
+    try:
+        cleanup.start_exit_watch(pid)
+        return True  # The fallback watcher took ownership (or completed inline).
+    except Exception as fallback_error:
+        # Only a verified child exit permits cleanup. If no worker can be
+        # started, retain ownership and wait here for the game to exit.
+        logger.warning(f"Cannot start fallback cleanup; waiting for game exit in caller: {fallback_error}")
+        try:
+            while psutil.pid_exists(pid):
+                time.sleep(2)
+            if kernel.TerminateProcess(parent, 0):
+                forget_owned_parent(cleanup.parent_pid, logger)
+            else:
+                logger.warning("Could not terminate owned temporary Games.exe after game exit")
+        except Exception as exit_error:
+            logger.warning(f"Cannot complete emergency temporary launcher cleanup: {exit_error}")
+    return False
+
+
+def _start_cleanup(cleanup, pid: int, kernel, parent, logger) -> bool:
+    """Return whether cleanup took ownership, preserving live children's parents."""
+    try:
+        cleanup.start(pid)
+        return True
+    except Exception as error:
+        # If the child has definitely exited, our suspended parent is disposable.
+        # Otherwise do not guess about SDK readiness or terminate a live child's parent.
+        try:
+            child_gone = not psutil.pid_exists(pid)
+        except Exception:
+            child_gone = False
+        if child_gone:
+            try:
+                if not kernel.TerminateProcess(parent, 0):
+                    raise OSError("Could not terminate the owned temporary Games.exe")
+                forget_owned_parent(cleanup.parent_pid, logger)
+                logger.info(f"Game PID {pid} exited before cleanup monitor started; discarded temporary Games.exe")
+            except Exception as discard_error:
+                logger.warning(f"Cannot discard temporary Games.exe after game exit: {discard_error}")
+            return False
+        logger.warning(f"Cannot start initial SDK monitor; starting fallback for owned Games.exe: {error}")
+        return _start_fallback_cleanup(cleanup, pid, kernel, parent, logger)
+
+
 def launch_game(game_path: str, arguments: str, logger) -> bool:
+    try:
+        recover_owned_parents(logger)
+    except Exception as error:
+        logger.warning(f"Cannot recover temporary launcher records: {error}")
     if running_pids("Endfield.exe"):
         logger.info("Endfield is already running; skipping launch")
         return True
+
     kernel = _kernel32()
-    parent = prepare_launcher(kernel, logger, game_path)
+    parent = create_temporary_parent(kernel, game_path, logger)
+    child_created = False
     try:
-        # The user may have started the game while the launcher was opening.
+        # Snapshot existing log offsets BEFORE starting the new game process.
+        cleanup = LauncherCleanup(kernel, parent, logger)
         if running_pids("Endfield.exe"):
             return True
         pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
-        logger.info(f"Created Endfield with official launcher parent: pid={pid}")
+        child_created = True
+        note_game_started(cleanup.parent_pid, pid, logger)
+        logger.info(f"Created Endfield with suspended official launcher parent: pid={pid}")
+        if _start_cleanup(cleanup, pid, kernel, parent, logger):
+            parent = None  # The background watcher owns the process handle now.
         return True
     finally:
-        kernel.CloseHandle(parent)
+        if parent:
+            if not child_created:
+                # Failed before game creation; this is our own disposable process.
+                try:
+                    if kernel.TerminateProcess(parent, 0):
+                        forget_owned_parent(kernel.GetProcessId(parent), logger)
+                    else:
+                        logger.warning("Could not terminate aborted owned temporary Games.exe")
+                except Exception as error:
+                    logger.warning(f"Cannot discard aborted temporary Games.exe: {error}")
+            kernel.CloseHandle(parent)
