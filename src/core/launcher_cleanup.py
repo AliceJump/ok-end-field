@@ -171,5 +171,18 @@ class LauncherCleanup:
                 self._wait_for_game_exit(game)
             except Exception as wait_error:
                 self.logger.warning(f"Cannot monitor game exit for owned Games.exe PID {self.parent_pid}: {wait_error}")
+                # Parent status queries may be broken. We still own the process
+                # handle, so wait for the game to exit before attempting cleanup.
+                try:
+                    while game.is_running():
+                        time.sleep(2)
+                    if not self.kernel.TerminateProcess(self.parent, 0):
+                        self.logger.warning(
+                            f"Could not terminate owned temporary Games.exe PID {self.parent_pid} after game exit"
+                        )
+                except Exception as fallback_error:
+                    self.logger.warning(
+                        f"Cannot discard owned temporary Games.exe PID {self.parent_pid}: {fallback_error}"
+                    )
         finally:
             self.kernel.CloseHandle(self.parent)
