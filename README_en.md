@@ -81,7 +81,7 @@ all potential risks.**
 ## Runtime Requirements & Recommendations
 
 - OS: Windows
-- Game resolution: 16:9 at 1920×1080 (1080P) or above required; lower than 1080P is not guaranteed to work
+- Game resolution: 16:9 at 1600×900 (900P) or above required; lower than 900P is not guaranteed to work
 - Language: some features currently support Simplified Chinese only
 - Privilege: run as Administrator recommended (required for source mode)
 - Path: prefer pure-English install/runtime path
