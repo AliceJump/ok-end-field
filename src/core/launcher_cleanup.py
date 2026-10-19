@@ -13,6 +13,8 @@ from pathlib import Path
 import psutil
 from win32com.shell import shell, shellcon
 
+from src.core.temporary_parent_recovery import forget_owned_parent
+
 _LOG_TIME = re.compile(r"^\[(\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]")
 _SDK_READY = re.compile(rb"OnU8V2InitCallback status\s*:\s*0\s*$")
 _TIMEOUT = 120
@@ -144,9 +146,11 @@ class LauncherCleanup:
         # This handle belongs exclusively to the Games.exe instance we created.
         # Do not kill by executable name or terminate an unrelated launcher tree.
         if not self._parent_running():
+            forget_owned_parent(self.parent_pid, self.logger)
             return
         if not self.kernel.TerminateProcess(self.parent, 0):
             raise OSError("Could not terminate the owned temporary Games.exe")
+        forget_owned_parent(self.parent_pid, self.logger)
         self.logger.info(f"Requested termination of temporary Games.exe PID {self.parent_pid}")
 
     def _seen(self, tail: _LogTail, pattern) -> bool:
@@ -194,7 +198,9 @@ class LauncherCleanup:
                 try:
                     while game.is_running():
                         time.sleep(2)
-                    if not self.kernel.TerminateProcess(self.parent, 0):
+                    if self.kernel.TerminateProcess(self.parent, 0):
+                        forget_owned_parent(self.parent_pid, self.logger)
+                    else:
                         self.logger.warning(
                             f"Could not terminate owned temporary Games.exe PID {self.parent_pid} after game exit"
                         )
