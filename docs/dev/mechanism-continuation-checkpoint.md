@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-19长息新断点：读[native-longxi-release-audit.md](native-longxi-release-audit.md)。当前8份记录核准三件/Rank1、102条件、TeamFinder排本人、全伤16%/15秒/Stack2 max1。普通梨诺攻击光环不触发四类tag；高歌无tag承载需走Enhanced6/3，false override不能借闲置赛希ID认模板。当前分派/真实102来源和共享刷新/独立清理仍未知，未产品启用。所有原始脚本和审计主仓ignored；只保存本审核文档，32/128、14/2与2/111不变。接入PR489独立b199b38f已接SP边际贡献/角色锁/零SP姿态排除，仍暂不合。定时实际PAUSED，不能照历史段落恢复ACTIVE。主仓由其他会话占用，不切分支、不恢复文件。
+
 > 2026-10-17来源清理新断点：读[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)最后两节。实际回调是ClearSource/_OnChildDetach，父m_children为ListSet；6条usage链和共享泛型声明/调用目标已核，exact-instance表行缺失不是空方法。组件完成相位、回调重入、UID/标签有效性与被动刷BB仍待实现，不把Die/动画结束/SourceClear/对象回收混为一谈。首次免费的3请求和末击附着现由旧纸面消费者保留为pending，而非立即加3/挂附着；未知总库存的确定字面更新也不会静默丢弃。未向master/PR489接入本研究，PR533关闭状态保持，主仓试用文件保留。
 
 > 2026-10-17新运行边界：继续从[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)的时序和旧假设修正章节接力。生成投射物的实际scalar/force比较、同tick碰撞后到达派发、Controller寿命选择和PeriodicTimer已核；388次原始指令回放只是显式输入标量验证。研究代码不再先清空既有剑、把未知初始数置0、均分条件生成或给旧纸面首次免费包络概率1。32面板/128报价数值未动，只更新庄方宜canonical来源哈希；PR489不自动带这些研究变化。目标是继续到达/登记/被动更新/区域取数与真实计数producer，不能把这批当电剑总伤害已经接入。人类要求PR533关闭已执行，主仓试用文件保留；定时ACTIVE规则02:06起五小时不变。

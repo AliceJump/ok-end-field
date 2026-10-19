@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-19长息证据：已核三件Rank1、来源102/四类tag OR、实际全队排除本人、16%全类型NormalCalcZone/15秒、max1及非父子绑定，不能把AddAttack误当攻击力或让普通演唱直接触发。梨诺高歌还需追Enhanced模板输出、当前分派、共享实例/刷新与独立期限；未启用运行规则。8份当前记录与等级/目标/乘区断言及AST通过，原始材料只在主仓ignored。见[native-longxi-release-audit.md](native-longxi-release-audit.md)。研究32/128、14/2及2/111不变。PR489独立已推单位SP真实排序b199b38f，1714全仓通过，不是本研究新增执行；定时实际PAUSED，手动续作授权有效，不恢复历史ACTIVE。
+
 > 2026-10-17来源清理续批：SetSource→父ListSet.Add→订阅子ClearSource→父_OnChildDetach/Remove关系已核，26方法/4字段组/6helper/6usage链/22锚点独立验证，使用真实callsite上下文和同方法共享泛型body而非要求每个实例独立注册。VBHit52等13字段枚举也已核。研究纸面首次免费改为3_requested，末击附着为on_final_hit，未把请求或未知库存变成已生成/已命中；到达、计数、区域快照仍未执行闭合，不提高2/111。见[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)。
 
 > 2026-10-17执行证据与旧假设修正：已核Bezier2D按float32中点采样/进度累积及严格force-reach边界、移动→几何检查→碰撞→到达派发顺序、Controller读取36/3寿命并用PeriodicTimer进入Die。158窗口/10字段组/2常量/48锚点核验与388次原始指令标量回放通过，不当实际delta、到达或剑数。canonical/机制表撤回青霆剑全量消费，initial_count=None，条件生成不再均分，旧纸面全伤害估价保留未知；相关回归及32面板/128报价数值比较通过，真实producer仍待接。详见[native-zhuangfy-entity-template-audit.md](native-zhuangfy-entity-template-audit.md)。
