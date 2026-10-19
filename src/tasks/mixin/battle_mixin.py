@@ -408,6 +408,8 @@ class BattleMixin(BaseEfTask):
                 False : 未找到可释放技能
         """
         ults = ["1", "2", "3", "4"] if ult_sequence is None else [ult_sequence]
+        # Only confirmed disappearance AND recovery can prove an ultimate HUD freeze.
+        self._last_ult_hud_frozen_seconds = 0.0
 
         release_mode = self.get_battle_config(KEY_ULT_RELEASE_MODE, ULT_RELEASE_MODE_HOLD)
 
@@ -424,17 +426,23 @@ class BattleMixin(BaseEfTask):
                     # Alt 路径允许调用方显式跳过同步等待；当前时间排轴调用仍传 True，
                     # 因此会等待头像消失并恢复后再继续调度。
                     if wait_for_team_recovery:
-                        self._has_detected_team_member(time_out=1, require_four_unknown=True)
-                        self._has_detected_team_member()
+                        hidden = self._has_detected_team_member(time_out=1, require_four_unknown=True)
+                        hidden_at = time.monotonic() if hidden else None
+                        recovered = self._has_detected_team_member()
+                        if hidden_at is not None and recovered:
+                            self._last_ult_hud_frozen_seconds = max(0.0, time.monotonic() - hidden_at)
                     return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
-                self._has_detected_team_member(time_out=1, require_four_unknown=True)
+                hidden = self._has_detected_team_member(time_out=1, require_four_unknown=True)
+                hidden_at = time.monotonic() if hidden else None
                 self.send_key_up(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，释放按键
                 # 从实际完成按键操作的时刻开始计算退出延迟
                 self._last_ult_release_time = self.active_time()
                 # wait_until 每轮会刷新 self.frame，再重新识别当前编队
-                self._has_detected_team_member()
+                recovered = self._has_detected_team_member()
+                if hidden_at is not None and recovered:
+                    self._last_ult_hud_frozen_seconds = max(0.0, time.monotonic() - hidden_at)
                 return True
 
         return False

@@ -588,6 +588,26 @@ class TestStateDrivenWaits(unittest.TestCase):
         )
         self.assertEqual(task._last_ult_release_time, 42)
 
+    def test_ultimate_hud_freeze_requires_both_confirmed_boundaries(self):
+        for mode in (ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD):
+            with self.subTest(mode=mode):
+                task = _UltHarness(mode)
+                task._has_detected_team_member = Mock(side_effect=[True, True])
+                with patch("src.tasks.mixin.battle_mixin.time.monotonic", side_effect=[10.0, 12.0]):
+                    self.assertTrue(BattleMixin.use_ult(task, "2"))
+                self.assertEqual(task._last_ult_hud_frozen_seconds, 2.0)
+
+                # No recovery confirmation: do not credit a guessed freeze duration.
+                task._has_detected_team_member = Mock(side_effect=[True, False])
+                with patch("src.tasks.mixin.battle_mixin.time.monotonic", return_value=20.0):
+                    self.assertTrue(BattleMixin.use_ult(task, "2"))
+                self.assertEqual(task._last_ult_hud_frozen_seconds, 0.0)
+
+                # Neither an absent HUD nor an Alt no-wait release proves a freeze.
+                task._has_detected_team_member = Mock(side_effect=[False, True])
+                self.assertTrue(BattleMixin.use_ult(task, "2"))
+                self.assertEqual(task._last_ult_hud_frozen_seconds, 0.0)
+
     def test_combat_exit_counter_reuses_existing_detection(self):
         task = _CombatExitHarness()
 
