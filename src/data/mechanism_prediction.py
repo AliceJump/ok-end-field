@@ -62,10 +62,12 @@ class EntityRequest:
 class MechanismState:
     requests: tuple[EntityRequest, ...] = ()
     minimum_spent: frozenset[str] = frozenset()
+    known_free_until: tuple[tuple[str, float], ...] = ()
 
     def keep(self, owners):
         return replace(self, requests=tuple(r for r in self.requests if r.owner in owners),
-                       minimum_spent=self.minimum_spent & set(owners))
+                       minimum_spent=self.minimum_spent & set(owners),
+                       known_free_until=tuple((owner, end) for owner, end in self.known_free_until if owner in owners))
 
     def observe(self, owner, assessment, spec):
         if matches(spec, assessment) and assessment.satisfied is False:
@@ -121,7 +123,12 @@ def branch_quote(row, owner, now, assessment, state, *, stance=None, forecast=Fa
     projected = forecast and any(r.forecast_only for r in requests)
     if spec['type'] == 'spear_recall':
         return _spear_quote(row, owner, spec, positive, projected, requests, state)
-    return _sword_quote(row, spec, positive, requests, stance)
+    known_end = dict(state.known_free_until).get(owner)
+    free_excluded = ((stance is not None and not stance.free_battle)
+                     or (known_end is not None and now >= known_end))
+    # A direct, explicitly observed Conduct tag does not need OR narrowing.
+    observed_conduct = (positive and assessment.inference.confirms('tag', spec['conduct_tag']))
+    return _sword_quote(row, spec, positive, requests, stance, free_excluded or observed_conduct)
 
 
 def _spear_quote(row, owner, spec, positive, projected, requests, state):
@@ -147,12 +154,12 @@ def _spear_quote(row, owner, spec, positive, projected, requests, state):
     return MechanismQuote(base, 'whirlwind; previous_minimum_already_used')
 
 
-def _sword_quote(row, spec, positive, requests, stance):
+def _sword_quote(row, spec, positive, requests, stance, free_excluded):
     enhanced = stance is not None
     free = enhanced and stance.free_battle
     # This excludes the free arm only in the combat model, never in observed
     # enemy facts. The raw OR observation remains intact.
-    conduct = 0 if free else 1 if positive else None
+    conduct = 0 if free else 1 if positive and free_excluded else None
     baseline = (row['stance']['quotes']['battle'] if enhanced else row['quotes']['battle'])['crit_expect']
     if conduct is None:
         return MechanismQuote(baseline, 'single_unit; conduct_or_free_unknown')
@@ -181,6 +188,10 @@ def after_action(state, row, owner, kind, started, *, quote=None, stance=None, f
     if spec is None:
         return state
     source = f'{owner}:{kind}:{float(started).hex()}'
+    if spec['type'] == 'sword_salvo' and kind == 'ult':
+        end = started+row['stance']['starts_after']+row['stance']['duration']
+        return replace(state, known_free_until=tuple((key, value) for key, value in state.known_free_until
+                                                     if key != owner)+((owner, end),))
     if spec['type'] == 'sword_salvo' and kind == 'battle':
         free = stance is not None and stance.free_battle
         count = spec['free_requests'] if free else (

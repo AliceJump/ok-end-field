@@ -122,10 +122,18 @@ class TestMechanismPrediction(unittest.TestCase):
     def test_zhuang_no_initial_zero_or_default_three_from_bare_ring(self):
         p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
         q = p.mechanism_quote('1', 0, self.observed('庄方宜'))
-        self.assertEqual(q.conduct, 1)
+        self.assertIsNone(q.conduct)  # A mid-fight entry may have untracked free eligibility.
         self.assertIsNone(q.selected_swords)
         self.assertEqual(q.value, p.quote('1', 'battle')['crit_expect'])
         self.assertEqual(p.mechanism_state, MechanismState())
+
+    def test_untracked_free_arm_stays_ambiguous_but_tracked_expiry_allows_minimum_conduct(self):
+        p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
+        obs = self.observed('庄方宜')
+        self.assertIsNone(p.mechanism_quote('1', 0, obs).conduct)
+        p.confirm('1', 'ult', 0)
+        self.assertEqual(p.mechanism_quote('1', 3, self.observed('庄方宜', enhanced=True)).conduct, 0)
+        self.assertEqual(p.mechanism_quote('1', 28, obs).conduct, 1)
 
     def test_salvo_all_conduct_and_sword_inputs_match_numeric_contract(self):
         p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
