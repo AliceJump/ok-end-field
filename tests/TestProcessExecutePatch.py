@@ -189,6 +189,14 @@ class TestZProcessExecutePatchStateRestored(unittest.TestCase):
 
 
 class TestOfficialLauncher(unittest.TestCase):
+    def setUp(self):
+        # These tests use fabricated process handles; the real journal is
+        # covered separately with an isolated temporary config directory.
+        for name in ("recover_owned_parents", "register_owned_parent", "note_game_started", "forget_owned_parent"):
+            patcher = patch.object(official_launcher, name)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
     def test_prepare_reuses_running_launcher(self):
         with (
             patch.object(official_launcher, "official_parent", return_value=123),
@@ -476,6 +484,27 @@ class TestOfficialLauncher(unittest.TestCase):
             self.assertEqual(exe, base / "2.4.9" / "Games.exe")
             verify.assert_called_once_with(str(exe))
 
+    def test_journal_failure_discards_unattached_suspended_parent(self):
+        import ctypes
+        kernel = Mock()
+
+        def created(*args):
+            info = ctypes.cast(args[-1], ctypes.POINTER(official_launcher._ProcessInfo))
+            info.contents.dwProcessId = 111
+            info.contents.hProcess = 222
+            info.contents.hThread = 333
+            return True
+
+        kernel.CreateProcessW.side_effect = created
+        with (
+            patch.object(official_launcher, "find_official_games_exe", return_value=Path("C:/Launcher/2.4.9/Games.exe")),
+            patch.object(official_launcher, "register_owned_parent", side_effect=OSError("disk full")),
+            self.assertRaisesRegex(OSError, "disk full"),
+        ):
+            official_launcher.create_temporary_parent(kernel, "Endfield.exe", Mock())
+        kernel.TerminateProcess.assert_called_once_with(222, 0)
+        self.assertIn((222,), [call.args for call in kernel.CloseHandle.call_args_list])
+
     def test_temporary_parent_uses_suspended_native_creation_and_owns_handle(self):
         import ctypes
         kernel = Mock()
@@ -574,6 +603,9 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
         self.kernel = Mock()
         self.kernel.GetProcessId.return_value = 123
         self.logger = Mock()
+        journal_patcher = patch.object(launcher_cleanup, "forget_owned_parent")
+        journal_patcher.start()
+        self.addCleanup(journal_patcher.stop)
 
     def _new_cleanup(self):
         return self.cleanup_mod.LauncherCleanup(self.kernel, 999, self.logger)
@@ -731,6 +763,173 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
         path.rename(path.with_suffix(".old"))
         path.write_bytes(b"next complete\n")
         self.assertEqual(tail.read(), [b"next complete"])
+
+
+class TestTemporaryParentRecovery(unittest.TestCase):
+    """Recovery must never terminate a user-owned launcher or a live game."""
+
+    def setUp(self):
+        from src.core import temporary_parent_recovery as recovery
+
+        self.recovery = recovery
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.path = Path(self.folder.name)
+        patcher = patch.object(recovery, "_records_dir", return_value=self.path)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.logger = Mock()
+        self.parent_pid = 231
+        self.parent_started = 100.0
+        self.executable = os.path.normcase(os.path.abspath("Games.exe"))
+
+    def _write(self, **changes):
+        record = {
+            "version": 1,
+            "parent_pid": self.parent_pid,
+            "parent_created": self.parent_started,
+            "parent_exe": self.executable,
+            "owner_pid": 1000,
+            "owner_created": 10.0,
+        }
+        record.update(changes)
+        path = self.path / f"{self.parent_pid}.json"
+        path.write_text(json.dumps(record), encoding="utf-8")
+        return path
+
+    def _parent(self):
+        parent = Mock()
+        parent.is_running.return_value = True
+        parent.create_time.return_value = self.parent_started
+        parent.exe.return_value = self.executable
+        parent.children.return_value = []
+        return parent
+
+    def _owner(self, alive=False):
+        owner = Mock(pid=1000)
+        owner.is_running.return_value = alive
+        owner.create_time.return_value = 10.0
+        return owner
+
+    def _recover(self, parent, owner=None, game=None):
+        owner = owner or self._owner()
+        mapping = {self.parent_pid: parent, 1000: owner}
+        if game:
+            mapping[501] = game
+
+        def get_process(pid):
+            if pid not in mapping:
+                raise psutil.NoSuchProcess(pid)
+            return mapping[pid]
+
+        with patch.object(self.recovery.psutil, "Process", side_effect=get_process):
+            self.recovery.recover_owned_parents(self.logger)
+
+    def test_register_and_forget_parent_identity(self):
+        parent, owner = self._parent(), self._owner(alive=True)
+        with (
+            patch.object(self.recovery.psutil, "Process", side_effect=lambda pid: parent if pid == 231 else owner),
+            patch.object(self.recovery.os, "getpid", return_value=1000),
+        ):
+            self.recovery.register_owned_parent(231, self.executable)
+        record = json.loads((self.path / "231.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["parent_created"], 100.0)
+        self.assertEqual(record["parent_exe"], self.executable)
+        self.assertEqual(record["owner_pid"], 1000)
+        self.recovery.forget_owned_parent(231, self.logger)
+        self.assertFalse((self.path / "231.json").exists())
+
+    def test_abandoned_parent_without_game_is_recovered(self):
+        path = self._write()
+        parent = self._parent()
+        self._recover(parent)
+        parent.terminate.assert_called_once()
+        self.assertFalse(path.exists())
+
+    def test_current_owner_alive_is_preserved(self):
+        path = self._write()
+        parent = self._parent()
+        self._recover(parent, owner=self._owner(alive=True))
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_recorded_live_game_preserves_parent(self):
+        path = self._write(game_pid=501, game_created=50.0)
+        parent = self._parent()
+        game = Mock()
+        game.is_running.return_value = True
+        game.create_time.return_value = 50.0
+        self._recover(parent, game=game)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_live_child_preserves_parent_even_if_game_record_was_not_written(self):
+        path = self._write()
+        parent = self._parent()
+        child = Mock()
+        child.is_running.return_value = True
+        parent.children.return_value = [child]
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_reused_parent_pid_cannot_terminate_unrelated_process(self):
+        path = self._write()
+        parent = self._parent()
+        parent.create_time.return_value = 200.0
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertFalse(path.exists())
+
+    def test_changed_parent_executable_cannot_terminate_unrelated_launcher(self):
+        path = self._write()
+        parent = self._parent()
+        parent.exe.return_value = os.path.normcase(os.path.abspath("Another/Games.exe"))
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertFalse(path.exists())
+
+    def test_parent_access_denied_preserves_record(self):
+        path = self._write()
+        parent = self._parent()
+        parent.exe.side_effect = psutil.AccessDenied(self.parent_pid)
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_recorded_game_status_unknown_preserves_parent(self):
+        path = self._write(game_pid=501, game_created=50.0)
+        parent = self._parent()
+        game = Mock()
+        game.is_running.side_effect = psutil.AccessDenied(501)
+        self._recover(parent, game=game)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_dead_parent_drops_stale_record(self):
+        path = self._write()
+        parent = self._parent()
+        parent.is_running.return_value = False
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertFalse(path.exists())
+
+    def test_invalid_record_is_never_used_to_terminate(self):
+        path = self._write(parent_exe="C:/NotTheOfficialExecutable.exe")
+        parent = self._parent()
+        self._recover(parent)
+        parent.terminate.assert_not_called()
+        self.assertTrue(path.exists())
+
+    def test_game_identity_is_persisted(self):
+        path = self._write()
+        game = Mock()
+        game.create_time.return_value = 50.0
+        with patch.object(self.recovery.psutil, "Process", return_value=game):
+            self.recovery.note_game_started(self.parent_pid, 501, self.logger)
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["game_pid"], 501)
+        self.assertEqual(record["game_created"], 50.0)
 
 
 if __name__ == "__main__":
