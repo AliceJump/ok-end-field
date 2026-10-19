@@ -113,4 +113,4 @@ def is_world_map_text(lang_accessor: Any, value: str | None, zh_text: str) -> bo
     if not value:
         return False
     locale_text = get_world_map_text(lang_accessor, zh_text)
-    return value == zh_text or value == locale_text
+    return value in (zh_text, locale_text)

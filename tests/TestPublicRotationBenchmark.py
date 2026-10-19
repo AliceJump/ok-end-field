@@ -13,14 +13,18 @@ _SPEC.loader.exec_module(benchmark)
 
 class TestBenchmarkReportPaths(unittest.TestCase):
     def test_missing_options_report_unavailable_plan(self):
-        with patch.object(benchmark, "build_options", return_value=()):
-            with self.assertRaisesRegex(ValueError, "No periodic plan"):
-                benchmark.benchmark(seconds=1)
+        with (
+            patch.object(benchmark, "build_options", return_value=()),
+            self.assertRaisesRegex(ValueError, "No periodic plan"),
+        ):
+            benchmark.benchmark(seconds=1)
 
     def test_unstable_baseline_is_reported(self):
-        with patch.object(benchmark, "evaluate_cycle", return_value=None):
-            with self.assertRaisesRegex(ValueError, "baseline periodic plan"):
-                benchmark.benchmark(seconds=1)
+        with (
+            patch.object(benchmark, "evaluate_cycle", return_value=None),
+            self.assertRaisesRegex(ValueError, "baseline periodic plan"),
+        ):
+            benchmark.benchmark(seconds=1)
 
     def test_replay_data_paths_are_independent_of_current_directory(self):
         import os

@@ -9,9 +9,9 @@ import cv2
 import numpy as np
 
 from src.image.hsv_config import HSVRange as hR
-from src.tasks.mixin.navigation_mixin import NavigationMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.mixin.zip_line_motion_tracking import track_zip_line_mouse_motion
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.test.zip_line_scan_recording import (
     ZipLineFrameDetector,
     ZipLineScanRecorder,
@@ -46,6 +46,11 @@ class TestZipLineGoldGate(unittest.TestCase):
             stub, *args, **kwargs
         )
         stub._try_click_on_zip_line = lambda *args, **kwargs: ZipLineMixin._try_click_on_zip_line(stub, *args, **kwargs)
+        # 合并后 zip_line_list_go 还要选路：网格导航那套参数与实际调用方的辅助方法
+        stub.zip_line_target_select_mode = lambda: "直接对准"
+        stub._normalize_values = ZipLineMixin._normalize_values
+        stub._value_for_index = ZipLineMixin._value_for_index
+        stub._ride_zip_line_by_ocr = lambda *args, **kwargs: ZipLineMixin._ride_zip_line_by_ocr(stub, *args, **kwargs)
         return stub
 
     @staticmethod
@@ -348,7 +353,9 @@ class TestZipLineGoldGate(unittest.TestCase):
         sender.side_effect = lambda **kwargs: events.append("prefeed" if kwargs["dx"] == 160 else "fine") or True
         stub._move_to_zip_line_target.side_effect = lambda target: stub.active_and_send_mouse_delta(dx=40, dy=20)
         targets = iter([self._matched_icon(1400, 800), self._matched_icon()])
-        stub._find_zip_line_template_target.side_effect = lambda *args: events.append("detect") or next(targets)
+        stub._find_zip_line_template_target.side_effect = lambda *args, **kwargs: (
+            events.append("detect") or next(targets)
+        )
         with track_zip_line_mouse_motion(stub) as total:
             result = ZipLineMixin._align_zip_line_distance(
                 stub, 108, need_scroll=True, max_time=2, initial_move=(160, 80)
@@ -367,7 +374,9 @@ class TestZipLineGoldGate(unittest.TestCase):
                 stub._find_zip_line_template_target.side_effect = [self._matched_icon(1400, 800), self._matched_icon()]
                 sender = stub.active_and_send_mouse_delta
                 sender.side_effect = [outcome, True]
-                stub._move_to_zip_line_target.side_effect = lambda target: stub.active_and_send_mouse_delta(40, 20)
+                stub._move_to_zip_line_target.side_effect = lambda target, stub=stub: stub.active_and_send_mouse_delta(
+                    40, 20
+                )
                 with track_zip_line_mouse_motion(stub) as total:
                     result = ZipLineMixin._align_zip_line_distance(stub, 108, max_time=2, initial_move=(160, 80))
 
@@ -381,7 +390,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub._find_zip_line_template_target.side_effect = [None, None, None, self._matched_icon()]
         stub.active_and_send_mouse_delta.return_value = True
         with (
-            patch("src.tasks.mixin.navigation_mixin.random.randint", return_value=25),
+            patch("src.tasks.navigation.mixin.navigation_mixin.random.randint", return_value=25),
             track_zip_line_mouse_motion(stub) as total,
         ):
             result = ZipLineMixin._align_zip_line_distance(stub, 108, max_time=5, initial_move=(100, 20))

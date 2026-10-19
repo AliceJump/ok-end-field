@@ -1,0 +1,33 @@
+"""导航侧可见的定位提供者接口。"""
+
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+
+class PoseProvider(Protocol):
+    """导航消费定位状态所需的最小接口。"""
+
+    @property
+    def minimap_position_ready(self) -> bool: ...
+
+    def start_minimap_position(self, *, wait_stable: bool = True) -> bool: ...
+
+    def sample_world_pose(self, frame=None, *, now=None) -> dict[str, Any]: ...
+
+    def turn_to_bearing(self, target_deg: float, **kwargs) -> dict[str, Any]: ...
+
+    def aim_view_to_bearing(self, target_deg: float, **kwargs) -> dict[str, Any]: ...
+
+    def yaw_per_pixel(self) -> float: ...
+
+    def heading_min_score(self) -> float: ...
+
+    def can_turn(self) -> bool: ...
+
+    def send_rotation(self, dx: int) -> None: ...
+
+    def minimap_rest_diag(self) -> dict[str, Any] | None: ...
+
+
+__all__ = ["PoseProvider"]

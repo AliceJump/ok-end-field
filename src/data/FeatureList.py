@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class FeatureList(str, Enum):
+class FeatureList(StrEnum):
     all_receive = "all_receive"
     assist_friend = "assist_friend"
     b = "b"

@@ -1,0 +1,737 @@
+import random
+from copy import copy
+
+import pyautogui
+
+from src.data.FeatureList import FeatureList as fL
+from src.interaction.target_movement import ellipse_geometry, hud_direction_step, resolve_move_profile
+from src.tasks.mixin.navigation_detection_scope import get_navigation_detection_scope
+from src.tasks.mixin.navigation_learning import initial_alignment
+from src.tasks.mixin.search_mixin import SearchMixin
+from src.tasks.mixin.workflow_learning import confirm_tracking_context, take_workflow_context
+
+TOLERANCE = 50
+
+
+class NavigationMixin(SearchMixin):
+    def start_tracking_and_align_target(self, target_feature_in_map, target_feature_out_map, *, learning_entry=None):
+        """在地图中开启追踪并在地图外完成朝向对齐。"""
+        context, confidence = take_workflow_context(self, learning_entry, target_feature_out_map)
+        result = self.find_one(
+            feature=target_feature_in_map,
+            box=self.box_of_screen(0, 0, 1, 1),
+            threshold=0.7,
+        )
+        if not result:
+            self.log_info(f"未找到{target_feature_in_map}图标")
+            return False
+        self.log_info(f"找到{target_feature_in_map}图标，点击进入")
+        self.click(result)
+
+        follow_button = self.wait_feature(
+            feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False
+        )
+        if follow_button:
+            self.click(follow_button, after_sleep=0.5)
+        else:
+            # An already tracked target may have no Start Tracking button.
+            # Stable workflow evidence remains valid; only fresh HUD alignment
+            # after actual input can commit a sample.
+            self.log_info("未匹配到开始追踪按钮，继续关闭地图并检查场外目标")
+
+        self.press_key("m")
+        self.log_info("关闭地图界面 (按下 M)")
+        context = confirm_tracking_context(self, context, learning_entry)
+        self.log_info(
+            f"[workflow-learning] tracking target={target_feature_out_map} "
+            f"context_confirmed={context is not None} start_follow_clicked={bool(follow_button)}"
+        )
+        with initial_alignment(self, context, confidence=confidence) as learning:
+            if learning is not None:
+                learning.replay()
+                self.sleep(0.08)
+            start_time = self.active_time()
+            while not self.find_feature(
+                feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1), threshold=0.7
+            ):
+                self.next_frame()
+                if self.active_time() - start_time > 5:
+                    self.log_info("等待追踪图标超时")
+                    if learning is not None:
+                        learning.fail()
+                    return False
+            kwargs = {"learning_session": learning} if learning is not None else {}
+            aligned = self.align_ocr_or_find_target_to_center(
+                ocr_match_or_feature_name_list=target_feature_out_map, only_x=True, threshold=0.7, ocr=False, **kwargs
+            )
+            if not aligned and learning is not None:
+                learning.fail()
+        self.log_info("已对齐地图目标")
+        return True
+
+    def navigate_until_target(
+        self,
+        target,
+        nav=None,
+        target_is_ocr: bool = True,
+        nav_is_ocr: bool = False,
+        time_out: int = 60,
+        pre_loop_callback=None,
+        found_special_callback=None,
+        target_is_yolo: bool = False,
+        nav_is_yolo: bool = False,
+        box=None,
+        target_vertical_variance: float = 0.0,
+        need_v: bool = False,
+        max_run_time: float = -1,
+        allow_rotate_search: bool = True,
+        nav_move_profile=None,
+    ):
+        """
+        持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
+
+        当 nav 为 None 时，进入纯前进搜索模式，不进行导航识别与对齐，仅持续移动直到目标出现。
+
+        Args:
+            target: 目标识别对象（OCR文本 / YOLO类别 / 特征名）。
+            nav: 导航标识（OCR文本 / YOLO类别 / 特征名）。为 None 时禁用导航逻辑。
+            target_is_ocr (bool): target 是否使用 OCR 检测。
+            nav_is_ocr (bool): nav 是否使用 OCR 检测。
+            time_out (int): 最大运行时间（秒）。
+            pre_loop_callback (callable, optional): 每轮循环前执行的回调函数。
+            found_special_callback (callable, optional): 特殊状态检测回调，返回非 None 则中断并返回。
+            target_is_yolo (bool): target 是否使用 YOLO 检测。
+            nav_is_yolo (bool): nav 是否使用 YOLO 检测。
+            box (tuple, optional): target 检测区域（None 则使用默认区域）。
+            target_vertical_variance (float): 特征匹配时允许的垂直误差。
+            need_v (bool): 是否在导航丢失时周期性按 V 尝试重置视野。
+            max_run_time (float): 最大累计奔跑（ctrl 状态）时间（秒），控制的是奔跑/步行切换，不影响 w 前进键。
+                - -1：不限制奔跑时间，保持原有行为
+                - 0：完全不奔跑，开局立即切换步行状态，全程按住 w 步行前进
+                - 大于0：允许累计奔跑指定秒数，达到后在本次导航中切换步行且不再恢复奔跑，函数结束时恢复奔跑状态
+            allow_rotate_search (bool): 导航连续丢失时是否允许旋转视角整圈搜索，默认 True；送礼等不应转动视角的场景传 False。
+
+        Returns:
+            bool | Any:
+                - True: 成功到达目标并稳定确认
+                - False: 超时未完成
+                - Any: found_special_callback 返回的非 None 结果
+
+        Behavior:
+            1. 持续按 W 移动
+            2. 检测 target 是否出现
+            3. 出现后进行稳定性确认
+            4. 确认期间丢失目标则先 WASD 小幅度移动搜索，未命中再按住 S 后退搜索
+            5. 若 nav 存在，则执行导航对齐逻辑；对中过程中实时门控行走：
+               目标在屏幕中央附近时按住 W 前进，偏离中央时松开 W 停步，循环内自动切换
+            6. 若 nav 为 None，则仅执行直线前进搜索
+            7. 导航连续丢失时旋转搜索，未命中则按中键并按住 S 后退搜索
+
+        """
+        last_click_v_time = 0
+        nav_missing_start_time = None
+        nav_missing_recovered = False
+        nav_not_found_time_out = 5
+        observations = get_navigation_detection_scope(self)
+
+        def check_target():
+            if target_is_ocr:
+                return self.ocr(match=target, box=box if box else self.box_of_screen(0.635, 0.563, 0.724, 0.843))
+            elif target_is_yolo:
+                return self.yolo_detect(name=target, box=box if box else self.box_of_screen(0.635, 0.563, 0.724, 0.843))
+            else:
+                return self.find_feature(target, threshold=0.7, vertical_variance=target_vertical_variance)
+
+        # ========== 奔跑状态管理 ==========
+        run_bool = True  # 当前是否处于奔跑状态（ctrl 切换）
+        start_time = self.active_time()
+
+        # max_run_time 状态变量
+        run_accumulated_time = 0.0
+        run_state_start_time = self.active_time() if max_run_time > 0 else None
+        run_allowed = True
+
+        def enter_run_mode():
+            """切换到奔跑状态（如果允许且尚未处于奔跑状态）。"""
+            nonlocal run_bool, run_state_start_time
+            if run_bool or not run_allowed:
+                return
+            run_bool = True
+            run_state_start_time = self.active_time()
+            self.press_key("ctrl")
+
+        def exit_run_mode():
+            """切换到步行状态，并累加本段奔跑时间。"""
+            nonlocal run_bool, run_state_start_time, run_accumulated_time, run_allowed
+            if not run_bool:
+                return
+            if run_state_start_time is not None:
+                run_accumulated_time += self.active_time() - run_state_start_time
+                run_state_start_time = None
+            run_bool = False
+            self.press_key("ctrl")
+            if max_run_time > 0 and run_accumulated_time >= max_run_time:
+                run_allowed = False
+
+        def enforce_max_run_time():
+            """达到最大奔跑时间后立即切换为步行。"""
+            if max_run_time <= 0 or not run_bool or not run_allowed or run_state_start_time is None:
+                return
+            if run_accumulated_time + self.active_time() - run_state_start_time >= max_run_time:
+                self.log_info("达到最大奔跑时间，切换为步行模式")
+                exit_run_mode()
+
+        # 处理 max_run_time == 0：开局切换为步行，且全程禁止奔跑
+        if max_run_time == 0:
+            run_allowed = False
+            run_bool = False
+            self.press_key("ctrl")
+
+        # ========== 主循环 ==========
+        nav_box = self.box_of_screen(
+            (1920 - 1550) / 1920,
+            150 / 1080,
+            1550 / 1920,
+            (1080 - 150) / 1080,
+        )
+
+        def check_nav():
+            if nav_is_ocr:
+                return self.ocr(match=nav, box=nav_box)
+            if nav_is_yolo:
+                return self.yolo_detect(name=nav, box=nav_box)
+            return self.find_feature(nav, box=nav_box, threshold=0.7)
+
+        # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
+        # Task.send_key_down 不透传底层是否按下成功（ok-script 2.0.4 恒返回 None），
+        # 按下后只能乐观标记为已按住；若底层置顶失败未实际按下，
+        # EfInteraction 的配对保护会让后续 send_key_up 静默跳过，不会误释放。
+        if observations is None:
+            self.send_key_down("w")
+        self._walk_key_held = observations is None
+
+        try:
+            while True:
+                if observations is not None and self.active_time() - start_time > time_out:
+                    self.log_info("导航超时")
+                    return False
+                enforce_max_run_time()
+                reached = check_target()
+                if observations is not None and not reached:
+                    kind = "ocr" if target_is_ocr else "yolo" if target_is_yolo else "feature"
+                    if observations.latest(kind, target):
+                        # 近期出现过交互提示时先停步重检，不以缓存判定到达。
+                        if self._walk_key_held:
+                            self.send_key_up("w")
+                            self._walk_key_held = False
+                        self.sleep(0.03)
+                        continue
+                if reached:
+                    self.send_key_up("w")  # 确认使用send_key：释放方向键
+                    self._walk_key_held = False
+
+                    if run_bool:
+                        self.log_info("找到目标，确认稳定中...")
+                        exit_run_mode()
+
+                    settle_time = 2 if target_is_ocr else 1
+                    stable = True
+                    confirm_start = self.active_time()
+                    confirm_miss_count = 0
+                    confirm_miss_limit = 4
+
+                    while self.active_time() - confirm_start < settle_time:
+                        if not check_target():
+                            confirm_miss_count += 1
+                            if confirm_miss_count >= confirm_miss_limit:
+                                stable = False
+                                break
+                        else:
+                            confirm_miss_count = 0
+                        self.sleep(0.03)
+
+                    if stable:
+                        return True
+
+                    self.log_info("确认期间目标丢失，开始小幅度 WASD 移动搜索")
+                    if self.strafe_search(check_target, passes=3, duration=0.2, time_out=10):
+                        self.log_info("WASD 移动过程中重新找到目标")
+                        if observations is not None:
+                            continue
+                    else:
+                        self.log_info("小幅度移动未找到目标，开始后退搜索")
+                        self.send_key_down("s")  # 确认使用send_key：s为方向移动键，不属于游戏可配置热键，用于后退搜索
+                        search_start = self.active_time()
+                        target_recovered = False
+                        while self.active_time() - search_start < 10:
+                            if check_target():
+                                self.log_info("后退过程中重新找到目标")
+                                self.send_key_up("s")  # 确认使用send_key：释放方向键
+                                target_recovered = True
+                                break
+                            self.sleep(0.02)
+                        self.send_key_up("s")  # 确认使用send_key：释放方向键
+                        if observations is not None and target_recovered:
+                            continue
+
+                if self.active_time() - start_time > time_out:
+                    self.log_info("导航超时")
+                    return False
+
+                if found_special_callback:
+                    special_result = found_special_callback()
+                    if special_result is not None:
+                        self.send_key_up("w")  # 确认使用send_key：释放方向键
+                        self._walk_key_held = False
+                        return special_result
+
+                if pre_loop_callback:
+                    pre_loop_callback()
+
+                if observations is not None and nav is None and not self._walk_key_held:
+                    self.send_key_down("w")
+                    self._walk_key_held = True
+
+                # ===== nav=None -> 纯前进搜索模式 =====
+                if nav is None:
+                    if not run_bool and run_allowed:
+                        self.log_info("恢复奔跑模式")
+                        enter_run_mode()
+
+                    self.sleep(0.005)
+                    continue
+
+                nav_result = check_nav()
+                if observations is not None and not nav_result:
+                    # 残影只用于停步找回方向，不允许旧坐标恢复前进。
+                    if self._walk_key_held:
+                        self.send_key_up("w")
+                        self._walk_key_held = False
+                    kind = "ocr" if nav_is_ocr else "yolo" if nav_is_yolo else "feature"
+                    if observations.latest(kind, nav):
+                        self.align_ocr_or_find_target_to_center(
+                            nav,
+                            only_x=True,
+                            ocr=nav_is_ocr,
+                            use_yolo=nav_is_yolo,
+                            threshold=0.7,
+                            max_time=1,
+                            raise_if_fail=False,
+                            allow_random_move=False,
+                            move_profile=nav_move_profile,
+                        )
+                        self.sleep(0.005)
+                        continue
+
+                if nav_result:
+                    nav_missing_start_time = None
+                    nav_missing_recovered = False
+
+                    # 在移动视角前先按首次识别位置门控行走。即使本轮未完成对中，
+                    # 也保留“已识别但偏离中央”的状态，避免误恢复 W。
+                    first_nav_result = nav_result[0] if isinstance(nav_result, list) else nav_result
+                    scx, _scy = self.screen_center()
+                    center_tolerance = self.scale_distance(100)
+                    first_nav_center_x = first_nav_result.x + first_nav_result.width // 2
+                    if abs(first_nav_center_x - scx) <= center_tolerance:
+                        if not self._walk_key_held:
+                            self.send_key_down("w")
+                            self._walk_key_held = True
+                        if self._walk_key_held and not run_bool and run_allowed:
+                            enter_run_mode()
+                    elif self._walk_key_held:
+                        self.send_key_up("w")
+                        self._walk_key_held = False
+
+                    align_pos = self.align_ocr_or_find_target_to_center(
+                        ocr_match_or_feature_name_list=nav,
+                        only_x=True,
+                        threshold=0.7,
+                        ocr=nav_is_ocr,
+                        use_yolo=nav_is_yolo,
+                        max_time=1,
+                        raise_if_fail=False,
+                        allow_random_move=False,
+                        move_profile=nav_move_profile,
+                    )
+
+                    # 对中过程中实时门控行走：目标在中央附近就走，偏离就停
+                    if align_pos:
+                        scx, _scy = self.screen_center()
+                        center_tolerance = self.scale_distance(100)
+                        if abs(align_pos[0] - scx) <= center_tolerance:
+                            # 目标在中央附近 → 恢复行走
+                            if not self._walk_key_held:
+                                self.send_key_down("w")
+                                self._walk_key_held = True
+                            if self._walk_key_held and not run_bool and run_allowed:
+                                enter_run_mode()
+                        else:
+                            # 目标偏离中央 → 停步
+                            if self._walk_key_held:
+                                self.send_key_up("w")
+                                self._walk_key_held = False
+                else:
+                    if nav_missing_start_time is None:
+                        nav_missing_start_time = self.active_time()
+                    elif (
+                        not nav_missing_recovered
+                        and self.active_time() - nav_missing_start_time >= nav_not_found_time_out
+                    ):
+                        self.log_info(f"导航目标连续丢失超过 {nav_not_found_time_out} 秒，进入兜底搜索")
+                        self.send_key_up("w")
+                        if observations is not None:
+                            self._walk_key_held = False
+                        self.sleep(0.1)
+                        nav_result = None
+                        if allow_rotate_search:
+                            self.log_info("旋转一圈搜索")
+                            nav_result = self.rotate_search(check_nav, between_delay=0.1)
+                            if nav_result:
+                                self.log_info("旋转搜索中重新找到导航")
+                        else:
+                            self.log_info("旋转搜索已禁用，跳过旋转直接后退搜索")
+
+                        if not nav_result:
+                            if observations is not None and observations.has_recent_target():
+                                nav_missing_recovered = True
+                                continue
+                            self.click(key="middle", after_sleep=1)
+                            self.log_info("按下中键后开始后退搜索")
+                            self.send_key_down("s")  # 确认使用send_key：s为方向移动键，用于后退搜索
+                            search_start = self.active_time()
+                            while self.active_time() - search_start < 10:
+                                if check_nav():
+                                    nav_result = True
+                                    self.log_info("后退搜索中重新找到导航")
+                                    break
+                                self.sleep(0.02)
+                            self.send_key_up("s")  # 确认使用send_key：释放方向键
+                        self.send_key_down("w")
+                        self._walk_key_held = True
+                        nav_missing_recovered = True
+
+                    if need_v and self.active_time() - last_click_v_time > 5:
+                        self.log_info("未找到导航标识，点击 V 尝试")
+                        self.press_key("v")
+                        last_click_v_time = self.active_time()
+
+                    if not nav_result and run_bool:
+                        self.log_info("未找到导航标识，进入短距离搜索模式")
+                        exit_run_mode()
+
+                self.sleep(0.005)
+
+        finally:
+            if not run_bool:
+                self.log_info("导航结束，恢复奔跑模式")
+                self.press_key("ctrl", after_sleep=0.01)  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
+            if self._walk_key_held:
+                self.send_key_up("w")  # 确认使用send_key：释放方向键
+                self._walk_key_held = False
+
+    def align_ocr_or_find_target_to_center(
+        self,
+        ocr_match_or_feature_name_list,
+        only_x=False,
+        only_y=False,
+        box=None,
+        threshold=0.8,
+        max_time=50,
+        ocr=True,
+        use_yolo=False,
+        back_prev=False,
+        raise_if_fail=True,
+        is_num=False,
+        need_scroll=False,
+        max_step=120,
+        min_step=20,
+        slow_radius=350,
+        deadzone=8,
+        once_time=0.02,
+        tolerance=TOLERANCE,
+        ocr_frame_processor_list=None,
+        allow_random_move=True,
+        deadline=None,
+        max_iterations=None,
+        ocr_target_detector=None,
+        ocr_target_mover=None,
+        move_profile=None,
+        learning_session=None,
+    ):
+        """将OCR识别或图像特征检测的目标对准屏幕中心（自动移动视角/鼠标）
+
+        Args:
+            ocr_match_or_feature_name_list: OCR匹配模式(str/List)或特征名称(str/List)
+            only_x: True时仅对齐X轴（左右），Y轴保持不变
+            only_y: True时仅对齐Y轴（上下），X轴保持不变
+            box: 搜索区域框(Box)，None表示全屏。用于限制OCR/特征检测范围
+            threshold: 图像特征匹配阈值(0-1)，默认0.8，仅在ocr=False时使用
+            max_time: 最大尝试循环次数，默认50次
+            ocr: True使用OCR模式识别，False使用图像特征匹配模式
+            use_yolo: 在ocr=False时，是否改用YOLO识别（True=YOLO，False=模板特征匹配）
+            back_prev: True时对中完成后返回上一个窗口
+            raise_if_fail: True时对中失败抛出异常，False时返回False
+            is_num: 数字型目标Y坐标微调（用于识别数字时的位置校正）
+            need_scroll: True时在对中过程中自动滚动放大视角（常用于滑索数字对中/列表滚动两类UI）
+            max_step: 单次移动最大步长(像素)
+            min_step: 单次移动最小步长(像素)
+            slow_radius: 接近目标时减速的半径范围(像素)
+            deadzone: 鼠标停止移动的死区半径(像素)
+            once_time: 每次循环最小耗时(秒)，保证操作频率
+            tolerance: 目标中心与屏幕中心的容忍偏差(像素)，默认50，偏差在范围内判定成功
+            ocr_frame_processor_list: OCR帧处理函数列表(可用于色彩隔离等预处理)
+            allow_random_move: False 时未识别到目标不会执行随机视角搜索。
+            deadline: 可选的 active_time 绝对截止时间，达到后按原失败语义结束。
+            max_iterations: 可选的底层循环次数上限；传入时覆盖 max_time * 2 的循环预算。
+            ocr_target_detector: 可选单帧 OCR 检测器，返回已校正坐标的目标；None 表示等待，空列表表示识别失败。
+            ocr_target_mover: 可选 OCR 目标移动函数，也用于短暂丢失后的目标跟踪；非 OCR 路径不使用。
+            move_profile: hud_direction 使用椭圆加速，world_projection 使用普通对中。
+                默认 Feature 使用 HUD，OCR/YOLO 使用普通对中；YOLO 始终使用普通对中。
+
+        Returns:
+            tuple[int,int] | bool: 成功对中返回对中前的目标中心坐标 (x, y)，失败返回 False(当raise_if_fail=False时)
+                返回的是对中前的位置，外部导航可根据该位置判定目标是否在屏幕中央，
+                从而决定是否允许行走（不在中央则停步等待对齐）。
+
+        Raises:
+            Exception: 对中失败且raise_if_fail=True时抛出异常
+        """
+        scaled_tolerance = self.scale_distance(tolerance)
+        observations = get_navigation_detection_scope(self)
+        detection_kind = "ocr" if ocr else "yolo" if use_yolo else "feature"
+        profile = resolve_move_profile(move_profile, ocr=ocr, use_yolo=use_yolo)
+
+        def move_target(target):
+            target = copy(target)
+            if only_x:
+                target.y = self.screen_center()[1] - target.height // 2
+            if only_y:
+                target.x = self.screen_center()[0] - target.width // 2
+            if ocr and ocr_target_mover is not None:
+                return ocr_target_mover(target)
+            if profile == "world_projection":
+                return self.move_to_target_once(
+                    target, max_step=max_step, min_step=min_step, slow_radius=slow_radius, deadzone=deadzone
+                )
+            geometry = ellipse_geometry(self.screen_center(), min(self.width / 1920, self.height / 1080))
+            dx, dy = hud_direction_step(
+                (target.x + target.width // 2, target.y + target.height // 2),
+                geometry,
+                self.width,
+                max_step=max_step,
+                min_step=min_step,
+                slow_radius=slow_radius,
+                deadzone=deadzone,
+            )
+            if (dx or dy) and not self.active_and_send_mouse_delta(dx, dy, steps=5, delay=0.005):
+                return 0, 0
+            return dx, dy
+
+        feature_box = box or self.box_of_screen(
+            (1920 - 1550) / 1920,
+            150 / 1080,
+            1550 / 1920,
+            (1080 - 150) / 1080,
+        )
+        last_target = None
+        last_target_fail_count = 0
+        success = False
+        random_move_count = 0
+        move_count = 0
+        iteration_limit = max_time * 2 if max_iterations is None else max(0, int(max_iterations))
+        for _ in range(iteration_limit):
+            if deadline is not None and self.active_time() >= deadline:
+                break
+            start_action_time = self.active_time()
+            if need_scroll:
+                if learning_session is not None:
+                    learning_session.disturb("scroll_changed")
+                self.do_scroll(1, 400)
+            if ocr and ocr_target_detector is not None:
+                frame = self.next_frame()
+                if learning_session is not None:
+                    learning_session.frame_acquired(frame)
+                result = ocr_target_detector(frame)
+                if deadline is not None and self.active_time() >= deadline:
+                    break
+                if result is None:
+                    self.sleep(0.03)
+                    continue
+            elif ocr:
+                # 使用OCR模式识别目标，设置超时时间为2秒，并启用日志记录
+                start_time = self.active_time()
+                result = None
+                while self.active_time() - start_time < 0.15:
+                    if deadline is not None and self.active_time() >= deadline:
+                        break
+                    frame = self.next_frame()
+                    if learning_session is not None:
+                        learning_session.frame_acquired(frame)
+                    if not isinstance(ocr_frame_processor_list, list):
+                        ocr_frame_processor_list = [ocr_frame_processor_list]
+                    for ocr_frame_processor in ocr_frame_processor_list:
+                        result = self.ocr(
+                            match=ocr_match_or_feature_name_list,
+                            box=box,
+                            frame=frame,
+                            log=True,
+                            frame_processor=ocr_frame_processor,
+                        )
+                        if result:
+                            break
+                    if result:
+                        break
+                    if observations is not None:
+                        break
+                    self.sleep(0.03)
+            else:
+                if isinstance(ocr_match_or_feature_name_list, str):
+                    ocr_match_or_feature_name_list = [ocr_match_or_feature_name_list]
+                start_time = self.active_time()
+                result = None
+                while True:
+                    if deadline is not None and self.active_time() >= deadline:
+                        break
+                    if self.active_time() - start_time >= 1:
+                        break
+                    frame = self.next_frame()
+                    if learning_session is not None:
+                        learning_session.frame_acquired(frame)
+                    if use_yolo:
+                        result = self.yolo_detect(
+                            name=ocr_match_or_feature_name_list,
+                            frame=frame,
+                            box=feature_box,
+                            conf=threshold,
+                        )
+                    else:
+                        for feature_name in ocr_match_or_feature_name_list:
+                            if deadline is not None and self.active_time() >= deadline:
+                                break
+                            if self.active_time() - start_time >= 1:
+                                break
+
+                            result = self.find_feature(
+                                feature=feature_name,
+                                threshold=threshold,
+                                box=feature_box,
+                                **({"frame": frame} if learning_session is not None else {}),
+                            )
+                            if result:
+                                break
+                    if result:
+                        break
+                    if observations is not None:
+                        break
+                    self.sleep(0.03)
+            if result:
+                success = True
+                random_move_count = 0
+                move_count = 0
+                # OCR 成功
+                if isinstance(result, list):
+                    result = result[0]
+                result = copy(result)
+                if is_num and (not ocr or ocr_target_detector is None):
+                    result.y = result.y - int(self.height * ((525 - 486) / 1080))
+                observed_center = (result.x + result.width // 2, result.y + result.height // 2)
+                if only_y:
+                    result.x = self.screen_center()[0] - result.width // 2
+                if only_x:
+                    result.y = self.screen_center()[1] - result.height // 2
+                target_center = (
+                    result.x + result.width // 2,
+                    result.y + result.height // 2,
+                )
+                screen_center_pos = self.screen_center()
+                last_target = result
+                last_target_fail_count = 0
+                # 计算偏移量
+
+                dx = target_center[0] - screen_center_pos[0]
+
+                dy = target_center[1] - screen_center_pos[1]
+
+                # 如果目标在容忍范围内
+                if abs(dx) <= scaled_tolerance and abs(dy) <= scaled_tolerance:
+                    if learning_session is not None:
+                        learning_session.confirm_alignment(observed_center)
+                    return target_center
+                else:
+                    move_target(result)
+
+            else:
+                if observations is not None:
+                    recent = observations.latest(detection_kind, ocr_match_or_feature_name_list, threshold=threshold)
+                    if recent is None:
+                        last_target = None
+                    elif last_target is None:
+                        last_target = recent.boxes[0]
+                        if only_x:
+                            last_target.y = self.screen_center()[1] - last_target.height // 2
+                        if only_y:
+                            last_target.x = self.screen_center()[0] - last_target.width // 2
+                        success = True
+                if not allow_random_move and (observations is None or last_target is None):
+                    continue
+                # 每次 OCR 失败，直接随机移动
+                max_offset = self.scale_distance(60)  # 最大随机偏移
+                if last_target:
+                    decay = 0.9**last_target_fail_count
+                    # 计算目标中心到屏幕中心的偏移
+
+                    screen_center_x, screen_center_y = self.screen_center()
+                    offset_x = int((screen_center_x - last_target.x) * decay)
+                    offset_y = int((screen_center_y - last_target.y) * decay)
+                    offset_width = int(last_target.width / 2 * decay)
+                    offset_height = int(last_target.height / 2 * decay)
+                    # 直接修改 last_target 坐标
+                    last_target.x = screen_center_x - offset_x
+                    last_target.y = screen_center_y - offset_y
+                    last_target.width = offset_width
+                    last_target.height = offset_height
+                    move_target(last_target)
+                    last_target_fail_count += 1
+                    random_move_count = 0
+                    move_count += 1
+                    if move_count >= 10:
+                        last_target = None
+                        move_count = 0
+                else:
+                    if not success:
+                        max_offset = self.width // 4
+                    last_target = None
+                    last_target_fail_count = 0
+                    dx = random.randint(-max_offset, max_offset)
+                    dy = 0 if not success else random.randint(-max_offset, max_offset)
+
+                    # 移动鼠标
+                    if learning_session is not None:
+                        learning_session.disturb("random_search")
+                    self.active_and_send_mouse_delta(
+                        0 if only_y else dx,
+                        0 if only_x else dy,
+                        activate=True,
+                        steps=5,
+                        delay=0.003,
+                    )
+                    move_count = 0
+                    random_move_count += 1
+                    if random_move_count >= 10:
+                        success = False
+                        random_move_count = 0
+
+            if self.active_time() - start_action_time < once_time:
+                self.sleep(
+                    once_time - (self.active_time() - start_action_time)
+                )  # OCR 成功后不需要处理，下一次失败仍然随机
+
+        if raise_if_fail:
+            raise Exception("对中失败")
+        else:
+            return False
+
+    def do_scroll(self, times, delta):
+        for _ in range(times):
+            pyautogui.scroll(int(self.resolution_scale() * delta))

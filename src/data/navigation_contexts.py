@@ -16,7 +16,8 @@ def delivery_route_family(config_key, *, origin_anchor):
     matches = []
     for area, data in DELIVERY_AREA_CONFIG.items():
         for location, targets in data["delivery_targets_by_location"].items():
-            if config_key in targets and origin_anchor == DELIVERY_DISPATCH_BOARD:
+            target_names = {target if isinstance(target, str) else target.get("name") for target in targets}
+            if config_key in target_names and origin_anchor == DELIVERY_DISPATCH_BOARD:
                 matches.append((area, location, origin_anchor, "outbound", "delivery"))
             if config_key == f"通向{location}送货点" and origin_anchor == DELIVERY_TRANSFER_BOARD:
                 matches.append((area, location, origin_anchor, "pickup", "delivery"))

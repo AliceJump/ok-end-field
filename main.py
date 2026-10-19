@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # abandoned temporary launcher parents recorded by this application.
     try:
         import logging
+
         from src.core.temporary_parent_recovery import recover_owned_parents
 
         recover_owned_parents(logging.getLogger("ok-end-field.launcher"))
