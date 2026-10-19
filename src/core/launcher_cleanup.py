@@ -166,27 +166,31 @@ class LauncherCleanup:
                 return
             time.sleep(2)
 
+    def _watch_startup(self, game) -> None:
+        """Observe SDK readiness, retaining the parent until readiness or game exit."""
+        checked = ready = False
+        success = re.compile(rb"Parent process check success:" + str(self.parent_pid).encode() + rb"\s*$")
+        deadline = time.monotonic() + _TIMEOUT
+        while time.monotonic() < deadline:
+            if not self._parent_running():
+                return
+            if not game.is_running():
+                self.logger.info(f"Game exited; discarding temporary Games.exe PID {self.parent_pid}")
+                self._request_exit()
+                return
+            checked = self._seen(self.check_log, success) or checked
+            ready = self._seen(self.sdk_log, _SDK_READY) or ready
+            if checked and ready:
+                self.logger.info(f"Game startup verified; terminating temporary Games.exe PID {self.parent_pid}")
+                self._request_exit()
+                return
+            time.sleep(_INTERVAL)
+        self.logger.warning("Game startup not verified in 120 seconds; keeping temporary Games.exe until the game exits")
+        self._wait_for_game_exit(game)
+
     def _watch(self, game) -> None:
         try:
-            checked = ready = False
-            success = re.compile(rb"Parent process check success:" + str(self.parent_pid).encode() + rb"\s*$")
-            deadline = time.monotonic() + _TIMEOUT
-            while time.monotonic() < deadline:
-                if not self._parent_running():
-                    return
-                if not game.is_running():
-                    self.logger.info(f"Game exited; discarding temporary Games.exe PID {self.parent_pid}")
-                    self._request_exit()
-                    return
-                checked = self._seen(self.check_log, success) or checked
-                ready = self._seen(self.sdk_log, _SDK_READY) or ready
-                if checked and ready:
-                    self.logger.info(f"Game startup verified; terminating temporary Games.exe PID {self.parent_pid}")
-                    self._request_exit()
-                    return
-                time.sleep(_INTERVAL)
-            self.logger.warning("Game startup not verified in 120 seconds; keeping temporary Games.exe until the game exits")
-            self._wait_for_game_exit(game)
+            self._watch_startup(game)
         except Exception as error:
             self.logger.warning(f"Cannot verify SDK startup; retaining temporary Games.exe while the game runs: {error}")
             try:

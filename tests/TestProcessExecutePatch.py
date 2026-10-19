@@ -499,9 +499,10 @@ class TestOfficialLauncher(unittest.TestCase):
         with (
             patch.object(official_launcher, "find_official_games_exe", return_value=Path("C:/Launcher/2.4.9/Games.exe")),
             patch.object(official_launcher, "register_owned_parent", side_effect=OSError("disk full")),
-            self.assertRaisesRegex(OSError, "disk full"),
         ):
-            official_launcher.create_temporary_parent(kernel, "Endfield.exe", Mock())
+            logger = Mock()
+            with self.assertRaisesRegex(OSError, "disk full"):
+                official_launcher.create_temporary_parent(kernel, "Endfield.exe", logger)
         kernel.TerminateProcess.assert_called_once_with(222, 0)
         self.assertIn((222,), [call.args for call in kernel.CloseHandle.call_args_list])
 
@@ -831,12 +832,38 @@ class TestTemporaryParentRecovery(unittest.TestCase):
             patch.object(self.recovery.psutil, "Process", side_effect=lambda pid: parent if pid == 231 else owner),
             patch.object(self.recovery.os, "getpid", return_value=1000),
         ):
-            self.recovery.register_owned_parent(231, self.executable)
+            self.recovery.register_owned_parent(231)
         record = json.loads((self.path / "231.json").read_text(encoding="utf-8"))
         self.assertEqual(record["parent_created"], 100.0)
         self.assertEqual(record["parent_exe"], self.executable)
         self.assertEqual(record["owner_pid"], 1000)
         self.recovery.forget_owned_parent(231, self.logger)
+        self.assertFalse((self.path / "231.json").exists())
+
+    def test_register_uses_reported_image_path_for_recovery(self):
+        parent, owner = self._parent(), self._owner(alive=True)
+        reported = os.path.abspath("Resolved Launcher/2.4.9/Games.exe")
+        parent.exe.return_value = reported
+        with (
+            patch.object(self.recovery.psutil, "Process", side_effect=lambda pid: parent if pid == 231 else owner),
+            patch.object(self.recovery.os, "getpid", return_value=1000),
+        ):
+            self.recovery.register_owned_parent(231)
+        path = self.path / "231.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["parent_exe"], os.path.normcase(reported))
+        self._recover(parent)
+        parent.terminate.assert_called_once()
+        self.assertFalse(path.exists())
+
+    def test_register_rejects_unexpected_image_name(self):
+        parent = self._parent()
+        parent.exe.return_value = os.path.abspath("Launcher.exe")
+        with (
+            patch.object(self.recovery.psutil, "Process", return_value=parent),
+            self.assertRaisesRegex(RuntimeError, "Cannot identify"),
+        ):
+            self.recovery.register_owned_parent(231)
         self.assertFalse((self.path / "231.json").exists())
 
     def test_abandoned_parent_without_game_is_recovered(self):

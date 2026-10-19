@@ -365,7 +365,7 @@ def create_temporary_parent(kernel, game_path: str, logger):
     try:
         # A crash after this point must leave sufficient identity evidence for
         # the next OK-EF launch to safely recognize our suspended process.
-        register_owned_parent(process.dwProcessId, str(executable))
+        register_owned_parent(process.dwProcessId)
     except Exception:
         kernel.TerminateProcess(process.hProcess, 0)
         kernel.CloseHandle(process.hProcess)
@@ -422,6 +422,52 @@ def create_process(kernel, game_path: str, arguments: str, parent) -> int:
         kernel.DeleteProcThreadAttributeList(attributes)
 
 
+def _start_fallback_cleanup(cleanup, pid: int, kernel, parent, logger) -> bool:
+    """Return whether a fallback watcher took ownership of the parent handle."""
+    try:
+        cleanup.start_exit_watch(pid)
+        return True  # The fallback watcher took ownership (or completed inline).
+    except Exception as fallback_error:
+        # Only a verified child exit permits cleanup. If no worker can be
+        # started, retain ownership and wait here for the game to exit.
+        logger.warning(f"Cannot start fallback cleanup; waiting for game exit in caller: {fallback_error}")
+        try:
+            while psutil.pid_exists(pid):
+                time.sleep(2)
+            if kernel.TerminateProcess(parent, 0):
+                forget_owned_parent(cleanup.parent_pid, logger)
+            else:
+                logger.warning("Could not terminate owned temporary Games.exe after game exit")
+        except Exception as exit_error:
+            logger.warning(f"Cannot complete emergency temporary launcher cleanup: {exit_error}")
+    return False
+
+
+def _start_cleanup(cleanup, pid: int, kernel, parent, logger) -> bool:
+    """Return whether cleanup took ownership, preserving live children's parents."""
+    try:
+        cleanup.start(pid)
+        return True
+    except Exception as error:
+        # If the child has definitely exited, our suspended parent is disposable.
+        # Otherwise do not guess about SDK readiness or terminate a live child's parent.
+        try:
+            child_gone = not psutil.pid_exists(pid)
+        except Exception:
+            child_gone = False
+        if child_gone:
+            try:
+                if not kernel.TerminateProcess(parent, 0):
+                    raise OSError("Could not terminate the owned temporary Games.exe")
+                forget_owned_parent(cleanup.parent_pid, logger)
+                logger.info(f"Game PID {pid} exited before cleanup monitor started; discarded temporary Games.exe")
+            except Exception as discard_error:
+                logger.warning(f"Cannot discard temporary Games.exe after game exit: {discard_error}")
+            return False
+        logger.warning(f"Cannot start initial SDK monitor; starting fallback for owned Games.exe: {error}")
+        return _start_fallback_cleanup(cleanup, pid, kernel, parent, logger)
+
+
 def launch_game(game_path: str, arguments: str, logger) -> bool:
     try:
         recover_owned_parents(logger)
@@ -443,45 +489,8 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
         child_created = True
         note_game_started(cleanup.parent_pid, pid, logger)
         logger.info(f"Created Endfield with suspended official launcher parent: pid={pid}")
-        try:
-            cleanup.start(pid)
+        if _start_cleanup(cleanup, pid, kernel, parent, logger):
             parent = None  # The background watcher owns the process handle now.
-        except Exception as error:
-            # If the child has definitely exited, our suspended parent is disposable.
-            # Otherwise do not guess about SDK readiness or terminate a live child's parent.
-            try:
-                child_gone = not psutil.pid_exists(pid)
-            except Exception:
-                child_gone = False
-            if child_gone:
-                try:
-                    if not kernel.TerminateProcess(parent, 0):
-                        raise OSError("Could not terminate the owned temporary Games.exe")
-                    forget_owned_parent(cleanup.parent_pid, logger)
-                    logger.info(f"Game PID {pid} exited before cleanup monitor started; discarded temporary Games.exe")
-                except Exception as discard_error:
-                    logger.warning(f"Cannot discard temporary Games.exe after game exit: {discard_error}")
-            else:
-                logger.warning(f"Cannot start initial SDK monitor; starting fallback for owned Games.exe: {error}")
-                try:
-                    cleanup.start_exit_watch(pid)
-                    parent = None  # The fallback watcher took ownership (or completed inline).
-                except Exception as fallback_error:
-                    # Only a verified child exit permits cleanup. If no worker
-                    # can be started, keep ownership and wait here rather than
-                    # close the sole handle of an indefinitely suspended parent.
-                    logger.warning(
-                        f"Cannot start fallback cleanup; waiting for game exit in caller: {fallback_error}"
-                    )
-                    try:
-                        while psutil.pid_exists(pid):
-                            time.sleep(2)
-                        if kernel.TerminateProcess(parent, 0):
-                            forget_owned_parent(cleanup.parent_pid, logger)
-                        else:
-                            logger.warning("Could not terminate owned temporary Games.exe after game exit")
-                    except Exception as exit_error:
-                        logger.warning(f"Cannot complete emergency temporary launcher cleanup: {exit_error}")
         return True
     finally:
         if parent:

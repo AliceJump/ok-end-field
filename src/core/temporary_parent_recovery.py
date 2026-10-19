@@ -53,11 +53,13 @@ def _write_record(path: Path, data: dict) -> None:
             tmp.unlink(missing_ok=True)
 
 
-def register_owned_parent(pid: int, executable: str) -> None:
+def register_owned_parent(pid: int) -> None:
     """Persist a uniquely identified owned parent before any game is launched."""
     proc = psutil.Process(pid)
     started = proc.create_time()
-    full_path = os.path.normcase(os.path.abspath(executable))
+    # Use the OS-reported image path for both registration and recovery; the
+    # CreateProcessW input can use a different spelling through a path alias.
+    full_path = os.path.normcase(os.path.abspath(proc.exe()))
     if not _same_process(proc, started, full_path) or Path(full_path).name.casefold() != "games.exe":
         raise RuntimeError("Cannot identify the newly created temporary Games.exe")
     owner = psutil.Process(os.getpid())
@@ -126,6 +128,49 @@ def _recorded_game_alive(record: dict) -> bool:
         return False
 
 
+def _recover_record(path: Path, logger) -> None:
+    """Validate one journal identity and reclaim it only after its users exit."""
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(record, dict) or record.get("version") != _RECORD_VERSION:
+        logger.warning(f"Unknown temporary launcher record: {path}")
+        return
+    pid = record["parent_pid"]
+    started = record["parent_created"]
+    executable = record["parent_exe"]
+    if (
+        not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0
+        or not isinstance(started, (int, float)) or isinstance(started, bool)
+        or not isinstance(executable, str)
+        or not executable
+        or path.name != f"{pid}.json"
+        or os.path.normcase(os.path.abspath(executable)) != executable
+        or Path(executable).name.casefold() != "games.exe"
+    ):
+        logger.warning(f"Invalid temporary launcher record: {path}")
+        return
+
+    try:
+        parent = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        path.unlink(missing_ok=True)
+        return
+    if not _same_process(parent, started, executable):
+        # PID reused, or a different process now occupies this identity.
+        path.unlink(missing_ok=True)
+        return
+    if _owner_still_alive(record) or _recorded_game_alive(record):
+        return
+    # If the child metadata was never saved, children() still protects
+    # the small interval between process creation and journal update.
+    if any(child.is_running() for child in parent.children(recursive=True)):
+        return
+    if not _same_process(parent, started, executable):
+        return
+    parent.terminate()
+    path.unlink(missing_ok=True)
+    logger.info(f"Recovered abandoned temporary Games.exe PID {pid}")
+
+
 def recover_owned_parents(logger) -> None:
     """Reclaim abandoned parents on next startup; never use process names alone."""
     folder = _records_dir()
@@ -133,45 +178,7 @@ def recover_owned_parents(logger) -> None:
         return
     for path in folder.glob("*.json"):
         try:
-            record = json.loads(path.read_text(encoding="utf-8"))
-            if not isinstance(record, dict) or record.get("version") != _RECORD_VERSION:
-                logger.warning(f"Unknown temporary launcher record: {path}")
-                continue
-            pid = record["parent_pid"]
-            started = record["parent_created"]
-            executable = record["parent_exe"]
-            if (
-                not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0
-                or not isinstance(started, (int, float)) or isinstance(started, bool)
-                or not isinstance(executable, str)
-                or not executable
-                or path.name != f"{pid}.json"
-                or os.path.normcase(os.path.abspath(executable)) != executable
-                or Path(executable).name.casefold() != "games.exe"
-            ):
-                logger.warning(f"Invalid temporary launcher record: {path}")
-                continue
-
-            try:
-                parent = psutil.Process(pid)
-            except psutil.NoSuchProcess:
-                path.unlink(missing_ok=True)
-                continue
-            if not _same_process(parent, started, executable):
-                # PID reused, or a different process now occupies this identity.
-                path.unlink(missing_ok=True)
-                continue
-            if _owner_still_alive(record) or _recorded_game_alive(record):
-                continue
-            # If the child metadata was never saved, children() still protects
-            # the small interval between process creation and journal update.
-            if any(child.is_running() for child in parent.children(recursive=True)):
-                continue
-            if not _same_process(parent, started, executable):
-                continue
-            parent.terminate()
-            path.unlink(missing_ok=True)
-            logger.info(f"Recovered abandoned temporary Games.exe PID {pid}")
-        except (psutil.AccessDenied, psutil.Error, OSError, KeyError, ValueError, TypeError) as error:
+            _recover_record(path, logger)
+        except (psutil.Error, OSError, KeyError, ValueError, TypeError) as error:
             # Missing permissions, ambiguous identity, corrupt data: preserve.
             logger.warning(f"Skipping unsafe temporary launcher recovery from {path}: {error}")
