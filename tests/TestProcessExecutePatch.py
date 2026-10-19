@@ -419,10 +419,26 @@ class TestOfficialLauncher(unittest.TestCase):
             patch.object(official_launcher, "create_temporary_parent", return_value=321),
             patch.object(official_launcher, "LauncherCleanup") as cleanup,
             patch.object(official_launcher, "create_process", return_value=456),
+            patch.object(official_launcher.psutil, "pid_exists", return_value=True),
         ):
             cleanup.return_value.start.side_effect = RuntimeError("thread unavailable")
             self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
         kernel.TerminateProcess.assert_not_called()
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_watcher_unavailable_after_game_exit_discards_owned_parent(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+            patch.object(official_launcher, "create_process", return_value=456),
+            patch.object(official_launcher.psutil, "pid_exists", return_value=False),
+        ):
+            cleanup.return_value.start.side_effect = psutil.NoSuchProcess(456)
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        kernel.TerminateProcess.assert_called_once_with(321, 0)
         kernel.CloseHandle.assert_called_once_with(321)
 
     def test_find_official_games_uses_newest_signed_version(self):
@@ -550,12 +566,15 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
             out.write(f"[{stamp}] [info] {text}\n".encode())
 
     def _watch(self, cleanup, game=None, ticks=(0, 0, 121)):
+        game = game or Mock(is_running=Mock(return_value=True))
         with (
             patch.object(cleanup, "_parent_running", return_value=True),
+            patch.object(cleanup, "_wait_for_game_exit") as wait_for_exit,
             patch.object(self.cleanup_mod.time, "monotonic", side_effect=ticks),
             patch.object(self.cleanup_mod.time, "sleep"),
         ):
-            cleanup._watch(game or Mock(is_running=Mock(return_value=True)))
+            cleanup._watch(game)
+        return wait_for_exit
 
     def test_both_current_sdk_signals_terminate_only_owned_parent(self):
         cleanup = self._new_cleanup()
@@ -588,17 +607,34 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
         self._watch(cleanup)
         self.kernel.TerminateProcess.assert_not_called()
 
-    def test_no_cleanup_when_game_exits_or_log_read_fails(self):
+    def test_game_exit_discards_owned_parent_and_log_error_preserves_live_game(self):
         cleanup = self._new_cleanup()
         self._watch(cleanup, game=Mock(is_running=Mock(return_value=False)))
-        self.kernel.TerminateProcess.assert_not_called()
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
         self.kernel.CloseHandle.assert_called_once_with(999)
         self.kernel.reset_mock()
         cleanup = self._new_cleanup()
         with patch.object(cleanup.check_log, "read", side_effect=PermissionError("denied")):
-            self._watch(cleanup)
+            wait = self._watch(cleanup)
         self.kernel.TerminateProcess.assert_not_called()
+        wait.assert_called_once()
         self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_timeout_keeps_parent_for_live_game_then_discards_on_exit(self):
+        cleanup = self._new_cleanup()
+        game = Mock(is_running=Mock(return_value=True))
+        wait = self._watch(cleanup, game=game)
+        self.kernel.TerminateProcess.assert_not_called()
+        wait.assert_called_once_with(game)
+        self.kernel.reset_mock()
+        game.is_running.side_effect = [True, False]
+        with (
+            patch.object(cleanup, "_parent_running", return_value=True),
+            patch.object(self.cleanup_mod.time, "sleep") as sleep,
+        ):
+            cleanup._wait_for_game_exit(game)
+        sleep.assert_called_once_with(2)
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
 
     def test_tail_skips_old_partial_and_survives_rotation(self):
         path = self.logs / "OneChannelLC.log"
