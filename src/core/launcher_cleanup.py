@@ -131,27 +131,45 @@ class LauncherCleanup:
             raise OSError("Could not terminate the owned temporary Games.exe")
         self.logger.info(f"Requested termination of temporary Games.exe PID {self.parent_pid}")
 
+    def _seen(self, tail: _LogTail, pattern) -> bool:
+        """Consume new log records and detect a current matching line."""
+        return any(_is_current(line, self.started) and pattern.search(line) for line in tail.read())
+
+    def _wait_for_game_exit(self, game) -> None:
+        """Keep our parent alive while the game runs, then discard it."""
+        while self._parent_running():
+            if not game.is_running():
+                self.logger.info(f"Game exited; discarding temporary Games.exe PID {self.parent_pid}")
+                self._request_exit()
+                return
+            time.sleep(2)
+
     def _watch(self, game) -> None:
         try:
             checked = ready = False
             success = re.compile(rb"Parent process check success:" + str(self.parent_pid).encode() + rb"\s*$")
             deadline = time.monotonic() + _TIMEOUT
             while time.monotonic() < deadline:
-                if not game.is_running() or not self._parent_running():
+                if not self._parent_running():
                     return
-                for line in self.check_log.read():
-                    if _is_current(line, self.started) and success.search(line):
-                        checked = True
-                for line in self.sdk_log.read():
-                    if _is_current(line, self.started) and _SDK_READY.search(line):
-                        ready = True
+                if not game.is_running():
+                    self.logger.info(f"Game exited; discarding temporary Games.exe PID {self.parent_pid}")
+                    self._request_exit()
+                    return
+                checked = self._seen(self.check_log, success) or checked
+                ready = self._seen(self.sdk_log, _SDK_READY) or ready
                 if checked and ready:
                     self.logger.info(f"Game startup verified; terminating temporary Games.exe PID {self.parent_pid}")
                     self._request_exit()
                     return
                 time.sleep(_INTERVAL)
-            self.logger.warning("Game startup success logs not observed within 120 seconds; preserving temporary Games.exe")
+            self.logger.warning("Game startup not verified in 120 seconds; keeping temporary Games.exe until the game exits")
+            self._wait_for_game_exit(game)
         except Exception as error:
-            self.logger.warning(f"Cannot close official launcher after startup; leaving it open: {error}")
+            self.logger.warning(f"Cannot verify SDK startup; retaining temporary Games.exe while the game runs: {error}")
+            try:
+                self._wait_for_game_exit(game)
+            except Exception as wait_error:
+                self.logger.warning(f"Cannot monitor game exit for owned Games.exe PID {self.parent_pid}: {wait_error}")
         finally:
             self.kernel.CloseHandle(self.parent)
