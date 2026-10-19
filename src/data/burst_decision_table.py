@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PATH = ROOT / 'data/release-burst-plans.json'
+DEFAULT_DIRECTORY = ROOT / 'data/release-burst-plans'
 CAPACITY = 256
 
 
@@ -55,6 +56,15 @@ def budget_cell(actions, sp):
         return sp  # Fractional/dynamic costs keep exact SP, avoiding rounding across affordability edges.
     thresholds = {0.0, *(value+gate for value in sums for gate in gates)}
     return max(value for value in thresholds if value <= min(sp, 300))
+
+
+def team_path(team, directory=DEFAULT_DIRECTORY):
+    """Ordered rosters of every supported size have independent local shards."""
+    roster = tuple(team)
+    if not 1 <= len(roster) <= 4 or any(not isinstance(name, str) or not name for name in roster):
+        raise ValueError('A team policy needs one to four named slots')
+    key = hashlib.sha256(json.dumps(roster, ensure_ascii=False, separators=(',', ':')).encode('utf8')).hexdigest()
+    return Path(directory) / (key + '.json')
 
 
 class BurstDecisionTable:
@@ -145,6 +155,15 @@ class BurstDecisionTable:
         except (OSError, ValueError, KeyError, TypeError, OverflowError):
             return cls()
         return table
+
+    @classmethod
+    def for_team(cls, team, *, directory=DEFAULT_DIRECTORY, fallback=DEFAULT_PATH):
+        try:
+            path = team_path(team, directory)
+        except (TypeError, ValueError):
+            return cls()  # Optional disk policies must not break an incomplete runtime roster.
+        table = cls.load(path)
+        return table if table.entries else cls.load(fallback)
 
     def save(self, path):
         """Offline preparation only. Runtime lookups never write or reread files."""

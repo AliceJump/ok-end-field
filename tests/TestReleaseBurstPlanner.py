@@ -10,7 +10,7 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from src.data.burst_decision_table import BurstDecisionTable, budget_cell
+from src.data.burst_decision_table import BurstDecisionTable, budget_cell, team_path
 from src.data.combat_observation import ActionBlockReason
 from src.data.release_burst_planner import SNAPSHOT, ReleaseBurstAction, ReleaseBurstPlanner, read_snapshot
 from src.data.skill_timing import load_skill_timings
@@ -1138,6 +1138,14 @@ class TestUltimateOutputWindow(unittest.TestCase):
 
 
 class TestBurstDecisionTable(unittest.TestCase):
+    @staticmethod
+    def generator():
+        script = Path(__file__).resolve().parents[1]/'scripts/skill-data/prepare_burst_decision_table.py'
+        spec = importlib.util.spec_from_file_location('prepare_burst_table_test', script)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
     def example(self):
         p = ReleaseBurstPlanner(['梨诺', '佩丽卡'])
         p.decision_table = BurstDecisionTable()
@@ -1261,10 +1269,7 @@ class TestBurstDecisionTable(unittest.TestCase):
         self.assertFalse(p.bonuses)
 
     def test_offline_opening_generator_produces_a_table_for_actual_runtime_inputs(self):
-        script = Path(__file__).resolve().parents[1]/'scripts/skill-data/prepare_burst_decision_table.py'
-        spec = importlib.util.spec_from_file_location('prepare_burst_table_test', script)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        module = self.generator()
         scenario = {'team': ['庄方宜', '佩丽卡', '艾维文娜', '梨诺'], 'sp': 225,
                     'ultimate_slots': ['1', '2', '3', '4'], 'rings': {'1': True, '3': True}, 'main_slot': '1'}
         with tempfile.TemporaryDirectory() as directory:
@@ -1278,6 +1283,85 @@ class TestBurstDecisionTable(unittest.TestCase):
                 decision = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 0)
             self.assertEqual((decision.action.slot, decision.action.kind), ('1', 'ult'))
             self.assertEqual(p.decision_table.hits, 1)
+
+    def test_actual_roster_size_and_order_select_independent_shards(self):
+        roster = ['庄方宜', '佩丽卡', '艾维文娜', '梨诺']
+        paths = {team_path(roster[:size]) for size in range(1, 5)}
+        paths.add(team_path(roster[::-1]))
+        self.assertEqual(len(paths), 5)
+        for invalid in ([], roster+['安塔尔'], [None], ['']):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                team_path(invalid)
+        self.assertFalse(BurstDecisionTable.for_team([]).entries)
+
+    def test_team_shards_load_independently_and_missing_shard_keeps_legacy_fallback(self):
+        p, actions = self.example()
+        p.choose(actions, 125, 0)
+        with tempfile.TemporaryDirectory() as directory:
+            legacy = Path(directory)/'legacy.json'
+            p.decision_table.save(legacy)
+            shard = team_path(['庄方宜'], directory)
+            BurstDecisionTable().save(shard)
+            self.assertEqual(len(BurstDecisionTable.for_team(['庄方宜'], directory=directory,
+                                                            fallback=legacy).entries), 1)
+            p.decision_table.save(shard)
+            with patch.object(BurstDecisionTable, 'load', wraps=BurstDecisionTable.load) as load:
+                self.assertEqual(len(BurstDecisionTable.for_team(['庄方宜'], directory=directory,
+                                                                fallback=legacy).entries), 1)
+            load.assert_called_once_with(shard)
+            self.assertFalse(BurstDecisionTable.for_team(['佩丽卡'], directory=directory,
+                                                         fallback=Path(directory)/'missing.json').entries)
+
+    def test_one_to_four_member_offline_policies_hit_real_unpadded_candidates(self):
+        module = self.generator()
+        roster = ['庄方宜', '佩丽卡', '艾维文娜', '梨诺']
+        scenarios = [{'team': roster[:size], 'sp': 225,
+                      'ultimate_slots': [str(i+1) for i in range(size)],
+                      'rings': {str(i+1): True for i in range(size)}, 'main_slot': '1'} for size in range(1, 5)]
+        with tempfile.TemporaryDirectory() as directory:
+            result = module.prepare_teams(scenarios, directory)
+            self.assertEqual(result['team_sizes'], [1, 2, 3, 4])
+            self.assertEqual(result['team_shards'], 4)
+            for scenario in scenarios:
+                team = scenario['team']
+                slots = {str(i+1) for i in range(len(team))}
+                with self.subTest(size=len(team)), patch.object(BurstDecisionTable, 'for_team',
+                        side_effect=lambda current: BurstDecisionTable.load(team_path(current, directory))):
+                    logic = TimedCombatLogic(module.PlanningInputs(scenario['ultimate_slots'], scenario['rings']),
+                                             load_skill_timings(), clock=lambda: 0.)
+                    self.assertTrue(logic._configure_team(team, reset_runtime=True))
+                    p = logic.release_burst
+                    self.assertEqual(set(p.rows), slots)
+                    logic._observe_battle_highlights()
+                    logic._burst_main_control = '1'
+                    with patch.object(p, '_search', side_effect=AssertionError('Prepared roster must hit')):
+                        decision = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 0)
+                    self.assertEqual(p.decision_table.hits, 1)
+                    self.assertTrue(all(slot in slots for slot, _ in decision.sequence))
+                    for slot in slots:
+                        p.confirm(slot, 'ult', 0)
+                    self.assertTrue(all(b.recipient in slots for b in p.bonuses))
+
+    def test_single_support_cannot_gain_from_missing_allies_or_ready_slots(self):
+        module = self.generator()
+        scenario = {'team': ['梨诺'], 'sp': 225, 'ultimate_slots': ['1'], 'rings': {}, 'main_slot': None}
+        with tempfile.TemporaryDirectory() as directory:
+            result = module.prepare_teams([scenario], directory)
+            self.assertEqual(result['outputs'][0]['stored_results'], 0)
+            for field, value in (('ultimate_slots', ['2']), ('rings', {'2': True}), ('main_slot', '2')):
+                with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'slots'):
+                    module.prepare([{**scenario, field: value}], Path(directory)/'invalid.json')
+
+    def test_multi_team_batches_do_not_evict_other_rosters_and_reject_oversized_groups(self):
+        module = self.generator()
+        scenario = {'team': ['庄方宜'], 'sp': 100, 'ultimate_slots': ['1'], 'rings': {'1': True}, 'main_slot': '1'}
+        with tempfile.TemporaryDirectory() as directory:
+            result = module.prepare_teams([scenario, {**scenario, 'team': ['庄方宜', '佩丽卡']}], directory)
+            self.assertEqual(result['team_shards'], 2)
+            self.assertEqual(len(list(Path(directory).glob('*.json'))), 2)
+            self.assertTrue(all(row['stored_results'] == 1 for row in result['outputs']))
+            with self.assertRaisesRegex(ValueError, '256'):
+                module.prepare_teams([scenario]*257, directory)
 
 
 class TestBurstSpValue(unittest.TestCase):

@@ -195,7 +195,7 @@ class ReleaseBurstPlanner:
         self.condition_transitions = {(actor, kind): transition for actor, row in self.rows.items()
                                       for kind, transition in ConditionTransition.for_actor(row, store).items()}
         self.table_profile_key = BurstDecisionTable.profile_key(self.rows)
-        self.decision_table = BurstDecisionTable.load()
+        self.decision_table = BurstDecisionTable.for_team(self.team)
 
     @staticmethod
     def _basic_normal_profiles(store, character):

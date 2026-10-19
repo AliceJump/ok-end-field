@@ -4,7 +4,9 @@
 
 ## 当前接入方式
 
-`ReleaseBurstPlanner.choose`先查`BurstDecisionTable`，仅在找到并通过复核时直接返回。Runtime在队伍/配装重建时读取一次`data/release-burst-plans.json`，之后只用内存；每帧不读文件、不写文件。未预制的新结果最多保留256项LRU，不自动写磁盘。
+`ReleaseBurstPlanner.choose`先查`BurstDecisionTable`，仅在找到并通过复核时直接返回。Runtime在队伍/配装重建时按实际编队读取`data/release-burst-plans/<队伍摘要>.json`；没有可用分队表时兼容读取`data/release-burst-plans.json`，之后只用内存。每帧不读文件、不写文件；每队最多256项LRU，不自动写磁盘。
+
+人数支持1、2、3、4人，按真实槽位生成候选、受益对象和查表键，不补成四人队。单人辅助不会凭空获得队友的输出贡献；少人队不生成不存在的终结、连携或主控槽位。队伍顺序也是键的一部分，换人或调换槽位会选择另一份表。多队分片彼此独立，避免全部队伍挤进同一份256项容量。
 
 `scripts/skill-data/prepare_burst_decision_table.py`是离线准备入口。它使用真实TimedCombatLogic候选和当前规划器，但提供的task只实现读取就绪/白圈及忽略日志的方法，没有截图或按键接口；不会启动战斗。输入只允许明确的开局情境，不创建虚构的已接受历史或初始库存。以下JSON是一组示例：
 
@@ -21,10 +23,10 @@
 ```
 
 ```powershell
-uv run --locked python scripts/skill-data/prepare_burst_decision_table.py --scenarios <opening-scenarios.json> --out data/release-burst-plans.json
+uv run --locked python scripts/skill-data/prepare_burst_decision_table.py --scenarios <opening-scenarios.json> --out-dir data/release-burst-plans
 ```
 
-默认输出为当前运行仓库下的上述`data`文件。生成的策略文件属于本地运行数据，Git忽略；独立研究脚本、原始资料和测速仍只放主仓ignored目录，不复制进其他工作树。构建没有Python源码可核摘要时，拒绝导入这种源码派生磁盘表，沿原搜索/进程内结果表运行。
+默认输出为当前运行仓库下的上述`data`目录，按实际队伍分片；一批最多4096组明确情境，每队最多256组。若需要旧式单文件，可以显式使用`--out data/release-burst-plans.json`，此时整批仍限256组。生成的策略文件属于本地运行数据，Git忽略；独立研究脚本、原始资料和测速仍只放主仓ignored目录，不复制进其他工作树。构建没有Python源码可核摘要时，拒绝导入这种源码派生磁盘表，沿原搜索/进程内结果表运行。
 
 生成新表后需在重建队伍规划器时载入，例如重新进入战斗或重启相应任务；当前帧不轮询磁盘。已运行的规划器不会在热路径悄悄切换表文件。
 
@@ -37,6 +39,8 @@ uv run --locked python scripts/skill-data/prepare_burst_decision_table.py --scen
 SP采用严格可行性区间：当前搜索只有支付成本、没有未来回复时，枚举至多四个正消耗动作的子集费用和后续门槛。例如25+100的组合，125与149.9可执行的路径集合相同，124.9不可与125共用。非整数/动态成本或更多正消耗候选保留精确SP，不做近似合档。预算仍按当前真实数值重放。
 
 活跃窗口、个人mark、请求的时刻保持相对当前时间的精确值，不对剩余秒数粗分档。空的开局状态可以整体平移时间；活跃增益老化、刷新或来源变化通常会未命中，这是明确保留的边界。第一版没有把所有动态战斗状态预制成有限格子。
+
+通用查表适用于任意已支持的1～4人编队，不代表这些角色的全部效果已经模拟。基础报价、已核准释放增益和已实现机制进入同一搜索；尚未接通的天赋、属性转换、条件装备或实体生命周期不会由预计算补出来。也不需要先穷举全部编队才能使用：实际队伍命中已有分片就复核使用，未命中就搜索，并保留在本队内存中。
 
 磁盘文件绑定八份运行算法源码的稳定LF摘要，并校验条目总摘要和结构；配装/规则改变还会改变输入键。源码逻辑或固定数据更新时旧表不再套用。表容量及读取大小受限，格式错误、版本不符或损坏时退回搜索，不执行文件中的代码。
 
