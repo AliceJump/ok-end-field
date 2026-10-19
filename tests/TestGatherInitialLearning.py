@@ -14,6 +14,7 @@ from src.tasks.mixin.gather_learning import (
     gather_initial_context,
     gather_transfer_alignment,
 )
+from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 from tests import TestInitialAlignmentLearning as initial_tests
@@ -93,6 +94,19 @@ class TestGatherInitialLearning(unittest.TestCase):
         self.assertIsNone(task._click_track_and_transfer())
         task.wait_ui_stable.return_value = True
         self.assertEqual(task._click_track_and_transfer().stage, "武陵城")
+
+    def test_missing_tracking_button_still_transfers_and_saves_gather_alignment(self):
+        task = self.entry_task([box(1500), box()])
+        task.to_near_transfer_point = lambda **kwargs: MapMixin.to_near_transfer_point(task, **kwargs)
+        task.wait_feature = Mock(return_value=None)
+        task._wait_click_transfer_go = Mock(return_value=True)
+        task.clear_icon_in_map = Mock(side_effect=AssertionError("no new tracking map"))
+        self.assertTrue(task.navigate_to_gather())
+        self.assertEqual(task._wait_click_transfer_go.call_count, 2)
+        task.clear_icon_in_map.assert_not_called()
+        records = list(self.store.snapshot().values())
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].motion.samples, 1)
 
     def test_world_confirmation_and_stability_propagate_stop(self):
         task = self.entry_task()

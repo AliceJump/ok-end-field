@@ -19,11 +19,13 @@ LiaisonMixin
 
 import random
 
+from src.core.learning.policy import learning_epoch
 from src.data.characters import characters
 from src.data.characters_utils import get_contact_list_with_feature_list, get_localized_name_by_canonical
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
 from src.tasks.mixin.navigation_mixin import NavigationMixin
+from src.tasks.mixin.workflow_learning import liaison_entry_after_transfer, liaison_entry_after_walk
 
 
 class LiaisonMixin(NavigationMixin):
@@ -69,6 +71,10 @@ class LiaisonMixin(NavigationMixin):
         Returns:
             bool: 是否成功传送
         """
+        self._liaison_transfer_entry = None
+        self._liaison_station_entry = None
+        default_point = box is None and not should_check_out_boat
+        epoch = learning_epoch()
         if box is None:
             box = self.box.left
         self.ensure_main()
@@ -98,7 +104,10 @@ class LiaisonMixin(NavigationMixin):
                 # 已在帝江号区域即视为已确认，后续共享帝江号状态的任务不必重复传送确认。
                 self._daily_boat_state_confirmed = True
                 return True
-        self.log_info("找到帝江号区域，点击进入")
+        if target_area:
+            self.log_info("找到帝江号区域，点击进入")
+        else:
+            self.log_info("未出现帝江号区域入口，继续选择当前地图传送点")
 
         # 查找传送点
         tp_icon = self.find_feature(feature=fL.transfer_point, box=box, threshold=0.7)
@@ -139,6 +148,43 @@ class LiaisonMixin(NavigationMixin):
         self.ensure_main()
         self.log_info("传送完成，已到达帝江号舰桥")
         self._daily_boat_state_confirmed = True
+        # Re-entering from the boat map does not expose boat_entrance_icon.
+        # In that case verify the landed Bridge location, then still require hall OCR.
+        if default_point:
+            self._liaison_transfer_entry = liaison_entry_after_transfer(
+                self, epoch=epoch, verify_bridge=not target_area
+            )
+        return True
+
+    def prepare_liaison_station_entry(self):
+        """Share the real bridge transfer, popup waits and hall walk with test runners."""
+        self.log_info("传送至帝江号指定点")
+        if not self.transfer_to_home_point():
+            self.mark_task_failure("传送失败，无法开始送礼任务")
+            return False
+        wait_bridge_disappear_count = 0
+        while self.ocr(match=self.lang.daily_liaison_mixin.k_27d2b829, box=self.box.left):
+            wait_bridge_disappear_count += 1
+            if wait_bridge_disappear_count >= 120:
+                self.log_info("等待 '舰桥' 文案消失次数超限，送礼任务中断")
+                return False
+            self.next_frame()
+            self.sleep(0.5)
+        self.log_info("舰桥提示已经消失，等待信赖弹窗并消失")
+        start_time = self.active_time()
+        if self.wait_ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left, time_out=5):
+            while self.ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left):
+                if self.active_time() - start_time > 10:
+                    self.log_info("等待 '信赖' 弹窗超时，本轮准备失败")
+                    self._liaison_transfer_entry = None
+                    self._liaison_station_entry = None
+                    return False
+                self.next_frame()
+                self.sleep(0.5)
+        self.log_info("前往中央环厅")
+        if not self.navigate_to_main_hall():
+            self.log_info("未到达中央环厅，送礼任务中断")
+            return False
         return True
 
     def navigate_to_main_hall(self) -> bool:
@@ -152,6 +198,10 @@ class LiaisonMixin(NavigationMixin):
             bool: 是否成功到达
         """
         self.log_info("开始前往中央环厅")
+        entry = vars(self).pop("_liaison_transfer_entry", None)
+        self._liaison_station_entry = None
+        self._liaison_walk_attempts = 0
+        self._liaison_hall_confirmed = False
 
         max_attempts = 2
 
@@ -159,9 +209,12 @@ class LiaisonMixin(NavigationMixin):
             self.log_info(f"第 {attempt}/{max_attempts} 次尝试移动前进")
 
             self.move_keys("w", duration=1)
+            self._liaison_walk_attempts = attempt
 
             if self.wait_ocr(match=self.lang.liaison_mixin.k_80b758b9, box=self.box.left, log=True):
                 self.log_info("已到达中央环厅")
+                self._liaison_hall_confirmed = True
+                self._liaison_station_entry = liaison_entry_after_walk(self, entry, attempt)
                 return True
 
         self.log_info("前往中央环厅可能失败，尝试后续操作")
@@ -175,11 +228,14 @@ class LiaisonMixin(NavigationMixin):
             LiaisonResult | bool
         """
         self.log_info("开始前往干员联络站")
+        entry = vars(self).pop("_liaison_station_entry", None)
         self.ensure_main()
         self.ensure_map()
         self.log_info("打开地图界面")
 
-        if not self.start_tracking_and_align_target(fL.operator_liaison_station, fL.operator_liaison_station_out_map):
+        if not self.start_tracking_and_align_target(
+            fL.operator_liaison_station, fL.operator_liaison_station_out_map, learning_entry=entry
+        ):
             return False
 
         def special_chat_detect():

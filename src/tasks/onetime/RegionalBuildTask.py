@@ -2,6 +2,7 @@ import re
 
 from qfluentwidgets import FluentIcon
 
+from src.core.learning.policy import learning_epoch
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list, goods_dict, outpost_dict
 from src.data.world_map_utils import (
@@ -15,6 +16,7 @@ from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.common import Common, GoodsInfo
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.region_scope_mixin import RegionScopeMixin
+from src.tasks.mixin.workflow_learning import trade_entry_after_visit
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 
@@ -642,11 +644,14 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
             self.log_info(f"不满足购买条件 | 实际价格:{buy_good.good_price} >= 设定上限:{buy_price}")
             return buy_good, sell_goods, False
 
-    def navigate_to_friend_exchange(self):
+    def navigate_to_friend_exchange(self, *, learning_entry=None):
         self.log_info("前往物资调度终端")
-        self.ensure_in_friend_boat()
+        if self.ensure_in_friend_boat() is not True:
+            learning_entry = None
         self.ensure_map()
-        if not self.start_tracking_and_align_target(fL.market_dispatch_terminal, fL.market_dispatch_terminal_out):
+        if not self.start_tracking_and_align_target(
+            fL.market_dispatch_terminal, fL.market_dispatch_terminal_out, learning_entry=learning_entry
+        ):
             return False
         result = self.navigate_until_target(
             target=self.lang.daily_trade_mixin.k_fa04e4df,
@@ -788,6 +793,7 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
                     self.log_info("未找到好友价格，无法出售")
                     continue
                 self.click(c_x, c_y)
+                visit_epoch = learning_epoch()
                 go_friend_deadline = self.active_time() + 20
                 while not self.wait_click_ocr(match=self.lang.daily_trade_mixin.k_23926d61, box=self.box.center):
                     if self.active_time() > go_friend_deadline:
@@ -802,7 +808,8 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
                 # 已真正点击「前往」并到达好友帝江号：角色在野外，之后无论卖出是否
                 # 完成都只能 ensure_main 返回主界面（safe_back 逐层返回无法退回地区建设）
                 went_friend_boat = True
-                self.navigate_to_friend_exchange()
+                entry = trade_entry_after_visit(self, epoch=visit_epoch)
+                self.navigate_to_friend_exchange(learning_entry=entry)
                 self.wait_click_ocr(match=get_world_map_matcher(self.lang, area), box=self.box.top)
                 if not (
                     self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]))
