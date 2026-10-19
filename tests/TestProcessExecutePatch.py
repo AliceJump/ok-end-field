@@ -423,7 +423,26 @@ class TestOfficialLauncher(unittest.TestCase):
         ):
             cleanup.return_value.start.side_effect = RuntimeError("thread unavailable")
             self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        cleanup.return_value.start_exit_watch.assert_called_once_with(456)
         kernel.TerminateProcess.assert_not_called()
+        kernel.CloseHandle.assert_not_called()  # Fallback now owns the handle.
+
+    def test_watcher_failure_and_fallback_setup_failure_waits_for_child_exit(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+            patch.object(official_launcher, "create_process", return_value=456),
+            patch.object(official_launcher.psutil, "pid_exists", side_effect=[True, True, False]),
+            patch.object(official_launcher.time, "sleep") as sleep,
+        ):
+            cleanup.return_value.start.side_effect = RuntimeError("no primary thread")
+            cleanup.return_value.start_exit_watch.side_effect = RuntimeError("no backup thread")
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        sleep.assert_called_once_with(2)
+        kernel.TerminateProcess.assert_called_once_with(321, 0)
         kernel.CloseHandle.assert_called_once_with(321)
 
     def test_watcher_unavailable_after_game_exit_discards_owned_parent(self):
@@ -635,6 +654,22 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
             cleanup._wait_for_game_exit(game)
         sleep.assert_called_once_with(2)
         self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+
+    def test_fallback_thread_failure_watches_inline_and_releases_owned_handle(self):
+        cleanup = self._new_cleanup()
+        game = Mock(is_running=Mock(return_value=False))
+        with (
+            patch.object(self.cleanup_mod.psutil, "Process", return_value=game),
+            patch.object(self.cleanup_mod.threading, "Thread") as worker,
+            patch.object(cleanup, "_parent_running", return_value=True),
+            patch.object(self.cleanup_mod.time, "monotonic", side_effect=[0, 0]),
+        ):
+            worker.return_value.start.side_effect = RuntimeError("thread creation failed")
+            cleanup.start_exit_watch(456)
+        worker.assert_called_once()
+        self.assertEqual(worker.call_args.kwargs["name"], "endfield-launcher-fallback")
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
 
     def test_failed_parent_status_query_waits_for_game_exit_before_termination(self):
         cleanup = self._new_cleanup()
