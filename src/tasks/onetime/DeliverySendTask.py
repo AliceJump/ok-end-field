@@ -135,27 +135,22 @@ class DeliverySendTask(Common):
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
                     (fL.fill_max, None, 0),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 1),
+                    # 黄键出现说明已进入报价列表页，只作判据，不点击
                     (fL.skip_dialog_confirm, self.box_of_screen(0.82, 0.88, 0.98, 0.96), 0),
-                    (fL.esc, None, 0),
+                    (fL.transfer_go, self.box_of_screen(0.645, 0.885, 0.815, 0.955), 0),
                 ]
-                optional_steps = {3}
-                blind_spot_steps = {3, 4}
+                blind_spot_steps = {3}
 
+                sent = False
                 for i in range(start_index, len(steps)):
-                    step = steps[i]
-                    feature = step[0]
-                    box = step[1]
-                    after_sleep = step[2]
+                    feature, box, after_sleep = steps[i]
                     time_out = 12 if i > 2 else 5
                     if i in blind_spot_steps:
                         self.log_info("盲点加速：装货过场动画期间快速连点屏幕中心")
                         if not self.blind_spot_speed_up(feature=feature, box=box, time_out=time_out):
-                            if i in optional_steps:
-                                continue
-                            self.log_info(f"步骤 {feature} 未找到，跳过本次活动")
+                            self.log_info(self.tr("步骤 {feature} 未找到，跳过本次活动").format(feature=feature))
                             break
-                        if i == len(steps) - 1:
-                            continue
+                        continue
                     res = self.wait_click_feature(
                         feature=feature,
                         click_after_delay=0.5,
@@ -166,23 +161,17 @@ class DeliverySendTask(Common):
                     )
 
                     if not res:
-                        if i in optional_steps:
-                            continue
-
                         self.log_info(self.tr("步骤 {feature} 未找到，跳过本次活动").format(feature=feature))
                         break
+                    if i == len(steps) - 1:
+                        self.click_confirm()
+                        if self.wait_pop_up():
+                            sent = True
+                            self.log_info("转交完成，已领取奖励弹窗")
+                        else:
+                            self.log_info("未等到奖励弹窗，跳过本次活动")
                 self.ensure_main()
-                self.press_key("j", after_sleep=1)
-
-                if not self.wait_click_ocr(
-                    match=self.lang.daily_routine_mixin.k_1dd73947, box=self.box.bottom_left, time_out=5
-                ):
-                    self.log_info("未找到 '转交运送委托' 按钮，跳过本次活动")
-                    self.ensure_main()
-                    break
-                if not self.click_confirm():
-                    self.log_info("未找到 '确认' 按钮，跳过本次活动")
-                    self.ensure_main()
+                if not sent:
                     break
                 count += 1
                 send_count += 1
