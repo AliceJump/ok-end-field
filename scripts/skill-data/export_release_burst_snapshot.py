@@ -109,6 +109,9 @@ def _evidence_hashes(source, rows):
              "src/data/damage_release_rules.py", "src/data/native_attribute_modifiers.py",
              "src/data/reviewed_weapon_release.py", "assets/data/skill_timings/20261002/index.json",
              "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
+             "assets/data/equipment_mechanics/20261008/guzhou.json",
+             "assets/data/common_mechanics/20261003/index.json",
+             "assets/data/common_mechanics/20261003/assets.json.gz",
              "assets/data/skill_timings/20261002/records.json.gz",
              "assets/data/skill_timings/20261002/ranked_blackboards.json.gz"}
     for row in rows:

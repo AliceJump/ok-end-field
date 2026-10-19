@@ -59,6 +59,15 @@ def _validate_equipment(spec):
                        or consumption[k]<=0 for k in ('amount_per_stack', 'duration'))):
             raise ValueError('Unreviewed consumption equipment')
     equipment = spec.get('equipment')
+    weapon = spec.get('consumption_weapon')
+    if weapon is not None:
+        if (spec['type']!='sword_salvo' or weapon['scope']!='nominal_conduct_consumption; future_quotes_only'
+                or weapon['key']!='guzhou' or weapon['elements']!=['电磁'] or weapon['damage_tags']!=['skill']
+                or weapon['max_stacks']!=2 or weapon['stacks_per_cast']!=1
+                or weapon['source_sha256']!='644d440edab4454cfe4d65b10d06233e53020c400caeb5a956aceec89841caa6'
+                or any(type(weapon[k]) not in (int,float) or not math.isfinite(weapon[k])
+                       or weapon[k]<=0 for k in ('amount_per_stack', 'duration'))):
+            raise ValueError('Unreviewed consumption weapon')
     if equipment is not None:
         next_battle, weapon = equipment['next_battle'], equipment['link_weapon']
         if (spec['type']!='spear_recall' or not equipment['sources'] or not equipment['native_records']
@@ -104,6 +113,8 @@ class ModelConsumptionStack:
     starts: float
     expires: float
     elements: tuple[str, ...]
+    key: str = 'rangliu'
+    damage_tags: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -123,24 +134,27 @@ class MechanismState:
                        combo_weapon=tuple(w for w in self.combo_weapon if w.owner in owners),
                        consumption_stacks=tuple(w for w in self.consumption_stacks if w.owner in owners))
 
-    def consumption_bonus(self, owner, now, element, *, until=None):
+    def consumption_bonus(self, owner, now, element, *, until=None, damage_tags=()):
         end = now if until is None else until
         return sum(w.amount for w in self.consumption_stacks
-                   if w.owner==owner and element in w.elements and w.starts<=now and end<w.expires)
+                   if w.owner==owner and element in w.elements and w.starts<=now and end<w.expires
+                   and (not w.damage_tags or set(w.damage_tags)&set(damage_tags)))
 
     def after_consumption(self, owner, source, equipment, started, damage_until, count):
         if equipment is None or count<=0:
             return self
+        key = equipment.get('key', 'rangliu')
         kept = tuple(w for w in self.consumption_stacks if started<w.expires)
-        if any(w.source==source for w in kept):
+        if any(w.source==source and w.key==key for w in kept):
             return self
         # Keep known instances at cap; overflow refresh/eviction is not audited.
-        count = min(count, max(0, equipment['max_stacks']-sum(w.owner==owner for w in kept)))
+        count = min(count, max(0, equipment['max_stacks']-sum(w.owner==owner and w.key==key for w in kept)))
         # No exact consume phase: admit benefits only after the previous full
         # authored damage interval, with expiry still measured from its cast.
         additions = tuple(ModelConsumptionStack(owner, source, equipment['amount_per_stack'],
                                                 damage_until, started+equipment['duration'],
-                                                tuple(equipment['elements'])) for _ in range(count))
+                                                tuple(equipment['elements']), key,
+                                                tuple(equipment.get('damage_tags', ()))) for _ in range(count))
         return replace(self, consumption_stacks=kept+additions)
 
     def weapon_bonus(self, owner, now, element, *, until=None):
@@ -233,7 +247,7 @@ def branch_quote(row, owner, now, assessment, state, *, stance=None, forecast=Fa
     observed_conduct = (positive and assessment.inference.confirms('tag', spec['conduct_tag']))
     result = _sword_quote(row, spec, positive, requests, stance, free_excluded or observed_conduct)
     duration = spec['damage_duration']['enhanced' if stance is not None else 'ordinary']
-    consumption = state.consumption_bonus(owner, now, '电磁', until=now+duration)
+    consumption = state.consumption_bonus(owner, now, '电磁', until=now+duration, damage_tags=('skill',))
     assumptions = result.assumptions+(('nominal_conduct_consumption_unobserved',) if consumption else ())
     return replace(result, quote_started=now, damage_until=now+duration,
                    model_consumption_bonus=consumption, assumptions=assumptions)
@@ -308,6 +322,9 @@ def after_action(state, row, owner, kind, started, *, quote=None, stance=None, f
         if not free and quote is not None and quote.conduct is not None:
             state = state.after_consumption(owner, source, spec.get('consumption_equipment'), started,
                                             started+spec['damage_duration'][phase], quote.conduct)
+            if quote.conduct>0:
+                state = state.after_consumption(owner, source, spec.get('consumption_weapon'), started,
+                                                started+spec['damage_duration'][phase], 1)
         return state.request(owner, source, 'sword', count, started+spec['launch_after'][phase],
                              spec['duration'], cap=spec['count_cap'], forecast=forecast, requested_at=started)
     production = spec.get('productions', {}).get(kind)

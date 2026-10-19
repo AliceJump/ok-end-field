@@ -30,6 +30,32 @@ def sword_equipment(row, source):
             'gear_sha256': hashlib.sha256(gear_path.read_bytes()).hexdigest()}
 
 
+def sword_weapon(row, source):
+    if row['build']['weapon']!='孤舟':
+        raise ValueError('Changed sword weapon requires review')
+    path = source/'assets/data/equipment_mechanics/20261008/guzhou.json'
+    raw = path.read_bytes()
+    digest = '644d440edab4454cfe4d65b10d06233e53020c400caeb5a956aceec89841caa6'
+    if hashlib.sha256(raw).hexdigest()!=digest:
+        raise ValueError('Changed Guzhou consumer evidence')
+    evidence = json.loads(raw)
+    records = evidence['records']
+    bb = {p['key']:p['value'] for p in evidence['selected_rank_patch']['blackboard']}
+    root = records['sk_wpn_funnel_0015']['data']['actionGroupData']['passiveEventActions']
+    nodes = [n['$value'] for n in next(e for e in root if e['abilityEvent']==208)['actions'][0]['actionData']]
+    combo, ult = (records['buff_wpn_funnel_0015_'+suffix]['data'] for suffix in ('combo','ultimate'))
+    if (nodes[1]['skillTypeList']!=[2] or nodes[2]['query']['tags']!=[{'raw':'d270dc57'}]
+            or nodes[3]['count']['useBlackboardKey'] or nodes[3]['count']['value']!=1
+            or combo['damageModifier']!=ult['damageModifier']
+            or combo['stackingSettings']['identifierType']!=0
+            or combo['stackingSettings']['stackingKey'] or ult['stackingSettings']['stackingKey']):
+        raise ValueError('Changed Guzhou consumption or independent modifier identity')
+    return {'key':'guzhou', 'amount_per_stack':bb['pulse_dmg_up2'], 'duration':bb['duration'],
+            'max_stacks':int(bb['max_stack']), 'elements':['电磁'], 'damage_tags':['skill'],
+            'scope':'nominal_conduct_consumption; future_quotes_only', 'source_sha256':digest,
+            'stacks_per_cast':1, 'buff_id':'buff_wpn_funnel_0015_combo'}
+
+
 def spear_equipment(row, source):
     if row['build']['weapon'] != 'J.E.T.':
         raise ValueError('Changed recall weapon requires review')

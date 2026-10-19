@@ -71,6 +71,9 @@
     "assets/data/character_skills/xaihi.json": "67662f09251e439c6b43bcb465557c2904c207583e1874816d13649c17e54f31",
     "assets/data/character_skills/yvonne.json": "a8772875fd6edc5a1750c5038778d17e5e3c629a34f20111fc0a36ae9ed5ecf9",
     "assets/data/character_skills/zhuang_fangyi.json": "a787c68655fdb57cf69dad2a3703209b5ed24050e10c531d8a9334f1fc54ed48",
+    "assets/data/common_mechanics/20261003/assets.json.gz": "485ebe9de11ca314ccff3de1f301035ef8882031768a7e7feae5f2dcb91ccf45",
+    "assets/data/common_mechanics/20261003/index.json": "56e1dda3a01d49d1b34f557655032d0ee2dcc03b79a836becc04392e7c6f9553",
+    "assets/data/equipment_mechanics/20261008/guzhou.json": "644d440edab4454cfe4d65b10d06233e53020c400caeb5a956aceec89841caa6",
     "assets/data/equipment_mechanics/20261008/next_skill_sets.json": "3d6dbaa2c49b3713dd860c644d583286dd5f67c7da247f0f57526d77f7fc3465",
     "assets/data/equipments.json": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170",
     "assets/data/fixed_damage_baseline.json": "2ff295c2cc64bc5793af99490e5e5d855cd1afb69e4b9b58c50bb39d6dd88ffb",
@@ -94,7 +97,7 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "2a7f8f6535352f609b8d8bdc27a9716fd25fc14db420f7461877d0a4e9032a46",
+  "snapshot_sha256": "9a45956382b0ff571ff0c9013ea28bdd1c5c67f047c07575d4859b7dc0ef8f25",
   "actors": 33,
   "rules": 16,
   "supplement_source_hashes": {
@@ -108,13 +111,13 @@
   },
   "support_evidence_sha256": "63fb997a727426f190cbecf6379a0e60ee50cd5ffa5b90f2c8ef4f2c9b23f5ba",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "cd569566f05c6c1eeb52bc9a4d0e25d15f0a8104d30863306af49dd7879a5520",
+    "export_release_burst_snapshot.py": "9bb5792d3d4f7b9a401cec7593b4042ecfcf493645bd5e0360cb9893ab999981",
     "reviewed_support_release.py": "4275d1fbaa903c83431cf992c67a5cd010383456ae2135c45a7fd88368b689de",
     "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792",
     "reviewed_si_release.py": "807639a720cdfa6205b02887fde35aadc2409c554a6d0adab77b2f61d6286dfa",
     "reviewed_avywenna_recall.py": "ada2f76001729ca5d03d8ef885234af7925288521ad5ea2061ac2913f83e17f3",
-    "reviewed_mechanism_quotes.py": "8066535b9b46b2e24ef8a3fce77eda33a7aedc417f429d612ac5470e52c325ad",
-    "reviewed_mechanism_equipment.py": "557ecaeb95cc819cd6d4a54c16257f1739459876ecb89a9662f453728c94b29d"
+    "reviewed_mechanism_quotes.py": "faede655ba1d41e48d3f8e455d0653f0dcfd456c67be789b3679278c0e1217a3",
+    "reviewed_mechanism_equipment.py": "90ece67e0f8c0f4f8b520fab9b7d4da76a4eab66cdea197531b6a9f507cf62b7"
   },
   "stances": 1
 }

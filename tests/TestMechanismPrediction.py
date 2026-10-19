@@ -382,9 +382,12 @@ class TestMechanismPrediction(unittest.TestCase):
         self.assertEqual(p.mechanism_state.consumption_stacks, ())
         p.confirm('1', 'battle', 10, mechanism=q)
         p.confirm('1', 'battle', 10, mechanism=q)  # Repeated confirmation is idempotent.
-        self.assertEqual(len(p.mechanism_state.consumption_stacks), 1)
+        self.assertEqual(sum(w.key=='rangliu' for w in p.mechanism_state.consumption_stacks), 1)
         self.assertAlmostEqual(p.price('1', 'battle', 11, mechanism=q), before)
-        state = p.mechanism_state
+        # Isolate the suit contribution; the weapon coexistence is tested below.
+        state = replace(p.mechanism_state, consumption_stacks=tuple(
+            w for w in p.mechanism_state.consumption_stacks if w.key=='rangliu'))
+        p.mechanism_state = state
         amount = p.rows['1']['mechanism']['consumption_equipment']['amount_per_stack']
         self.assertEqual(state.consumption_bonus('1', 16, '电磁'), 0)
         self.assertEqual(state.consumption_bonus('1', 17, '电磁'), amount)
@@ -440,3 +443,56 @@ class TestMechanismPrediction(unittest.TestCase):
         self.assertEqual(p.mechanism_state, before)
         p.source_unavailable('1')
         self.assertFalse(p.mechanism_state.consumption_stacks)
+
+    def test_guzhou_consume_and_ultimate_modifiers_coexist_without_same_cast_backfill(self):
+        p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
+        p.confirm('1', 'ult', 0)
+        obs = self.observed('庄方宜', enhanced=True)
+        p.confirm('1', 'battle', 3, mechanism=p.mechanism_quote('1', 3, obs))
+        q = p.mechanism_quote('1', 10, obs)
+        before = p.preview_release_price('1', 'battle', 10, 1, mechanism=q)
+        p.confirm('1', 'battle', 10, mechanism=q)
+        self.assertAlmostEqual(p.price('1', 'battle', 11, mechanism=q), before)
+        later = p.mechanism_quote('1', 17, obs)
+        value = p.price('1', 'battle', 17, mechanism=later)
+        without = p.price('1', 'battle', 17, mechanism=later,
+                          mechanism_state=replace(p.mechanism_state, consumption_stacks=()))
+        amount = p.rows['1']['mechanism']['consumption_weapon']['amount_per_stack']
+        suit = p.rows['1']['mechanism']['consumption_equipment']['amount_per_stack']
+        ult = p.rules['1', 'ult'][0]['magnitude']['base']
+        bonus = p.quote('1', 'battle')['bonus_pct']/100
+        self.assertEqual(later.model_consumption_bonus, amount+suit)
+        self.assertAlmostEqual(value/without, (1+bonus+ult+amount+suit)/(1+bonus+ult))
+        self.assertAlmostEqual(without, 262233.37712175935)
+
+    def test_guzhou_counts_one_per_consume_event_and_filters_damage_type(self):
+        p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
+        p.confirm('1', 'ult', 0)
+        obs = self.observed('庄方宜', enhanced=True)
+        p.confirm('1', 'battle', 3, mechanism=p.mechanism_quote('1', 3, obs))
+        q = p.mechanism_quote('1', 10, obs)
+        # Explicit high-conduct test input tests per-event versus per-layer.
+        p.confirm('1', 'battle', 10, mechanism=replace(q, conduct=4))
+        state = p.mechanism_state
+        self.assertEqual(sum(w.key=='guzhou' for w in state.consumption_stacks), 1)
+        self.assertEqual(sum(w.key=='rangliu' for w in state.consumption_stacks), 3)
+        isolated = replace(state, consumption_stacks=tuple(w for w in state.consumption_stacks if w.key=='guzhou'))
+        amount = p.rows['1']['mechanism']['consumption_weapon']['amount_per_stack']
+        self.assertEqual(isolated.consumption_bonus('1', 17, '电磁', damage_tags=('skill',)), amount)
+        self.assertEqual(isolated.consumption_bonus('1', 17, '电磁', damage_tags=('normal',)), 0)
+        self.assertEqual(isolated.consumption_bonus('1', 17, '自然', damage_tags=('skill',)), 0)
+        self.assertEqual(isolated.consumption_bonus('2', 17, '电磁', damage_tags=('skill',)), 0)
+        self.assertEqual(isolated.consumption_bonus('1', 30, '电磁', damage_tags=('skill',)), 0)
+
+    def test_consumption_caps_and_expiry_are_independent_for_suit_and_weapon(self):
+        p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
+        spec = p.rows['1']['mechanism']
+        state = MechanismState()
+        for started in (0, 1, 2):
+            state = state.after_consumption('1', str(started), spec['consumption_equipment'], started, started+7, 1)
+            state = state.after_consumption('1', str(started), spec['consumption_weapon'], started, started+7, 1)
+        self.assertEqual(sum(w.key=='guzhou' for w in state.consumption_stacks), 2)
+        self.assertEqual(sum(w.key=='rangliu' for w in state.consumption_stacks), 3)
+        bonus = state.consumption_bonus('1', 20, '电磁', damage_tags=('skill',))
+        self.assertAlmostEqual(bonus, spec['consumption_weapon']['amount_per_stack']+
+                               3*spec['consumption_equipment']['amount_per_stack'])
