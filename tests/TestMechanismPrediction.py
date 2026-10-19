@@ -98,13 +98,16 @@ class TestMechanismPrediction(unittest.TestCase):
         completed.source_unavailable('1')
         self.assertFalse(completed.mechanism_state.requests)
 
-    def test_zhuang_free_request_is_not_backdated_into_its_own_snapshot(self):
+    def test_zhuang_free_quote_is_explicit_nominal_branch_without_publishing_inventory(self):
         p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
         p.confirm('1', 'ult', 0)
         obs = self.observed('庄方宜', now=3, enhanced=True)
         first = p.mechanism_quote('1', 3, obs)
         self.assertEqual(first.conduct, 0)
-        self.assertIsNone(first.selected_swords)
+        self.assertEqual(first.selected_swords, 3)
+        self.assertEqual(first.same_cast_requested_swords, 3)
+        self.assertIn('same_cast_requests_reach_before_area_snapshot_assumed', first.assumptions)
+        self.assertFalse(p.mechanism_state.requests)
         p.confirm('1', 'battle', 3, mechanism=first)
         p.confirm('1', 'battle', 3, mechanism=first)
         self.assertEqual(len(p.mechanism_state.requests), 1)
@@ -218,7 +221,8 @@ class TestMechanismPrediction(unittest.TestCase):
         task.now = 4
         task.battle_pulses = {'1'}
         self.assertTrue(logic._try_battle_token('1', 100, advance_cursor=False))
-        self.assertIsNone(logic._attempt_mechanism.selected_swords)
+        self.assertEqual(logic._attempt_mechanism.selected_swords, 3)
+        self.assertEqual(logic._attempt_mechanism.same_cast_requested_swords, 3)
         task.battle_pulses.clear()
         task.now = 4.2
         logic._confirm_battle(task.now)
@@ -502,8 +506,8 @@ class TestZhuangEffectiveMultipliers(unittest.TestCase):
     def make_three_sword_case(self, team=('庄方宜',)):
         p = ReleaseBurstPlanner(team, store=load_skill_timings())
         p.confirm('1', 'ult', 0)
-        # Explicit prior nominal requests, not a guessed initial inventory.
-        p.mechanism_state = p.mechanism_state.request('1', 'earlier_accepted_request', 'sword', 3, 0, 36, cap=9)
+        # The free-action contract supplies a conditional three-request branch;
+        # it does not initialize or observe the initial sword inventory.
         state = BattleHighlightState(load_skill_timings())
         profiles = (load_skill_timings().profile('chr_0030_zhuangfy_normal_skill_ult'),)
         obs = BattleConditionEvaluator(team).assess(state.observe('1', profiles, True, 3))
@@ -559,12 +563,11 @@ class TestZhuangEffectiveMultipliers(unittest.TestCase):
         self.assertAlmostEqual(p.price('1', 'normal', 6, action_started=3.4)/base, 1.18, places=7)
         self.assertAlmostEqual(p.price('1', 'normal', 9, action_started=6), base)
 
-    def test_unknown_sword_count_does_not_manufacture_additional_mark_count(self):
+    def test_unknown_ordinary_sword_count_does_not_manufacture_additional_mark_count(self):
         p = ReleaseBurstPlanner(['庄方宜'])
-        p.confirm('1', 'ult', 0)
         quote = p.mechanism_quote('1', 3)
         self.assertIsNone(quote.selected_swords)
-        self.assertAlmostEqual(p.price('1', 'battle', 3), 21455.457984614768*(1+.18000000715255737))
+        self.assertEqual(quote.same_cast_requested_swords, 0)
         p.confirm('1', 'battle', 3, mechanism=quote)
         self.assertEqual(p.mechanism_state.skill_amplifications[0].marks, ())
 
@@ -605,7 +608,6 @@ class TestZhuangEffectiveMultipliers(unittest.TestCase):
         logic._configure_team(['庄方宜'], reset_runtime=True)
         p = logic.release_burst
         p.confirm('1', 'ult', 0)
-        p.mechanism_state = p.mechanism_state.request('1', 'earlier_accepted_request', 'sword', 3, 0, 36, cap=9)
         logic.step()
         self.assertEqual(task.keys, ['1'])
         self.assertTrue(any('211551' in message for message in task.messages))

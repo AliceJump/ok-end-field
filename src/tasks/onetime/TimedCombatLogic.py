@@ -1255,7 +1255,10 @@ class TimedCombatLogic:
                 same_actor_duration=max(p.actionable for p in combo.profiles), queue_position=combo.position,
                 damage_duration=max(max(p.duration, p.handoff) for p in combo.profiles)))
         conditions = self._scene_conditions()
-        decision = self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions)
+        horizon = self.release_burst.planning_horizon((token for _, token, _ in ready_ults), now)
+        decision = self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions,
+                                             horizon=horizon, repeat_normals=horizon > 12,
+                                             width=64 if horizon > 12 else 16)
         mechanism_gain = (decision is not None and decision.mechanism is not None
                           and (decision.mechanism.sources or decision.mechanism.minimum_recall))
         if decision is not None and decision.gain <= 1e-6 and not mechanism_gain and not self._combo_queue and self.order:
@@ -1340,7 +1343,8 @@ class TimedCombatLogic:
             return None
         if token == self.forced_main_control_slot and now < self.forced_main_control_until:
             return None
-        if token not in future_free and not self._execution_allows_battle(token):
+        current_allowed = self._execution_allows_battle(token)
+        if token not in future_free and not current_allowed:
             return None
         mechanic = self._mechanic_for_token(token)
         if mechanic is not None and mechanic.archetype == "multi_stage_battle":
@@ -1360,7 +1364,10 @@ class TimedCombatLogic:
                                   observed_bonus=extra, base_components=base_components,
                                   observed_components=extra_components,
                                   condition=ConditionRequirement.from_assessment(token, assessment),
-                                  mechanism_assessment=assessment)
+                                  mechanism_assessment=assessment,
+                                  requires_free_battle=token in future_free and (
+                                      not current_allowed or sp < max(gate, cost)
+                                      or not self.phase_planner.can_spend(token, 'battle', sp, cost)))
 
     def _release_normal_candidate(self, now):
         main = self._burst_main_control
@@ -1415,7 +1422,10 @@ class TimedCombatLogic:
         self._observe_phase_sp(post_ult_sp)
         if self.forced_battle_token is not None:
             forced = self.forced_battle_token
-            if self._slot_available(forced) and self._try_battle_token(forced, post_ult_sp, advance_cursor=False):
+            planned_stance = (burst_selected and self.release_burst is not None
+                              and self.release_burst.stance_spec(forced) is not None)
+            if (not planned_stance and self._slot_available(forced)
+                    and self._try_battle_token(forced, post_ult_sp, advance_cursor=False)):
                 self.task.log_info(f"时间排轴: 终结技恢复插入机制战技 {forced}")
                 return True
         if not burst_selected:

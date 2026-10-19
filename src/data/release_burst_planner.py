@@ -130,6 +130,7 @@ class ReleaseBurstAction:
     queue_position: int = 0
     damage_duration: float | None = None
     mechanism_assessment: BattleConditionAssessment | None = None
+    requires_free_battle: bool = False
 
 
 @dataclass(frozen=True)
@@ -271,6 +272,8 @@ class ReleaseBurstPlanner:
     def _stance_action(self, action, now, stances):
         stance = self.stance_at(action.slot, now, stances=stances)
         if stance is None:
+            if action.kind == 'normal' and action.slot in self.normal_durations:
+                return replace(action, duration=self.normal_durations[action.slot], same_actor_duration=None)
             return action
         spec = self.stance_spec(action.slot)
         if action.kind == "normal":
@@ -280,6 +283,20 @@ class ReleaseBurstPlanner:
                            sp_gate=0 if stance.free_battle else action.sp_gate,
                            sp_cost=0 if stance.free_battle else action.sp_cost)
         return action
+
+    def planning_horizon(self, ready_ultimate_slots, now):
+        """Look through a known output window, with the same clock for all routes."""
+        horizon = 12.0
+        for actor in ready_ultimate_slots:
+            stance = self.stance_spec(actor)
+            if stance is not None:
+                horizon = max(horizon, stance['starts_after'] + stance['duration'])
+            for rule in self.rules.get((actor, 'ult'), ()):
+                horizon = max(horizon, rule['starts_after'] + rule['duration'])
+        for stance in self.stances.values():
+            if stance.starts_at <= now < stance.expires_at:
+                horizon = max(horizon, stance.expires_at-now)
+        return horizon
 
     def _release(self, bonuses, actor, kind, now):
         bonuses[:] = [b for b in bonuses if now < b.expires_at
@@ -449,15 +466,19 @@ class ReleaseBurstPlanner:
 
     def _forecast_step(self, node, action, index, now, *, releases, horizon, predecessors):
         damage, time, budget, indices, current, actor_locks, stances, conditions, queue_delay, mechanism_state = node
-        if index in indices or any(i not in indices for i in predecessors[index]):
+        repeat_normal = action.kind == 'normal' and predecessors.get('repeat_normals', False)
+        if (index in indices and not repeat_normal) or any(i not in indices for i in predecessors[index]):
             return None
-        if indices and predecessors.get("normal", -1) in indices:
+        if indices and predecessors.get("normal", -1) in indices and not repeat_normal:
             return None
         started = max(time, actor_locks.get(action.slot, now))
         pending_stance = stances.get(action.slot)
         if pending_stance is not None and action.kind in {"battle", "normal"}:
             started = max(started, pending_stance.starts_at)
         action = self._stance_action(action, started, stances)
+        if (action.kind == 'battle' and self.stance_at(action.slot, now) is not None
+                and self.stance_at(action.slot, started, stances=stances) is None):
+            return None  # A currently replaced/free button cannot remain that phase after expiry.
         if budget < max(action.sp_gate, action.sp_cost):
             return None
         if self.action_blocked(action.slot, action.kind, started, bonuses=current):
@@ -466,6 +487,8 @@ class ReleaseBurstPlanner:
         if end > now + horizon:
             return None
         stance = self.stance_at(action.slot, started, stances=stances)
+        if action.requires_free_battle and (stance is None or not stance.free_battle):
+            return None
         if stance is not None and action.kind in {"normal", "battle"} and end >= stance.expires_at:
             return None  # Do not credit a complete enhanced action across an uncertain exit.
         forecast = list(current)
@@ -485,6 +508,9 @@ class ReleaseBurstPlanner:
                                           action.mechanism_assessment if enhanced else None,
                                           state=mechanism_state, stances=stances, forecast=True)
                      if action.kind == 'battle' else None)
+        if (stance is not None and mechanism is not None and mechanism.damage_until is not None
+                and mechanism.damage_until >= stance.expires_at):
+            return None
         row = self.rows.get(action.slot)
         next_mechanism = (after_action(mechanism_state, row, action.slot, action.kind, started,
                                        quote=mechanism, stance=stance, forecast=True)
@@ -525,17 +551,22 @@ class ReleaseBurstPlanner:
                 per_start[first] = per_start.get(first, 0) + 1
         return beam
 
-    def _search(self, actions, sp, now, *, releases, bonuses, horizon, width, conditions, by_start=False):
+    def _search(self, actions, sp, now, *, releases, bonuses, horizon, width, conditions, by_start=False,
+                repeat_normals=False):
         predecessors = {i: tuple(j for j, a in enumerate(actions) if a.kind == "link"
                                  and a.queue_position < action.queue_position)
                         if action.kind == "link" else () for i, action in enumerate(actions)}
         predecessors["normal"] = (next((i for i, a in enumerate(actions) if a.kind == "normal"), -1)
                                   if any(a.kind == "link" for a in actions) else -1)
+        predecessors['repeat_normals'] = repeat_normals
         beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions, 0.0,
                  self.mechanism_state)]
         best = beam[0]
         starts = {}
-        for _ in actions:
+        normal_times = [min(a.duration, (self.stance_spec(a.slot) or {}).get('normal_duration', a.duration))
+                        for a in actions if a.kind == 'normal']
+        extra = math.ceil(horizon/max(.3, min(normal_times))) if repeat_normals and normal_times else 0
+        for _ in range(len(actions)+extra):
             expanded = [entry for node in beam for index, action in enumerate(actions)
                         if (entry := self._forecast_step(node, action, index, now,
                                                         releases=releases, horizon=horizon,
@@ -592,7 +623,7 @@ class ReleaseBurstPlanner:
         return BurstSpValue(first_value, contribution, first_cost,
                             (first_value+contribution)/first_cost if first_cost>0 else None)
 
-    def choose(self, actions, sp, now, *, horizon=12.0, width=16, conditions=ForecastConditions()):
+    def choose(self, actions, sp, now, *, horizon=12.0, width=16, conditions=ForecastConditions(), repeat_normals=False):
         actions = tuple(actions)
         positions = sorted(a.queue_position for a in actions if a.kind == "link")
         if (not actions or len(actions) > 13 or sum(a.kind == "normal" for a in actions) > 1
@@ -603,6 +634,8 @@ class ReleaseBurstPlanner:
                        or not all(math.isfinite(v) for v in (a.duration, a.value, a.sp_gate, a.sp_cost))
                        or a.value < 0 or (a.kind != "link" and a.queue_position != 0)
                        or a.sp_gate < 0 or a.sp_cost < 0
+                       or type(a.requires_free_battle) is not bool
+                       or (a.requires_free_battle and (a.kind != 'battle' or self.stance_spec(a.slot) is None))
                        or (a.damage_duration is not None and (not math.isfinite(a.damage_duration)
                                                              or a.damage_duration < a.duration))
                        for a in actions)):
@@ -628,7 +661,8 @@ class ReleaseBurstPlanner:
                 and not any(self.rules.get((a.slot, a.kind)) for a in actions)):
             return None
         best, starts, predecessors = self._search(actions, min(sp, 300), now, releases=True,
-                            bonuses=list(self.bonuses), horizon=horizon, width=width, conditions=conditions, by_start=True)
+                            bonuses=list(self.bonuses), horizon=horizon, width=width, conditions=conditions, by_start=True,
+                            repeat_normals=repeat_normals)
         values = {}
         def opener_value(plan):
             first = plan[3][0]
@@ -652,7 +686,7 @@ class ReleaseBurstPlanner:
                 best = max(paid, key=lambda plan: (values[plan[3][0]].damage_per_sp,
                                                    plan[0], -plan[8], -plan[1]))
         plain = self._search(actions, min(sp, 300), now, releases=False, bonuses=[], horizon=horizon, width=width,
-                             conditions=conditions)
+                             conditions=conditions, repeat_normals=repeat_normals)
         if (not best[3] or (not needs_cast_pricing and (best[0] <= plain[0] + 1e-6
                                              or actions[best[3][0]].kind == "normal"))):
             return None  # Normals are an existing held-output tail, not a new input.

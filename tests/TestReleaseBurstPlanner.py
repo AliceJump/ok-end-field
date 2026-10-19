@@ -443,9 +443,7 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         enhanced = planner.price("1", "normal", 3, value=1)
         self.assertAlmostEqual(enhanced, spec["quotes"]["normal"]["crit_expect"])
         self.assertGreater(enhanced / basic, 1.77)
-        lightning = spec["quotes"]["battle"]["crit_expect"]
-        self.assertAlmostEqual(planner.price("1", "battle", 3) / lightning,
-                               (1 + 1.12 / 2.385)*(1+.18000000715255737), places=6)
+        self.assertAlmostEqual(planner.price("1", "battle", 3), 211550.8189915943, places=4)
         planner.confirm("2", "ult", 3)
         self.assertGreater(planner.price("1", "normal", 4), enhanced)
 
@@ -503,13 +501,13 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertIsNone(planner.choose((normal,), 0, 26))
         self.assertTrue(planner.stance_at("1", 26).free_battle)
 
-    def test_zhuang_stance_keeps_affecting_decisions_after_weapon_buff_expiry(self):
+    def test_zhuang_free_full_salvo_cannot_fit_the_last_seconds_of_its_stance(self):
         planner = ReleaseBurstPlanner(["庄方宜"])
         planner.confirm("1", "ult", 0)
         battle = ReleaseBurstAction("1", "battle", 4.65, planner.quote("1", "battle")["crit_expect"], 100, 100)
         chosen = planner.choose((battle,), 0, 26)
-        self.assertEqual(chosen.action.kind, "battle")
-        self.assertGreater(chosen.gain, 0)
+        self.assertIsNone(chosen)
+        self.assertIsNotNone(planner.stance_at('1', 26))  # Still a stance, but no complete salvo fits.
 
     def test_zhuang_preserve_keeps_only_unchanged_actor_stance(self):
         planner = ReleaseBurstPlanner(["庄方宜", "?"])
@@ -1026,6 +1024,115 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         with patch.object(logic.release_burst, "choose", return_value=None) as choose:
             logic._release_burst_decision([], 0, task.now)
             self.assertTrue(any(a.kind == "normal" and a.slot == "1" for a in choose.call_args.args[0]))
+
+
+class TestUltimateOutputWindow(unittest.TestCase):
+    def make_logic(self, *, sp=225, ready=True, white=True):
+        task = FakeTask()
+        task.sp = sp
+        task.ults = {'1', '2', '3', '4'} if ready else set()
+        task.battle_pulses = {'1', '3'} if white else set()
+        task.detect_current_char_index = lambda: 0
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(['庄方宜', '佩丽卡', '艾维文娜', '梨诺'], reset_runtime=True)
+        logic._observe_battle_highlights()
+        logic._burst_main_control = '1'
+        return task, logic
+
+    def test_no_ultimate_has_local_mode_ready_and_live_stance_expand_output_mode(self):
+        _, logic = self.make_logic()
+        p = logic.release_burst
+        self.assertEqual(p.planning_horizon([], 0), 12)
+        self.assertAlmostEqual(p.planning_horizon(['1'], 0), 27.6)
+        p.confirm('1', 'ult', 0)
+        self.assertAlmostEqual(p.planning_horizon([], 3), 24.6)
+        self.assertEqual(p.planning_horizon([], 30), 12)
+
+    def test_ultimate_and_plain_routes_use_the_same_extended_clock(self):
+        _, logic = self.make_logic()
+        p = logic.release_burst
+        with patch.object(p, '_search', wraps=p._search) as search:
+            decision = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 0)
+        self.assertEqual(decision.action.slot, '1')
+        self.assertEqual(decision.action.kind, 'ult')
+        self.assertEqual({call.kwargs['horizon'] for call in search.call_args_list}, {27.6})
+        self.assertEqual({call.kwargs['releases'] for call in search.call_args_list}, {True, False})
+        self.assertTrue(all(call.kwargs['repeat_normals'] for call in search.call_args_list))
+        self.assertGreater(decision.sequence.count(('1', 'normal')), 1)
+        self.assertLess(decision.sequence.index(('1', 'ult')), decision.sequence.index(('1', 'battle')))
+        self.assertLess(decision.sequence.index(('4', 'ult')), decision.sequence.index(('1', 'battle')))
+
+    def test_real_all_ult_step_opens_stance_then_waits_for_its_real_free_button(self):
+        task, logic = self.make_logic()
+        logic.step()
+        self.assertEqual(task.keys[0], 'ult_1')
+        self.assertTrue(logic.release_burst.stance_at('1', 3).free_battle)
+        self.assertFalse(logic.release_burst.mechanism_state.requests)
+        task.now = 3.3
+        self.assertTrue(logic._try_battle_token('1', task.sp))
+        self.assertEqual(logic.pending[2], 0)
+        self.assertEqual(logic._attempt_mechanism.same_cast_requested_swords, 3)
+        self.assertFalse(logic.release_burst.mechanism_state.requests)  # White acknowledgement not yet observed.
+
+    def test_future_free_candidate_cannot_execute_in_the_ordinary_pre_ultimate_state(self):
+        _, logic = self.make_logic(sp=0, white=False)
+        p = logic.release_burst
+        action = logic._release_battle_candidate('1', 0, 0, {'1'})
+        self.assertTrue(action.requires_free_battle)
+        node = (0., 0., 0., (), [], {}, {}, logic._scene_conditions(), 0., p.mechanism_state)
+        self.assertIsNone(p._forecast_step(node, action, 0, 0, releases=True, horizon=27.6, predecessors={0: ()}))
+        ultimate = logic._release_ultimate_candidate('1', logic.store.profiles('庄方宜', 'ult'))
+        node = p._forecast_step(node, ultimate, 1, 0, releases=True, horizon=27.6, predecessors={1: ()})
+        after = p._forecast_step(node, action, 0, 0, releases=True, horizon=27.6, predecessors={0: ()})
+        self.assertIsNotNone(after)
+        self.assertEqual(after[2], 0)
+        self.assertGreater(after[0], 200000)
+
+    def test_ultimate_recovery_does_not_force_the_free_cast_ahead_of_planned_support(self):
+        task, logic = self.make_logic()
+        original = task.use_ult
+        def recover_after_stance_starts(**kwargs):
+            result = original(**kwargs)
+            task.now += 1.2
+            return result
+        task.use_ult = recover_after_stance_starts
+        self.assertTrue(logic._use_timed_ultimate('1', logic.store.profiles('庄方宜', 'ult'), burst_selected=True))
+        self.assertEqual(task.keys, ['ult_1'])
+        self.assertTrue(logic.release_burst.stance_at('1', task.now).free_battle)
+        self.assertEqual(logic.forced_battle_token, '1')  # Still available to the next real planning step.
+        logic.step()
+        self.assertEqual(task.keys[1], 'ult_4')
+
+    def test_no_ready_ultimate_and_no_sp_cannot_invent_a_free_action(self):
+        task, logic = self.make_logic(sp=0, ready=False)
+        self.assertIsNone(logic._release_battle_candidate('1', 0, 0, set()))
+        logic.step()
+        self.assertEqual(task.keys, [])
+        self.assertFalse(logic.release_burst.stances)
+        self.assertFalse(logic.release_burst.mechanism_state.requests)
+
+    def test_failed_ultimate_does_not_unlock_a_free_cast_or_requests(self):
+        task, logic = self.make_logic(sp=0, white=False)
+        task.ults = {'1'}
+        task.use_ult = lambda **kwargs: False
+        logic.step()
+        self.assertFalse(logic.release_burst.stances)
+        self.assertFalse(logic.release_burst.mechanism_state.requests)
+        self.assertEqual(task.keys, [])
+
+    def test_normal_repeats_are_timed_and_restore_base_duration_after_stance(self):
+        _, logic = self.make_logic()
+        p = logic.release_burst
+        normal = ReleaseBurstAction('1', 'normal', p.normal_durations['1'], p.quote('1', 'normal')['crit_expect'])
+        node = p._search((normal,), 0, 0, releases=True, bonuses=[], horizon=27.6, width=16,
+                         conditions=logic._scene_conditions(), repeat_normals=True)
+        self.assertEqual(len(node[3]), 4)
+        self.assertLessEqual(node[1], 27.6)
+        self.assertEqual(node[2], 0)
+        p.confirm('1', 'ult', 0)
+        enhanced = p._stance_action(normal, 3, p.stances)
+        restored = p._stance_action(enhanced, 28, p.stances)
+        self.assertAlmostEqual(restored.duration, p.normal_durations['1'])
 
 
 class TestBurstSpValue(unittest.TestCase):

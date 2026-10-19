@@ -265,6 +265,7 @@ class MechanismQuote:
     model_consumption_bonus: float = 0.0
     nominal_hit_offsets: tuple[float, ...] = ()
     nominal_hit_weights: tuple[float, ...] = ()
+    same_cast_requested_swords: int = 0
 
 
 def _unit(row):
@@ -353,6 +354,18 @@ def _sword_quote(row, spec, positive, requests, stance, free_excluded):
     if conduct is None:
         return MechanismQuote(baseline, 'single_unit; conduct_or_free_unknown')
     swords = min(spec['count_cap'], sum(r.nominal_count for r in requests if r.kind == 'sword'))
+    if free:
+        # An explicit model branch, not backdating an observed inventory. The
+        # free action requests three positions before its area snapshot; its
+        # quotation assumes those requests participate in this cast.
+        swords = min(spec['count_cap'], swords+spec['free_requests'])
+        value = salvo_value(row, spec, 0, swords, enhanced=True)
+        return MechanismQuote(value, 'nominal_free_salvo_including_current_requests', 0, swords,
+                              sources=tuple(r.source for r in requests),
+                              same_cast_requested_swords=spec['free_requests'],
+                              assumptions=('same_cast_requests_reach_before_area_snapshot_assumed',
+                                           'arrival_unconfirmed', 'owner_range_unmeasured',
+                                           'untracked_initial_inventory_excluded', 'first_free_consumes_no_conduct'))
     if not swords:
         return MechanismQuote(baseline, 'single_unit; sword_snapshot_unknown', conduct=conduct,
                               assumptions=('initial_inventory_unknown',))
