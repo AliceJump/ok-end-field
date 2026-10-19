@@ -428,8 +428,20 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
             cleanup.start(pid)
             parent = None  # The background watcher owns the process handle now.
         except Exception as error:
-            # Do not terminate a parent's process while startup is unverified.
-            logger.warning(f"Cannot monitor SDK startup; preserving temporary Games.exe: {error}")
+            # If the child has definitely exited, our suspended parent is disposable.
+            # Otherwise do not guess about SDK readiness or terminate a live child's parent.
+            try:
+                child_gone = not psutil.pid_exists(pid)
+            except Exception:
+                child_gone = False
+            if child_gone:
+                try:
+                    kernel.TerminateProcess(parent, 0)
+                    logger.info(f"Game PID {pid} exited before cleanup monitor started; discarded temporary Games.exe")
+                except Exception as discard_error:
+                    logger.warning(f"Cannot discard temporary Games.exe after game exit: {discard_error}")
+            else:
+                logger.warning(f"Cannot monitor SDK startup; preserving temporary Games.exe: {error}")
         return True
     finally:
         if parent:
