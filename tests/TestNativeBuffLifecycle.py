@@ -18,7 +18,7 @@ from src.data.combat_simulation import (
 )
 from src.data.native_action_program import _nodes, compile_native_action
 from src.data.native_buff_program import POGRANI_MORALE, compile_buff_definition, reviewed_retained_layers
-from src.data.native_buff_runtime import change_buff, finish_buff_instances
+from src.data.native_buff_runtime import change_buff, finish_buff_instances, pause_buff_time
 from src.data.native_gameplay import native_record
 from src.data.skill_timing import SkillTimingStore
 from src.data.skill_types import CombatResourceType
@@ -300,6 +300,191 @@ class TestRetainedMoraleLayers(unittest.TestCase):
         self.assertEqual(self.world.native_buff_count("1", "explicit_parent"), 3)
         self.world.advance(30)
         self.assertFalse(self.world.native_buff_instances)
+
+
+class TestNativePausedBuffClock(unittest.TestCase):
+    """Authored clock scenarios; no assumed Laevatain stance producer or ticks."""
+
+    def setUp(self):
+        self.world = CombatWorldState(("1", "2"), regen=0)
+        self.definition = TestNativeBuffLifecycle().definition
+
+    def add(self, *, key="stance", owner="1", definition=None, end=None):
+        definition = definition or self.definition(period=-1, callbacks=())
+        change = NativeBuffChange(key, literal(1), target="self", definition=definition, action_finish_after=end)
+        program = ActionProgram("confirmed_"+key, owner, "normal", 0, 0, 0,
+                                (CombatEvent(0, "create", native_buffs=(change,)),), parameters=(("bb.inherit", 7),))
+        self.assertTrue(self.world.start(program, action_id="add_"+key))
+        return next(v for v in self.world.native_buff_instances.values() if v.key == key)
+
+    def pause(self, instance, paused, *, world=None):
+        world = world or self.world
+        previous = world._native_buff_context
+        world._native_buff_context = instance
+        try:
+            pause_buff_time(world, instance.uid, paused)
+        finally:
+            world._native_buff_context = previous
+
+    def test_pause_preserves_remainder_and_does_not_pause_weapon_or_another_actor(self):
+        stance = self.add()
+        self.add(key="weapon", owner="1")
+        self.add(key="other", owner="2")
+        self.world.advance(.5)
+        self.pause(stance, True)
+        self.world.advance(10)
+        self.assertEqual(set(self.world.native_buff_instances), {stance.uid})
+        self.assertEqual(stance.paused_lifetime, 2.5)
+        self.assertEqual(self.world.native_buff_count("1", "stance"), 1)
+        self.pause(stance, False)
+        self.assertEqual(stance.expires, 12.5)
+        self.world.advance(12.49)
+        self.assertIn(stance.uid, self.world.native_buff_instances)
+        self.world.advance(12.5)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_periodic_timer_also_pauses_and_deadline_trigger_is_paid_once(self):
+        stance = self.add(definition=self.definition())
+        self.world.advance(1.25)
+        self.assertEqual(self.world.characters["1"].energy, 7)
+        self.pause(stance, True)
+        self.world.advance(20)
+        self.assertEqual(self.world.characters["1"].energy, 7)
+        self.pause(stance, False)
+        self.assertEqual(stance.next_trigger, 20.75)
+        self.assertEqual(stance.expires, 21.75)
+        self.world.advance(21.75)
+        self.assertEqual(self.world.characters["1"].energy, 21)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_same_time_toggles_and_duplicate_notifications_do_not_duplicate_ticks(self):
+        stance = self.add(definition=self.definition())
+        self.world.advance(.25)
+        for _ in range(3):
+            self.pause(stance, True)
+            self.pause(stance, True)
+            self.pause(stance, False)
+            self.pause(stance, False)
+        self.world.advance(3)
+        self.assertEqual(self.world.characters["1"].energy, 21)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_action_end_and_explicit_removal_still_finish_paused_instances(self):
+        stance = self.add(end=1)
+        self.world.advance(.25)
+        self.pause(stance, True)
+        self.world.advance(1)
+        self.assertFalse(self.world.native_buff_instances)
+        with self.assertRaisesRegex(UnresolvedMechanic, "owner"):
+            self.pause(stance, False)
+        stance = self.add(key="second")
+        self.pause(stance, True)
+        finish_buff_instances(self.world, (stance.uid,))
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_prediction_fork_can_resume_without_changing_the_observed_world(self):
+        stance = self.add()
+        self.pause(stance, True)
+        forecast = self.world.fork()
+        forecast.advance(5)
+        self.pause(forecast.native_buff_instances[stance.uid], False, world=forecast)
+        forecast.advance(8)
+        self.assertFalse(forecast.native_buff_instances)
+        self.assertTrue(self.world.native_buff_instances[stance.uid].time_paused)
+        self.assertEqual(self.world.time, 0)
+
+    def test_infinite_lifetime_survives_pause_resume_without_a_fake_expiry(self):
+        stance = self.add(definition=self.definition(duration=None, period=-1, callbacks=()))
+        self.pause(stance, True)
+        self.world.advance(100)
+        self.pause(stance, False)
+        self.assertIsNone(stance.expires)
+        self.world.advance(1000)
+        self.assertEqual(self.world.native_buff_count("1", "stance"), 1)
+
+    def test_pause_without_buff_owner_is_unknown_not_a_team_clock_switch(self):
+        stance = self.add()
+        action = ActionProgram("not_a_buff", "1", "normal", 0, 0, 0,
+                               (CombatEvent(0, "wrong_root", buff_pause=True),))
+        self.world.start(action, action_id="wrong")
+        self.assertFalse(stance.time_paused)
+        self.assertTrue(any("executing Buff owner" in error for error in self.world.unresolved))
+        self.assertEqual(stance.expires, 3)
+
+    def test_periodic_initialization_pause_keeps_zero_dt_trigger_order_unknown(self):
+        start = ActionProgram("pause_on_start", "1", "normal", 0, 0, 0,
+                              (CombatEvent(0, "pause", buff_pause=True),))
+        definition = self.definition(wait=False)
+        definition = replace(definition, callbacks=((0, start), *definition.callbacks))
+        stance = self.add(definition=definition)
+        self.assertFalse(stance.time_paused)
+        self.assertTrue(any("initialization/trigger boundary" in error for error in self.world.unresolved))
+        self.world.advance(3)
+        # Rejected pause leaves the existing explicit immediate-trigger rule.
+        # There are four opportunities (start plus 1/2/3), not a guessed skip.
+        self.assertEqual(self.world.characters["1"].energy, 28)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_refresh_of_paused_finite_buff_does_not_turn_it_into_infinite_life(self):
+        from src.data.native_attribute_modifiers import ALESH_TEAM_ATTACK
+
+        definition = self.definition(stacking=4, period=-1, callbacks=())
+        stance = self.add(key=ALESH_TEAM_ATTACK, definition=definition)
+        self.world.advance(.5)
+        self.pause(stance, True)
+        self.world.advance(10)
+        refreshed = replace(definition, duration=literal(7))
+        change_buff(self.world, "1", NativeBuffChange(ALESH_TEAM_ATTACK, literal(1), definition=refreshed),
+                    {"bb.inherit": 7}, "later_source", stance.program, 1)
+        self.assertEqual(stance.paused_lifetime, 7)
+        self.assertEqual(len(self.world.native_buff_instances), 1)
+        self.pause(stance, False)
+        self.assertEqual(stance.expires, 17)
+        self.world.advance(17)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_unreviewed_child_clock_propagation_is_rejected_without_mutation(self):
+        stance = self.add()
+        child = self.add(key="child")
+        child.parent_scope = stance.uid  # Explicitly supplied parent relationship.
+        with self.assertRaisesRegex(UnresolvedMechanic, "child clocks"):
+            self.pause(stance, True)
+        self.assertFalse(stance.time_paused)
+        self.assertEqual(stance.expires, 3)
+        self.assertIsNone(stance.paused_lifetime)
+
+    def test_real_laevatain_pause_leaves_compile_but_unbound_event_guard_stays_unknown(self):
+        store = SkillTimingStore()
+        character = get_character("laevatain")
+        source = native_record(store, "buff_chr_0016_laevat_show_weapon")["data"]
+        subscriptions = []
+        flags = []
+        for event in source["abilityEventAction"]:
+            for block in event["actions"]:
+                full = compile_native_action(store, character, store.profiles("莱万汀", "ult")[0], "1", "normal",
+                                             event_sequence=block, isolated_blackboard=True)
+                self.assertIn("Native advanced event buff identity/output needs binding",
+                              [error for e in full.events for error in e.unresolved])
+                leaf = next(n for n in _nodes(block) if n["$type"].endswith("PauseBuffTime+Data"))
+                isolated = copy.deepcopy(block)
+                isolated["actionData"] = [leaf]
+                callback = compile_native_action(store, character, store.profiles("莱万汀", "ult")[0], "1", "normal",
+                                                 event_sequence=isolated, isolated_blackboard=True)
+                self.assertFalse([error for e in callback.events for error in e.unresolved])
+                flags += [e.buff_pause for e in callback.events if e.buff_pause is not None]
+                subscriptions.append((str(event["abilityEvent"]), callback))
+        self.assertEqual(flags, [True, False])
+        # Explicitly filtered event input plus a confirmed plain holder isolate
+        # the actual leaves. The real type-5 container and guard stay unresolved.
+        definition = replace(self.definition(period=-1, callbacks=()), subscriptions=tuple(subscriptions))
+        stance = self.add(definition=definition)
+        self.world.advance(.5)
+        self.world.dispatch_native("9", "1")
+        self.assertTrue(stance.time_paused)
+        self.world.advance(10)
+        self.world.dispatch_native("203", "1")
+        self.assertFalse(stance.time_paused)
+        self.assertEqual(stance.expires, 12.5)
 
 
 if __name__ == "__main__":

@@ -33,6 +33,9 @@ class NativeBuffInstance:
     attack_addition: float | None = 0.0
     enabled: bool = True
     priority_position: int | None = None
+    time_paused: bool = False
+    paused_lifetime: float | None = None
+    paused_trigger_delay: float | None = None
 
 
 def _instances(world, owner, key):
@@ -82,16 +85,22 @@ def _insert_retained_layer(world, instance, maximum):
 
 def _refresh_duration(world, instance, duration):
     """Native type 4 keeps the original instance and only refreshes its timer."""
-    if instance.expires is None or duration is None:
+    old_remaining = instance.paused_lifetime if instance.time_paused else (
+        None if instance.expires is None else instance.expires - world.time)
+    if old_remaining is None or duration is None:
         instance.expires = None
+        instance.paused_lifetime = None
     else:
-        remaining = _single(max(0, instance.expires - world.time))
+        remaining = _single(max(0, old_remaining))
         # Verified SUBSS/COMISS branch: shorter by <= native epsilon may replace
         # the remainder. This is not blindly now+duration or max in double.
         threshold = _single(remaining - _single(1e-5))
         chosen = duration if duration >= threshold else remaining
-        instance.expires = world.time + chosen
-        _schedule(world, instance, instance.expires, "finish")
+        if instance.time_paused:
+            instance.paused_lifetime = chosen
+        else:
+            instance.expires = world.time + chosen
+            _schedule(world, instance, instance.expires, "finish")
     _sync(world, instance.owner, instance.key)
 
 
@@ -112,6 +121,54 @@ def _schedule(world, instance, at, kind):
         instance.next_trigger = at
     event = CombatEvent(0, "native_buff_" + kind, buff_controls=(NativeBuffControl(instance.uid, kind, at),))
     heapq.heappush(world._queue, (at, world._sequence, instance.uid, instance.program, event))
+
+
+def pause_buff_time(world, action_id, paused):
+    """Pause this Buff's modeled clock, never the team, action deadline or weapon buff.
+
+    The native action writes its owning Buff's flag. Authored world time is an
+    explicit input; native per-tick float32 accumulation remains a separate gap.
+    """
+    instance = world._native_buff_context
+    if (instance is None or instance.uid != action_id
+            or world.native_buff_instances.get(action_id) is not instance):
+        raise UnresolvedMechanic("Native PauseBuffTime lacks its executing Buff owner")
+    if type(paused) is not bool:
+        raise UnresolvedMechanic("Native PauseBuffTime requires a boolean flag")
+    if instance.time_paused == paused:
+        return
+    if instance.definition.retained_priority_layers or instance.definition.stacking not in {0, 2, 4, 7}:
+        raise UnresolvedMechanic(f"Native paused priority stacking needs binding: {instance.key}")
+    if (paused and instance.period > 0 and instance.remaining != 0
+            and (instance.next_trigger is None or instance.next_trigger <= world.time)):
+        raise UnresolvedMechanic(f"Native pause at periodic initialization/trigger boundary needs tick ordering: {instance.key}")
+    if any(child.parent_scope == action_id for child in world.native_buff_instances.values()):
+        raise UnresolvedMechanic(f"Native paused child clocks need binding: {instance.key}")
+    if any(row[2] == action_id and not row[4].buff_controls for row in world._queue):
+        raise UnresolvedMechanic(f"Native paused delayed callback clocks need binding: {instance.key}")
+    if paused:
+        instance.paused_lifetime = (None if instance.expires is None else
+                                    _single(max(0, instance.expires - world.time)))
+        instance.paused_trigger_delay = (instance.next_trigger - world.time
+                                         if instance.next_trigger is not None else None)
+        instance.expires = instance.next_trigger = None
+        # Remove old timers, including pause/resume at the same timestamp. UID
+        # and expected_at alone cannot distinguish identical rescheduled events.
+        world._queue[:] = [row for row in world._queue if not (row[2] == action_id and any(
+            control.kind in {"finish", "trigger"} for control in row[4].buff_controls))]
+        heapq.heapify(world._queue)
+    else:
+        instance.expires = (None if instance.paused_lifetime is None else world.time + instance.paused_lifetime)
+        if instance.paused_trigger_delay is not None and instance.remaining != 0:
+            at = world.time + instance.paused_trigger_delay
+            if instance.expires is None or at <= instance.expires:
+                _schedule(world, instance, at, "trigger")
+        if instance.expires is not None:
+            _schedule(world, instance, instance.expires, "finish")
+        instance.paused_lifetime = instance.paused_trigger_delay = None
+    instance.time_paused = paused
+    _sync(world, instance.owner, instance.key)
+    world.unresolved.add(f"Native paused-buff tick accumulation not yet bound: {instance.key}")
 
 
 def _execute(world, instance, program, payload=None, target=None):
@@ -194,6 +251,7 @@ def finish_buff_instances(world, instance_ids):
 def _trigger(world, instance):
     if instance.remaining == 0:
         return
+    instance.next_trigger = None
     instance.remaining -= 1
     _callbacks(world, instance, 1)
 
@@ -337,13 +395,14 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
             # _AddPassiveBuff stores only valid AddBuff results after creation.
             # Unique reapplication creates no wrapper and never joins this list.
             passive_root.passive_buffs.append(uid)
-        if period > 0 and limit != 0:
+        if period > 0 and limit != 0 and not instance.time_paused:
             if not definition.wait_first:
                 _trigger(world, instance)
-            if instance.remaining != 0 and uid in world.native_buff_instances and (expires is None or world.time + period <= expires):
+            if (instance.remaining != 0 and uid in world.native_buff_instances and not instance.time_paused
+                    and (instance.expires is None or world.time + period <= instance.expires)):
                 _schedule(world, instance, world.time + period, "trigger")
-        if expires is not None:
-            _schedule(world, instance, expires, "finish")
+        if instance.expires is not None:
+            _schedule(world, instance, instance.expires, "finish")
         if instance.action_finish_at is not None:
             _schedule(world, instance, instance.action_finish_at, "action_finish")
 
@@ -363,10 +422,12 @@ def control_buff(world, control):
                 _trigger(world, instance)
             _finish(world, instance)
     elif control.kind == "trigger":
+        if instance.time_paused or instance.next_trigger != control.expected_at:
+            return
         if instance.expires is not None and world.time > instance.expires:
             return
         _trigger(world, instance)
-        if instance.uid in world.native_buff_instances and instance.remaining != 0:
+        if instance.uid in world.native_buff_instances and instance.remaining != 0 and not instance.time_paused:
             at = world.time + instance.period
             if instance.expires is None or at <= instance.expires:
                 _schedule(world, instance, at, "trigger")

@@ -475,6 +475,10 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             eid = _PHYSICAL[name]
             duration = native_number(body["duration"], bb) if "duration" in body else None
             emit(CombatEvent(at, "physical_anomaly", effects=(SkillEffect(eid, count=1, duration=duration, target="enemy"),)))
+        elif name == "PauseBuffTime+Data":
+            if type(body.get("isPaused")) is not bool:
+                raise UnresolvedMechanic("Native PauseBuffTime lacks its boolean flag")
+            emit(CombatEvent(at, "native_pause_buff_time", buff_pause=body["isPaused"]))
         elif name == "ModifyDynamicBlackboard+Data":
             if not body["directValue"]:
                 raise UnresolvedMechanic(f"Runtime native calculation: {profile.skill_id}/{body['key']}")

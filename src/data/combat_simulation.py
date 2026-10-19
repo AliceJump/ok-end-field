@@ -249,6 +249,7 @@ class CombatEvent(ImmutableCombatValue):
     native_spells: tuple[NativeSpellInfliction, ...] = ()
     native_spell_bursts: tuple[int, ...] = ()
     hit_source: NativeTarget | None = None
+    buff_pause: bool | None = None
 
     def __post_init__(self):
         object.__setattr__(self, "effects", tuple(effect_value(effect) for effect in self.effects))
@@ -1234,6 +1235,13 @@ class CombatWorldState:
             self._executing_action = None
             return
         self.unresolved.update(event.unresolved)
+        if event.buff_pause is not None:
+            from src.data.native_buff_runtime import pause_buff_time
+
+            try:
+                pause_buff_time(self, action_id, event.buff_pause)
+            except UnresolvedMechanic as error:
+                self.unresolved.add(str(error))
         for change in event.skill_changes:
             try:
                 self._change_native_skill(action_id, program, change, inputs)
