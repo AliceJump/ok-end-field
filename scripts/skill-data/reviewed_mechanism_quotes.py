@@ -4,6 +4,7 @@ import hashlib
 import json
 
 from reviewed_mechanism_equipment import spear_equipment, sword_equipment, sword_weapon
+from reviewed_zhuang_talent import sword_talent
 
 VALUE = '$value'
 HASHES = {
@@ -128,4 +129,5 @@ def mechanism_contract(row, store, source):
     else:
         result['consumption_equipment'] = sword_equipment(row, source)
         result['consumption_weapon'] = sword_weapon(row, source)
+        result['talent_amplification'] = sword_talent(row, source)
     return result

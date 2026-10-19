@@ -50,6 +50,19 @@ def validate_contract(spec, *, actor=None):
 
 
 def _validate_equipment(spec):
+    talent = spec.get('talent_amplification')
+    if talent is not None:
+        if (spec['type'] != 'sword_salvo'
+                or talent['source_sha256'] != 'f6dadf3d26e7dc5695096fff69dafe1f96710b6aca04fb21a494ad3ff73e019d'
+                or talent['stack_group'] != 'electric_enhancement_highest_active'
+                or talent['scope'] != 'nominal_skill_mark_projection; not_observed_marks_or_native_keyword_execution'
+                or not talent['native_hashes']
+                or set(talent['base_after']) != {'ordinary', 'enhanced'}
+                or any(not math.isfinite(v) or v <= 0 for v in (
+                    talent['base_rate'], talent['enhance_rate'], talent['duration'],
+                    *talent['base_after'].values(), talent['enhanced_area_after'],
+                    talent['first_mark_after_area'], talent['mark_interval'], talent['last_mark_after_area']))):
+            raise ValueError('Unreviewed nominal talent amplification')
     consumption = spec.get('consumption_equipment')
     if consumption is not None:
         if (spec['type']!='sword_salvo' or consumption['scope']!='nominal_conduct_consumption; future_quotes_only'
@@ -118,6 +131,26 @@ class ModelConsumptionStack:
 
 
 @dataclass(frozen=True)
+class ModelSkillAmplification:
+    owner: str
+    source: str
+    starts: float
+    expires: float
+    base: float
+    per_mark: float
+    marks: tuple[float, ...] = ()
+
+    def at(self, now):
+        if not self.starts <= now < self.expires:
+            return 0.0
+        rate = _f32(self.base)
+        for stamp in self.marks:
+            if self.starts <= stamp <= now:
+                rate = _f32(rate + _f32(self.per_mark))
+        return rate
+
+
+@dataclass(frozen=True)
 class MechanismState:
     requests: tuple[EntityRequest, ...] = ()
     minimum_spent: frozenset[str] = frozenset()
@@ -125,6 +158,7 @@ class MechanismState:
     bone_stacks: tuple[tuple[str, int], ...] = ()
     combo_weapon: tuple[ModelWeaponWindow, ...] = ()
     consumption_stacks: tuple[ModelConsumptionStack, ...] = ()
+    skill_amplifications: tuple[ModelSkillAmplification, ...] = ()
 
     def keep(self, owners):
         return replace(self, requests=tuple(r for r in self.requests if r.owner in owners),
@@ -132,7 +166,24 @@ class MechanismState:
                        known_free_until=tuple((owner, end) for owner, end in self.known_free_until if owner in owners),
                        bone_stacks=tuple((owner, n) for owner, n in self.bone_stacks if owner in owners),
                        combo_weapon=tuple(w for w in self.combo_weapon if w.owner in owners),
-                       consumption_stacks=tuple(w for w in self.consumption_stacks if w.owner in owners))
+                       consumption_stacks=tuple(w for w in self.consumption_stacks if w.owner in owners),
+                       skill_amplifications=tuple(w for w in self.skill_amplifications if w.owner in owners))
+
+    def amplification(self, owner, now):
+        # Recasting replaces the personal base after its marker phase. A new
+        # scheduled marker does not erase the preceding instance early.
+        windows = [w for w in self.skill_amplifications if w.owner == owner and w.starts <= now < w.expires]
+        return max(windows, key=lambda w: w.starts).at(now) if windows else 0.0
+
+    def amplification_floor(self, owner, started, until):
+        # Without a reviewed per-hit normal-attack timeline, only credit the
+        # personal factor that covers its whole authored output interval.
+        points = {started, until}
+        for window in self.skill_amplifications:
+            if window.owner == owner:
+                points.update(stamp for stamp in (window.starts, window.expires, *window.marks)
+                              if started <= stamp <= until)
+        return min(self.amplification(owner, stamp) for stamp in points)
 
     def consumption_bonus(self, owner, now, element, *, until=None, damage_tags=()):
         end = now if until is None else until
@@ -212,6 +263,8 @@ class MechanismQuote:
     quote_started: float = 0.0
     damage_until: float | None = None
     model_consumption_bonus: float = 0.0
+    nominal_hit_offsets: tuple[float, ...] = ()
+    nominal_hit_weights: tuple[float, ...] = ()
 
 
 def _unit(row):
@@ -249,8 +302,22 @@ def branch_quote(row, owner, now, assessment, state, *, stance=None, forecast=Fa
     duration = spec['damage_duration']['enhanced' if stance is not None else 'ordinary']
     consumption = state.consumption_bonus(owner, now, '电磁', until=now+duration, damage_tags=('skill',))
     assumptions = result.assumptions+(('nominal_conduct_consumption_unobserved',) if consumption else ())
+    offsets, weights = (), ()
+    talent = spec.get('talent_amplification')
+    if talent is not None and stance is not None:
+        count = result.selected_swords
+        if count is not None:
+            offsets = tuple(talent['enhanced_area_after'] + talent['first_mark_after_area'] + i*talent['mark_interval']
+                            for i in range(count-1)) + (talent['enhanced_area_after'] + talent['last_mark_after_area'],)
+            regular = _f32(spec['enhanced']['atk_scale'] + _f32(result.conduct*spec['enhanced']['atk_up_per_conduct']))
+            weights = (regular,)*(count-1) + (_f32(regular*spec['enhanced']['final_rate']),)
+        else:
+            # A single-unit reference has no confirmed count. Price its base
+            # marker, but do not manufacture an additional mark from one hit.
+            offsets, weights = (talent['enhanced_area_after'] + talent['first_mark_after_area'],), (1.0,)
     return replace(result, quote_started=now, damage_until=now+duration,
-                   model_consumption_bonus=consumption, assumptions=assumptions)
+                   model_consumption_bonus=consumption, assumptions=assumptions,
+                   nominal_hit_offsets=offsets, nominal_hit_weights=weights)
 
 
 def _spear_quote(row, owner, spec, positive, projected, requests, state):
@@ -315,6 +382,7 @@ def after_action(state, row, owner, kind, started, *, quote=None, stance=None, f
         return replace(state, known_free_until=tuple((key, value) for key, value in state.known_free_until
                                                      if key != owner)+((owner, end),))
     if spec['type'] == 'sword_salvo' and kind == 'battle':
+        state = talent_after_cast(state, row, owner, started, quote=quote, stance=stance)
         free = stance is not None and stance.free_battle
         count = spec['free_requests'] if free else (
             min(quote.conduct+1, spec['conduct_requests_cap']) if quote and quote.conduct else 0)
@@ -341,3 +409,19 @@ def after_action(state, row, owner, kind, started, *, quote=None, stance=None, f
         return replace(state, requests=requests, minimum_spent=state.minimum_spent | {owner},
                        bone_stacks=tuple((key,n) for key,n in state.bone_stacks if key != owner))
     return state
+
+
+def talent_after_cast(state, row, owner, started, *, quote=None, stance=None):
+    talent = (row.get('mechanism') or {}).get('talent_amplification')
+    if talent is None:
+        return state
+    source = f'{owner}:battle:{float(started).hex()}'
+    if any(w.source == source for w in state.skill_amplifications):
+        return state
+    phase = 'enhanced' if stance is not None else 'ordinary'
+    begin = started + talent['base_after'][phase]
+    marks = (tuple(started + offset for offset in quote.nominal_hit_offsets)
+             if phase == 'enhanced' and quote is not None and quote.selected_swords is not None else ())
+    window = ModelSkillAmplification(owner, source, begin, begin+talent['duration'],
+                                    talent['base_rate'], talent['enhance_rate'], marks)
+    return replace(state, skill_amplifications=tuple(w for w in state.skill_amplifications if w.expires > started)+(window,))

@@ -36,6 +36,7 @@
     "assets/data/character_builds/xaihi.json": "9967cc02a8fd2f0f6dda930a75fe40639b40772928aa1f4cbc2bd0fef74fba57",
     "assets/data/character_builds/yvonne.json": "66f1d3be0ef65963b8546f5796dc2dea9a8403ca395384626fec05af11b5c6df",
     "assets/data/character_builds/zhuang_fangyi.json": "f5c34b1518f52657af5342b9345e4c8560a98f2b0ef51631b26001af41e43e40",
+    "assets/data/character_mechanics/20261008/zhuangfy_release.json.gz": "f6dadf3d26e7dc5695096fff69dafe1f96710b6aca04fb21a494ad3ff73e019d",
     "assets/data/character_progression/20261003/characters.json": "5309432af9941451ab248d11ed3454aad7e5c18c37e0fcbbfa0d255f3c789e1e",
     "assets/data/character_progression/20261003/index.json": "e5e4f8fe61f13339c3c59a7a1a02e00a244798126a1651d9f9f812371d9fdab7",
     "assets/data/character_progression/20261003/tables.json.gz": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
@@ -97,7 +98,7 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "9a45956382b0ff571ff0c9013ea28bdd1c5c67f047c07575d4859b7dc0ef8f25",
+  "snapshot_sha256": "8fe99c88b833e796e5d21ecf5728a75314b9dceee8af1acdbfc241503305b39e",
   "actors": 33,
   "rules": 16,
   "supplement_source_hashes": {
@@ -111,13 +112,14 @@
   },
   "support_evidence_sha256": "63fb997a727426f190cbecf6379a0e60ee50cd5ffa5b90f2c8ef4f2c9b23f5ba",
   "exporter_hashes": {
-    "export_release_burst_snapshot.py": "9bb5792d3d4f7b9a401cec7593b4042ecfcf493645bd5e0360cb9893ab999981",
+    "export_release_burst_snapshot.py": "b245e9ec11ad445bea5522257ed2ed1e9ab7abd7d39a358f18dbb96292e5f019",
     "reviewed_support_release.py": "4275d1fbaa903c83431cf992c67a5cd010383456ae2135c45a7fd88368b689de",
     "reviewed_release_stance.py": "38f08e87300832857e5076259542288b4e0fbe7816740ba26c17b17c4cca0792",
     "reviewed_si_release.py": "807639a720cdfa6205b02887fde35aadc2409c554a6d0adab77b2f61d6286dfa",
     "reviewed_avywenna_recall.py": "ada2f76001729ca5d03d8ef885234af7925288521ad5ea2061ac2913f83e17f3",
-    "reviewed_mechanism_quotes.py": "faede655ba1d41e48d3f8e455d0653f0dcfd456c67be789b3679278c0e1217a3",
-    "reviewed_mechanism_equipment.py": "90ece67e0f8c0f4f8b520fab9b7d4da76a4eab66cdea197531b6a9f507cf62b7"
+    "reviewed_mechanism_quotes.py": "5e4474230b143b3b66185382edf3ed46085e024a453c26bf6b5809be32d1b4e3",
+    "reviewed_mechanism_equipment.py": "90ece67e0f8c0f4f8b520fab9b7d4da76a4eab66cdea197531b6a9f507cf62b7",
+    "reviewed_zhuang_talent.py": "14f06b0ac3a42691bc9bf1708d132f25a2f9fe19fb0344db255026fd249eaf68"
   },
   "stances": 1
 }

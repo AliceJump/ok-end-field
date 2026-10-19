@@ -76,7 +76,7 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         basic = planner.price("3", "ult", 0)
         planner.confirm("1", "ult", 0)
         planner.confirm("2", "ult", 0)
-        self.assertAlmostEqual(planner.price("3", "ult", 3) / basic, 1 + .36000001430511475 + .38478, places=7)
+        self.assertAlmostEqual(planner.price("3", "ult", 3) / basic, 1 + max(.36000001430511475, .38478), places=7)
 
     def test_changed_snapshot_fails_hash_validation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -392,7 +392,7 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertEqual(planner.price("1", "ult", 0, value=49073.9), 0)
         self.assertIsNone(planner.choose((ReleaseBurstAction("1", "ult", 3, 0),), 0, 0))
 
-    def test_two_supports_add_matching_amp_and_refresh_without_duplicate_layers(self):
+    def test_two_supports_select_matching_amp_and_refresh_without_duplicate_layers(self):
         planner = ReleaseBurstPlanner(["梨诺", "安塔尔", "佩丽卡"])
         before = planner.price("3", "battle", 0)
         planner.confirm("1", "ult", 0)
@@ -400,7 +400,7 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         panel = planner.rows["3"]["panel"]
         atk = panel["attack_white"] * (1 + panel["attack_percent"]) + panel["attack_flat"]
         atk_up = planner.rules["1", "ult"][0]["magnitude"]["base"]
-        amp = sum(s["magnitude"]["base"] for a in ("1", "2") for s in planner.rules[a, "ult"]
+        amp = max(s["magnitude"]["base"] for a in ("1", "2") for s in planner.rules[a, "ult"]
                   if s["bucket"] == "amplification" and "电磁" in s["elements"])
         self.assertAlmostEqual(planner.price("3", "battle", 3) / before,
                                (1 + panel["attack_white"] * atk_up / atk) * (1 + amp))
@@ -417,12 +417,13 @@ class TestReleaseBurstPlanner(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Support evidence"):
                 read_snapshot(path)
 
-    def test_nature_beneficiary_receives_both_new_support_windows(self):
+    def test_nature_beneficiary_selects_top_amp_and_keeps_the_attack_window(self):
         planner = ReleaseBurstPlanner(["赛希", "梨诺", "艾尔黛拉"])
         before = planner.price("3", "normal", 0)
         planner.confirm("1", "ult", 0)
         planner.confirm("2", "ult", 0)
-        self.assertGreater(planner.price("3", "normal", 3) / before, 1.7)
+        self.assertGreater(planner.price("3", "normal", 3) / before, 1.5)
+        self.assertLess(planner.price("3", "normal", 3) / before, 1.6)
         planner.confirm("2", "battle", 4)
         panel = planner.rows['3']['panel']
         attack = panel['attack_white'] * (1 + panel['attack_percent']) + panel['attack_flat']
@@ -443,7 +444,8 @@ class TestReleaseBurstPlanner(unittest.TestCase):
         self.assertAlmostEqual(enhanced, spec["quotes"]["normal"]["crit_expect"])
         self.assertGreater(enhanced / basic, 1.77)
         lightning = spec["quotes"]["battle"]["crit_expect"]
-        self.assertAlmostEqual(planner.price("1", "battle", 3) / lightning, 1 + 1.12 / 2.385, places=6)
+        self.assertAlmostEqual(planner.price("1", "battle", 3) / lightning,
+                               (1 + 1.12 / 2.385)*(1+.18000000715255737), places=6)
         planner.confirm("2", "ult", 3)
         self.assertGreater(planner.price("1", "normal", 4), enhanced)
 

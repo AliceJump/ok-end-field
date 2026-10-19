@@ -25,6 +25,7 @@ from src.data.mechanism_prediction import (
     MechanismState,
     after_action,
     branch_quote,
+    talent_after_cast,
     validate_contract,
 )
 
@@ -354,12 +355,16 @@ class ReleaseBurstPlanner:
         binding = self.highlight_damage.get(actor)
         return binding.components(assessment) if binding is not None else ((), ())
 
-    def price_components(self, actor, now, components, *, bonuses=None):
-        values = [self._price_value(actor, now, c.element, set(c.damage_tags), c.bonus_pct, c.value, bonuses)
+    def price_components(self, actor, now, components, *, bonuses=None, mechanism_state=None):
+        model = self.mechanism_state if mechanism_state is None else mechanism_state
+        values = [self._price_value(actor, now, c.element, set(c.damage_tags), c.bonus_pct, c.value, bonuses,
+                                   personal_amplification=model.amplification(actor, now)
+                                   if c.element == '电磁' else 0)
                   for c in components]
         return sum(values) if all(v is not None for v in values) else None
 
-    def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None, mechanism=None, mechanism_state=None):
+    def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None, mechanism=None, mechanism_state=None,
+              action_started=None):
         quote = self.quote(actor, kind)
         if quote is None:
             return None
@@ -375,10 +380,30 @@ class ReleaseBurstPlanner:
         elif quote.get("pricing_scope", "").startswith(("support_opener_only", "unconditional_cast_only;")):
             value = quote["crit_expect"]
         model = self.mechanism_state if mechanism_state is None else mechanism_state
+        if kind == 'battle' and mechanism is not None:
+            model = talent_after_cast(model, self.rows[actor], actor, mechanism.quote_started,
+                                      quote=mechanism, stance=self.stance_at(actor, mechanism.quote_started, stances=stances))
         bonuses, extra = self._mechanism_windows(actor, now, quote, model, mechanism, bonuses)
+        amount = quote["crit_expect"] if value is None else value
+        if mechanism is not None and mechanism.nominal_hit_offsets:
+            # Derive each effective multiplier from the unchanged source value.
+            # A late personal amplification does not rewrite preceding hits.
+            weights = mechanism.nominal_hit_weights
+            return sum(self._price_value(actor, mechanism.quote_started+offset, quote['quote_basis']['element'],
+                                         set(quote['quote_basis']['damage_tags']), quote['bonus_pct'],
+                                         amount*weight/sum(weights), bonuses, extra,
+                                         model.amplification(actor, mechanism.quote_started+offset))
+                       for offset, weight in zip(mechanism.nominal_hit_offsets, weights))
+        personal = model.amplification(actor, now) if quote['quote_basis']['element'] == '电磁' else 0
+        if kind == 'normal' and action_started is not None and personal:
+            personal = model.amplification_floor(actor, action_started, now)
+        if mechanism is not None and mechanism.selected_swords is not None:
+            # Ordinary sword trajectories have no reviewed per-hit phases.
+            # Do not apply a five-second personal buff to a whole long salvo.
+            personal = 0
         return self._price_value(actor, now, quote["quote_basis"]["element"],
                                  set(quote["quote_basis"]["damage_tags"]), quote["bonus_pct"],
-                                 quote["crit_expect"] if value is None else value, bonuses, extra)
+                                 amount, bonuses, extra, personal)
 
     def _mechanism_windows(self, actor, now, quote, model, mechanism, bonuses):
         if mechanism is not None and mechanism.damage_until is not None:
@@ -396,25 +421,30 @@ class ReleaseBurstPlanner:
                                               damage_tags=quote['quote_basis']['damage_tags'])
         return bonuses, extra+(mechanism.extra_damage_bonus if mechanism is not None else 0)
 
-    def _price_value(self, actor, now, element, tags, bonus_pct, value, bonuses, extra_damage_bonus=0):
+    def _price_value(self, actor, now, element, tags, bonus_pct, value, bonuses, extra_damage_bonus=0,
+                     personal_amplification=0):
         panel = self.rows[actor]["panel"]
         # The exported quote already includes fixed weapon/gear/type bonuses.
         # Adding panel.damage_bonus again would dilute each dynamic increment.
         base_bonus = bonus_pct / 100
         base_amp = panel["amplification"].get(element, 0)
-        additions = {"attack": 0.0, "damage_bonus": extra_damage_bonus, "amplification": 0.0}
+        additions = {"attack": 0.0, "damage_bonus": extra_damage_bonus}
+        amplifications = [base_amp, personal_amplification]
         for bonus in self.bonuses if bonuses is None else bonuses:
             spec = bonus.spec
             if (bonus.recipient == actor and bonus.starts_at <= now < bonus.expires_at
                     and ("all" in spec["elements"] or element in spec["elements"])
                     and (not spec["damage_tags"] or set(spec["damage_tags"]) & tags)):
-                additions[spec["bucket"]] += spec["magnitude"]["base"]
+                if spec['bucket'] == 'amplification':
+                    amplifications.append(spec['magnitude']['base'])
+                else:
+                    additions[spec["bucket"]] += spec["magnitude"]["base"]
         attack = panel["attack_white"] * (1 + panel["attack_percent"]) + panel["attack_flat"]
         if attack <= 0 or 1 + base_bonus <= 0 or 1 + base_amp <= 0:
             return None
         ratio = ((attack + panel["attack_white"] * additions["attack"]) / attack
                  * max(0, 1 + base_bonus + additions["damage_bonus"]) / (1 + base_bonus)
-                 * max(0, 1 + base_amp + additions["amplification"]) / (1 + base_amp))
+                 * max(0, 1 + max(amplifications)) / (1 + base_amp))
         return value * ratio
 
     def _forecast_step(self, node, action, index, now, *, releases, horizon, predecessors):
@@ -467,11 +497,12 @@ class ReleaseBurstPlanner:
         value = action.value + (action.observed_bonus if enhanced else 0)
         if action.base_components:
             components = action.base_components + (action.observed_components if enhanced else ())
-            priced = self.price_components(action.slot, end, components, bonuses=pricing_bonuses)
+            priced = self.price_components(action.slot, end, components, bonuses=pricing_bonuses,
+                                            mechanism_state=pricing_mechanism)
         else:
             priced = self.price(action.slot, action.kind, end, value=value,
                                 bonuses=pricing_bonuses, stances=stances, mechanism=mechanism,
-                                mechanism_state=pricing_mechanism)
+                                mechanism_state=pricing_mechanism, action_started=started)
         if priced is None:
             return None
         if releases:

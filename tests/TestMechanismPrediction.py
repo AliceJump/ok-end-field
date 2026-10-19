@@ -400,7 +400,7 @@ class TestMechanismPrediction(unittest.TestCase):
         without = replace(state, consumption_stacks=())
         price = p.price('1', 'battle', 18, mechanism=later)
         base = p.price('1', 'battle', 18, mechanism=later, mechanism_state=without)
-        self.assertAlmostEqual(price, 189660.94483946325)
+        self.assertAlmostEqual(price, 238972.79038467698)
         bonus = p.quote('1', 'battle')['bonus_pct']/100
         self.assertAlmostEqual(price/base, (1+bonus+amount)/(1+bonus))
 
@@ -463,7 +463,7 @@ class TestMechanismPrediction(unittest.TestCase):
         bonus = p.quote('1', 'battle')['bonus_pct']/100
         self.assertEqual(later.model_consumption_bonus, amount+suit)
         self.assertAlmostEqual(value/without, (1+bonus+ult+amount+suit)/(1+bonus+ult))
-        self.assertAlmostEqual(without, 262233.37712175935)
+        self.assertAlmostEqual(without, 330414.0550171135)
 
     def test_guzhou_counts_one_per_consume_event_and_filters_damage_type(self):
         p = ReleaseBurstPlanner(['庄方宜'], store=self.store)
@@ -496,3 +496,117 @@ class TestMechanismPrediction(unittest.TestCase):
         bonus = state.consumption_bonus('1', 20, '电磁', damage_tags=('skill',))
         self.assertAlmostEqual(bonus, spec['consumption_weapon']['amount_per_stack']+
                                3*spec['consumption_equipment']['amount_per_stack'])
+
+
+class TestZhuangEffectiveMultipliers(unittest.TestCase):
+    def make_three_sword_case(self, team=('庄方宜',)):
+        p = ReleaseBurstPlanner(team, store=load_skill_timings())
+        p.confirm('1', 'ult', 0)
+        # Explicit prior nominal requests, not a guessed initial inventory.
+        p.mechanism_state = p.mechanism_state.request('1', 'earlier_accepted_request', 'sword', 3, 0, 36, cap=9)
+        state = BattleHighlightState(load_skill_timings())
+        profiles = (load_skill_timings().profile('chr_0030_zhuangfy_normal_skill_ult'),)
+        obs = BattleConditionEvaluator(team).assess(state.observe('1', profiles, True, 3))
+        return p, p.mechanism_quote('1', 3, obs)
+
+    def test_three_explicit_swords_use_each_segment_rate_not_final_rate_for_all(self):
+        p, quote = self.make_three_sword_case()
+        before = p.mechanism_state
+        self.assertEqual(quote.selected_swords, 3)
+        self.assertEqual(quote.conduct, 0)
+        self.assertEqual(quote.nominal_hit_offsets, (.9, 1.1, 2.8))
+        self.assertAlmostEqual(p.price('1', 'battle', 3, mechanism=quote), 211550.8189915943, places=4)
+        self.assertLess(p.price('1', 'battle', 3, mechanism=quote), 171643.66703456*1.24)
+        self.assertEqual(p.mechanism_state, before)  # Preview never publishes marks.
+
+    def test_personal_model_has_no_effect_from_ultimate_alone(self):
+        p = ReleaseBurstPlanner(['庄方宜'])
+        p.confirm('1', 'ult', 0)
+        self.assertFalse(p.mechanism_state.skill_amplifications)
+        self.assertAlmostEqual(p.price('1', 'normal', 3), p.stance_spec('1')['quotes']['normal']['crit_expect'])
+
+    def test_confirmed_cast_installs_delayed_base_then_mark_changes_and_expiry(self):
+        p, quote = self.make_three_sword_case()
+        p.confirm('1', 'battle', 3, mechanism=quote)
+        model = p.mechanism_state
+        self.assertEqual(model.amplification('1', 3.1), 0)
+        self.assertAlmostEqual(model.amplification('1', 3.2), .18, places=7)
+        for stamp, rate in ((3.9, .20), (4.1, .22), (5.8, .24)):
+            self.assertAlmostEqual(model.amplification('1', stamp), rate, places=7)
+        self.assertAlmostEqual(model.amplification('1', 8.1), .24, places=7)
+        self.assertEqual(model.amplification('1', 3+5/30+5), 0)
+        base = p.stance_spec('1')['quotes']['normal']['crit_expect']
+        self.assertAlmostEqual(p.price('1', 'normal', 6)/base, 1.24, places=7)
+        self.assertAlmostEqual(p.price('1', 'normal', 9), base)
+        self.assertEqual(model.keep({'2'}).skill_amplifications, ())
+
+    def test_repeated_confirmation_is_idempotent_and_recast_resets_at_new_marker(self):
+        p, quote = self.make_three_sword_case()
+        p.confirm('1', 'battle', 3, mechanism=quote)
+        before = p.mechanism_state
+        p.confirm('1', 'battle', 3, mechanism=quote)
+        self.assertEqual(p.mechanism_state, before)
+        p.confirm('1', 'battle', 7, mechanism=replace(quote, quote_started=7))
+        self.assertAlmostEqual(p.mechanism_state.amplification('1', 7.1), .24, places=7)
+        self.assertAlmostEqual(p.mechanism_state.amplification('1', 7.2), .18, places=7)
+        p.source_unavailable('1')
+        self.assertFalse(p.mechanism_state.skill_amplifications)
+
+    def test_normal_chain_does_not_backfill_late_marks_or_an_expiring_personal_window(self):
+        p, quote = self.make_three_sword_case()
+        p.confirm('1', 'battle', 3, mechanism=quote)
+        base = p.stance_spec('1')['quotes']['normal']['crit_expect']
+        self.assertAlmostEqual(p.price('1', 'normal', 6, action_started=3.4)/base, 1.18, places=7)
+        self.assertAlmostEqual(p.price('1', 'normal', 9, action_started=6), base)
+
+    def test_unknown_sword_count_does_not_manufacture_additional_mark_count(self):
+        p = ReleaseBurstPlanner(['庄方宜'])
+        p.confirm('1', 'ult', 0)
+        quote = p.mechanism_quote('1', 3)
+        self.assertIsNone(quote.selected_swords)
+        self.assertAlmostEqual(p.price('1', 'battle', 3), 21455.457984614768*(1+.18000000715255737))
+        p.confirm('1', 'battle', 3, mechanism=quote)
+        self.assertEqual(p.mechanism_state.skill_amplifications[0].marks, ())
+
+    def test_stronger_liino_amplification_replaces_personal_factor_instead_of_adding(self):
+        p, quote = self.make_three_sword_case(('庄方宜', '梨诺'))
+        p.confirm('2', 'ult', 0)
+        baseline = 171643.66703456
+        panel = p.rows['1']['panel']
+        raw = panel['attack_white']*(1+panel['attack_percent'])+panel['attack_flat']
+        attack = (raw+panel['attack_white']*p.rules['2', 'ult'][0]['magnitude']['base'])/raw
+        amp = p.rules['2', 'ult'][1]['magnitude']['base']
+        self.assertAlmostEqual(p.price('1', 'battle', 3, mechanism=quote), baseline*attack*(1+amp), places=4)
+        self.assertLess(p.price('1', 'battle', 3, mechanism=quote), baseline*attack*(1+amp+.18))
+
+    def test_personal_effect_does_not_leak_to_a_teammate_or_change_base_snapshot(self):
+        p, quote = self.make_three_sword_case(('庄方宜', '佩丽卡'))
+        before = p.price('2', 'battle', 4)
+        normal_quote = dict(p.stance_spec('1')['quotes']['normal'])
+        p.confirm('1', 'battle', 3, mechanism=quote)
+        self.assertEqual(p.price('2', 'battle', 4), before)
+        self.assertEqual(p.stance_spec('1')['quotes']['normal'], normal_quote)
+
+    def test_real_failed_attempt_does_not_install_amplification(self):
+        task = FakeTask()
+        task.now, task.sp, task.battle_pulses = 3, 0, {'1'}
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(['庄方宜'], reset_runtime=True)
+        logic.release_burst.confirm('1', 'ult', 0)
+        self.assertTrue(logic._try_battle_token('1', 0))
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+        logic._probe_action_feedback()
+        self.assertFalse(logic.release_burst.mechanism_state.skill_amplifications)
+
+    def test_real_step_prices_the_effective_cast_before_white_acknowledgement(self):
+        task = FakeTask()
+        task.now, task.sp, task.battle_pulses = 3, 0, {'1'}
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(['庄方宜'], reset_runtime=True)
+        p = logic.release_burst
+        p.confirm('1', 'ult', 0)
+        p.mechanism_state = p.mechanism_state.request('1', 'earlier_accepted_request', 'sword', 3, 0, 36, cap=9)
+        logic.step()
+        self.assertEqual(task.keys, ['1'])
+        self.assertTrue(any('211551' in message for message in task.messages))
+        self.assertFalse(p.mechanism_state.skill_amplifications)  # Still awaiting the white acknowledgement.

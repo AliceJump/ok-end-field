@@ -110,6 +110,7 @@ def _evidence_hashes(source, rows):
              "src/data/reviewed_weapon_release.py", "assets/data/skill_timings/20261002/index.json",
              "assets/data/equipment_mechanics/20261008/next_skill_sets.json",
              "assets/data/equipment_mechanics/20261008/guzhou.json",
+             "assets/data/character_mechanics/20261008/zhuangfy_release.json.gz",
              "assets/data/common_mechanics/20261003/index.json",
              "assets/data/common_mechanics/20261003/assets.json.gz",
              "assets/data/skill_timings/20261002/records.json.gz",
@@ -180,6 +181,8 @@ def export(source, revision, destination):
         (ROOT / "scripts/skill-data/reviewed_mechanism_quotes.py").read_bytes()).hexdigest()
     manifest["exporter_hashes"]["reviewed_mechanism_equipment.py"] = hashlib.sha256(
         (ROOT / "scripts/skill-data/reviewed_mechanism_equipment.py").read_bytes()).hexdigest()
+    manifest["exporter_hashes"]["reviewed_zhuang_talent.py"] = hashlib.sha256(
+        (ROOT / "scripts/skill-data/reviewed_zhuang_talent.py").read_bytes()).hexdigest()
     (destination / "index.json").write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf8"))
     print(f"Exported 32 research panels from {head}, one reviewed master Si projection, "
           f"and {sum(actual.values())} release rules")

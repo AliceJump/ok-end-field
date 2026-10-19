@@ -5134,6 +5134,34 @@
           "source_sha256": "644d440edab4454cfe4d65b10d06233e53020c400caeb5a956aceec89841caa6",
           "stacks_per_cast": 1,
           "buff_id": "buff_wpn_funnel_0015_combo"
+        },
+        "talent_amplification": {
+          "base_rate": 0.18000000715255737,
+          "duration": 5.0,
+          "enhance_rate": 0.019999999552965164,
+          "base_after": {
+            "ordinary": 0.2,
+            "enhanced": 0.16666666666666666
+          },
+          "enhanced_area_after": 0.5,
+          "first_mark_after_area": 0.4,
+          "mark_interval": 0.2,
+          "last_mark_after_area": 2.3,
+          "scope": "nominal_skill_mark_projection; not_observed_marks_or_native_keyword_execution",
+          "stack_group": "electric_enhancement_highest_active",
+          "source_sha256": "f6dadf3d26e7dc5695096fff69dafe1f96710b6aca04fb21a494ad3ff73e019d",
+          "native_hashes": {
+            "chr_0030_zhuangfy_talent1": "8d3a815a9c25d5cae961c3b3298af174aa4b9de83fa60f58f3eda166b77cd9f0",
+            "chr_0030_zhuangfy_normal_skill": "06a61a8b2630fbe792294c3a0dc0a9a24080d8c8be45cb5895d2f16f0f05a9fd",
+            "chr_0030_zhuangfy_normal_skill_ult": "33483a4c247260eb69cdd90ab80a604c113fb8e57a79817d3a39f54dbf971ccf",
+            "chr_0030_zhuangfy_normal_skill_ult_abilityrange": "d8c052a17e9f1332ba95277d19027e5df67af4e747fc601b4b171744f7daa6a2",
+            "buff_chr_0030_zhuangfy_talent1": "f89ddacb79396fa222615d921ae13e6d71a0336e6b89ba9fc7c84fcb468f60e1",
+            "buff_chr_0030_zhuangfy_talent1_mark": "03c34a3ca7b5edb541f9ae562f468107f7cfd29882da52af986664cc358193b1",
+            "buff_chr_0030_zhuangfy_talent1_base": "3eec3e44c4ccab29aea2af7117dac7bb100297386808100904a19aec4c3f1b1d",
+            "buff_common_affixes_enhance_pulse_zhuangfy_talent1_child": "29dbefcac34676cc46fd69682999df5c54c3a3686c86a36fdb60720a2224b2dd",
+            "buff_common_affixes_enhance_pulse": "5f090c91ce28c3c2cf5e821d417cf8b6286b57d266196c12409992f4893477c1",
+            "buff_common_affixes_enhance_pulse_default_child": "1fc3eb6731ae3c11b7c1698bf563aa50b6da9b6397cb2860105dcb33ec3d3f52"
+          }
         }
       }
     },
