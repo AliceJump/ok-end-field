@@ -1037,6 +1037,15 @@ class TestReleaseSnapshotExportBoundary(unittest.TestCase):
         finally:
             sys.path.remove(str(directory))
 
+    def test_rangliu_contract_digest_survives_git_lf_normalization(self):
+        raw = (SNAPSHOT/'rangliu-contract.json').read_bytes()
+        self.assertNotIn(b'\r', raw)
+        digest = hashlib.sha256(raw).hexdigest()
+        manifest = json.loads((SNAPSHOT/'index.json').read_bytes())
+        self.assertEqual(manifest['supplement_source_hashes']['assets/data/release_burst/rangliu-contract.json'], digest)
+        self.assertEqual(self.exporter.RANGLIU_SHA256, digest)
+        self.assertEqual(read_snapshot()['庄方宜']['mechanism']['consumption_equipment']['contract_sha256'], digest)
+
     def test_revision_option_and_non_sha_rejected_before_git_execution(self):
         for revision in ("--help", "master", "a" * 39, "a" * 40 + "^{tree}"):
             with self.subTest(revision=revision), patch.object(self.exporter.subprocess, "check_output") as git:

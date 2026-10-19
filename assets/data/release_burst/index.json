@@ -94,7 +94,7 @@
     "src/data/release_burst_planner.py": "960f8905714337ca406b56c393cbf0c8f13c863045bae49e4cd9caad0fbf0b18",
     "src/data/reviewed_weapon_release.py": "b1c44816c10482296a1dd4e8846adda93314617cdd44cec26e3896274c9afd45"
   },
-  "snapshot_sha256": "030c1abecef3ec980513583b6df308f4fd64ea26274c56d60af39cc673edde49",
+  "snapshot_sha256": "2a7f8f6535352f609b8d8bdc27a9716fd25fc14db420f7461877d0a4e9032a46",
   "actors": 33,
   "rules": 16,
   "supplement_source_hashes": {
@@ -103,7 +103,7 @@
     "assets/data/damage_baseline.json": "121c0168fd705047b2f924db85d4dcde882178c5fcab44af2e829e7e7099d6bc",
     "assets/data/skill_timings/20261015-si/index.json": "929af3f81d717124bbeebf1c608d9b7908ea6f56f96b87cb7f66535b9b7e2395",
     "assets/data/skill_timings/20261015-si/profiles.json": "471dadbec2a1e77381e3636b7954e94f3c7d650e4a6d17d684c85447586e8346",
-    "assets/data/release_burst/rangliu-contract.json": "9e403cf95e17e6c9137c62badff4f9c296de4d4830d0595ee8f65358b139935d",
+    "assets/data/release_burst/rangliu-contract.json": "15bafef48437e2cfa285e03b6d1bf9dfe5360084dbeba44fa6ffa66da08a32f3",
     "assets/data/release_burst/si-release-contract.json": "86cb40dbec3fe5aa6b7d8d94d617e216b1ebc9e31dac61889556ffc1052accf6"
   },
   "support_evidence_sha256": "63fb997a727426f190cbecf6379a0e60ee50cd5ffa5b90f2c8ef4f2c9b23f5ba",
@@ -114,7 +114,7 @@
     "reviewed_si_release.py": "807639a720cdfa6205b02887fde35aadc2409c554a6d0adab77b2f61d6286dfa",
     "reviewed_avywenna_recall.py": "ada2f76001729ca5d03d8ef885234af7925288521ad5ea2061ac2913f83e17f3",
     "reviewed_mechanism_quotes.py": "8066535b9b46b2e24ef8a3fce77eda33a7aedc417f429d612ac5470e52c325ad",
-    "reviewed_mechanism_equipment.py": "f1cbfe9ed13d6a6d302a90b6bb2e1e6b49a626afb0c1589ccd738990d1b9f4bc"
+    "reviewed_mechanism_equipment.py": "557ecaeb95cc819cd6d4a54c16257f1739459876ecb89a9662f453728c94b29d"
   },
   "stances": 1
 }

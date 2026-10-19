@@ -5116,7 +5116,7 @@
             "自然"
           ],
           "scope": "nominal_conduct_consumption; future_quotes_only",
-          "contract_sha256": "9e403cf95e17e6c9137c62badff4f9c296de4d4830d0595ee8f65358b139935d",
+          "contract_sha256": "15bafef48437e2cfa285e03b6d1bf9dfe5360084dbeba44fa6ffa66da08a32f3",
           "gear_sha256": "8cc0d4dadc757729ca2f6ee05db50c5f00a42b540adb3b9c7679605dc0ff3170"
         }
       }

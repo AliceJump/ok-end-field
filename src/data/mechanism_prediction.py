@@ -53,7 +53,7 @@ def _validate_equipment(spec):
     consumption = spec.get('consumption_equipment')
     if consumption is not None:
         if (spec['type']!='sword_salvo' or consumption['scope']!='nominal_conduct_consumption; future_quotes_only'
-                or consumption['contract_sha256']!='9e403cf95e17e6c9137c62badff4f9c296de4d4830d0595ee8f65358b139935d'
+                or consumption['contract_sha256']!='15bafef48437e2cfa285e03b6d1bf9dfe5360084dbeba44fa6ffa66da08a32f3'
                 or consumption['elements']!=['电磁', '自然'] or consumption['max_stacks']!=3
                 or any(type(consumption[k]) not in (int,float) or not math.isfinite(consumption[k])
                        or consumption[k]<=0 for k in ('amount_per_stack', 'duration'))):

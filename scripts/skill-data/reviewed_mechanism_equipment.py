@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 
-RANGLIU_SHA256 = '9e403cf95e17e6c9137c62badff4f9c296de4d4830d0595ee8f65358b139935d'
+RANGLIU_SHA256 = '15bafef48437e2cfa285e03b6d1bf9dfe5360084dbeba44fa6ffa66da08a32f3'
 
 
 def sword_equipment(row, source):
