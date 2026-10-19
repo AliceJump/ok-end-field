@@ -266,7 +266,8 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 config_key=self.battle_ctx.stage_name,
                 **(
                     {"target_learning_context": context, "target_learning_epoch": initial_entry.epoch}
-                    if context is not None else {}
+                    if context is not None
+                    else {}
                 ),
             )
             return True

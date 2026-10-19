@@ -43,9 +43,7 @@ class TestLearningBattleBoundary(unittest.TestCase):
                 "src.core.learning.routes.RouteLearning.nearest_yaw",
                 side_effect=AssertionError("nearest"),
             ),
-            patch(
-                "src.tasks.mixin.route_learning._migrate_once", side_effect=AssertionError("migration")
-            ),
+            patch("src.tasks.mixin.route_learning._migrate_once", side_effect=AssertionError("migration")),
             deny_learning("post_battle"),
         ):
             ZipLineMixin.zip_line_list_go(task, [108], config_key="route", stay_on_zip_line=True)
@@ -107,9 +105,7 @@ class TestLearningBattleBoundary(unittest.TestCase):
         )
         with (
             patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")),
-            patch(
-                "src.tasks.mixin.route_learning._migrate_once", side_effect=AssertionError("migration")
-            ),
+            patch("src.tasks.mixin.route_learning._migrate_once", side_effect=AssertionError("migration")),
         ):
             self.assertTrue(BattleTask._gather_retry_navigate(task))
         self.assertTrue(learning_allowed())

@@ -362,6 +362,5 @@ class TestZipLineMotionCache(unittest.TestCase):
         return stub
 
 
-
 if __name__ == "__main__":
     unittest.main()

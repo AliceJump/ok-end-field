@@ -442,8 +442,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 need_v=not only_zip_line,
                 stay_on_zip_line=only_zip_line,
                 **delivery_learning_kwargs(
-                    self, to_delivery_point_key, DELIVERY_TRANSFER_BOARD,
-                    phase=None if only_zip_line else "pickup_initial", distances=zip_line_list,
+                    self,
+                    to_delivery_point_key,
+                    DELIVERY_TRANSFER_BOARD,
+                    phase=None if only_zip_line else "pickup_initial",
+                    distances=zip_line_list,
                 ),
             )  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
             if only_zip_line:
