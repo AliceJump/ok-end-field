@@ -15,6 +15,7 @@ def route_context_for(task, fingerprint, segment_index, start_yaw, *, need_scrol
     if not learning_allowed() or fingerprint is None or start_yaw is None:
         return None
     try:
+        task._learning_start_yaw = float(start_yaw) % 360.0
         config_key, distances = json.loads(fingerprint)
         return RouteContext(
             config_key,
@@ -24,7 +25,7 @@ def route_context_for(task, fingerprint, segment_index, start_yaw, *, need_scrol
                 task.width,
                 task.height,
                 "zipline-scroll-max" if need_scroll else "zipline-scroll-off",
-                "zipline-initial-v1",
+                "zipline-initial-v2-records",
             ),
             yaw_bucket(start_yaw),
             family,

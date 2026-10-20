@@ -10,7 +10,7 @@ from threading import RLock
 from src.core.learning.models import LearningRecord, canonical_fingerprint
 from src.core.learning.policy import learning_allowed
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 _STORE_LOCK = RLock()
 _GENERATIONS = {}
 _UNREADABLE = object()
@@ -61,7 +61,7 @@ class LearningStore:
             if (
                 not isinstance(payload, dict)
                 or type(payload.get("schema_version")) is not int
-                or payload["schema_version"] != SCHEMA_VERSION
+                or payload["schema_version"] not in (1, SCHEMA_VERSION)
             ):
                 raise ValueError("Unsupported learning schema")
             entries = payload["records"]

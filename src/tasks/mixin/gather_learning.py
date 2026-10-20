@@ -123,6 +123,7 @@ def gather_transfer_alignment(task, entry):
     if not learning_allowed() or entry.epoch != learning_epoch():
         return None, ContextConfidence.INVALID
     if reading is not None and reading[1] >= task._ZIP_LINE_ARROW_MIN_SCORE:
+        task._learning_start_yaw = float(reading[0]) % 360.0
         context = replace(context, start_yaw_bucket=yaw_bucket(reading[0]))
     # A completed index/stage/fast-transfer chain establishes the stable entry.
     # Reliability still comes from verified sample count/variance, not a point name.

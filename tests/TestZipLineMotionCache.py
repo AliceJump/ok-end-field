@@ -146,7 +146,7 @@ class TestZipLineMotionCache(unittest.TestCase):
         ):
             self.assertTrue(record_arrow_turn_motion(1920, 1080, 121.0, 90.0, 360))
             self.assertEqual(load_arrow_turn_motion(1920, 1080, 121.9, 90.9), (360, 1))
-            self.assertIsNone(load_arrow_turn_motion(3840, 2160, 121.0, 90.0))
+            self.assertEqual(load_arrow_turn_motion(3840, 2160, 121.0, 90.0), (720, 1))
             self.assertIsNone(load_arrow_turn_motion(1920, 1080, 140.0, 90.0))
 
     def test_tracker_counts_successful_raw_input_and_restores_override(self):
@@ -205,7 +205,9 @@ class TestZipLineMotionCache(unittest.TestCase):
             result = ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90)
         self.assertEqual(result, (90.0, True))
         stub._send_zip_line_yaw_delta.assert_called_once_with(361)
-        record.assert_called_once_with(1920, 1080, 120.0, 90.0, 361)
+        record.assert_called_once()
+        self.assertEqual(record.call_args.args, (1920, 1080, 120.0, 90.0, 361))
+        self.assertEqual(record.call_args.kwargs["environment"].start_yaw, 120.0)
 
     def test_cached_turn_updates_memory_with_its_final_correction(self):
         stub = self._yaw_stub([(120.0, 0.9), (100.0, 0.9), (90.0, 0.9)])
@@ -215,7 +217,9 @@ class TestZipLineMotionCache(unittest.TestCase):
         ):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, True))
         self.assertEqual([call.args[0] for call in stub._send_zip_line_yaw_delta.call_args_list], [240, 120])
-        record.assert_called_once_with(1920, 1080, 120.0, 90.0, 360)
+        record.assert_called_once()
+        self.assertEqual(record.call_args.args, (1920, 1080, 120.0, 90.0, 360))
+        self.assertEqual(record.call_args.kwargs["environment"].start_yaw, 120.0)
 
     def test_failed_cached_turn_cannot_contaminate_turn_learning(self):
         stub = self._yaw_stub([(120.0, 0.9)])

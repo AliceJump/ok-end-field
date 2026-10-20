@@ -237,7 +237,11 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         record = self.store.get(context.fingerprint)
         # Three seeded samples of (100,20), one replay of (100,20),
         # and two visual corrections of (40,20) -> new sample (180,60).
-        self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (4, 120, 30))
+        self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (3, 100, 20))
+        self.assertEqual(len(record.observations), 4)
+        sample = record.observations[-1]
+        self.assertEqual((sample.dx, sample.dy, sample.verification, sample.outlier), (180, 60, "gold_gate", True))
+        self.assertEqual([(item.dx, item.dy) for item in sample.inputs], [(100, 20), (40, 20), (40, 20)])
         self.assertEqual(task._move_to_zip_line_target.call_count, 2)
         self.assertEqual(task.active_and_send_mouse_delta.call_count, 3)
 

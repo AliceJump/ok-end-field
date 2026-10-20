@@ -7,6 +7,9 @@ import math
 from dataclasses import asdict, dataclass, replace
 from enum import StrEnum
 
+from src.core.learning.environment import LearningEnvironment
+from src.core.learning.samples import MotionSample, classify_samples
+
 CONTEXT_VERSION = 1
 
 
@@ -246,6 +249,7 @@ class LearningRecord:
     consecutive_failures: int = 0
     updated_at: float = 0.0
     provenance: tuple[str, ...] = ()
+    observations: tuple[MotionSample, ...] = ()
 
     def __post_init__(self):
         if not isinstance(self.motion, MotionStatistics) or (
@@ -260,11 +264,31 @@ class LearningRecord:
         if not isinstance(self.provenance, tuple) or len(self.provenance) > 64:
             raise ValueError("Invalid provenance")
         _identity(*self.provenance)
+        if not isinstance(self.observations, tuple) or any(
+            not isinstance(item, MotionSample) for item in self.observations
+        ):
+            raise ValueError("Invalid acquisition records")
 
-    def successful(self, dx, dy, *, target=None, now, provenance=()):
+    def motion_for(self, environment):
+        """Every accepted acquisition has equal weight after conversion; never average averages."""
+        motion = MotionStatistics(legacy_samples=self.motion.legacy_samples)
+        for sample in self.observations:
+            if not sample.outlier:
+                motion = motion.add(*sample.environment.convert(sample.dx, sample.dy, environment))
+        return motion
+
+    def successful(
+        self, dx, dy, *, target=None, now, provenance=(), environment=None, inputs=(), verification="aligned"
+    ):
+        environment = environment or LearningEnvironment()
+        observations = classify_samples(
+            (*self.observations, MotionSample(dx, dy, now, environment, inputs, verification))
+        )
+        legacy = self.motion.legacy_samples + (self.motion.samples if not self.observations else 0)
+        updated = replace(self, observations=observations, motion=MotionStatistics(legacy_samples=legacy))
         return replace(
-            self,
-            motion=self.motion.add(dx, dy),
+            updated,
+            motion=updated.motion_for(environment),
             target=target if target is not None else self.target,
             success_count=self.success_count + 1,
             consecutive_failures=0,
@@ -295,6 +319,7 @@ class LearningRecord:
                     target[field] = tuple(target[field])
             values["target"] = TargetPrior(**target)
         values["provenance"] = tuple(values.get("provenance", ()))
+        values["observations"] = tuple(MotionSample.from_dict(item) for item in values.get("observations", ()))
         return cls(**values)
 
 

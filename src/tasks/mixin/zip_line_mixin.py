@@ -27,6 +27,7 @@ from src.tasks.mixin.zip_line_motion_cache import build_zip_line_route_fingerpri
 from src.tasks.mixin.zip_line_yaw_cache import (
     load_arrow_turn_motion,
     record_arrow_turn_motion,
+    yaw_environment,
 )
 
 _ZIP_LINE_ICON_TEMPLATE_ROWS = (
@@ -852,7 +853,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return current_yaw, True
 
         total_dx = 0
-        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw) if learning_allowed() else None
+        scope = vars(self).get("_initial_alignment_scope")
+        scroll = scope.session.environment.scroll if scope is not None else False
+        environment = yaw_environment(width, height, initial_yaw, scroll=scroll)
+        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw, environment=environment) if learning_allowed() else None
         if hint is not None:
             hint_dx, hint_samples = hint
             if self._send_zip_line_yaw_delta(hint_dx):
@@ -919,8 +923,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return target_yaw, False
 
         if total_dx:
-            if learning_allowed():
-                record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx)
+            if learning_allowed() and environment == yaw_environment(width, height, initial_yaw, scroll=scroll):
+                record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx, environment=environment)
         self.log_info(
             f"[zipline-yaw] normalized {initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
         )
@@ -1119,6 +1123,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 if context is not None:
                     reading = self._read_zip_line_settled_arrow_angle()
                     verified_yaw = reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE
+                    if verified_yaw:
+                        self._learning_start_yaw = float(reading[0]) % 360.0
                     context = replace(context, start_yaw_bucket=yaw_bucket(reading[0]) if verified_yaw else None)
                     confidence = "high" if verified_yaw else "medium"
                     if target_learning_epoch is not None and target_learning_epoch != learning_epoch():

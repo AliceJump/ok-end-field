@@ -61,12 +61,12 @@ def without_learning(reason):
     return decorate
 
 
-def choose_hint(record, confidence, *, source="private", min_samples=3, max_motion=6000):
+def choose_hint(record, confidence, *, source="private", min_samples=3, max_motion=6000, environment=None):
     """Use sample reliability to cap context confidence, independent of detection."""
     confidence = ContextConfidence(confidence)
     if not learning_allowed() or confidence == ContextConfidence.INVALID or record is None:
         return None
-    motion = record.motion
+    motion = record.motion_for(environment) if environment is not None else record.motion
     variance = motion.variance
     stable = (
         motion.samples >= min_samples
