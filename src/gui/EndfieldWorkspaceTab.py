@@ -7,7 +7,7 @@ from typing import Any
 from ok import Logger, og
 from ok.ui.qt.common.OKIcon import OKIcon
 from ok.ui.qt.Communicate import communicate
-from PySide6.QtCore import QCoreApplication, QRectF, QSize, Qt, Signal  # type: ignore
+from PySide6.QtCore import QCoreApplication, QRectF, QSize, Qt, QVariantAnimation, Signal  # type: ignore
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPixmap  # type: ignore
 from PySide6.QtWidgets import (  # type: ignore
     QBoxLayout,
@@ -24,7 +24,6 @@ from qfluentwidgets import FlowLayout, FluentIcon, Theme, qconfig  # type: ignor
 from src.gui.EndfieldEntryCards import (
     EndfieldEntryNumbering,
     EndfieldSectionBanner,
-    EndfieldTaskStatus,
     english_title,
     remove_page_decorations,
 )
@@ -187,6 +186,97 @@ class EndfieldSegmentedBar(QWidget):
             self.tabChanged.emit(index)
 
 
+# 页眉运行状态：英文代码与中文状态，版式同页签
+RUN_STATES = {
+    "running": ("RUNNING", "运行中"),
+    "paused": ("PAUSED", "已暂停"),
+    "waiting": ("QUEUED", "等待执行"),
+}
+
+
+class EndfieldRunState(ThemeRepaint, QWidget):
+    """Header run state in the tab label style: an English code over the status, led by a square marker."""
+
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.state = "waiting"
+        self._label = ""
+        self._pulse = 1.0
+        self._code_font = field_font(9, label=True)
+        self._name_font = ui_font(14, QFont.DemiBold)
+        # 运行中方块慢闪，表示任务仍在执行
+        self._pulse_ani = QVariantAnimation(self)
+        self._pulse_ani.setDuration(1400)
+        self._pulse_ani.setLoopCount(-1)
+        self._pulse_ani.setKeyValueAt(0.0, 1.0)
+        self._pulse_ani.setKeyValueAt(0.5, 0.25)
+        self._pulse_ani.setKeyValueAt(1.0, 1.0)
+        self._pulse_ani.valueChanged.connect(self._set_pulse)
+        qconfig.themeChanged.connect(self._repaint)
+
+    def text(self) -> str:
+        return self._label
+
+    def set_state(self, state: str):
+        self.state = state
+        code, label = RUN_STATES[state]
+        self._label = ui_tr(label)
+        width = max(
+            QFontMetrics(self._code_font).horizontalAdvance(code),
+            QFontMetrics(self._name_font).horizontalAdvance(self._label),
+        )
+        self.setFixedSize(16 + width + 2, 36)
+        self._sync_pulse()
+        self.update()
+
+    def _set_pulse(self, value):
+        self._pulse = float(value)
+        self.update()
+
+    def _sync_pulse(self):
+        if self.state == "running" and self.isVisible():
+            if self._pulse_ani.state() != QVariantAnimation.Running:
+                self._pulse_ani.start()
+        else:
+            self._pulse_ani.stop()
+            self._pulse = 1.0
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._sync_pulse()
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self._sync_pulse()
+
+    def paintEvent(self, event):
+        colors = palette(is_dark_theme())
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        marker = QRectF(0.5, 20.5, 7, 7)
+        if self.state == "running":
+            fill = QColor(colors["signal"])
+            fill.setAlphaF(self._pulse)
+            painter.setPen(QColor(colors["text"]))
+            painter.setBrush(fill)
+        elif self.state == "paused":
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(colors["text"]))
+        else:
+            painter.setPen(QColor(colors["muted"]))
+            painter.setBrush(Qt.NoBrush)
+        painter.drawRect(marker)
+        painter.setPen(QColor(colors["muted"]))
+        painter.setFont(self._code_font)
+        painter.drawText(
+            QRectF(16, 2, self.width() - 16, 12), Qt.AlignLeft | Qt.AlignVCenter, RUN_STATES[self.state][0]
+        )
+        painter.setPen(QColor(colors["text"]))
+        painter.setFont(self._name_font)
+        painter.drawText(QRectF(16, 14, self.width() - 16, 20), Qt.AlignLeft | Qt.AlignVCenter, self._label)
+        painter.end()
+
+
 class EndfieldWorkspaceHeader(ThemeRepaint, QWidget):
     """Title row and tab row; the tabs stand on a 1px rule along its bottom edge."""
 
@@ -278,11 +368,11 @@ class EndfieldWorkspaceTab(QWidget):
         # 主操作启动的任务：按它的状态在“开始 / 暂停、停止 / 继续、停止”之间切换，规则同原生任务卡片
         self._run_task = run_task if primary_action is not None else None
         self._announce_start = False
-        self.run_status: EndfieldTaskStatus | None = None
+        self.run_status: EndfieldRunState | None = None
         self.pause_action_button: EndfieldActionButton | None = None
         self.stop_action_button: EndfieldActionButton | None = None
         if self._run_task is not None:
-            self.run_status = EndfieldTaskStatus(self.header_bar)
+            self.run_status = EndfieldRunState(self.header_bar)
             self.run_status.hide()
             self.action_row.addWidget(self.run_status, 0, Qt.AlignVCenter)
         if secondary_action is not None:
@@ -403,12 +493,7 @@ class EndfieldWorkspaceTab(QWidget):
             self.stop_action_button.setVisible(enabled)
         if self.run_status is not None:
             if enabled:
-                text, role = (
-                    ("已暂停", "attention") if paused else ("运行中", "running") if running else ("等待执行", "waiting")
-                )
-                self.run_status.setText(ui_tr(text))
-                self.run_status.role = role
-                self.run_status.apply_theme()
+                self.run_status.set_state("paused" if paused else "running" if running else "waiting")
             self.run_status.setVisible(enabled)
         if enabled and self._announce_start:
             self._announce_start = False

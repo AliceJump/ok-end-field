@@ -392,7 +392,7 @@ class EndfieldTacticalDrawer(QFrame):
         self._layout_timer.start(0)
         return True
 
-    def open_subtask(self, task_name: str, task_obj: Any, hidden_keys=()):
+    def open_subtask(self, task_name: str, task_obj: Any, hidden_keys=(), *, run_once=True):
         if not has_task_configuration(task_obj):
             return False
         self._clear_form()
@@ -406,7 +406,7 @@ class EndfieldTacticalDrawer(QFrame):
         self.sub_label.setText("// TASK CONFIG")
         self.save_btn.setText(ui_tr("保存并同步"))
         self.save_btn.setEnabled(True)
-        self.run_once_btn.show()
+        self.run_once_btn.setVisible(run_once)
         self._show_panel(ui_tr("{} 参数配置").format(ui_tr(task_name)))
         return True
 

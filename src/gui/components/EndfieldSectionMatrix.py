@@ -204,9 +204,9 @@ def open_daily_settings_drawer(host: QWidget) -> EndfieldTacticalDrawer | None:
     daily = find_daily_task()
     if daily is None:
         return None
-    # 子任务清单已由勾选行维护，侧栏只放总控字段
+    # 子任务清单已由勾选行维护，侧栏只放总控字段；启动用页眉的“开始一条龙”，侧栏不再放单独运行
     roster_keys = [key for key in (getattr(daily, attr, None) for attr in DAILY_GROUP_KEY_ATTRS) if key]
-    return show_drawer(host, lambda drawer: drawer.open_subtask(daily.name, daily, roster_keys))
+    return show_drawer(host, lambda drawer: drawer.open_subtask(daily.name, daily, roster_keys, run_once=False))
 
 
 class EndfieldSectionMatrix(ThemeRepaint, QWidget):

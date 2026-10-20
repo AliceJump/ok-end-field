@@ -695,6 +695,7 @@ class CombatSettingsTest(unittest.TestCase):
         self.task.config.get_default = self.task.config.get
         drawer = EndfieldTacticalDrawer(host)
         drawer.open_subtask(self.task.name, self.task)
+        self.assertFalse(drawer.run_once_btn.isHidden())
         old_form = drawer.form_layout.itemAt(0).widget()
         drawer.open_subtask(self.task.name, self.task)
         self.assertTrue(old_form.isHidden())
@@ -741,6 +742,8 @@ class CombatSettingsTest(unittest.TestCase):
             drawer = open_daily_settings_drawer(host)
         assert drawer is not None
         self.assertIs(drawer.current_task, daily)
+        # 启动走页眉的“开始一条龙”，总控面板不放单独运行
+        self.assertTrue(drawer.run_once_btn.isHidden())
         form = drawer.form_layout.itemAt(0).widget()
         self.assertEqual(set(form.config_widget_by_key), {"多账户模式", "账号列表", "仅退出游戏"})
         self.assertEqual(daily.config_type["帝江号任务"], {"type": "multi_selection", "options": ["送礼"]})
@@ -1315,7 +1318,7 @@ class NativeTextLayoutTest(unittest.TestCase):
 
     def test_daily_header_actions_follow_the_task_run_state(self):
         from ok.ui.qt.Communicate import communicate
-        from PySide6.QtCore import QCoreApplication, QEvent
+        from PySide6.QtCore import QCoreApplication, QEvent, QVariantAnimation
 
         calls = []
         task = SimpleNamespace(
@@ -1363,10 +1366,12 @@ class NativeTextLayoutTest(unittest.TestCase):
         self.assertEqual(notices, ["Start Success."])
         self.assertEqual(publish(running=True), [True, True, True, False])
         self.assertEqual(status.text(), "运行中")
+        self.assertEqual(status._pulse_ani.state(), QVariantAnimation.Running)
         self.assertEqual(workspace.width() - stop.mapTo(workspace, QPoint(stop.width(), 0)).x(), 36)
         pause.click()
         self.assertEqual(publish(paused=True), [True, False, True, True])
         self.assertEqual((start.text(), status.text()), ("继续", "已暂停"))
+        self.assertEqual(status._pulse_ani.state(), QVariantAnimation.Stopped)
         stop.click()
         self.assertEqual(publish(enabled=False, paused=False, running=False), [False, False, False, True])
         self.assertEqual(start.text(), "开始一条龙")
