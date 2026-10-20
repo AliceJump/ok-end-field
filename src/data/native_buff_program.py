@@ -9,6 +9,23 @@ POGRANI_MORALE = "buff_chr_0029_pograni_talent1"
 LAEVAT_STANCE = "buff_chr_0016_laevat_show_weapon"
 LAEVAT_ULT_END = "buff_chr_0016_laevat_ult_end"
 LAEVAT_DURATION_BUFFS = frozenset((LAEVAT_STANCE, LAEVAT_ULT_END))
+YVONNE_CRIT_LAYERS = "buff_chr_0017_yvonne_ultimate_skill_layer"
+
+
+def reviewed_enhance_refresh(buff_id, data):
+    """Approve Yvonne's one-object layer container, not crit attribute evaluation."""
+    return (buff_id == YVONNE_CRIT_LAYERS and data["id"] == buff_id
+            and data["stackingSettings"] == {
+                "identifierType": 0, "isNeedStackEffect": True, "maxStackCnt": 10,
+                "maxStackCntKey": "", "negatePriority": False, "priority": 0.0,
+                "priorityKey": "", "stackEffects": [], "stackingKey": "", "stackingType": 8,
+                "useMaxStackCntKey": False, "usePriorityKey": False}
+            and data["lifeType"] == 0 and not data["hasAddingCooldown"]
+            and data["duration"] == {"blackboardKey": "recycle_time", "useBlackboardKey": True, "value": 2.0}
+            and data["triggerInterval"] == {"blackboardKey": "", "useBlackboardKey": False, "value": -1.0}
+            and not data["useTimeDilationDt"] and not data["onlyUseSelfTimeDilation"]
+            and not data["timelineActions"] and not data["igniteEventAction"] and not data["abilityEventAction"]
+            and [event["buffEvent"] for event in data["buffEventAction"]] == [6])
 
 
 def reviewed_duration_extend(buff_id, data):
@@ -89,7 +106,7 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
         unresolved.append(f"Native buff stacking priority not yet bound: {buff_id}")
     for event in data["buffEventAction"]:
         programs = compile_blocks(event["actions"]) or ()
-        if event["buffEvent"] not in {0, 1, 2, 3, 5}:
+        if event["buffEvent"] not in ({0, 1, 2, 3, 5, 6} if reviewed_enhance_refresh(buff_id, data) else {0, 1, 2, 3, 5}):
             if any(program.events for program in programs):
                 unresolved.append(f"Native buff lifecycle event not yet bound: {buff_id}/{event['buffEvent']}")
             continue
@@ -119,4 +136,4 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
                              CombatExpression("literal", (float(data["stackingSettings"]["maxStackCnt"]),)),
                              tuple(callbacks), tuple(subscriptions), tuple(unresolved), expand_tags(data["applyTags"]),
                              stacking_key, damage_scales, attack_additions, reviewed_retained_layers(buff_id, data),
-                             reviewed_duration_extend(buff_id, data))
+                             reviewed_duration_extend(buff_id, data), reviewed_enhance_refresh(buff_id, data))

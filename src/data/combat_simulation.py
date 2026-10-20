@@ -153,6 +153,7 @@ class NativeBuffProgram(ImmutableCombatValue):
     attack_additions: tuple[CombatExpression, ...] = ()
     retained_priority_layers: bool = False
     reviewed_duration_extend: bool = False
+    reviewed_enhance_refresh: bool = False
 
 
 @dataclass(frozen=True)
@@ -1656,7 +1657,7 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                               for uid, passive in state.native_passives.items()),
                         tuple((v.uid, v.owner, v.key, v.source, v.expires, v.period, v.remaining,
                                v.action_scope, v.action_finish_at, v.parent_scope, v.inherit_skill_ids,
-                               v.finish_with_next_skill, v.attack_addition, v.enabled, v.priority_position,
+                               v.finish_with_next_skill, v.attack_addition, v.enabled, v.priority_position, v.enhance_count,
                                repr(v.definition),
                                tuple(sorted(state._action_inputs[v.uid].items()))) for v in state.native_buff_instances.values()),
                         tuple(sorted(state.native_timers.items())),

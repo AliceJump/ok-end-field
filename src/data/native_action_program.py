@@ -710,7 +710,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                         if reviewed_duration_extend(buff_id, data):
                             definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
                                                                  attributes=attributes, panel=panel, path=buff_path)
-                    if attaches_skill and (definition is None or definition.stacking in {4, 5}):
+                    elif stacking["stackingType"] == 8:
+                        from src.data.native_buff_program import compile_buff_definition, reviewed_enhance_refresh
+
+                        if not reviewed_enhance_refresh(buff_id, data):
+                            raise UnresolvedMechanic(f"Native EnhanceAndRefresh needs reviewed instance policy: {buff_id}")
+                        definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
+                                                             attributes=attributes, panel=panel, path=buff_path)
+                    if attaches_skill and (definition is None or definition.stacking in {4, 5, 8}):
                         # In particular, Yvonne's Refresh4 + attacker modifier
                         # and reparenting are not licensed by this node binding.
                         raise UnresolvedMechanic(f"Native skill-attached buff needs reviewed instance policy: {buff_id}")

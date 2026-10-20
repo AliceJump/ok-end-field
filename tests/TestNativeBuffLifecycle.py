@@ -21,8 +21,10 @@ from src.data.native_buff_program import (
     LAEVAT_STANCE,
     LAEVAT_ULT_END,
     POGRANI_MORALE,
+    YVONNE_CRIT_LAYERS,
     compile_buff_definition,
     reviewed_duration_extend,
+    reviewed_enhance_refresh,
     reviewed_retained_layers,
 )
 from src.data.native_buff_runtime import change_buff, finish_buff_instances, pause_buff_time
@@ -649,6 +651,128 @@ class TestLaevatainDurationExtension(unittest.TestCase):
         self.assertEqual(exit_marker.expires, 10)
         self.assertEqual(stance.expires, 3)
         self.assertEqual(self.world.native_buff_count("1", LAEVAT_ULT_END), 1)
+
+
+class TestYvonneEnhanceAndRefresh(unittest.TestCase):
+    def setUp(self):
+        self.world = CombatWorldState(("1", "2"), regen=0)
+        payout = NativeResourceChange(CombatResourceType.ULTIMATE_ENERGY, literal(1), literal(1),
+                                      NativeTarget("source"), NativeTarget("owner"), ignore_energy_gain=True)
+        callback = ActionProgram("enhanced", "1", "normal", 0, 0, 0,
+                                 (CombatEvent(0, "enhanced", native_resources=(payout,)),))
+        self.definition = NativeBuffProgram((("bb.original", 7),), (), literal(4), literal(-1), literal(-1),
+                                            True, 8, literal(10), ((6, callback),), reviewed_enhance_refresh=True)
+        self.program = ActionProgram("explicit_layer", "1", "normal", 0, 0, 0, ())
+
+    def add(self, *, source="1", definition=None):
+        definition = definition or self.definition
+        change = NativeBuffChange(YVONNE_CRIT_LAYERS, literal(1), definition=definition)
+        change_buff(self.world, "1", change, {}, "request", replace(self.program, actor=source), 1)
+        return next(v for v in self.world.native_buff_instances.values() if v.key == YVONNE_CRIT_LAYERS)
+
+    def test_one_instance_counts_enhancements_and_cap_does_not_repeat_event6(self):
+        instance = self.add()
+        self.assertEqual(instance.enhance_count, 1)
+        self.assertEqual(self.world.characters["1"].energy, 0)
+        for expected in range(2, 11):
+            self.assertIs(self.add(), instance)
+            self.assertEqual(self.world.native_buff_count("1", YVONNE_CRIT_LAYERS), expected)
+        self.assertEqual(self.world.characters["1"].energy, 9)
+        self.world.advance(3)
+        self.assertIs(self.add(), instance)
+        self.assertEqual(instance.expires, 7)
+        self.assertEqual(instance.enhance_count, 10)
+        self.assertEqual(self.world.characters["1"].energy, 9)
+        self.assertEqual(len(self.world.native_buff_instances), 1)
+        self.world.advance(4)
+        self.assertIn(instance.uid, self.world.native_buff_instances)
+        self.world.advance(7)
+        self.assertFalse(self.world.native_buff_instances)
+        self.assertEqual(self.world.native_buff_count("1", YVONNE_CRIT_LAYERS), 0)
+
+    def test_refresh_preserves_original_source_bb_and_longer_remaining_life(self):
+        instance = self.add()
+        self.world.advance(1)
+        incoming = replace(self.definition, duration=literal(1), parameters=(("bb.original", 999),))
+        self.assertIs(self.add(source="2", definition=incoming), instance)
+        self.assertEqual(instance.source, "1")
+        self.assertEqual(instance.expires, 4)
+        self.assertEqual(self.world._action_inputs[instance.uid]["bb.original"], 7)
+
+    def test_prediction_and_full_removal_do_not_leak_or_reuse_enhance_count(self):
+        instance = self.add()
+        predicted = copy.deepcopy(self.world)
+        change = NativeBuffChange(YVONNE_CRIT_LAYERS, literal(1), definition=self.definition)
+        change_buff(predicted, "1", change, {}, "predicted", self.program, 1)
+        self.assertEqual(predicted.native_buff_count("1", YVONNE_CRIT_LAYERS), 2)
+        self.assertEqual(self.world.native_buff_count("1", YVONNE_CRIT_LAYERS), 1)
+        finish_buff_instances(self.world, (instance.uid,))
+        replacement = self.add()
+        self.assertNotEqual(instance.uid, replacement.uid)
+        self.assertEqual(replacement.enhance_count, 1)
+
+    def test_partial_decrement_and_unreviewed_scope_fail_before_mutation(self):
+        instance = self.add()
+        removal = NativeBuffChange(YVONNE_CRIT_LAYERS, literal(-1))
+        with self.assertRaisesRegex(UnresolvedMechanic, "decrement"):
+            change_buff(self.world, "1", removal, {}, "remove", self.program, -1)
+        for definition in (replace(self.definition, reviewed_enhance_refresh=False),
+                           replace(self.definition, maximum=literal(9)),
+                           replace(self.definition, callbacks=((8, self.program),))):
+            with self.assertRaises(UnresolvedMechanic):
+                self.add(definition=definition)
+        self.assertEqual(instance.enhance_count, 1)
+        self.assertEqual(instance.expires, 4)
+
+    def test_actual_layer_callback_reads_current_count_and_sets_dynamic_only_at_ten(self):
+        store = SkillTimingStore()
+        data = native_record(store, YVONNE_CRIT_LAYERS)["data"]
+        self.assertTrue(reviewed_enhance_refresh(YVONNE_CRIT_LAYERS, data))
+        definition = compile_buff_definition(store, get_character("yvonne"), store.profiles("伊冯", "ult")[0],
+                                             "1", YVONNE_CRIT_LAYERS, data, {"assignBlackboard": False},
+                                             attributes={}, panel=None, path=())
+        self.assertTrue(definition.reviewed_enhance_refresh)
+        self.assertEqual([kind for kind, _ in definition.callbacks], [6])
+        instance = self.add(definition=definition)
+        for _ in range(8):
+            self.add(definition=definition)
+        self.assertEqual(instance.enhance_count, 9)
+        self.assertEqual(self.world._action_inputs[instance.uid]["bb.crit_rate_up_dynamic"], 0)
+        self.add(definition=definition)
+        self.assertEqual(instance.enhance_count, 10)
+        self.assertAlmostEqual(self.world._action_inputs[instance.uid]["bb.crit_rate_up_dynamic"], .06)
+        self.assertTrue(any("RefreshBuffAttrModifierValue" in reason for reason in self.world.unresolved))
+        self.assertTrue(any("attributeModifier" in reason for reason in self.world.unresolved))
+        self.assertFalse(self.world.characters["1"].attributes)
+
+    def test_real_literal_producer_binds_container_instead_of_flat_count_pool(self):
+        store = SkillTimingStore()
+        character = get_character("yvonne")
+        profile = store.profiles("伊冯", "ult")[0]
+        record = native_record(store, "chr_0017_yvonne_ult_attack1_1")["data"]
+        node = next(n for n in _nodes(record) if n["$type"].endswith("CreateBuffAction+Data")
+                    and any(v["buffId"] == YVONNE_CRIT_LAYERS for v in n["$value"]["buffs"]))
+        compiled = compile_native_action(store, character, profile, "1", "normal", attributes={}, panel=None,
+                                         event_sequence={"actionData": [node], "onlyExecuteWhenSourceIsGuard": False,
+                                                         "onlyExecuteWhenSourceIsMainChar": False},
+                                         event_blackboard={"crit_rate_up": .06, "normal_dmg_up": .03},
+                                         isolated_blackboard=True)
+        changes = [v for event in compiled.events for v in event.native_buffs if v.key == YVONNE_CRIT_LAYERS]
+        self.assertEqual(len(changes), 1)
+        self.assertTrue(changes[0].definition.reviewed_enhance_refresh)
+        self.assertEqual(changes[0].definition.stacking, 8)
+        producer_events = tuple(replace(event, native_buffs=tuple(v for v in event.native_buffs
+                               if v.key == YVONNE_CRIT_LAYERS)) for event in compiled.events if event.native_buffs)
+        producer = ActionProgram("actual_layer_request", "1", "normal", 0, 0, 0, producer_events,
+                                 parameters=compiled.parameters)
+        self.assertTrue(self.world.start(producer, action_id="actual_first"))
+        self.assertEqual(self.world.native_buff_count("1", YVONNE_CRIT_LAYERS), 1)
+        self.assertTrue(self.world.start(producer, action_id="actual_second"))
+        self.assertEqual(self.world.native_buff_count("1", YVONNE_CRIT_LAYERS), 2)
+        self.assertEqual(len(self.world.native_buff_instances), 1)
+        changed = copy.deepcopy(native_record(store, YVONNE_CRIT_LAYERS)["data"])
+        changed["stackingSettings"]["maxStackCnt"] = 11
+        self.assertFalse(reviewed_enhance_refresh(YVONNE_CRIT_LAYERS, changed))
 
 
 if __name__ == "__main__":

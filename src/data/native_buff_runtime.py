@@ -36,6 +36,7 @@ class NativeBuffInstance:
     time_paused: bool = False
     paused_lifetime: float | None = None
     paused_trigger_delay: float | None = None
+    enhance_count: int = 1
 
 
 def _instances(world, owner, key):
@@ -110,7 +111,7 @@ def _sync(world, owner, key):
         world.native_buffs.pop((owner, key), None)
     else:
         expires = None if any(v.expires is None for v in instances) else max(v.expires for v in instances)
-        world.native_buffs[owner, key] = (len(instances), expires)
+        world.native_buffs[owner, key] = (sum(v.enhance_count for v in instances), expires)
 
 
 def _extend_duration(world, instance, duration):
@@ -274,6 +275,8 @@ def _trigger(world, instance):
 
 def change_buff(world, owner, change, inputs, action_id, program, delta):
     existing = _instances(world, owner, change.key)
+    if delta < 0 and not change.remove_all and any(v.definition.stacking == 8 for v in existing):
+        raise UnresolvedMechanic(f"Native enhanced-layer decrement needs group binding: {change.key}")
     if change.remove_all or delta < 0:
         for instance in existing if change.remove_all else existing[: -delta]:
             _finish(world, instance)
@@ -281,7 +284,7 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     definition = change.definition
     if definition is None:
         raise UnresolvedMechanic(f"Buff addition lacks instance definition: {change.key}")
-    if change.attach_to_event_skill and definition.stacking in {4, 5}:
+    if change.attach_to_event_skill and definition.stacking in {4, 5, 8}:
         raise UnresolvedMechanic(f"Native skill-attached Refresh reapplication needs binding: {change.key}")
     parent = world._native_buff_context if change.child_of_buff else None
     if change.child_of_buff and (parent is None or parent.uid != action_id
@@ -337,9 +340,11 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         raise UnresolvedMechanic(f"Parent-bound periodic buff needs tick/end ordering: {change.key}")
     limit = definition.trigger_limit.evaluate(values)
     # Unique, Unlimited and reviewed Refresh do not read maxStackCnt.
-    maximum = definition.maximum.evaluate(values) if definition.stacking in {2, 11} else 0
+    maximum = definition.maximum.evaluate(values) if definition.stacking in {2, 8, 11} else 0
     if definition.retained_priority_layers and definition.stacking != 11:
         raise UnresolvedMechanic(f"Conflicting native retained-layer policy: {change.key}")
+    if definition.reviewed_enhance_refresh and definition.stacking != 8:
+        raise UnresolvedMechanic(f"Conflicting native enhancement policy: {change.key}")
     if duration is not None and duration < 0 or limit != int(limit) or maximum != int(maximum):
         raise UnresolvedMechanic(f"Invalid native buff parameters: {change.key}")
     if definition.stacking == 11:
@@ -354,6 +359,17 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         # Replay uses the world's authored clock, not the native per-tick delta
         # stream/accumulated SUBSS. Keep that precision boundary explicit.
         world.unresolved.add(f"Native retained-layer tick accumulation not yet bound: {change.key}")
+    elif definition.stacking == 8:
+        from src.data.native_buff_program import YVONNE_CRIT_LAYERS
+
+        if (not definition.reviewed_enhance_refresh or change.key != YVONNE_CRIT_LAYERS or delta != 1
+                or maximum != 10 or period != -1 or duration is None or not math.isfinite(duration)
+                or duration <= 0 or parent is not None or passive_root is not None
+                or change.action_finish_after is not None or change.inherit_skill_ids
+                or any(kind != 6 for kind, _ in definition.callbacks) or definition.subscriptions):
+            raise UnresolvedMechanic(f"Native EnhanceAndRefresh needs plain reviewed crit-layer binding: {change.key}")
+        duration = _single(duration)
+        world.unresolved.add(f"Native enhanced-layer attributes/notifications/tick accumulation not yet bound: {change.key}")
     elif definition.stacking not in {0, 2, 4, 5, 7}:
         raise UnresolvedMechanic(f"Native buff stacking policy not yet bound: {change.key}/{definition.stacking}")
     group = _stacking_group(world, owner, change.key, definition)
@@ -368,6 +384,18 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     world.native_buff_tags[change.key] = definition.tags
     for _ in range(delta):
         existing = _stacking_group(world, owner, change.key, definition)
+        if definition.stacking == 8 and existing:
+            # Type8 retains one instance. At cap it still refreshes, but does
+            # not run _Enhance/OnBuffEnhanced again. Empty 8/7 callbacks only
+            # are approved; actual notifications/attribute reload stay unknown.
+            instance = existing[0]
+            if instance.enhance_count < maximum:
+                instance.enhance_count += 1
+                _sync(world, owner, change.key)
+                _callbacks(world, instance, 6)
+            if instance.uid in world.native_buff_instances:
+                _refresh_duration(world, instance, duration)
+            continue
         if definition.stacking == 5 and existing:
             # Native returns no new creation handle. Do not replay OnStart,
             # reassign source/BB, attach a new parent or restart the tick timer.
