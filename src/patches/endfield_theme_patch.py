@@ -635,11 +635,10 @@ def route_endfield_tabs(
 
 
 def reorganize_tasks_architecture(executor: Any) -> None:
-    """重构业务任务划分体系：将核心日常流水线独立为「日常一条龙」，净化「业务与战斗」。
+    """按类名改写任务的 group_name，决定任务落在哪个工作区页签。
 
-    新分类原则：依据《明日方舟：终末地》塔卫二工业循环链路与指挥官生命周期拆解。
-    1. 【业务与战斗】：纯粹聚焦副本挑战、周本演练与大世界探索（含日常任务汇总页签）
-    2. 【日常一条龙】：按 Section 拆为帝江号、其他、战斗、奖励四大横向分栏
+    1. 日常一条龙：清单内的子任务分到帝江号、战斗、奖励、其他四个分栏。
+    2. 业务与战斗：副本类任务归「副本」；DailyTask 与清单外的独立任务归「收尾」，页签显示为「其他」。
     """
     if not executor or not hasattr(executor, "onetime_tasks"):
         return
@@ -666,7 +665,7 @@ def reorganize_tasks_architecture(executor: Any) -> None:
         "CreditShopTask": "其他",
         # 独立「自动送货」不在一条龙清单内（清单里的自动送货由 DailyDeliveryTask 执行）
         "DeliveryTask": "收尾",
-        # 按取委托 / 仓库物品转移同样不在清单内，留在「收尾」作为独立任务
+        # 接取委托 / 仓库物品转移同样不在清单内，留在「收尾」作为独立任务
         "TakeDeliveryTask": "收尾",
         "DailyBattleTask": "战斗",
         "DemoBattleTask": "战斗",
@@ -865,14 +864,11 @@ def apply_native_card_panel(card: Any) -> None:
 
 
 def install_endfield_theme_patch() -> None:
-    """将《明日方舟：终末地》UI 设计系统第二阶段深度重构注入 ok-ef 主应用中。
+    """把终末地风格界面装到 ok-ef 主窗口。
 
-    核心重构项：
-    1. 动态双主题 QSS 编译引擎：严格遵循 WCAG 2.1 AA 标准（浅色高对比度、深色工业冷黑）；
-    2. 业务功能架构重组：解构杂乱的“日常任务”，分散为战备清剿、工业物流、联络勤务、大世界探索四大均衡模块；
-    3. 文本 100% 保持原生真实中文名称，零伪造假概念；
-    4. 消除所有无实际用途的大面积假元素；
-    5. 工作区顶部采用 EndfieldSegmentedBar 切角标签页实现横向快速切换。
+    1. 主窗口：页签按页面身份归入五个工作区，工作区顶部用切角页签切换；标题栏加「恢复默认大小」。
+    2. 样式：浅色、深色两套 QSS 只下发到主窗口；切换主题时同步强调色。
+    3. 任务页：日常分栏渲染为分区勾选清单，战斗字段集中到「自动战斗」页，参数在右侧面板编辑。
     """
     global _PATCH_INSTALLED
     if _PATCH_INSTALLED:
@@ -915,7 +911,7 @@ def install_endfield_theme_patch() -> None:
         return False
 
     def _patched_init(self: Any, *args: Any, **kwargs: Any) -> None:
-        # 1. 在初始化前，执行业务功能架构重组（解构日常任务，均衡各模块负载）
+        # 1. 在初始化前改写任务分组，原生页签才会按新分组生成
         from ok import og  # type: ignore
 
         if hasattr(og, "executor") and og.executor:
@@ -1074,7 +1070,7 @@ def install_endfield_theme_patch() -> None:
             if hasattr(self, "navigationInterface"):
                 self.navigationInterface.setExpandWidth(216)
 
-            logger.info("Endfield UI Phase 2 architecture applied successfully.")
+            logger.info("Endfield UI architecture applied successfully.")
         except Exception as e:
             logger.warning("Error applying Endfield UI architecture in MainWindow: %s", e)
 

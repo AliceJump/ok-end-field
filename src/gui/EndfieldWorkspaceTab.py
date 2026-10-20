@@ -1,5 +1,4 @@
 # Endfield Workspace Container & Segmented Navigation
-# Dual-theme adaptive (Dark / Light) with WCAG 2.1 AA compliance
 
 from collections.abc import Callable
 from contextlib import suppress
