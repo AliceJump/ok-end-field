@@ -7,7 +7,7 @@ from src.core.learning.models import ContextConfidence, LearningHint
 from src.core.learning.policy import choose_hint, learning_allowed
 
 
-def legacy_hint(records, confidence):
+def legacy_hint(records, confidence, *, exact=()):
     """Do not invent settings, raw acquisitions or variance for old estimates."""
     confidence = ContextConfidence(confidence)
     if not learning_allowed() or confidence not in (ContextConfidence.HIGH, ContextConfidence.MEDIUM) or not records:
@@ -16,7 +16,8 @@ def legacy_hint(records, confidence):
         return None
     if max(records, key=lambda record: record.updated_at).consecutive_failures:
         return None
-    for record in sorted(records, key=lambda record: record.updated_at, reverse=True):
+    exact_ids = {id(record) for record in exact}
+    for record in sorted(records, key=lambda record: (id(record) in exact_ids, record.updated_at), reverse=True):
         motion = record.legacy_motion if record.observations else record.motion
         if motion is None or not motion.samples or record.consecutive_failures:
             continue

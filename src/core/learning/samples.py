@@ -2,9 +2,39 @@
 
 import math
 from dataclasses import dataclass, replace
-from statistics import median
 
 from src.core.learning.environment import LearningEnvironment
+
+DECAY_HALF_LIFE_DAYS = 7.0
+SECONDS_PER_DAY = 86400
+
+
+def acquisition_day(timestamp):
+    """Daily UTC age avoids wall-clock jitter changing classifications within a run."""
+    return int(timestamp // SECONDS_PER_DAY)
+
+
+def history_weights(samples):
+    if not samples:
+        return ()
+    latest = max(acquisition_day(sample.acquired_at) for sample in samples)
+    return tuple(
+        max(1e-150, 2.0 ** (-(latest - acquisition_day(sample.acquired_at)) / DECAY_HALF_LIFE_DAYS))
+        for sample in samples
+    )
+
+
+def weighted_median(values, weights):
+    pairs = sorted((value, weight) for value, weight in zip(values, weights, strict=True) if weight > 0)
+    half = math.fsum(weight for _, weight in pairs) / 2
+    cumulative = 0.0
+    for index, (value, weight) in enumerate(pairs):
+        cumulative += weight
+        if math.isclose(cumulative, half, rel_tol=1e-12, abs_tol=0.0) and index + 1 < len(pairs):
+            return (value + pairs[index + 1][0]) / 2
+        if cumulative >= half:
+            return value
+    return pairs[-1][0]
 
 
 @dataclass(frozen=True)
@@ -74,18 +104,34 @@ class MotionSample:
 
 
 def classify_samples(samples):
-    """MAD around the median, with raw-count floors in a fixed 1080p reference."""
+    """Time-weighted median/MAD, with raw-count floors in a fixed 1080p reference."""
     reference = LearningEnvironment()
     points = [sample.environment.convert(sample.dx, sample.dy, reference) for sample in samples]
     if len(points) < 3:
         return tuple(replace(sample, outlier=False) for sample in samples)
-    centers = [median(point[axis] for point in points) for axis in (0, 1)]
+    weights = history_weights(samples)
+    centers = [weighted_median([point[axis] for point in points], weights) for axis in (0, 1)]
     limits = [
         max(
-            12.0, abs(centers[axis]) * 0.25, 3.5 * 1.4826 * median(abs(point[axis] - centers[axis]) for point in points)
+            12.0,
+            abs(centers[axis]) * 0.25,
+            3.5 * 1.4826 * weighted_median([abs(point[axis] - centers[axis]) for point in points], weights),
         )
         for axis in (0, 1)
     ]
+    # A recent stable triple can establish a changed regime without waiting for
+    # thousands of old observations to lose their majority. Conversely, one or
+    # two recent spikes cannot replace the latest verified stable cluster.
+    ordered = sorted(range(len(samples)), key=lambda index: (samples[index].acquired_at, index))
+    for end in range(len(ordered), 2, -1):
+        cluster = [points[index] for index in ordered[end - 3 : end]]
+        candidate = [weighted_median([point[axis] for point in cluster], (1.0, 1.0, 1.0)) for axis in (0, 1)]
+        bounds = [max(12.0, abs(value) * 0.25) for value in candidate]
+        if any(abs(point[axis] - candidate[axis]) > bounds[axis] for point in cluster for axis in (0, 1)):
+            continue
+        if any(abs(candidate[axis] - centers[axis]) > max(bounds[axis], abs(centers[axis]) * 0.25) for axis in (0, 1)):
+            centers, limits = candidate, bounds
+        break
     return tuple(
         replace(sample, outlier=any(abs(point[axis] - centers[axis]) > limits[axis] for axis in (0, 1)))
         for sample, point in zip(samples, points, strict=True)

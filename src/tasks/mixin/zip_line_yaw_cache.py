@@ -153,7 +153,10 @@ def load_arrow_turn_motion(width, height, start_yaw, target_yaw, *, environment=
         # Old counts intentionally stay unchanged, even across capture sizes.
         # Never mix these aggregates into converted per-acquisition statistics.
         candidates = []
-        for old_key, entry in payload.get("legacy_turns", {}).items():
+        legacy_turns = payload.get("legacy_turns", {})
+        if not isinstance(legacy_turns, dict):
+            legacy_turns = {}
+        for old_key, entry in legacy_turns.items():
             try:
                 source_key = json.loads(old_key)
                 if source_key[1:3] != requested or environment.scroll:

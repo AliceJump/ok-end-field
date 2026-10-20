@@ -24,6 +24,95 @@ from tests.TestRouteLearning import route_context
 
 
 class TestLearningObservations(unittest.TestCase):
+    def test_old_fallback_prefers_exact_capture_but_failure_and_retirement_cover_all_sources(self):
+        source = workflow_context()
+        large = replace(source, capture_profile=replace(source.capture_profile, width=3840, height=2160))
+        old_small = LearningRecord(motion=MotionStatistics(10, 100, 20), success_count=10, updated_at=2)
+        old_large = LearningRecord(motion=MotionStatistics(10, 200, 40), success_count=10, updated_at=1)
+        environment = environment_for_context(large)
+        records = {source.fingerprint: old_small, large.fingerprint: old_large}
+        self.assertEqual(workflow_hint(large, records, environment, "high").action, (200, 40))
+        records[source.fingerprint] = old_small.failed(now=3)
+        self.assertIsNone(workflow_hint(large, records, environment, "high").action)
+        records[source.fingerprint] = replace(old_small, legacy_retired=True)
+        self.assertIsNone(workflow_hint(large, records, environment, "high"))
+        with tempfile.TemporaryDirectory() as folder:
+            store = LearningStore(Path(folder) / "cache.json")
+            route = route_context()
+            large_route = replace(route, capture_profile=replace(route.capture_profile, width=3840, height=2160))
+            store.put(route.fingerprint, old_small)
+            store.put(large_route.fingerprint, old_large)
+            self.assertEqual(
+                RouteLearning(store).lookup(large_route, environment=environment_for_context(large_route)).action,
+                (200, 40),
+            )
+
+    def test_invalid_legacy_yaw_container_fails_soft(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "yaw.json"
+            for invalid in (None, [], "broken", 10):
+                with self.subTest(invalid=invalid):
+                    path.write_text(json.dumps({"version": 2, "turns": {}, "legacy_turns": invalid}))
+                    with patch("src.tasks.mixin.zip_line_yaw_cache._DEFAULT_CACHE_PATH", path):
+                        self.assertIsNone(load_arrow_turn_motion(1920, 1080, 120, 90))
+
+    def test_new_history_decays_by_acquisition_day_in_mean_variance_and_effective_count(self):
+        day = 86400
+        record = LearningRecord()
+        # All values stay within one regime; the old cohort gets half the weight.
+        for timestamp, dx in ((0, 100), (0, 100), (0, 100), (7 * day, 112), (7 * day, 112), (7 * day, 112)):
+            record = record.successful(dx, 20, now=timestamp)
+        motion = record.motion_for(LearningEnvironment())
+        self.assertEqual(len(record.observations), 6)
+        self.assertAlmostEqual(motion.total_weight, 4.5)
+        self.assertAlmostEqual(motion.mean_dx, 108)
+        self.assertAlmostEqual(motion.variance[0], 144 / (4.5 - 3.75 / 4.5))
+        self.assertAlmostEqual(motion.effective_samples, 4.5**2 / 3.75)
+        scaled = record.motion_for(LearningEnvironment(capture_size=(3840, 2160)))
+        self.assertAlmostEqual(scaled.mean_dx, 216)
+        self.assertAlmostEqual(scaled.variance[0], motion.variance[0] * 4)
+
+    def test_shared_weighted_statistics_align_source_dates_before_merging(self):
+        old, new = LearningRecord(), LearningRecord()
+        for _ in range(3):
+            old = old.successful(100, 20, now=0)
+            new = new.successful(112, 20, now=7 * 86400)
+        merged = old.motion.merge(new.motion)
+        self.assertAlmostEqual(merged.mean_dx, 108)
+        self.assertAlmostEqual(merged.total_weight, 4.5)
+        self.assertAlmostEqual(merged.effective_samples, 5.4)
+        direct = LearningRecord()
+        for sample in (*old.observations, *new.observations):
+            direct = direct.successful(sample.dx, sample.dy, now=sample.acquired_at)
+        self.assertAlmostEqual(merged.variance[0], direct.motion.variance[0])
+
+    def test_recent_spikes_wait_for_three_consistent_verified_acquisitions_then_change_regime(self):
+        record = LearningRecord()
+        for index in range(20):
+            record = record.successful(100, 20, now=index)
+        for index in range(3):
+            record = record.successful(1000, 20, now=86400 + index)
+            if index < 2:
+                self.assertTrue(record.observations[-1].outlier)
+                self.assertEqual(record.motion.mean_dx, 100)
+            else:
+                self.assertFalse(record.observations[-1].outlier)
+                self.assertEqual(record.motion.mean_dx, 1000)
+                self.assertTrue(record.observations[0].outlier)
+        # A later isolated spike must not revert to the old majority or switch again.
+        record = record.successful(3000, 20, now=86404)
+        self.assertTrue(record.observations[-1].outlier)
+        self.assertEqual(record.motion.mean_dx, 1000)
+        self.assertEqual(len(record.observations), 24)
+
+    def test_single_fresh_spike_cannot_override_very_old_stable_history(self):
+        record = LearningRecord()
+        for timestamp in range(3):
+            record = record.successful(100, 20, now=timestamp)
+        record = record.successful(1000, 20, now=120 * 86400)
+        self.assertTrue(record.observations[-1].outlier)
+        self.assertAlmostEqual(record.motion.mean_dx, 100)
+
     def test_signed_conversion_uses_independent_width_height_and_sensitivities(self):
         original = LearningEnvironment()
         target = LearningEnvironment(speed_x=5, speed_y=-5, reverse_y=True, capture_size=(3840, 1080))

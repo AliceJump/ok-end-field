@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+import time
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -51,9 +52,10 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         return task
 
     def seed(self, context, dx=100, dy=20):
-        for now in range(3):
+        acquired_at = time.time()
+        for _ in range(3):
             self.store.update(
-                context.fingerprint, lambda record, timestamp=now: record.successful(dx, dy, now=timestamp)
+                context.fingerprint, lambda record, timestamp=acquired_at: record.successful(dx, dy, now=timestamp)
             )
 
     def zip_task(self, detections=None):

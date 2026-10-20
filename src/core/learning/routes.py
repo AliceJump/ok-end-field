@@ -192,7 +192,14 @@ class RouteLearning:
         records = self._project_records(context, raw_records, environment)
         hint = self._lookup(context, confidence, records)
         if environment is not None and not ready_hint(hint):
-            hint = legacy_hint(self._legacy_sources(context, raw_records), confidence) or hint
+            pairs = self._legacy_sources(context, raw_records)
+            exact = [
+                record
+                for source, record in pairs
+                if (source.capture_profile.width, source.capture_profile.height)
+                == (context.capture_profile.width, context.capture_profile.height)
+            ]
+            hint = legacy_hint([record for _, record in pairs], confidence, exact=exact) or hint
         return self._restrict_axes(hint, context)
 
     @staticmethod
@@ -221,7 +228,7 @@ class RouteLearning:
                     )
                 )
             if compatible and left.axes == right.axes:
-                sources.append(record)
+                sources.append((source, record))
         return sources
 
     @staticmethod

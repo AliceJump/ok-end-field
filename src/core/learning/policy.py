@@ -70,6 +70,7 @@ def choose_hint(record, confidence, *, source="private", min_samples=3, max_moti
     variance = motion.variance
     stable = (
         motion.samples >= min_samples
+        and motion.effective_samples >= min_samples - 1e-9
         and variance is not None
         and record.success_count >= motion.samples
         and math.sqrt(sum(variance)) <= max(12.0, math.hypot(motion.mean_dx, motion.mean_dy) * 0.25)

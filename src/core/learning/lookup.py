@@ -53,12 +53,12 @@ def _workflow_sources(context, records):
                 continue
         except (ValueError, TypeError, KeyError):
             continue
-        yield record
+        yield source, record
 
 
 def workflow_record(context, records, environment):
     result = None
-    for record in _workflow_sources(context, records):
+    for _, record in _workflow_sources(context, records):
         converted = projected_record(record, environment)
         if converted is not None:
             result = combine_records(result, converted, environment)
@@ -69,4 +69,6 @@ def workflow_hint(context, records, environment, confidence):
     hint = choose_hint(workflow_record(context, records, environment), confidence)
     if ready_hint(hint):
         return hint
-    return legacy_hint(list(_workflow_sources(context, records)), confidence) or hint
+    pairs = list(_workflow_sources(context, records))
+    exact = [record for source, record in pairs if source.capture_profile == context.capture_profile]
+    return legacy_hint([record for _, record in pairs], confidence, exact=exact) or hint
