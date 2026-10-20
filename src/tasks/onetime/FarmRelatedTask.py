@@ -123,7 +123,7 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
                 return False
             elif not self.wait_pop_up(time_out=5):
                 self.log_info(f"{source_name}未找到确认按钮，收取结束")
-                return False
+                return True
 
         self.log_info(f"已点击{source_name}的存至武陵仓库按钮")
         return True

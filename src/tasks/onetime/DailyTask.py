@@ -27,6 +27,7 @@ from src.tasks.onetime.DailyDeliveryTask import DailyDeliveryTask
 from src.tasks.onetime.DailyRewardTask import DailyRewardTask
 from src.tasks.onetime.DeliverySendTask import DeliverySendTask
 from src.tasks.onetime.DemoBattleTask import DemoBattleTask
+from src.tasks.onetime.FarmRelatedTask import FarmRelatedTask
 from src.tasks.onetime.HomePointTask import HomePointTask
 from src.tasks.onetime.LiaisonGiftTask import LiaisonGiftTask
 from src.tasks.onetime.MailTask import MailTask
@@ -58,6 +59,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
     CFG_OTHER_TASKS = "其他任务"
     CFG_BATTLE_TASKS = "战斗任务"
     CFG_REWARD_TASKS = "奖励任务"
+    CFG_FARM_TASKS = "农牧任务"
     CFG_DELIVERY_TASKS = "自动送货任务"
     CFG_TAIL_TASKS = "收尾任务"
 
@@ -65,6 +67,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
     OTHER_TASKS = ["收邮件", "转交运送委托", "地区建设", "造装备", "收信用", "买信用商店"]
     BATTLE_TASKS = ["刷体力", "演算"]
     REWARD_TASKS = ["活动奖励", "日常奖励"]
+    FARM_TASKS = ["农牧相关"]
     DELIVERY_TASKS = ["自动送货"]
     TAIL_TASKS = ["传送到帝江号右侧传送点"]
 
@@ -82,12 +85,13 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         "演算": "⭐演算",
         "活动奖励": "⭐活动奖励",
         "日常奖励": "⭐日常奖励",
+        "农牧相关": "⭐农牧相关",
         "自动送货": "⭐自动送货",
         "传送到帝江号右侧传送点": "⭐传送到帝江号右侧传送点",
     }
 
     _LEGACY_DEFAULTS = {
-        **dict.fromkeys(BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS, True),
+        **dict.fromkeys(BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS + FARM_TASKS, True),
         "自动送货": False,
         "传送到帝江号右侧传送点": True,
     }
@@ -118,6 +122,10 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         ),
         CFG_REWARD_TASKS: _legacy_daily_task_list(
             [("活动奖励", "⭐活动奖励"), ("日常奖励", "⭐日常奖励")],
+            _LEGACY_DEFAULTS,
+        ),
+        CFG_FARM_TASKS: _legacy_daily_task_list(
+            [("农牧相关", "⭐农牧相关")],
             _LEGACY_DEFAULTS,
         ),
         CFG_DELIVERY_TASKS: _legacy_daily_task_list(
@@ -266,6 +274,12 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             run_method="claim_daily_rewards",
             predicate=lambda: self._task_selected(self.CFG_REWARD_TASKS, "日常奖励"),
         )
+        self.farm_feature = DailyFeature(
+            self,
+            FarmRelatedTask,
+            switch_key="⭐农牧相关",
+            predicate=lambda: self._task_selected(self.CFG_FARM_TASKS, "农牧相关"),
+        )
         self.demo_feature = DailyFeature(
             self,
             DemoBattleTask,
@@ -287,7 +301,8 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
                 self.CFG_OTHER_TASKS: "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。",
                 self.CFG_BATTLE_TASKS: "选择参加一键日常的战斗任务；刷体力与演算连续执行。",
                 self.CFG_REWARD_TASKS: "选择参加一键日常的奖励任务；奖励块固定安排在普通业务任务之后。",
-                self.CFG_DELIVERY_TASKS: "自动送货是高风险长流程，固定在奖励之后、最终归位之前执行。",
+                self.CFG_FARM_TASKS: "农牧领取单独成块，固定安排在奖励之后、自动送货之前执行。",
+                self.CFG_DELIVERY_TASKS: "自动送货是高风险长流程，固定在农牧与奖励之后、最终归位之前执行。",
                 self.CFG_TAIL_TASKS: "最终归位固定在所有业务任务之后执行；自动送货失败时会跳过归位。",
                 "⭐送礼": (
                     "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。\n"
@@ -307,6 +322,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
                 "⭐买信用商店": ("是否在「采购中心/信用交易所」采购。\n自动刷新 且 仅购买「武库配额」「嵌晶玉」。"),
                 "⭐刷体力": ("是否消耗所有「理智」刷取培养材料。"),
                 "⭐日常奖励": ("是否领取「行动手册/日常」和「通行证」中的奖励。"),
+                "⭐农牧相关": "是否进入『祀的画』领取牧场与自动农植机的产出，并存入武陵仓库。",
                 "⭐演算": "是否执行演武集算任务",
                 "⭐传送到帝江号右侧传送点": "是否在日常任务结束后传送到帝江号右侧传送点。",
                 "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
@@ -328,6 +344,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
                 self.CFG_OTHER_TASKS: list(self.OTHER_TASKS),
                 self.CFG_BATTLE_TASKS: list(self.BATTLE_TASKS),
                 self.CFG_REWARD_TASKS: list(self.REWARD_TASKS),
+                self.CFG_FARM_TASKS: list(self.FARM_TASKS),
                 self.CFG_DELIVERY_TASKS: [],
                 self.CFG_TAIL_TASKS: ["传送到帝江号右侧传送点"],
                 "发生异常时终止游戏": False,
@@ -341,6 +358,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             (self.CFG_OTHER_TASKS, self.OTHER_TASKS),
             (self.CFG_BATTLE_TASKS, self.BATTLE_TASKS),
             (self.CFG_REWARD_TASKS, self.REWARD_TASKS),
+            (self.CFG_FARM_TASKS, self.FARM_TASKS),
             (self.CFG_DELIVERY_TASKS, self.DELIVERY_TASKS),
             (self.CFG_TAIL_TASKS, self.TAIL_TASKS),
         ):
@@ -355,6 +373,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
                 "其他日常": [self.CFG_OTHER_TASKS],
                 "战斗": [self.CFG_BATTLE_TASKS],
                 "奖励": [self.CFG_REWARD_TASKS],
+                "农牧": [self.CFG_FARM_TASKS],
                 "自动送货": [self.CFG_DELIVERY_TASKS],
                 "最终归位": [self.CFG_TAIL_TASKS],
                 "其他配置": ["发生异常时终止游戏", "仅退出游戏", "邮件发送汇总", "自动打开汇总文件"],
@@ -371,6 +390,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self.CFG_OTHER_TASKS,
             self.CFG_BATTLE_TASKS,
             self.CFG_REWARD_TASKS,
+            self.CFG_FARM_TASKS,
             self.CFG_DELIVERY_TASKS,
             self.CFG_TAIL_TASKS,
         )
@@ -406,6 +426,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self.demo_feature.plan_item(),
             self.activity_feature.plan_item(),
             self.daily_reward_feature.plan_item(),
+            self.farm_feature.plan_item(),
             self.delivery_feature.plan_item(),
             self.home_point_feature.plan_item(),
         ]
