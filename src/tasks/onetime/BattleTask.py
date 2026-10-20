@@ -567,6 +567,8 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                     box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
                     nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
                     time_out=60,
+                    nav_disappears_on_arrival=True,
+                    detection_mode="parallel",
                 )
             )
         return True
@@ -599,7 +601,8 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
 
     def battle_gather(self):
         self.battle_ctx.enter_text = "挑战"
-        self.navigate_to_gather()
+        if not self.navigate_to_gather():
+            return False
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
             self.log_info("放弃未领取的奖励")
             self.wait_click_ocr(
@@ -675,12 +678,15 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             need_navigation = self._prepare_gather_navigation(initial_entry, arrival_match=click_key)
         # The reset window covers initialization only. Navigation/reward stay denied.
         if need_navigation:
-            self.navigate_until_target(
+            if not self.navigate_until_target(
                 target=self.lang.daily_battle_mixin.k_39d12e73_1,
                 nav=[fL.gather_icon_out_map, fL.gather_icon_out_map2],
                 box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
                 time_out=60,
-            )
+                nav_disappears_on_arrival=True,
+                detection_mode="parallel",
+            ):
+                return False
         result = self.wait_ocr(match=re.compile(click_key), box=self.box.bottom_right, time_out=5)
         if not result:
             self.mark_task_failure(f"二次寻路失败：没有找到『{click_key}』按钮")

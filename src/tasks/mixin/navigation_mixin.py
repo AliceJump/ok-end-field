@@ -5,6 +5,7 @@ import pyautogui
 
 from src.data.FeatureList import FeatureList as fL
 from src.interaction.target_movement import ellipse_geometry, hud_direction_step, resolve_move_profile
+from src.tasks.mixin.navigation_detection_mode import ParallelNavigationDetection
 from src.tasks.mixin.navigation_detection_scope import get_navigation_detection_scope
 from src.tasks.mixin.navigation_learning import initial_alignment
 from src.tasks.mixin.search_mixin import SearchMixin
@@ -86,6 +87,8 @@ class NavigationMixin(SearchMixin):
         max_run_time: float = -1,
         allow_rotate_search: bool = True,
         nav_move_profile=None,
+        nav_disappears_on_arrival: bool = False,
+        detection_mode: str = "serial",
     ):
         """
         持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
@@ -110,6 +113,9 @@ class NavigationMixin(SearchMixin):
                 - 0：完全不奔跑，开局立即切换步行状态，全程按住 w 步行前进
                 - 大于0：允许累计奔跑指定秒数，达到后在本次导航中切换步行且不再恢复奔跑，函数结束时恢复奔跑状态
             allow_rotate_search (bool): 导航连续丢失时是否允许旋转视角整圈搜索，默认 True；送礼等不应转动视角的场景传 False。
+            nav_disappears_on_arrival (bool): parallel 模式下，仅供到达时图标会消失的路线使用。文本带出现后慢走，
+                并行检测导航模板和交互 OCR；图标消失继续前进，交互命中才停步确认。
+            detection_mode (str): serial 使用原同步检测；parallel 在同一导航流程中并行检测 OCR 目标和模板导航。
 
         Returns:
             bool | Any:
@@ -128,13 +134,34 @@ class NavigationMixin(SearchMixin):
             7. 导航连续丢失时旋转搜索，未命中则按中键并按住 S 后退搜索
 
         """
+        if detection_mode not in ("serial", "parallel"):
+            raise ValueError("Unknown navigation detection mode")
+        if detection_mode == "parallel":
+            if not target_is_ocr or target_is_yolo or nav_is_ocr or nav_is_yolo or not nav:
+                raise ValueError("Parallel detection requires an OCR target and template navigation")
+            mode = ParallelNavigationDetection(
+                self, target, nav, box, nav_disappears_on_arrival=nav_disappears_on_arrival
+            )
+        else:
+            mode = None
+
         last_click_v_time = 0
         nav_missing_start_time = None
         nav_missing_recovered = False
         nav_not_found_time_out = 5
         observations = get_navigation_detection_scope(self)
+        pending_target = None
 
-        def check_target():
+        def check_target(after=None):
+            nonlocal pending_target, run_allowed
+            if mode is not None:
+                result = mode.target(after=after)
+                if mode.approaching:
+                    exit_run_mode()
+                    run_allowed = False
+                if after is None and pending_target:
+                    result, pending_target = pending_target, None
+                return result
             if target_is_ocr:
                 return self.ocr(match=target, box=self.box_of_screen(0.635, 0.563, 0.724, 0.843) if not box else box)
             elif target_is_yolo:
@@ -198,23 +225,41 @@ class NavigationMixin(SearchMixin):
         )
 
         def check_nav():
+            if mode is not None:
+                return mode.nav()
             if nav_is_ocr:
                 return self.ocr(match=nav, box=nav_box)
             if nav_is_yolo:
                 return self.yolo_detect(name=nav, box=nav_box)
             return self.find_feature(nav, box=nav_box, threshold=0.7)
 
+        def check_recovery_target():
+            nonlocal pending_target
+            result = check_target()
+            if mode is not None and result:
+                pending_target = result
+            return result
+
+        def check_search():
+            if mode is not None and (
+                self.active_time() - start_time >= time_out or check_recovery_target() or mode.approaching
+            ):
+                return True
+            return check_nav()
+
         # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
         # Task.send_key_down 不透传底层是否按下成功（ok-script 2.0.4 恒返回 None），
         # 按下后只能乐观标记为已按住；若底层置顶失败未实际按下，
         # EfInteraction 的配对保护会让后续 send_key_up 静默跳过，不会误释放。
-        if observations is None:
-            self.send_key_down("w")
-        self._walk_key_held = observations is None
-
+        self._walk_key_held = False
         try:
+            if mode is not None:
+                mode.start()
+            if observations is None:
+                self.send_key_down("w")
+                self._walk_key_held = True
             while True:
-                if observations is not None and self.active_time() - start_time > time_out:
+                if (observations is not None or mode is not None) and self.active_time() - start_time > time_out:
                     self.log_info("导航超时")
                     return False
                 enforce_max_run_time()
@@ -241,40 +286,59 @@ class NavigationMixin(SearchMixin):
                     confirm_start = self.active_time()
                     confirm_miss_count = 0
                     confirm_miss_limit = 4
+                    confirm_seen = False
+                    if mode is not None:
+                        mode.target_priority = True
+                        mode.invalidate_target()
 
                     while self.active_time() - confirm_start < settle_time:
-                        if not check_target():
+                        if mode is not None and self.active_time() - start_time >= time_out:
+                            return False
+                        confirmed = check_target(after=confirm_start) if mode is not None else check_target()
+                        if mode is not None and confirmed is None:
+                            self.sleep(0.03)
+                            continue
+                        if not confirmed:
                             confirm_miss_count += 1
                             if confirm_miss_count >= confirm_miss_limit:
                                 stable = False
                                 break
                         else:
                             confirm_miss_count = 0
+                            confirm_seen = True
                         self.sleep(0.03)
 
-                    if stable:
+                    if stable and (mode is None or confirm_seen):
                         return True
 
+                    if mode is not None:
+                        mode.invalidate_target()
                     self.log_info("确认期间目标丢失，开始小幅度 WASD 移动搜索")
-                    if self.strafe_search(check_target, passes=3, duration=0.2, time_out=10):
+                    search_budget = min(10, max(0.001, time_out - (self.active_time() - start_time))) if mode else 10
+                    if self.strafe_search(check_recovery_target, passes=3, duration=0.2, time_out=search_budget):
                         self.log_info("WASD 移动过程中重新找到目标")
-                        if observations is not None:
+                        if observations is not None or mode is not None:
                             continue
                     else:
                         self.log_info("小幅度移动未找到目标，开始后退搜索")
                         self.send_key_down("s")  # 确认使用send_key：s为方向移动键，不属于游戏可配置热键，用于后退搜索
                         search_start = self.active_time()
                         target_recovered = False
-                        while self.active_time() - search_start < 10:
-                            if check_target():
-                                self.log_info("后退过程中重新找到目标")
-                                self.send_key_up("s")  # 确认使用send_key：释放方向键
-                                target_recovered = True
-                                break
-                            self.sleep(0.02)
-                        self.send_key_up("s")  # 确认使用send_key：释放方向键
-                        if observations is not None and target_recovered:
+                        try:
+                            while self.active_time() - search_start < 10:
+                                if mode is not None and self.active_time() - start_time >= time_out:
+                                    return False
+                                if check_recovery_target():
+                                    self.log_info("后退过程中重新找到目标")
+                                    target_recovered = True
+                                    break
+                                self.sleep(0.02)
+                        finally:
+                            self.send_key_up("s")
+                        if (observations is not None or mode is not None) and target_recovered:
                             continue
+                    if mode is not None:
+                        mode.target_priority = False
 
                 if self.active_time() - start_time > time_out:
                     self.log_info("导航超时")
@@ -304,6 +368,17 @@ class NavigationMixin(SearchMixin):
                     continue
 
                 nav_result = check_nav()
+                if mode is not None:
+                    if mode.approaching and not nav_result:
+                        # 已知会消失的图标在接近阶段缺失，继续慢走找交互。
+                        if not self._walk_key_held:
+                            self.send_key_down("w")
+                            self._walk_key_held = True
+                        self.sleep(0.005)
+                        continue
+                    if nav_result is None:
+                        self.sleep(0.005)
+                        continue
                 if observations is not None and not nav_result:
                     # 残影只用于停步找回方向，不允许旧坐标恢复前进。
                     if self._walk_key_held:
@@ -341,6 +416,10 @@ class NavigationMixin(SearchMixin):
                             self._walk_key_held = True
                         if self._walk_key_held and not run_bool and run_allowed:
                             enter_run_mode()
+                        if mode is not None:
+                            # 同一导航循环内直接检查下一帧；居中不重复对中。
+                            self.sleep(0.005)
+                            continue
                     elif self._walk_key_held:
                         self.send_key_up("w")
                         self._walk_key_held = False
@@ -355,7 +434,16 @@ class NavigationMixin(SearchMixin):
                         raise_if_fail=False,
                         allow_random_move=False,
                         move_profile=nav_move_profile,
+                        **(
+                            {"frame_target_detector": mode.nav, "max_iterations": 1, "deadline": start_time + time_out}
+                            if mode is not None
+                            else {}
+                        ),
                     )
+                    if mode is not None:
+                        mode.invalidate_nav()
+                        # 对中后重新检查交互，再按新图标决定是否前进。
+                        continue
 
                     # 对中过程中实时门控行走：目标在中央附近就走，偏离就停
                     if align_pos:
@@ -382,13 +470,17 @@ class NavigationMixin(SearchMixin):
                     ):
                         self.log_info(f"导航目标连续丢失超过 {nav_not_found_time_out} 秒，进入兜底搜索")
                         self.send_key_up("w")
-                        if observations is not None:
+                        if observations is not None or mode is not None:
                             self._walk_key_held = False
                         self.sleep(0.1)
                         nav_result = None
                         if allow_rotate_search:
                             self.log_info("旋转一圈搜索")
-                            nav_result = self.rotate_search(check_nav, between_delay=0.1)
+                            nav_result = self.rotate_search(check_search, between_delay=0.1)
+                            if mode is not None and (
+                                pending_target or mode.approaching or self.active_time() - start_time >= time_out
+                            ):
+                                continue
                             if nav_result:
                                 self.log_info("旋转搜索中重新找到导航")
                         else:
@@ -402,13 +494,19 @@ class NavigationMixin(SearchMixin):
                             self.log_info("按下中键后开始后退搜索")
                             self.send_key_down("s")  # 确认使用send_key：s为方向移动键，用于后退搜索
                             search_start = self.active_time()
-                            while self.active_time() - search_start < 10:
-                                if check_nav():
-                                    nav_result = True
-                                    self.log_info("后退搜索中重新找到导航")
-                                    break
-                                self.sleep(0.02)
-                            self.send_key_up("s")  # 确认使用send_key：释放方向键
+                            try:
+                                while self.active_time() - search_start < 10:
+                                    if check_search():
+                                        nav_result = True
+                                        self.log_info("后退搜索中重新找到导航")
+                                        break
+                                    self.sleep(0.02)
+                            finally:
+                                self.send_key_up("s")
+                            if mode is not None and (
+                                pending_target or mode.approaching or self.active_time() - start_time >= time_out
+                            ):
+                                continue
                         self.send_key_down("w")
                         self._walk_key_held = True
                         nav_missing_recovered = True
@@ -425,12 +523,16 @@ class NavigationMixin(SearchMixin):
                 self.sleep(0.005)
 
         finally:
-            if not run_bool:
-                self.log_info("导航结束，恢复奔跑模式")
-                self.press_key("ctrl", after_sleep=0.01)  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
-            if self._walk_key_held:
-                self.send_key_up("w")  # 确认使用send_key：释放方向键
-                self._walk_key_held = False
+            try:
+                if self._walk_key_held:
+                    self.send_key_up("w")
+                    self._walk_key_held = False
+                if not run_bool:
+                    self.log_info("导航结束，恢复奔跑模式")
+                    self.press_key("ctrl", after_sleep=0.01)
+            finally:
+                if mode is not None:
+                    mode.close()
 
     def align_ocr_or_find_target_to_center(
         self,
@@ -460,6 +562,7 @@ class NavigationMixin(SearchMixin):
         ocr_target_mover=None,
         move_profile=None,
         learning_session=None,
+        frame_target_detector=None,
     ):
         """将OCR识别或图像特征检测的目标对准屏幕中心（自动移动视角/鼠标）
 
@@ -488,6 +591,7 @@ class NavigationMixin(SearchMixin):
             max_iterations: 可选的底层循环次数上限；传入时覆盖 max_time * 2 的循环预算。
             ocr_target_detector: 可选单帧 OCR 检测器，返回已校正坐标的目标；None 表示等待，空列表表示识别失败。
             ocr_target_mover: 可选 OCR 目标移动函数，也用于短暂丢失后的目标跟踪；非 OCR 路径不使用。
+            frame_target_detector: 可选通用单帧检测来源，供导航并行模式复用本函数的对中和移动逻辑。
             move_profile: hud_direction 使用椭圆加速，world_projection 使用普通对中。
                 默认 Feature 使用 HUD，OCR/YOLO 使用普通对中；YOLO 始终使用普通对中。
 
@@ -553,7 +657,15 @@ class NavigationMixin(SearchMixin):
                 if learning_session is not None:
                     learning_session.disturb("scroll_changed")
                 self.do_scroll(1, 400)
-            if ocr and ocr_target_detector is not None:
+            if frame_target_detector is not None:
+                frame = self.next_frame()
+                result = frame_target_detector(frame)
+                if deadline is not None and self.active_time() >= deadline:
+                    break
+                if result is None:
+                    self.sleep(0.03)
+                    continue
+            elif ocr and ocr_target_detector is not None:
                 frame = self.next_frame()
                 if learning_session is not None:
                     learning_session.frame_acquired(frame)

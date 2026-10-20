@@ -79,8 +79,11 @@ class TestGatherRetransferLearning(unittest.TestCase):
 
         task.navigate_until_target.side_effect = navigate
         with deny_learning("post_battle"):
-            self.assertTrue(BattleTask._gather_retry_navigate(task))
+            self.assertFalse(BattleTask._gather_retry_navigate(task))
             self.assertFalse(learning_allowed())
+        task.wait_click_ocr.assert_not_called()
+        self.assertTrue(task.navigate_until_target.call_args.kwargs["nav_disappears_on_arrival"])
+        self.assertEqual(task.navigate_until_target.call_args.kwargs["detection_mode"], "parallel")
         record = self.store.get(context.fingerprint)
         self.assertEqual((record.motion.samples, record.motion.mean_dx, record.failure_count), (4, 100, 0))
         self.assertEqual(len(self.store.snapshot()), 1)
