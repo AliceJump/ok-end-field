@@ -1,0 +1,50 @@
+{
+  "panel": {
+    "zh_CN": {
+      "pattern": "珍馐产出概率"
+    },
+    "zh_TW": {
+      "pattern": "珍饈產出機率"
+    }
+  },
+  "ended": {
+    "zh_CN": {
+      "pattern": "经营结束"
+    },
+    "zh_TW": {
+      "pattern": "經營結束"
+    }
+  },
+  "continue_button": {
+    "zh_CN": {
+      "pattern": "继续"
+    },
+    "zh_TW": {
+      "pattern": "繼續"
+    }
+  },
+  "complete_button": {
+    "zh_CN": {
+      "pattern": "完成"
+    },
+    "zh_TW": {
+      "pattern": "完成"
+    }
+  },
+  "craftable": {
+    "zh_CN": {
+      "pattern": "可烹饪\\s*[：:]?\\s*(\\d+|∞)"
+    },
+    "zh_TW": {
+      "pattern": "可烹飪\\s*[：:]?\\s*(\\d+|∞)"
+    }
+  },
+  "countdown": {
+    "zh_CN": {
+      "pattern": "(?:\\d{1,2}\\s*[:：]\\s*\\d{2}|.*营业.*\\d+.*)"
+    },
+    "zh_TW": {
+      "pattern": "(?:\\d{1,2}\\s*[:：]\\s*\\d{2}|.*營業.*\\d+.*)"
+    }
+  }
+}

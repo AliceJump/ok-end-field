@@ -379,6 +379,28 @@ class LoginMixinModule(_LangModuleBaseT):
     """上次"""
 
 
+class RestaurantTaskModule(_LangModuleBaseT):
+    """RestaurantTask — OCR 语言节点（值取自 zh_CN）"""
+
+    panel: re.Pattern[str]
+    """珍馐产出概率"""
+
+    ended: re.Pattern[str]
+    """经营结束"""
+
+    continue_button: re.Pattern[str]
+    """继续"""
+
+    complete_button: re.Pattern[str]
+    """完成"""
+
+    craftable: re.Pattern[str]
+    """可烹饪\\s*[：:]?\\s*(\\d+|∞)"""
+
+    countdown: re.Pattern[str]
+    """(?:\\d{1,2}\\s*[:：]\\s*\\d{2}|.*营业.*\\d+.*)"""
+
+
 class TakeDeliveryTaskModule(_LangModuleBaseT):
     """TakeDeliveryTask — OCR 语言节点（值取自 zh_CN）"""
 
@@ -740,6 +762,7 @@ class _LangAccessorTyped:
     game_flow_mixin: GameFlowMixinModule
     liaison_mixin: LiaisonMixinModule
     login_mixin: LoginMixinModule
+    RestaurantTask: RestaurantTaskModule
     TakeDeliveryTask: TakeDeliveryTaskModule
     WarehouseTransferTask: WarehouseTransferTaskModule
     world_map: WorldMapModule
