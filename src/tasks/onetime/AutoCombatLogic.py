@@ -1,7 +1,6 @@
 import traceback
 
 from src.config import config as app_config
-
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
     KEY_BATTLE_INITIAL_WAIT,
@@ -472,9 +471,7 @@ class AutoCombatLogic:
         if now - last_warn >= self._LOW_RES_WARN_INTERVAL:
             task._last_low_res_warn_time = now
             min_w, min_h = app_config["supported_resolution"]["min_size"]
-            task.log_warning(
-                f"低于{min_w}x{min_h}自动战斗匹配不良，请切换{min_w}x{min_h}及以上分辨率", notify=True
-            )
+            task.log_warning(f"低于{min_w}x{min_h}自动战斗匹配不良，请切换{min_w}x{min_h}及以上分辨率", notify=True)
 
     def run(self, start_sleep: float | None = None, no_battle: bool = False, deadline: float | None = None):
         self._last_exit_check_time = 0

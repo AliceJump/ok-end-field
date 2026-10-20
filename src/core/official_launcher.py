@@ -18,13 +18,13 @@ import psutil
 from ok.util.file import ensure_dir_for_file, read_json_file, write_json_file
 
 from src.core.launcher_cleanup import LauncherCleanup
+from src.core.paths import config_path
 from src.core.temporary_parent_recovery import (
     forget_owned_parent,
     note_game_started,
     recover_owned_parents,
     register_owned_parent,
 )
-from src.core.paths import config_path
 
 OFFICIAL_SIGNERS = {
     "2B366F397E64A9494A553B70004E8CA1AAE02B9D",
@@ -310,7 +310,6 @@ def prepare_launcher(kernel, logger, game_path: str):
             return parent
         time.sleep(0.25)
     raise TimeoutError("Official Games.exe did not become ready within 30 seconds")
-
 
 
 def find_official_games_exe(game_path: str, logger) -> Path:

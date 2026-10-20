@@ -204,9 +204,7 @@ class RuntimeMixin:
         min_size = app_config.get("supported_resolution", {}).get("min_size", (1600, 900))
         min_w, min_h = min_size
         if width < min_w or height < min_h:
-            self.log_info(
-                f"当前分辨率 {width}x{height} 低于要求最小值 {min_w}x{min_h}，不保证正常运行", notify=True
-            )
+            self.log_info(f"当前分辨率 {width}x{height} 低于要求最小值 {min_w}x{min_h}，不保证正常运行", notify=True)
         RuntimeMixin._resolution_warned = True
 
     def resolution_scale(self) -> float:

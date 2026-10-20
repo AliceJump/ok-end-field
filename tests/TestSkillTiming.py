@@ -802,8 +802,10 @@ class TestTimedCombat(unittest.TestCase):
         task.ults = {"1"}
         task.ult_frozen_seconds = 2.0
         logic = TimedCombatLogic(
-            task, load_skill_timings(),
-            clock=lambda: task.now, wall_clock=lambda: task.now,
+            task,
+            load_skill_timings(),
+            clock=lambda: task.now,
+            wall_clock=lambda: task.now,
         )
         logic.team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
         logic.order = []
