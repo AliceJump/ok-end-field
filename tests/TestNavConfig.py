@@ -37,7 +37,6 @@ from src.core.GridNavConfig import (
 )
 from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
-    DEFAULT_NAV_YAW_PER_PIXEL,
     DEFAULT_SCALE_CONSTANT,
     NAV_CONFIG_DESCRIPTION,
     NAV_CONFIG_GROUP_KEY,
@@ -50,7 +49,6 @@ from src.core.NavConfig import (
     NAV_SCALE_CONSTANT_KEY,
     NAV_SCALE_SUFFIX,
     NAV_WS_ACCOUNT_KEY,
-    NAV_YAW_PER_PIXEL_KEY,
     nav_profile_for_width,
     tier_for_width,
 )
@@ -189,14 +187,10 @@ class TestNavConfigShape(unittest.TestCase):
         self.assertIn(NAV_CONTENT_KEY, DEFAULT_NAV_CONFIG)
         self.assertIn(NAV_WS_ACCOUNT_KEY, DEFAULT_NAV_CONFIG)
 
-    def test_yaw_per_pixel_is_registered_in_localization_group(self):
-        self.assertEqual(
-            DEFAULT_NAV_CONFIG[NAV_YAW_PER_PIXEL_KEY],
-            DEFAULT_NAV_YAW_PER_PIXEL,
-        )
-        self.assertIn(NAV_YAW_PER_PIXEL_KEY, NAV_CONFIG_DESCRIPTION)
+    def test_manual_yaw_ratio_is_not_a_nav_config_key(self):
+        self.assertNotIn("yaw_per_pixel(度/像素)", DEFAULT_NAV_CONFIG)
         localization_keys = NAV_CONFIG_TYPE[NAV_CONFIG_GROUP_KEY]["sub_configs"][NAV_CONFIG_GROUP_LOCALIZATION]
-        self.assertIn(NAV_YAW_PER_PIXEL_KEY, localization_keys)
+        self.assertNotIn("yaw_per_pixel(度/像素)", localization_keys)
 
     def test_registered_as_global_config(self):
         from src.core.global_config_store import GLOBAL_CONFIG_OPTIONS, get_all_visible_configs

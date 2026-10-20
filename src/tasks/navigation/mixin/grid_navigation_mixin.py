@@ -3051,7 +3051,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             self._set_grid_walking(False)
             return
         per_px = self.pose_yaw_per_pixel()
-        if per_px <= 0:
+        if per_px == 0:
             self.log_warning("定位接口未提供有效旋转比例，无法移动转向")
             self._set_grid_walking(False)
             return

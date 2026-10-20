@@ -9,12 +9,10 @@
 """
 
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
-from src.localization.minimap_heading_mixin import (
-    CONFIG_MIN_SCORE,
-    CONFIG_YAW_PER_PIXEL,
-    MinimapHeadingMixin,
-)
+from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE, MinimapHeadingMixin
 
 
 class _FakeTurnTask(MinimapHeadingMixin):
@@ -31,9 +29,10 @@ class _FakeTurnTask(MinimapHeadingMixin):
         facing_follows_camera=False,
     ):
         self.config = {
-            CONFIG_YAW_PER_PIXEL: per_px,
             CONFIG_MIN_SCORE: 0.6,
         }
+        self.width = 1920
+        self.per_px = float(per_px)
         self.facing = float(facing)  # 角色朝向（方位角）
         self.camera = float(facing)  # 视角朝向
         self.k_error = float(k_error)  # 实测系数 = 配置系数 x k_error（模拟标定偏差）
@@ -47,6 +46,9 @@ class _FakeTurnTask(MinimapHeadingMixin):
         self._init_minimap_heading_mixin()
 
     # --- 输入/环境桩 ---
+    def yaw_per_pixel(self):
+        return self.per_px
+
     def input_mode(self):
         return self._input_mode
 
@@ -58,7 +60,7 @@ class _FakeTurnTask(MinimapHeadingMixin):
 
     def active_and_send_mouse_delta(self, dx=0, dy=0, steps=1, delay=0):
         self.sent.append(int(dx))
-        self.camera = (self.camera + dx * self.config[CONFIG_YAW_PER_PIXEL] * self.k_error) % 360.0
+        self.camera = (self.camera + dx * self.yaw_per_pixel() * self.k_error) % 360.0
         if self.facing_follows_camera:
             self.facing = self.camera
 
@@ -97,6 +99,61 @@ class TestReadHeading(unittest.TestCase):
         bearing, score = _FakeTurnTask(arrow_fail=True).read_heading()
         self.assertIsNone(bearing)
         self.assertAlmostEqual(score, 0.0, delta=1e-6)
+
+
+class TestCameraYawRatio(unittest.TestCase):
+    """覆盖摄像机水平比率的读取、缓存和失败边界。"""
+
+    def _task(self):
+        task = MinimapHeadingMixin()
+        task.width = 1920
+        task.logs = []
+        task.executor = SimpleNamespace(
+            device_manager=SimpleNamespace(
+                hwnd_window=SimpleNamespace(exe_full_path=r"D:\Games\Endfield Game\Endfield.exe")
+            )
+        )
+        task._init_minimap_heading_mixin()
+        task.log_info = lambda msg, notify=False: task.logs.append(str(msg))
+        task.log_warning = lambda msg, notify=False: task.logs.append("WARN " + str(msg))
+        return task
+
+    def test_uses_build_verified_camera_ratio_and_caches_it(self):
+        task = self._task()
+        with patch(
+            "src.localization.minimap_heading_mixin.get_default_camera_yaw_ratio",
+            return_value=0.084375,
+        ) as get_ratio:
+            self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
+            self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
+
+        get_ratio.assert_called_once_with(1920, game_dir=r"D:\Games\Endfield Game")
+        self.assertTrue(any("0.084375" in msg for msg in task.logs))
+
+    def test_rejects_unverifiable_camera_ratio(self):
+        task = self._task()
+        with patch(
+            "src.localization.minimap_heading_mixin.get_default_camera_yaw_ratio",
+            side_effect=ValueError("changed build"),
+        ):
+            self.assertEqual(task.yaw_per_pixel(), 0.0)
+
+        self.assertTrue(any("不可用" in msg for msg in task.logs))
+
+    def test_rejects_missing_game_window_path(self):
+        task = self._task()
+        task.executor = None
+
+        self.assertEqual(task.yaw_per_pixel(), 0.0)
+        self.assertTrue(any("安装目录" in msg for msg in task.logs))
+
+    def test_accepts_signed_reverse_ratio(self):
+        task = self._task()
+        with patch(
+            "src.localization.minimap_heading_mixin.get_default_camera_yaw_ratio",
+            return_value=-0.084375,
+        ):
+            self.assertAlmostEqual(task.yaw_per_pixel(), -0.084375)
 
 
 class TestTurnToBearing(unittest.TestCase):
@@ -139,6 +196,15 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertGreater(task.sent[0], 0)  # 鼠标右移 = 方位角增大
         self.assertAlmostEqual(res["heading"], 10.0, delta=1.0)
 
+    def test_reverse_ratio_uses_opposite_mouse_direction(self):
+        task = _FakeTurnTask(facing=0.0, per_px=-0.084375)
+
+        res = task.turn_to_bearing(90.0, tolerance=5.0)
+
+        self.assertTrue(res["ok"], res)
+        self.assertLess(task.sent[0], 0)
+        self.assertAlmostEqual(res["heading"], 90.0, delta=1.0)
+
     def test_adapts_to_ten_times_lower_coefficient(self):
         """首轮实测比例偏小时，下一轮必须改用实测值完成补偿。"""
         task = _FakeTurnTask(facing=0.0, k_error=0.1)
@@ -164,7 +230,7 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertFalse(res["one_shot"])
         self.assertEqual(task.w_presses, 0)
         self.assertEqual(task.sent, [])
-        self.assertTrue(any("yaw_per_pixel" in m for m in task.logs))
+        self.assertTrue(any("摄像机水平比率不可用" in m for m in task.logs))
 
     def test_refuses_in_background_mode(self):
         """后台模式鼠标位移会被静默丢弃：提前拦下，别做无用的 W 按键。"""
@@ -274,16 +340,16 @@ class TestOneShotAndDiagnostics(unittest.TestCase):
         self.assertEqual(task.w_presses, 2)
 
     def test_hints_when_measured_ratio_much_lower(self):
-        """实测系数明显偏小 = 位移可能被截断 / 配置系数偏大 -> 要提示怎么改。"""
+        """实测系数明显偏小时要提示位移可能被截断或计数传递不一致。"""
         task = _FakeTurnTask(facing=0.0, k_error=0.5)
         task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=1)
-        self.assertTrue(any("明显低于配置" in m for m in task.logs), task.logs)
+        self.assertTrue(any("明显低于理论值" in m for m in task.logs), task.logs)
 
     def test_hints_when_measured_ratio_much_higher(self):
-        """实测系数明显偏大 = 配置系数偏小 -> 改成实测值就能一次到位。"""
+        """实测系数明显偏大时要提示计数传递可能不是 1:1。"""
         task = _FakeTurnTask(facing=0.0, k_error=2.0)
         task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=1)
-        self.assertTrue(any("明显高于配置" in m for m in task.logs), task.logs)
+        self.assertTrue(any("明显高于理论值" in m for m in task.logs), task.logs)
 
     def test_no_hint_for_tiny_displacement(self):
         """位移太小（<40px）时实测比例被量化噪声主导，不据此提示。"""

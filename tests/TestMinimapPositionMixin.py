@@ -18,8 +18,7 @@ from unittest.mock import Mock, patch
 import cv2
 import numpy as np
 
-from src.core.NavConfig import DEFAULT_NAV_CONFIG, NAV_SCALE_CONSTANT_KEY, NAV_YAW_PER_PIXEL_KEY
-from src.localization.minimap_heading_mixin import CONFIG_YAW_PER_PIXEL
+from src.core.NavConfig import DEFAULT_NAV_CONFIG, NAV_SCALE_CONSTANT_KEY
 from src.localization.minimap_position_mixin import (
     MinimapPositionMixin,
     parse_map_to_world,
@@ -126,17 +125,6 @@ class TestMinimapPositionMixin(unittest.TestCase):
     def setUp(self):
         self.task = _FakeTask()
         self.frame = _frame_at(0)
-
-    def test_yaw_per_pixel_prefers_global_nav_config(self):
-        self.task.nav_config[NAV_YAW_PER_PIXEL_KEY] = 0.123
-        self.assertAlmostEqual(self.task.yaw_per_pixel(), 0.123)
-
-        self.task.nav_config[NAV_YAW_PER_PIXEL_KEY] = -0.123
-        self.assertAlmostEqual(self.task.yaw_per_pixel(), 0.123)
-
-        self.task.nav_config[NAV_YAW_PER_PIXEL_KEY] = None
-        self.task.config[CONFIG_YAW_PER_PIXEL] = 0.456
-        self.assertAlmostEqual(self.task.yaw_per_pixel(), 0.456)
 
     def test_resolve_ws_cred_falls_back_to_executor_current_task(self):
         self.task.current_account_id = ""

@@ -1471,6 +1471,18 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(all(self.task.rotation_w_held))
         self.assertFalse(self.task.turns)
 
+    def test_navigate_turns_while_walking_with_reverse_ratio(self):
+        self.task.config["移动转向最小目标距离(米)"] = 0.0
+        self.task.heading = 60.0
+        self.task.yaw_per_pixel = lambda: -0.07125
+
+        result = self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+
+        self.assertTrue(result)
+        self.assertTrue(self.task.rotations)
+        self.assertTrue(all(self.task.rotation_w_held))
+        self.assertFalse(self.task.turns)
+
     def test_large_angle_uses_stationary_turn(self):
         self.task.heading = 0.0
         result = self.task.navigate_grid_to((4.5, 0.5), map_id="test")

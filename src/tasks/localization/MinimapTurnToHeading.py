@@ -19,14 +19,12 @@ from src.localization.minimap_heading_mixin import (
     CONFIG_MOUSE_CHUNK_DELAY,
     CONFIG_TURN_SETTLE,
     CONFIG_W_HOLD,
-    CONFIG_YAW_PER_PIXEL,
     DEFAULT_ANGLE_REFRESH,
     DEFAULT_MIN_SCORE,
     DEFAULT_MOUSE_CHUNK,
     DEFAULT_MOUSE_CHUNK_DELAY,
     DEFAULT_TURN_SETTLE,
     DEFAULT_W_HOLD,
-    DEFAULT_YAW_PER_PIXEL,
     MinimapHeadingMixin,
 )
 
@@ -37,7 +35,6 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
     requires_foreground = True  # 转视角/按 W 需要前台
 
     # 旋转参数（可通过任务配置覆盖，集中在此处便于统一调整）
-    YAW_PER_PIXEL = DEFAULT_YAW_PER_PIXEL  # 度/像素（鼠标右移=方位角增大），由标定任务实测
     W_HOLD_TIME = DEFAULT_W_HOLD  # 按 W 让角色转身的长按时长（秒）
     TURN_SETTLE_DELAY = DEFAULT_TURN_SETTLE  # 发完鼠标位移后等视角转完（秒）
     ANGLE_REFRESH_DELAY = DEFAULT_ANGLE_REFRESH  # 按 W 后等画面刷新再读朝向（秒）
@@ -66,7 +63,6 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
             "目标角度列表(逗号分隔)": self.TARGET_LIST,
             "误差容差(度)": self.TOLERANCE,
             "最大轮数": self.MAX_ROUNDS,
-            CONFIG_YAW_PER_PIXEL: self.YAW_PER_PIXEL,
             CONFIG_W_HOLD: self.W_HOLD_TIME,
             CONFIG_TURN_SETTLE: self.TURN_SETTLE_DELAY,
             CONFIG_ANGLE_REFRESH: self.ANGLE_REFRESH_DELAY,
@@ -79,8 +75,6 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
             "目标角度列表(逗号分隔)": "一次转多个目标（如 0, 90, 180, 270），每个都实测；留空则只用「目标方位角」",
             "误差容差(度)": "最终朝向与目标的允许误差，超过判 FAIL",
             "最大轮数": "每个目标最多转几轮（每轮都会按一次 W，角色会前移一小段）",
-            CONFIG_YAW_PER_PIXEL: "转视角系数（度/像素，正数=鼠标右移方位角增大）；"
-            "由「鼠标视角旋转系数标定」任务实测，取该任务 k 的绝对值",
             CONFIG_W_HOLD: "按 W 让角色转身时的长按时长；太短角色不会真正转身",
             CONFIG_TURN_SETTLE: "发完鼠标位移后、按 W 之前等待视角转完的时间",
             CONFIG_ANGLE_REFRESH: "按 W 之后等待画面刷新再读朝向的时间",
@@ -107,10 +101,13 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
         per_px = self.yaw_per_pixel()
 
         self.log_info(
-            f"参数: 目标={targets}  容差=±{tolerance:.1f}°  最大轮数={max_rounds}  yaw_per_pixel={per_px}°/px"
+            f"参数: 目标={targets}  容差=±{tolerance:.1f}°  最大轮数={max_rounds}  摄像机水平比率={per_px}°/计数"
         )
-        if per_px <= 0:
-            self.log_warning("yaw_per_pixel 必须为正数，请先跑「鼠标视角旋转系数标定」任务", notify=True)
+        if per_px == 0:
+            self.log_warning(
+                "无法读取经过构建核验的摄像机水平比率，请确认游戏窗口已连接且安装目录可访问",
+                notify=True,
+            )
             return
 
         results = []

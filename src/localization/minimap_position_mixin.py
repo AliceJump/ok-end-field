@@ -75,7 +75,6 @@ from src.core.NavConfig import (
     NAV_SCALE_CONSTANT_KEY,
     NAV_SCALE_SUFFIX,
     NAV_WS_ACCOUNT_KEY,
-    NAV_YAW_PER_PIXEL_KEY,
     NavProfile,
     nav_profile_for_width,
 )
@@ -270,20 +269,6 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         except Exception as e:  # 该对象是框架 Config，异常类型不可控
             self.log_warning(f"读取全局「{NAV_CONFIG_NAME}」失败: {e}")
             return None
-
-    def yaw_per_pixel(self) -> float:
-        """正式导航转向优先使用全局 Nav Config 的标定系数。"""
-        nav_config = self._nav_config()
-        if nav_config is not None:
-            raw = nav_config.get(NAV_YAW_PER_PIXEL_KEY)
-            if raw not in (None, ""):
-                try:
-                    value = abs(float(raw))
-                except (TypeError, ValueError):
-                    value = 0.0
-                if value > 0:
-                    return value
-        return super().yaw_per_pixel()
 
     def _nav_profile(self) -> NavProfile | None:
         """按**当前画面宽度**从全局「导航配置」选出比例尺与轴映射。

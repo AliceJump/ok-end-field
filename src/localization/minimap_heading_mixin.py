@@ -24,13 +24,19 @@
             if res["ok"]:
                 self.log_info(f"到位: {res['heading']:.1f}°（{res['rounds']} 轮）")
 
-旋转系数 ``yaw_per_pixel``（度/像素）由「鼠标视角旋转系数标定」任务实测得到，
-恒为正（鼠标右移 -> 方位角增大）；``MouseRotationCalibration`` 报出来的 k 是
-"箭头角/像素"且恒为负，取绝对值即可。
+水平旋转系数由 :func:`src.core.camera_input_config.get_default_camera_yaw_ratio`
+按当前画面宽度和游戏安装目录计算，不再读取任务或全局导航配置里的手工标定值。
+该函数会校验客户端和摄像机资源；结果按 ``(画面宽度, 安装目录)`` 缓存在任务实例上，
+避免每次转向都重复读取大文件哈希。默认方向下鼠标右移使方位角增大；游戏反向设置会让
+比率带负号，闭环除法随之翻转鼠标方向。
 """
 
 from __future__ import annotations
 
+import math
+from pathlib import Path
+
+from src.core.camera_input_config import get_default_camera_yaw_ratio
 from src.localization.minimap_odometry import angle_delta, arrow_angle_to_bearing
 
 __all__ = [
@@ -40,18 +46,15 @@ __all__ = [
     "CONFIG_MOUSE_CHUNK_DELAY",
     "CONFIG_TURN_SETTLE",
     "CONFIG_W_HOLD",
-    "CONFIG_YAW_PER_PIXEL",
     "DEFAULT_ANGLE_REFRESH",
     "DEFAULT_MIN_SCORE",
     "DEFAULT_MOUSE_CHUNK",
     "DEFAULT_MOUSE_CHUNK_DELAY",
     "DEFAULT_TURN_SETTLE",
     "DEFAULT_W_HOLD",
-    "DEFAULT_YAW_PER_PIXEL",
     "MinimapHeadingMixin",
 ]
 
-CONFIG_YAW_PER_PIXEL = "yaw_per_pixel(度/像素)"
 CONFIG_W_HOLD = "W长按时间(秒)"
 CONFIG_TURN_SETTLE = "转向后等待(秒)"
 CONFIG_ANGLE_REFRESH = "角度刷新等待(秒)"
@@ -59,8 +62,6 @@ CONFIG_MIN_SCORE = "朝向最低分数"
 CONFIG_MOUSE_CHUNK = "单次鼠标位移上限(像素)"
 CONFIG_MOUSE_CHUNK_DELAY = "分段间隔(秒)"
 
-#: 旋转系数实测值（2026-09-05 标定：yaw_per_pixel=-0.0675，std=0.0025；取绝对值）
-DEFAULT_YAW_PER_PIXEL = 0.07125
 DEFAULT_W_HOLD = 0.3
 DEFAULT_TURN_SETTLE = 0.3
 DEFAULT_ANGLE_REFRESH = 0.1
@@ -85,7 +86,6 @@ class MinimapHeadingMixin:
     def minimap_heading_default_config() -> dict:
         """返回朝向检测和转向相关配置的默认值。"""
         return {
-            CONFIG_YAW_PER_PIXEL: DEFAULT_YAW_PER_PIXEL,
             CONFIG_W_HOLD: DEFAULT_W_HOLD,
             CONFIG_TURN_SETTLE: DEFAULT_TURN_SETTLE,
             CONFIG_ANGLE_REFRESH: DEFAULT_ANGLE_REFRESH,
@@ -98,8 +98,6 @@ class MinimapHeadingMixin:
     def minimap_heading_config_description() -> dict:
         """返回朝向配置键的用户说明，供任务界面直接合并。"""
         return {
-            CONFIG_YAW_PER_PIXEL: "转视角系数（度/像素，正数=鼠标右移方位角增大）；"
-            "由「鼠标视角旋转系数标定」任务实测，取该任务 k 的绝对值",
             CONFIG_W_HOLD: "按 W 让角色转身时的长按时长；太短角色不会真正转身",
             CONFIG_TURN_SETTLE: "发完鼠标位移后、按 W 之前等待视角转完的时间",
             CONFIG_ANGLE_REFRESH: "按 W 之后等待画面刷新再读朝向的时间",
@@ -133,6 +131,74 @@ class MinimapHeadingMixin:
     def _init_minimap_heading_mixin(self):
         """初始化朝向状态；必须在任务 ``__init__`` 中调用且不启动任何线程。"""
         self._last_turn_result = None
+        self._camera_yaw_ratio_cache = None
+        self._camera_yaw_ratio_warning_key = None
+
+    def _camera_input_game_dir(self) -> str | None:
+        """从当前游戏窗口解析安装目录，供摄像机配置校验使用。"""
+        executor = getattr(self, "executor", None)
+        device_manager = getattr(executor, "device_manager", None)
+        candidates = []
+
+        hwnd_window = getattr(device_manager, "hwnd_window", None)
+        candidates.append(getattr(hwnd_window, "exe_full_path", None))
+
+        device_config = getattr(device_manager, "config", None)
+        getter = getattr(device_config, "get", None)
+        if callable(getter):
+            candidates.append(getter("pc_full_path"))
+
+        devices = getattr(device_manager, "device_dict", None)
+        if isinstance(devices, dict):
+            for device in devices.values():
+                if isinstance(device, dict) and device.get("device") == "windows":
+                    candidates.append(device.get("full_path"))
+
+        for candidate in candidates:
+            raw = str(candidate or "").strip()
+            if not raw:
+                continue
+            path = Path(raw)
+            if path.name.casefold() == "endfield.exe":
+                return str(path.parent)
+        return None
+
+    def _camera_yaw_per_pixel(self) -> float:
+        """读取并缓存构建核验的摄像机水平比率。"""
+        width = int(getattr(self, "width", 0) or 0)
+        game_dir = self._camera_input_game_dir()
+        key = (width, game_dir)
+        cached = getattr(self, "_camera_yaw_ratio_cache", None)
+        if cached is not None and cached[0] == key:
+            return float(cached[1])
+
+        reason = None
+        value = 0.0
+        if width <= 0:
+            reason = "当前画面宽度未知"
+        elif not game_dir:
+            reason = "无法从游戏窗口解析安装目录"
+        else:
+            try:
+                value = float(get_default_camera_yaw_ratio(width, game_dir=game_dir))
+            except (OSError, ValueError) as exc:
+                reason = f"客户端、资源或保存设置未通过核验: {exc}"
+            except Exception as exc:
+                reason = f"读取失败: {exc}"
+
+        if not math.isfinite(value) or value == 0:
+            value = 0.0
+            if reason is None:
+                reason = "计算结果不是有限非零值"
+            warning_key = (key, reason)
+            if getattr(self, "_camera_yaw_ratio_warning_key", None) != warning_key:
+                self.log_warning(f"摄像机水平比率不可用：{reason}")
+                self._camera_yaw_ratio_warning_key = warning_key
+        else:
+            self.log_info(f"摄像机水平比率={value:.6f}°/收到的相对X计数（画面宽 {width}px，安装目录 {game_dir}）")
+
+        self._camera_yaw_ratio_cache = (key, value)
+        return value
 
     # ------------------------------------------------------------------ #
     # 读朝向
@@ -169,8 +235,8 @@ class MinimapHeadingMixin:
         return bearing, score
 
     def yaw_per_pixel(self) -> float:
-        """当前旋转系数（度/像素，正数=鼠标右移方位角增大）。"""
-        return self._cfg_float(CONFIG_YAW_PER_PIXEL, DEFAULT_YAW_PER_PIXEL)
+        """当前摄像机水平比率（度/收到的相对X计数）；符号跟随游戏反向设置。"""
+        return self._camera_yaw_per_pixel()
 
     def heading_min_score(self) -> float:
         """返回当前配置的朝向最低置信度。"""
@@ -236,11 +302,8 @@ class MinimapHeadingMixin:
         self._last_turn_result = result
 
         per_px = self.yaw_per_pixel()
-        if per_px <= 0:
-            self.log_warning(
-                f"{CONFIG_YAW_PER_PIXEL} 必须为正数（鼠标右移=方位角增大），当前 {per_px}；"
-                "请用「鼠标视角旋转系数标定」任务实测后再填"
-            )
+        if per_px == 0:
+            self.log_warning("摄像机水平比率不可用，无法转向", notify=True)
             return result
         if not self._can_turn():
             return result
@@ -327,8 +390,8 @@ class MinimapHeadingMixin:
         self._last_turn_result = result
 
         per_px = self.yaw_per_pixel()
-        if per_px <= 0:
-            self.log_warning(f"{CONFIG_YAW_PER_PIXEL} 必须为正数，当前 {per_px}；无法按世界坐标对准滑索")
+        if per_px == 0:
+            self.log_warning("摄像机水平比率不可用，无法按世界坐标对准滑索", notify=True)
             return result
         if not self._can_turn():
             return result
@@ -405,11 +468,13 @@ class MinimapHeadingMixin:
         """用本轮实测比例修正下一轮；极端异常值不参与自适应。"""
         if ratio is None or abs(int(dx)) < RATIO_HINT_MIN_DX:
             return configured
+        direction = -1.0 if configured < 0 else 1.0
+        magnitude = abs(configured)
         measured = abs(float(ratio))
-        lower = configured * 0.05
-        upper = configured * 5.0
+        lower = magnitude * 0.05
+        upper = magnitude * 5.0
         if lower <= measured <= upper:
-            return measured
+            return direction * measured
         return configured
 
     def _warn_if_ratio_off(self, ratio, configured: float, dx: int) -> None:
@@ -421,21 +486,21 @@ class MinimapHeadingMixin:
         - 实测明显偏大：配置系数偏小，按实测值更新后就能一次到位。
         小位移的比例被量化噪声主导，不作数。
         """
-        if ratio is None or configured <= 0 or abs(ratio) < 1e-9:
+        if ratio is None or configured == 0 or abs(ratio) < 1e-9:
             return
         if abs(dx) < RATIO_HINT_MIN_DX:
             return
-        rel = abs(ratio) / configured
+        rel = abs(ratio) / abs(configured)
         if rel < 1.0 - RATIO_HINT_TOLERANCE:
             self.log_warning(
-                f"实测系数 {abs(ratio):.5f}°/px 明显低于配置 {configured:.5f}°/px："
+                f"实测系数 {abs(ratio):.5f}°/计数 明显低于理论值 {abs(configured):.5f}°/计数："
                 "位移可能被游戏截断（调小「单次鼠标位移上限」或加大「分段间隔」），"
-                "或配置系数偏大；修正后即可一次到位"
+                "或游戏收到的相对计数与发送 dx 不是 1:1"
             )
         elif rel > 1.0 + RATIO_HINT_TOLERANCE:
             self.log_warning(
-                f"实测系数 {abs(ratio):.5f}°/px 明显高于配置 {configured:.5f}°/px："
-                f"配置系数偏小，改成实测值后即可一次到位"
+                f"实测系数 {abs(ratio):.5f}°/计数 明显高于理论值 {abs(configured):.5f}°/计数："
+                "游戏收到的相对计数可能大于发送 dx；本轮已用实测值补正"
             )
 
     # ------------------------------------------------------------------ #
