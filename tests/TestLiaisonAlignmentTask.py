@@ -155,7 +155,11 @@ class TestLiaisonAlignmentTask(unittest.TestCase):
             self.assertTrue(LiaisonAlignmentTestTask._align_once(task))
             records = list(fixtures.store.snapshot().values())
             self.assertEqual(len(records), 1)
-            self.assertEqual(records[0].motion.samples, cycle + 1)
+            # The fixture still requests a full visual correction after replay;
+            # retain that fourth acquisition but reject its doubled movement.
+            self.assertEqual(len(records[0].observations), cycle + 1)
+            self.assertEqual(records[0].motion.samples, min(cycle + 1, 3))
+            self.assertEqual(records[0].observations[-1].outlier, cycle == 3)
             self.assertEqual(task._liaison_walk_attempts, 1)
             self.assertTrue(task._liaison_hall_confirmed)
         replays = [

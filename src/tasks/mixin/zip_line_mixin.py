@@ -27,6 +27,7 @@ from src.tasks.mixin.zip_line_motion_cache import build_zip_line_route_fingerpri
 from src.tasks.mixin.zip_line_yaw_cache import (
     load_arrow_turn_motion,
     record_arrow_turn_motion,
+    yaw_environment,
 )
 
 _ZIP_LINE_ICON_TEMPLATE_ROWS = (
@@ -771,7 +772,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _wait_zip_line_prefeed_settled(self, start_reading, prefeed_dx):
         """Wait until replayed horizontal motion starts and then the arrow settles again."""
-        expected_yaw_delta = abs(float(prefeed_dx) * self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+        environment = yaw_environment(self.width, self.height, start_reading[0] if start_reading else 0)
+        expected_yaw_delta = abs(float(prefeed_dx) * environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE))
         if expected_yaw_delta < 1.0:
             self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
             return True
@@ -852,7 +854,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return current_yaw, True
 
         total_dx = 0
-        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw) if learning_allowed() else None
+        scope = vars(self).get("_initial_alignment_scope")
+        scroll = scope.session.environment.scroll if scope is not None else False
+        environment = yaw_environment(width, height, initial_yaw, scroll=scroll)
+        yaw_per_mouse = environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw, environment=environment) if learning_allowed() else None
         if hint is not None:
             hint_dx, hint_samples = hint
             if self._send_zip_line_yaw_delta(hint_dx):
@@ -889,7 +895,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 -self._ZIP_LINE_ARROW_MAX_STEP_DEGREES,
                 min(self._ZIP_LINE_ARROW_MAX_STEP_DEGREES, desired_delta),
             )
-            move_dx = round(step_degrees / self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+            move_dx = round(step_degrees / yaw_per_mouse)
             if move_dx == 0 or not self._send_zip_line_yaw_delta(move_dx):
                 break
 
@@ -919,8 +925,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return target_yaw, False
 
         if total_dx:
-            if learning_allowed():
-                record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx)
+            if learning_allowed() and environment == yaw_environment(width, height, initial_yaw, scroll=scroll):
+                record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx, environment=environment)
         self.log_info(
             f"[zipline-yaw] normalized {initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
         )
@@ -1119,6 +1125,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 if context is not None:
                     reading = self._read_zip_line_settled_arrow_angle()
                     verified_yaw = reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE
+                    if verified_yaw:
+                        self._learning_start_yaw = float(reading[0]) % 360.0
                     context = replace(context, start_yaw_bucket=yaw_bucket(reading[0]) if verified_yaw else None)
                     confidence = "high" if verified_yaw else "medium"
                     if target_learning_epoch is not None and target_learning_epoch != learning_epoch():

@@ -53,6 +53,46 @@ def _read_settings(profile: dict, axis: str) -> tuple[float, bool]:
     return speed, bool(reverse)
 
 
+def read_saved_camera_settings():
+    """Read each saved field independently; use the verified local baseline when unavailable.
+
+    This snapshot reader does not claim an installation audit or live-state read.
+    The defaults were read on the user's environment: X/Y speed 0, reverse off.
+    """
+    values = {"speed_x": 0.0, "speed_y": 0.0, "reverse_x": False, "reverse_y": False}
+    fallback = []
+    try:
+        import winreg
+
+        profile = json.loads(_PROFILE_PATH.read_text(encoding="utf-8"))
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, profile["registry_path"], 0, winreg.KEY_READ) as key:
+            for axis in ("x", "y"):
+                for kind in ("speed", "reverse"):
+                    name = f"{kind}_{axis}"
+                    try:
+                        values[name] = _read_saved_camera_field(key, profile["axes"][axis], kind)
+                    except (OSError, ValueError, TypeError, OverflowError, struct.error):
+                        fallback.append(name)
+    except (ImportError, OSError, ValueError, KeyError, TypeError):
+        fallback = list(values)
+    return values, tuple(fallback)
+
+
+def _read_saved_camera_field(key, config, kind):
+    import winreg
+
+    raw, value_type = winreg.QueryValueEx(key, config[f"{kind}_key"])
+    if value_type != winreg.REG_DWORD:
+        raise ValueError("Expected a DWORD camera setting")
+    if kind == "speed":
+        value = struct.unpack("<f", struct.pack("<I", raw))[0]
+        _evaluate_curve(config["speed_curve"], value)
+        return value
+    if raw not in (0, 1):
+        raise ValueError("Invalid reverse setting")
+    return bool(raw)
+
+
 def _evaluate_curve(keys: list[dict], value: float) -> float:
     """Evaluate the exported nonweighted Unity Hermite curve inside its range."""
     if len(keys) < 2 or any(key["weightedMode"] != 0 for key in keys):

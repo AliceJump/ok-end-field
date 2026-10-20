@@ -11,6 +11,9 @@ from dataclasses import dataclass, replace
 from hashlib import sha256
 from itertools import combinations
 
+from src.core.learning.environment import environment_for_context
+from src.core.learning.legacy import legacy_hint, ready_hint
+from src.core.learning.lookup import combine_records, matching_profile, projected_record
 from src.core.learning.models import (
     CONTEXT_VERSION,
     CaptureProfile,
@@ -59,6 +62,11 @@ def trim_routes(records, *, max_routes=128):
 
 def _conflict_marker(context):
     shared = context.shared_fingerprint
+    if shared:
+        values = json.loads(shared)
+        values["capture_profile"].pop("width")
+        values["capture_profile"].pop("height")
+        shared = json.dumps(values, sort_keys=True, ensure_ascii=False)
     return "reject-shared:" + sha256(shared.encode("utf-8")).hexdigest() if shared else None
 
 
@@ -98,6 +106,23 @@ class RouteLearning:
         self.store = store
         self.max_routes = max_routes
         self.max_sources_per_prefix = max_sources_per_prefix
+
+    @staticmethod
+    def _project_records(context, records, environment):
+        if environment is None:
+            return records
+        result = {}
+        for key, record in records.items():
+            source = route_context_from_key(key)
+            if source is None or not matching_profile(source.capture_profile, context.capture_profile):
+                continue
+            projected = replace(source, capture_profile=context.capture_profile)
+            converted = projected_record(record, environment)
+            if converted is not None:
+                result[projected.fingerprint] = combine_records(
+                    result.get(projected.fingerprint), converted, environment
+                )
+        return result
 
     @staticmethod
     def _source_index(records):
@@ -155,7 +180,7 @@ class RouteLearning:
         shared_hint = choose_hint(shared, confidence, source="shared-prefix")
         return shared_hint if shared_hint is not None and shared_hint.action is not None else hint or shared_hint
 
-    def lookup(self, context, confidence=ContextConfidence.HIGH):
+    def lookup(self, context, confidence=ContextConfidence.HIGH, *, environment=None):
         """No target, ROI, detector or current visibility is required to obtain an action."""
         if (
             not learning_allowed()
@@ -163,7 +188,48 @@ class RouteLearning:
             or context.start_yaw_bucket is None
         ):
             return None
-        return self._restrict_axes(self._lookup(context, confidence, self.store.snapshot()), context)
+        raw_records = self.store.snapshot()
+        records = self._project_records(context, raw_records, environment)
+        hint = self._lookup(context, confidence, records)
+        if environment is not None and not ready_hint(hint):
+            pairs = self._legacy_sources(context, raw_records)
+            exact = [
+                record
+                for source, record in pairs
+                if (source.capture_profile.width, source.capture_profile.height)
+                == (context.capture_profile.width, context.capture_profile.height)
+            ]
+            hint = legacy_hint([record for _, record in pairs], confidence, exact=exact) or hint
+        return self._restrict_axes(hint, context)
+
+    @staticmethod
+    def _legacy_sources(context, records):
+        """Only this exact route/segment/yaw; old unknown families never gain sharing."""
+        sources = []
+        for key, record in records.items():
+            source = route_context_from_key(key)
+            if source is None or (
+                source.config_key,
+                source.distances,
+                source.segment_index,
+                source.start_yaw_bucket,
+            ) != (context.config_key, context.distances, context.segment_index, context.start_yaw_bucket):
+                continue
+            left, right = source.capture_profile, context.capture_profile
+            compatible = matching_profile(left, right)
+            if right.movement_version == "zipline-initial-v2-records":
+                compatible = (
+                    compatible
+                    or (left.movement_version == "zipline-initial-v1" and left.camera == right.camera)
+                    or (
+                        left.movement_version == "zipline-v4"
+                        and left.camera == "legacy-unknown"
+                        and right.camera == "zipline-scroll-off"
+                    )
+                )
+            if compatible and left.axes == right.axes:
+                sources.append((source, record))
+        return sources
 
     @staticmethod
     def _restrict_axes(hint, context):
@@ -174,7 +240,7 @@ class RouteLearning:
         action = (dx if "x" in axes else 0, dy if "y" in axes else 0)
         return replace(hint, action=action if any(action) else None)
 
-    def nearest_yaw(self, context, confidence=ContextConfidence.HIGH):
+    def nearest_yaw(self, context, confidence=ContextConfidence.HIGH, *, environment=None):
         """Return a candidate only; after turning, call lookup with the *actual* bucket."""
         if (
             not learning_allowed()
@@ -182,7 +248,7 @@ class RouteLearning:
             or context.start_yaw_bucket is None
         ):
             return None
-        records = self.store.snapshot()
+        records = self._project_records(context, self.store.snapshot(), environment)
         index = self._source_index(records)
         # A rejection survives private warmup; do not bypass it through another yaw.
         allow_shared = True
@@ -215,7 +281,7 @@ class RouteLearning:
         _, _, _, bucket, hint = min(candidates, key=lambda item: item[:4])
         return RouteYawCandidate(bucket * 5.0, hint)
 
-    def record_success(self, context, dx, dy, *, now):
+    def record_success(self, context, dx, dy, *, now, environment=None, inputs=(), verification="aligned"):
         """Persist a caller-verified clean initial alignment, never a nav outcome."""
         if (
             not learning_allowed()
@@ -227,14 +293,28 @@ class RouteLearning:
 
         def update(records):
             previous = records.get(context.fingerprint, LearningRecord())
-            updated = previous.successful(dx, dy, now=now, provenance=("initial-alignment",))
-            shared = self._shared(context, records, exclude=context.fingerprint)
+            updated = previous.successful(
+                dx,
+                dy,
+                now=now,
+                provenance=("initial-alignment",),
+                environment=environment or environment_for_context(context),
+                inputs=inputs,
+                verification=verification,
+            )
+            shared = self._shared(
+                context, self._project_records(context, records, environment), exclude=context.fingerprint
+            )
             if shared is not None and _conflicts(updated, shared):
                 updated = replace(
                     updated,
                     provenance=tuple(dict.fromkeys((*updated.provenance, _conflict_marker(context))))[-64:],
                 )
             records[context.fingerprint] = updated
+            if environment is not None:
+                projected = self._project_records(context, records, environment)
+                if ready_hint(self._lookup(context, ContextConfidence.HIGH, projected)):
+                    records[context.fingerprint] = replace(updated, legacy_retired=True)
             return trim_routes(records, max_routes=self.max_routes)
 
         return self.store.update_many(update)

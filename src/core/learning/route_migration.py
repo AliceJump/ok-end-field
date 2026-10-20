@@ -84,8 +84,9 @@ def migrate_zip_line_cache(path, store, *, profile_resolver=None, family_resolve
     """One atomic snapshot import, followed by disk readback; the source is untouched.
 
     Without an explicitly verified camera resolver, legacy records stay private in
-    an unknown-camera profile. Even mapped v4 records have unknown variance and
-    cannot authorize strong replay. Counts weight legacy *estimates*, not raw data.
+    an unknown-camera profile. V4 records retain unknown variance and may only
+    supply a separately labelled private raw fallback, never converted new data.
+    Counts weight legacy *estimates*, not raw data.
     A durable per-source marker and non-overwriting imports make retries idempotent.
     """
     if not learning_allowed():

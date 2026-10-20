@@ -146,7 +146,7 @@ class TestZipLineMotionCache(unittest.TestCase):
         ):
             self.assertTrue(record_arrow_turn_motion(1920, 1080, 121.0, 90.0, 360))
             self.assertEqual(load_arrow_turn_motion(1920, 1080, 121.9, 90.9), (360, 1))
-            self.assertIsNone(load_arrow_turn_motion(3840, 2160, 121.0, 90.0))
+            self.assertEqual(load_arrow_turn_motion(3840, 2160, 121.0, 90.0), (720, 1))
             self.assertIsNone(load_arrow_turn_motion(1920, 1080, 140.0, 90.0))
 
     def test_tracker_counts_successful_raw_input_and_restores_override(self):
@@ -205,7 +205,42 @@ class TestZipLineMotionCache(unittest.TestCase):
             result = ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90)
         self.assertEqual(result, (90.0, True))
         stub._send_zip_line_yaw_delta.assert_called_once_with(361)
-        record.assert_called_once_with(1920, 1080, 120.0, 90.0, 361)
+        record.assert_called_once()
+        self.assertEqual(record.call_args.args, (1920, 1080, 120.0, 90.0, 361))
+        self.assertEqual(record.call_args.kwargs["environment"].start_yaw, 120.0)
+
+    def test_yaw_calibration_uses_current_width_sensitivity_and_reverse(self):
+        from src.core.learning.environment import LearningEnvironment
+
+        for width, speed, reverse, expected in (
+            (1920, 0, False, 361),
+            (3840, 0, False, 723),
+            (3840, 5, False, 482),
+            (3840, 5, True, -482),
+        ):
+            with self.subTest(width=width, speed=speed, reverse=reverse):
+                stub = self._yaw_stub([(120.0, 0.9), (90.0, 0.9)])
+                stub.width = width
+                env = LearningEnvironment(speed_x=speed, reverse_x=reverse, capture_size=(width, 1080), start_yaw=120)
+                with (
+                    patch("src.tasks.mixin.zip_line_mixin.yaw_environment", return_value=env),
+                    patch("src.tasks.mixin.zip_line_mixin.load_arrow_turn_motion", return_value=None),
+                    patch("src.tasks.mixin.zip_line_mixin.record_arrow_turn_motion", return_value=True),
+                ):
+                    self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90, True))
+                stub._send_zip_line_yaw_delta.assert_called_once_with(expected)
+
+    def test_prefeed_tiny_motion_threshold_uses_current_resolution(self):
+        from src.core.learning.environment import LearningEnvironment
+
+        stub = self._yaw_stub([])
+        stub.width = 3840
+        env = LearningEnvironment(capture_size=(3840, 1080))
+        # 20 counts produce <1 degree at this width; no angle loop is needed.
+        with patch("src.tasks.mixin.zip_line_mixin.yaw_environment", return_value=env):
+            self.assertTrue(ZipLineMixin._wait_zip_line_prefeed_settled(stub, (120, 0.9), 20))
+        stub._read_zip_line_arrow_angle.assert_not_called()
+        stub.sleep.assert_called_once_with(stub._ZIP_LINE_ARROW_SETTLE_DELAY)
 
     def test_cached_turn_updates_memory_with_its_final_correction(self):
         stub = self._yaw_stub([(120.0, 0.9), (100.0, 0.9), (90.0, 0.9)])
@@ -215,7 +250,9 @@ class TestZipLineMotionCache(unittest.TestCase):
         ):
             self.assertEqual(ZipLineMixin._normalize_zip_line_segment_yaw(stub, 90), (90.0, True))
         self.assertEqual([call.args[0] for call in stub._send_zip_line_yaw_delta.call_args_list], [240, 120])
-        record.assert_called_once_with(1920, 1080, 120.0, 90.0, 360)
+        record.assert_called_once()
+        self.assertEqual(record.call_args.args, (1920, 1080, 120.0, 90.0, 360))
+        self.assertEqual(record.call_args.kwargs["environment"].start_yaw, 120.0)
 
     def test_failed_cached_turn_cannot_contaminate_turn_learning(self):
         stub = self._yaw_stub([(120.0, 0.9)])

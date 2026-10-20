@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+import time
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -51,9 +52,10 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         return task
 
     def seed(self, context, dx=100, dy=20):
-        for now in range(3):
+        acquired_at = time.time()
+        for _ in range(3):
             self.store.update(
-                context.fingerprint, lambda record, timestamp=now: record.successful(dx, dy, now=timestamp)
+                context.fingerprint, lambda record, timestamp=acquired_at: record.successful(dx, dy, now=timestamp)
             )
 
     def zip_task(self, detections=None):
@@ -237,7 +239,11 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         record = self.store.get(context.fingerprint)
         # Three seeded samples of (100,20), one replay of (100,20),
         # and two visual corrections of (40,20) -> new sample (180,60).
-        self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (4, 120, 30))
+        self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (3, 100, 20))
+        self.assertEqual(len(record.observations), 4)
+        sample = record.observations[-1]
+        self.assertEqual((sample.dx, sample.dy, sample.verification, sample.outlier), (180, 60, "gold_gate", True))
+        self.assertEqual([(item.dx, item.dy) for item in sample.inputs], [(100, 20), (40, 20), (40, 20)])
         self.assertEqual(task._move_to_zip_line_target.call_count, 2)
         self.assertEqual(task.active_and_send_mouse_delta.call_count, 3)
 
@@ -364,7 +370,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         self.assertEqual(self.store.get(context.fingerprint).motion.mean_dx, 40)
         self.assertIsNone(self.store.get(self.zip_context(task).fingerprint))
 
-    def test_production_route_entry_migrates_legacy_privately_without_replaying_it(self):
+    def test_production_route_entry_migrates_legacy_and_replays_raw_without_changing_source(self):
         task = self.zip_task()
         inner = build_zip_line_route_fingerprint("route", [108])
         key = json.dumps([inner, [1920, 1080], 18])
@@ -376,7 +382,8 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         )
         before = self.source.read_bytes()
         self.run_zip(task)
-        self.assertEqual(task.active_and_send_mouse_delta.call_count, 1)
+        self.assertEqual(task.active_and_send_mouse_delta.call_count, 2)
+        self.assertEqual(task.active_and_send_mouse_delta.call_args_list[0].args[:2], (900, 10))
         self.assertEqual(self.source.read_bytes(), before)
         self.assertEqual(self.store.get(self.zip_context(task).fingerprint).motion.samples, 1)
         self.assertEqual(len(self.store.snapshot()), 3)

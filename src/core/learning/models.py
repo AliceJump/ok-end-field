@@ -6,6 +6,16 @@ import json
 import math
 from dataclasses import asdict, dataclass, replace
 from enum import StrEnum
+from functools import cached_property
+
+from src.core.learning.environment import LearningEnvironment
+from src.core.learning.samples import (
+    DECAY_HALF_LIFE_DAYS,
+    MotionSample,
+    acquisition_day,
+    classify_samples,
+    history_weights,
+)
 
 CONTEXT_VERSION = 1
 
@@ -165,29 +175,65 @@ class MotionStatistics:
     m2_dy: float = 0.0
     variance_known: bool = True
     legacy_samples: int = 0
+    weight_sum: float = 0.0
+    weight_square_sum: float = 0.0
+    reference_day: int = 0
 
     def __post_init__(self):
         _count(self.samples)
         _count(self.legacy_samples)
+        _count(self.reference_day)
+        _finite(self.weight_sum, self.weight_square_sum)
+        if self.weight_sum < 0 or self.weight_square_sum < 0 or bool(self.weight_sum) != bool(self.weight_square_sum):
+            raise ValueError("Invalid history weights")
         _finite(self.mean_dx, self.mean_dy, self.m2_dx, self.m2_dy)
         if type(self.variance_known) is not bool or self.m2_dx < 0 or self.m2_dy < 0:
             raise ValueError("Invalid variance")
 
-    def add(self, dx, dy):
+    @property
+    def total_weight(self):
+        return self.weight_sum or float(self.samples)
+
+    @property
+    def squared_weights(self):
+        return self.weight_square_sum or float(self.samples)
+
+    @property
+    def effective_samples(self):
+        return self.total_weight**2 / self.squared_weights if self.squared_weights else 0.0
+
+    def add(self, dx, dy, *, weight=1.0):
         _finite(dx, dy)
+        _finite(weight)
+        if weight < 0:
+            raise ValueError("Negative history weight")
+        if weight == 0:
+            return self
         # Legacy means are retained as priors, but cannot invent within-source variance.
         if not self.variance_known:
-            return MotionStatistics(1, dx, dy, legacy_samples=self.samples + self.legacy_samples)
+            return MotionStatistics(
+                1,
+                dx,
+                dy,
+                legacy_samples=self.samples + self.legacy_samples,
+                weight_sum=weight,
+                weight_square_sum=weight * weight,
+                reference_day=self.reference_day,
+            )
         n = self.samples + 1
-        mx = self.mean_dx + (dx - self.mean_dx) / n
-        my = self.mean_dy + (dy - self.mean_dy) / n
+        total = self.total_weight + weight
+        mx = self.mean_dx + (dx - self.mean_dx) * weight / total
+        my = self.mean_dy + (dy - self.mean_dy) * weight / total
         return MotionStatistics(
             n,
             mx,
             my,
-            self.m2_dx + (dx - self.mean_dx) * (dx - mx),
-            self.m2_dy + (dy - self.mean_dy) * (dy - my),
+            self.m2_dx + weight * (dx - self.mean_dx) * (dx - mx),
+            self.m2_dy + weight * (dy - self.mean_dy) * (dy - my),
             legacy_samples=self.legacy_samples,
+            weight_sum=total,
+            weight_square_sum=self.squared_weights + weight * weight,
+            reference_day=self.reference_day,
         )
 
     def merge(self, other):
@@ -196,24 +242,35 @@ class MotionStatistics:
         if not other.samples:
             return self
         n = self.samples + other.samples
+        day = max(self.reference_day, other.reference_day)
+        a = max(1e-150, 2.0 ** (-(day - self.reference_day) / DECAY_HALF_LIFE_DAYS))
+        b = max(1e-150, 2.0 ** (-(day - other.reference_day) / DECAY_HALF_LIFE_DAYS))
+        left, right = self.total_weight * a, other.total_weight * b
+        total = left + right
         delta_x, delta_y = other.mean_dx - self.mean_dx, other.mean_dy - self.mean_dy
-        weight = self.samples * other.samples / n
+        weight = left * right / total
         known = self.variance_known and other.variance_known
         return MotionStatistics(
             n,
-            self.mean_dx + delta_x * other.samples / n,
-            self.mean_dy + delta_y * other.samples / n,
-            self.m2_dx + other.m2_dx + delta_x**2 * weight if known else 0.0,
-            self.m2_dy + other.m2_dy + delta_y**2 * weight if known else 0.0,
+            self.mean_dx + delta_x * right / total,
+            self.mean_dy + delta_y * right / total,
+            self.m2_dx * a + other.m2_dx * b + delta_x**2 * weight if known else 0.0,
+            self.m2_dy * a + other.m2_dy * b + delta_y**2 * weight if known else 0.0,
             known,
             self.legacy_samples + other.legacy_samples,
+            total,
+            self.squared_weights * a * a + other.squared_weights * b * b,
+            day,
         )
 
     @property
     def variance(self):
         if not self.variance_known or self.samples < 2:
             return None
-        return self.m2_dx / (self.samples - 1), self.m2_dy / (self.samples - 1)
+        denominator = self.total_weight - self.squared_weights / self.total_weight
+        if denominator <= 0:
+            return None
+        return self.m2_dx / denominator, self.m2_dy / denominator
 
 
 @dataclass(frozen=True)
@@ -246,6 +303,9 @@ class LearningRecord:
     consecutive_failures: int = 0
     updated_at: float = 0.0
     provenance: tuple[str, ...] = ()
+    observations: tuple[MotionSample, ...] = ()
+    legacy_motion: MotionStatistics | None = None
+    legacy_retired: bool = False
 
     def __post_init__(self):
         if not isinstance(self.motion, MotionStatistics) or (
@@ -260,17 +320,69 @@ class LearningRecord:
         if not isinstance(self.provenance, tuple) or len(self.provenance) > 64:
             raise ValueError("Invalid provenance")
         _identity(*self.provenance)
+        if not isinstance(self.observations, tuple) or any(
+            not isinstance(item, MotionSample) for item in self.observations
+        ):
+            raise ValueError("Invalid acquisition records")
+        if self.legacy_motion is not None and not isinstance(self.legacy_motion, MotionStatistics):
+            raise ValueError("Invalid legacy motion")
+        if type(self.legacy_retired) is not bool:
+            raise ValueError("Invalid legacy retirement")
 
-    def successful(self, dx, dy, *, target=None, now, provenance=()):
+    @cached_property
+    def _reference_motion(self):
+        """One scan per immutable record; cache is runtime-only and never serialized."""
+        reference = LearningEnvironment()
+        day = max((acquisition_day(sample.acquired_at) for sample in self.observations), default=0)
+        motion = MotionStatistics(legacy_samples=self.motion.legacy_samples, reference_day=day)
+        for sample, weight in zip(self.observations, history_weights(self.observations), strict=True):
+            if not sample.outlier:
+                motion = motion.add(*sample.environment.convert(sample.dx, sample.dy, reference), weight=weight)
+        return motion
+
+    def motion_for(self, environment):
+        """Scale full-history sufficient statistics instead of rescanning for each yaw lookup."""
+        motion = self._reference_motion
+        sx, sy = LearningEnvironment().convert(1, 1, environment)
         return replace(
-            self,
-            motion=self.motion.add(dx, dy),
+            motion,
+            mean_dx=motion.mean_dx * sx,
+            mean_dy=motion.mean_dy * sy,
+            m2_dx=motion.m2_dx * sx * sx,
+            m2_dy=motion.m2_dy * sy * sy,
+        )
+
+    def successful(
+        self, dx, dy, *, target=None, now, provenance=(), environment=None, inputs=(), verification="aligned"
+    ):
+        environment = environment or LearningEnvironment()
+        observations = classify_samples(
+            (*self.observations, MotionSample(dx, dy, now, environment, inputs, verification))
+        )
+        legacy = self.motion.legacy_samples + (self.motion.samples if not self.observations else 0)
+        legacy_motion = self.legacy_motion
+        if not self.observations and self.motion.samples:
+            legacy_motion = self.motion
+        updated = replace(
+            self, observations=observations, motion=MotionStatistics(legacy_samples=legacy), legacy_motion=legacy_motion
+        )
+        result = replace(
+            updated,
+            motion=updated.motion_for(environment),
             target=target if target is not None else self.target,
             success_count=self.success_count + 1,
             consecutive_failures=0,
             updated_at=now,
             provenance=tuple(dict.fromkeys((*self.provenance, *provenance)))[-64:],
         )
+        variance = result.motion.variance
+        ready = (
+            result.motion.samples >= 3
+            and result.motion.effective_samples >= 3 - 1e-9
+            and variance is not None
+            and math.sqrt(sum(variance)) <= max(12.0, math.hypot(result.motion.mean_dx, result.motion.mean_dy) * 0.25)
+        )
+        return replace(result, legacy_retired=self.legacy_retired or ready)
 
     def failed(self, *, now):
         return replace(
@@ -287,6 +399,8 @@ class LearningRecord:
     def from_dict(cls, data):
         values = dict(data)
         values["motion"] = MotionStatistics(**values["motion"])
+        if values.get("legacy_motion") is not None:
+            values["legacy_motion"] = MotionStatistics(**values["legacy_motion"])
         target = values.get("target")
         if target is not None:
             target = dict(target)
@@ -295,6 +409,7 @@ class LearningRecord:
                     target[field] = tuple(target[field])
             values["target"] = TargetPrior(**target)
         values["provenance"] = tuple(values.get("provenance", ()))
+        values["observations"] = tuple(MotionSample.from_dict(item) for item in values.get("observations", ()))
         return cls(**values)
 
 
