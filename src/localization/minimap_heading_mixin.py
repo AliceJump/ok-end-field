@@ -282,16 +282,16 @@ class MinimapHeadingMixin:
             entry["error_after"] = angle_delta(target, after)
             entry["ratio"] = angle_delta(after, before) / dx if dx else None
             self._warn_if_ratio_off(entry["ratio"], per_px, dx)
-            control_per_px = self._adapted_yaw_per_pixel(
-                per_px,
-                entry["ratio"],
-                dx,
-            )
             result["history"].append(entry)
             result["rounds"] = i
             before = after
             if abs(entry["error_after"]) <= tolerance:
                 break
+            if not self._rotation_response_valid(per_px, entry["ratio"], dx):
+                result["reason"] = "unreliable_heading_response"
+                self.log_warning("转向朝向反馈异常，停止本次补偿，等待重新定位或脱困")
+                break
+            control_per_px = self._adapted_yaw_per_pixel(per_px, entry["ratio"], dx)
 
         result["heading"] = before
         result["error"] = angle_delta(target, before)
@@ -390,11 +390,26 @@ class MinimapHeadingMixin:
             before = after
             if abs(entry["error_after"]) <= tolerance:
                 break
+            if not self._rotation_response_valid(per_px, entry["ratio"], dx):
+                result["reason"] = "unreliable_heading_response"
+                self.log_warning("转向朝向反馈异常，停止本次补偿，等待重新定位或脱困")
+                break
 
         result["heading"] = before
         result["error"] = angle_delta(target, before)
         result["ok"] = abs(result["error"]) <= tolerance
         return result
+
+    @staticmethod
+    def _rotation_response_valid(configured: float, ratio: float | None, dx: int) -> bool:
+        """角色朝向不等于相机朝向，受阻/旧帧/反向反馈不能当成灵敏度突变。"""
+        if abs(int(dx)) < RATIO_HINT_MIN_DX:
+            return True
+        if ratio is None:
+            return False
+        # Allow ordinary calibration error, but never infer a tenfold gain from
+        # one weak character-heading observation. Keep the sign as evidence.
+        return configured * 0.5 * (1 - 1e-6) <= float(ratio) <= configured * 2.0 * (1 + 1e-6)
 
     @staticmethod
     def _adapted_yaw_per_pixel(
@@ -405,11 +420,8 @@ class MinimapHeadingMixin:
         """用本轮实测比例修正下一轮；极端异常值不参与自适应。"""
         if ratio is None or abs(int(dx)) < RATIO_HINT_MIN_DX:
             return configured
-        measured = abs(float(ratio))
-        lower = configured * 0.05
-        upper = configured * 5.0
-        if lower <= measured <= upper:
-            return measured
+        if MinimapHeadingMixin._rotation_response_valid(configured, ratio, dx):
+            return float(ratio)
         return configured
 
     def _warn_if_ratio_off(self, ratio, configured: float, dx: int) -> None:

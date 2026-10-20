@@ -139,14 +139,36 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertGreater(task.sent[0], 0)  # 鼠标右移 = 方位角增大
         self.assertAlmostEqual(res["heading"], 10.0, delta=1.0)
 
-    def test_adapts_to_ten_times_lower_coefficient(self):
-        """首轮实测比例偏小时，下一轮必须改用实测值完成补偿。"""
+    def test_ten_times_lower_feedback_does_not_amplify_camera_rotation(self):
+        """角色转身受阻与系数偏小无法仅凭一次反馈区分，不能直接十倍补偿。"""
         task = _FakeTurnTask(facing=0.0, k_error=0.1)
         res = task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=2)
-        self.assertTrue(res["ok"], res)
-        self.assertEqual(res["rounds"], 2)
-        self.assertEqual(task.w_presses, 2)
-        self.assertLessEqual(abs(res["error"]), 5.0)
+        self.assertFalse(res["ok"], res)
+        self.assertEqual(res["rounds"], 1)
+        self.assertEqual(task.w_presses, 1)
+        self.assertEqual(res["reason"], "unreliable_heading_response")
+
+    def test_frozen_or_opposite_heading_stops_before_another_camera_turn(self):
+        for feedback in (0.0, -10.0):
+            with self.subTest(feedback=feedback):
+                task = _FakeTurnTask(facing=0.0)
+
+                def blocked_turn(*, min_score=None, task=task, feedback=feedback):
+                    task.press_key("w", down_time=0.3)
+                    task.facing = feedback % 360
+                    return task.read_heading(min_score=min_score)
+
+                task._arrow_after_w = blocked_turn
+                result = task.turn_to_bearing(90.0, max_rounds=3)
+                self.assertFalse(result["ok"])
+                self.assertEqual(task.w_presses, 1)
+                self.assertAlmostEqual(task.camera, 90.0, delta=1.0)
+                self.assertEqual(result["reason"], "unreliable_heading_response")
+
+    def test_opposite_or_tiny_response_is_not_an_adaptive_coefficient(self):
+        for ratio in (-0.0675, 0.0, 0.00675):
+            with self.subTest(ratio=ratio):
+                self.assertEqual(MinimapHeadingMixin._adapted_yaw_per_pixel(0.0675, ratio, 100), 0.0675)
 
     def test_large_turn_is_chunked_but_total_is_kept(self):
         """1333px 的位移要拆成 ≤100px 的多段，但总和不变（避免单次事件被截断）。"""
@@ -252,6 +274,14 @@ class TestAimViewToBearing(unittest.TestCase):
         self.assertEqual(result["rounds"], 2)
         self.assertLessEqual(abs(result["error"]), 5.0)
         self.assertEqual(task.w_presses, 0)
+
+    def test_view_rotation_stops_when_character_heading_does_not_follow_camera(self):
+        task = _FakeTurnTask(facing=0.0, facing_follows_camera=False)
+        result = task.aim_view_to_bearing(90.0, max_rounds=3)
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["rounds"], 1)
+        self.assertEqual(result["reason"], "unreliable_heading_response")
+        self.assertAlmostEqual(task.camera, 90.0, delta=1.0)
 
 
 class TestOneShotAndDiagnostics(unittest.TestCase):

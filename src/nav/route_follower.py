@@ -8,8 +8,8 @@
     到达终点 -> DONE
     偏航持续超限 -> REPLAN
     朝向不可用 -> WAIT
+    持续行走或转向但位移不足 -> STUCK
     朝向误差过大 -> TURN
-    持续行走但位移不足 -> STUCK
     其余情况 -> WALK
 
 坐标均为世界系 ``(x, z)``，距离单位为米；角度为罗盘方位角，正北 ``0°``、正东
@@ -395,20 +395,8 @@ class GridRouteFollower:
 
         delta = angle_delta(target_bearing, heading)
         tolerance = max(0.0, float(self.config.heading_tolerance))
-        if abs(delta) > tolerance:
-            self._reset_motion()
-            return self._step(
-                TURN,
-                waypoint,
-                target_bearing=target_bearing,
-                heading_error=delta,
-                waypoint_distance=waypoint_distance,
-                goal_distance=goal_distance,
-                arrived_waypoint_index=arrived_index,
-                skipped_waypoints=skipped,
-                shortcut_distance=shortcut_distance,
-            )
-
+        # TURN also presses/holds W. Resetting this window on every turn lets
+        # blocked characters spin until the overall navigation timeout.
         stuck = self._update_stuck(pos, now)
         if stuck:
             return self._step(
@@ -422,6 +410,19 @@ class GridRouteFollower:
                 skipped_waypoints=skipped,
                 shortcut_distance=shortcut_distance,
                 reason=f"{self.config.stuck_window_s:.1f}s 内位移不足",
+            )
+
+        if abs(delta) > tolerance:
+            return self._step(
+                TURN,
+                waypoint,
+                target_bearing=target_bearing,
+                heading_error=delta,
+                waypoint_distance=waypoint_distance,
+                goal_distance=goal_distance,
+                arrived_waypoint_index=arrived_index,
+                skipped_waypoints=skipped,
+                shortcut_distance=shortcut_distance,
             )
 
         return self._step(
