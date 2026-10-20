@@ -170,18 +170,19 @@ class EndfieldCombatTab(Tab):
         if not self._loaded:
             self._loaded = True
             self._load_targets()
-        elif self._editor is not None:
+        elif not self._battle_is_running():
+            # 账号页可能已新增或清空覆盖：先保存当前编辑，再重建范围并按任务和账号保留选择
             self._save_settings()
-            self._select_target(self.target_combo.currentIndex())
+            self._load_targets(keep=(self._target.task, self._target.account_key))
         self._state_timer.start()
 
-    def _load_targets(self):
-        self._targets = [CombatTarget(ui_tr("通用战斗设置"))]
+    def _load_targets(self, keep: tuple[Any, str] | None = None):
+        targets = [CombatTarget(ui_tr("通用战斗设置"))]
         tasks = list(getattr(og.executor, "onetime_tasks", [])) + list(getattr(og.executor, "trigger_tasks", []))
         tasks = [t for t in tasks if BATTLE_CONFIG_MODE_KEY in (getattr(t, "default_config", {}) or {})]
         data = load_overrides()
         for task in tasks:
-            self._targets.append(CombatTarget(ui_tr(task.name), task))
+            targets.append(CombatTarget(ui_tr(task.name), task))
             storage = task_storage_name(task)
             for account_key, task_map in data.get("accounts", {}).items():
                 overrides = task_map.get(storage, {})
@@ -189,12 +190,18 @@ class EndfieldCombatTab(Tab):
                     continue
                 # Names stay in the application; do not put account identities in logs.
                 account_name = data.get("account_registry", {}).get(account_key, {}).get("username", account_key)
-                self._targets.append(CombatTarget(f"{account_name} / {ui_tr(task.name)}", task, account_key))
+                targets.append(CombatTarget(f"{account_name} / {ui_tr(task.name)}", task, account_key))
+        index = next((i for i, t in enumerate(targets) if (t.task, t.account_key) == keep), 0)
+        if keep is not None and (targets[index].task, targets[index].account_key) == keep:
+            # Same scope at a new position: keep the editor's expanded state.
+            self._target_index = index
+        self._targets = targets
         self.target_combo.blockSignals(True)
         self.target_combo.clear()
-        self.target_combo.addItems([t.label for t in self._targets])
+        self.target_combo.addItems([t.label for t in targets])
+        self.target_combo.setCurrentIndex(index)
         self.target_combo.blockSignals(False)
-        self._select_target(0)
+        self._select_target(index)
 
     def _overrides(self, target: CombatTarget) -> dict:
         if not target.account_key:

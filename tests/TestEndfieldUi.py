@@ -390,6 +390,34 @@ class CombatSettingsTest(unittest.TestCase):
         )
         self.assertTrue(self.task.config[KEY_COMPLETE_NOTIFY])
 
+    def test_reentry_refreshes_account_scopes_and_keeps_the_selection(self):
+        data: dict[str, Any] = {"accounts": {}, "account_registry": {"acc-1": {"username": "测试账号"}}}
+        account_label = "测试账号 / 日常刷体力"
+
+        def labels():
+            return [self.page.target_combo.itemText(i) for i in range(self.page.target_combo.count())]
+
+        with (
+            patch("src.gui.EndfieldCombatTab.load_overrides", side_effect=lambda *_args, **_kwargs: data),
+            patch("src.gui.EndfieldCombatTab.BATTLE_CONFIG_TYPE", {}),
+        ):
+            self.page.show()
+            self.page.target_combo.setCurrentIndex(1)
+            self.page.hide()
+            # 账号页新增覆盖后重新进入：出现账号范围，当前选中的任务范围不变
+            data["accounts"]["acc-1"] = {"SimpleNamespace": {BATTLE_CONFIG_MODE_KEY: True}}
+            self.page.show()
+            self.assertIn(account_label, labels())
+            self.assertEqual((self.page._target.task, self.page._target.account_key), (self.task, ""))
+            self.page.target_combo.setCurrentIndex(labels().index(account_label))
+            self.page.hide()
+            # 清空覆盖后重新进入：旧范围移除，选择回到通用设置
+            data["accounts"].clear()
+            self.page.show()
+            self.assertNotIn(account_label, labels())
+            self.assertEqual(self.page.target_combo.currentIndex(), 0)
+            self.assertIsNone(self.page._target.task)
+
     def test_runtime_lock_prevents_source_changes(self):
         self.task.config[BATTLE_CONFIG_MODE_KEY] = True
         with patch("src.gui.EndfieldCombatTab.BATTLE_CONFIG_TYPE", {}):
