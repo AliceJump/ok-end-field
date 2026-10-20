@@ -32,6 +32,7 @@ class InitialAlignment:
         self.observed_at = session.started_at
         self._has_frame = False
         self.require_gold_gate = False
+        self.allow_tracked_random_search = False
         self._pending_center = None
 
     def frame_acquired(self, frame):
@@ -46,6 +47,10 @@ class InitialAlignment:
         self._has_frame = True
 
     def disturb(self, reason):
+        if reason == "random_search" and self.allow_tracked_random_search:
+            # This zipline search uses the wrapped sender, so every accepted
+            # mouse delta is already recorded; bad/partial input still taints.
+            return
         if reason == "random_search" and not self.session.contaminated:
             # Recognition-driven recovery invalidates the attempted prior before
             # recovery motion contaminates the original-entry sample.

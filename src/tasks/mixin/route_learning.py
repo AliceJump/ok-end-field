@@ -57,6 +57,9 @@ def zipline_initial_alignment(task, context, distance, *, need_scroll=None):
             yield None
             return
         learning.require_gold_gate = True
+        # Recorded mouse-only random search is a learnable correction. Other
+        # tasks still reject searches, and failed mouse sends still contaminate.
+        learning.allow_tracked_random_search = True
         _migrate_once(learning.session.store)
         lookup_context = context
         hint = learning.session.hint()
