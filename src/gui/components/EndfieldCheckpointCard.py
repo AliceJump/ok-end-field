@@ -187,17 +187,6 @@ class EndfieldCheckpointCard(QFrame):
             painter.fillRect(0, self.height() - 1, self.width(), 1, QColor(colors["divider"]))
         painter.end()
 
-    def showEvent(self, event: Any):
-        super().showEvent(event)
-        try:
-            center_pos = self.config_btn.rect().center()
-            g_pos = self.config_btn.mapToGlobal(center_pos)
-            logger.info(
-                f"EndfieldCheckpointCard [{self.task_name}] config_btn screen center: ({g_pos.x()}, {g_pos.y()})"
-            )
-        except Exception as exc:
-            logger.debug(f"Failed to calculate config_btn center: {exc}")
-
     def _on_check_state_changed(self, state: int):
         is_chk = state == Qt.Checked.value or state == 2
         self.checked_changed.emit(self.task_name, is_chk)

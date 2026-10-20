@@ -411,8 +411,11 @@ class EndfieldTacticalDrawer(QFrame):
         self.close_drawer()
 
     def run_subtask_now(self):
-        if self.current_task and og.executor:
-            og.executor.start_task(self.current_task)
+        # 与任务卡片的「开始」走同一入口；TaskExecutor 没有按任务启动的方法
+        start_controller = getattr(getattr(og, "app", None), "start_controller", None)
+        if self.current_task is None or start_controller is None:
+            return
+        start_controller.start(self.current_task)
 
     def close_drawer(self, *, save=True):
         self._clear_form(save=save)

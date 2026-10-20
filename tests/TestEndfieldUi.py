@@ -662,6 +662,16 @@ class CombatSettingsTest(unittest.TestCase):
         host.close()
         host.deleteLater()
 
+    def test_run_once_starts_the_task_through_the_start_controller(self):
+        started = []
+        drawer = EndfieldTacticalDrawer()
+        drawer.current_task = self.task
+        start_controller = SimpleNamespace(start=started.append)
+        with patch.object(og, "app", SimpleNamespace(tr=lambda value: value, start_controller=start_controller)):
+            drawer.run_subtask_now()
+        self.assertEqual(started, [self.task])
+        drawer.deleteLater()
+
     def test_multi_selection_wraps_in_one_column_and_keeps_value_binding(self):
         from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
 
