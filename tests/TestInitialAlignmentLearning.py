@@ -73,7 +73,12 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task._zip_line_motion_route_fingerprint = lambda *a, **k: ZipLineMixin._zip_line_motion_route_fingerprint(
             task, *a, **k
         )
-        task._try_click_on_zip_line = Mock(return_value=(True, None))
+        def pass_gate(*args, on_gate_confirmed=None):
+            if on_gate_confirmed is not None:
+                on_gate_confirmed(task.next_frame())
+            return True, None
+
+        task._try_click_on_zip_line = Mock(side_effect=pass_gate)
         task.lang = SimpleNamespace(
             zip_line_mixin=SimpleNamespace(k_2f4f4a2f="move", k_0b1e4f35="leave", k_b0e3a2da="board")
         )
@@ -193,11 +198,13 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         self.assertTrue(align_initial_target(task, context, "hud", ocr=False, confidence=ContextConfidence.LOW))
         self.assertIsNone(self.store.get(context.fingerprint))
 
-    def test_zipline_saves_before_activation_and_riding_failure_does_not_change_it(self):
+    def test_zipline_saves_on_gold_gate_before_interaction_and_riding_failure_does_not_change_it(self):
         task = self.zip_task()
         context = self.zip_context(task)
 
-        def activate(*args):
+        def activate(*args, on_gate_confirmed=None):
+            self.assertIsNone(self.store.get(context.fingerprint))
+            on_gate_confirmed(task.next_frame())
             self.assertEqual(self.store.get(context.fingerprint).motion.mean_dx, 40)
             return True, None
 
@@ -210,19 +217,68 @@ class TestInitialAlignmentLearning(unittest.TestCase):
             (40, 20),
         )
 
-    def test_gate_retry_never_replays_or_adds_to_completed_initial_sample(self):
+    def test_gate_retry_keeps_complete_corrections_in_original_sample_without_extra_replay(self):
         task = self.zip_task(
             [gold_tests.TestZipLineGoldGate._matched_icon(1400, 800), gold_tests.TestZipLineGoldGate._matched_icon()]
             * 2
         )
         context = self.zip_context(task)
         self.seed(context)
-        task._try_click_on_zip_line.side_effect = [(False, "gate"), (True, None)]
+
+        def gate(*args, on_gate_confirmed=None):
+            if task._try_click_on_zip_line.call_count == 1:
+                self.assertEqual(self.store.get(context.fingerprint).motion.samples, 3)
+                return False, "gate"
+            on_gate_confirmed(task.next_frame())
+            return True, None
+
+        task._try_click_on_zip_line.side_effect = gate
         self.run_zip(task)
         record = self.store.get(context.fingerprint)
-        self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (4, 110, 25))
+        # Three seeded samples of (100,20), one replay of (100,20),
+        # and two visual corrections of (40,20) -> new sample (180,60).
+        self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (4, 120, 30))
         self.assertEqual(task._move_to_zip_line_target.call_count, 2)
         self.assertEqual(task.active_and_send_mouse_delta.call_count, 3)
+
+    def test_gold_gate_never_passes_fallback_does_not_save_initial_sample(self):
+        task = self.zip_task([gold_tests.TestZipLineGoldGate._matched_icon()] * 8)
+        context = self.zip_context(task)
+        task._try_click_on_zip_line = Mock(return_value=(False, "gate"))
+        task._legacy_click_on_zip_line = Mock(return_value=True)
+        self.run_zip(task)
+        self.assertIsNone(self.store.get(context.fingerprint))
+        task._legacy_click_on_zip_line.assert_called_once()
+
+    def test_gold_gate_saves_before_e_failure_but_does_not_train_twice(self):
+        task = self.zip_task()
+        context = self.zip_context(task)
+
+        def no_e(*args, on_gate_confirmed=None):
+            if on_gate_confirmed is not None:
+                on_gate_confirmed(task.next_frame())
+            return False, "interaction"
+
+        task._try_click_on_zip_line.side_effect = no_e
+        with self.assertRaisesRegex(RuntimeError, "E 连续未生效"):
+            self.run_zip(task)
+        record = self.store.get(context.fingerprint)
+        self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (1, 40, 20))
+
+    def test_gate_retry_random_search_contamination_discards_successful_sample(self):
+        task = self.zip_task([gold_tests.TestZipLineGoldGate._matched_icon()] * 8)
+        context = self.zip_context(task)
+
+        def dirty_gate(*args, on_gate_confirmed=None):
+            if task._try_click_on_zip_line.call_count == 1:
+                task._initial_alignment_scope.disturb("random_search")
+                return False, "gate"
+            on_gate_confirmed(task.next_frame())
+            return True, None
+
+        task._try_click_on_zip_line.side_effect = dirty_gate
+        self.run_zip(task)
+        self.assertIsNone(self.store.get(context.fingerprint))
 
     def test_nearest_yaw_rechecks_actual_bucket_and_learns_total_at_original_yaw(self):
         task = self.zip_task()

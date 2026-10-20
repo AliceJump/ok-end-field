@@ -31,6 +31,8 @@ class InitialAlignment:
         self.frame_id = 0
         self.observed_at = session.started_at
         self._has_frame = False
+        self.require_gold_gate = False
+        self._pending_center = None
 
     def frame_acquired(self, frame):
         profile = self.session.context.capture_profile
@@ -72,6 +74,10 @@ class InitialAlignment:
     def confirm_alignment(self, center):
         if not self._has_frame:
             return False
+        if self.require_gold_gate:
+            # The visual alignment is provisional until the actual gold gate accepts it.
+            self._pending_center = center
+            return False
         width, height = self.task.width, self.task.height
         position = center[0] / width, center[1] / height
         target = TargetPrior(aligned_position=position) if all(0 <= value <= 1 for value in position) else None
@@ -84,6 +90,18 @@ class InitialAlignment:
             f"[initial-align-learning] verified target={self.session.context.target_id} saved={saved} move=({self.session.dx},{self.session.dy}) reasons={self.session.reasons}"
         )
         return saved
+
+    def confirm_zipline_gold_gate(self, frame):
+        """Commit the full, still-clean movement only after a fresh gold-gate match."""
+        if not self.require_gold_gate or self._pending_center is None or self.session.closed:
+            return False
+        self.frame_acquired(frame)
+        if not self._has_frame:
+            return False
+        center = self._pending_center
+        self._pending_center = None
+        self.require_gold_gate = False
+        return self.confirm_alignment(center)
 
     def fail(self):
         saved = self.session.fail(now=time.time())
@@ -162,6 +180,7 @@ def initial_alignment(task, context, *, confidence=ContextConfidence.HIGH):
                 after_frame_id=learning.frame_id,
             )
             learning._has_frame = False
+            learning._pending_center = None
         return accepted
 
     setattr(task, name, send)

@@ -1,5 +1,6 @@
 import math
 import re
+from contextlib import nullcontext
 from copy import copy
 from dataclasses import replace
 
@@ -21,7 +22,7 @@ from src.interaction.target_movement import ellipse_geometry, ellipse_move_profi
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_learning import align_initial_target
 from src.tasks.mixin.navigation_mixin import NavigationMixin
-from src.tasks.mixin.route_learning import align_initial_zipline, route_context_for
+from src.tasks.mixin.route_learning import route_context_for, zipline_initial_alignment
 from src.tasks.mixin.zip_line_motion_cache import build_zip_line_route_fingerprint
 from src.tasks.mixin.zip_line_yaw_cache import (
     load_arrow_turn_motion,
@@ -672,11 +673,17 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.box_of_screen(0.351, 0.943, 0.657, 0.981),
         )
 
-    def _try_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2):
+    def _try_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2, *, on_gate_confirmed=None):
         """执行一次黄色门控 + 点击 + E，返回 ``(成功, 失败原因)``。"""
         stop_match, stop_box = self._zip_line_stop_state()
         lock_start = self.active_time()
-        while not self._zip_line_target_is_gold_and_centered(zip_line, frame=self.next_frame(), tolerance=50):
+        while True:
+            gate_frame = self.next_frame()
+            if self._zip_line_target_is_gold_and_centered(zip_line, frame=gate_frame, tolerance=50):
+                # Observe the gate before clicking/E changes the scene or taints the learning session.
+                if on_gate_confirmed is not None:
+                    on_gate_confirmed(gate_frame)
+                break
             if self.active_time() - lock_start >= lock_timeout:
                 return False, "gate"
             self.sleep(0.05)
@@ -920,59 +927,77 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return current_yaw, True
 
     def _align_and_activate_zip_line(self, zip_line, need_scroll=None, initial_move=None, learning_context=None):
-        """Close initial learning before activation; gate retries use only realtime alignment."""
-        if learning_context is not None:
-            align_initial_zipline(self, learning_context, zip_line, need_scroll=need_scroll)
-        else:
-            self._align_zip_line_distance(
-                zip_line,
-                need_scroll=need_scroll,
-                tolerance=50,
-                initial_move=initial_move,
-            )
-        self.log_info(f"成功将滑索调整到{zip_line}的中心")
+        """Commit a clean complete initial movement only when its gold gate is verified."""
+        scope = (
+            zipline_initial_alignment(self, learning_context, zip_line, need_scroll=need_scroll)
+            if learning_context is not None
+            else nullcontext(None)
+        )
+        with scope as learning:
+            if learning_context is None:
+                self._align_zip_line_distance(
+                    zip_line,
+                    need_scroll=need_scroll,
+                    tolerance=50,
+                    initial_move=initial_move,
+                )
+            self.log_info(f"成功将滑索调整到{zip_line}的中心")
 
-        gate_retry_start = self.active_time()
-        gate_retry_deadline = gate_retry_start + 20
-        activated = False
-        last_reason = None
-        interaction_failed = False
-        for attempt in range(3):
-            activated, last_reason = self._try_click_on_zip_line(zip_line)
-            if activated:
-                break
-            if last_reason == "gate":
-                self.log_info(f"滑索{zip_line}金色门未通过，重新对中后重试（{attempt + 1}/3）")
-            else:
-                interaction_failed = True
-                self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
-            if attempt >= 2 or self.active_time() >= gate_retry_deadline:
-                break
-            realigned = self._align_zip_line_distance(
-                zip_line,
-                need_scroll=need_scroll,
-                tolerance=50,
-                max_time=10,
-                raise_if_fail=False,
-                deadline=gate_retry_deadline,
-            )
-            if not realigned:
-                last_reason = "gate"
-                self.log_info(f"滑索{zip_line}重新对中失败，进入失败处理")
-                break
+            gate_retry_start = self.active_time()
+            gate_retry_deadline = gate_retry_start + 20
+            activated = False
+            last_reason = None
+            interaction_failed = False
+            for attempt in range(3):
+                on_gate = (
+                    learning.confirm_zipline_gold_gate
+                    if learning is not None and not learning.session.closed
+                    else None
+                )
+                activated, last_reason = self._try_click_on_zip_line(
+                    zip_line, **({"on_gate_confirmed": on_gate} if on_gate is not None else {})
+                )
+                if activated:
+                    break
+                if last_reason == "gate":
+                    self.log_info(f"滑索{zip_line}金色门未通过，重新对中后重试（{attempt + 1}/3）")
+                else:
+                    interaction_failed = True
+                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
+                if attempt >= 2 or self.active_time() >= gate_retry_deadline:
+                    break
+                # Retry movement belongs to the same original-entry sample if the gate
+                # has not passed. The entry zoom has already been applied once.
+                retry_learning = learning if on_gate is not None else None
+                realigned = self._align_zip_line_distance(
+                    zip_line,
+                    need_scroll=False if retry_learning is not None else need_scroll,
+                    tolerance=50,
+                    max_time=10,
+                    raise_if_fail=False,
+                    deadline=gate_retry_deadline,
+                    **({"learning_session": retry_learning} if retry_learning is not None else {}),
+                )
+                if not realigned:
+                    last_reason = "gate"
+                    self.log_info(f"滑索{zip_line}重新对中失败，进入失败处理")
+                    break
 
-        if not activated:
-            if interaction_failed:
-                self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
-                raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
-            if last_reason == "gate":
-                self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击 + E")
-                if not self._legacy_click_on_zip_line():
-                    self.log_info(f"滑索{zip_line}直接点击后 E 未生效", notify=True)
-                    raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
-            else:
-                self.log_info(f"滑索{zip_line}交互失败", notify=True)
-                raise RuntimeError(f"滑索{zip_line}交互失败")
+            if not activated:
+                # A direct-click fallback has no gold-gate evidence and must not train.
+                if learning is not None and not learning.session.closed:
+                    learning.fail()
+                if interaction_failed:
+                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
+                    raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
+                if last_reason == "gate":
+                    self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击 + E")
+                    if not self._legacy_click_on_zip_line():
+                        self.log_info(f"滑索{zip_line}直接点击后 E 未生效", notify=True)
+                        raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
+                else:
+                    self.log_info(f"滑索{zip_line}交互失败", notify=True)
+                    raise RuntimeError(f"滑索{zip_line}交互失败")
 
     def zip_line_list_go(
         self,
