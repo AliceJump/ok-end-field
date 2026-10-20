@@ -64,7 +64,6 @@ class TestMyOneTimeTask(TaskTestCase):
         )
 
 
-
 class TestResolutionMinimum(unittest.TestCase):
     def test_supported_resolution_minimum_is_900p(self):
         self.assertEqual(config["supported_resolution"]["min_size"], (1600, 900))
