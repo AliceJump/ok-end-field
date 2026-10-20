@@ -8,11 +8,12 @@ from ok.gui.Communicate import communicate
 from ok.gui.tasks.ConfigCard import ConfigCard, og
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 from ok.gui.widget.CustomTab import CustomTab
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QBoxLayout, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     ComboBox,
+    ExpandSettingCard,
     FluentIcon,
     LineEdit,
     NavigationItemPosition,
@@ -165,6 +166,12 @@ class AccountConfigTab(CustomTab):
         elif self.executor is not None:
             self.sync_from_source()
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        direction = QBoxLayout.TopToBottom if self.viewport().width() < 700 else QBoxLayout.LeftToRight
+        for row in getattr(self, "_action_rows", ()):
+            row.layout.setDirection(direction)
+
     def _prewarm_refresh(self):
         """启动空闲时预热账号页首屏，效果等同首次 showEvent 的加载。"""
         if self._loaded_once or self.executor is None:
@@ -191,10 +198,6 @@ class AccountConfigTab(CustomTab):
             self._building = False
 
     def _build_ui(self):
-        header = QWidget()
-        header_layout = QVBoxLayout(header)
-        header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(6)
         tip = BodyLabel(
             og.app.tr(
                 "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。"
@@ -203,38 +206,49 @@ class AccountConfigTab(CustomTab):
             )
         )
         tip.setWordWrap(True)
-        header_layout.addWidget(tip)
-        self.add_card(og.app.tr("账号配置中心"), header)
+        tip.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        tip.setObjectName("accountHint")
+        self.vBoxLayout.addWidget(tip)
 
         base_widget = QWidget()
         base_layout = QVBoxLayout(base_widget)
         base_layout.setContentsMargins(0, 0, 0, 0)
-        base_layout.setSpacing(8)
+        base_layout.setSpacing(0)
 
         account_list_row = LabelAndWidget("账号列表", "每行一个手机号；逗号后内容忽略")
+        account_list_row.setProperty("configFirst", True)
         self.account_list_edit = TextEdit()
-        self.account_list_edit.setFixedWidth(420)
-        self.account_list_edit.setMinimumHeight(120)
+        self.account_list_edit.setMinimumWidth(160)
+        self.account_list_edit.setMaximumWidth(420)
+        self.account_list_edit.setFixedHeight(120)
         self.account_list_edit.setPlaceholderText(og.app.tr("手机号A\n手机号B"))
         account_list_row.add_widget(self.account_list_edit, stretch=0)
         base_layout.addWidget(account_list_row)
 
         base_action_row = LabelAndWidget("账号列表操作")
         base_action_layout = QHBoxLayout()
+        base_action_layout.setContentsMargins(0, 0, 0, 0)
+        base_action_layout.setSpacing(8)
         base_action_layout.addStretch(1)
         self.save_base_button = PrimaryPushButton(og.app.tr("保存账号列表"))
         base_action_layout.addWidget(self.save_base_button)
         base_action_row.add_layout(base_action_layout, stretch=1)
         base_layout.addWidget(base_action_row)
 
-        self.add_card(og.app.tr("账号基础设置"), base_widget)
+        self.base_card = ExpandSettingCard(FluentIcon.PEOPLE, og.app.tr("账号基础设置"), parent=self.view)
+        self.base_card.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.base_card.viewLayout.addWidget(base_widget)
+        self.base_card._endfield_commit = self.save_base_settings
+        self.base_card._adjustViewSize()
+        self.vBoxLayout.addWidget(self.base_card)
 
         selector_widget = QWidget()
         selector_layout = QVBoxLayout(selector_widget)
         selector_layout.setContentsMargins(0, 0, 0, 0)
-        selector_layout.setSpacing(8)
+        selector_layout.setSpacing(0)
 
         account_selector_row = LabelAndWidget("账号", "从账号列表或已有覆盖中选择")
+        account_selector_row.setProperty("configFirst", True)
         self.account_selector = ComboBox()
         self.account_selector.setMinimumWidth(220)
         account_selector_row.add_widget(self.account_selector, stretch=0)
@@ -245,7 +259,8 @@ class AccountConfigTab(CustomTab):
             "当前账号的 hg/check data.content 值，用于官方地图位置同步",
         )
         self.map_content_edit = LineEdit()
-        self.map_content_edit.setFixedWidth(420)
+        self.map_content_edit.setMinimumWidth(160)
+        self.map_content_edit.setMaximumWidth(420)
         self.map_content_edit.setPlaceholderText(og.app.tr("只填写 data.content 的字符串值"))
         map_content_row.add_widget(self.map_content_edit, stretch=0)
         selector_layout.addWidget(map_content_row)
@@ -265,6 +280,8 @@ class AccountConfigTab(CustomTab):
 
         action_row = LabelAndWidget("账号任务覆盖操作")
         action_layout = QHBoxLayout()
+        action_layout.setContentsMargins(0, 0, 0, 0)
+        action_layout.setSpacing(8)
         action_layout.addStretch(1)
         self.save_current_config_button = PrimaryPushButton(og.app.tr("保存当前账号配置"))
         self.clear_task_override_button = PushButton(og.app.tr("清空当前任务覆盖"))
@@ -274,11 +291,21 @@ class AccountConfigTab(CustomTab):
         action_layout.addWidget(self.clear_account_override_button)
         action_row.add_layout(action_layout, stretch=1)
         selector_layout.addWidget(action_row)
+        self._action_rows = (base_action_row, action_row)
 
-        self.add_card(og.app.tr("账号任务选择"), selector_widget)
+        self.selector_card = ExpandSettingCard(FluentIcon.SETTING, og.app.tr("账号任务选择"), parent=self.view)
+        self.selector_card.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.selector_card.viewLayout.addWidget(selector_widget)
+        self.selector_card._adjustViewSize()
+        self.vBoxLayout.addWidget(self.selector_card)
+        for rows in (base_layout, selector_layout):
+            for index in range(rows.count()):
+                rows.itemAt(index).widget().setMinimumHeight(64)
 
         editor_widget = QWidget()
+        editor_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         self.editor_layout = QVBoxLayout(editor_widget)
+        self.editor_layout.setAlignment(Qt.AlignTop)
         self.editor_layout.setContentsMargins(0, 0, 0, 0)
         self.editor_layout.setSpacing(8)
         self.editor_summary_label = BodyLabel()
@@ -286,7 +313,7 @@ class AccountConfigTab(CustomTab):
         self.editor_layout.addWidget(self.editor_summary_label)
         self.editor_layout.addWidget(self.editor_empty_label)
         self.editor_summary_label.hide()
-        self.add_card(og.app.tr("任务属性配置"), editor_widget)
+        self.vBoxLayout.addWidget(editor_widget)
 
         status_widget = QWidget()
         status_layout = QVBoxLayout(status_widget)
@@ -765,7 +792,7 @@ class AccountConfigTab(CustomTab):
             return
 
         only_diff = bool(self.only_diff_switch.isChecked())
-        virtual_config, editable_keys, _base_values, total_supported_keys = self._build_virtual_config(
+        virtual_config, editable_keys, _base_values, _total_supported_keys = self._build_virtual_config(
             task,
             account_key,
             account_name,
@@ -780,12 +807,7 @@ class AccountConfigTab(CustomTab):
             self.editor_empty_label.show()
             return
 
-        view_mode = og.app.tr("仅差异项") if only_diff else og.app.tr("全部配置")
-        summary_text = og.app.tr("当前视图：{view_mode} | 展示 {count} / {total} 项").format(
-            view_mode=view_mode, count=len(editable_keys), total=total_supported_keys
-        )
-        self.editor_summary_label.setText(summary_text)
-        self.editor_summary_label.show()
+        self.editor_summary_label.hide()
 
         config_description = dict(task.config_description or {})
         config_description.update(getattr(task, "account_config_description", {}) or {})
@@ -811,7 +833,6 @@ class AccountConfigTab(CustomTab):
                 config_type,
                 task.icon,
             )
-            card.card.setTitle(f"{og.app.tr(task.name)} - {account_name or account_key}")
             self._editor_cards[cache_key] = card
             self.editor_layout.addWidget(card)
             while len(self._editor_cards) > 8:
@@ -823,9 +844,11 @@ class AccountConfigTab(CustomTab):
             card.config.clear()
             card.config.update(virtual_config)
             card.config.default = dict(virtual_config.default)
-            card.card.setTitle(f"{og.app.tr(task.name)} - {account_name or account_key}")
             card.update_config()
 
+        card.card.setTitle(og.app.tr("任务属性配置"))
+        card.card.setContent(og.app.tr(task.name))
+        card._endfield_drawer_title = f"{og.app.tr(task.name)} - {account_name or account_key}"
         desired_expand_state = self._task_expand_state.get(AccountConfigTab._task_storage_name(task), card.isExpand)
         card.setExpand(desired_expand_state)
         card.show()
@@ -938,6 +961,10 @@ class AccountConfigTab(CustomTab):
 
     def _clear_overrides_and_refresh(self, clear):
         """保留未保存的地图编辑，清空指定覆盖，再刷新账号与任务界面。"""
+        from src.gui.components.EndfieldTacticalDrawer import close_page_drawer
+
+        # The clear action supersedes pending task edits in the borrowed form.
+        close_page_drawer(self, save=False)
         map_dirty = bool(
             self.current_map_account_key and self.map_content_edit.text().strip() != self.current_map_value
         )
