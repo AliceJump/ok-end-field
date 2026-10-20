@@ -124,18 +124,7 @@ def yaw_environment(width, height, start_yaw, *, scroll=False):
     )
 
 
-def load_arrow_turn_motion(width, height, start_yaw, target_yaw, *, environment=None):
-    """Convert individual raw acquisitions before computing the current turn average."""
-    if not learning_allowed():
-        return None
-    key = _turn_key(width, height, start_yaw, target_yaw)
-    if key is None:
-        return None
-    environment = environment or yaw_environment(width, height, start_yaw)
-    requested = json.loads(key)[1:]
-    with _CACHE_LOCK:
-        payload = _read_cache()
-        entries = payload["turns"].copy()
+def _new_yaw_record(entries, requested, environment):
     combined = None
     for source_key, entry in entries.items():
         try:
@@ -149,29 +138,46 @@ def load_arrow_turn_motion(width, height, start_yaw, target_yaw, *, environment=
             combined = combine_records(combined, record, environment)
         except (KeyError, TypeError, ValueError):
             continue
-    if combined is None:
-        # Old counts intentionally stay unchanged, even across capture sizes.
-        # Never mix these aggregates into converted per-acquisition statistics.
-        candidates = []
-        legacy_turns = payload.get("legacy_turns", {})
-        if not isinstance(legacy_turns, dict):
-            legacy_turns = {}
-        for old_key, entry in legacy_turns.items():
-            try:
-                source_key = json.loads(old_key)
-                if source_key[1:3] != requested or environment.scroll:
-                    continue
-                count = entry["samples"]
-                dx = _finite_number(entry["mean_dx"])
-                if type(count) is not int or count <= 0 or dx is None or not 0 < abs(dx) <= 6000:
-                    continue
-                candidates.append((source_key[0] == list(environment.capture_size), count, round(dx)))
-            except (KeyError, TypeError, ValueError):
-                continue
-        if candidates:
-            _, count, dx = max(candidates)
-            return dx, count
+    return combined
+
+
+def _legacy_yaw_motion(legacy_turns, requested, environment):
+    """Old counts intentionally stay unchanged, independently of new statistics."""
+    if not isinstance(legacy_turns, dict) or environment.scroll:
         return None
+    candidates = []
+    for old_key, entry in legacy_turns.items():
+        try:
+            source_key = json.loads(old_key)
+            if source_key[1:3] != requested:
+                continue
+            count = entry["samples"]
+            dx = _finite_number(entry["mean_dx"])
+            if type(count) is not int or count <= 0 or dx is None or not 0 < abs(dx) <= 6000:
+                continue
+            candidates.append((source_key[0] == list(environment.capture_size), count, round(dx)))
+        except (KeyError, TypeError, ValueError):
+            continue
+    if not candidates:
+        return None
+    _, count, dx = max(candidates)
+    return dx, count
+
+
+def load_arrow_turn_motion(width, height, start_yaw, target_yaw, *, environment=None):
+    """Prefer converted new history; independently fall back to unconverted old counts."""
+    if not learning_allowed():
+        return None
+    key = _turn_key(width, height, start_yaw, target_yaw)
+    if key is None:
+        return None
+    environment = environment or yaw_environment(width, height, start_yaw)
+    requested = json.loads(key)[1:]
+    with _CACHE_LOCK:
+        payload = _read_cache()
+    combined = _new_yaw_record(payload["turns"], requested, environment)
+    if combined is None:
+        return _legacy_yaw_motion(payload.get("legacy_turns"), requested, environment)
     motion = combined.motion_for(environment)
     if not motion.samples:
         return None

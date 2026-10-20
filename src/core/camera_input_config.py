@@ -70,22 +70,27 @@ def read_saved_camera_settings():
                 for kind in ("speed", "reverse"):
                     name = f"{kind}_{axis}"
                     try:
-                        raw, value_type = winreg.QueryValueEx(key, profile["axes"][axis][f"{kind}_key"])
-                        if value_type != winreg.REG_DWORD:
-                            raise ValueError("Expected a DWORD camera setting")
-                        if kind == "speed":
-                            value = struct.unpack("<f", struct.pack("<I", raw))[0]
-                            _evaluate_curve(profile["axes"][axis]["speed_curve"], value)
-                        else:
-                            if raw not in (0, 1):
-                                raise ValueError("Invalid reverse setting")
-                            value = bool(raw)
-                        values[name] = value
+                        values[name] = _read_saved_camera_field(key, profile["axes"][axis], kind)
                     except (OSError, ValueError, TypeError, OverflowError, struct.error):
                         fallback.append(name)
     except (ImportError, OSError, ValueError, KeyError, TypeError):
         fallback = list(values)
     return values, tuple(fallback)
+
+
+def _read_saved_camera_field(key, config, kind):
+    import winreg
+
+    raw, value_type = winreg.QueryValueEx(key, config[f"{kind}_key"])
+    if value_type != winreg.REG_DWORD:
+        raise ValueError("Expected a DWORD camera setting")
+    if kind == "speed":
+        value = struct.unpack("<f", struct.pack("<I", raw))[0]
+        _evaluate_curve(config["speed_curve"], value)
+        return value
+    if raw not in (0, 1):
+        raise ValueError("Invalid reverse setting")
+    return bool(raw)
 
 
 def _evaluate_curve(keys: list[dict], value: float) -> float:

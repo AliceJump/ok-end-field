@@ -151,27 +151,29 @@ class LearningSession:
                 verification=self.verification,
             )
 
-        def update(record):
-            updated = record.successful(
-                self.dx,
-                self.dy,
-                target=target,
-                now=now,
-                provenance=(self.context.task, self.context.phase, evidence.kind),
-                environment=self.environment or environment_for_context(self.context),
-                inputs=tuple(self.inputs),
-                verification=self.verification,
-            )
-            if self.environment is not None:
-                records = self.store.snapshot()
-                if isinstance(records, dict):
-                    records[self.context.fingerprint] = updated
-                    hint = choose_hint(workflow_record(self.context, records, self.environment), ContextConfidence.HIGH)
-                    if ready_hint(hint):
-                        updated = replace(updated, legacy_retired=True)
-            return updated
+        return self.store.update(
+            self.context.fingerprint, lambda record: self._successful_workflow_record(record, now=now, target=target)
+        )
 
-        return self.store.update(self.context.fingerprint, update)
+    def _successful_workflow_record(self, record, *, now, target):
+        updated = record.successful(
+            self.dx,
+            self.dy,
+            target=target,
+            now=now,
+            provenance=(self.context.task, self.context.phase, "aligned"),
+            environment=self.environment or environment_for_context(self.context),
+            inputs=tuple(self.inputs),
+            verification=self.verification,
+        )
+        if self.environment is None:
+            return updated
+        records = self.store.snapshot()
+        if not isinstance(records, dict):
+            return updated
+        records[self.context.fingerprint] = updated
+        hint = choose_hint(workflow_record(self.context, records, self.environment), ContextConfidence.HIGH)
+        return replace(updated, legacy_retired=True) if ready_hint(hint) else updated
 
     def fail(self, *, now):
         allowed = self._allowed()
