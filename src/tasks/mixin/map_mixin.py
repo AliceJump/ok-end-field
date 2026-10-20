@@ -94,25 +94,33 @@ class MapMixin(BaseEfTask):
         ):
             return False
 
-        # 如需保留特定标记，则尝试查找并勾选
+        # 如需保留特定标记，则在左侧列表中查找并勾选
         if need_reserve_icon_name:
-            for _ in range(2):
-                if ocr:
-                    result = self.wait_click_ocr(
-                        match=re.compile(need_reserve_icon_name),
-                        box=self.box_of_screen(0.003, 0.063, 0.281, 0.993),
-                        time_out=2,
-                        log=True,
-                    )
-                else:
-                    result = self.wait_click_feature(
-                        feature=need_reserve_icon_name,
-                        box=self.box_of_screen(0.003, 0.063, 0.281, 0.993),
-                        time_out=2,
-                        raise_if_not_found=False,
-                    )
+            reserve_icon_found = False
+            # 尝试5次查找，每次滚动一次
+            for _ in range(5):
+                for _ in range(2):
+                    if ocr:
+                        result = self.wait_click_ocr(
+                            match=re.compile(need_reserve_icon_name),
+                            box=self.box_of_screen(0.003, 0.063, 0.281, 0.993),
+                            time_out=2,
+                            log=True,
+                        )
+                    else:
+                        result = self.wait_click_feature(
+                            feature=need_reserve_icon_name,
+                            box=self.box_of_screen(0.003, 0.063, 0.281, 0.993),
+                            time_out=2,
+                            raise_if_not_found=False,
+                        )
+
+                    if result:
+                        reserve_icon_found = True
+                        break
 
                 if result:
+                    reserve_icon_found = True
                     break
 
                 self.scroll_relative(0.1, 0.5, -1)
@@ -121,7 +129,7 @@ class MapMixin(BaseEfTask):
         self.back()
         self.wait_ui_stable(refresh_interval=0.2)
 
-        return True
+        return not need_reserve_icon_name or reserve_icon_found
 
     def to_near_transfer_point(self, need_track, need_location_list=None, need_reserve_icon_name=None):
         """
