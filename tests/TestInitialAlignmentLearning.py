@@ -272,7 +272,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
     def test_gate_retry_recorded_random_search_is_part_of_full_verified_motion(self):
         task = self.zip_task([
             gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
-            gold_tests.TestZipLineGoldGate._matched_icon(),
+            *[gold_tests.TestZipLineGoldGate._matched_icon()] * 8,
         ])
         context = self.zip_context(task)
 
@@ -293,7 +293,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
     def test_rejected_random_search_input_still_cannot_save_gold_gate_sample(self):
         task = self.zip_task([
             gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
-            gold_tests.TestZipLineGoldGate._matched_icon(),
+            *[gold_tests.TestZipLineGoldGate._matched_icon()] * 8,
         ])
         context = self.zip_context(task)
         task.active_and_send_mouse_delta.side_effect = [True, False]
