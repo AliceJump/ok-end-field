@@ -132,32 +132,11 @@ class CharactersModule(_LangModuleBaseT):
 class DailyBattleMixinModule(_LangModuleBaseT):
     """daily_battle_mixin — OCR 语言节点（值取自 zh_CN）"""
 
-    k_4d0b4688: re.Pattern[str]
-    """取消"""
-
-    k_45ff3e5f: re.Pattern[str]
-    """可领取"""
-
     k_25e74dce: re.Pattern[str]
     """当前"""
 
-    k_a0d434d4: re.Pattern[str]
-    """干员"""
-
-    k_6c4d77af: re.Pattern[str]
-    """恢复理智"""
-
-    k_9294c931: re.Pattern[str]
-    """挑战"""
-
-    k_6afbae72: re.Pattern[str]
-    """撤离"""
-
     k_b8a81b7a: re.Pattern[str]
     """放弃"""
-
-    k_cd9eabf7: re.Pattern[str]
-    """激发"""
 
     k_bfe73e18: re.Pattern[str]
     """激发|放弃"""
@@ -168,41 +147,17 @@ class DailyBattleMixinModule(_LangModuleBaseT):
     k_b56d9ac6: re.Pattern[str]
     """确认"""
 
-    k_0ba18905: re.Pattern[str]
-    """离开"""
-
     k_79f91106: re.Pattern[str]
     """索引"""
 
     k_a6ee3a67: re.Pattern[str]
     """自选"""
 
-    k_60064e16: re.Pattern[str]
-    """获得奖励"""
-
     k_4cc61900: re.Pattern[str]
     """触碰"""
 
-    k_0e25578e: re.Pattern[str]
-    """进入"""
-
-    k_8967d3c6: re.Pattern[str]
-    """追踪"""
-
-    k_55cfd979: re.Pattern[str]
-    """重新挑战"""
-
-    k_39d12e73: re.Pattern[str]
-    """领取"""
-
     k_39d12e73_1: re.Pattern[str]
     """领取"""
-
-    k_62b5b688: re.Pattern[str]
-    """已出战"""
-
-    k_12577cd1: re.Pattern[str]
-    """出战"""
 
     k_70b20820: re.Pattern[str]
     """选择"""
@@ -220,30 +175,8 @@ class DailyBattleMixinModule(_LangModuleBaseT):
 class DailyBuyMixinModule(_LangModuleBaseT):
     """daily_buy_mixin — OCR 语言节点（值取自 zh_CN）"""
 
-    k_8f834df1: re.Pattern[str]
-    """确认购买"""
-
-    k_02894ea7: str
-    """物资调度"""
-
     stable_materials_tab: re.Pattern[str]
     """稳定"""
-
-
-class DailyDemoMixinModule(_LangModuleBaseT):
-    """daily_demo_mixin — OCR 语言节点（值取自 zh_CN）"""
-
-    double_reward: re.Pattern[str]
-    """开"""
-
-    k_27d2b829: str
-    """舰桥"""
-
-    k_933056f0: re.Pattern[str]
-    """信赖"""
-
-    k_d661f6da: re.Pattern[str]
-    """存放"""
 
 
 class DailyLiaisonMixinModule(_LangModuleBaseT):
@@ -262,44 +195,17 @@ class DailyLiaisonMixinModule(_LangModuleBaseT):
 class DailyRoutineMixinModule(_LangModuleBaseT):
     """daily_routine_mixin — OCR 语言节点（值取自 zh_CN）"""
 
-    k_dfe79994: str
-    """交易"""
-
-    k_7d394484: str
-    """制作"""
-
     k_105cdd5a: re.Pattern[str]
     """任务$"""
-
-    k_39d12e73: str
-    """领取"""
 
     k_bf856c96: re.Pattern[str]
     """一键领取"""
 
-    k_f546849b: re.Pattern[str]
-    """会客室"""
-
-    k_0e2d3a3c: re.Pattern[str]
-    """使用"""
-
     k_7be4248b: re.Pattern[str]
     """信用交易所"""
 
-    k_a63bb002: re.Pattern[str]
-    """全部接收"""
-
     k_3fef35d6: re.Pattern[str]
     """全部领取"""
-
-    k_a4cd21cc: re.Pattern[str]
-    """再次"""
-
-    k_7d394484_1: re.Pattern[str]
-    """制作"""
-
-    k_e1c08f6a: re.Pattern[str]
-    """简易"""
 
     k_b693e51a: re.Pattern[str]
     """收取信用"""
@@ -313,14 +219,8 @@ class DailyRoutineMixinModule(_LangModuleBaseT):
     k_8f2058a8: re.Pattern[str]
     """查看报价"""
 
-    k_04afbdcd: re.Pattern[str]
-    """制造"""
-
     k_23926d61: re.Pattern[str]
     """前往"""
-
-    k_1cdef26c: re.Pattern[str]
-    """助力"""
 
     k_4d0b4688: re.Pattern[str]
     """取消"""
@@ -328,29 +228,14 @@ class DailyRoutineMixinModule(_LangModuleBaseT):
     k_cdb1d49b: re.Pattern[str]
     """可"""
 
-    k_31cceca8: re.Pattern[str]
-    """培养"""
-
     k_e84c3ae9: re.Pattern[str]
     """好友"""
-
-    k_0503d6d6: re.Pattern[str]
-    """开展交流"""
-
-    k_449497e5: re.Pattern[str]
-    """情报交流"""
 
     k_41a9fd98: re.Pattern[str]
     """我转交的委托"""
 
-    k_de7b4c9e: re.Pattern[str]
-    """接收"""
-
     k_ffb5655a: re.Pattern[str]
     """收取"""
-
-    k_3297422a: re.Pattern[str]
-    """收集"""
 
     k_8d0e83fc: re.Pattern[str]
     """日常"""
@@ -376,32 +261,14 @@ class DailyRoutineMixinModule(_LangModuleBaseT):
     k_059a808c: re.Pattern[str]
     """理智补给|危机筹备"""
 
-    k_3e790a94: re.Pattern[str]
-    """生产助力"""
-
     k_401d58fa: re.Pattern[str]
     """的线索"""
-
-    k_3deed650: re.Pattern[str]
-    """设施"""
-
-    k_5c42c048: re.Pattern[str]
-    """等级"""
-
-    k_b56d9ac6: re.Pattern[str]
-    """确认"""
 
     k_1faf3321: re.Pattern[str]
     """装备"""
 
     k_bb6c696b: re.Pattern[str]
     """货品"""
-
-    k_1dd73947: re.Pattern[str]
-    """转交运送委托"""
-
-    k_e39054a0: re.Pattern[str]
-    """运转"""
 
     k_70b20820: re.Pattern[str]
     """选择"""
@@ -421,27 +288,6 @@ class DailyRoutineMixinModule(_LangModuleBaseT):
     k_39d12e73_1: re.Pattern[str]
     """领取"""
 
-    k_a72a252f: str
-    """仓储节点"""
-
-    k_9f929560: str
-    """据点管理"""
-
-    k_next_step: str
-    """下一步"""
-
-    k_fill_to_max: str
-    """填充至满"""
-
-    k_start_shipping: str
-    """开始运送"""
-
-    k_get_dispatch_ticket: str
-    """获得调度券"""
-
-    k_culture_stopped: re.Pattern[str]
-    """停工"""
-
     k_view_quote: str
     """查看报价"""
 
@@ -451,21 +297,6 @@ class DailyShopMixinModule(_LangModuleBaseT):
 
     k_9a0004ef: re.Pattern[str]
     """信用"""
-
-    k_38108eaa: re.Pattern[str]
-    """刷新"""
-
-    k_b56d9ac6: re.Pattern[str]
-    """确认"""
-
-    k_7cf40bbd: re.Pattern[str]
-    """购买"""
-
-    k_8533f5f6: re.Pattern[str]
-    """不足"""
-
-    k_b52d6a2a: re.Pattern[str]
-    """采购"""
 
 
 class DailyTradeMixinModule(_LangModuleBaseT):
@@ -486,9 +317,6 @@ class DailyTradeMixinModule(_LangModuleBaseT):
     k_33fb3f9c: re.Pattern[str]
     """弹性"""
 
-    k_7907d90f: re.Pattern[str]
-    """总控"""
-
     k_cd3a269a: re.Pattern[str]
     """查看好友价格"""
 
@@ -498,36 +326,18 @@ class DailyTradeMixinModule(_LangModuleBaseT):
     k_13f2c5a1: re.Pattern[str]
     """货组"""
 
-    k_f48bcfb6: re.Pattern[str]
-    """即将"""
-
-    k_6174dac7: re.Pattern[str]
-    """溢出"""
-
     impending_overflow: re.Pattern[str]
     """即将|溢出"""
 
     k_fa04e4df: re.Pattern[str]
     """物资调度终端"""
 
-    k_02894ea7: str
-    """物资调度"""
-
 
 class DeliveryTaskModule(_LangModuleBaseT):
     """DeliveryTask — OCR 语言节点（值取自 zh_CN）"""
 
-    k_a72a252f: str
-    """仓储节点"""
-
-    k_38108eaa: str
-    """刷新"""
-
     k_96b876e3: str
     """工业"""
-
-    k_9d5535b7: str
-    """接取运送委托"""
 
     k_b0e3a2da: str
     """登上滑索架"""
@@ -535,63 +345,21 @@ class DeliveryTaskModule(_LangModuleBaseT):
     k_ae8fb114: str
     """运送委托列表"""
 
-    k_f736eb3d: re.Pattern[str]
-    """取货"""
-
-    k_c7b4d04e: re.Pattern[str]
-    """送达"""
-
     k_6536f6f1: re.Pattern[str]
     """资源"""
 
     k_0c1ef9f5: re.Pattern[str]
     """交货"""
 
-    k_a72a252f_1: str
-    """仓储节点"""
-
-    k_view_location: str
-    """查看位置"""
-
-    k_accept_delivery: str
-    """接取运送委托"""
-
-    k_fragile: str
-    """易损"""
-
-    k_not_fragile: str
-    """不易损"""
-
 
 class GameFlowMixinModule(_LangModuleBaseT):
     """game_flow_mixin — OCR 语言节点（值取自 zh_CN）"""
 
-    k_d6b103ab: re.Pattern[str]
-    """建设"""
-
-    k_b1a3fede: re.Pattern[str]
-    """更换"""
-
     k_8b2ca27a: re.Pattern[str]
     """点击空白处继续"""
 
-    k_b56d9ac6: re.Pattern[str]
-    """确认"""
-
     k_7cd2e0c0: re.Pattern[str]
     """结束拜访"""
-
-    k_f546849b: re.Pattern[str]
-    """会客室"""
-
-    k_04afbdcd: re.Pattern[str]
-    """制造"""
-
-    k_d3ade189: re.Pattern[str]
-    """事务"""
-
-    k_0ba18905: re.Pattern[str]
-    """离开"""
 
 
 class LiaisonMixinModule(_LangModuleBaseT):
@@ -599,24 +367,6 @@ class LiaisonMixinModule(_LangModuleBaseT):
 
     k_80b758b9: str
     """中央环厅"""
-
-    k_ff0a81cd: re.Pattern[str]
-    """帝江号"""
-
-    k_47eaf0c5: re.Pattern[str]
-    """干员联络"""
-
-    k_c8d09cf9: re.Pattern[str]
-    """默认"""
-
-    k_4f35d7ac: re.Pattern[str]
-    """联络"""
-
-    k_ae0c20b5: re.Pattern[str]
-    """收下"""
-
-    k_662dc863: re.Pattern[str]
-    """赠送"""
 
 
 class LoginMixinModule(_LangModuleBaseT):
@@ -627,26 +377,6 @@ class LoginMixinModule(_LangModuleBaseT):
 
     k_20275ef2: re.Pattern[str]
     """上次"""
-
-    k_8c73d90e: re.Pattern[str]
-    """最近"""
-
-
-class MapMixinModule(_LangModuleBaseT):
-    """map_mixin — OCR 语言节点（值取自 zh_CN）"""
-
-    k_3da67d44: str
-    """标记显示管理"""
-
-    k_5d879e98: str
-    """清空选中"""
-
-
-class NavigationMixinModule(_LangModuleBaseT):
-    """navigation_mixin — OCR 语言节点（值取自 zh_CN）"""
-
-    k_8967d3c6: re.Pattern[str]
-    """追踪"""
 
 
 class TakeDeliveryTaskModule(_LangModuleBaseT):
@@ -988,9 +718,6 @@ class ZipLineMixinModule(_LangModuleBaseT):
     k_b0e3a2da: str
     """登上滑索架"""
 
-    k_55ef5a58: re.Pattern[str]
-    """下一连接点"""
-
     k_2f4f4a2f: re.Pattern[str]
     """向目标移动"""
 
@@ -1005,7 +732,6 @@ class _LangAccessorTyped:
     characters: CharactersModule
     daily_battle_mixin: DailyBattleMixinModule
     daily_buy_mixin: DailyBuyMixinModule
-    daily_demo_mixin: DailyDemoMixinModule
     daily_liaison_mixin: DailyLiaisonMixinModule
     daily_routine_mixin: DailyRoutineMixinModule
     daily_shop_mixin: DailyShopMixinModule
@@ -1014,8 +740,6 @@ class _LangAccessorTyped:
     game_flow_mixin: GameFlowMixinModule
     liaison_mixin: LiaisonMixinModule
     login_mixin: LoginMixinModule
-    map_mixin: MapMixinModule
-    navigation_mixin: NavigationMixinModule
     TakeDeliveryTask: TakeDeliveryTaskModule
     WarehouseTransferTask: WarehouseTransferTaskModule
     world_map: WorldMapModule

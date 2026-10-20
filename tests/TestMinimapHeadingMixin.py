@@ -183,9 +183,122 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertTrue(res["ok"], res)
         self.assertGreaterEqual(res["rounds"], 2)
         self.assertLessEqual(abs(res["error"]), 5.0)
-        # 每轮的实测系数应稳定反映真实比例（配置 0.0675 x 0.8 = 0.054）
-        for e in res["history"]:
+        # 首轮尚无相机基准；后续稳定观测才反映真实输入比例。
+        self.assertIsNone(res["history"][0]["ratio"])
+        for e in res["history"][1:]:
             self.assertAlmostEqual(e["ratio"], 0.0675 * 0.8, delta=0.002)
+
+    def test_initial_camera_offset_converges_without_full_revolutions(self):
+        task = _FakeTurnTask(facing=0.0, per_px=0.08438)
+        task.camera = 280.0
+        result = task.turn_to_bearing(90.0, tolerance=4.0, max_rounds=3)
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(result["rounds"], 2)
+        self.assertIsNone(result["history"][0]["ratio"])
+        self.assertAlmostEqual(sum(abs(dx * 0.08438) for dx in task.sent), 170.0, delta=0.2)
+
+    def test_all_camera_offsets_converge_with_calibrated_gain(self):
+        for camera in range(0, 360, 5):
+            with self.subTest(camera=camera):
+                task = _FakeTurnTask(facing=0.0, per_px=0.08438)
+                task.camera = float(camera)
+                result = task.turn_to_bearing(90.0, tolerance=4.0, max_rounds=3)
+                self.assertTrue(result["ok"], result)
+                self.assertLessEqual(result["rounds"], 2)
+                self.assertLess(sum(abs(dx * 0.08438) for dx in task.sent), 271.0)
+
+    @staticmethod
+    def _feedback_task(headings):
+        task = _FakeTurnTask(facing=0.0)
+        pending = list(headings)
+        active = False
+
+        def read(frame=None):
+            if active and pending:
+                reading = pending.pop(0)
+                if reading is None:
+                    return None, 0.0
+                task.facing = float(reading)
+            return task.facing, task.score
+
+        def after_w(*, min_score=None):
+            nonlocal active
+            active = True
+            return MinimapHeadingMixin._arrow_after_w(task, min_score=min_score)
+
+        task._read_arrow = read
+        task._arrow_after_w = after_w
+        return task, pending
+
+    def test_delayed_heading_is_waited_for_without_sending_another_turn(self):
+        task, pending = self._feedback_task([0, 30, 60, 90, 90, 90])
+        result = task.turn_to_bearing(90.0, max_rounds=3)
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(result["rounds"], 1)
+        self.assertEqual(task.w_presses, 1)
+        self.assertEqual(pending, [])
+        self.assertAlmostEqual(sum(task.sent) * 0.0675, 90.0, delta=0.1)
+
+    def test_transient_target_hit_is_not_accepted_before_heading_settles(self):
+        task, pending = self._feedback_task([90, 120, 90, 90, 90])
+        result = task.turn_to_bearing(90.0, max_rounds=3)
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(result["rounds"], 1)
+        self.assertEqual(pending, [])
+
+    def test_continuously_changing_heading_does_not_trigger_another_input(self):
+        task, _ = self._feedback_task([10, 30, 60, 90, 120, 150, 180])
+        result = task.turn_to_bearing(90.0, max_rounds=3)
+        self.assertFalse(result["ok"], result)
+        self.assertEqual(result["reason"], "heading_unsettled")
+        self.assertEqual(result["rounds"], 1)
+        self.assertEqual(task.w_presses, 1)
+
+    def test_slow_drift_is_not_mistaken_for_stable_heading(self):
+        task, _ = self._feedback_task([10, 11, 12, 13, 14, 15, 16])
+        result = task.turn_to_bearing(90.0, max_rounds=3)
+        self.assertFalse(result["ok"], result)
+        self.assertEqual(result["reason"], "heading_unsettled")
+        self.assertEqual(task.w_presses, 1)
+
+    def test_low_confidence_gap_requires_new_stable_observations(self):
+        task, pending = self._feedback_task([20, None, 40, 90, 90, 90])
+        result = task.turn_to_bearing(90.0, max_rounds=3)
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(result["rounds"], 1)
+        self.assertEqual(pending, [])
+
+    def test_reverse_feedback_is_not_an_adaptive_gain(self):
+        self.assertEqual(MinimapHeadingMixin._adapted_yaw_per_pixel(0.0675, -0.0675, 100), 0.0675)
+
+    def test_half_turn_feedback_is_not_used_as_a_calibration_sample(self):
+        task = _FakeTurnTask(facing=0.0, k_error=2.0)
+        result = task.turn_to_bearing(90.0, max_rounds=2)
+        self.assertIsNone(result["history"][1]["ratio"])
+
+    def test_unsettled_final_target_reading_does_not_report_success(self):
+        task, _ = self._feedback_task([10, 30, 60, 120, 150, 180, 90])
+        result = task.turn_to_bearing(90.0, max_rounds=3)
+        self.assertFalse(result["ok"], result)
+        self.assertEqual(result["reason"], "heading_unsettled")
+        self.assertEqual(result["rounds"], 1)
+
+    def test_normal_turn_reuses_refresh_wait_for_stability(self):
+        task = _FakeTurnTask(facing=0.0)
+        waits = []
+        task.sleep = waits.append
+        press_key = task.press_key
+
+        def align_character(key, **kwargs):
+            press_key(key, **kwargs)
+            task.facing = task.camera
+
+        task.press_key = align_character
+        task._arrow_after_w = lambda **kwargs: MinimapHeadingMixin._arrow_after_w(task, **kwargs)
+        result = task.turn_to_bearing(90.0)
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(task.w_presses, 1)
+        self.assertEqual(waits[-3:], [0.3, 0.05, 0.05])
 
     def test_takes_shortest_path_across_north(self):
         """350° -> 10° 应该向东走 +20°，而不是向西绕 340°。"""
@@ -206,13 +319,24 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertAlmostEqual(res["heading"], 90.0, delta=1.0)
 
     def test_adapts_to_ten_times_lower_coefficient(self):
-        """首轮实测比例偏小时，下一轮必须改用实测值完成补偿。"""
+        """从第二轮的同基准观测估计系数，首轮不能拿来估计。"""
         task = _FakeTurnTask(facing=0.0, k_error=0.1)
-        res = task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=2)
+        res = task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=3)
         self.assertTrue(res["ok"], res)
-        self.assertEqual(res["rounds"], 2)
-        self.assertEqual(task.w_presses, 2)
+        self.assertEqual(res["rounds"], 3)
+        self.assertEqual(task.w_presses, 3)
         self.assertLessEqual(abs(res["error"]), 5.0)
+
+    def test_adapts_reverse_ratio_from_second_round(self):
+        """负号反向镜头也要能根据第二轮稳定反馈修正增益。"""
+        task = _FakeTurnTask(facing=0.0, per_px=-0.084375, k_error=0.5)
+
+        result = task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=3)
+
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(result["rounds"], 3)
+        self.assertLess(sum(task.sent), 0)
+        self.assertTrue(all(entry["ratio"] is None or entry["ratio"] < 0 for entry in result["history"]))
 
     def test_large_turn_is_chunked_but_total_is_kept(self):
         """1333px 的位移要拆成 ≤100px 的多段，但总和不变（避免单次事件被截断）。"""
@@ -342,14 +466,21 @@ class TestOneShotAndDiagnostics(unittest.TestCase):
     def test_hints_when_measured_ratio_much_lower(self):
         """实测系数明显偏小时要提示位移可能被截断或计数传递不一致。"""
         task = _FakeTurnTask(facing=0.0, k_error=0.5)
-        task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=1)
+        task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=3)
         self.assertTrue(any("明显低于理论值" in m for m in task.logs), task.logs)
 
     def test_hints_when_measured_ratio_much_higher(self):
         """实测系数明显偏大时要提示计数传递可能不是 1:1。"""
-        task = _FakeTurnTask(facing=0.0, k_error=2.0)
-        task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=1)
+        task = _FakeTurnTask(facing=0.0, k_error=1.5)
+        task.turn_to_bearing(45.0, tolerance=5.0, max_rounds=3)
         self.assertTrue(any("明显高于理论值" in m for m in task.logs), task.logs)
+
+    def test_initial_camera_offset_does_not_emit_coefficient_advice(self):
+        task = _FakeTurnTask(facing=0.0)
+        task.camera = 280.0
+        result = task.turn_to_bearing(90.0, max_rounds=1)
+        self.assertIsNone(result["history"][0]["ratio"])
+        self.assertFalse(any("实测系数" in message for message in task.logs))
 
     def test_no_hint_for_tiny_displacement(self):
         """位移太小（<40px）时实测比例被量化噪声主导，不据此提示。"""
