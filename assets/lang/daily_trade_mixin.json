@@ -195,26 +195,6 @@
       "pattern": "elasticidad"
     }
   },
-  "k_7907d90f": {
-    "zh_CN": {
-      "pattern": "总控"
-    },
-    "zh_TW": {
-      "pattern": "總控"
-    },
-    "en_US": {
-      "pattern": "General control"
-    },
-    "ja_JP": {
-      "pattern": "全般的な制御"
-    },
-    "ko_KR": {
-      "pattern": "일반 통제"
-    },
-    "es_ES": {
-      "pattern": "controles generales"
-    }
-  },
   "k_cd3a269a": {
     "zh_CN": {
       "pattern": "查看好友价格"
@@ -323,46 +303,6 @@
       "pattern": "grupo de carga"
     }
   },
-  "k_f48bcfb6": {
-    "zh_CN": {
-      "pattern": "即将"
-    },
-    "zh_TW": {
-      "pattern": "即將"
-    },
-    "en_US": {
-      "pattern": "Coming soon"
-    },
-    "ja_JP": {
-      "pattern": "近日公開"
-    },
-    "ko_KR": {
-      "pattern": "곧 출시 예정"
-    },
-    "es_ES": {
-      "pattern": "Muy pronto"
-    }
-  },
-  "k_6174dac7": {
-    "zh_CN": {
-      "pattern": "溢出"
-    },
-    "zh_TW": {
-      "pattern": "溢出"
-    },
-    "en_US": {
-      "pattern": "overflow"
-    },
-    "ja_JP": {
-      "pattern": "オーバーフロー"
-    },
-    "ko_KR": {
-      "pattern": "과다"
-    },
-    "es_ES": {
-      "pattern": "rebosar"
-    }
-  },
   "impending_overflow": {
     "zh_CN": {
       "pattern": "即将|溢出"
@@ -425,50 +365,6 @@
     },
     "vi_VN": {
       "pattern": "Trạm Điều Phối Vật Tư"
-    }
-  },
-  "k_02894ea7": {
-    "zh_CN": {
-      "string": "物资调度"
-    },
-    "zh_TW": {
-      "string": "物資調度"
-    },
-    "en_US": {
-      "string": "Stock Redistribution"
-    },
-    "ja_JP": {
-      "string": "商品取引"
-    },
-    "ko_KR": {
-      "string": "물자 관리"
-    },
-    "es_ES": {
-      "string": "Redistribución de existencias"
-    },
-    "pt_BR": {
-      "string": "Redistribuição do Estoque"
-    },
-    "de_DE": {
-      "string": "Vorratneuverteilung"
-    },
-    "fr_FR": {
-      "string": "Magasin de redistribution"
-    },
-    "id_ID": {
-      "string": "Redistribusi Stok"
-    },
-    "it_IT": {
-      "string": "Ridistribuzione scorte"
-    },
-    "ru_RU": {
-      "string": "Перераспределение резервов"
-    },
-    "th_TH": {
-      "string": "ศูนย์​กระจาย​ของ"
-    },
-    "vi_VN": {
-      "string": "Điều Phối Vật Tư"
     }
   }
 }
