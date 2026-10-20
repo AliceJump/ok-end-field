@@ -101,6 +101,9 @@ def drawer_for(host):
 
 
 def close_page_drawer(page, *, save=True):
+    # 账号页的清空逻辑也会在非控件对象上调用（如测试替身）；没有窗口就没有打开的面板
+    if not isinstance(page, QWidget):
+        return
     entry = _DRAWERS.get(id(page.window()))
     source = entry[0]._source_card if entry else None
     if entry is not None and source is not None and page.isAncestorOf(source):
