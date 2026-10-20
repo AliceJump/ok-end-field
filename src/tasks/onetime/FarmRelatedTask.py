@@ -29,23 +29,31 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):  # 定义农牧标记筛�
             feature=fL.boat_entrance_icon,  # 识别地区总览中的帝江号入口
             threshold=0.6,  # 沿用当前入口识别阈值
             time_out=10,  # 将识别和点击重试限制在十秒等待内
-            post_action=lambda: self.click(1770 / 1920, 135 / 1080, interval=3),  # 识别失败才按截图坐标点击，间隔至少三秒
+            pre_action=lambda: self.click(1770 / 1920, 135 / 1080, interval=3),
             raise_if_not_found=False,  # 超时后由任务记录失败
         ):  # 超时仍未识别到入口则停止
             self.mark_task_failure("未识别到地区总览的帝江号入口，停止后续地图操作")  # 记录识别失败
             return False  # 结束本次任务
 
+        self.wait_ui_stable()  # 等待地图页签切换完成
         self.log_info("切换到武陵地图")  # 记录地图区域切换步骤
-        self.click(1534 / 1920, 990 / 1080, after_sleep=2)  # 按截图估算坐标点击右下角武陵页签
+        if not self.wait_click_ocr(  # 等待识别武陵页签并点击
+            match=self.lang.world_map.k_a4410e3f,  # 复用武陵的多语言 OCR 词条
+            box=self.box_of_screen(0.74, 0.89, 0.98, 0.95),  # 仅识别右下角地区页签区域
+            time_out=5,  # 最多等待五秒
+            raise_if_not_found=False,  # 未识别到时由任务记录失败
+            after_sleep=2,  # 点击后等待地图切换
+        ):  # 未找到武陵页签时停止
+            self.mark_task_failure("未识别到武陵地图页签")  # 记录地图区域识别失败
+            return False  # 结束本次任务
         self.wait_ui_stable()  # 等待地图页签切换完成
 
         self.log_info("进入祀的画地图")  # 记录目标地图步骤
-        self.click(1668 / 1920, 250 / 1080, after_sleep=2)  # 按截图估算坐标点击祀的画区域
-        self.wait_ui_stable()  # 等待祀的画地图加载完成
         if not self.wait_feature(  # 确认地图筛选入口已出现
             feature=fL.map_filter_icon,  # 使用地图筛选入口模板
             box=self.box_of_screen(0.10, 0.90, 0.14, 0.94),  # 限定在地图左下角的入口区域
             time_out=10,  # 最多等待十秒
+            pre_action=lambda: self.click(1668 / 1920, 250 / 1080, after_sleep=2, interval=3),
             raise_if_not_found=False,  # 未出现时由任务自行记录失败
         ):
             self.mark_task_failure("未进入祀的画地图，未找到标记筛选入口")  # 记录地图加载失败
@@ -71,7 +79,6 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):  # 定义农牧标记筛�
             feature=fL.auto_farmer_on_map,  # 直接使用专用地图模板
             use_gray_scale=True,  # 以灰度匹配白色图标
             box=self.box_of_screen(0.30, 0.20, 0.65, 0.65),  # 仅搜索地图中央的图标
-            threshold=0.8,  # 保持匹配阈值以过滤地图背景
             time_out=5,  # 最多等待五秒
             raise_if_not_found=False,  # 未识别到时由任务记录失败
             after_sleep=1,  # 点击后等待界面响应
@@ -106,7 +113,7 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):  # 定义农牧标记筛�
             ):  # 未识别到仓库存放按钮时停止
                 self.mark_task_failure(f"未找到{source_name}的存至武陵仓库按钮")  # 记录对应对象的识别失败
                 return False  # 将收取失败返回给调用方
-            elif not self.wait_pop_up():
+            elif not self.wait_pop_up(time_out=5):
                 self.log_info(f"未找到确认按钮，收取结束")
                 break
 
