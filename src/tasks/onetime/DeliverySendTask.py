@@ -130,7 +130,6 @@ class DeliverySendTask(Common):
                     )
 
                 self.click(results[0])
-                start_index = 0 if self.lang.daily_routine_mixin.k_view_quote not in results[0].name else 2
                 steps = [
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
                     (fL.fill_max, None, 0),
@@ -139,6 +138,8 @@ class DeliverySendTask(Common):
                     (fL.skip_dialog_confirm, self.box_of_screen(0.82, 0.88, 0.98, 0.96), 0),
                     (fL.transfer_go, self.box_of_screen(0.645, 0.885, 0.815, 0.955), 0),
                 ]
+                # 「查看报价」已直接打开报价列表，无需再装箱或等待装货动画。
+                start_index = len(steps) - 1 if self.lang.daily_routine_mixin.k_view_quote in results[0].name else 0
                 blind_spot_steps = {3}
 
                 sent = False
