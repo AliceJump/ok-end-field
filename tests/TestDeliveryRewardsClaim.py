@@ -132,6 +132,51 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
                 self.assertEqual(feature.click_confirm.called, quote_ready)
                 self.assertEqual(feature.mark_task_failure.called, not success)
 
+    def test_view_quote_transfers_without_packing(self):
+        for quote_text in ("查看报价", "查看報價"):
+            with self.subTest(quote_text=quote_text):
+                feature = self.make_send_feature([True])
+                feature.lang.daily_routine_mixin.k_view_quote = quote_text
+                feature.wait_ocr.return_value = [SimpleNamespace(name=quote_text)]
+
+                with patch("src.tasks.onetime.DeliverySendTask.areas_list", ["武陵"]):
+                    self.assertTrue(feature.delivery_send_others())
+
+                features_clicked = [call.kwargs["feature"] for call in feature.wait_click_feature.call_args_list]
+                self.assertEqual(features_clicked, [fL.transfer_go])
+                feature.blind_spot_speed_up.assert_not_called()
+                feature.click_confirm.assert_called_once_with()
+                feature.wait_pop_up.assert_called_once_with()
+                feature.mark_task_failure.assert_not_called()
+
+    def test_view_quote_transfer_failure_does_not_count(self):
+        feature = self.make_send_feature([True])
+        feature.wait_ocr.return_value = [SimpleNamespace(name="查看报价")]
+        feature.wait_click_feature.return_value = False
+
+        with patch("src.tasks.onetime.DeliverySendTask.areas_list", ["武陵"]):
+            self.assertFalse(feature.delivery_send_others())
+
+        features_clicked = [call.kwargs["feature"] for call in feature.wait_click_feature.call_args_list]
+        self.assertEqual(features_clicked, [fL.transfer_go])
+        feature.blind_spot_speed_up.assert_not_called()
+        feature.click_confirm.assert_not_called()
+        feature.wait_pop_up.assert_not_called()
+        feature.mark_task_failure.assert_called_once()
+
+    def test_packing_path_still_waits_for_quote_page(self):
+        feature = self.make_send_feature([True])
+
+        with patch("src.tasks.onetime.DeliverySendTask.areas_list", ["武陵"]):
+            self.assertTrue(feature.delivery_send_others())
+
+        features_clicked = [call.kwargs["feature"] for call in feature.wait_click_feature.call_args_list]
+        self.assertEqual(features_clicked, [fL.give_gift, fL.fill_max, fL.give_gift, fL.transfer_go])
+        self.assertEqual(feature.blind_spot_speed_up.call_count, 1)
+        self.assertEqual(feature.blind_spot_speed_up.call_args.kwargs["feature"], fL.skip_dialog_confirm)
+        feature.click_confirm.assert_called_once_with()
+        feature.wait_pop_up.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()

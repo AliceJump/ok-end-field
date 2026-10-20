@@ -43,26 +43,6 @@
       "string": "Chốt vào Công Trình Zipline"
     }
   },
-  "k_55ef5a58": {
-    "zh_CN": {
-      "pattern": "下一连接点"
-    },
-    "zh_TW": {
-      "pattern": "下一連結點"
-    },
-    "en_US": {
-      "pattern": "next connection point"
-    },
-    "ja_JP": {
-      "pattern": "次の接続ポイント"
-    },
-    "ko_KR": {
-      "pattern": "다음 연결 지점"
-    },
-    "es_ES": {
-      "pattern": "siguiente punto de conexión"
-    }
-  },
   "k_2f4f4a2f": {
     "zh_CN": {
       "pattern": "向目标移动"

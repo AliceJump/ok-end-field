@@ -38,49 +38,5 @@
     "es_ES": {
       "pattern": "último tiempo"
     }
-  },
-  "k_8c73d90e": {
-    "zh_CN": {
-      "pattern": "最近"
-    },
-    "zh_TW": {
-      "pattern": "最近"
-    },
-    "en_US": {
-      "pattern": "Recent"
-    },
-    "ja_JP": {
-      "pattern": "最近"
-    },
-    "ko_KR": {
-      "pattern": "최근"
-    },
-    "es_ES": {
-      "pattern": "Recientes"
-    },
-    "pt_BR": {
-      "pattern": "Recente"
-    },
-    "de_DE": {
-      "pattern": "Aktuell"
-    },
-    "fr_FR": {
-      "pattern": "Récent"
-    },
-    "id_ID": {
-      "pattern": "Terkini"
-    },
-    "it_IT": {
-      "pattern": "Recente"
-    },
-    "ru_RU": {
-      "pattern": "Недавние"
-    },
-    "th_TH": {
-      "pattern": "ล่าสุด"
-    },
-    "vi_VN": {
-      "pattern": "Gần đây"
-    }
   }
 }

@@ -1,6 +1,7 @@
 """Zipline initial-alignment adapter; arrival and activation never commit samples."""
 
 import json
+from contextlib import contextmanager
 from dataclasses import replace
 
 from src.core.learning.models import CaptureProfile, ContextConfidence, RouteContext, yaw_bucket
@@ -47,13 +48,21 @@ def _migrate_once(store):
         store._zip_line_migration_done = True
 
 
-def align_initial_zipline(task, context, distance, *, need_scroll=None, distance_tolerance=None):
+@contextmanager
+def zipline_initial_alignment(task, context, distance, *, need_scroll=None, distance_tolerance=None):
+    """Keep the initial movement observable across gold-gate retries."""
     alignment_kwargs = {"distance_tolerance": distance_tolerance} if distance_tolerance is not None else {}
     with initial_alignment(task, context) as learning:
         if learning is None:
-            return task._align_zip_line_distance(
+            task._align_zip_line_distance(
                 distance, need_scroll=need_scroll, tolerance=50, initial_move=None, **alignment_kwargs
             )
+            yield None
+            return
+        learning.require_gold_gate = True
+        # Recorded mouse-only random search is a learnable correction. Other
+        # tasks still reject searches, and failed mouse sends still contaminate.
+        learning.allow_tracked_random_search = True
         _migrate_once(learning.session.store)
         lookup_context = context
         hint = learning.session.hint()
@@ -84,4 +93,4 @@ def align_initial_zipline(task, context, distance, *, need_scroll=None, distance
         )
         if not result:
             learning.fail()
-        return result
+        yield learning
