@@ -1,10 +1,11 @@
-from qfluentwidgets import FluentIcon  # 导入日常任务分组图标
+from qfluentwidgets import FluentIcon
 
-from src.data.FeatureList import FeatureList as fL  # 导入地图筛选模板列表
-from src.icons import Icons  # 导入应用内任务图标
-from src.tasks.mixin.common import Common  # 复用一次性任务通用能力
-from src.tasks.mixin.liaison_mixin import LiaisonMixin  # 复用帝江号传送流程
-from src.tasks.mixin.map_mixin import MapMixin  # 复用地图筛选流程
+from src.data.FeatureList import FeatureList as fL
+from src.data.world_map_utils import get_world_map_matcher
+from src.icons import Icons
+from src.tasks.mixin.common import Common
+from src.tasks.mixin.liaison_mixin import LiaisonMixin
+from src.tasks.mixin.map_mixin import MapMixin
 
 
 class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
@@ -14,7 +15,7 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         self.icon = Icons.Collect
         self.group_name = "日常任务"
         self.group_icon = FluentIcon.CALENDAR
-        self.description = "『祀的画』中农牧领域。"
+        self.description = "『祀的画』中农牧领取。"
         self.support_multi_account = True
 
     def run(self):  # 执行农牧标记筛选
@@ -38,7 +39,7 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         self.log_info("切换到武陵地图")
         # 右下角点击武陵切换至武陵地图
         if not self.wait_click_ocr(
-            match=self.lang.world_map.k_a4410e3f,
+            match=get_world_map_matcher(self.lang, "武陵"),
             box=self.box_of_screen(0.74, 0.89, 0.98, 0.95),
             time_out=5,
             raise_if_not_found=False,
@@ -129,7 +130,7 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
 
     def _click_farm_related(self):
         """
-        清理地图标记筛选，保留农牧相关。参考 map_mixin.py 中的 clear_icon_in_map 方法。
+        清理地图标记筛选，保留农牧相关。参考了 map_mixin.py 中的 clear_icon_in_map 方法。
         """
 
         # 打开标记显示管理
