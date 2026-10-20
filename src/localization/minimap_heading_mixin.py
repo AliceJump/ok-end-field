@@ -31,6 +31,8 @@
 
 from __future__ import annotations
 
+import math
+
 from src.localization.minimap_odometry import angle_delta, arrow_angle_to_bearing
 
 __all__ = [
@@ -199,10 +201,11 @@ class MinimapHeadingMixin:
 
         **目标是一轮到位**（只按一次 W，角色只前移一小步）：系数准的话第一轮就该进容差。
         多轮只是兜底——每多一轮就多按一次 W、角色再多前移一小段（约 1~1.5m）。
-        一轮没到位时会把本轮的**实测系数**打进日志，据此更新配置即可下次一次到位。
+        首轮的角色与镜头方向可能不同，不能据此估计输入系数。从第二轮开始，只使用
+        同基准、已稳定且未跨半圈的有符号观测修正本次转向的输入比例。
 
         每轮：算残差 -> 发鼠标位移转视角 -> 等视角转完 -> 按一次 W 让角色转身
-        -> 读回朝向校验；没到位就用当前残差再补一轮，最多 ``max_rounds`` 轮。
+        -> 等新朝向稳定后校验；没到位就用当前残差再补一轮，最多 ``max_rounds`` 轮。
 
         Args:
             target_deg: 目标罗盘方位角（度）。
@@ -252,6 +255,7 @@ class MinimapHeadingMixin:
 
         settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
         control_per_px = per_px
+        feedback_settled = True
         for i in range(1, max(1, int(max_rounds)) + 1):
             err = angle_delta(target, before)
             if abs(err) <= tolerance:
@@ -264,6 +268,14 @@ class MinimapHeadingMixin:
             self._send_rotation(dx)
             self.sleep(settle)
             after, score = self._arrow_after_w(min_score=min_score)
+            after, score, feedback_settled = self._wait_for_turn_heading(
+                before,
+                after,
+                score,
+                target=target,
+                tolerance=tolerance,
+                min_score=min_score,
+            )
 
             entry = {
                 "round": i,
@@ -273,6 +285,7 @@ class MinimapHeadingMixin:
                 "after": after,
                 "error_after": None,
                 "ratio": None,
+                "settled": feedback_settled,
             }
             if after is None:
                 self.log_warning(f"第 {i} 轮：按 W 后读不到朝向（score={score:.3f}）")
@@ -280,22 +293,33 @@ class MinimapHeadingMixin:
                 result["rounds"] = i
                 break
             entry["error_after"] = angle_delta(target, after)
-            entry["ratio"] = angle_delta(after, before) / dx if dx else None
-            self._warn_if_ratio_off(entry["ratio"], per_px, dx)
-            control_per_px = self._adapted_yaw_per_pixel(
-                per_px,
-                entry["ratio"],
-                dx,
-            )
+            observed_delta = angle_delta(after, before)
+            # The first W establishes a camera-aligned baseline. Its delta can
+            # contain an arbitrary initial camera offset, even with exact gain.
+            # A shortest-angle reading near half a turn is ambiguous as well.
+            if (
+                i > 1
+                and feedback_settled
+                and abs(dx) >= RATIO_HINT_MIN_DX
+                and abs(observed_delta) < 180.0 - tolerance
+                and observed_delta * dx > 0
+            ):
+                entry["ratio"] = observed_delta / dx
+                self._warn_if_ratio_off(entry["ratio"], per_px, dx)
+                if per_px * 0.05 <= entry["ratio"] <= per_px * 5.0:
+                    control_per_px = self._adapted_yaw_per_pixel(per_px, entry["ratio"], dx)
             result["history"].append(entry)
             result["rounds"] = i
             before = after
+            if not feedback_settled:
+                result["reason"] = "heading_unsettled"
+                break
             if abs(entry["error_after"]) <= tolerance:
                 break
 
         result["heading"] = before
         result["error"] = angle_delta(target, before)
-        result["ok"] = abs(result["error"]) <= tolerance
+        result["ok"] = feedback_settled and abs(result["error"]) <= tolerance
         # 目标是一轮到位（只按一次 W，角色只前移一小步）；多轮只是兜底
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
         return result
@@ -405,7 +429,7 @@ class MinimapHeadingMixin:
         """用本轮实测比例修正下一轮；极端异常值不参与自适应。"""
         if ratio is None or abs(int(dx)) < RATIO_HINT_MIN_DX:
             return configured
-        measured = abs(float(ratio))
+        measured = float(ratio)
         lower = configured * 0.05
         upper = configured * 5.0
         if lower <= measured <= upper:
@@ -464,10 +488,40 @@ class MinimapHeadingMixin:
                 self.sleep(delay)
 
     def _arrow_after_w(self, *, min_score=None):
-        """按一次 W（长按）让角色转到视角方向，等画面刷新后读回朝向。
+        """按一次 W（长按）让角色转到视角方向，读取初始反馈。
 
         必须长按：瞬时按键不足以让角色真正转身，小地图朝向不会刷新，会读到旧角度。
+        后续刷新等待由调用方的稳定观测窗口完成，避免固定等待后再叠加同样的等待。
         """
         self.press_key("w", down_time=self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
-        self.sleep(self._cfg_float(CONFIG_ANGLE_REFRESH, DEFAULT_ANGLE_REFRESH))
         return self.read_heading(min_score=min_score)
+
+    def _wait_for_turn_heading(self, before, heading, score, *, target, tolerance, min_score):
+        """无新输入地等待新朝向稳定；未稳定时交回外层，禁止按旧读数继续补转。"""
+        refresh = max(0.0, self._cfg_float(CONFIG_ANGLE_REFRESH, DEFAULT_ANGLE_REFRESH))
+        interval = min(0.05, max(0.01, refresh))
+        stable_samples = max(1, math.ceil(refresh / interval))
+        budget = max(refresh, self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE))
+        max_samples = max(stable_samples, math.ceil(budget / interval))
+        jitter = min(1.0, max(0.25, tolerance / 4.0))
+        stable = 0
+        stable_heading = heading
+        for _ in range(max_samples):
+            self.sleep(interval)
+            heading, score = self.read_heading(min_score=min_score)
+            if (
+                stable_heading is not None
+                and heading is not None
+                and abs(angle_delta(heading, stable_heading)) <= jitter
+            ):
+                stable += 1
+            else:
+                stable = 0
+                stable_heading = heading
+            if stable >= stable_samples and (
+                abs(angle_delta(heading, before)) > jitter or abs(angle_delta(target, heading)) <= tolerance
+            ):
+                return heading, score, True
+        # Unchanged feedback may be a real camera/character coincidence. Keep
+        # the configured gain for the next correction; never infer a small gain.
+        return heading, score, heading is not None and stable >= stable_samples
