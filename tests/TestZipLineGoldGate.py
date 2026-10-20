@@ -37,6 +37,7 @@ class TestZipLineGoldGate(unittest.TestCase):
             send_key=Mock(),
             ocr=Mock(),
             active_and_send_mouse_delta=Mock(return_value=True),
+            _zip_line_has_stable_gold_selection=Mock(return_value=False),
         )
         stub._zip_line_stop_state = lambda: ZipLineMixin._zip_line_stop_state(stub)
         stub._zip_line_motion_route_fingerprint = lambda *args, **kwargs: (
@@ -458,30 +459,88 @@ class TestZipLineGoldGate(unittest.TestCase):
                     self.assertAlmostEqual(value, expected * width / 1920, delta=1)
                 self.assertEqual(actual[0], -actual[1])
 
-    def test_gold_center_check_uses_fifty_pixel_tolerance(self):
-        processor = object()
-        target = SimpleNamespace(x=950, y=569, width=20, height=20)
+    def test_gold_selected_off_center_is_ready_with_no_matching_white_candidate(self):
+        selected = {"state": "gold", "center_x": 1450, "center_y": 750}
+        stub = SimpleNamespace(_find_zip_line_template_target=Mock(return_value=[(selected, object())]))
+
+        result = ZipLineMixin._zip_line_uncontested_gold_candidate(stub, 108, "frame")
+
+        self.assertIs(result, selected)
+        stub._find_zip_line_template_target.assert_called_once_with(108, "frame", all_matches=True)
+
+    def test_matching_white_or_multiple_gold_candidates_block_selection(self):
+        selected = {"state": "gold", "center_x": 1450, "center_y": 750}
+        matching_white = {"state": "white", "center_x": 700, "center_y": 540}
+        another_gold = {"state": "gold", "center_x": 1200, "center_y": 540}
+        stub = SimpleNamespace(_find_zip_line_template_target=Mock())
+
+        for matches in (
+            [(selected, object()), (matching_white, object())],
+            [(selected, object()), (another_gold, object())],
+            [(matching_white, object())],
+            [],
+        ):
+            with self.subTest(states=[c["state"] for c, _ in matches]):
+                stub._find_zip_line_template_target.return_value = matches
+                self.assertIsNone(ZipLineMixin._zip_line_uncontested_gold_candidate(stub, 108, "frame"))
+
+    def test_white_icon_with_different_distance_does_not_block_selected_gold(self):
+        white = {"state": "white", "center_x": 700, "center_y": 540}
+        gold = {"state": "gold", "center_x": 1440, "center_y": 680}
         stub = SimpleNamespace(
             _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
-            make_hsv_isolator=Mock(return_value=processor),
-            ocr=Mock(return_value=[target]),
-            screen_center=Mock(return_value=(960, 540)),
-            scale_distance=Mock(return_value=50),
-            height=1080,
-            next_frame=Mock(),
+            _detect_zip_line_icon_candidates=Mock(return_value=[white, gold]),
+            _zip_line_distance_box=lambda candidate: candidate["state"],
+            make_hsv_isolator=Mock(return_value=object()),
+            ocr=Mock(side_effect=lambda **kwargs: (
+                [SimpleNamespace(name="108m")] if kwargs["box"] == "gold" else []
+            )),
+        )
+        stub._find_zip_line_template_target = lambda *args, **kwargs: (
+            ZipLineMixin._find_zip_line_template_target(stub, *args, **kwargs)
         )
 
-        result = ZipLineMixin._zip_line_target_is_gold_and_centered(stub, 108, frame="frame")
+        selected = ZipLineMixin._zip_line_uncontested_gold_candidate(stub, 108, "frame")
 
-        self.assertTrue(result)
-        stub.make_hsv_isolator.assert_called_once_with(hR.GOLD_TEXT)
-        self.assertIs(stub.ocr.call_args.kwargs["frame_processor"], processor)
-        self.assertEqual(stub.ocr.call_args.kwargs["frame"], "frame")
-        stub.scale_distance.assert_called_once_with(50)
+        self.assertIs(selected, gold)
+        self.assertTrue(any(item.kwargs["box"] == "white" for item in stub.ocr.call_args_list))
+
+    def test_gold_selection_requires_consecutive_stable_frames(self):
+        now = [0.0]
+        selected = {"center_x": 1450, "center_y": 750}
+        jumped = {"center_x": 1600, "center_y": 750}
+        observations = [None, selected, selected, jumped, selected, selected, selected]
+        stub = SimpleNamespace(
+            _ZIP_LINE_GOLD_STABLE_SAMPLES=3,
+            _ZIP_LINE_GOLD_STABLE_MOVE=24,
+            active_time=lambda: now[0],
+            scale_distance=lambda distance: distance,
+            next_frame=Mock(return_value="frame"),
+            _zip_line_uncontested_gold_candidate=Mock(side_effect=observations),
+        )
+        stub.sleep = lambda duration: now.__setitem__(0, now[0] + duration)
+
+        self.assertTrue(ZipLineMixin._zip_line_has_stable_gold_selection(stub, 108, timeout=1))
+        self.assertEqual(stub.next_frame.call_count, len(observations))
+        self.assertAlmostEqual(now[0], 0.3)
+
+    def test_early_gold_check_returns_immediately_on_missing_or_competing_target(self):
+        stub = SimpleNamespace(
+            _ZIP_LINE_GOLD_STABLE_SAMPLES=3,
+            _ZIP_LINE_GOLD_STABLE_MOVE=24,
+            active_time=Mock(return_value=0),
+            scale_distance=lambda distance: distance,
+            next_frame=Mock(return_value="frame"),
+            _zip_line_uncontested_gold_candidate=Mock(return_value=None),
+            sleep=Mock(),
+        )
+        self.assertFalse(ZipLineMixin._zip_line_has_stable_gold_selection(stub, 64, stop_on_miss=True))
+        stub.next_frame.assert_called_once()
+        stub.sleep.assert_not_called()
 
     def test_white_or_unlocked_target_never_clicks(self):
         stub = self._stub()
-        stub._zip_line_target_is_gold_and_centered = Mock(return_value=False)
+        stub._zip_line_has_stable_gold_selection = Mock(return_value=False)
 
         result = ZipLineMixin.ensure_click_on_zip_line(stub, 108, lock_timeout=0)
 
@@ -490,23 +549,20 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub.send_key.assert_not_called()
         stub.ocr.assert_not_called()
 
-    def test_waits_across_white_frames_until_target_turns_gold(self):
+    def test_gate_skips_click_when_gold_is_not_stable(self):
         stub = self._stub()
-        stub._zip_line_target_is_gold_and_centered = Mock(side_effect=[False, False, False, True])
-        stub.ocr.return_value = []
+        stub._zip_line_has_stable_gold_selection.return_value = False
 
-        result = ZipLineMixin.ensure_click_on_zip_line(stub, 108, lock_timeout=1)
+        result = ZipLineMixin.ensure_click_on_zip_line(stub, 108, lock_timeout=0.2)
 
-        self.assertTrue(result)
-        self.assertEqual(stub._zip_line_target_is_gold_and_centered.call_count, 4)
-        self.assertEqual(stub.sleep.call_count, 3)
-        stub.click.assert_called_once()
-        stub.send_key.assert_called_once_with("e")
+        self.assertFalse(result)
+        stub._zip_line_has_stable_gold_selection.assert_called_once_with(108, timeout=0.2)
+        stub.click.assert_not_called()
 
     def test_gold_gate_is_checked_before_calibration_click(self):
         stub = self._stub()
         events = []
-        stub._zip_line_target_is_gold_and_centered = Mock(
+        stub._zip_line_has_stable_gold_selection = Mock(
             side_effect=lambda *_args, **_kwargs: events.append("gold_check") or True
         )
         stub.click.side_effect = lambda **_kwargs: events.append("click")
@@ -520,26 +576,26 @@ class TestZipLineGoldGate(unittest.TestCase):
 
     def test_e_has_no_second_gold_gate_after_click(self):
         stub = self._stub()
-        stub._zip_line_target_is_gold_and_centered = Mock(return_value=True)
+        stub._zip_line_has_stable_gold_selection = Mock(return_value=True)
         stub.ocr.return_value = []
 
         result = ZipLineMixin.ensure_click_on_zip_line(stub, 108)
 
         self.assertTrue(result)
-        stub._zip_line_target_is_gold_and_centered.assert_called_once()
+        stub._zip_line_has_stable_gold_selection.assert_called_once()
         stub.click.assert_called_once()
         stub.send_key.assert_called_once_with("e")
         stub.ocr.assert_called_once()
 
     def test_e_retry_does_not_recheck_gold_after_click(self):
         stub = self._stub()
-        stub._zip_line_target_is_gold_and_centered = Mock(return_value=True)
+        stub._zip_line_has_stable_gold_selection = Mock(return_value=True)
         stub.ocr.side_effect = [[SimpleNamespace(name="move")], []]
 
         result = ZipLineMixin.ensure_click_on_zip_line(stub, 108)
 
         self.assertTrue(result)
-        stub._zip_line_target_is_gold_and_centered.assert_called_once()
+        stub._zip_line_has_stable_gold_selection.assert_called_once()
         stub.click.assert_called_once()
         self.assertEqual(stub.send_key.call_count, 2)
         self.assertEqual(stub.ocr.call_count, 2)
@@ -566,41 +622,36 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(retry_kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_not_called()
 
-    def test_gate_realign_failure_falls_back_without_raising_alignment_error(self):
+    def test_gate_realign_failure_never_uses_unguarded_click(self):
         stub = self._stub()
         stub._align_zip_line_distance = Mock(side_effect=[True, False])
         stub._try_click_on_zip_line = Mock(return_value=(False, "gate"))
-        stub._legacy_click_on_zip_line = Mock(return_value=True)
         stub.log_info = Mock()
-        stub.wait_ocr = Mock(return_value=False)
-        stub.ensure_main = Mock()
-        stub.ocr.return_value = [SimpleNamespace(name="move")]
 
-        ZipLineMixin.zip_line_list_go(stub, [108])
+        with self.assertRaisesRegex(RuntimeError, "未确认安全选中状态"):
+            ZipLineMixin._align_and_activate_zip_line(stub, 108)
 
         self.assertEqual(stub._align_zip_line_distance.call_count, 2)
         retry_kwargs = stub._align_zip_line_distance.call_args_list[1].kwargs
         self.assertFalse(retry_kwargs["raise_if_fail"])
         self.assertEqual(retry_kwargs["deadline"], 20.0)
-        stub._legacy_click_on_zip_line.assert_called_once_with()
+        stub.click.assert_not_called()
+        stub.send_key.assert_not_called()
 
-    def test_gate_retry_exhaustion_falls_back_to_direct_click_and_e(self):
+    def test_gate_retry_exhaustion_never_bypasses_selection(self):
         stub = self._stub()
         stub._align_zip_line_distance = Mock(return_value=True)
         stub._try_click_on_zip_line = Mock(return_value=(False, "gate"))
-        stub._legacy_click_on_zip_line = Mock(return_value=True)
         stub.log_info = Mock()
-        stub.wait_ocr = Mock(return_value=False)
-        stub.ensure_main = Mock()
-        stub.ocr.return_value = [SimpleNamespace(name="move")]
 
-        ZipLineMixin.zip_line_list_go(stub, [108])
+        with self.assertRaisesRegex(RuntimeError, "未确认安全选中状态"):
+            ZipLineMixin._align_and_activate_zip_line(stub, 108)
 
         self.assertEqual(stub._try_click_on_zip_line.call_count, 3)
         self.assertEqual(stub._align_zip_line_distance.call_count, 3)
         for retry_call in stub._align_zip_line_distance.call_args_list[1:]:
             self.assertEqual(retry_call.kwargs["deadline"], 20.0)
-        stub._legacy_click_on_zip_line.assert_called_once_with()
+        stub.click.assert_not_called()
 
     def test_interaction_failure_does_not_use_unlocked_legacy_fallback(self):
         stub = self._stub()
@@ -628,15 +679,20 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(stub._try_click_on_zip_line.call_count, 2)
         stub._legacy_click_on_zip_line.assert_not_called()
 
-    def test_legacy_fallback_repeats_click_and_e_without_gold_gate(self):
+    def test_stable_gold_direct_click_skips_alignment(self):
         stub = self._stub()
-        stub.ocr.side_effect = [[SimpleNamespace(name="move")], []]
+        stub._zip_line_has_stable_gold_selection.return_value = True
+        stub._try_click_on_zip_line = Mock(return_value=(True, None))
+        stub._align_zip_line_distance = Mock()
+        stub.log_info = Mock()
 
-        result = ZipLineMixin._legacy_click_on_zip_line(stub, max_attempts=3)
+        ZipLineMixin._align_and_activate_zip_line(stub, 108)
 
-        self.assertTrue(result)
-        self.assertEqual(stub.click.call_count, 2)
-        self.assertEqual(stub.send_key.call_count, 2)
+        stub._align_zip_line_distance.assert_not_called()
+        stub._try_click_on_zip_line.assert_called_once_with(108, already_verified=True)
+        stub._zip_line_has_stable_gold_selection.assert_called_once_with(
+            108, timeout=4, stop_on_miss=True
+        )
 
     def test_test_route_completes_segments_without_dismount_or_target_search(self):
         stub = self._stub()

@@ -357,6 +357,7 @@ class TestZipLineMotionCache(unittest.TestCase):
             return True
 
         stub._align_zip_line_distance = Mock(side_effect=align)
+        stub._zip_line_has_stable_gold_selection = Mock(return_value=False)
         stub._try_click_on_zip_line = Mock(return_value=(True, None))
         stub._align_and_activate_zip_line = lambda *a, **k: ZipLineMixin._align_and_activate_zip_line(stub, *a, **k)
         return stub

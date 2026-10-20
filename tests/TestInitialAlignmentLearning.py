@@ -73,6 +73,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task._zip_line_motion_route_fingerprint = lambda *a, **k: ZipLineMixin._zip_line_motion_route_fingerprint(
             task, *a, **k
         )
+        task._zip_line_has_stable_gold_selection = Mock(return_value=False)
         task._try_click_on_zip_line = Mock(return_value=(True, None))
         task.lang = SimpleNamespace(
             zip_line_mixin=SimpleNamespace(k_2f4f4a2f="move", k_0b1e4f35="leave", k_b0e3a2da="board")
