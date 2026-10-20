@@ -138,6 +138,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
     attribute_queries = {}
     timer_ids = set()
     cast_skill_ids = set()
+    event_buff_ids = set()
     event_defaults = {}
     spell_buff_definitions = {}
     ability_events = {v["value"]: k for k, v in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
@@ -276,10 +277,9 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 test = CombatExpression("any", tuple(combat_input("event.cast_skill." + key) for key in identities))
             elif name in {"CheckBuffIdInContext+Data", "CheckBuffIdInContextAdvanced+Data"}:
                 advanced = name == "CheckBuffIdInContextAdvanced+Data"
-                # Advanced ID entries are StringBlackboardRefs, and its output
-                # key writes the matching ID. Only the proven tag-only, no-write
-                # arm is bound here; neither is interchangeable with plain IDs.
-                if advanced and (value["checkType"] != 1 or value["blackboardKey"]):
+                # Advanced literal IDs and tag queries are separate branches.
+                # Dynamic references and writing a matching string remain unknown.
+                if advanced and value["blackboardKey"]:
                     raise UnresolvedMechanic("Native advanced event buff identity/output needs binding")
                 if value["blackboardKey"]:
                     raise UnresolvedMechanic("Dynamic native event buff identity")
@@ -287,7 +287,17 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     mode, tags = tag_query(value["query"])
                     keys = [f"event.buff_tag.{tag}" for tag in tags]
                 elif value["checkType"] == 0:
-                    keys = [f"event.buff_id.{bid['buffId'] if isinstance(bid, dict) else bid}" for bid in value["buffIdList"]]
+                    if advanced:
+                        identities = []
+                        for reference in value["buffIdList"]:
+                            if (not isinstance(reference, dict) or reference.get("useBlackboardKey") is not False
+                                    or not isinstance(reference.get("value"), str) or not reference["value"]):
+                                raise UnresolvedMechanic("Dynamic/unknown native event buff identity needs binding")
+                            identities.append(reference["value"])
+                        event_buff_ids.update(identities)
+                        keys = ["event.literal_buff_id." + key for key in identities]
+                    else:
+                        keys = [f"event.buff_id.{bid['buffId'] if isinstance(bid, dict) else bid}" for bid in value["buffIdList"]]
                 else:
                     raise UnresolvedMechanic("Unknown native buff identity query")
                 event_defaults.update(dict.fromkeys(keys, 0.0))
@@ -295,7 +305,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                                         tuple(combat_input(k) for k in keys))
                 if value["checkType"] == 1 and mode.startswith("Except"):
                     test = CombatExpression("not", (test,))
-                if advanced:
+                if advanced and value["checkType"] == 1:
                     # Native first requires a Buff event context, then loads
                     # that ID's BuffData. Metadata absence in this world is
                     # unknown, not an empty tag list that could match Except.
@@ -694,7 +704,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                         if reviewed_retained_layers(buff_id, data):
                             definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
                                                                  attributes=attributes, panel=panel, path=buff_path)
-                    if attaches_skill and (definition is None or definition.stacking == 4):
+                    elif stacking["stackingType"] == 5:
+                        from src.data.native_buff_program import compile_buff_definition, reviewed_duration_extend
+
+                        if reviewed_duration_extend(buff_id, data):
+                            definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
+                                                                 attributes=attributes, panel=panel, path=buff_path)
+                    if attaches_skill and (definition is None or definition.stacking in {4, 5}):
                         # In particular, Yvonne's Refresh4 + attacker modifier
                         # and reparenting are not licensed by this node binding.
                         raise UnresolvedMechanic(f"Native skill-attached buff needs reviewed instance policy: {buff_id}")
@@ -796,4 +812,5 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                             next_action_windows=profile.allow_next, native_buff_ids=tuple(sorted(buff_ids)),
                             native_timer_ids=tuple(sorted(timer_ids)))
     return replace(program, gate=cost, native_buff_queries=tuple(buff_queries.values()),
-                   native_attribute_queries=tuple(attribute_queries.values()), native_cast_skill_ids=tuple(sorted(cast_skill_ids)))
+                   native_attribute_queries=tuple(attribute_queries.values()), native_cast_skill_ids=tuple(sorted(cast_skill_ids)),
+                   native_event_buff_ids=tuple(sorted(event_buff_ids)))

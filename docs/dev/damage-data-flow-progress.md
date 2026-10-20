@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-20莱万汀续批：Advanced字面事件ID以显式BuffContext执行，真实9/203条件与Pause完整回调已通过；动态ID/字符串写回保留未知。核准并执行限定show_weapon的5号剩余寿命加法，保留原实例/BB/source/父根/周期，暂停中延长余量。真实ult producer已走实例策略，但隐式duration BB缺证保留诊断，不借字面16秒替代等级15秒。连携另有0.1秒重复channel补时，不能只补一次或按57帧猜墙钟。13新增、53相关、1762全仓通过；数据流JSON逐字节不变，完整2/111。见[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)，后续自动通知、BB传递、重复channel和强化动作仍待闭合，PR489独立不改。
+
 > 2026-10-20其他角色：莱万汀PauseBuffTime进入编译器及研究世界，以确切Buff根暂停寿命和周期余量；恢复不重复tick，动作/移除与预测隔离保持。原生tick累积、周期零边界、子对象时钟及完整5号姿态容器仍未知，不将叶节点当终结全链。15窗口/4字段/8锚点核准，11新增专项，见[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)。伊冯终结另核10份记录及7秒/20%/300%/条件600%等级输入，私有BB实际对应暴击率9/暴伤10，max10不是射击次数；见[native-yvonne-ultimate-window-audit.md](native-yvonne-ultimate-window-audit.md)。32/128、14/2、完整2/111及PR489不变。
 
 > 2026-10-19长息证据：已核三件Rank1、来源102/四类tag OR、实际全队排除本人、16%全类型NormalCalcZone/15秒、max1及非父子绑定，不能把AddAttack误当攻击力或让普通演唱直接触发。梨诺高歌还需追Enhanced模板输出、当前分派、共享实例/刷新与独立期限；未启用运行规则。8份当前记录与等级/目标/乘区断言及AST通过，原始材料只在主仓ignored。见[native-longxi-release-audit.md](native-longxi-release-audit.md)。研究32/128、14/2及2/111不变。PR489独立已推单位SP真实排序b199b38f，1714全仓通过，不是本研究新增执行；定时实际PAUSED，手动续作授权有效，不恢复历史ACTIVE。

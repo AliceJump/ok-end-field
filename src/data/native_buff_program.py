@@ -6,6 +6,20 @@ from src.data.native_gameplay import native_enums
 from src.data.native_tags import expand_tags
 
 POGRANI_MORALE = "buff_chr_0029_pograni_talent1"
+LAEVAT_STANCE = "buff_chr_0016_laevat_show_weapon"
+
+
+def reviewed_duration_extend(buff_id, data):
+    """Approve this container's type5 arithmetic, not its full stance producer."""
+    return (buff_id == LAEVAT_STANCE and data["id"] == buff_id
+            and data["stackingSettings"] == {
+                "identifierType": 0, "isNeedStackEffect": False, "maxStackCnt": 1,
+                "maxStackCntKey": "", "negatePriority": False, "priority": 0.0,
+                "priorityKey": "", "stackEffects": [], "stackingKey": "", "stackingType": 5,
+                "useMaxStackCntKey": False, "usePriorityKey": False}
+            and data["lifeType"] == 0 and not data["hasAddingCooldown"]
+            and not data["useTimeDilationDt"] and not data["onlyUseSelfTimeDilation"]
+            and not data["timelineActions"] and not data["igniteEventAction"])
 
 
 def reviewed_retained_layers(buff_id, data):
@@ -58,6 +72,11 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
         return programs
 
     callbacks, subscriptions, unresolved = [], [], []
+    if (reviewed_duration_extend(buff_id, data) and data["duration"]["useBlackboardKey"]
+            and not any(key == "bb." + data["duration"]["blackboardKey"] for key, _ in inherited)):
+        # The raw fallback is 16; the ranked ultimate input is 15. The implicit
+        # cast-info BB bridge is not proved by matching these two key names.
+        unresolved.append(f"Native stance duration blackboard transfer needs binding: {buff_id}")
     stacking = data["stackingSettings"]
     if stacking["identifierType"] not in {0, 1}:
         raise UnresolvedMechanic(f"Unknown native buff stacking identity: {buff_id}/{stacking['identifierType']}")
@@ -97,4 +116,5 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
                              if data["stackingSettings"]["useMaxStackCntKey"] else
                              CombatExpression("literal", (float(data["stackingSettings"]["maxStackCnt"]),)),
                              tuple(callbacks), tuple(subscriptions), tuple(unresolved), expand_tags(data["applyTags"]),
-                             stacking_key, damage_scales, attack_additions, reviewed_retained_layers(buff_id, data))
+                             stacking_key, damage_scales, attack_additions, reviewed_retained_layers(buff_id, data),
+                             reviewed_duration_extend(buff_id, data))

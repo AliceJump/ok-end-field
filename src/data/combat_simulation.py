@@ -152,6 +152,7 @@ class NativeBuffProgram(ImmutableCombatValue):
     damage_scales: tuple = ()
     attack_additions: tuple[CombatExpression, ...] = ()
     retained_priority_layers: bool = False
+    reviewed_duration_extend: bool = False
 
 
 @dataclass(frozen=True)
@@ -296,6 +297,7 @@ class ActionProgram(ImmutableCombatValue):
     native_attribute_queries: tuple[NativeAttributeQuery, ...] = ()
     scenario_ignored_nodes: tuple[str, ...] = ()
     native_cast_skill_ids: tuple[str, ...] = ()
+    native_event_buff_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -362,6 +364,7 @@ class CombatWorldState:
         self.native_buff_instances: dict[str, object] = {}
         self._native_buff_context: object | None = None
         self._native_cast_context: tuple[str, str, str] | None = None
+        self._native_event_buff_id: str | None = None
         self.native_abilities: dict[tuple[str, str], object] = {}
         self._native_action_abilities: dict[str, tuple[str, str]] = {}
         self.native_skill_buffs: dict[tuple[str, str], list[str]] = {}
@@ -783,6 +786,8 @@ class CombatWorldState:
         # The callback source is its owning character; the triggering attacker
         # remains separate and must never steal the recipient's marker or BB.
         previous_action = self._executing_action
+        previous_buff_id = self._native_event_buff_id
+        self._native_event_buff_id = buff_id if isinstance(buff_id, str) and buff_id else None
         try:
             for event_type, program in tuple(self.native_character_hooks):
                 if event_type != trigger or not self.characters[program.actor].alive:
@@ -811,17 +816,22 @@ class CombatWorldState:
                                         replace(event, inputs=(*event.inputs, *values.items())))
         finally:
             self._executing_action = previous_action
+            self._native_event_buff_id = previous_buff_id
 
-    def dispatch_native(self, trigger, actor, payload=None, *, target=None, cast_action=None):
+    def dispatch_native(self, trigger, actor, payload=None, *, target=None, cast_action=None, buff_event_id=None):
         """Callbacks read the event's state before its producer consumes a pool."""
         previous_action = self._executing_action
         previous_cast = self._native_cast_context
+        previous_buff_id = self._native_event_buff_id
+        if buff_event_id is not None and (not isinstance(buff_event_id, str) or not buff_event_id):
+            raise ValueError("Native BuffContext needs a nonempty buff ID")
         try:
             # A numeric skill-type/name payload is not a native Skill object.
             # Nested unrelated events must not borrow their caller's context.
             from src.data.native_skill_runtime import resolve_cast_context
 
             self._native_cast_context = None
+            self._native_event_buff_id = buff_event_id
             if cast_action is not None:
                 try:
                     self._native_cast_context = resolve_cast_context(self, cast_action)
@@ -849,6 +859,7 @@ class CombatWorldState:
         finally:
             self._executing_action = previous_action
             self._native_cast_context = previous_cast
+            self._native_event_buff_id = previous_buff_id
 
     def _resource_amount(self, actor, change, inputs):
         kind = change.kind
@@ -1192,6 +1203,12 @@ class CombatWorldState:
                     inputs[query.key] = float(value)
             except UnresolvedMechanic:
                 pass
+        for buff_id in program.native_event_buff_ids:
+            key = "event.literal_buff_id." + buff_id
+            # Resolve from this event's explicit identity, never payload/old BB,
+            # the owning buff, a still-active pool or loaded tag metadata.
+            inputs.pop(key, None)
+            inputs[key] = float(self._native_event_buff_id == buff_id)
         for skill_id in program.native_cast_skill_ids:
             key = "event.cast_skill." + skill_id
             if needed is not None and key not in needed:

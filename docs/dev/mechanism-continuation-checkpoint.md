@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-20再续：莱万汀真实字面ID条件+暂停/恢复回调和限定5号容器已执行；buff_event_id独立传递，数值/旧BB不授权，嵌套/异常恢复。容器延长剩余寿命不重建实例或重置周期；真实ult创建也保留隐式duration桥接未知。连携0～57帧每约0.1秒加0.1秒寿命的channel尚未执行，不能当战技pause标记或补一次便完成。13新增/53专项/1762全仓172.737s、164文件16组通过，32/128审计字节一致、2/111不提高。读[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)续批；原始材料只主仓ignored，主仓已由其他会话换回master，勿切换/覆盖，定时PAUSED未动，PR489未改。
+
 > 2026-10-20最新：用户要求转其他角色，先莱万汀、伊冯。暂停Buff时钟已执行有限余量/周期/刷新/动作结束/预测隔离，真实周期初始化与子对象传播仍明确未知；完整5号容器/事件身份/自动通知未闭合。读[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)，勿把叶节点消费当整条终结producer。伊冯7秒/结束攻击/私有暴击层另见[native-yvonne-ultimate-window-audit.md](native-yvonne-ultimate-window-audit.md)，max10非射击次数，BB名非乘区。原始探针只主仓ignored，32/128、14/2及2/111不提高，PR489保持独立，定时仍沿实际PAUSED不改。
 
 > 2026-10-19长息新断点：读[native-longxi-release-audit.md](native-longxi-release-audit.md)。当前8份记录核准三件/Rank1、102条件、TeamFinder排本人、全伤16%/15秒/Stack2 max1。普通梨诺攻击光环不触发四类tag；高歌无tag承载需走Enhanced6/3，false override不能借闲置赛希ID认模板。当前分派/真实102来源和共享刷新/独立清理仍未知，未产品启用。所有原始脚本和审计主仓ignored；只保存本审核文档，32/128、14/2与2/111不变。接入PR489独立b199b38f已接SP边际贡献/角色锁/零SP姿态排除，仍暂不合。定时实际PAUSED，不能照历史段落恢复ACTIVE。主仓由其他会话占用，不切分支、不恢复文件。

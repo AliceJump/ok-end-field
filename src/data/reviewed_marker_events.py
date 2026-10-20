@@ -70,5 +70,5 @@ def publish_marker_added(world, instance, action_id, inputs):
     # Current CreateBuff publishes recipient before source. These Unlimited
     # plain markers always have a new object; Unique/Refresh/null-result and
     # mutable pre-add processing are deliberately outside this binding.
-    world.dispatch_native("OnAddedBuff", instance.owner, payload, target=instance.owner)
-    world.dispatch_native("OnOutputBuff", instance.source, payload, target=instance.owner)
+    world.dispatch_native("OnAddedBuff", instance.owner, payload, target=instance.owner, buff_event_id=instance.key)
+    world.dispatch_native("OnOutputBuff", instance.source, payload, target=instance.owner, buff_event_id=instance.key)

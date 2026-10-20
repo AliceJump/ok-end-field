@@ -113,6 +113,20 @@ def _sync(world, owner, key):
         world.native_buffs[owner, key] = (len(instances), expires)
 
 
+def _extend_duration(world, instance, duration):
+    """Type5 adds incoming life to the first unfinished object's remaining life."""
+    remaining = instance.paused_lifetime if instance.time_paused else (
+        None if instance.expires is None else instance.expires-world.time)
+    added = None if remaining is None or duration is None else _single(_single(max(0, remaining))+_single(duration))
+    if instance.time_paused:
+        instance.paused_lifetime = added
+    else:
+        instance.expires = None if added is None else world.time+added
+        if instance.expires is not None:
+            _schedule(world, instance, instance.expires, "finish")
+    _sync(world, instance.owner, instance.key)
+
+
 def _schedule(world, instance, at, kind):
     if not math.isfinite(at) or at < world.time:
         raise UnresolvedMechanic("Invalid native buff event time")
@@ -137,7 +151,9 @@ def pause_buff_time(world, action_id, paused):
         raise UnresolvedMechanic("Native PauseBuffTime requires a boolean flag")
     if instance.time_paused == paused:
         return
-    if instance.definition.retained_priority_layers or instance.definition.stacking not in {0, 2, 4, 7}:
+    if (instance.definition.retained_priority_layers
+            or instance.definition.stacking not in {0, 2, 4, 7}
+            and not (instance.definition.stacking == 5 and instance.definition.reviewed_duration_extend)):
         raise UnresolvedMechanic(f"Native paused priority stacking needs binding: {instance.key}")
     if (paused and instance.period > 0 and instance.remaining != 0
             and (instance.next_trigger is None or instance.next_trigger <= world.time)):
@@ -265,7 +281,7 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     definition = change.definition
     if definition is None:
         raise UnresolvedMechanic(f"Buff addition lacks instance definition: {change.key}")
-    if change.attach_to_event_skill and definition.stacking == 4:
+    if change.attach_to_event_skill and definition.stacking in {4, 5}:
         raise UnresolvedMechanic(f"Native skill-attached Refresh reapplication needs binding: {change.key}")
     parent = world._native_buff_context if change.child_of_buff else None
     if change.child_of_buff and (parent is None or parent.uid != action_id
@@ -296,6 +312,15 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     values.update({key: expression.evaluate(inputs) for key, expression in definition.inherited})
     duration = definition.duration.evaluate(values) if definition.duration is not None else None
     period = definition.period.evaluate(values)
+    if definition.reviewed_duration_extend and definition.stacking != 5:
+        raise UnresolvedMechanic(f"Conflicting native duration-extension policy: {change.key}")
+    if definition.stacking == 5:
+        from src.data.native_buff_program import LAEVAT_STANCE
+
+        if not definition.reviewed_duration_extend or change.key != LAEVAT_STANCE or delta != 1:
+            raise UnresolvedMechanic(f"Native duration extension needs reviewed single-layer stance binding: {change.key}")
+        if duration is not None:
+            duration = _single(duration)
     if definition.stacking == 4:
         from src.data.native_attribute_modifiers import ALESH_TEAM_ATTACK
 
@@ -329,11 +354,11 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         # Replay uses the world's authored clock, not the native per-tick delta
         # stream/accumulated SUBSS. Keep that precision boundary explicit.
         world.unresolved.add(f"Native retained-layer tick accumulation not yet bound: {change.key}")
-    elif definition.stacking not in {0, 2, 4, 7}:
+    elif definition.stacking not in {0, 2, 4, 5, 7}:
         raise UnresolvedMechanic(f"Native buff stacking policy not yet bound: {change.key}/{definition.stacking}")
     group = _stacking_group(world, owner, change.key, definition)
     if any(v.definition.stacking != definition.stacking or
-           definition.stacking != 4 and v.definition.maximum != definition.maximum for v in group):
+           definition.stacking not in {4, 5} and v.definition.maximum != definition.maximum for v in group):
         raise UnresolvedMechanic(f"Native shared stacking group has conflicting policies: {change.key}")
     if definition.stacking == 11 and any(
         v.definition.maximum.evaluate(world._action_inputs[v.uid]) != maximum for v in group
@@ -343,6 +368,11 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     world.native_buff_tags[change.key] = definition.tags
     for _ in range(delta):
         existing = _stacking_group(world, owner, change.key, definition)
+        if definition.stacking == 5 and existing:
+            # Native returns no new creation handle. Do not replay OnStart,
+            # reassign source/BB, attach a new parent or restart the tick timer.
+            _extend_duration(world, existing[0], duration)
+            continue
         if definition.stacking == 4 and existing:
             # StackBuff returns the first existing object, not a newly enabled
             # layer. Source, BB, captured attribute and parent identity survive.

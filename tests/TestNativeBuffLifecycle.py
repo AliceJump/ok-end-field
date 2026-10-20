@@ -17,7 +17,13 @@ from src.data.combat_simulation import (
     UnresolvedMechanic,
 )
 from src.data.native_action_program import _nodes, compile_native_action
-from src.data.native_buff_program import POGRANI_MORALE, compile_buff_definition, reviewed_retained_layers
+from src.data.native_buff_program import (
+    LAEVAT_STANCE,
+    POGRANI_MORALE,
+    compile_buff_definition,
+    reviewed_duration_extend,
+    reviewed_retained_layers,
+)
 from src.data.native_buff_runtime import change_buff, finish_buff_instances, pause_buff_time
 from src.data.native_gameplay import native_record
 from src.data.skill_timing import SkillTimingStore
@@ -453,7 +459,7 @@ class TestNativePausedBuffClock(unittest.TestCase):
         self.assertEqual(stance.expires, 3)
         self.assertIsNone(stance.paused_lifetime)
 
-    def test_real_laevatain_pause_leaves_compile_but_unbound_event_guard_stays_unknown(self):
+    def test_real_laevatain_full_pause_callbacks_use_explicit_event_id(self):
         store = SkillTimingStore()
         character = get_character("laevatain")
         source = native_record(store, "buff_chr_0016_laevat_show_weapon")["data"]
@@ -461,30 +467,162 @@ class TestNativePausedBuffClock(unittest.TestCase):
         flags = []
         for event in source["abilityEventAction"]:
             for block in event["actions"]:
-                full = compile_native_action(store, character, store.profiles("莱万汀", "ult")[0], "1", "normal",
-                                             event_sequence=block, isolated_blackboard=True)
-                self.assertIn("Native advanced event buff identity/output needs binding",
-                              [error for e in full.events for error in e.unresolved])
-                leaf = next(n for n in _nodes(block) if n["$type"].endswith("PauseBuffTime+Data"))
-                isolated = copy.deepcopy(block)
-                isolated["actionData"] = [leaf]
                 callback = compile_native_action(store, character, store.profiles("莱万汀", "ult")[0], "1", "normal",
-                                                 event_sequence=isolated, isolated_blackboard=True)
+                                                 event_sequence=block, isolated_blackboard=True)
                 self.assertFalse([error for e in callback.events for error in e.unresolved])
                 flags += [e.buff_pause for e in callback.events if e.buff_pause is not None]
-                subscriptions.append((str(event["abilityEvent"]), callback))
+                subscriptions.append(({9: "OnAddedBuff", 203: "OnFinishedBuff"}[event["abilityEvent"]], callback))
         self.assertEqual(flags, [True, False])
-        # Explicitly filtered event input plus a confirmed plain holder isolate
-        # the actual leaves. The real type-5 container and guard stay unresolved.
+        # The full actual condition/Pause callbacks execute on a confirmed plain
+        # holder. The type-5 container and automatic event producer are separate.
         definition = replace(self.definition(period=-1, callbacks=()), subscriptions=tuple(subscriptions))
         stance = self.add(definition=definition)
         self.world.advance(.5)
-        self.world.dispatch_native("9", "1")
+        key = "buff_chr_0016_laevat_pause_ult"
+        self.world.dispatch_native("OnAddedBuff", "1", {"event.literal_buff_id."+key: 1})
+        self.assertFalse(stance.time_paused)
+        self.world.dispatch_native("OnAddedBuff", "1", buff_event_id="other_buff")
+        self.assertFalse(stance.time_paused)
+        self.world.dispatch_native("OnAddedBuff", "1", buff_event_id=key)
         self.assertTrue(stance.time_paused)
         self.world.advance(10)
-        self.world.dispatch_native("203", "1")
+        self.world.dispatch_native("OnFinishedBuff", "1")
+        self.assertTrue(stance.time_paused)
+        self.world.dispatch_native("OnFinishedBuff", "1", buff_event_id=key)
         self.assertFalse(stance.time_paused)
         self.assertEqual(stance.expires, 12.5)
+
+
+class TestLaevatainDurationExtension(unittest.TestCase):
+    """The reviewed type5 container, independent of unresolved stance creation."""
+
+    def setUp(self):
+        self.world = CombatWorldState(("1", "2"), regen=0)
+        self.definition = replace(TestNativeBuffLifecycle().definition(period=-1, callbacks=()),
+                                  stacking=5, reviewed_duration_extend=True)
+
+    def add(self, duration=3, *, source="1", definition=None, end=None, delta=1):
+        definition = replace(definition or self.definition, duration=None if duration is None else literal(duration))
+        change = NativeBuffChange(LAEVAT_STANCE, literal(delta), selector=NativeTarget("main"),
+                                  definition=definition, action_finish_after=end)
+        program = ActionProgram("explicit_stance", source, "normal", 0, 0, 0,
+                                (CombatEvent(0, "add", native_buffs=(change,)),), parameters=(("bb.inherit", 7),))
+        action_id = f"add:{self.world._sequence}:{source}"
+        self.assertTrue(self.world.start(program, action_id=action_id))
+        return next((v for v in self.world.native_buff_instances.values() if v.key == LAEVAT_STANCE), None)
+
+    def pause(self, instance, paused):
+        self.world._native_buff_context = instance
+        try:
+            pause_buff_time(self.world, instance.uid, paused)
+        finally:
+            self.world._native_buff_context = None
+
+    def test_existing_instance_adds_life_instead_of_restarting_or_taking_maximum(self):
+        instance = self.add()
+        self.world.advance(2)
+        same = self.add(2, source="2")
+        self.assertIs(same, instance)
+        self.assertEqual(instance.expires, 5)  # now 2 + remaining 1 + incoming 2.
+        self.assertEqual(instance.source, "1")
+        self.assertEqual(self.world.native_buff_count("1", LAEVAT_STANCE), 1)
+        self.world.advance(3)
+        self.assertIn(instance.uid, self.world.native_buff_instances)
+        self.world.advance(5)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_extension_while_paused_keeps_saved_remainder(self):
+        instance = self.add()
+        self.world.advance(1)
+        self.pause(instance, True)
+        self.world.advance(10)
+        self.assertIs(self.add(1), instance)
+        self.assertTrue(instance.time_paused)
+        self.assertEqual(instance.paused_lifetime, 3)
+        self.assertIsNone(instance.expires)
+        self.pause(instance, False)
+        self.assertEqual(instance.expires, 13)
+        self.world.advance(13)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_extension_retains_original_bb_source_parent_and_action_end(self):
+        instance = self.add(15, end=5)
+        instance.parent_scope = "explicit_original_parent"
+        before = dict(self.world._action_inputs[instance.uid])
+        self.world.advance(1)
+        updated = replace(self.definition, parameters=(("bb.gain", 999),))
+        self.assertIs(self.add(15, source="2", definition=updated, end=20), instance)
+        self.assertEqual(instance.source, "1")
+        self.assertEqual(instance.parent_scope, "explicit_original_parent")
+        self.assertEqual(self.world._action_inputs[instance.uid], before)
+        self.assertEqual(instance.action_finish_at, 5)
+        self.world.advance(5)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_periodic_timer_and_counter_are_not_restarted_on_extension(self):
+        definition = replace(TestNativeBuffLifecycle().definition(), stacking=5, reviewed_duration_extend=True)
+        instance = self.add(definition=definition)
+        self.world.advance(.5)
+        self.assertIs(self.add(3, definition=definition), instance)
+        self.assertEqual(instance.next_trigger, 1)
+        self.assertEqual(self.world.characters["1"].energy, 0)
+        self.world.advance(6)
+        self.assertEqual(self.world.characters["1"].energy, 42)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_infinite_input_and_prediction_fork_do_not_corrupt_real_deadline(self):
+        instance = self.add()
+        fork = self.world.fork()
+        definition = replace(self.definition, duration=None)
+        change = NativeBuffChange(LAEVAT_STANCE, literal(1), definition=definition)
+        change_buff(fork, "1", change, {"bb.inherit": 7}, "fork_add", instance.program, 1)
+        self.assertIsNone(fork.native_buff_instances[instance.uid].expires)
+        fork.advance(100)
+        self.assertEqual(fork.native_buff_count("1", LAEVAT_STANCE), 1)
+        self.assertEqual(instance.expires, 3)
+        self.world.advance(3)
+        self.assertFalse(self.world.native_buff_instances)
+
+    def test_unreviewed_type5_and_multi_count_stay_unknown(self):
+        for flag, count in ((False, 1), (True, 2)):
+            with self.subTest(flag=flag, count=count):
+                self.world = CombatWorldState(("1", "2"), regen=0)
+                self.assertIsNone(self.add(definition=replace(self.definition, reviewed_duration_extend=flag), delta=count))
+                self.assertTrue(any("reviewed single-layer" in reason for reason in self.world.unresolved))
+
+    def test_real_container_shape_is_approved_without_accepting_other_policies(self):
+        data = native_record(SkillTimingStore(), LAEVAT_STANCE)["data"]
+        self.assertTrue(reviewed_duration_extend(LAEVAT_STANCE, data))
+        self.assertFalse(reviewed_duration_extend("unreviewed", data))
+        for key, value in (("stackingType", 4), ("identifierType", 1), ("priority", 1)):
+            changed = copy.deepcopy(data)
+            changed["stackingSettings"][key] = value
+            self.assertFalse(reviewed_duration_extend(LAEVAT_STANCE, changed))
+
+    def test_real_container_compiler_keeps_ranked_duration_bridge_unknown(self):
+        store = SkillTimingStore()
+        data = native_record(store, LAEVAT_STANCE)["data"]
+        arguments = (store, get_character("laevatain"), store.profiles("莱万汀", "ult")[0], "1", LAEVAT_STANCE, data)
+        unbound = compile_buff_definition(*arguments, {"assignBlackboard": False}, attributes={}, panel=None, path=())
+        self.assertTrue(unbound.reviewed_duration_extend)
+        self.assertIn("Native stance duration blackboard transfer needs binding: "+LAEVAT_STANCE, unbound.unresolved)
+        reference = {"assignBlackboard": True, "assignItems": [{"directValueType": 0, "useDirectValue": True,
+                     "numericValue": .1, "inputValueKey": "", "targetKey": "duration"}]}
+        bound = compile_buff_definition(*arguments, reference, attributes={}, panel=None, path=())
+        self.assertTrue(bound.reviewed_duration_extend)
+        self.assertFalse(bound.unresolved)
+        self.assertEqual(dict(bound.inherited)["bb.duration"].evaluate({}), .1)
+
+    def test_real_ultimate_producer_uses_instance_policy_without_silencing_other_gaps(self):
+        store = SkillTimingStore()
+        program = compile_native_action(store, get_character("laevatain"), store.profiles("莱万汀", "ult")[0], "1", "ult")
+        changes = [change for event in program.events for change in event.native_buffs
+                   if change.key == LAEVAT_STANCE and not change.remove_all]
+        self.assertEqual(len(changes), 1)
+        self.assertIsNotNone(changes[0].definition)
+        self.assertTrue(changes[0].definition.reviewed_duration_extend)
+        self.assertIn("Native stance duration blackboard transfer needs binding: "+LAEVAT_STANCE,
+                      changes[0].definition.unresolved)
 
 
 if __name__ == "__main__":
