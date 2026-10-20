@@ -1,5 +1,5 @@
-from types import SimpleNamespace
 import unittest
+from types import SimpleNamespace
 
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 
