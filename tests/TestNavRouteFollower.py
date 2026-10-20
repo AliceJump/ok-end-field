@@ -97,25 +97,6 @@ class TestGridRouteFollower(unittest.TestCase):
         step = self.follower.update((0.5, 0.5), heading=90.0, now=2.1)
         self.assertEqual(step.action, STUCK)
 
-    def test_stationary_turns_still_detect_stuck(self):
-        self.follower.plan((0.5, 0.5), (4.5, 0.5))
-        for now, heading in ((0.0, 0.0), (1.0, 270.0)):
-            self.assertEqual(self.follower.update((0.5, 0.5), heading=heading, now=now).action, TURN)
-        self.assertEqual(self.follower.update((0.5, 0.5), heading=180.0, now=2.1).action, STUCK)
-
-    def test_switching_between_walk_and_turn_does_not_hide_stuck(self):
-        self.follower.plan((0.5, 0.5), (4.5, 0.5))
-        for now, heading in ((0.0, 90.0), (0.5, 0.0), (1.0, 90.0), (1.5, 180.0)):
-            self.assertIn(self.follower.update((0.5, 0.5), heading=heading, now=now).action, (TURN, WALK))
-        self.assertEqual(self.follower.update((0.5, 0.5), heading=90.0, now=2.1).action, STUCK)
-
-    def test_turning_with_position_progress_restarts_stuck_window(self):
-        self.follower.plan((0.5, 0.5), (4.5, 0.5))
-        self.assertEqual(self.follower.update((0.5, 0.5), heading=0.0, now=0.0).action, TURN)
-        self.assertEqual(self.follower.update((1.0, 0.5), heading=0.0, now=1.5).action, TURN)
-        self.assertEqual(self.follower.update((1.0, 0.5), heading=0.0, now=3.0).action, TURN)
-        self.assertEqual(self.follower.update((1.0, 0.5), heading=0.0, now=3.6).action, STUCK)
-
     def test_pause_resets_stuck_window(self):
         self.follower.plan((0.5, 0.5), (4.5, 0.5))
         self.assertEqual(

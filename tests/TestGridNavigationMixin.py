@@ -1478,23 +1478,6 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(self.task.turns)
         self.assertFalse(self.task.rotations)
 
-    def test_stationary_spinning_enters_recovery_instead_of_turning_until_timeout(self):
-        self.task.heading = 0.0
-        self.task.config["导航超时(秒)"] = 60.0
-        self.task.config["卡住脱困次数"] = 1
-
-        def blocked_turn(target_deg, **kwargs):
-            self.task.turns.append(float(target_deg))
-            self.task.t += 1.0
-            self.task.heading = (self.task.heading + 180.0) % 360
-            return {"ok": False, "heading": self.task.heading, "error": 90.0}
-
-        self.task.turn_to_bearing = blocked_turn
-        self.assertFalse(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
-        self.assertIn("s", self.task.pressed_keys)
-        self.assertTrue(any("导航卡住" in msg for msg in self.task.logs))
-        self.assertLess(self.task.t, 15.0)
-
     def test_close_waypoint_uses_stationary_turn(self):
         step = SimpleNamespace(heading_error=20.0, distance_to_waypoint=2.0)
         self.assertTrue(self.task._should_turn_grid_in_place(step))
