@@ -251,7 +251,11 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task._legacy_click_on_zip_line.assert_called_once()
 
     def test_gold_gate_saves_before_e_failure_but_does_not_train_twice(self):
-        task = self.zip_task()
+        # All three E retries must still have fresh target detections.
+        task = self.zip_task(
+            [gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
+             gold_tests.TestZipLineGoldGate._matched_icon()] * 4
+        )
         context = self.zip_context(task)
 
         def no_e(*args, on_gate_confirmed=None):
