@@ -1234,6 +1234,8 @@ class NativeTextLayoutTest(unittest.TestCase):
             "自动战斗",
             "开始一条龙",
             "一条龙设置",
+            "暂停",
+            "停止",
         }
         for path in [*root.glob("src/gui/**/*.py"), root / "src/patches/endfield_theme_patch.py"]:
             for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
@@ -1310,6 +1312,74 @@ class NativeTextLayoutTest(unittest.TestCase):
         self.assertGreater(button.x(), workspace.tab_bar.geometry().right() + 100)
         workspace.close()
         workspace.deleteLater()
+
+    def test_daily_header_actions_follow_the_task_run_state(self):
+        from ok.ui.qt.Communicate import communicate
+        from PySide6.QtCore import QCoreApplication, QEvent
+
+        calls = []
+        task = SimpleNamespace(
+            enabled=False,
+            paused=False,
+            running=False,
+            pause=lambda: calls.append("pause"),
+            disable=lambda: calls.append("disable"),
+            unpause=lambda: calls.append("unpause"),
+        )
+        workspace = EndfieldWorkspaceTab(
+            "DAILY",
+            "日常一条龙",
+            [("帝江号", None, QWidget())],
+            primary_action=("开始一条龙", lambda: calls.append("start")),
+            secondary_action=("一条龙设置", lambda: None),
+            run_task=lambda: task,
+        )
+        notices = []
+        workspace.show_notification = lambda message, **_kwargs: notices.append(message)
+        workspace.resize(1300, 700)
+        workspace.show()
+        start, pause, stop, status = (
+            workspace.primary_action_button,
+            workspace.pause_action_button,
+            workspace.stop_action_button,
+            workspace.run_status,
+        )
+        assert start is not None and pause is not None and stop is not None and status is not None
+
+        def publish(**state):
+            for key, value in state.items():
+                setattr(task, key, value)
+            communicate.task.emit(task)
+            for _ in range(4):
+                self.app.processEvents()
+            return [widget.isVisible() for widget in (status, pause, stop, start)]
+
+        self.assertEqual(publish(), [False, False, False, True])
+        # 执行器已在运行：ok 不会弹“启动成功”，由页眉在任务启用后补上
+        with patch.object(og, "executor", SimpleNamespace(paused=False)):
+            start.click()
+        self.assertEqual(publish(enabled=True), [True, False, True, False])
+        self.assertEqual(status.text(), "等待执行")
+        self.assertEqual(notices, ["Start Success."])
+        self.assertEqual(publish(running=True), [True, True, True, False])
+        self.assertEqual(status.text(), "运行中")
+        self.assertEqual(workspace.width() - stop.mapTo(workspace, QPoint(stop.width(), 0)).x(), 36)
+        pause.click()
+        self.assertEqual(publish(paused=True), [True, False, True, True])
+        self.assertEqual((start.text(), status.text()), ("继续", "已暂停"))
+        stop.click()
+        self.assertEqual(publish(enabled=False, paused=False, running=False), [False, False, False, True])
+        self.assertEqual(start.text(), "开始一条龙")
+        self.assertEqual(calls, ["start", "pause", "disable", "unpause"])
+        # 执行器暂停时由 ok 自己提示，页眉不重复
+        with patch.object(og, "executor", SimpleNamespace(paused=True)):
+            start.click()
+        publish(enabled=True)
+        self.assertEqual(notices, ["Start Success."])
+        workspace.close()
+        workspace.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+        self.assertNotIn(workspace._sync_run_state, communicate.task._subscribers)
 
 
 class NativeControlsTest(unittest.TestCase):

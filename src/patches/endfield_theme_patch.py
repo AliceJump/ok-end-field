@@ -1008,7 +1008,13 @@ def install_endfield_theme_patch() -> None:
                 if not tabs:
                     continue
                 workspace = EndfieldWorkspaceTab(
-                    code, title, tabs, self, primary_action=action, secondary_action=setting
+                    code,
+                    title,
+                    tabs,
+                    self,
+                    primary_action=action,
+                    secondary_action=setting,
+                    run_task=find_daily_composite_task if code == "DAILY" else None,
                 )
                 item = self.addSubInterface(workspace, icon, self.app.tr(title), position=NavigationItemPosition.SCROLL)
                 if item is not None:

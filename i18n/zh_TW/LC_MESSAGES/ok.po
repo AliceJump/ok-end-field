@@ -2961,6 +2961,15 @@ msgstr "開始一條龍"
 msgid "一条龙设置"
 msgstr "一條龍設定"
 
+msgid "暂停"
+msgstr "暫停"
+
+msgid "停止"
+msgstr "停止"
+
+msgid "继续"
+msgstr "繼續"
+
 msgid "帝江号"
 msgstr "帝江號"
 

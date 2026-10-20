@@ -4,8 +4,10 @@ from collections.abc import Callable
 from contextlib import suppress
 from typing import Any
 
-from ok import Logger
-from PySide6.QtCore import QRectF, QSize, Qt, Signal  # type: ignore
+from ok import Logger, og
+from ok.ui.qt.common.OKIcon import OKIcon
+from ok.ui.qt.Communicate import communicate
+from PySide6.QtCore import QCoreApplication, QRectF, QSize, Qt, Signal  # type: ignore
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPixmap  # type: ignore
 from PySide6.QtWidgets import (  # type: ignore
     QBoxLayout,
@@ -22,6 +24,7 @@ from qfluentwidgets import FlowLayout, FluentIcon, Theme, qconfig  # type: ignor
 from src.gui.EndfieldEntryCards import (
     EndfieldEntryNumbering,
     EndfieldSectionBanner,
+    EndfieldTaskStatus,
     english_title,
     remove_page_decorations,
 )
@@ -212,6 +215,7 @@ class EndfieldWorkspaceTab(QWidget):
         parent: QWidget | None = None,
         primary_action: tuple[str, Callable[[], None]] | None = None,
         secondary_action: tuple[str, Callable[[], None]] | None = None,
+        run_task: Callable[[], Any] | None = None,
     ):
         super().__init__(parent)
         self.setObjectName(f"{category_code.lower()}_workspace")
@@ -271,29 +275,42 @@ class EndfieldWorkspaceTab(QWidget):
         # Keep the workspace actions separate from section navigation.
         self.action_row = QHBoxLayout()
         self.action_row.setSpacing(12)
+        # 主操作启动的任务：按它的状态在“开始 / 暂停、停止 / 继续、停止”之间切换，规则同原生任务卡片
+        self._run_task = run_task if primary_action is not None else None
+        self._announce_start = False
+        self.run_status: EndfieldTaskStatus | None = None
+        self.pause_action_button: EndfieldActionButton | None = None
+        self.stop_action_button: EndfieldActionButton | None = None
+        if self._run_task is not None:
+            self.run_status = EndfieldTaskStatus(self.header_bar)
+            self.run_status.hide()
+            self.action_row.addWidget(self.run_status, 0, Qt.AlignVCenter)
         if secondary_action is not None:
             setting_text, setting_callback = secondary_action
-            setting_btn = EndfieldActionButton(FluentIcon.SETTING, ui_tr(setting_text), self.header_bar)
-            setting_btn.setObjectName("workspaceSecondaryAction")
-            setting_btn.setIconSize(QSize(14, 14))
-            setting_btn.setFont(ui_font(14, QFont.DemiBold))
-            setting_btn.setFixedSize(max(132, setting_btn.sizeHint().width()), 36)
+            setting_btn = self._action_button(FluentIcon.SETTING, setting_text, "workspaceSecondaryAction")
             setting_btn.clicked.connect(lambda: setting_callback())
             self.secondary_action_button = setting_btn
-            self.action_row.addWidget(setting_btn, 0, Qt.AlignVCenter)
+        if self._run_task is not None:
+            self.pause_action_button = self._action_button(FluentIcon.PAUSE, "暂停", "workspacePauseAction")
+            self.pause_action_button.clicked.connect(self._pause_clicked)
+            self.stop_action_button = self._action_button(OKIcon.STOP, "停止", "workspaceStopAction", primary=True)
+            self.stop_action_button.clicked.connect(self._stop_clicked)
         if primary_action is not None:
             action_text, action_callback = primary_action
-            action_btn = EndfieldActionButton(FluentIcon.PLAY, ui_tr(action_text), self.header_bar, primary=True)
-            action_btn.setObjectName("workspacePrimaryAction")
-            action_btn.setFixedSize(132, 36)
-            action_btn.setIconSize(QSize(14, 14))
-            action_btn.setFont(ui_font(14, QFont.DemiBold))
-            action_btn.clicked.connect(lambda: action_callback())
+            self._primary_text = ui_tr(action_text)
+            self._primary_callback = action_callback
+            action_btn = self._action_button(FluentIcon.PLAY, action_text, "workspacePrimaryAction", primary=True)
+            action_btn.clicked.connect(self._start_clicked)
             self.primary_action_button = action_btn
-            self.action_row.addWidget(action_btn, 0, Qt.AlignVCenter)
         if self.action_row.count():
             self.header_layout.addLayout(self.action_row)
         header.addLayout(self.header_layout)
+        if self._run_task is not None:
+            # 事件总线强引用订阅者，页面销毁时要退订
+            sync = self._sync_run_state
+            communicate.task.connect(sync)
+            self.destroyed.connect(lambda *_args: communicate.task.disconnect(sync))
+            self._sync_run_state()
 
         self.main_layout.addWidget(self.header_bar)
 
@@ -340,6 +357,64 @@ class EndfieldWorkspaceTab(QWidget):
         self.apply_theme_colors()
         with suppress(Exception):
             qconfig.themeChanged.connect(self.apply_theme_colors)
+
+    def _action_button(self, icon: Any, text: str, name: str, *, primary: bool = False) -> EndfieldActionButton:
+        button = EndfieldActionButton(icon, ui_tr(text), self.header_bar, primary=primary)
+        button.setObjectName(name)
+        button.setIconSize(QSize(14, 14))
+        button.setFont(ui_font(14, QFont.DemiBold))
+        button.setFixedSize(max(132, button.sizeHint().width()), 36)
+        self.action_row.addWidget(button, 0, Qt.AlignVCenter)
+        return button
+
+    def _start_clicked(self):
+        task = self._run_task() if self._run_task is not None else None
+        # 执行器从暂停恢复时 ok 自己会提示“启动成功”；执行器已在运行时由页眉补这条提示
+        self._announce_start = (
+            task is not None
+            and not getattr(task, "enabled", False)
+            and not getattr(getattr(og, "executor", None), "paused", True)
+        )
+        self._primary_callback()
+
+    def _pause_clicked(self):
+        task = self._run_task() if self._run_task is not None else None
+        if task is not None:
+            task.pause()
+
+    def _stop_clicked(self):
+        task = self._run_task() if self._run_task is not None else None
+        if task is not None:
+            task.disable()
+            task.unpause()
+
+    def _sync_run_state(self, *_args):
+        task = self._run_task() if self._run_task is not None else None
+        if task is None or self.primary_action_button is None:
+            return
+        enabled = bool(getattr(task, "enabled", False))
+        paused = enabled and bool(getattr(task, "paused", False))
+        running = enabled and not paused and bool(getattr(task, "running", False))
+        self.primary_action_button.setText(ui_tr("继续") if paused else self._primary_text)
+        self.primary_action_button.setVisible(not enabled or paused)
+        if self.pause_action_button is not None:
+            self.pause_action_button.setVisible(running)
+        if self.stop_action_button is not None:
+            self.stop_action_button.setVisible(enabled)
+        if self.run_status is not None:
+            if enabled:
+                text, role = (
+                    ("已暂停", "attention") if paused else ("运行中", "running") if running else ("等待执行", "waiting")
+                )
+                self.run_status.setText(ui_tr(text))
+                self.run_status.role = role
+                self.run_status.apply_theme()
+            self.run_status.setVisible(enabled)
+        if enabled and self._announce_start:
+            self._announce_start = False
+            notify = getattr(self.window(), "show_notification", None)
+            if notify is not None:
+                notify(QCoreApplication.translate("MainWindow", "Start Success."), tray=False)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

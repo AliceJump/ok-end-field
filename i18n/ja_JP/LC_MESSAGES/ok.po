@@ -2978,6 +2978,15 @@ msgstr "ルーチン開始"
 msgid "一条龙设置"
 msgstr "ルーチン設定"
 
+msgid "暂停"
+msgstr "一時停止"
+
+msgid "停止"
+msgstr "停止"
+
+msgid "继续"
+msgstr "再開"
+
 msgid "帝江号"
 msgstr "帝江号"
 

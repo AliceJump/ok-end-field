@@ -3270,6 +3270,15 @@ msgstr "Iniciar rutina"
 msgid "一条龙设置"
 msgstr "Ajustes de rutina"
 
+msgid "暂停"
+msgstr "Pausar"
+
+msgid "停止"
+msgstr "Detener"
+
+msgid "继续"
+msgstr "Reanudar"
+
 msgid "帝江号"
 msgstr "Dijiang"
 

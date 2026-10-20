@@ -3172,6 +3172,15 @@ msgstr "Start Routine"
 msgid "一条龙设置"
 msgstr "Routine Settings"
 
+msgid "暂停"
+msgstr "Pause"
+
+msgid "停止"
+msgstr "Stop"
+
+msgid "继续"
+msgstr "Resume"
+
 msgid "帝江号"
 msgstr "Dijiang"
 

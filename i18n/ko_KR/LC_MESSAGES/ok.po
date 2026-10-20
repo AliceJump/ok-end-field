@@ -2993,6 +2993,15 @@ msgstr "루틴 시작"
 msgid "一条龙设置"
 msgstr "루틴 설정"
 
+msgid "暂停"
+msgstr "일시정지"
+
+msgid "停止"
+msgstr "중지"
+
+msgid "继续"
+msgstr "재개"
+
 msgid "帝江号"
 msgstr "제강호"
 
