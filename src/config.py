@@ -143,7 +143,6 @@ config = {
         ["src.tasks.onetime.DemoBattleTask", "DemoBattleTask"],
         ["src.tasks.onetime.ActivityRewardTask", "ActivityRewardTask"],
         ["src.tasks.onetime.DailyRewardTask", "DailyRewardTask"],
-        ["src.tasks.onetime.FarmRelatedTask", "FarmRelatedTask"],
         ["src.tasks.onetime.DailyDeliveryTask", "DailyDeliveryTask"],
         ["src.tasks.onetime.HomePointTask", "HomePointTask"],
         # 其他一次性业务任务
@@ -166,6 +165,7 @@ config = {
         ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
         ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],
+        ["src.tasks.onetime.FarmRelatedTask", "FarmRelatedTask"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],
