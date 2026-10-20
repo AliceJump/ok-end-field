@@ -59,7 +59,7 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):  # 定义农牧标记筛�
             self.mark_task_failure("未进入祀的画地图，未找到标记筛选入口")  # 记录地图加载失败
             return False  # 结束本次任务
 
-        if not self.clear_icon_in_map(need_reserve_icon_name="农牧相关", ocr=True):  # 清空其他标记并只选农牧相关
+        if not self._click_farm_related():  # 清空其他标记并只选农牧相关
             self.mark_task_failure("筛选农牧相关标记失败")  # 记录标记筛选失败
             return False  # 结束本次任务
 
@@ -114,8 +114,47 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):  # 定义农牧标记筛�
                 self.mark_task_failure(f"未找到{source_name}的存至武陵仓库按钮")  # 记录对应对象的识别失败
                 return False  # 将收取失败返回给调用方
             elif not self.wait_pop_up(time_out=5):
-                self.log_info(f"未找到确认按钮，收取结束")
+                self.log_info(f"{source_name}未找到确认按钮，收取结束")
                 break
 
         self.log_info(f"已点击{source_name}的存至武陵仓库按钮")  # 记录按钮点击完成
         return True  # 将收取成功返回给调用方
+
+    def _click_farm_related(self):
+        """
+        清理地图标记筛选，保留农牧相关。
+        """
+
+        # 打开标记显示管理
+        if not self.wait_click_feature(
+            feature=fL.map_filter_icon,
+            time_out=10,
+            raise_if_not_found=False,
+        ):
+            return False
+
+        # 先清空选中，确保随后点击农牧相关会将其勾选
+        if not self.wait_click_feature(
+            feature=fL.to_max_produce_num,
+            box=self.box_of_screen(0.117, 0.902, 0.141, 0.941),
+            time_out=10,
+            raise_if_not_found=False,
+        ):
+            return False
+
+        for _ in range(5):  # 向下滑动 5 次
+            self.scroll_relative(0.1, 0.5, -1)
+            if self.wait_click_feature(  # 等待并点击农牧相关图标
+                feature=fL.farm_related_icon,  # 使用子仓库中已有的农牧筛选模板
+                box=self.box_of_screen(0.025, 0.065, 0.145, 0.88),  # 限定左侧第一列列表，避开右列相似图标和底部按钮
+                use_gray_scale=True,  # 使用灰度匹配筛选图标
+                time_out=2,  # 每次最多等待两秒让列表显示完成
+                raise_if_not_found=False,  # 未找到时继续滚动查找
+                after_sleep=0.5,  # 点击后等待筛选状态更新
+            ):  # 找到并点击后结束查找
+                # 退出标记管理界面
+                self.back()
+                self.wait_ui_stable()
+                return True
+
+        return False

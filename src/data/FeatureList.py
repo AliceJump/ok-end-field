@@ -145,6 +145,7 @@ class FeatureList(str, Enum):
     essence_ui_marker = "essence_ui_marker"
     essence_unlocked = "essence_unlocked"
     exchange_room = "exchange_room"
+    farm_related_icon = "farm_related_icon"  # 标记显示管理中的农牧相关图标
     fill_max = "fill_max"
     friend_chat_icon = "friend_chat_icon"
     friend_page = "friend_page"
