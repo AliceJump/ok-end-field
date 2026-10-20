@@ -4,6 +4,8 @@ from enum import Enum
 class FeatureList(str, Enum):
     all_receive = "all_receive"
     assist_friend = "assist_friend"
+    auto_farmer = "auto_farmer"  # 自动农植机图标
+    auto_farmer_on_map = "auto_farmer_on_map"  # 自动农植机地图图标
     b = "b"
     b_2k = "b_2k"
     b_4k = "b_4k"
@@ -211,6 +213,7 @@ class FeatureList(str, Enum):
     products_collect_icon = "products_collect_icon"
     products_icon = "products_icon"
     q = "q"
+    ranch = "ranch"  # 牧场地图图标
     rationality_supplement_page = "rationality_supplement_page"
     receive_clue_enter = "receive_clue_enter"
     receive_good = "receive_good"
