@@ -6,6 +6,7 @@ import json
 import math
 from dataclasses import asdict, dataclass, replace
 from enum import StrEnum
+from functools import cached_property
 
 from src.core.learning.environment import LearningEnvironment
 from src.core.learning.samples import MotionSample, classify_samples
@@ -250,6 +251,8 @@ class LearningRecord:
     updated_at: float = 0.0
     provenance: tuple[str, ...] = ()
     observations: tuple[MotionSample, ...] = ()
+    legacy_motion: MotionStatistics | None = None
+    legacy_retired: bool = False
 
     def __post_init__(self):
         if not isinstance(self.motion, MotionStatistics) or (
@@ -268,14 +271,32 @@ class LearningRecord:
             not isinstance(item, MotionSample) for item in self.observations
         ):
             raise ValueError("Invalid acquisition records")
+        if self.legacy_motion is not None and not isinstance(self.legacy_motion, MotionStatistics):
+            raise ValueError("Invalid legacy motion")
+        if type(self.legacy_retired) is not bool:
+            raise ValueError("Invalid legacy retirement")
 
-    def motion_for(self, environment):
-        """Every accepted acquisition has equal weight after conversion; never average averages."""
+    @cached_property
+    def _reference_motion(self):
+        """One scan per immutable record; cache is runtime-only and never serialized."""
+        reference = LearningEnvironment()
         motion = MotionStatistics(legacy_samples=self.motion.legacy_samples)
         for sample in self.observations:
             if not sample.outlier:
-                motion = motion.add(*sample.environment.convert(sample.dx, sample.dy, environment))
+                motion = motion.add(*sample.environment.convert(sample.dx, sample.dy, reference))
         return motion
+
+    def motion_for(self, environment):
+        """Scale full-history sufficient statistics instead of rescanning for each yaw lookup."""
+        motion = self._reference_motion
+        sx, sy = LearningEnvironment().convert(1, 1, environment)
+        return replace(
+            motion,
+            mean_dx=motion.mean_dx * sx,
+            mean_dy=motion.mean_dy * sy,
+            m2_dx=motion.m2_dx * sx * sx,
+            m2_dy=motion.m2_dy * sy * sy,
+        )
 
     def successful(
         self, dx, dy, *, target=None, now, provenance=(), environment=None, inputs=(), verification="aligned"
@@ -285,8 +306,13 @@ class LearningRecord:
             (*self.observations, MotionSample(dx, dy, now, environment, inputs, verification))
         )
         legacy = self.motion.legacy_samples + (self.motion.samples if not self.observations else 0)
-        updated = replace(self, observations=observations, motion=MotionStatistics(legacy_samples=legacy))
-        return replace(
+        legacy_motion = self.legacy_motion
+        if not self.observations and self.motion.samples:
+            legacy_motion = self.motion
+        updated = replace(
+            self, observations=observations, motion=MotionStatistics(legacy_samples=legacy), legacy_motion=legacy_motion
+        )
+        result = replace(
             updated,
             motion=updated.motion_for(environment),
             target=target if target is not None else self.target,
@@ -295,6 +321,13 @@ class LearningRecord:
             updated_at=now,
             provenance=tuple(dict.fromkeys((*self.provenance, *provenance)))[-64:],
         )
+        variance = result.motion.variance
+        ready = (
+            result.motion.samples >= 3
+            and variance is not None
+            and math.sqrt(sum(variance)) <= max(12.0, math.hypot(result.motion.mean_dx, result.motion.mean_dy) * 0.25)
+        )
+        return replace(result, legacy_retired=self.legacy_retired or ready)
 
     def failed(self, *, now):
         return replace(
@@ -311,6 +344,8 @@ class LearningRecord:
     def from_dict(cls, data):
         values = dict(data)
         values["motion"] = MotionStatistics(**values["motion"])
+        if values.get("legacy_motion") is not None:
+            values["legacy_motion"] = MotionStatistics(**values["legacy_motion"])
         target = values.get("target")
         if target is not None:
             target = dict(target)

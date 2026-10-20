@@ -12,6 +12,7 @@ from hashlib import sha256
 from itertools import combinations
 
 from src.core.learning.environment import environment_for_context
+from src.core.learning.legacy import legacy_hint, ready_hint
 from src.core.learning.lookup import combine_records, matching_profile, projected_record
 from src.core.learning.models import (
     CONTEXT_VERSION,
@@ -187,8 +188,41 @@ class RouteLearning:
             or context.start_yaw_bucket is None
         ):
             return None
-        records = self._project_records(context, self.store.snapshot(), environment)
-        return self._restrict_axes(self._lookup(context, confidence, records), context)
+        raw_records = self.store.snapshot()
+        records = self._project_records(context, raw_records, environment)
+        hint = self._lookup(context, confidence, records)
+        if environment is not None and not ready_hint(hint):
+            hint = legacy_hint(self._legacy_sources(context, raw_records), confidence) or hint
+        return self._restrict_axes(hint, context)
+
+    @staticmethod
+    def _legacy_sources(context, records):
+        """Only this exact route/segment/yaw; old unknown families never gain sharing."""
+        sources = []
+        for key, record in records.items():
+            source = route_context_from_key(key)
+            if source is None or (
+                source.config_key,
+                source.distances,
+                source.segment_index,
+                source.start_yaw_bucket,
+            ) != (context.config_key, context.distances, context.segment_index, context.start_yaw_bucket):
+                continue
+            left, right = source.capture_profile, context.capture_profile
+            compatible = matching_profile(left, right)
+            if right.movement_version == "zipline-initial-v2-records":
+                compatible = (
+                    compatible
+                    or (left.movement_version == "zipline-initial-v1" and left.camera == right.camera)
+                    or (
+                        left.movement_version == "zipline-v4"
+                        and left.camera == "legacy-unknown"
+                        and right.camera == "zipline-scroll-off"
+                    )
+                )
+            if compatible and left.axes == right.axes:
+                sources.append(record)
+        return sources
 
     @staticmethod
     def _restrict_axes(hint, context):
@@ -270,6 +304,10 @@ class RouteLearning:
                     provenance=tuple(dict.fromkeys((*updated.provenance, _conflict_marker(context))))[-64:],
                 )
             records[context.fingerprint] = updated
+            if environment is not None:
+                projected = self._project_records(context, records, environment)
+                if ready_hint(self._lookup(context, ContextConfidence.HIGH, projected)):
+                    records[context.fingerprint] = replace(updated, legacy_retired=True)
             return trim_routes(records, max_routes=self.max_routes)
 
         return self.store.update_many(update)

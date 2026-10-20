@@ -3,7 +3,9 @@
 import json
 from dataclasses import replace
 
+from src.core.learning.legacy import legacy_hint, ready_hint
 from src.core.learning.models import CONTEXT_VERSION, CaptureProfile, LearningRecord, MotionStatistics, WorkflowContext
+from src.core.learning.policy import choose_hint
 from src.core.learning.samples import classify_samples
 
 
@@ -29,14 +31,14 @@ def combine_records(left, right, environment):
         consecutive_failures=(left if left.updated_at >= right.updated_at else right).consecutive_failures,
         updated_at=max(left.updated_at, right.updated_at),
         provenance=tuple(dict.fromkeys((*left.provenance, *right.provenance)))[-64:],
+        legacy_retired=left.legacy_retired or right.legacy_retired,
     )
     return replace(combined, motion=combined.motion_for(environment))
 
 
-def workflow_record(context, records, environment):
-    result = None
+def _workflow_sources(context, records):
     if not isinstance(records, dict):
-        return None
+        return
     for key, record in records.items():
         try:
             values = json.loads(key)
@@ -51,7 +53,20 @@ def workflow_record(context, records, environment):
                 continue
         except (ValueError, TypeError, KeyError):
             continue
+        yield record
+
+
+def workflow_record(context, records, environment):
+    result = None
+    for record in _workflow_sources(context, records):
         converted = projected_record(record, environment)
         if converted is not None:
             result = combine_records(result, converted, environment)
     return result
+
+
+def workflow_hint(context, records, environment, confidence):
+    hint = choose_hint(workflow_record(context, records, environment), confidence)
+    if ready_hint(hint):
+        return hint
+    return legacy_hint(list(_workflow_sources(context, records)), confidence) or hint

@@ -368,7 +368,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         self.assertEqual(self.store.get(context.fingerprint).motion.mean_dx, 40)
         self.assertIsNone(self.store.get(self.zip_context(task).fingerprint))
 
-    def test_production_route_entry_migrates_legacy_privately_without_replaying_it(self):
+    def test_production_route_entry_migrates_legacy_and_replays_raw_without_changing_source(self):
         task = self.zip_task()
         inner = build_zip_line_route_fingerprint("route", [108])
         key = json.dumps([inner, [1920, 1080], 18])
@@ -380,7 +380,8 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         )
         before = self.source.read_bytes()
         self.run_zip(task)
-        self.assertEqual(task.active_and_send_mouse_delta.call_count, 1)
+        self.assertEqual(task.active_and_send_mouse_delta.call_count, 2)
+        self.assertEqual(task.active_and_send_mouse_delta.call_args_list[0].args[:2], (900, 10))
         self.assertEqual(self.source.read_bytes(), before)
         self.assertEqual(self.store.get(self.zip_context(task).fingerprint).motion.samples, 1)
         self.assertEqual(len(self.store.snapshot()), 3)

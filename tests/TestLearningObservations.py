@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 from src.core.camera_input_config import read_saved_camera_settings
 from src.core.learning.environment import LearningEnvironment, environment_for_context
-from src.core.learning.lookup import workflow_record
+from src.core.learning.lookup import workflow_hint, workflow_record
 from src.core.learning.models import LearningRecord, MotionStatistics
 from src.core.learning.policy import choose_hint
 from src.core.learning.routes import RouteLearning
@@ -69,6 +69,32 @@ class TestLearningObservations(unittest.TestCase):
         self.assertEqual(restored.observations[0].environment, environment)
         self.assertEqual(restored.observations[0].inputs, inputs)
 
+    def test_full_history_over_128_is_retained_and_cached_statistics_are_runtime_only(self):
+        record = LearningRecord()
+        for index in range(160):
+            record = record.successful(100 + index % 3, 20, now=index)
+        self.assertEqual(len(record.observations), 160)
+        expected = sum(100 + index % 3 for index in range(160)) / 160
+        self.assertAlmostEqual(record.motion_for(LearningEnvironment()).mean_dx, expected)
+        # Once a record's reference moments are cached, another target setting
+        # only needs a single scale conversion, not 160 input conversions.
+        original = LearningEnvironment.convert
+        calls = []
+
+        def convert(source, dx, dy, target):
+            calls.append((dx, dy))
+            return original(source, dx, dy, target)
+
+        with patch.object(LearningEnvironment, "convert", convert):
+            current = record.motion_for(LearningEnvironment(capture_size=(3840, 2160)))
+        self.assertEqual(len(calls), 1)
+        self.assertAlmostEqual(current.mean_dx, expected * 2)
+        self.assertAlmostEqual(current.variance[0], record.motion.variance[0] * 4)
+        self.assertNotIn("_reference_motion", record.to_dict())
+        restored = LearningRecord.from_dict(json.loads(json.dumps(record.to_dict())))
+        self.assertEqual(len(restored.observations), 160)
+        self.assertAlmostEqual(restored.motion_for(LearningEnvironment()).mean_dx, expected)
+
     def test_workflow_cross_resolution_replay_uses_raw_records_and_preserves_entry_isolation(self):
         with tempfile.TemporaryDirectory() as folder:
             store = LearningStore(Path(folder) / "samples.json")
@@ -110,6 +136,94 @@ class TestLearningObservations(unittest.TestCase):
         record = record.successful(110, 22, now=1)
         self.assertEqual((record.motion.samples, record.motion.legacy_samples), (1, 100))
         self.assertEqual(len(record.observations), 1)
+
+    def test_old_workflow_replays_unchanged_until_new_observations_are_replayable(self):
+        context = workflow_context()
+        environment = LearningEnvironment(speed_x=5, reverse_x=True, capture_size=(3840, 2160))
+        target = replace(context, capture_profile=replace(context.capture_profile, width=3840, height=2160))
+        old = LearningRecord(motion=MotionStatistics(10, 300, 40), success_count=10)
+        records = {context.fingerprint: old}
+        hint = workflow_hint(target, records, environment, "high")
+        self.assertEqual((hint.action, hint.source), ((300, 40), "legacy-raw"))
+        new = LearningRecord()
+        for index in range(3):
+            new = new.successful(-100, 20, now=index + 1, environment=environment)
+            records[target.fingerprint] = new
+            hint = workflow_hint(target, records, environment, "high")
+            self.assertEqual(hint.action, (300, 40) if index < 2 else (-100, 20))
+        self.assertTrue(new.legacy_retired)
+        records[target.fingerprint] = new.failed(now=10)
+        self.assertIsNone(workflow_hint(target, records, environment, "high").action)
+        self.assertEqual(records[context.fingerprint], old)
+
+    def test_old_aggregate_in_same_key_is_preserved_separately_during_warmup(self):
+        context = workflow_context()
+        environment = environment_for_context(context)
+        old = LearningRecord(motion=MotionStatistics(10, 300, 40), success_count=10)
+        new = old.successful(100, 20, now=1, environment=environment)
+        self.assertEqual(new.legacy_motion, old.motion)
+        self.assertEqual(new.motion.samples, 1)
+        self.assertEqual(workflow_hint(context, {context.fingerprint: new}, environment, "high").action, (300, 40))
+        for now in (2, 3):
+            new = new.successful(100, 20, now=now, environment=environment)
+        self.assertEqual(workflow_hint(context, {context.fingerprint: new}, environment, "high").action, (100, 20))
+        self.assertEqual(LearningRecord.from_dict(json.loads(json.dumps(new.to_dict()))), new)
+
+    def test_old_route_version_and_migrated_full_motion_are_raw_private_fallbacks(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = LearningStore(Path(folder) / "samples.json")
+            learning = RouteLearning(store)
+            source = route_context(
+                capture_profile=replace(route_context().capture_profile, movement_version="zipline-initial-v1")
+            )
+            old = LearningRecord(motion=MotionStatistics(10, 300, 40, variance_known=False), success_count=10)
+            store.put(source.fingerprint, old)
+            target = replace(
+                source,
+                capture_profile=replace(
+                    source.capture_profile, width=3840, height=2160, movement_version="zipline-initial-v2-records"
+                ),
+            )
+            environment = replace(environment_for_context(target), reverse_x=True, speed_x=5)
+            hint = learning.lookup(target, environment=environment)
+            self.assertEqual((hint.action, hint.source), ((300, 40), "legacy-raw"))
+            self.assertIsNone(learning.lookup(replace(target, config_key="different"), environment=environment))
+            for now in range(1, 4):
+                learning.record_success(target, -100, 20, now=now, environment=environment)
+            self.assertEqual(learning.lookup(target, environment=environment).action, (-100, 20))
+            self.assertEqual(store.get(source.fingerprint), old)
+
+    def test_new_samples_across_sizes_persist_legacy_retirement_at_replay_readiness(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = LearningStore(Path(folder) / "samples.json")
+            learning = RouteLearning(store)
+            source = route_context()
+            old = LearningRecord(motion=MotionStatistics(10, 300, 40), success_count=10)
+            store.put(source.fingerprint, old)
+            for index, width in enumerate((2560, 3840, 1920), start=1):
+                context = replace(source, capture_profile=replace(source.capture_profile, width=width))
+                env = environment_for_context(context)
+                learning.record_success(context, 100 * width / 1920, 20, now=index, environment=env)
+            self.assertTrue(store.get(source.fingerprint).legacy_retired)
+            current = store.get(source.fingerprint)
+            # Even if subsequent classifications temporarily disable the new
+            # action, the retired old aggregate must stay retired after reload.
+            store.put(
+                source.fingerprint, replace(current, observations=(), motion=MotionStatistics(), legacy_retired=True)
+            )
+            self.assertIsNone(learning.lookup(source, environment=environment_for_context(source)).action)
+
+    def test_legacy_yaw_is_not_converted_and_new_yaw_retires_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "yaw.json"
+            key = json.dumps([[1920, 1080], 24, 18])
+            path.write_text(json.dumps({"version": 1, "turns": {key: {"samples": 10, "mean_dx": 360}}}))
+            target = LearningEnvironment(speed_x=5, reverse_x=True, capture_size=(3840, 2160), start_yaw=120)
+            with patch("src.tasks.mixin.zip_line_yaw_cache._DEFAULT_CACHE_PATH", path):
+                self.assertEqual(load_arrow_turn_motion(3840, 2160, 120, 90, environment=target), (360, 10))
+                record_arrow_turn_motion(3840, 2160, 120, 90, -400, environment=target)
+                self.assertEqual(load_arrow_turn_motion(3840, 2160, 120, 90, environment=target), (-400, 1))
+            self.assertEqual(json.loads(path.read_text())["legacy_turns"][key]["mean_dx"], 360)
 
     def test_failed_cross_resolution_replay_blocks_until_a_new_verified_success(self):
         with tempfile.TemporaryDirectory() as folder:

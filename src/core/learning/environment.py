@@ -72,6 +72,16 @@ class LearningEnvironment:
             for index, (axis, delta) in enumerate(zip(("x", "y"), (dx, dy), strict=True))
         )
 
+    def horizontal_yaw_gain(self, reference_gain):
+        """Scale the empirical 1920-wide, speed-zero yaw seed to these settings."""
+        return (
+            reference_gain
+            * 1920
+            / self.capture_size[0]
+            * sensitivity_gain(self.speed_x, self.reverse_x, "x")
+            / sensitivity_gain(0.0, False, "x")
+        )
+
     @classmethod
     def from_dict(cls, data):
         values = dict(data)

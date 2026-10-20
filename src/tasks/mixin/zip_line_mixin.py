@@ -772,7 +772,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _wait_zip_line_prefeed_settled(self, start_reading, prefeed_dx):
         """Wait until replayed horizontal motion starts and then the arrow settles again."""
-        expected_yaw_delta = abs(float(prefeed_dx) * self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+        environment = yaw_environment(self.width, self.height, start_reading[0] if start_reading else 0)
+        expected_yaw_delta = abs(float(prefeed_dx) * environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE))
         if expected_yaw_delta < 1.0:
             self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
             return True
@@ -856,6 +857,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         scope = vars(self).get("_initial_alignment_scope")
         scroll = scope.session.environment.scroll if scope is not None else False
         environment = yaw_environment(width, height, initial_yaw, scroll=scroll)
+        yaw_per_mouse = environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
         hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw, environment=environment) if learning_allowed() else None
         if hint is not None:
             hint_dx, hint_samples = hint
@@ -893,7 +895,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 -self._ZIP_LINE_ARROW_MAX_STEP_DEGREES,
                 min(self._ZIP_LINE_ARROW_MAX_STEP_DEGREES, desired_delta),
             )
-            move_dx = round(step_degrees / self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+            move_dx = round(step_degrees / yaw_per_mouse)
             if move_dx == 0 or not self._send_zip_line_yaw_delta(move_dx):
                 break
 

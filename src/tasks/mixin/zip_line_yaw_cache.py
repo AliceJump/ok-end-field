@@ -134,7 +134,8 @@ def load_arrow_turn_motion(width, height, start_yaw, target_yaw, *, environment=
     environment = environment or yaw_environment(width, height, start_yaw)
     requested = json.loads(key)[1:]
     with _CACHE_LOCK:
-        entries = _read_cache()["turns"].copy()
+        payload = _read_cache()
+        entries = payload["turns"].copy()
     combined = None
     for source_key, entry in entries.items():
         try:
@@ -149,6 +150,24 @@ def load_arrow_turn_motion(width, height, start_yaw, target_yaw, *, environment=
         except (KeyError, TypeError, ValueError):
             continue
     if combined is None:
+        # Old counts intentionally stay unchanged, even across capture sizes.
+        # Never mix these aggregates into converted per-acquisition statistics.
+        candidates = []
+        for old_key, entry in payload.get("legacy_turns", {}).items():
+            try:
+                source_key = json.loads(old_key)
+                if source_key[1:3] != requested or environment.scroll:
+                    continue
+                count = entry["samples"]
+                dx = _finite_number(entry["mean_dx"])
+                if type(count) is not int or count <= 0 or dx is None or not 0 < abs(dx) <= 6000:
+                    continue
+                candidates.append((source_key[0] == list(environment.capture_size), count, round(dx)))
+            except (KeyError, TypeError, ValueError):
+                continue
+        if candidates:
+            _, count, dx = max(candidates)
+            return dx, count
         return None
     motion = combined.motion_for(environment)
     if not motion.samples:

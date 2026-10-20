@@ -3,7 +3,8 @@
 from dataclasses import dataclass, field, replace
 
 from src.core.learning.environment import LearningEnvironment, environment_for_context
-from src.core.learning.lookup import workflow_record
+from src.core.learning.legacy import ready_hint
+from src.core.learning.lookup import workflow_hint, workflow_record
 from src.core.learning.models import (
     ContextConfidence,
     RouteContext,
@@ -66,12 +67,9 @@ class LearningSession:
             return RouteLearning(self.store).lookup(context, self.confidence, environment=self.environment)
         if lookup_context is not None:
             raise ValueError("Workflow alignment cannot borrow another context")
-        record = (
-            workflow_record(self.context, self.store.snapshot(), self.environment)
-            if self.environment is not None
-            else self.store.get(self.context.fingerprint)
-        )
-        return choose_hint(record, self.confidence)
+        if self.environment is not None:
+            return workflow_hint(self.context, self.store.snapshot(), self.environment, self.confidence)
+        return choose_hint(self.store.get(self.context.fingerprint), self.confidence)
 
     def take_action_prior(self, lookup_context=None):
         if self.replay_used:
@@ -152,9 +150,9 @@ class LearningSession:
                 inputs=tuple(self.inputs),
                 verification=self.verification,
             )
-        return self.store.update(
-            self.context.fingerprint,
-            lambda record: record.successful(
+
+        def update(record):
+            updated = record.successful(
                 self.dx,
                 self.dy,
                 target=target,
@@ -163,8 +161,17 @@ class LearningSession:
                 environment=self.environment or environment_for_context(self.context),
                 inputs=tuple(self.inputs),
                 verification=self.verification,
-            ),
-        )
+            )
+            if self.environment is not None:
+                records = self.store.snapshot()
+                if isinstance(records, dict):
+                    records[self.context.fingerprint] = updated
+                    hint = choose_hint(workflow_record(self.context, records, self.environment), ContextConfidence.HIGH)
+                    if ready_hint(hint):
+                        updated = replace(updated, legacy_retired=True)
+            return updated
+
+        return self.store.update(self.context.fingerprint, update)
 
     def fail(self, *, now):
         allowed = self._allowed()
