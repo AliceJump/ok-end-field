@@ -7,11 +7,13 @@ from src.data.native_tags import expand_tags
 
 POGRANI_MORALE = "buff_chr_0029_pograni_talent1"
 LAEVAT_STANCE = "buff_chr_0016_laevat_show_weapon"
+LAEVAT_ULT_END = "buff_chr_0016_laevat_ult_end"
+LAEVAT_DURATION_BUFFS = frozenset((LAEVAT_STANCE, LAEVAT_ULT_END))
 
 
 def reviewed_duration_extend(buff_id, data):
     """Approve this container's type5 arithmetic, not its full stance producer."""
-    return (buff_id == LAEVAT_STANCE and data["id"] == buff_id
+    return (buff_id in LAEVAT_DURATION_BUFFS and data["id"] == buff_id
             and data["stackingSettings"] == {
                 "identifierType": 0, "isNeedStackEffect": False, "maxStackCnt": 1,
                 "maxStackCntKey": "", "negatePriority": False, "priority": 0.0,
@@ -72,7 +74,7 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
         return programs
 
     callbacks, subscriptions, unresolved = [], [], []
-    if (reviewed_duration_extend(buff_id, data) and data["duration"]["useBlackboardKey"]
+    if (buff_id == LAEVAT_STANCE and reviewed_duration_extend(buff_id, data) and data["duration"]["useBlackboardKey"]
             and not any(key == "bb." + data["duration"]["blackboardKey"] for key, _ in inherited)):
         # The raw fallback is 16; the ranked ultimate input is 15. The implicit
         # cast-info BB bridge is not proved by matching these two key names.

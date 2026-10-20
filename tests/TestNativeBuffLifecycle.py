@@ -19,6 +19,7 @@ from src.data.combat_simulation import (
 from src.data.native_action_program import _nodes, compile_native_action
 from src.data.native_buff_program import (
     LAEVAT_STANCE,
+    LAEVAT_ULT_END,
     POGRANI_MORALE,
     compile_buff_definition,
     reviewed_duration_extend,
@@ -623,6 +624,31 @@ class TestLaevatainDurationExtension(unittest.TestCase):
         self.assertTrue(changes[0].definition.reviewed_duration_extend)
         self.assertIn("Native stance duration blackboard transfer needs binding: "+LAEVAT_STANCE,
                       changes[0].definition.unresolved)
+
+    def test_link_exit_marker_has_its_own_reviewed_duration_not_a_shared_deadline(self):
+        store = SkillTimingStore()
+        data = native_record(store, LAEVAT_ULT_END)["data"]
+        self.assertTrue(reviewed_duration_extend(LAEVAT_ULT_END, data))
+        reference = {"assignBlackboard": True, "assignItems": [{"directValueType": 0, "useDirectValue": True,
+                     "numericValue": .1, "inputValueKey": "", "targetKey": "duration"}]}
+        compiled = compile_buff_definition(store, get_character("laevatain"), store.profiles("莱万汀", "ult")[0],
+                                           "1", LAEVAT_ULT_END, data, reference, attributes={}, panel=None, path=())
+        self.assertTrue(compiled.reviewed_duration_extend)
+        own = compile_buff_definition(store, get_character("laevatain"), store.profiles("莱万汀", "ult")[0],
+                                      "1", LAEVAT_ULT_END, data, {"assignBlackboard": False},
+                                      attributes={}, panel=None, path=())
+        self.assertNotIn("Native stance duration blackboard transfer needs binding: "+LAEVAT_ULT_END, own.unresolved)
+        self.assertEqual(own.duration.evaluate(dict(own.parameters)), 15)
+        stance = self.add()
+        # Explicit holder omits the independent exit callbacks under audit.
+        change = NativeBuffChange(LAEVAT_ULT_END, literal(1), definition=replace(self.definition, duration=literal(5)))
+        change_buff(self.world, "1", change, {"bb.inherit": 7}, "exit_first", stance.program, 1)
+        exit_marker = next(v for v in self.world.native_buff_instances.values() if v.key == LAEVAT_ULT_END)
+        self.world.advance(1)
+        change_buff(self.world, "1", change, {"bb.inherit": 7}, "exit_extend", stance.program, 1)
+        self.assertEqual(exit_marker.expires, 10)
+        self.assertEqual(stance.expires, 3)
+        self.assertEqual(self.world.native_buff_count("1", LAEVAT_ULT_END), 1)
 
 
 if __name__ == "__main__":

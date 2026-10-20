@@ -315,9 +315,9 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     if definition.reviewed_duration_extend and definition.stacking != 5:
         raise UnresolvedMechanic(f"Conflicting native duration-extension policy: {change.key}")
     if definition.stacking == 5:
-        from src.data.native_buff_program import LAEVAT_STANCE
+        from src.data.native_buff_program import LAEVAT_DURATION_BUFFS
 
-        if not definition.reviewed_duration_extend or change.key != LAEVAT_STANCE or delta != 1:
+        if not definition.reviewed_duration_extend or change.key not in LAEVAT_DURATION_BUFFS or delta != 1:
             raise UnresolvedMechanic(f"Native duration extension needs reviewed single-layer stance binding: {change.key}")
         if duration is not None:
             duration = _single(duration)

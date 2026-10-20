@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-20两份终结截止续批：莱万汀ult_end与show_weapon分别启用核准的type5延寿，不共用截止；End自有BB=15可读，姿态隐式15秒桥接仍未知。连携tick要求本人End≥1；3窗口/6字段/10锚点及308原x64标量比较核准逐更新最多一轮、目标严格间隔和结束清记录，不按57帧/0.1秒填次数。48专项/1763全仓169.829s通过，32/128审计逐字节一致、完整2/111不提高。见[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)末节。继续参数桥接和真实重复执行，不称角色已完整；主仓/PR489/PAUSED定时未动。
+
 > 2026-10-20再续：莱万汀真实字面ID条件+暂停/恢复回调和限定5号容器已执行；buff_event_id独立传递，数值/旧BB不授权，嵌套/异常恢复。容器延长剩余寿命不重建实例或重置周期；真实ult创建也保留隐式duration桥接未知。连携0～57帧每约0.1秒加0.1秒寿命的channel尚未执行，不能当战技pause标记或补一次便完成。13新增/53专项/1762全仓172.737s、164文件16组通过，32/128审计字节一致、2/111不提高。读[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)续批；原始材料只主仓ignored，主仓已由其他会话换回master，勿切换/覆盖，定时PAUSED未动，PR489未改。
 
 > 2026-10-20最新：用户要求转其他角色，先莱万汀、伊冯。暂停Buff时钟已执行有限余量/周期/刷新/动作结束/预测隔离，真实周期初始化与子对象传播仍明确未知；完整5号容器/事件身份/自动通知未闭合。读[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)，勿把叶节点消费当整条终结producer。伊冯7秒/结束攻击/私有暴击层另见[native-yvonne-ultimate-window-audit.md](native-yvonne-ultimate-window-audit.md)，max10非射击次数，BB名非乘区。原始探针只主仓ignored，32/128、14/2及2/111不提高，PR489保持独立，定时仍沿实际PAUSED不改。

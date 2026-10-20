@@ -1,5 +1,7 @@
 # 角色与技能加成数据流核查（2026-10-07）
 
+> 2026-10-20两份截止续批：ult_end与show_weapon分别执行核准的type5延寿；前者自有duration=15，后者等级BB隐式传递仍未知。连携周期补时须先有本人End标记。3原生窗口、6字段、10锚点和308原指令标量比较核准每次更新最多一轮及目标严格间隔，不将显式输入流次数当真实57帧次数。48专项/1763全仓169.829秒通过；32/128审计逐字节一致，14模型释放/2原生攻击、完整2/111不变。见[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)末节；继续BB桥接/重复channel，PR489及定时PAUSED不动。
+
 > 2026-10-20莱万汀续批：Advanced字面事件ID以显式BuffContext执行，真实9/203条件与Pause完整回调已通过；动态ID/字符串写回保留未知。核准并执行限定show_weapon的5号剩余寿命加法，保留原实例/BB/source/父根/周期，暂停中延长余量。真实ult producer已走实例策略，但隐式duration BB缺证保留诊断，不借字面16秒替代等级15秒。连携另有0.1秒重复channel补时，不能只补一次或按57帧猜墙钟。13新增、53相关、1762全仓通过；数据流JSON逐字节不变，完整2/111。见[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)，后续自动通知、BB传递、重复channel和强化动作仍待闭合，PR489独立不改。
 
 > 2026-10-20其他角色：莱万汀PauseBuffTime进入编译器及研究世界，以确切Buff根暂停寿命和周期余量；恢复不重复tick，动作/移除与预测隔离保持。原生tick累积、周期零边界、子对象时钟及完整5号姿态容器仍未知，不将叶节点当终结全链。15窗口/4字段/8锚点核准，11新增专项，见[native-laev-paused-clock-audit.md](native-laev-paused-clock-audit.md)。伊冯终结另核10份记录及7秒/20%/300%/条件600%等级输入，私有BB实际对应暴击率9/暴伤10，max10不是射击次数；见[native-yvonne-ultimate-window-audit.md](native-yvonne-ultimate-window-audit.md)。32/128、14/2、完整2/111及PR489不变。
