@@ -3169,6 +3169,9 @@ msgstr "Developer Tools"
 msgid "开始一条龙"
 msgstr "Start Routine"
 
+msgid "一条龙设置"
+msgstr "Routine Settings"
+
 msgid "帝江号"
 msgstr "Dijiang"
 

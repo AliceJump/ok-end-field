@@ -18,6 +18,7 @@ from src.gui.components.EndfieldTacticalDrawer import (  # type: ignore
     EndfieldTacticalDrawer,
     is_dark,
     show_drawer,
+    sync_bus,
 )
 from src.gui.EndfieldConfigContent import has_task_configuration
 from src.gui.EndfieldEntryCards import EndfieldSectionBanner
@@ -198,6 +199,16 @@ def open_task_drawer(host: QWidget, task_name: str, task_obj: Any) -> EndfieldTa
     return show_drawer(host, lambda drawer: drawer.open_subtask(task_name, task_obj))
 
 
+def open_daily_settings_drawer(host: QWidget) -> EndfieldTacticalDrawer | None:
+    """一条龙页眉「一条龙设置」：DailyTask 卡片隐藏后，多账户、退出与汇总等总控字段从这里编辑。"""
+    daily = find_daily_task()
+    if daily is None:
+        return None
+    # 子任务清单已由勾选行维护，侧栏只放总控字段
+    roster_keys = [key for key in (getattr(daily, attr, None) for attr in DAILY_GROUP_KEY_ATTRS) if key]
+    return show_drawer(host, lambda drawer: drawer.open_subtask(daily.name, daily, roster_keys))
+
+
 class EndfieldSectionMatrix(ThemeRepaint, QWidget):
     """单个顶栏页签的分区面板：标题行压一条墨线，下面是细线分隔的勾选行。"""
 
@@ -243,6 +254,7 @@ class EndfieldSectionMatrix(ThemeRepaint, QWidget):
         outer.addLayout(row_box)
         attach_panel_tab(self)
         qconfig.themeChanged.connect(self._repaint)
+        sync_bus.config_changed.connect(self._on_config_changed)
         self._height_update_pending = False
         self._height_timer = QTimer(self)
         self._height_timer.setSingleShot(True)
@@ -296,6 +308,18 @@ class EndfieldSectionMatrix(ThemeRepaint, QWidget):
 
     def _on_checked(self, task_name: str, checked: bool) -> None:
         set_subtask_enabled(task_name, checked)
+        self._refresh_count()
+
+    def _on_config_changed(self, changed_name: str) -> None:
+        # 「一条龙设置」重置配置会改子任务清单；只回显勾选，不再写回配置
+        daily = find_daily_task()
+        if daily is None or changed_name != getattr(daily, "name", None):
+            return
+        for card in self.checkpoint_cards:
+            if card.participates:
+                card.checkbox.blockSignals(True)
+                card.checkbox.setChecked(subtask_enabled(card.task_name))
+                card.checkbox.blockSignals(False)
         self._refresh_count()
 
     def _on_config_requested(self, task_name: str, task_obj: Any) -> None:

@@ -65,19 +65,27 @@ class TacticalDrawerMask(QWidget):
 
 
 class DrawerConfigForm(ConfigContentMixin, QWidget):
-    def __init__(self, task, parent=None):
+    def __init__(self, task, parent=None, hidden_keys=()):
         QWidget.__init__(self, parent)
         self.setObjectName("drawerConfigForm")
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.viewLayout = QVBoxLayout(self)
+        config_type = dict(task.config_type or {})
+        for key in hidden_keys:
+            config_type[key] = {**config_type.get(key, {}), "hidden": True}
         self._init_config_content(
             task,
             task.config,
             getattr(task, "default_config", {}),
             task.config_description or {},
-            task.config_type or {},
+            config_type,
         )
         self.viewLayout.setContentsMargins(1, 1, 1, 1)
+
+    def reset_clicked(self):
+        super().reset_clicked()
+        # 重置也会改到表单里隐藏的字段（如一条龙的子任务清单），通知页面重读
+        sync_bus.config_changed.emit(getattr(self.task, "name", ""))
 
     def tr(self, text, disambiguation=None, n=-1):
         # ok 的 Qt 译文登记在 ConfigCard 上下文；按本类名查找会退回英文原文
@@ -384,11 +392,11 @@ class EndfieldTacticalDrawer(QFrame):
         self._layout_timer.start(0)
         return True
 
-    def open_subtask(self, task_name: str, task_obj: Any):
+    def open_subtask(self, task_name: str, task_obj: Any, hidden_keys=()):
         if not has_task_configuration(task_obj):
             return False
         self._clear_form()
-        form = DrawerConfigForm(task_obj, self.form_container)
+        form = DrawerConfigForm(task_obj, self.form_container, hidden_keys)
         if not form.config_widgets and not has_operation_row(form.default_config, task_obj):
             form.deleteLater()
             return False

@@ -2958,6 +2958,9 @@ msgstr "開發者工具"
 msgid "开始一条龙"
 msgstr "開始一條龍"
 
+msgid "一条龙设置"
+msgstr "一條龍設定"
+
 msgid "帝江号"
 msgstr "帝江號"
 

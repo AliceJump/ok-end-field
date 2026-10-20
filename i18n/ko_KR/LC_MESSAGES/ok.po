@@ -2990,6 +2990,9 @@ msgstr "개발자 도구"
 msgid "开始一条龙"
 msgstr "루틴 시작"
 
+msgid "一条龙设置"
+msgstr "루틴 설정"
+
 msgid "帝江号"
 msgstr "제강호"
 

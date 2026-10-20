@@ -963,6 +963,7 @@ def install_endfield_theme_patch() -> None:
                 self.setCustomBackgroundColor(LIGHT["canvas"], DARK["canvas"])
 
             # 导入终末地工作区容器
+            from src.gui.components.EndfieldSectionMatrix import open_daily_settings_drawer
             from src.gui.EndfieldCombatTab import EndfieldCombatTab
             from src.gui.EndfieldWorkspaceTab import EndfieldWorkspaceTab
 
@@ -986,18 +987,29 @@ def install_endfield_theme_patch() -> None:
 
             # 实例化五大终末地顶级工作区
             workspaces: list[EndfieldWorkspaceTab] = []
+            # 日常任务卡片不再显示，它的总控字段改从页眉「一条龙设置」进入
+            daily_settings = ("一条龙设置", lambda: open_daily_settings_drawer(self))
             sections = (
-                ("ENVIRONMENT", "系统与环境", "SYSTEM", FluentIcon.SETTING, None),
-                ("DAILY", "日常一条龙", "DAILY", FluentIcon.PLAY, ("开始一条龙", start_daily_dispatch)),
-                ("COMBAT", "业务与战斗", "OPERATIONS", FluentIcon.ACCEPT, None),
-                ("AUTOMATION", "自动化调度", "AUTOMATION", FluentIcon.CALENDAR, None),
-                ("DEVELOPER", "开发者工具", "DEVELOPER", FluentIcon.DEVELOPER_TOOLS, None),
+                ("ENVIRONMENT", "系统与环境", "SYSTEM", FluentIcon.SETTING, None, None),
+                (
+                    "DAILY",
+                    "日常一条龙",
+                    "DAILY",
+                    FluentIcon.PLAY,
+                    ("开始一条龙", start_daily_dispatch),
+                    daily_settings,
+                ),
+                ("COMBAT", "业务与战斗", "OPERATIONS", FluentIcon.ACCEPT, None, None),
+                ("AUTOMATION", "自动化调度", "AUTOMATION", FluentIcon.CALENDAR, None, None),
+                ("DEVELOPER", "开发者工具", "DEVELOPER", FluentIcon.DEVELOPER_TOOLS, None, None),
             )
-            for code, title, nav_code, icon, action in sections:
+            for code, title, nav_code, icon, action, setting in sections:
                 tabs = routed_tabs[code]
                 if not tabs:
                     continue
-                workspace = EndfieldWorkspaceTab(code, title, tabs, self, primary_action=action)
+                workspace = EndfieldWorkspaceTab(
+                    code, title, tabs, self, primary_action=action, secondary_action=setting
+                )
                 item = self.addSubInterface(workspace, icon, self.app.tr(title), position=NavigationItemPosition.SCROLL)
                 if item is not None:
                     style_navigation_item(item, f"{len(workspaces) + 1:02d} · {nav_code}")

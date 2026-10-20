@@ -3267,6 +3267,9 @@ msgstr "Desarrollo"
 msgid "开始一条龙"
 msgstr "Iniciar rutina"
 
+msgid "一条龙设置"
+msgstr "Ajustes de rutina"
+
 msgid "帝江号"
 msgstr "Dijiang"
 

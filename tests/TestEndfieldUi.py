@@ -38,6 +38,7 @@ from src.gui.components.EndfieldSectionMatrix import EndfieldSectionMatrix
 from src.gui.components.EndfieldTacticalDrawer import (
     DrawerConfigForm,
     EndfieldTacticalDrawer,
+    sync_bus,
 )
 from src.gui.EndfieldCombatTab import (
     CombatEditBuffer,
@@ -93,6 +94,23 @@ class SectionMatrixLayoutTest(unittest.TestCase):
     def flush_events(self):
         for _ in range(8):
             self.app.processEvents()
+
+    def test_daily_config_change_rereads_the_check_rows(self):
+        class DailyTask(SimpleNamespace):
+            CFG_BOAT_TASKS = "帝江号任务"
+            BOAT_TASKS = ("送礼", "帝江号整理", "帝江号收菜")
+
+        daily = DailyTask(name="日常任务", config={"帝江号任务": ["送礼"]})
+        og.executor.onetime_tasks = [daily, *self.matrix.tasks]
+        checks = [card.checkbox for card in self.matrix.checkpoint_cards]
+        self.assertEqual([box.isChecked() for box in checks], [False, False, False])
+        sync_bus.config_changed.emit("送礼")
+        self.assertEqual([box.isChecked() for box in checks], [False, False, False])
+        sync_bus.config_changed.emit("日常任务")
+        self.assertEqual([box.isChecked() for box in checks], [True, False, False])
+        # 回显不能反过来改写配置
+        self.assertEqual(daily.config, {"帝江号任务": ["送礼"]})
+        self.assertTrue(self.matrix.count_tag.text().endswith("1 / 3"))
 
     def test_section_banners_keep_native_and_wrapped_page_routes(self):
         from PySide6.QtWidgets import QVBoxLayout
@@ -690,6 +708,65 @@ class CombatSettingsTest(unittest.TestCase):
         host.close()
         host.deleteLater()
 
+    def test_daily_settings_drawer_edits_master_fields_without_the_roster(self):
+        from src.gui.components.EndfieldSectionMatrix import open_daily_settings_drawer
+
+        class DailyTask(SimpleNamespace):
+            CFG_BOAT_TASKS = "帝江号任务"
+            CFG_TAIL_TASKS = "收尾任务"
+
+        config = CombatEditBuffer(
+            {"帝江号任务": ["送礼"], "收尾任务": [], "多账户模式": False, "账号列表": "", "仅退出游戏": False}
+        )
+        roster_type = {"type": "multi_selection", "options": ["送礼"]}
+        daily = DailyTask(
+            name="日常任务",
+            config=config,
+            default_config=dict(config),
+            config_description={},
+            config_type={
+                "帝江号任务": roster_type,
+                "收尾任务": {"type": "multi_selection", "options": []},
+                "多账户模式": {"sub_configs": {True: ["账号列表"]}},
+            },
+            show_create_shortcut=False,
+        )
+        host = QWidget()
+        host.resize(1200, 700)
+        host.show()
+        with (
+            patch.object(og.executor, "onetime_tasks", [daily]),
+            patch.object(config, "get_default", side_effect=config.get),
+        ):
+            drawer = open_daily_settings_drawer(host)
+        assert drawer is not None
+        self.assertIs(drawer.current_task, daily)
+        form = drawer.form_layout.itemAt(0).widget()
+        self.assertEqual(set(form.config_widget_by_key), {"多账户模式", "账号列表", "仅退出游戏"})
+        self.assertEqual(daily.config_type["帝江号任务"], {"type": "multi_selection", "options": ["送礼"]})
+
+        # 重置会改到隐藏的子任务清单，表单要通知勾选行重读
+        emitted = []
+
+        def record(name):
+            emitted.append(name)
+
+        config["帝江号任务"] = []
+        sync_bus.config_changed.connect(record)
+        with (
+            patch.object(
+                config, "reset_to_default", create=True, side_effect=lambda: config.update(daily.default_config)
+            ),
+            patch.object(config, "get_default", side_effect=config.get),
+        ):
+            form.reset_config.click()
+        sync_bus.config_changed.disconnect(record)
+        self.assertEqual(config["帝江号任务"], ["送礼"])
+        self.assertEqual(emitted, ["日常任务"])
+        drawer.close_drawer()
+        host.close()
+        host.deleteLater()
+
     def test_run_once_starts_the_task_through_the_start_controller(self):
         started = []
         drawer = EndfieldTacticalDrawer()
@@ -997,11 +1074,13 @@ class NativeTextLayoutTest(unittest.TestCase):
             row.deleteLater()
 
     def test_narrow_workspace_keeps_tabs_and_action_inside_the_header(self):
+        opened = []
         workspace = EndfieldWorkspaceTab(
             "DAILY",
             "日常一条龙",
             [(name, None, QWidget()) for name in ("帝江号", "其他", "战斗", "奖励")],
             primary_action=("开始一条龙", lambda: None),
+            secondary_action=("一条龙设置", lambda: opened.append(True)),
         )
         workspace.show()
         for width in (1300, 450, 650, 1300):
@@ -1010,10 +1089,16 @@ class NativeTextLayoutTest(unittest.TestCase):
                 self.app.processEvents()
             header = workspace.header_bar
             action = workspace.primary_action_button
-            assert action is not None
-            for widget in (*workspace.tab_bar.buttons, action):
+            setting = workspace.secondary_action_button
+            assert action is not None and setting is not None
+            for widget in (*workspace.tab_bar.buttons, setting, action):
                 origin = widget.mapTo(header, QPoint(0, 0))
                 self.assertTrue(header.rect().contains(QRect(origin, widget.size())))
+            # 两个动作同排，设置在开始左侧
+            self.assertEqual(setting.y(), action.y())
+            self.assertLess(setting.geometry().right(), action.x())
+        setting.click()
+        self.assertEqual(opened, [True])
         workspace.close()
         workspace.deleteLater()
 
@@ -1147,6 +1232,8 @@ class NativeTextLayoutTest(unittest.TestCase):
             "大世界",
             "副本",
             "自动战斗",
+            "开始一条龙",
+            "一条龙设置",
         }
         for path in [*root.glob("src/gui/**/*.py"), root / "src/patches/endfield_theme_patch.py"]:
             for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
@@ -1167,13 +1254,18 @@ class NativeTextLayoutTest(unittest.TestCase):
         catalog = gettext.translation("ok", str(root / "i18n"), languages=["ja_JP"])
         with patch.object(og, "app", SimpleNamespace(tr=catalog.gettext)):
             workspace = EndfieldWorkspaceTab(
-                "DAILY", "日常一条龙", [("帝江号", None, QWidget())], primary_action=("开始一条龙", lambda: None)
+                "DAILY",
+                "日常一条龙",
+                [("帝江号", None, QWidget())],
+                primary_action=("开始一条龙", lambda: None),
+                secondary_action=("一条龙设置", lambda: None),
             )
             drawer = EndfieldTacticalDrawer()
         self.assertEqual(workspace.title_label.text(), "デイリールーチン")
         self.assertEqual(workspace.eyebrow_label.text(), "// DAILY ROUTINE")
-        assert workspace.primary_action_button is not None
+        assert workspace.primary_action_button is not None and workspace.secondary_action_button is not None
         self.assertEqual(workspace.primary_action_button.text(), "ルーチン開始")
+        self.assertEqual(workspace.secondary_action_button.text(), "ルーチン設定")
         self.assertEqual((drawer.save_btn.text(), drawer.run_once_btn.text()), ("保存して同期", "今すぐ単体実行"))
         workspace.deleteLater()
         drawer.deleteLater()

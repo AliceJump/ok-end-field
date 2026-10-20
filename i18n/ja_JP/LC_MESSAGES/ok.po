@@ -2975,6 +2975,9 @@ msgstr "開発者ツール"
 msgid "开始一条龙"
 msgstr "ルーチン開始"
 
+msgid "一条龙设置"
+msgstr "ルーチン設定"
+
 msgid "帝江号"
 msgstr "帝江号"
 

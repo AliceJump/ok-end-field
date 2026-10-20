@@ -211,6 +211,7 @@ class EndfieldWorkspaceTab(QWidget):
         tabs: list[tuple[str, Any, QWidget]],
         parent: QWidget | None = None,
         primary_action: tuple[str, Callable[[], None]] | None = None,
+        secondary_action: tuple[str, Callable[[], None]] | None = None,
     ):
         super().__init__(parent)
         self.setObjectName(f"{category_code.lower()}_workspace")
@@ -218,6 +219,7 @@ class EndfieldWorkspaceTab(QWidget):
         self.category_title = category_title
         self.child_tabs = tabs
         self.primary_action_button: EndfieldActionButton | None = None
+        self.secondary_action_button: EndfieldActionButton | None = None
         self._backdrop: QPixmap | None = None
         self._backdrop_key: tuple | None = None
 
@@ -266,7 +268,19 @@ class EndfieldWorkspaceTab(QWidget):
         self.header_layout.addWidget(self.tab_bar, 0, Qt.AlignBottom)
         self.header_layout.addStretch(1)
 
-        # Keep the workspace action separate from section navigation.
+        # Keep the workspace actions separate from section navigation.
+        self.action_row = QHBoxLayout()
+        self.action_row.setSpacing(12)
+        if secondary_action is not None:
+            setting_text, setting_callback = secondary_action
+            setting_btn = EndfieldActionButton(FluentIcon.SETTING, ui_tr(setting_text), self.header_bar)
+            setting_btn.setObjectName("workspaceSecondaryAction")
+            setting_btn.setIconSize(QSize(14, 14))
+            setting_btn.setFont(ui_font(14, QFont.DemiBold))
+            setting_btn.setFixedSize(max(132, setting_btn.sizeHint().width()), 36)
+            setting_btn.clicked.connect(lambda: setting_callback())
+            self.secondary_action_button = setting_btn
+            self.action_row.addWidget(setting_btn, 0, Qt.AlignVCenter)
         if primary_action is not None:
             action_text, action_callback = primary_action
             action_btn = EndfieldActionButton(FluentIcon.PLAY, ui_tr(action_text), self.header_bar, primary=True)
@@ -276,7 +290,9 @@ class EndfieldWorkspaceTab(QWidget):
             action_btn.setFont(ui_font(14, QFont.DemiBold))
             action_btn.clicked.connect(lambda: action_callback())
             self.primary_action_button = action_btn
-            self.header_layout.addWidget(action_btn, 0, Qt.AlignVCenter)
+            self.action_row.addWidget(action_btn, 0, Qt.AlignVCenter)
+        if self.action_row.count():
+            self.header_layout.addLayout(self.action_row)
         header.addLayout(self.header_layout)
 
         self.main_layout.addWidget(self.header_bar)
@@ -330,16 +346,14 @@ class EndfieldWorkspaceTab(QWidget):
         if not hasattr(self, "tab_bar"):
             return
         required = self.tab_bar.sizeHint().width() + 2 * EndfieldWorkspaceHeader.INSET
-        if self.primary_action_button is not None:
-            required += self.primary_action_button.width() + self.header_layout.spacing()
+        if self.action_row.count():
+            required += self.action_row.sizeHint().width() + self.header_layout.spacing()
         compact = self.header_bar.width() < required
         direction = QBoxLayout.TopToBottom if compact else QBoxLayout.LeftToRight
         if self.header_layout.direction() != direction:
             self.header_layout.setDirection(direction)
-            if self.primary_action_button is not None:
-                self.header_layout.setAlignment(
-                    self.primary_action_button, Qt.AlignRight if compact else Qt.AlignVCenter
-                )
+            if self.action_row.count():
+                self.header_layout.setAlignment(self.action_row, Qt.AlignRight if compact else Qt.AlignVCenter)
 
     def paintEvent(self, event):
         # 画布底色和等高线缓存成一张图，子控件重绘时直接贴图
