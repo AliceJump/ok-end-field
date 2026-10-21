@@ -166,6 +166,8 @@ class EndfieldTacticalDrawer(QFrame):
         self.main_layout.setSpacing(0)
 
         self.header_widget = EndfieldHeader(self)
+        self.header_widget.setObjectName("drawerHeader")
+        self.header_widget.setAttribute(Qt.WA_StyledBackground, True)
         self.header_widget.setFixedHeight(56)
         self.header_layout = QHBoxLayout(self.header_widget)
         self.header_layout.setContentsMargins(18, 0, 14, 0)
@@ -208,6 +210,7 @@ class EndfieldTacticalDrawer(QFrame):
         self.main_layout.addWidget(self.bottom_sep)
 
         self.footer_widget = QWidget(self)
+        self.footer_widget.setObjectName("drawerFooter")
         self.footer_widget.setFixedHeight(64)
         self.footer_layout = QHBoxLayout(self.footer_widget)
         self.footer_layout.setContentsMargins(18, 10, 18, 12)
@@ -263,9 +266,9 @@ class EndfieldTacticalDrawer(QFrame):
             #EndfieldTacticalDrawer #drawerFormContainer {{ background: {bg}; border: none; }}
             #EndfieldTacticalDrawer QLabel {{ color: {text}; }}
             #EndfieldTacticalDrawer QLabel#contentLabel {{ color: {muted}; }}
+            #EndfieldTacticalDrawer #drawerHeader,
+            #EndfieldTacticalDrawer #drawerFooter {{ background: {surface}; }}
         """)
-        self.header_widget.setStyleSheet(f"background: {surface};")
-        self.footer_widget.setStyleSheet(f"background: {surface};")
         self.sub_label.setStyleSheet(f"color: {muted};")
         self.title_label.setStyleSheet(f"color: {text}; font-weight: bold;")
         self.close_btn.setStyleSheet(f"""
