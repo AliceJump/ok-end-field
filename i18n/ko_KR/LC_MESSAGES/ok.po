@@ -2971,3 +2971,150 @@ msgstr "매회 다시 이동한 뒤 한 번 정렬합니다. 0은 수동으로 �
 
 msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
 msgstr "연락 스테이션 정렬 테스트 종료: 성공 {success}회, 실패 {failed}회."
+
+msgid "系统与环境"
+msgstr "시스템 및 환경"
+
+msgid "日常一条龙"
+msgstr "일일 루틴"
+
+msgid "业务与战斗"
+msgstr "업무 및 전투"
+
+msgid "自动化调度"
+msgstr "자동화 스케줄"
+
+msgid "开发者工具"
+msgstr "개발자 도구"
+
+msgid "开始一条龙"
+msgstr "루틴 시작"
+
+msgid "一条龙设置"
+msgstr "루틴 설정"
+
+msgid "暂停"
+msgstr "일시정지"
+
+msgid "停止"
+msgstr "중지"
+
+msgid "继续"
+msgstr "재개"
+
+msgid "帝江号"
+msgstr "제강호"
+
+msgid "奖励"
+msgstr "보상"
+
+msgid "其他"
+msgstr "기타"
+
+msgid "大世界"
+msgstr "오픈 월드"
+
+msgid "副本"
+msgstr "던전"
+
+msgid "配置"
+msgstr "설정"
+
+msgid "关闭配置面板"
+msgstr "설정 패널 닫기"
+
+msgid "打开配置面板"
+msgstr "설정 패널 열기"
+
+msgid "未纳入一条龙"
+msgstr "루틴 제외"
+
+msgid "默认策略"
+msgstr "기본 전략"
+
+msgid "默认参数"
+msgstr "기본 설정"
+
+msgid "一键存放"
+msgstr "일괄 보관"
+
+msgid "简易制作"
+msgstr "간단 제작"
+
+msgid "自动收取产出"
+msgstr "생산품 자동 수령"
+
+msgid "自动兑换"
+msgstr "자동 교환"
+
+msgid "全基建巡检"
+msgstr "전체 시설 점검"
+
+msgid "好感度优先"
+msgstr "호감도 우선"
+
+msgid "高效物流路线"
+msgstr "효율적인 물류 경로"
+
+msgid "该任务不在一条龙执行清单中，可用右侧「配置」抽屉单独运行"
+msgstr "이 작업은 루틴 실행 목록에 없습니다. 오른쪽 「설정」 패널에서 단독으로 실행할 수 있습니다."
+
+msgid "勾选后纳入一条龙"
+msgstr "체크하면 루틴에 포함"
+
+msgid "已选"
+msgstr "선택됨"
+
+msgid "保存并同步"
+msgstr "저장 및 동기화"
+
+msgid "立即单测运行"
+msgstr "지금 단독 실행"
+
+msgid "保存并关闭"
+msgstr "저장 후 닫기"
+
+msgid "{} 参数配置"
+msgstr "{} 설정"
+
+msgid "通用战斗设置"
+msgstr "공통 전투 설정"
+
+msgid "配置范围"
+msgstr "설정 범위"
+
+msgid "保存专用设置"
+msgstr "전용 설정 저장"
+
+msgid "改用通用设置"
+msgstr "공통 설정 사용"
+
+msgid "改用专用设置"
+msgstr "전용 설정 사용"
+
+msgid "专用设置"
+msgstr "전용 설정"
+
+msgid "战斗策略与技能设置"
+msgstr "전투 전략 및 스킬 설정"
+
+msgid "敌人检测"
+msgstr "적 감지"
+
+msgid "自动战斗诊断设置"
+msgstr "자동 전투 진단 설정"
+
+msgid "{}：使用专用设置。修改后保存；仅影响当前范围。"
+msgstr "{}: 전용 설정을 사용합니다. 수정 후 저장하세요. 현재 범위에만 적용됩니다."
+
+msgid "{}：使用通用战斗设置。修改后自动保存，所有沿用通用设置的任务同步生效。"
+msgstr "{}: 공통 전투 설정을 사용합니다. 수정하면 자동 저장되며 공통 설정을 쓰는 모든 작업에 적용됩니다."
+
+msgid "已暂停"
+msgstr "일시정지됨"
+
+msgid "等待执行"
+msgstr "실행 대기"
+
+msgid "恢复默认大小"
+msgstr "기본 크기로 복원"

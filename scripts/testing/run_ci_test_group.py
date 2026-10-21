@@ -192,6 +192,8 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestRuntimeMixinFeatureClick.py",
             "TestTopmostMixin.py",
             "TestWindowOverlayTextRendering.py",
+            "TestEndfieldUi.py",
+            "TestEndfieldPanels.py",
         ),
     ),
     "runtime-platform": (

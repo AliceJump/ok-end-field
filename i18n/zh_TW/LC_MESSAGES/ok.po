@@ -2939,3 +2939,150 @@ msgstr "每輪重新傳送並完成一次對中；0 表示持續循環，直到�
 
 msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
 msgstr "聯絡站對中測試結束：成功 {success} 次，失敗 {failed} 次。"
+
+msgid "系统与环境"
+msgstr "系統與環境"
+
+msgid "日常一条龙"
+msgstr "日常一條龍"
+
+msgid "业务与战斗"
+msgstr "業務與戰鬥"
+
+msgid "自动化调度"
+msgstr "自動化排程"
+
+msgid "开发者工具"
+msgstr "開發者工具"
+
+msgid "开始一条龙"
+msgstr "開始一條龍"
+
+msgid "一条龙设置"
+msgstr "一條龍設定"
+
+msgid "暂停"
+msgstr "暫停"
+
+msgid "停止"
+msgstr "停止"
+
+msgid "继续"
+msgstr "繼續"
+
+msgid "帝江号"
+msgstr "帝江號"
+
+msgid "奖励"
+msgstr "獎勵"
+
+msgid "其他"
+msgstr "其他"
+
+msgid "大世界"
+msgstr "大世界"
+
+msgid "副本"
+msgstr "副本"
+
+msgid "配置"
+msgstr "配置"
+
+msgid "关闭配置面板"
+msgstr "關閉配置面板"
+
+msgid "打开配置面板"
+msgstr "開啟配置面板"
+
+msgid "未纳入一条龙"
+msgstr "未納入一條龍"
+
+msgid "默认策略"
+msgstr "預設策略"
+
+msgid "默认参数"
+msgstr "預設參數"
+
+msgid "一键存放"
+msgstr "一鍵存放"
+
+msgid "简易制作"
+msgstr "簡易製作"
+
+msgid "自动收取产出"
+msgstr "自動收取產出"
+
+msgid "自动兑换"
+msgstr "自動兌換"
+
+msgid "全基建巡检"
+msgstr "全基建巡檢"
+
+msgid "好感度优先"
+msgstr "好感度優先"
+
+msgid "高效物流路线"
+msgstr "高效物流路線"
+
+msgid "该任务不在一条龙执行清单中，可用右侧「配置」抽屉单独运行"
+msgstr "該任務不在一條龍執行清單中，可用右側「配置」抽屜單獨執行"
+
+msgid "勾选后纳入一条龙"
+msgstr "勾選後納入一條龍"
+
+msgid "已选"
+msgstr "已選"
+
+msgid "保存并同步"
+msgstr "儲存並同步"
+
+msgid "立即单测运行"
+msgstr "立即單測執行"
+
+msgid "保存并关闭"
+msgstr "儲存並關閉"
+
+msgid "{} 参数配置"
+msgstr "{} 參數配置"
+
+msgid "通用战斗设置"
+msgstr "通用戰鬥設定"
+
+msgid "配置范围"
+msgstr "配置範圍"
+
+msgid "保存专用设置"
+msgstr "儲存專用設定"
+
+msgid "改用通用设置"
+msgstr "改用通用設定"
+
+msgid "改用专用设置"
+msgstr "改用專用設定"
+
+msgid "专用设置"
+msgstr "專用設定"
+
+msgid "战斗策略与技能设置"
+msgstr "戰鬥策略與技能設定"
+
+msgid "敌人检测"
+msgstr "敵人檢測"
+
+msgid "自动战斗诊断设置"
+msgstr "自動戰鬥診斷設定"
+
+msgid "{}：使用专用设置。修改后保存；仅影响当前范围。"
+msgstr "{}：使用專用設定。修改後儲存；僅影響目前範圍。"
+
+msgid "{}：使用通用战斗设置。修改后自动保存，所有沿用通用设置的任务同步生效。"
+msgstr "{}：使用通用戰鬥設定。修改後自動儲存，所有沿用通用設定的任務同步生效。"
+
+msgid "已暂停"
+msgstr "已暫停"
+
+msgid "等待执行"
+msgstr "等待執行"
+
+msgid "恢复默认大小"
+msgstr "恢復預設大小"

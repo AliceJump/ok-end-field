@@ -2956,3 +2956,150 @@ msgstr "毎回再転送して位置合わせを1回実行します。0は手動�
 
 msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
 msgstr "連絡ステーション位置合わせテスト終了：成功 {success} 回、失敗 {failed} 回。"
+
+msgid "系统与环境"
+msgstr "システムと環境"
+
+msgid "日常一条龙"
+msgstr "デイリールーチン"
+
+msgid "业务与战斗"
+msgstr "業務と戦闘"
+
+msgid "自动化调度"
+msgstr "自動化スケジュール"
+
+msgid "开发者工具"
+msgstr "開発者ツール"
+
+msgid "开始一条龙"
+msgstr "ルーチン開始"
+
+msgid "一条龙设置"
+msgstr "ルーチン設定"
+
+msgid "暂停"
+msgstr "一時停止"
+
+msgid "停止"
+msgstr "停止"
+
+msgid "继续"
+msgstr "再開"
+
+msgid "帝江号"
+msgstr "帝江号"
+
+msgid "奖励"
+msgstr "報酬"
+
+msgid "其他"
+msgstr "その他"
+
+msgid "大世界"
+msgstr "オープンワールド"
+
+msgid "副本"
+msgstr "ダンジョン"
+
+msgid "配置"
+msgstr "設定"
+
+msgid "关闭配置面板"
+msgstr "設定パネルを閉じる"
+
+msgid "打开配置面板"
+msgstr "設定パネルを開く"
+
+msgid "未纳入一条龙"
+msgstr "ルーチン対象外"
+
+msgid "默认策略"
+msgstr "デフォルト戦略"
+
+msgid "默认参数"
+msgstr "デフォルト設定"
+
+msgid "一键存放"
+msgstr "一括収納"
+
+msgid "简易制作"
+msgstr "簡易製作"
+
+msgid "自动收取产出"
+msgstr "生産物を自動回収"
+
+msgid "自动兑换"
+msgstr "自動交換"
+
+msgid "全基建巡检"
+msgstr "全施設巡回"
+
+msgid "好感度优先"
+msgstr "好感度優先"
+
+msgid "高效物流路线"
+msgstr "効率的な物流ルート"
+
+msgid "该任务不在一条龙执行清单中，可用右侧「配置」抽屉单独运行"
+msgstr "このタスクはルーチンの実行リストに含まれていません。右側の「設定」パネルから単独で実行できます。"
+
+msgid "勾选后纳入一条龙"
+msgstr "チェックするとルーチンに追加"
+
+msgid "已选"
+msgstr "選択済み"
+
+msgid "保存并同步"
+msgstr "保存して同期"
+
+msgid "立即单测运行"
+msgstr "今すぐ単体実行"
+
+msgid "保存并关闭"
+msgstr "保存して閉じる"
+
+msgid "{} 参数配置"
+msgstr "{} の設定"
+
+msgid "通用战斗设置"
+msgstr "共通戦闘設定"
+
+msgid "配置范围"
+msgstr "設定範囲"
+
+msgid "保存专用设置"
+msgstr "専用設定を保存"
+
+msgid "改用通用设置"
+msgstr "共通設定に切り替え"
+
+msgid "改用专用设置"
+msgstr "専用設定に切り替え"
+
+msgid "专用设置"
+msgstr "専用設定"
+
+msgid "战斗策略与技能设置"
+msgstr "戦闘戦略とスキル設定"
+
+msgid "敌人检测"
+msgstr "敵検出"
+
+msgid "自动战斗诊断设置"
+msgstr "自動戦闘の診断設定"
+
+msgid "{}：使用专用设置。修改后保存；仅影响当前范围。"
+msgstr "{}：専用設定を使用中。変更後に保存してください。現在の範囲だけに反映されます。"
+
+msgid "{}：使用通用战斗设置。修改后自动保存，所有沿用通用设置的任务同步生效。"
+msgstr "{}：共通戦闘設定を使用中。変更は自動保存され、共通設定を使うすべてのタスクに反映されます。"
+
+msgid "已暂停"
+msgstr "一時停止中"
+
+msgid "等待执行"
+msgstr "実行待ち"
+
+msgid "恢复默认大小"
+msgstr "既定のサイズに戻す"

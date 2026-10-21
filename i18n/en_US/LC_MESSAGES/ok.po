@@ -3150,3 +3150,150 @@ msgstr "Transfer again and align once per round; 0 repeats until manually stoppe
 
 msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
 msgstr "Liaison alignment test finished: {success} succeeded, {failed} failed."
+
+msgid "系统与环境"
+msgstr "System & Environment"
+
+msgid "日常一条龙"
+msgstr "Daily Routine"
+
+msgid "业务与战斗"
+msgstr "Operations & Combat"
+
+msgid "自动化调度"
+msgstr "Automation"
+
+msgid "开发者工具"
+msgstr "Developer Tools"
+
+msgid "开始一条龙"
+msgstr "Start Routine"
+
+msgid "一条龙设置"
+msgstr "Routine Settings"
+
+msgid "暂停"
+msgstr "Pause"
+
+msgid "停止"
+msgstr "Stop"
+
+msgid "继续"
+msgstr "Resume"
+
+msgid "帝江号"
+msgstr "Dijiang"
+
+msgid "奖励"
+msgstr "Rewards"
+
+msgid "其他"
+msgstr "Others"
+
+msgid "大世界"
+msgstr "Open World"
+
+msgid "副本"
+msgstr "Dungeons"
+
+msgid "配置"
+msgstr "Config"
+
+msgid "关闭配置面板"
+msgstr "Close config panel"
+
+msgid "打开配置面板"
+msgstr "Open config panel"
+
+msgid "未纳入一条龙"
+msgstr "Not in routine"
+
+msgid "默认策略"
+msgstr "Default strategy"
+
+msgid "默认参数"
+msgstr "Default settings"
+
+msgid "一键存放"
+msgstr "One-Click Store"
+
+msgid "简易制作"
+msgstr "Simple Crafting"
+
+msgid "自动收取产出"
+msgstr "Auto-collect output"
+
+msgid "自动兑换"
+msgstr "Auto redeem"
+
+msgid "全基建巡检"
+msgstr "Full facility check"
+
+msgid "好感度优先"
+msgstr "Affinity first"
+
+msgid "高效物流路线"
+msgstr "Efficient logistics route"
+
+msgid "该任务不在一条龙执行清单中，可用右侧「配置」抽屉单独运行"
+msgstr "This task is not in the routine list. Run it on its own from the Config drawer on the right."
+
+msgid "勾选后纳入一条龙"
+msgstr "Checked tasks join the routine"
+
+msgid "已选"
+msgstr "Selected"
+
+msgid "保存并同步"
+msgstr "Save & Sync"
+
+msgid "立即单测运行"
+msgstr "Run Once Now"
+
+msgid "保存并关闭"
+msgstr "Save & Close"
+
+msgid "{} 参数配置"
+msgstr "{} Settings"
+
+msgid "通用战斗设置"
+msgstr "Shared Combat Settings"
+
+msgid "配置范围"
+msgstr "Scope"
+
+msgid "保存专用设置"
+msgstr "Save Custom Settings"
+
+msgid "改用通用设置"
+msgstr "Use Shared Settings"
+
+msgid "改用专用设置"
+msgstr "Use Custom Settings"
+
+msgid "专用设置"
+msgstr "Custom Settings"
+
+msgid "战斗策略与技能设置"
+msgstr "Combat strategy and skill settings"
+
+msgid "敌人检测"
+msgstr "Enemy Detection"
+
+msgid "自动战斗诊断设置"
+msgstr "Auto combat diagnostics"
+
+msgid "{}：使用专用设置。修改后保存；仅影响当前范围。"
+msgstr "{}: uses custom settings. Save after editing; changes affect this scope only."
+
+msgid "{}：使用通用战斗设置。修改后自动保存，所有沿用通用设置的任务同步生效。"
+msgstr "{}: uses shared combat settings. Edits save automatically and apply to every task that uses them."
+
+msgid "已暂停"
+msgstr "Paused"
+
+msgid "等待执行"
+msgstr "Waiting"
+
+msgid "恢复默认大小"
+msgstr "Restore default size"

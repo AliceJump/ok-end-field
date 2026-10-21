@@ -3248,3 +3248,150 @@ msgstr "Vuelve a teletransportarte y alinea una vez por ronda; 0 repite hasta de
 
 msgid "联络站对中测试结束：成功 {success} 次，失败 {failed} 次。"
 msgstr "Prueba de alineación de enlace finalizada: {success} éxitos, {failed} fallos."
+
+msgid "系统与环境"
+msgstr "Sistema y entorno"
+
+msgid "日常一条龙"
+msgstr "Rutina diaria"
+
+msgid "业务与战斗"
+msgstr "Operaciones y combate"
+
+msgid "自动化调度"
+msgstr "Automatización"
+
+msgid "开发者工具"
+msgstr "Desarrollo"
+
+msgid "开始一条龙"
+msgstr "Iniciar rutina"
+
+msgid "一条龙设置"
+msgstr "Ajustes de rutina"
+
+msgid "暂停"
+msgstr "Pausar"
+
+msgid "停止"
+msgstr "Detener"
+
+msgid "继续"
+msgstr "Reanudar"
+
+msgid "帝江号"
+msgstr "Dijiang"
+
+msgid "奖励"
+msgstr "Recompensas"
+
+msgid "其他"
+msgstr "Otros"
+
+msgid "大世界"
+msgstr "Mundo abierto"
+
+msgid "副本"
+msgstr "Mazmorras"
+
+msgid "配置"
+msgstr "Ajustes"
+
+msgid "关闭配置面板"
+msgstr "Cerrar panel de ajustes"
+
+msgid "打开配置面板"
+msgstr "Abrir panel de ajustes"
+
+msgid "未纳入一条龙"
+msgstr "Fuera de la rutina"
+
+msgid "默认策略"
+msgstr "Estrategia predeterminada"
+
+msgid "默认参数"
+msgstr "Ajustes predeterminados"
+
+msgid "一键存放"
+msgstr "Almacenar con 1 clic"
+
+msgid "简易制作"
+msgstr "Fabricación sencilla"
+
+msgid "自动收取产出"
+msgstr "Recogida automática"
+
+msgid "自动兑换"
+msgstr "Canje automático"
+
+msgid "全基建巡检"
+msgstr "Revisión de instalaciones"
+
+msgid "好感度优先"
+msgstr "Prioridad de afinidad"
+
+msgid "高效物流路线"
+msgstr "Ruta logística eficiente"
+
+msgid "该任务不在一条龙执行清单中，可用右侧「配置」抽屉单独运行"
+msgstr "Esta tarea no está en la lista de la rutina. Ejecútala por separado desde el panel «Ajustes» de la derecha."
+
+msgid "勾选后纳入一条龙"
+msgstr "Marca para incluir en la rutina"
+
+msgid "已选"
+msgstr "Seleccionadas"
+
+msgid "保存并同步"
+msgstr "Guardar y sincronizar"
+
+msgid "立即单测运行"
+msgstr "Ejecutar ahora"
+
+msgid "保存并关闭"
+msgstr "Guardar y cerrar"
+
+msgid "{} 参数配置"
+msgstr "Ajustes de {}"
+
+msgid "通用战斗设置"
+msgstr "Ajustes de combate comunes"
+
+msgid "配置范围"
+msgstr "Ámbito"
+
+msgid "保存专用设置"
+msgstr "Guardar ajustes propios"
+
+msgid "改用通用设置"
+msgstr "Usar ajustes comunes"
+
+msgid "改用专用设置"
+msgstr "Usar ajustes propios"
+
+msgid "专用设置"
+msgstr "Ajustes propios"
+
+msgid "战斗策略与技能设置"
+msgstr "Estrategia de combate y habilidades"
+
+msgid "敌人检测"
+msgstr "Detección de enemigos"
+
+msgid "自动战斗诊断设置"
+msgstr "Diagnóstico del combate automático"
+
+msgid "{}：使用专用设置。修改后保存；仅影响当前范围。"
+msgstr "{}: usa ajustes propios. Guarda tras editar; solo afecta a este ámbito."
+
+msgid "{}：使用通用战斗设置。修改后自动保存，所有沿用通用设置的任务同步生效。"
+msgstr "{}: usa los ajustes de combate comunes. Los cambios se guardan solos y se aplican a todas las tareas que los usan."
+
+msgid "已暂停"
+msgstr "En pausa"
+
+msgid "等待执行"
+msgstr "En espera"
+
+msgid "恢复默认大小"
+msgstr "Restaurar tamaño predeterminado"
