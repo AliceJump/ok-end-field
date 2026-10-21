@@ -1,4 +1,4 @@
-"""Stop only our temporary suspended launcher after verified SDK startup."""
+"""Stop only our temporary suspended launcher after its parent check succeeds."""
 
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ from win32com.shell import shell, shellcon
 from src.core.temporary_parent_recovery import forget_owned_parent
 
 _LOG_TIME = re.compile(r"^\[(\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]")
-_SDK_READY = re.compile(rb"OnU8V2InitCallback status\s*:\s*0\s*$")
 _TIMEOUT = 120
 _INTERVAL = 0.25
 
@@ -92,9 +91,11 @@ def _is_current(line: bytes, started: datetime) -> bool:
 
 
 class LauncherCleanup:
-    """Snapshot both SDK logs before game creation, then own the temporary process handle."""
+    """Snapshot the selected channel's parent-check log before game creation."""
 
-    def __init__(self, kernel, parent, logger):
+    def __init__(self, kernel, parent, logger, company: str = "Hypergryph"):
+        if company not in ("Hypergryph", "Gryphline"):
+            raise ValueError(f"Unsupported Endfield company: {company}")
         self.kernel = kernel
         self.parent = parent
         self.logger = logger
@@ -102,9 +103,8 @@ class LauncherCleanup:
         if not self.parent_pid:
             raise OSError("Cannot identify the verified launcher parent")
         folder = Path(shell.SHGetKnownFolderPath(shellcon.FOLDERID_LocalAppDataLow))
-        folder = folder / "Hypergryph" / "Endfield" / "sdklogs"
+        folder = folder / company / "Endfield" / "sdklogs"
         self.check_log = _LogTail(folder / "OneChannelLC.log")
-        self.sdk_log = _LogTail(folder / "u8sdk_pc.log")
         now = datetime.now()
         self.started = now.replace(microsecond=now.microsecond // 1000 * 1000)
 
@@ -167,8 +167,7 @@ class LauncherCleanup:
             time.sleep(2)
 
     def _watch_startup(self, game) -> None:
-        """Observe SDK readiness, retaining the parent until readiness or game exit."""
-        checked = ready = False
+        """Both channels finish the one-time parent check before SDK initialization."""
         success = re.compile(rb"Parent process check success:" + str(self.parent_pid).encode() + rb"\s*$")
         deadline = time.monotonic() + _TIMEOUT
         while time.monotonic() < deadline:
@@ -178,15 +177,13 @@ class LauncherCleanup:
                 self.logger.info(f"Game exited; discarding temporary Games.exe PID {self.parent_pid}")
                 self._request_exit()
                 return
-            checked = self._seen(self.check_log, success) or checked
-            ready = self._seen(self.sdk_log, _SDK_READY) or ready
-            if checked and ready:
-                self.logger.info(f"Game startup verified; terminating temporary Games.exe PID {self.parent_pid}")
+            if self._seen(self.check_log, success):
+                self.logger.info(f"Parent check verified; terminating temporary Games.exe PID {self.parent_pid}")
                 self._request_exit()
                 return
             time.sleep(_INTERVAL)
         self.logger.warning(
-            "Game startup not verified in 120 seconds; keeping temporary Games.exe until the game exits"
+            "Parent check not verified in 120 seconds; keeping temporary Games.exe until the game exits"
         )
         self._wait_for_game_exit(game)
 
@@ -195,7 +192,7 @@ class LauncherCleanup:
             self._watch_startup(game)
         except Exception as error:
             self.logger.warning(
-                f"Cannot verify SDK startup; retaining temporary Games.exe while the game runs: {error}"
+                f"Cannot verify parent check; retaining temporary Games.exe while the game runs: {error}"
             )
             try:
                 self._wait_for_game_exit(game)
