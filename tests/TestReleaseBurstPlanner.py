@@ -12,11 +12,152 @@ from unittest.mock import patch
 
 from src.data.burst_decision_table import BurstDecisionTable, budget_cell, team_path
 from src.data.combat_observation import ActionBlockReason
-from src.data.release_burst_planner import SNAPSHOT, ReleaseBurstAction, ReleaseBurstPlanner, read_snapshot
+from src.data.normal_attack_window import read_windows
+from src.data.release_burst_planner import (
+    SNAPSHOT,
+    ReleaseBurstAction,
+    ReleaseBurstDecision,
+    ReleaseBurstPlanner,
+    read_snapshot,
+)
 from src.data.skill_timing import load_skill_timings
 from src.data.team_phase_planner import BurstAction, CombatPhase, make_burst_plan
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 from tests.TestSkillTiming import FakeTask
+
+
+class TestYvonneWindowIntegration(unittest.TestCase):
+    def planner(self, team=("伊冯",)):
+        return ReleaseBurstPlanner(team, store=load_skill_timings())
+
+    def test_reviewed_contract_has_nominal_trace_and_no_research_imports(self):
+        model, _, _ = read_windows()
+        attacks = model.attacks(0)
+        self.assertEqual(len(attacks), 74)
+        self.assertEqual([a.layers for a in attacks[:7]], [1, 2, 3, 4, 5, 6, 6])
+        self.assertEqual(attacks[-1].kind, "finisher")
+        self.assertAlmostEqual(attacks[-1].projected_at, 299/30)
+        source = Path("src/data/normal_attack_window.py").read_text(encoding="utf8")
+        self.assertNotIn("native_action_program", source)
+        self.assertNotIn("combat_simulation", source)
+
+    def test_actual_price_matches_reviewed_window_and_frozen_talent_branch(self):
+        p = self.planner()
+        p.confirm("1", "ult", 0)
+        basic = p.normal_window_quote("1", 0)
+        frozen = p.normal_window_quote("1", 0, frozen=True)
+        self.assertAlmostEqual(basic.damage, 261824.5464605, places=5)
+        self.assertAlmostEqual(frozen.damage, 379237.1067516, places=5)
+        self.assertAlmostEqual(frozen.damage-basic.damage, basic.conditional_frozen_damage)
+        self.assertEqual(p.price("1", "ult", 3, value=999999), 0)
+        short = p.normal_window_quote("1", 0, until=5)
+        self.assertLess(short.damage, basic.damage)
+        self.assertFalse(any(a.kind == "finisher" for a in short.attacks))
+
+    def test_partial_team_window_prices_per_phase_with_existing_amp_maximum(self):
+        p = self.planner(("祀", "伊冯"))
+        p.confirm("2", "ult", 0)
+        basic = p.normal_window_quote("2", 0).damage
+        p._release(p.bonuses, "1", "ult", 0)  # Isolate coverage from an intervening accepted cast's output loss.
+        boosted = p.normal_window_quote("2", 0).damage
+        self.assertGreater(boosted, basic)
+        self.assertAlmostEqual(boosted/basic, 1.3600000143051147)
+        p.bonuses = [replace(b, expires_at=4) for b in p.bonuses]
+        partial = p.normal_window_quote("2", 0).damage
+        self.assertGreater(partial, basic)
+        self.assertLess(partial, boosted)
+
+    def test_unknown_main_does_not_claim_current_output_and_future_ult_unlocks_it(self):
+        p = self.planner()
+        ult = ReleaseBurstAction("1", "ult", 2.283333333333333, 999999)
+        decision = p.choose((ult,), 0, 0)
+        self.assertEqual(decision.action.kind, "ult")
+        self.assertEqual(decision.sequence[:2], (("1", "ult"), ("1", "normal")))
+        self.assertGreater(decision.damage, 260000)
+        self.assertFalse(p.normal_state.windows)
+        p.confirm("1", "ult", 0)
+        self.assertIsNone(p.choose((), 0, 3))
+        normal = ReleaseBurstAction("1", "normal", p.normal_duration("1", 3), p.quote("1", "normal")["crit_expect"])
+        decision = p.choose((normal,), 0, 3, main="1")
+        self.assertEqual(decision.action.kind, "normal")
+
+    def test_si_precedes_yvonne_and_marginal_cost_keeps_known_combo_prefix(self):
+        p = self.planner(("祀", "伊冯", "狼卫"))
+        actions = (ReleaseBurstAction("1", "ult", 3, 0), ReleaseBurstAction("2", "ult", 2.283333333333333, 999999),
+                   ReleaseBurstAction("3", "link", .5, 100, queue_position=1),
+                   ReleaseBurstAction("1", "link", .5, 20000, queue_position=2))
+        decision = p.choose(actions, 0, 0, horizon=16)
+        self.assertEqual(decision.sequence[0], ("1", "ult"))
+        self.assertIn(("2", "ult"), decision.sequence)
+        if ("1", "link") in decision.sequence:
+            self.assertLess(decision.sequence.index(("3", "link")), decision.sequence.index(("1", "link")))
+        self.assertIsNone(decision.sp_value.damage_per_sp)
+
+    def test_current_main_ordinary_output_is_real_opportunity_cost(self):
+        p = self.planner()
+        ult = ReleaseBurstAction("1", "ult", 2.283333333333333, 999999)
+        normal = ReleaseBurstAction("1", "normal", p.normal_durations["1"], p.quote("1", "normal")["crit_expect"])
+        result = p.choose((ult, normal), 0, 0, main="1")
+        self.assertEqual(result.action.kind, "ult")
+        self.assertGreater(result.gain, 0)
+        self.assertLess(result.gain, result.damage)
+        huge = replace(normal, value=10000000)
+        result = p.choose((ult, huge), 0, 0, main="1")
+        self.assertEqual(result.action.kind, "normal")
+
+    def test_long_command_expires_layers_recovery_and_source_cleanup(self):
+        p = self.planner(("伊冯", "狼卫"))
+        p.confirm("1", "ult", 0, recovered_at=5)
+        self.assertEqual(p.normal_state.window("1").input_at, 5)
+        p.confirm("2", "ult", 6, recovered_at=12)
+        self.assertEqual(p.normal_state.window("1").layers, 0)
+        p.source_unavailable("1")
+        self.assertFalse(p.normal_state.windows)
+
+    def test_table_replays_window_and_rejects_changed_main_or_timeline(self):
+        p = self.planner(("伊冯", "狼卫"))
+        actions = (ReleaseBurstAction("1", "ult", 2.283333333333333, 999999),)
+        first = p.choose(actions, 0, 0)
+        with patch.object(p, "_choose_uncached", side_effect=AssertionError("Repeated exact input should replay")):
+            second = p.choose(actions, 0, 0)
+        self.assertEqual(second.damage, first.damage)
+        p.confirm("1", "ult", 0)
+        normal = ReleaseBurstAction("1", "normal", p.normal_duration("1", 3), 1000)
+        p.choose((normal,), 0, 3, main="1")
+        with patch.object(p, "_choose_uncached", wraps=p._choose_uncached) as search:
+            p.choose((normal,), 0, 3.1, main="1")
+            self.assertTrue(search.called, "Active window timestamps cannot reuse the old quote")
+
+    def test_all_roster_sizes_and_contract_corruption(self):
+        for size in range(1, 5):
+            team = ("安塔尔", "佩丽卡", "狼卫")[:size-1] + ("伊冯",)
+            p = self.planner(team)
+            actor = str(size)
+            self.assertEqual(set(p.window_models), {actor})
+            decision = p.choose((ReleaseBurstAction(actor, "ult", 2.283333333333333, 0),), 0, 0)
+            self.assertEqual(decision.action.slot, actor)
+        from src.data.normal_attack_window import SNAPSHOT as WINDOW_SNAPSHOT
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "index.json").write_bytes((WINDOW_SNAPSHOT / "index.json").read_bytes())
+            (path / "windows.json").write_bytes((WINDOW_SNAPSHOT / "windows.json").read_bytes()+b" ")
+            with self.assertRaisesRegex(ValueError, "hash"):
+                read_windows(path)
+
+    def test_real_step_confirms_window_and_keeps_held_normal_choice(self):
+        task = FakeTask()
+        task.sp = 0
+        task.ults = {"1"}
+        task.detect_current_char_index = lambda: 0
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(["伊冯"], reset_runtime=True)
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertIsNotNone(logic.release_burst.normal_state.window("1"))
+        task.now = 3
+        logic.step()
+        self.assertTrue(logic._holding)
+        self.assertEqual(task.keys, ["ult_1"])
 
 
 class TestReleaseBurstPlanner(unittest.TestCase):
@@ -546,7 +687,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertIsNone(logic.pending)
         self.assertTrue(logic.release_burst.bonuses)
         task.sp = 100
-        self.assertEqual(logic.release_burst.last_confirmed['1', 'battle'], 0)
+        self.assertEqual(logic.release_burst.last_confirmed['1', 'battle'], .05)
         task.now = 2
         logic.step()
         self.assertEqual(task.keys, ['1', '2'])
@@ -666,7 +807,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         task.sp = 0
         task.now = .2
         logic._confirm_battle(task.now)
-        self.assertAlmostEqual(logic.battle_retry_after["1"], 25.6)
+        self.assertAlmostEqual(logic.battle_retry_after["1"], logic.started + 25.6)
         task.now = 3
         self.assertIsNone(logic._release_battle_candidate("1", 100, task.now, set()))
         self.assertTrue(logic._ready_ultimate_actions())
@@ -716,9 +857,9 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         task.probe_combat_action_block_reason = lambda: events.append("probe")
         original_confirm = logic.release_burst.confirm
 
-        def confirm(*args):
+        def confirm(*args, **kwargs):
             events.append("confirm")
-            return original_confirm(*args)
+            return original_confirm(*args, **kwargs)
 
         with patch.object(logic.release_burst, "confirm", side_effect=confirm):
             self.assertTrue(logic._use_timed_ultimate("1", logic.store.profiles("安塔尔", "ult"), burst_selected=True))
@@ -924,7 +1065,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
                 task.now = 3.3
                 logic._confirm_battle(task.now)
                 self.assertIsNotNone(logic.pending)
-                task.now = 4.01
+                task.now = logic.started + .81
                 logic._confirm_battle(task.now)
                 self.assertIsNone(logic.pending)
                 self.assertEqual(logic.active, ())
@@ -1029,6 +1170,23 @@ class TestReleaseBurstDispatch(unittest.TestCase):
 
 
 class TestUltimateOutputWindow(unittest.TestCase):
+    def test_selected_free_cast_pending_stance_does_not_fall_through_to_paid_overflow(self):
+        task, logic = self.make_logic(sp=267, ready=False)
+        logic.release_burst.confirm('1', 'ult', 0)
+        logic.free_battle_once.add('1')
+        task.battle_pulses = {'1'}
+        task.now = 2.395  # Real log: 7.255 wall seconds minus 4.86 confirmed HUD freeze.
+        decision = ReleaseBurstDecision(ReleaseBurstAction('1', 'battle', .55, 211550, 0, 0),
+                                         (('1', 'battle'),), 211550, 211550)
+        with patch.object(logic, '_release_burst_decision', return_value=decision):
+            logic.step()
+            self.assertEqual(task.keys, [], 'A selected free cast must not silently spend 100SP on another slot')
+            self.assertIsNone(logic.pending)
+            task.now = 2.7
+            logic.step()
+        self.assertEqual(task.keys, ['1'])
+        self.assertEqual(logic.pending[2], 0)
+
     def make_logic(self, *, sp=225, ready=True, white=True):
         task = FakeTask()
         task.sp = sp
@@ -1081,7 +1239,7 @@ class TestUltimateOutputWindow(unittest.TestCase):
         p = logic.release_burst
         action = logic._release_battle_candidate('1', 0, 0, {'1'})
         self.assertTrue(action.requires_free_battle)
-        node = (0., 0., 0., (), [], {}, {}, logic._scene_conditions(), 0., p.mechanism_state)
+        node = (0., 0., 0., (), [], {}, {}, logic._scene_conditions(), 0., p.mechanism_state, p.normal_state)
         self.assertIsNone(p._forecast_step(node, action, 0, 0, releases=True, horizon=27.6, predecessors={0: ()}))
         ultimate = logic._release_ultimate_candidate('1', logic.store.profiles('庄方宜', 'ult'))
         node = p._forecast_step(node, ultimate, 1, 0, releases=True, horizon=27.6, predecessors={1: ()})

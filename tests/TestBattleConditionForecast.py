@@ -131,7 +131,7 @@ class TestBattleConditionForecast(unittest.TestCase):
     def test_forecast_consumer_cannot_reuse_another_old_enemy_condition(self):
         arc = self.observe('2', '弧光')
         wolf = self.observe('3', '狼卫')
-        initial = (0.0, 0.0, 200.0, (), [], {}, {}, self.forecast(), 0.0, self.planner.mechanism_state)
+        initial = (0.0, 0.0, 200.0, (), [], {}, {}, self.forecast(), 0.0, self.planner.mechanism_state, self.planner.normal_state)
         used = self.planner._forecast_step(initial, self.arclight(arc), 0, 0, releases=False, horizon=6,
                                            predecessors={0: ()})
         self.assertFalse(used[7].supports(ConditionRequirement.from_assessment('3', wolf)))

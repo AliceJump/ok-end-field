@@ -303,7 +303,7 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 0.2
         logic._confirm_battle(task.now)
         self.assertIsNone(logic.pending)
-        self.assertAlmostEqual(logic.battle_retry_after["1"], 25.6)
+        self.assertAlmostEqual(logic.battle_retry_after["1"], logic.started + 25.6)
         task.now = 2
         self.assertFalse(logic._try_battle_token("1", 100))
         task.now = 25.7
@@ -350,7 +350,7 @@ class TestTimedCombat(unittest.TestCase):
 
             def next_frame(self):
                 super().next_frame()
-                self.frame = band.copy()
+                self.frame = band.copy() if self.keys else np.zeros_like(band)
                 self.refreshes += 1
 
             def recover_target_too_far(self):
@@ -365,7 +365,7 @@ class TestTimedCombat(unittest.TestCase):
         logic.team[0] = "梨诺"
         logic.step()
         self.assertEqual(task.keys, ["1"])
-        self.assertEqual(task.refreshes, 2)
+        self.assertEqual(task.refreshes, 3)  # One pre-key sample, then two feedback frames.
         self.assertEqual(len(recoveries), 1)
         self.assertEqual(logic.cursor, 0)
         self.assertNotIn("1", logic.state_until)
@@ -877,7 +877,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.keys, ["1"])
         self.assertIsNone(logic.pending)
         self.assertEqual(logic.cursor, 1)
-        self.assertAlmostEqual(task.now - before, 0.1)
+        self.assertAlmostEqual(task.now - before, 0.15)  # Fresh pre-key frame plus the existing .1s feedback pause.
         self.assertTrue(any("消耗证据 25 SP <= 25，按键后直接视为成功" in message for message in task.messages))
 
     def test_precise_sp_readiness_uses_partial_bar_value(self):
@@ -907,7 +907,7 @@ class TestTimedCombat(unittest.TestCase):
         combat_clock["now"] = 20.0
         logic.step()
 
-        self.assertEqual(task.now, 10.0)
+        self.assertEqual(task.now, 10.05)  # Capture advances automation time, not the injected combat clock.
         self.assertEqual(task.keys, ["1"])
 
     def test_cooldown_and_native_handoff_ignore_script_pause_duration(self):
@@ -946,7 +946,7 @@ class TestTimedCombat(unittest.TestCase):
         combat_clock["now"] += 8.0
         logic.step()
 
-        self.assertEqual(task.now, 5.0)
+        self.assertEqual(task.now, 5.05)
         self.assertEqual(task.keys, ["1"])
 
     def test_state_skill_is_not_pressed_again_while_state_is_active(self):

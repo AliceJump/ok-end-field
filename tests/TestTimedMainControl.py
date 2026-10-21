@@ -1,4 +1,6 @@
 import unittest
+from copy import deepcopy
+from dataclasses import replace
 
 from src.data.skill_timing import load_skill_timings
 from src.tasks.mixin.battle_mixin import BattleMixin
@@ -204,7 +206,17 @@ class TestTimedMainControl(unittest.TestCase):
         self.assertEqual(task.keys, ["ult_1"])
         task.sp = 100.0
         logic.order = ["2"]
+        # A valuable teammate remains executable; the new normal-window
+        # decision may legitimately beat a low-value insertion.
+        logic.release_burst.rows['2'] = deepcopy(logic.release_burst.rows['2'])
+        logic.release_burst.rows['2']['quotes']['battle']['crit_expect'] = 1000000
         task.now += 0.3
+        # A short personal window makes this output urgent; without expiry,
+        # taking the full held-normal window first can correctly win.
+        logic.release_burst._release(logic.release_burst.bonuses, '2', 'ult', task.now)
+        logic.release_burst.bonuses = [replace(b, expires_at=task.now+1,
+            spec={**b.spec, 'magnitude': {**b.spec['magnitude'], 'base': 10}})
+            for b in logic.release_burst.bonuses]
         logic.step()
         self.assertEqual(task.keys, ["ult_1", "2"])
         self.assertLess(task.now, logic.forced_main_control_until)
@@ -256,7 +268,7 @@ class TestTimedMainControl(unittest.TestCase):
         task, logic = _control_logic(["洁尔佩塔", "佩丽卡"])
         task.sp = 100.0
         self.assertTrue(logic._try_battle_token("1", 100.0))
-        task.now = 0.8
+        task.now = logic.started + .81
         task.sp = 100.0
         logic.step()
         self.assertEqual(task.keys, ["1"])

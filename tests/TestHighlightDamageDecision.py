@@ -15,6 +15,48 @@ class TestHighlightDamageDecision(unittest.TestCase):
     def setUp(self):
         self.store = load_skill_timings()
 
+    def test_every_battle_attempt_samples_new_frame_including_ordinary_button(self):
+        task = FakeTask()
+        logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
+        logic._configure_team(['弧光', '佩丽卡'], reset_runtime=True)
+        seen = []
+
+        def refresh():
+            task.now += .05
+            task.battle_pulses.add('1')
+            seen.append(tuple(task.keys))
+
+        task.next_frame = refresh
+        task.sp = 300
+        logic._observe_battle_highlights()
+        self.assertFalse(logic.battle_highlights.observations['1'].visible)
+        self.assertTrue(logic._try_battle_token('2', 300))
+        self.assertEqual(seen, [()])
+        self.assertEqual(task.keys, ['2'])
+        self.assertTrue(logic.battle_highlights.observations['1'].visible)
+
+    def test_changed_ring_during_search_rejects_stale_quote_and_replans(self):
+        for initial, current in ((True, False), (False, True), (True, None)):
+            with self.subTest(initial=initial, current=current):
+                task = FakeTask()
+                logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
+                logic._configure_team(['弧光', '佩丽卡'], reset_runtime=True)
+                state = [initial]
+                task.is_battle_skill_pulsing = lambda _token: state[0]
+                logic._observe_battle_highlights()
+
+                def refresh():
+                    task.now += .05
+                    state[0] = current
+
+                task.next_frame = refresh
+                self.assertFalse(logic._try_battle_token('1', 300, revalidate_forecast=True))
+                self.assertEqual(task.keys, [])
+                self.assertIs(logic.battle_highlights.observations['1'].visible, current)
+                # Timestamp-only changes on a later frame do not cause a loop.
+                self.assertTrue(logic._try_battle_token('1', 300, revalidate_forecast=True))
+                self.assertEqual(task.keys, ['1'])
+
     def test_native_projectile_damage_uses_baseline_rank_and_current_condition(self):
         planner = ReleaseBurstPlanner(['狼卫'], store=self.store)
         state = BattleHighlightState(self.store)
@@ -90,9 +132,9 @@ class TestHighlightDamageDecision(unittest.TestCase):
     def test_current_condition_is_not_carried_past_another_forecast_action(self):
         planner = ReleaseBurstPlanner(['狼卫', '余烬'])
         action = ReleaseBurstAction('1', 'battle', .5, 100, 100, 100, observed_bonus=2000)
-        node = (0.0, 0.0, 100.0, (), [], {}, {}, ForecastConditions(), 0.0, planner.mechanism_state)
+        node = (0.0, 0.0, 100.0, (), [], {}, {}, ForecastConditions(), 0.0, planner.mechanism_state, planner.normal_state)
         first = planner._forecast_step(node, action, 1, 0, releases=False, horizon=6, predecessors={1: ()})
-        after_other = (0.0, .5, 100.0, (0,), [], {}, {}, ForecastConditions(), 0.0, planner.mechanism_state)
+        after_other = (0.0, .5, 100.0, (0,), [], {}, {}, ForecastConditions(), 0.0, planner.mechanism_state, planner.normal_state)
         later = planner._forecast_step(after_other, action, 1, 0, releases=False, horizon=6, predecessors={1: ()})
         self.assertEqual(first[0], 2100)
         self.assertEqual(later[0], 100)
@@ -162,8 +204,8 @@ class TestHighlightDamageDecision(unittest.TestCase):
                                     observed_components=binding.conditional_components)
         planner.confirm('2', 'ult', 0)
         amp = 1 + next(s['magnitude']['base'] for s in planner.rules['2', 'ult'] if '电磁' in s['elements'])
-        first = (0.0, 0.0, 100.0, (), list(planner.bonuses), {}, {}, ForecastConditions(), 0.0, planner.mechanism_state)
-        later = (0.0, .5, 100.0, (0,), list(planner.bonuses), {}, {}, ForecastConditions(), 0.0, planner.mechanism_state)
+        first = (0.0, 0.0, 100.0, (), list(planner.bonuses), {}, {}, ForecastConditions(), 0.0, planner.mechanism_state, planner.normal_state)
+        later = (0.0, .5, 100.0, (0,), list(planner.bonuses), {}, {}, ForecastConditions(), 0.0, planner.mechanism_state, planner.normal_state)
         self.assertAlmostEqual(planner._forecast_step(first, action, 1, 0, releases=False, horizon=6, predecessors={1: ()})[0],
                                binding.base_value + binding.conditional_value * amp)
         self.assertAlmostEqual(planner._forecast_step(later, action, 1, 0, releases=False, horizon=6, predecessors={1: ()})[0],

@@ -18,7 +18,8 @@ CAPACITY = 256
 def algorithm_digest():
     paths = ('src/data/burst_decision_table.py', 'src/data/release_burst_planner.py',
              'src/data/mechanism_prediction.py', 'src/data/battle_conditions.py', 'src/data/highlight_damage.py',
-             'src/data/skill_timing.py', 'src/data/combo_queue.py', 'src/tasks/onetime/TimedCombatLogic.py')
+             'src/data/skill_timing.py', 'src/data/combo_queue.py', 'src/tasks/onetime/TimedCombatLogic.py',
+             'src/data/normal_attack_window.py', 'src/data/held_normal_forecast.py')
     try:
         return hashlib.sha256(b''.join(p.encode()+b'\0'+(ROOT / p).read_bytes().replace(b'\r\n', b'\n')
                                        for p in paths)).hexdigest()
@@ -95,7 +96,7 @@ class BurstDecisionTable:
                         tuple(stamp-now for stamp in w.marks)) for w in model.skill_amplifications))
         data = (planner.team, planner.table_profile_key, planner.rules, planner.normal_durations, planner.condition_transitions,
                 actions, budget_cell(actions, sp), horizon, width, conditions, repeat_normals,
-                planner.mechanism_assessments, state)
+                planner.mechanism_assessments, state, planner.normal_state.relative(now))
         try:
             raw = json.dumps(freeze(data), ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode('utf8')
         except (TypeError, ValueError):

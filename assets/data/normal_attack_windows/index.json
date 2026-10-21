@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "source_revision": "e73f75a392fa5f135cba3105c22cc85d063a6279",
+  "payload_sha256": "8c58e18a4d5e77ce21220c3dbcb47cb0301d7a235b47c2684d728dff6bfb17bc",
+  "source_hashes": {
+    "src/data/yvonne_normal_window.py": "c032e042cd1652197d913c8cee88df5e50a608ff7bca32cadc022cb045761020",
+    "assets/data/fixed_damage_baseline.json": "c6bc2adbba6582daa8d5b9a3266731be34a52400bfe54bdb776dc5e7214f43b8",
+    "assets/data/skill_timings/20261002/index.json": "2b0ead66e568f93d9e0b269f9a7a16921d530338cb5cfe0573a6786236d60e4b",
+    "assets/data/skill_timings/20261002/records.json.gz": "e15ff2073e253262ba97cb919216039e4603de01cdd6a7bc598f06e127d62019",
+    "assets/data/skill_timings/20261002/ranked_blackboards.json.gz": "9e309bba6955954b3de6f67f207b422b61250576b1234f7d611bfe8729787ec1",
+    "assets/data/character_progression/20261003/index.json": "e5e4f8fe61f13339c3c59a7a1a02e00a244798126a1651d9f9f812371d9fdab7"
+  },
+  "exporter_sha256": "4e8a63a53149812171da43bb3acef57ac052016b9f682e3d539d7432ebc3e79c",
+  "scope": "nominal_primary_held_normals; not_native_execution_or_observed_hits"
+}

@@ -941,6 +941,8 @@ class TimedCombatLogic:
         if self._cycle_start is None:
             return
         if kind == "ult":
+            if self.release_burst is not None and token in self.release_burst.window_models:
+                return
             quote = self.damage_quotes.get(self.team[int(token) - 1])
             self._cycle_bonus += quote.ult if quote else 0
         elif token is not None:
@@ -1020,7 +1022,7 @@ class TimedCombatLogic:
         if self.release_burst is not None:
             self.release_burst.observe_conditions({token: self._battle_condition(token) for token in bound})
 
-    def _try_battle_token(self, token, sp, overflow=False, advance_cursor=True):
+    def _try_battle_token(self, token, sp, overflow=False, advance_cursor=True, *, revalidate_forecast=False):
         now = self._clock()
         if self.release_burst is not None and self.release_burst.action_blocked(token, "battle", now):
             return False
@@ -1046,6 +1048,18 @@ class TimedCombatLogic:
         ):
             return False
         if not self.phase_planner.can_spend(token, "battle", sp, expected_cost):
+            return False
+        # Search may outlive the sampled HUD. Capture once for an eligible
+        # attempt, including ordinary buttons; no capture for SP/lock failures.
+        def condition_key():
+            return tuple(sorted((slot, obs.skill_ids, obs.condition_json, obs.visible)
+                                for slot, obs in self.battle_highlights.observations.items()))
+
+        previous = condition_key() if self.battle_highlights is not None else ()
+        self.task.next_frame()
+        self._observe_battle_highlights()
+        if revalidate_forecast and self.battle_highlights is not None and previous != condition_key():
+            self.task.log_info("时间排轴: 战技按前白圈条件变化，保留技力并重新选招")
             return False
         if not self._execution_allows_battle(token):
             return False
@@ -1258,7 +1272,7 @@ class TimedCombatLogic:
         horizon = self.release_burst.planning_horizon((token for _, token, _ in ready_ults), now)
         decision = self.release_burst.choose(actions, max(0.0, sp), now, conditions=conditions,
                                              horizon=horizon, repeat_normals=horizon > 12,
-                                             width=64 if horizon > 12 else 16)
+                                             width=64 if horizon > 12 else 16, main=normal.slot if normal is not None else None)
         mechanism_gain = (decision is not None and decision.mechanism is not None
                           and (decision.mechanism.sources or decision.mechanism.minimum_recall))
         if decision is not None and decision.gain <= 1e-6 and not mechanism_gain and not self._combo_queue and self.order:
@@ -1405,7 +1419,7 @@ class TimedCombatLogic:
         self._clear_action_attempt_feedback()
         self._ult_action_seconds[token] = max(0, ended - started)
         if self.release_burst is not None:
-            self.release_burst.confirm(token, "ult", started)
+            self.release_burst.confirm(token, "ult", started, recovered_at=ended)
         self._observe_bonus("ult", token)
         self._observe_phase_action(token, "ult")
         self._set_cooldowns(profiles, started)
@@ -1478,8 +1492,14 @@ class TimedCombatLogic:
                 profiles = next(profiles for _, token, profiles in ready_ults if token == action.slot)
                 if self._use_timed_ultimate(action.slot, profiles, burst_selected=True):
                     return
-            elif action.kind == "battle" and self._try_battle_token(action.slot, sp, advance_cursor=False):
-                return
+            elif action.kind == "battle":
+                if not self._try_battle_token(action.slot, sp, advance_cursor=False, revalidate_forecast=True):
+                    stance = self.release_burst.stances.get(action.slot)
+                    if stance is not None and self._clock() < stance.starts_at:
+                        self.task.log_info(f"时间排轴: 已选战技 {action.slot} 等待姿态起点 "
+                                           f"{stance.starts_at-self._clock():.3f}s；本轮保留技力，不转防溢出")
+                    self._hold(True)
+                return  # Reobserve a blocked chosen action; never spend SP on a different fallback in this step.
             elif action.kind == "link":
                 self._try_link_skill()
                 return  # A changed head needs a new step, never anonymous E at the old price.

@@ -206,7 +206,7 @@ class TestMechanismPrediction(unittest.TestCase):
                                     mechanism_assessment=obs)
         # A direct action may use its observation. Once an unknown transition
         # precedes it, the same scene condition must not be reused.
-        node = (0., 1., 100., (0,), [], {}, {}, ForecastConditions(), 0., p.mechanism_state)
+        node = (0., 1., 100., (0,), [], {}, {}, ForecastConditions(), 0., p.mechanism_state, p.normal_state)
         later = p._forecast_step(node, action, 1, 0, releases=True, horizon=12, predecessors={1: ()})
         p.confirm('1', 'battle', 1)
         self.assertAlmostEqual(later[0], p.price('1', 'battle', 1))

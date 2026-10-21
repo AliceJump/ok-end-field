@@ -20,6 +20,7 @@ from src.data.battle_conditions import (
     ForecastConditions,
 )
 from src.data.burst_decision_table import BurstDecisionTable
+from src.data.held_normal_forecast import HeldNormalState, model_price
 from src.data.highlight_damage import HighlightDamageBinding, HighlightDamageComponent
 from src.data.mechanism_prediction import (
     MechanismQuote,
@@ -29,6 +30,7 @@ from src.data.mechanism_prediction import (
     talent_after_cast,
     validate_contract,
 )
+from src.data.normal_attack_window import read_windows
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "assets/data/release_burst"
 ELEMENTS = {"all", "物理", "寒冷", "灼热", "电磁", "自然"}
@@ -132,6 +134,7 @@ class ReleaseBurstAction:
     damage_duration: float | None = None
     mechanism_assessment: BattleConditionAssessment | None = None
     requires_free_battle: bool = False
+    requires_normal_window: bool = False
 
 
 @dataclass(frozen=True)
@@ -180,6 +183,11 @@ class ReleaseBurstPlanner:
         self.last_confirmed = {}
         self.mechanism_state = MechanismState()
         self.mechanism_assessments = {}
+        self.normal_state = HeldNormalState()
+        self.window_models = {}
+        self.window_native_entries = {}
+        self.cast_seconds = {}
+        self.window_snapshot_key = None
         if store is not None:
             for row in self.rows.values():
                 for skill, digest in (row.get('mechanism') or {}).get('native_hashes', {}).items():
@@ -190,11 +198,30 @@ class ReleaseBurstPlanner:
         self.stance_normal_entries = {}
         if store is not None:
             self._load_normal_timings(store)
+            window, contract, self.window_snapshot_key = read_windows()
+            for actor, row in self.rows.items():
+                if row["key"] != "yvonne":
+                    continue
+                profile = {key: row["profile"][key] for key in contract["profile"]}
+                panel_hash = hashlib.sha256(json.dumps(row["panel"], sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                if profile != contract["profile"] or panel_hash != contract["panel_sha256"]:
+                    continue
+                if any(store.record(skill)["source"]["sha256"] != digest for skill, digest in contract["native_hashes"].items()):
+                    raise ValueError("Unreviewed live normal-window record")
+                self.window_models[actor] = window
+                self.window_native_entries[actor] = (store.profile("chr_0017_yvonne_ult_attack1_1"),)
+            for actor, row in self.rows.items():
+                for kind in ("ult", "battle", "link"):
+                    profiles = store.profiles(row["character"], kind)
+                    if profiles:
+                        self.cast_seconds[actor, kind] = max(p.actionable for p in profiles)
         self.highlight_damage = {actor: binding for actor, row in self.rows.items()
                                  if (binding := HighlightDamageBinding.for_actor(row, store)) is not None}
         self.condition_transitions = {(actor, kind): transition for actor, row in self.rows.items()
                                       for kind, transition in ConditionTransition.for_actor(row, store).items()}
         self.table_profile_key = BurstDecisionTable.profile_key(self.rows)
+        if self.window_models:
+            self.table_profile_key = BurstDecisionTable.profile_key((self.rows, self.window_snapshot_key))
         self.decision_table = BurstDecisionTable.for_team(self.team)
 
     @staticmethod
@@ -230,6 +257,7 @@ class ReleaseBurstPlanner:
         self.last_confirmed = {key: time for key, time in previous.last_confirmed.items() if key[0] in unchanged}
         self.stances = {actor: stance for actor, stance in previous.stances.items() if actor in unchanged}
         self.mechanism_state = previous.mechanism_state.keep(unchanged)
+        self.normal_state = previous.normal_state.keep(unchanged & set(self.window_models))
 
     def observe_conditions(self, assessments):
         self.mechanism_assessments = dict(assessments)
@@ -265,12 +293,26 @@ class ReleaseBurstPlanner:
             stances[actor] = replace(stances[actor], free_battle=False)
 
     def normal_duration(self, actor, now):
+        window = self.normal_state.window(actor)
+        if window is not None:
+            model = self.window_models[actor]
+            return max(.01, window.cast_at + model.activation + model.duration + model.final_recovery-now)
         spec = self.stance_spec(actor)
         return spec["normal_duration"] if self.stance_at(actor, now) is not None else self.normal_durations.get(actor)
 
     def normal_entry(self, actor, now):
+        if self.normal_state.window(actor) is not None:
+            return self.window_native_entries[actor]
         entries = self.stance_normal_entries if self.stance_at(actor, now) is not None else self.normal_entries
         return entries.get(actor, ())
+
+    def normal_window_quote(self, actor, now, *, until=None, frozen=None):
+        projection = self.normal_state.window(actor)
+        if projection is None:
+            return None
+        model = self.window_models[actor]
+        end = until if until is not None else projection.cast_at+model.activation+model.duration+model.final_delay
+        return model_price(self, model, actor, projection, now, end, self.bonuses, self.mechanism_state, frozen=frozen)
 
     def _stance_action(self, action, now, stances):
         stance = self.stance_at(action.slot, now, stances=stances)
@@ -331,11 +373,15 @@ class ReleaseBurstPlanner:
         self.stances.pop(actor, None)
         self.mechanism_state = self.mechanism_state.keep(set(self.rows)-{actor})
         self.mechanism_assessments.pop(actor, None)
+        self.normal_state = self.normal_state.keep(set(self.rows)-{actor})
 
-    def confirm(self, actor, kind, started, *, mechanism=None):
+    def confirm(self, actor, kind, started, *, mechanism=None, recovered_at=None):
         if self.last_confirmed.get((actor, kind)) == started:
             return
         self.last_confirmed[actor, kind] = started
+        self.normal_state = self.normal_state.expire(self.window_models, started).command(
+            self.window_models, actor, kind, started,
+            max(started+self.cast_seconds.get((actor, kind), 0), recovered_at or started))
         row = self.rows.get(actor)
         if row is not None:
             quote = mechanism if mechanism is not None else self.mechanism_quote(actor, started)
@@ -357,6 +403,8 @@ class ReleaseBurstPlanner:
         return self.price(actor, kind, started+duration, bonuses=bonuses, mechanism=mechanism, mechanism_state=model)
 
     def cast_only_quote(self, actor, kind):
+        if kind == "ult" and actor in self.window_models:
+            return True
         quote = self.quote(actor, kind)
         return quote is not None and quote.get("pricing_scope", "").startswith("unconditional_cast_only;")
 
@@ -385,6 +433,8 @@ class ReleaseBurstPlanner:
 
     def price(self, actor, kind, now, *, value=None, bonuses=None, stances=None, mechanism=None, mechanism_state=None,
               action_started=None):
+        if kind == "ult" and actor in self.window_models:
+            return 0.0  # Future normal-window output is priced on its own timeline.
         quote = self.quote(actor, kind)
         if quote is None:
             return None
@@ -467,8 +517,30 @@ class ReleaseBurstPlanner:
                  * max(0, 1 + max(amplifications)) / (1 + base_amp))
         return value * ratio
 
+    def _normal_scope(self, state, action, started, now, horizon, bonuses, mechanism_state):
+        if action.kind != "normal" or not state.enabled:
+            return action.duration, None, 1.0
+        projection = state.window(action.slot)
+        if state.main != action.slot or action.requires_normal_window and projection is None:
+            return None
+        model = self.window_models.get(action.slot)
+        if projection is not None:
+            recovered = projection.cast_at + model.activation + model.duration + model.final_recovery
+            if started < recovered:
+                end = min(now+horizon, recovered)
+                if end <= started:
+                    return None
+                quote = model_price(self, model, action.slot, projection, started, end, bonuses, mechanism_state)
+                return (end-started, quote.damage, 1.0) if quote.damage is not None else None
+        # Continuous ordinary output supplies the same-horizon opportunity
+        # cost, including a fractional tail and exact release-window boundaries.
+        ends = [b.expires_at for b in bonuses if started < b.expires_at < now+horizon]
+        starts = [b.starts_at for b in bonuses if started < b.starts_at < now+horizon]
+        end = min(now+horizon, started+action.duration, *ends, *starts)
+        return (end-started, None, (end-started)/action.duration) if end > started else None
+
     def _forecast_step(self, node, action, index, now, *, releases, horizon, predecessors):
-        damage, time, budget, indices, current, actor_locks, stances, conditions, queue_delay, mechanism_state = node
+        damage, time, budget, indices, current, actor_locks, stances, conditions, queue_delay, mechanism_state, normal_state = node
         repeat_normal = action.kind == 'normal' and predecessors.get('repeat_normals', False)
         if (index in indices and not repeat_normal) or any(i not in indices for i in predecessors[index]):
             return None
@@ -479,6 +551,12 @@ class ReleaseBurstPlanner:
         if pending_stance is not None and action.kind in {"battle", "normal"}:
             started = max(started, pending_stance.starts_at)
         action = self._stance_action(action, started, stances)
+        normal = self._normal_scope(normal_state, action, started, now, horizon, current, mechanism_state)
+        if normal is None:
+            return None
+        duration, normal_value, normal_fraction = normal
+        if action.kind == "normal" and normal_state.enabled:
+            action = replace(action, duration=duration)
         if (action.kind == 'battle' and self.stance_at(action.slot, now) is not None
                 and self.stance_at(action.slot, started, stances=stances) is None):
             return None  # A currently replaced/free button cannot remain that phase after expiry.
@@ -524,24 +602,32 @@ class ReleaseBurstPlanner:
                 w for w in next_mechanism.combo_weapon if w.starts <= started
                 and started+(action.damage_duration or action.duration) < w.expires))
         value = action.value + (action.observed_bonus if enhanced else 0)
-        if action.base_components:
+        if normal_value is not None:
+            priced = normal_value
+        elif action.base_components:
             components = action.base_components + (action.observed_components if enhanced else ())
             priced = self.price_components(action.slot, end, components, bonuses=pricing_bonuses,
                                             mechanism_state=pricing_mechanism)
         else:
-            priced = self.price(action.slot, action.kind, end, value=value,
+            priced = self.price(action.slot, action.kind, (started+end)/2 if normal_state.enabled and action.kind == "normal" else end, value=value,
                                 bonuses=pricing_bonuses, stances=stances, mechanism=mechanism,
                                 mechanism_state=pricing_mechanism, action_started=started)
+            if priced is not None:
+                priced *= normal_fraction
         if priced is None:
             return None
         if releases:
             self._advance_stance(next_stances, action.slot, action.kind, started)
+        next_normals = normal_state
+        if action.kind != "normal":
+            next_normals = normal_state.command(self.window_models, action.slot,
+                                                action.kind if releases else "without_release", started, end)
         locks = dict(actor_locks)
         locks[action.slot] = started + max(action.duration, action.same_actor_duration or 0)
         next_conditions = conditions.after(action.slot, action.kind, self.condition_transitions.get((action.slot, action.kind)))
         return (damage + priced, end, min(300.0, budget - action.sp_cost),
                 (*indices, index), forecast, locks, next_stances, next_conditions,
-                queue_delay + (started - now if action.kind == "link" else 0), next_mechanism)
+                queue_delay + (started - now if action.kind == "link" else 0), next_mechanism, next_normals)
 
     @staticmethod
     def _select_beam(expanded, quota):
@@ -568,7 +654,7 @@ class ReleaseBurstPlanner:
                 repeat_normals=False):
         predecessors = self._predecessors(actions, repeat_normals)
         beam = [(0.0, now, sp, (), bonuses, {}, dict(self.stances) if releases else {}, conditions, 0.0,
-                 self.mechanism_state)]
+                 self.mechanism_state, self.normal_state if releases else replace(self.normal_state, windows=()))]
         best = beam[0]
         starts = {}
         normal_times = [min(a.duration, (self.stance_spec(a.slot) or {}).get('normal_duration', a.duration))
@@ -601,7 +687,7 @@ class ReleaseBurstPlanner:
         still apply in the counterfactual.
         """
         initial = (0.0, now, sp, (), list(self.bonuses), {}, dict(self.stances), conditions, 0.0,
-                   self.mechanism_state)
+                   self.mechanism_state, self.normal_state)
         original = initial
         schedule = []
         first_value = first_cost = 0.0
@@ -631,8 +717,20 @@ class ReleaseBurstPlanner:
         return BurstSpValue(first_value, contribution, first_cost,
                             (first_value+contribution)/first_cost if first_cost>0 else None)
 
-    def choose(self, actions, sp, now, *, horizon=12.0, width=16, conditions=ForecastConditions(), repeat_normals=False):
+    def choose(self, actions, sp, now, *, horizon=12.0, width=16, conditions=ForecastConditions(), repeat_normals=False, main=None):
         actions = tuple(actions)
+        window_actors = {a.slot for a in actions if a.kind == "ult" and a.slot in self.window_models}
+        self.normal_state = self.normal_state.expire(self.window_models, now)
+        if main is None:
+            main = next((a.slot for a in actions if a.kind == "normal" and not a.requires_normal_window), None)
+        enabled = bool(window_actors or self.normal_state.windows)
+        self.normal_state = replace(self.normal_state, main=main, enabled=enabled)
+        existing = {a.slot for a in actions if a.kind == "normal"}
+        for actor in sorted(window_actors-existing):
+            quote = self.quote(actor, "normal")
+            actions += (ReleaseBurstAction(actor, "normal", self.normal_durations[actor], quote["crit_expect"],
+                                           requires_normal_window=True),)
+        repeat_normals = repeat_normals or enabled
         key = self.decision_table.key(self, actions, sp, now, horizon, width, conditions, repeat_normals)
         stored = self.decision_table.get(key)
         if stored is not None:
@@ -656,7 +754,8 @@ class ReleaseBurstPlanner:
         positions = {(a.slot, a.kind): index for index, a in enumerate(actions)}
         if len(positions) != len(actions) or any(pair not in positions for pair in sequence):
             return None
-        node = (0., now, min(sp, 300), (), list(self.bonuses), {}, dict(self.stances), conditions, 0., self.mechanism_state)
+        node = (0., now, min(sp, 300), (), list(self.bonuses), {}, dict(self.stances), conditions, 0., self.mechanism_state,
+                self.normal_state)
         predecessors = self._predecessors(actions, repeat_normals)
         for pair in sequence:
             index = positions[pair]
@@ -674,7 +773,8 @@ class ReleaseBurstPlanner:
                           conditions=ForecastConditions(), repeat_normals=False):
         actions = tuple(actions)
         positions = sorted(a.queue_position for a in actions if a.kind == "link")
-        if (not actions or len(actions) > 13 or sum(a.kind == "normal" for a in actions) > 1
+        virtual = sum(a.requires_normal_window for a in actions)
+        if (not actions or len(actions) > 13+virtual or virtual > 1 or sum(a.kind == "normal" for a in actions) > 1+virtual
                 or len({(a.slot, a.kind) for a in actions}) != len(actions)
                 or positions != list(range(1, len(positions) + 1)) or len(positions) > 4
                 or not math.isfinite(sp) or not math.isfinite(now) or sp < 0
@@ -683,6 +783,8 @@ class ReleaseBurstPlanner:
                        or a.value < 0 or (a.kind != "link" and a.queue_position != 0)
                        or a.sp_gate < 0 or a.sp_cost < 0
                        or type(a.requires_free_battle) is not bool
+                       or type(a.requires_normal_window) is not bool
+                       or (a.requires_normal_window and (a.kind != "normal" or a.slot not in self.window_models))
                        or (a.requires_free_battle and (a.kind != 'battle' or self.stance_spec(a.slot) is None))
                        or (a.damage_duration is not None and (not math.isfinite(a.damage_duration)
                                                              or a.damage_duration < a.duration))
@@ -704,7 +806,7 @@ class ReleaseBurstPlanner:
         needs_cast_pricing = (has_links or any(self.cast_only_quote(a.slot, a.kind) for a in actions)
                               or any(q is not None and (q.sources or q.minimum_recall) for q in mechanism_quotes))
         needs_sp_pricing = sum(a.kind=='battle' and a.sp_cost>0 for a in actions)>1
-        needs_cast_pricing = needs_cast_pricing or needs_sp_pricing
+        needs_cast_pricing = needs_cast_pricing or needs_sp_pricing or self.normal_state.enabled
         if (not needs_cast_pricing and not self.bonuses and not self.stances
                 and not any(self.rules.get((a.slot, a.kind)) for a in actions)):
             return None
@@ -733,7 +835,8 @@ class ReleaseBurstPlanner:
             if paid:
                 best = max(paid, key=lambda plan: (values[plan[3][0]].damage_per_sp,
                                                    plan[0], -plan[8], -plan[1]))
-        plain = self._search(actions, min(sp, 300), now, releases=False, bonuses=[], horizon=horizon, width=width,
+        plain = self._search(actions, min(sp, 300), now, releases=False,
+                             bonuses=list(self.bonuses) if self.normal_state.enabled else [], horizon=horizon, width=width,
                              conditions=conditions, repeat_normals=repeat_normals)
         if (not best[3] or (not needs_cast_pricing and (best[0] <= plain[0] + 1e-6
                                              or actions[best[3][0]].kind == "normal"))):
