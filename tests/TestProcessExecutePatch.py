@@ -467,6 +467,33 @@ class TestOfficialLauncher(unittest.TestCase):
         verify.assert_called_once_with(str(launcher))
         logger.warning.assert_not_called()
 
+    def test_invalid_cached_launcher_is_rejected_without_other_candidates(self):
+        logger = Mock()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stale = root / "stale" / "Launcher.exe"
+            stale.parent.mkdir()
+            stale.touch()
+            cache = root / "official_launcher.json"
+            cache.write_text(json.dumps({"path": str(stale)}), encoding="utf-8")
+            with (
+                patch.object(official_launcher, "get_launcher_cache_path", return_value=str(cache)),
+                patch.object(official_launcher, "_registered_launchers", return_value=[]),
+                patch.object(official_launcher, "_game_path_launchers", return_value=[]),
+                patch.object(
+                    official_launcher, "verify_launcher",
+                    side_effect=RuntimeError("bad signature"),
+                ) as verify,
+                self.assertRaisesRegex(RuntimeError, "not found"),
+            ):
+                official_launcher.installed_launcher("unused", logger)
+            verify.assert_called_once_with(str(stale))
+            self.assertEqual(
+                json.loads(cache.read_text(encoding="utf-8")),
+                {"path": str(stale)},
+            )
+        logger.warning.assert_called_once()
+
     def test_launch_game_preserves_arguments_without_injecting_defaults(self):
         kernel = Mock()
         logger = Mock()
