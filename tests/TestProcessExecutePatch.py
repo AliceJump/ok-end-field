@@ -431,7 +431,7 @@ class TestOfficialLauncher(unittest.TestCase):
             )
         verify.assert_called_once_with(str(launcher))
 
-    def test_invalid_cached_launcher_falls_back_and_replaces_cache(self):
+    def test_inferred_launcher_takes_priority_over_stale_cache(self):
         logger = Mock()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -454,11 +454,7 @@ class TestOfficialLauncher(unittest.TestCase):
                     "_game_path_launchers",
                     return_value=[str(launcher)],
                 ),
-                patch.object(
-                    official_launcher,
-                    "verify_launcher",
-                    side_effect=[RuntimeError("bad signature"), None],
-                ),
+                patch.object(official_launcher, "verify_launcher") as verify,
             ):
                 self.assertEqual(
                     official_launcher.installed_launcher("unused", logger),
@@ -468,7 +464,8 @@ class TestOfficialLauncher(unittest.TestCase):
                 json.loads(cache.read_text(encoding="utf-8")),
                 {"path": os.path.abspath(launcher)},
             )
-        logger.warning.assert_called_once()
+        verify.assert_called_once_with(str(launcher))
+        logger.warning.assert_not_called()
 
     def test_launch_game_preserves_arguments_without_injecting_defaults(self):
         kernel = Mock()
