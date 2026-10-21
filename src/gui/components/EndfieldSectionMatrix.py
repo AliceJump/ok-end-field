@@ -27,13 +27,14 @@ from src.gui.EndfieldTheme import palette
 
 logger = Logger.get_logger(__name__)
 
-# DailyTask 的六组配置键：任务名 → 分组键以 DailyTask 实际清单为准，
+# DailyTask 的七组配置键：任务名 → 分组键以 DailyTask 实际清单为准，
 # 不在任何一组里的任务不参与一条龙（行内标“未纳入一条龙”，勾选点置灰）
 DAILY_GROUP_KEY_ATTRS = (
     "CFG_BOAT_TASKS",
     "CFG_OTHER_TASKS",
     "CFG_BATTLE_TASKS",
     "CFG_REWARD_TASKS",
+    "CFG_FARM_TASKS",
     "CFG_DELIVERY_TASKS",
     "CFG_TAIL_TASKS",
 )
@@ -42,6 +43,7 @@ DAILY_ROSTER_ATTRS = (
     "OTHER_TASKS",
     "BATTLE_TASKS",
     "REWARD_TASKS",
+    "FARM_TASKS",
     "DELIVERY_TASKS",
     "TAIL_TASKS",
 )
@@ -61,6 +63,7 @@ FALLBACK_GROUP_MAP = {
     "演算": "战斗任务",
     "活动奖励": "奖励任务",
     "日常奖励": "奖励任务",
+    "农牧相关": "农牧任务",
     "自动送货": "自动送货任务",
     "传送到帝江号右侧传送点": "收尾任务",
 }
