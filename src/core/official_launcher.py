@@ -1,7 +1,7 @@
 """Start Endfield with a signed, temporary, suspended official Games.exe parent.
 
 This is an alternative to the live-launcher startup/cleanup proposal in PR #558.
-The temporary parent is terminated only after matching SDK success log entries.
+Both official channels release only their owned parent after its fresh check succeeds.
 """
 
 from __future__ import annotations
@@ -9,12 +9,11 @@ from __future__ import annotations
 import ctypes
 import json
 import os
-import re
 import subprocess
 import time
-from urllib.parse import quote
 from ctypes import wintypes
 from pathlib import Path
+from urllib.parse import quote
 
 import psutil
 from ok.util.file import ensure_dir_for_file, read_json_file, write_json_file
@@ -32,14 +31,35 @@ OFFICIAL_SIGNERS = {
     "2B366F397E64A9494A553B70004E8CA1AAE02B9D",
     "FF4AF264C36A27F0C805936708EF8EC67B396225",
 }
+LAUNCHER_PRODUCTS = {
+    "Hypergryph": {"鹰角启动器", "Hypergryph Launcher"},
+    "Gryphline": {"GRYPHLINK"},
+}
 LAUNCHER_ID = "33a0a6296a20400d503c59ac0fd6341e"
 LAUNCHER_CACHE_FILE = "official_launcher.json"
-GRYPHLINE_REGISTRY_KEY = r"Software\GRYPHLINK\Launcher\94005b4608518100ed8df1d8107356a8"
+CHANNEL_REGISTRY_KEYS = {
+    "Hypergryph": r"Software\Hypergryph\Launcher\7cadd91e975e03634d178312268c57d6",
+    "Gryphline": r"Software\GRYPHLINK\Launcher\94005b4608518100ed8df1d8107356a8",
+}
 STEAM_ENDFIELD_APP_ID = "4732690"
 
 
 def _path_has_part(path: str, part: str) -> bool:
     return part.casefold() in {item.casefold() for item in Path(os.path.abspath(path)).parts}
+
+
+def _game_company(game_path: str) -> str:
+    """Use Unity's installed company/product identity, independent of directory names."""
+    info = Path(os.path.abspath(game_path)).parent / "Endfield_Data" / "app.info"
+    try:
+        lines = info.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeError) as error:
+        raise RuntimeError("Cannot identify Endfield channel; repair the game or launch through its client") from error
+    if len(lines) >= 2 and lines[1].strip().casefold() == "endfield":
+        for company in LAUNCHER_PRODUCTS:
+            if lines[0].strip().casefold() == company.casefold():
+                return company
+    raise RuntimeError("Unrecognized Endfield channel; launch through its official client")
 
 
 def _platform_for_game(game_path: str) -> str | None:
@@ -78,13 +98,14 @@ def get_launcher_cache_path() -> str:
     return config_path(LAUNCHER_CACHE_FILE)
 
 
-def verify_launcher(path: str) -> None:
-    """Validate Authenticode and a recognized official launcher publisher."""
+def verify_launcher(path: str, company: str | None = None) -> None:
+    """Share certificate trust; use the signed product identity to select a channel."""
     script = (
         "$ErrorActionPreference='Stop'; "
         "[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new(); "
         "$s=Get-AuthenticodeSignature -LiteralPath $env:OK_EF_VERIFY_LAUNCHER; "
-        "@{status=[int]$s.Status; signer=$s.SignerCertificate.Thumbprint; subject=$s.SignerCertificate.Subject} | ConvertTo-Json -Compress"
+        "$p=(Get-Item -LiteralPath $env:OK_EF_VERIFY_LAUNCHER).VersionInfo.ProductName; "
+        "@{status=[int]$s.Status; signer=$s.SignerCertificate.Thumbprint; product=$p} | ConvertTo-Json -Compress"
     )
     result = subprocess.run(
         [
@@ -109,19 +130,12 @@ def verify_launcher(path: str) -> None:
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
     signature = json.loads(result.stdout)
-    if signature.get("status") != 0:
-        raise RuntimeError(f"Official launcher signature is invalid: {path}")
-    if (signature.get("signer") or "").upper() in OFFICIAL_SIGNERS:
-        return
-    # International GRYPHLINK can use GRYPH FRONTIER's publisher certificate.
-    # Require a valid Authenticode chain AND the verified publisher name; never
-    # accept arbitrary signed launchers merely because their file name matches.
-    subject = signature.get("subject") or ""
-    organization = re.search(r'(?:^|,\s*)O=(?:"([^"]+)"|([^,]+))', subject, re.IGNORECASE)
-    name = (organization.group(1) or organization.group(2) or "").strip() if organization else ""
-    if _path_has_part(path, "GRYPHLINK") and name.upper() == "GRYPH FRONTIER PTE. LTD.":
-        return
-    raise RuntimeError(f"Official launcher signature is invalid or unrecognized: {path}")
+    if signature.get("status") != 0 or (signature.get("signer") or "").upper() not in OFFICIAL_SIGNERS:
+        raise RuntimeError(f"Official launcher signature is invalid or unrecognized: {path}")
+    if company is not None:
+        products = {name.casefold() for name in LAUNCHER_PRODUCTS[company]}
+        if (signature.get("product") or "").strip().casefold() not in products:
+            raise RuntimeError(f"Official launcher product does not match {company}: {path}")
 
 
 def _cached_launcher() -> str:
@@ -145,13 +159,13 @@ def _save_cached_launcher(path: str, logger) -> None:
         logger.warning(f"Cannot persist official launcher path: {error}")
 
 
-def _registered_launchers() -> list[str]:
-    """Return launcher paths registered by the Hypergryph installer."""
+def _registered_launchers(company: str) -> list[str]:
+    """Query only the selected channel; never mix two installers' results."""
     import winreg
 
     key_path = rf"Software\Microsoft\Windows\CurrentVersion\Uninstall\{LAUNCHER_ID}"
     paths = []
-    for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+    for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE) if company == "Hypergryph" else ():
         for view in (winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY):
             try:
                 with winreg.OpenKey(root, key_path, 0, winreg.KEY_READ | view) as key:
@@ -161,11 +175,11 @@ def _registered_launchers() -> list[str]:
                     paths.append(path)
             except OSError:
                 continue
-    # Global official launcher registration (XXMI's GRYPHLINK lookup).
+    # Both launchers register install_path, under their own product key.
     for view in (winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY):
         try:
             with winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER, GRYPHLINE_REGISTRY_KEY, 0, winreg.KEY_READ | view
+                winreg.HKEY_CURRENT_USER, CHANNEL_REGISTRY_KEYS[company], 0, winreg.KEY_READ | view
             ) as key:
                 location = winreg.QueryValueEx(key, "install_path")[0]
             root = Path(location)
@@ -194,30 +208,22 @@ def installed_launcher(game_path: str, logger) -> str:
     """Find and verify the selected-channel launcher, then cache its location."""
     # Prefer the launcher adjacent to this installation over a cached launcher
     # from another channel. Registry/cache serve as fallbacks for relocated games.
+    company = _game_company(game_path)
     candidates = [("game path", path) for path in _game_path_launchers(game_path)]
-    candidates.extend(("registry", path) for path in _registered_launchers())
+    candidates.extend(("registry", path) for path in _registered_launchers(company))
     candidates.append(("cache", _cached_launcher()))
-    expected_channel = (
-        "gryphline" if _path_has_part(game_path, "GRYPHLINK")
-        else "hypergryph" if _path_has_part(game_path, "Hypergryph Launcher")
-        else None
-    )
 
     seen = set()
     errors = []
     for source, path in candidates:
         if not path:
             continue
-        if expected_channel is not None:
-            is_gryphline = _path_has_part(path, "GRYPHLINK")
-            if is_gryphline != (expected_channel == "gryphline"):
-                continue
         normalized = os.path.normcase(os.path.abspath(path))
         if normalized in seen:
             continue
         seen.add(normalized)
         try:
-            verify_launcher(path)
+            verify_launcher(path, company)
         except Exception as error:
             logger.warning(f"Cannot use official launcher from {source}: path={path}, error={error}")
             errors.append(error)
@@ -388,6 +394,7 @@ def prepare_launcher(kernel, logger, game_path: str):
 
 def find_official_games_exe(game_path: str, logger) -> Path:
     """Choose the newest signed Games.exe within the verified official launcher."""
+    company = _game_company(game_path)
     launcher = Path(installed_launcher(game_path, logger))
     candidates = []
     for folder in launcher.parent.iterdir():
@@ -405,7 +412,7 @@ def find_official_games_exe(game_path: str, logger) -> Path:
     failures = []
     for _, exe in sorted(candidates, reverse=True):
         try:
-            verify_launcher(str(exe))
+            verify_launcher(str(exe), company)
             return exe
         except Exception as error:
             failures.append(error)
@@ -554,17 +561,13 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
     if platform is not None:
         return _launch_via_platform(game_path, arguments, platform, logger)
 
+    company = _game_company(game_path)
     kernel = _kernel32()
     parent = create_temporary_parent(kernel, game_path, logger)
     child_created = False
     try:
         # Snapshot existing log offsets BEFORE starting the new game process.
-        # The CN SDK log contract is not established for GRYPHLINK. Preserve
-        # its suspended parent until game exit rather than applying CN log gates.
-        if _path_has_part(game_path, "GRYPHLINK"):
-            cleanup = LauncherCleanup(kernel, parent, logger, verify_sdk_logs=False)
-        else:
-            cleanup = LauncherCleanup(kernel, parent, logger)
+        cleanup = LauncherCleanup(kernel, parent, logger, company=company)
         if running_pids("Endfield.exe"):
             return True
         pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
