@@ -233,7 +233,7 @@ def install_combat_decision_trace_patch():
         _publish(self, "未知角色", "连携技", state, reason, detail, dedupe_key=key)
         return result
 
-    def try_battle_token_with_reason(self, token, sp, overflow=False, advance_cursor=True):
+    def try_battle_token_with_reason(self, token, sp, overflow=False, advance_cursor=True, **kwargs):
         if _task_trace_enabled(self.task):
             actor, state, reason, reason_key = _describe_battle_wait(self, token, sp)
             _publish(
@@ -252,6 +252,7 @@ def install_combat_decision_trace_patch():
             sp,
             overflow=overflow,
             advance_cursor=advance_cursor,
+            **kwargs,
         )
         if result and _task_trace_enabled(self.task):
             actor = _actor_for_token(self, token)
