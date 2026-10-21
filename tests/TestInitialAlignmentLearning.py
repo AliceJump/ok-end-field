@@ -75,6 +75,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task._zip_line_motion_route_fingerprint = lambda *a, **k: ZipLineMixin._zip_line_motion_route_fingerprint(
             task, *a, **k
         )
+
         def pass_gate(*args, on_gate_confirmed=None):
             if on_gate_confirmed is not None:
                 on_gate_confirmed(task.next_frame())
@@ -259,8 +260,8 @@ class TestInitialAlignmentLearning(unittest.TestCase):
     def test_gold_gate_saves_before_e_failure_but_does_not_train_twice(self):
         # All three E retries must still have fresh target detections.
         task = self.zip_task(
-            [gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
-             gold_tests.TestZipLineGoldGate._matched_icon()] * 4
+            [gold_tests.TestZipLineGoldGate._matched_icon(1400, 800), gold_tests.TestZipLineGoldGate._matched_icon()]
+            * 4
         )
         context = self.zip_context(task)
 
@@ -276,10 +277,12 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (1, 40, 20))
 
     def test_gate_retry_recorded_random_search_is_part_of_full_verified_motion(self):
-        task = self.zip_task([
-            gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
-            *[gold_tests.TestZipLineGoldGate._matched_icon()] * 8,
-        ])
+        task = self.zip_task(
+            [
+                gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
+                *[gold_tests.TestZipLineGoldGate._matched_icon()] * 8,
+            ]
+        )
         context = self.zip_context(task)
 
         def search_then_gate(*args, on_gate_confirmed=None):
@@ -297,10 +300,12 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (1, 130, -10))
 
     def test_rejected_random_search_input_still_cannot_save_gold_gate_sample(self):
-        task = self.zip_task([
-            gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
-            *[gold_tests.TestZipLineGoldGate._matched_icon()] * 8,
-        ])
+        task = self.zip_task(
+            [
+                gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
+                *[gold_tests.TestZipLineGoldGate._matched_icon()] * 8,
+            ]
+        )
         context = self.zip_context(task)
         task.active_and_send_mouse_delta.side_effect = [True, False]
 

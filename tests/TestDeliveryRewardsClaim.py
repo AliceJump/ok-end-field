@@ -132,7 +132,6 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
                 self.assertEqual(feature.click_confirm.called, quote_ready)
                 self.assertEqual(feature.mark_task_failure.called, not success)
 
-
     def test_view_quote_transfers_without_packing(self):
         for quote_text in ("查看报价", "查看報價"):
             with self.subTest(quote_text=quote_text):
@@ -177,7 +176,6 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         self.assertEqual(feature.blind_spot_speed_up.call_args.kwargs["feature"], fL.skip_dialog_confirm)
         feature.click_confirm.assert_called_once_with()
         feature.wait_pop_up.assert_called_once_with()
-
 
 
 if __name__ == "__main__":
