@@ -4,8 +4,8 @@ from enum import Enum
 class FeatureList(str, Enum):
     all_receive = "all_receive"
     assist_friend = "assist_friend"
-    auto_farmer = "auto_farmer"  # 自动农植机图标
-    auto_farmer_on_map = "auto_farmer_on_map"  # 自动农植机地图图标
+    auto_farmer = "auto_farmer"
+    auto_farmer_on_map = "auto_farmer_on_map"
     b = "b"
     b_2k = "b_2k"
     b_4k = "b_4k"
@@ -145,7 +145,7 @@ class FeatureList(str, Enum):
     essence_ui_marker = "essence_ui_marker"
     essence_unlocked = "essence_unlocked"
     exchange_room = "exchange_room"
-    farm_related_icon = "farm_related_icon"  # 标记显示管理中的农牧相关图标
+    farm_related_icon = "farm_related_icon"
     fill_max = "fill_max"
     friend_chat_icon = "friend_chat_icon"
     friend_page = "friend_page"
@@ -176,6 +176,7 @@ class FeatureList(str, Enum):
     liaison_confirm = "liaison_confirm"
     liaison_stage = "liaison_stage"
     log_out_confirm = "log_out_confirm"
+    login_in = "login_in"
     login_reward_icon = "login_reward_icon"
     logout = "logout"
     main_centre_icon = "main_centre_icon"
@@ -214,7 +215,7 @@ class FeatureList(str, Enum):
     products_collect_icon = "products_collect_icon"
     products_icon = "products_icon"
     q = "q"
-    ranch = "ranch"  # 牧场地图图标
+    ranch = "ranch"
     rationality_supplement_page = "rationality_supplement_page"
     receive_clue_enter = "receive_clue_enter"
     receive_good = "receive_good"

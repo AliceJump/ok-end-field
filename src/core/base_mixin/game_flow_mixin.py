@@ -230,6 +230,7 @@ class GameFlowMixin:
                 or self.find_one(fL.monthly_card2)
                 or self.find_one(fL.logout)
                 or self.find_one(fL.login_reward_icon)
+                or self.find_one(fL.login_in)
             ):
                 run_at_window_pos(self.get_game_hwnd(), super().click, *self.screen_center(), 1, 0.5, 0.5)
                 return False
