@@ -204,11 +204,11 @@ def _game_path_launchers(game_path: str) -> list[str]:
     return candidates
 
 
-def installed_launcher(game_path: str, logger) -> str:
+def installed_launcher(game_path: str, logger, company: str | None = None) -> str:
     """Find and verify the selected-channel launcher, then cache its location."""
     # Prefer the launcher adjacent to this installation over a cached launcher
     # from another channel. Registry/cache serve as fallbacks for relocated games.
-    company = _game_company(game_path)
+    company = company or _game_company(game_path)
     candidates = [("game path", path) for path in _game_path_launchers(game_path)]
     candidates.extend(("registry", path) for path in _registered_launchers(company))
     candidates.append(("cache", _cached_launcher()))
@@ -392,10 +392,10 @@ def prepare_launcher(kernel, logger, game_path: str):
     raise TimeoutError("Official Games.exe did not become ready within 30 seconds")
 
 
-def find_official_games_exe(game_path: str, logger) -> Path:
+def find_official_games_exe(game_path: str, logger, company: str | None = None) -> Path:
     """Choose the newest signed Games.exe within the verified official launcher."""
-    company = _game_company(game_path)
-    launcher = Path(installed_launcher(game_path, logger))
+    company = company or _game_company(game_path)
+    launcher = Path(installed_launcher(game_path, logger, company=company))
     candidates = []
     for folder in launcher.parent.iterdir():
         if not folder.is_dir():
@@ -420,9 +420,9 @@ def find_official_games_exe(game_path: str, logger) -> Path:
     raise RuntimeError("Cannot find a signed official Games.exe") from failures[-1]
 
 
-def create_temporary_parent(kernel, game_path: str, logger):
+def create_temporary_parent(kernel, game_path: str, logger, company: str | None = None):
     """Create our own suspended Games.exe, without touching running launcher processes."""
-    executable = find_official_games_exe(game_path, logger)
+    executable = find_official_games_exe(game_path, logger, company=company)
     startup = _StartupInfoEx()
     startup.StartupInfo.cb = ctypes.sizeof(_StartupInfo)
     process = _ProcessInfo()
@@ -563,29 +563,39 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
 
     company = _game_company(game_path)
     kernel = _kernel32()
-    parent = create_temporary_parent(kernel, game_path, logger)
-    child_created = False
-    try:
-        # Snapshot existing log offsets BEFORE starting the new game process.
-        cleanup = LauncherCleanup(kernel, parent, logger, company=company)
-        if running_pids("Endfield.exe"):
+    # Parent compatibility is independent of the game's company/log directory.
+    # Prefer its own launcher, then try the other known official product once.
+    companies = [company, *(other for other in LAUNCHER_PRODUCTS if other != company)]
+    failures = []
+    for parent_company in companies:
+        parent = None
+        child_created = False
+        try:
+            parent = create_temporary_parent(kernel, game_path, logger, company=parent_company)
+            # Always watch the game's logs, including when its parent is cross-channel.
+            cleanup = LauncherCleanup(kernel, parent, logger, company=company)
+            if running_pids("Endfield.exe"):
+                return True
+            pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
+            child_created = True
+            note_game_started(cleanup.parent_pid, pid, logger)
+            logger.info(f"Created Endfield with suspended official launcher parent: pid={pid}, launcher={parent_company}")
+            if _start_cleanup(cleanup, pid, kernel, parent, logger):
+                parent = None  # The background watcher owns the process handle now.
             return True
-        pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
-        child_created = True
-        note_game_started(cleanup.parent_pid, pid, logger)
-        logger.info(f"Created Endfield with suspended official launcher parent: pid={pid}")
-        if _start_cleanup(cleanup, pid, kernel, parent, logger):
-            parent = None  # The background watcher owns the process handle now.
-        return True
-    finally:
-        if parent:
-            if not child_created:
-                # Failed before game creation; this is our own disposable process.
+        except Exception as error:
+            if child_created:
+                raise  # A post-creation failure must never trigger another launch.
+            logger.warning(f"Cannot launch Endfield using {parent_company}: {error}")
+            failures.append(error)
+        finally:
+            if parent:
                 try:
-                    if kernel.TerminateProcess(parent, 0):
+                    if not child_created:
+                        # Do not create another parent if disposal of this one fails.
+                        if not kernel.TerminateProcess(parent, 0):
+                            raise OSError("Could not terminate aborted owned temporary Games.exe")
                         forget_owned_parent(kernel.GetProcessId(parent), logger)
-                    else:
-                        logger.warning("Could not terminate aborted owned temporary Games.exe")
-                except Exception as error:
-                    logger.warning(f"Cannot discard aborted temporary Games.exe: {error}")
-            kernel.CloseHandle(parent)
+                finally:
+                    kernel.CloseHandle(parent)
+    raise failures[-1]
