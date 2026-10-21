@@ -671,6 +671,8 @@ def reorganize_tasks_architecture(executor: Any) -> None:
         "DemoBattleTask": "战斗",
         "ActivityRewardTask": "奖励",
         "DailyRewardTask": "奖励",
+        # 农牧领取按一条龙执行顺序排在自动送货之前，行序见 _endfield_refresh_ui 的 roster 排序
+        "FarmRelatedTask": "其他",
         "HomePointTask": "其他",
         # 清单里的「自动送货」由日常自动送货执行，随其它物流任务同栏
         "DailyDeliveryTask": "其他",
@@ -780,6 +782,9 @@ def patch_onetime_task_tab() -> None:
                         [getattr(t, "name", "") for t in dropped],
                     )
                 self.tasks = [t for t in self.tasks if (getattr(t, "name", "") or "") in roster]
+                # 行序按一条龙执行顺序，而非任务注册顺序（注册末尾的农牧领取要排在自动送货之前）
+                order = {name: index for index, name in enumerate(roster)}
+                self.tasks.sort(key=lambda task: order.get(getattr(task, "name", "") or "", len(order)))
 
             # 日常类顶栏统一渲染为终末地分区矩阵（统一勾选点、策略 Tag、预估耗时与配置入口）
             if self.group_name in MATRIX_GROUPS and self.tasks:
