@@ -11,7 +11,7 @@ from src.data.release_burst_planner import ReleaseBurstAction, ReleaseBurstPlann
 from src.data.skill_timing import load_skill_timings
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 from tests.TestComboQueueScheduling import QueueTask
-from tests.TestSkillTiming import FakeTask
+from tests.TestSkillTiming import FakeTask, confirm_dark_highlights, settle_highlights
 
 
 class TestMechanismPrediction(unittest.TestCase):
@@ -169,6 +169,7 @@ class TestMechanismPrediction(unittest.TestCase):
         task.battle_pulses = {'3'}
         logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
         logic._configure_team(['庄方宜', '佩丽卡', '艾维文娜', '梨诺'], reset_runtime=True)
+        settle_highlights(logic)
         logic.step()
         self.assertEqual(task.keys, ['3'])
         self.assertTrue(logic._attempt_mechanism.minimum_recall)
@@ -224,12 +225,11 @@ class TestMechanismPrediction(unittest.TestCase):
         self.assertEqual(logic._attempt_mechanism.selected_swords, 3)
         self.assertEqual(logic._attempt_mechanism.same_cast_requested_swords, 3)
         task.battle_pulses.clear()
-        task.now = 4.2
-        logic._confirm_battle(task.now)
+        confirm_dark_highlights(logic)
         self.assertEqual(len(logic.release_burst.mechanism_state.requests), 1)
         task.now = 10
         task.battle_pulses = {'1'}
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         action = logic._release_battle_candidate('1', 100, 10, set())
         self.assertGreater(action.value, 140000)
         self.assertEqual(action.sp_cost, 100)
@@ -358,7 +358,7 @@ class TestMechanismPrediction(unittest.TestCase):
         logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
         logic._configure_team(['艾维文娜'], reset_runtime=True)
         logic.release_burst.confirm('1', 'link', 0)
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         action = logic._release_battle_candidate('1', 100, 1, set())
         decision = logic.release_burst.choose((action,), 100, 1, conditions=logic._scene_conditions())
         self.assertAlmostEqual(logic._overflow_score('1')*max(action.duration, .3), decision.damage)
@@ -435,7 +435,7 @@ class TestMechanismPrediction(unittest.TestCase):
         p.confirm('1', 'battle', 3, mechanism=p.mechanism_quote('1', 3, obs))
         task.now = 10
         task.battle_pulses = {'1'}
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         action = logic._release_battle_candidate('1', 100, 10, set())
         before = p.mechanism_state
         decision = p.choose((action,), 100, 10, conditions=logic._scene_conditions())
@@ -608,6 +608,7 @@ class TestZhuangEffectiveMultipliers(unittest.TestCase):
         logic._configure_team(['庄方宜'], reset_runtime=True)
         p = logic.release_burst
         p.confirm('1', 'ult', 0)
+        settle_highlights(logic)
         logic.step()
         self.assertEqual(task.keys, ['1'])
         self.assertTrue(any('211551' in message for message in task.messages))

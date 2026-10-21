@@ -8,7 +8,7 @@ from src.data.battle_highlight import BattleHighlightState
 from src.data.release_burst_planner import ReleaseBurstAction, ReleaseBurstPlanner
 from src.data.skill_timing import load_skill_timings
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
-from tests.TestSkillTiming import FakeTask
+from tests.TestSkillTiming import FakeTask, settle_highlights
 
 
 class TestHighlightDamageDecision(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestHighlightDamageDecision(unittest.TestCase):
         logic._observe_battle_highlights()
         self.assertFalse(logic.battle_highlights.observations['1'].visible)
         self.assertTrue(logic._try_battle_token('2', 300))
-        self.assertEqual(seen, [()])
+        self.assertEqual(seen, [(), (), (), ()])
         self.assertEqual(task.keys, ['2'])
         self.assertTrue(logic.battle_highlights.observations['1'].visible)
 
@@ -43,7 +43,7 @@ class TestHighlightDamageDecision(unittest.TestCase):
                 logic._configure_team(['弧光', '佩丽卡'], reset_runtime=True)
                 state = [initial]
                 task.is_battle_skill_pulsing = lambda _token: state[0]
-                logic._observe_battle_highlights()
+                settle_highlights(logic)
 
                 def refresh():
                     task.now += .05
@@ -72,6 +72,26 @@ class TestHighlightDamageDecision(unittest.TestCase):
         other = evaluator.assess(state.observe('1', self.store.profiles('弧光', 'battle'), True, 2))
         self.assertEqual(planner.battle_values('1', other), (base, 0))
 
+    def test_temporal_condition_changes_real_quote_only_after_confirmed_darkness(self):
+        task = FakeTask()
+        task.sp = 100
+        task.battle_pulses = {'1'}
+        logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
+        logic._configure_team(['弧光', '佩丽卡'], reset_runtime=True)
+        settle_highlights(logic)
+        bright = logic._release_battle_candidate('1', 100, task.now, set())
+        self.assertGreater(bright.observed_bonus, 0)
+        task.battle_pulses.clear()
+        task.next_frame()
+        logic._observe_battle_highlights()
+        self.assertFalse(logic.battle_highlights.observations['1'].visible)
+        dip = logic._release_battle_candidate('1', 100, task.now, set())
+        self.assertEqual(dip.observed_bonus, bright.observed_bonus)
+        settle_highlights(logic)
+        dark = logic._release_battle_candidate('1', 100, task.now, set())
+        self.assertEqual(dark.observed_bonus, 0)
+        self.assertFalse(task.keys)
+
     def test_raw_visible_ring_cannot_enable_damage_without_condition_assessment(self):
         planner = ReleaseBurstPlanner(['弧光'], store=self.store)
         sensor = BattleHighlightState(self.store)
@@ -88,11 +108,11 @@ class TestHighlightDamageDecision(unittest.TestCase):
         logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
         logic._configure_team(['狼卫', '安塔尔', '余烬', '骏卫'], reset_runtime=True)
         task.sp = 100
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         plain = logic._release_battle_candidate('1', 100, 0, set())
         plain_score = logic._overflow_score('1')
         task.battle_pulses.add('1')
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         enhanced = logic._release_battle_candidate('1', 100, 0, set())
         self.assertEqual(plain.value, enhanced.value)
         self.assertEqual(plain.observed_bonus, 0)
@@ -100,7 +120,7 @@ class TestHighlightDamageDecision(unittest.TestCase):
         self.assertEqual((plain.sp_cost, enhanced.sp_cost), (100, 100))
         self.assertGreater(logic._overflow_score('1'), plain_score)
         task.battle_pulses.clear()
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         self.assertEqual(logic._overflow_score('1'), plain_score)
         self.assertTrue(logic._try_battle_token('1', 100))
 
@@ -177,11 +197,11 @@ class TestHighlightDamageDecision(unittest.TestCase):
         logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
         logic._configure_team(['弧光', '安塔尔', '佩丽卡', '余烬'], reset_runtime=True)
         logic.release_burst.confirm('2', 'ult', 0)
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         plain = logic._release_battle_candidate('1', 100, 0, set())
         plain_score = logic._overflow_score('1')
         task.battle_pulses.add('1')
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         enhanced = logic._release_battle_candidate('1', 100, 0, set())
         self.assertEqual((plain.sp_cost, enhanced.sp_cost), (100, 100))
         self.assertEqual(plain.base_components, enhanced.base_components)
@@ -191,7 +211,7 @@ class TestHighlightDamageDecision(unittest.TestCase):
         self.assertAlmostEqual(logic._overflow_score('1'), expected / max(enhanced.duration, .3))
         self.assertGreater(logic._overflow_score('1'), plain_score)
         task.battle_pulses.clear()
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         self.assertEqual(logic._overflow_score('1'), plain_score)
         self.assertIsNotNone(logic._release_battle_candidate('1', 100, 0, set()))
 

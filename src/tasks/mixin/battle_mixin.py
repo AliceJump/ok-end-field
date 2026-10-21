@@ -1132,18 +1132,30 @@ class BattleMixin(BaseEfTask):
         """Sample all fixed button rings together, without deciding any action."""
         member_count = int(getattr(self, "_battle_member_count", 0) or 0)
         if not 1 <= member_count <= len(RECOMMEND_SKILL_REGIONS):
+            self._battle_highlight_sample_frame = None
             return {}
         unknown = dict.fromkeys((str(i) for i in range(1, member_count + 1)))
         frame = self.frame
+        self._battle_highlight_sample_frame = frame
+        stamp = getattr(getattr(self, '_executor', None), '_last_frame_time', None)
+        self._battle_highlight_sample_token = stamp
         if frame is None or frame.size == 0:
             return unknown
-        regions = RECOMMEND_SKILL_REGIONS[-member_count:]
+        cached = getattr(self, '_battle_highlight_batch_cache', None)
+        if cached is not None and cached[0] is frame and cached[1] == member_count and cached[3] == stamp:
+            return dict(cached[2])
+        regions = RECOMMEND_SKILL_REGIONS
         detector = get_recommend_skill_detector()
         ratios = [detector.white_ratio(frame, float(r["x"]), float(r["y"]), float(r["button_radius"]))
                   for r in regions]
+        ratios = ratios[-member_count:]
+        regions = regions[-member_count:]
         if len(regions) >= 3 and all(ratio >= PULSE_ON_RATIO for ratio in ratios):
-            return unknown
-        return {str(i): ratio >= PULSE_ON_RATIO for i, ratio in enumerate(ratios, 1)}
+            result = unknown
+        else:
+            result = {str(i): ratio >= PULSE_ON_RATIO for i, ratio in enumerate(ratios, 1)}
+        self._battle_highlight_batch_cache = frame, member_count, result, stamp
+        return dict(result)
 
     def is_battle_skill_pulsing(self, slot):
         """Existing execution hook; sensing does not imply mechanism readiness."""

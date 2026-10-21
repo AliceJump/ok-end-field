@@ -30,6 +30,16 @@ class PlanningInputs:
         return self.rings.get(slot)
 
 
+def observe_declared_conditions(logic):
+    """Offline scenarios declare calibrated states, not one captured frame."""
+    logic._observe_battle_highlights()
+    logic.highlight_stability.clear()
+    for sampled_at in (-.16, -.1, -.05, 0.):
+        logic.highlight_stability.observe(logic.battle_highlights.observations, sampled_at)
+    logic.release_burst.observe_conditions({slot: logic._battle_condition(slot)
+                                           for slot in logic.highlight_stability.observations})
+
+
 def prepare(scenarios, destination):
     """Opening-only inputs. Runtime scene changes always build different keys."""
     if not isinstance(scenarios, list) or len(scenarios) > 256:
@@ -52,7 +62,7 @@ def prepare(scenarios, destination):
         logic = TimedCombatLogic(PlanningInputs(ready, rings), store, clock=lambda: 0.0)
         logic._configure_team(team, reset_runtime=True)
         logic.release_burst.decision_table = table
-        logic._observe_battle_highlights()
+        observe_declared_conditions(logic)
         logic._burst_main_control = main
         logic._release_burst_decision(logic._ready_ultimate_actions(), sp, 0.0)
     table.save(destination)

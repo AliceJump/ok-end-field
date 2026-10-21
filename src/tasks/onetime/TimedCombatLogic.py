@@ -12,6 +12,7 @@ from ok import FinishedException, TaskDisabledException
 from src.data.battle_conditions import BattleConditionEvaluator, ConditionRequirement, ForecastConditions
 from src.data.battle_execution_policy import battle_execution_policy
 from src.data.battle_highlight import BattleHighlightState
+from src.data.battle_highlight_stability import BattleHighlightStability
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
 from src.data.combat_observation import (
     ActionBlockReason,
@@ -76,6 +77,7 @@ class TimedCombatLogic:
         self.damage_quotes = {}
         self.release_burst = None
         self.battle_highlights = None
+        self.highlight_stability = BattleHighlightStability()
         self.battle_condition_evaluator = BattleConditionEvaluator()
         self._burst_main_control = None
         self._ult_action_seconds = {}
@@ -506,6 +508,7 @@ class TimedCombatLogic:
     def _confirm_battle(self, now):
         if self.pending is None:
             return
+        self._observe_battle_highlights()
         before_sp, token, expected_cost = self.pending
         if self._uses_white_acknowledgement(token):
             self._confirm_pulsed_battle(now, before_sp, token, expected_cost)
@@ -642,6 +645,7 @@ class TimedCombatLogic:
 
         self.team = team
         self.battle_highlights = BattleHighlightState(self.store) if isinstance(self.store, SkillTimingStore) else None
+        self.highlight_stability.clear()
         self.battle_condition_evaluator = BattleConditionEvaluator(team)
         self.task._battle_team = list(team)
         self.task._battle_member_count = len(team)
@@ -970,29 +974,20 @@ class TimedCombatLogic:
     def _uses_white_acknowledgement(self, token):
         return self._battle_execution_policy(token).uses_white_acknowledgement
 
-    def _battle_pulse_state(self, token, *, samples=None):
-        if samples is None:
-            probe = getattr(self.task, "is_battle_skill_pulsing", None)
-            state = probe(token) if callable(probe) else None
-        else:
-            state = samples.get(token)
-        if self.battle_highlights is not None:
-            profiles, _, _ = self._battle_context(token)
-            observation = self.battle_highlights.observe(token, profiles, state, self._clock())
-            if observation is not None:
-                return observation.visible
-        return state if type(state) is bool else None
+    def _battle_pulse_state(self, token):
+        observation = self.highlight_stability.observations.get(token)
+        return observation.visible if observation is not None else None
 
     def _execution_allows_battle(self, token):
         policy = self._battle_execution_policy(token)
         return policy.can_attempt(self._battle_pulse_state(token) if policy.uses_white_acknowledgement else None)
 
     def _battle_condition(self, token):
-        observation = self.battle_highlights.observations.get(token) if self.battle_highlights is not None else None
+        observation = self.highlight_stability.observations.get(token)
         return self.battle_condition_evaluator.assess(observation)
 
     def _scene_conditions(self):
-        return (self.battle_condition_evaluator.forecast(self.battle_highlights.observations)
+        return (self.battle_condition_evaluator.forecast(self.highlight_stability.observations)
                 if self.battle_highlights is not None else ForecastConditions())
 
     def _observe_battle_highlights(self):
@@ -1009,16 +1004,17 @@ class TimedCombatLogic:
                 bound[token] = profiles
             else:
                 self.battle_highlights.observations.pop(token, None)
-        if not bound:
-            if self.release_burst is not None:
-                self.release_burst.observe_conditions({})
-            return
         monitor = getattr(self.task, "observe_battle_skill_highlights", None)
         samples = monitor() if callable(monitor) else None
         if callable(monitor) and not isinstance(samples, dict):
             samples = {}
         for token in bound:
-            self._battle_pulse_state(token, samples=samples)
+            probe = getattr(self.task, "is_battle_skill_pulsing", None)
+            state = samples.get(token) if isinstance(samples, dict) else probe(token) if callable(probe) else None
+            self.battle_highlights.observe(token, bound[token], state, self._clock())
+        self.highlight_stability.observe(self.battle_highlights.observations, self._raw_clock(),
+                                        frame=getattr(self.task, '_battle_highlight_sample_frame', None),
+                                        sample_token=getattr(self.task, '_battle_highlight_sample_token', None))
         if self.release_burst is not None:
             self.release_burst.observe_conditions({token: self._battle_condition(token) for token in bound})
 
@@ -1053,15 +1049,22 @@ class TimedCombatLogic:
         # attempt, including ordinary buttons; no capture for SP/lock failures.
         def condition_key():
             return tuple(sorted((slot, obs.skill_ids, obs.condition_json, obs.visible)
-                                for slot, obs in self.battle_highlights.observations.items()))
+                                for slot, obs in self.highlight_stability.observations.items()))
 
         previous = condition_key() if self.battle_highlights is not None else ()
-        self.task.next_frame()
-        self._observe_battle_highlights()
+        for index in range(4):
+            if index:
+                self.task.sleep(.05)
+            self.task.next_frame()
+            self._observe_battle_highlights()
         if revalidate_forecast and self.battle_highlights is not None and previous != condition_key():
             self.task.log_info("时间排轴: 战技按前白圈条件变化，保留技力并重新选招")
             return False
         if not self._execution_allows_battle(token):
+            return False
+        current_profiles, current_gate, current_cost = self._battle_context(token)
+        if ((current_profiles, current_gate, current_cost) != (profiles, sp_gate, expected_cost)
+                or not self._ready(profiles, slot=token, kind="battle")):
             return False
 
         self.phase_planner.start_if_ready(token, "battle")
@@ -1076,6 +1079,8 @@ class TimedCombatLogic:
                      token, 'battle', started, max(p.handoff for p in profiles), mechanism=self._attempt_mechanism),
                  **asdict(self._attempt_mechanism)}, ensure_ascii=False))
         self.task.send_key(token)
+        if self._uses_white_acknowledgement(token):
+            self.highlight_stability.arm_disappearance(token)
         self._note_action_attempt("battle", token)
         self._begin(profiles, started, slot=token, kind="battle")
         self.pending_advance_cursor = advance_cursor
@@ -1412,6 +1417,7 @@ class TimedCombatLogic:
             # Recovery advanced the scene; the pre-animation batch is no
             # longer current evidence for the immediate overflow check.
             self.battle_highlights.observations.clear()
+            self.highlight_stability.clear()
             if self.release_burst is not None:
                 self.release_burst.observe_conditions({})
         if self._wait_assumed_success_feedback():
@@ -1576,6 +1582,7 @@ class TimedCombatLogic:
                 if deadline is not None and now >= deadline:
                     return False
                 task.next_frame()
+                self._observe_battle_highlights()
                 if now >= next_exit:
                     next_exit = now + 0.5
                     condition = task._check_single_exit_condition()

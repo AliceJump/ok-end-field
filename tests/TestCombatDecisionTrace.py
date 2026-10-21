@@ -22,7 +22,7 @@ from src.gui.combat_decision_window import (
 from src.patches import combat_decision_trace_patch
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
-from tests.TestSkillTiming import FakeTask
+from tests.TestSkillTiming import FakeTask, confirm_dark_highlights, settle_highlights
 
 
 class TestCombatDecisionTrace(unittest.TestCase):
@@ -61,7 +61,7 @@ class TestCombatDecisionTrace(unittest.TestCase):
                     logic.release_burst.confirm('1', 'ult', 0)
                     logic.free_battle_once.add('1')
                     task.now = 3.2
-                    logic._observe_battle_highlights()
+                    settle_highlights(logic)
                     frames = []
 
                     def refresh():
@@ -75,7 +75,7 @@ class TestCombatDecisionTrace(unittest.TestCase):
                                                      (('1', 'battle'),), 211550, 211550)
                     with patch.object(logic, '_release_burst_decision', return_value=decision):
                         logic.step()
-                    self.assertEqual(len(frames), 1)
+                    self.assertEqual(len(frames), 4)
                     self.assertEqual(task.keys, [] if changed else ['1'])
                     self.assertTrue(logic.release_burst.stance_at('1', task.now).free_battle)
                     if changed:
@@ -83,7 +83,7 @@ class TestCombatDecisionTrace(unittest.TestCase):
                     else:
                         self.assertEqual(logic.pending[2], 0)
                         task.battle_pulses.clear()
-                        logic._confirm_battle(task.now)
+                        confirm_dark_highlights(logic)
                         self.assertFalse(logic.release_burst.stance_at('1', task.now).free_battle)
 
     def test_same_semantic_decision_updates_live_row_without_spamming_history(self):

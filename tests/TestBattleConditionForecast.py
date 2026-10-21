@@ -12,7 +12,7 @@ from src.data.highlight_producers import read_producers
 from src.data.release_burst_planner import ReleaseBurstAction, ReleaseBurstPlanner
 from src.data.skill_timing import load_skill_timings
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
-from tests.TestSkillTiming import FakeTask
+from tests.TestSkillTiming import FakeTask, settle_highlights
 
 
 class TestBattleConditionForecast(unittest.TestCase):
@@ -108,7 +108,7 @@ class TestBattleConditionForecast(unittest.TestCase):
         task.battle_pulses.add('2')
         logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
         logic._configure_team(self.team, reset_runtime=True)
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         self.assertTrue(logic._scene_conditions().facts())
         logic._configure_team(['安塔尔', '佩丽卡', '狼卫', '莱万汀'])
         self.assertFalse(logic._scene_conditions().observations)
@@ -178,14 +178,14 @@ class TestBattleConditionForecast(unittest.TestCase):
         task.battle_pulses.add('2')
         logic = TimedCombatLogic(task, self.store, clock=lambda: task.now)
         logic._configure_team(['安塔尔', '弧光', '?', '?'], reset_runtime=True)
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         decision = logic._release_burst_decision(logic._ready_ultimate_actions(), 100, 0)
         self.assertEqual(decision.sequence, (('1', 'ult'), ('2', 'battle')))
         logic.step()
         self.assertIn('ult_1', task.keys)
         self.assertNotIn('2', task.keys)
         task.battle_pulses.clear()
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         ordinary = logic._release_battle_candidate('2', 100, task.now, set())
         self.assertEqual(ordinary.observed_bonus, 0)
 

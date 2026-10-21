@@ -23,7 +23,7 @@ from src.data.release_burst_planner import (
 from src.data.skill_timing import load_skill_timings
 from src.data.team_phase_planner import BurstAction, CombatPhase, make_burst_plan
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
-from tests.TestSkillTiming import FakeTask
+from tests.TestSkillTiming import FakeTask, confirm_dark_highlights, settle_highlights
 
 
 class TestYvonneWindowIntegration(unittest.TestCase):
@@ -687,7 +687,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertIsNone(logic.pending)
         self.assertTrue(logic.release_burst.bonuses)
         task.sp = 100
-        self.assertEqual(logic.release_burst.last_confirmed['1', 'battle'], .05)
+        self.assertAlmostEqual(logic.release_burst.last_confirmed['1', 'battle'], .35)
         task.now = 2
         logic.step()
         self.assertEqual(task.keys, ['1', '2'])
@@ -712,6 +712,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         task.ults = set()
         task.sp = 100
         task.battle_pulses = {"3"}  # An entity/distance hint is not a typed count or path hit.
+        settle_highlights(logic)
         logic.step()
         self.assertEqual(task.keys, ["3"])
         self.assertEqual(logic.pending[1], "3")
@@ -766,6 +767,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         logic.state_until["1"] = 10
         task.sp = 100
         task.ults = set()
+        settle_highlights(logic)
         logic.step()
         self.assertEqual(task.keys, ["3"])
 
@@ -964,7 +966,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
         self.assertIsNotNone(logic.pending)
         task.battle_pulses.clear()
-        logic.step()
+        confirm_dark_highlights(logic)
         self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
         self.assertEqual(logic._battle_context("1")[1:], (100, 100))
         task.now = 28
@@ -1027,7 +1029,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertTrue(logic._try_battle_token("1", 0))
         self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
         task.battle_pulses.clear()
-        logic._confirm_battle(task.now)
+        confirm_dark_highlights(logic)
         self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
         self.assertFalse(logic._try_battle_token("1", 0))
         self.assertEqual(task.keys, ["1", "1"])
@@ -1046,7 +1048,7 @@ class TestReleaseBurstDispatch(unittest.TestCase):
         self.assertIsNotNone(logic.pending)
         task.battle_pulses.clear()
         with patch.object(logic, "_sample_sp") as sample:
-            logic._confirm_battle(task.now)
+            confirm_dark_highlights(logic)
             sample.assert_not_called()
         self.assertIsNone(logic.pending)
         self.assertIn(logic.active[0].skill_id, logic.cooldowns)
@@ -1182,7 +1184,8 @@ class TestUltimateOutputWindow(unittest.TestCase):
             logic.step()
             self.assertEqual(task.keys, [], 'A selected free cast must not silently spend 100SP on another slot')
             self.assertIsNone(logic.pending)
-            task.now = 2.7
+            task.now = 3.2
+            settle_highlights(logic)
             logic.step()
         self.assertEqual(task.keys, ['1'])
         self.assertEqual(logic.pending[2], 0)
@@ -1195,7 +1198,7 @@ class TestUltimateOutputWindow(unittest.TestCase):
         task.detect_current_char_index = lambda: 0
         logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic._configure_team(['庄方宜', '佩丽卡', '艾维文娜', '梨诺'], reset_runtime=True)
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         logic._burst_main_control = '1'
         return task, logic
 
@@ -1260,6 +1263,8 @@ class TestUltimateOutputWindow(unittest.TestCase):
         self.assertEqual(task.keys, ['ult_1'])
         self.assertTrue(logic.release_burst.stance_at('1', task.now).free_battle)
         self.assertEqual(logic.forced_battle_token, '1')  # Still available to the next real planning step.
+        settle_highlights(logic)
+        task.detect_current_char_index = lambda: None  # Compare auxiliary openers without a held-normal alternative.
         logic.step()
         self.assertEqual(task.keys[1], 'ult_4')
 
@@ -1340,7 +1345,7 @@ class TestBurstDecisionTable(unittest.TestCase):
         p.decision_table = BurstDecisionTable()
         first = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 0)
         task.now = 100
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         with patch.object(p, '_search', side_effect=AssertionError('Unexpected full search')):
             second = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 100)
         self.assertEqual(second.sequence, first.sequence)
@@ -1352,7 +1357,7 @@ class TestBurstDecisionTable(unittest.TestCase):
         p.decision_table = BurstDecisionTable()
         first = logic._release_burst_decision([], 225, 0)
         task.battle_pulses.clear()
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         with patch.object(p, '_search', wraps=p._search) as search:
             second = logic._release_burst_decision([], 225, 0)
         self.assertTrue(search.called)
@@ -1490,7 +1495,7 @@ class TestBurstDecisionTable(unittest.TestCase):
                     self.assertTrue(logic._configure_team(team, reset_runtime=True))
                     p = logic.release_burst
                     self.assertEqual(set(p.rows), slots)
-                    logic._observe_battle_highlights()
+                    module.observe_declared_conditions(logic)
                     logic._burst_main_control = '1'
                     with patch.object(p, '_search', side_effect=AssertionError('Prepared roster must hit')):
                         decision = logic._release_burst_decision(logic._ready_ultimate_actions(), 225, 0)

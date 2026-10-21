@@ -198,7 +198,9 @@ class TestBattleSkillPulseQuery(unittest.TestCase):
             with patch.object(detector, "white_ratio", wraps=detector.white_ratio) as sample:
                 values = BattleMixin.observe_battle_skill_highlights(task)
                 self.assertEqual(values, {"1": False, "2": True, "3": False})
-                self.assertEqual(sample.call_count, 3)
+                self.assertEqual(sample.call_count, 4)
+                self.assertEqual(BattleMixin.observe_battle_skill_highlights(task), values)
+                self.assertEqual(sample.call_count, 4)  # Same capture is sampled once.
         self.assertTrue(detector.detect(task.frame, .920, .898, .037, "批次3"))
 
     def test_unusable_frame_or_party_is_not_disappearance(self):

@@ -5,7 +5,7 @@ from dataclasses import replace
 from src.data.skill_timing import load_skill_timings
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
-from tests.TestSkillTiming import FakeTask
+from tests.TestSkillTiming import FakeTask, confirm_dark_highlights, settle_highlights
 
 
 class _ControlTask(FakeTask):
@@ -184,6 +184,8 @@ class TestTimedMainControl(unittest.TestCase):
         self.assertTrue(logic.release_burst.stance_at("1", task.now).free_battle)
         task.battle_pulses.clear()
         logic.step()
+        self.assertIsNotNone(logic.pending)
+        confirm_dark_highlights(logic)
         self.assertIsNone(logic.pending)
         self.assertFalse(logic.release_burst.stance_at("1", task.now).free_battle)
 
@@ -214,9 +216,10 @@ class TestTimedMainControl(unittest.TestCase):
         # A short personal window makes this output urgent; without expiry,
         # taking the full held-normal window first can correctly win.
         logic.release_burst._release(logic.release_burst.bonuses, '2', 'ult', task.now)
-        logic.release_burst.bonuses = [replace(b, expires_at=task.now+1,
+        logic.release_burst.bonuses = [replace(b, expires_at=task.now+2,
             spec={**b.spec, 'magnitude': {**b.spec['magnitude'], 'base': 10}})
             for b in logic.release_burst.bonuses]
+        settle_highlights(logic)
         logic.step()
         self.assertEqual(task.keys, ["ult_1", "2"])
         self.assertLess(task.now, logic.forced_main_control_until)
@@ -274,7 +277,8 @@ class TestTimedMainControl(unittest.TestCase):
         self.assertEqual(task.keys, ["1"])
         self.assertEqual(task.switches, [])
         self.assertEqual(task.current, 0)
-        task.now = 1.3
+        task.now = logic.battle_retry_after['1'] + .05
+        settle_highlights(logic)
         logic.step()
         # An unconfirmed source must not hand off control. The new paid-cast
         # comparison may still select an available teammate after rejection.

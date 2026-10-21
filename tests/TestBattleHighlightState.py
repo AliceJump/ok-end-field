@@ -2,14 +2,85 @@
 
 import json
 import unittest
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from src.data.battle_conditions import BattleConditionEvaluator, ConditionRequirement, ForecastConditions
 from src.data.battle_execution_policy import battle_execution_policy
-from src.data.battle_highlight import BattleHighlightState
+from src.data.battle_highlight import BattleHighlightObservation, BattleHighlightState
+from src.data.battle_highlight_stability import BattleHighlightStability
 from src.data.skill_timing import load_skill_timings
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
-from tests.TestSkillTiming import FakeTask
+from tests.TestSkillTiming import FakeTask, confirm_dark_highlights, settle_highlights
+
+
+class TestTemporalHighlightEvidence(unittest.TestCase):
+    def sample(self, tracker, values, now, frame=None):
+        raw = {str(i): BattleHighlightObservation(('skill'+str(i),), 'predicate', value, now)
+               for i, value in enumerate(values, 1)}
+        return tracker.observe(raw, now, frame=frame)
+
+    def test_four_slots_calibrate_independently_and_a_dark_dip_keeps_bright(self):
+        t = BattleHighlightStability()
+        self.assertTrue(all(o.visible is None for o in self.sample(t, [True, False, True, None], 0).values()))
+        self.sample(t, [True, False, True, None], .05)
+        states = self.sample(t, [False, False, True, None], .16)
+        self.assertEqual([o.visible for o in states.values()], [True, False, True, None])
+        self.sample(t, [True, False, True, None], .2)
+        self.assertTrue(t.observations['1'].visible)
+        for now in (.25, .3, .4):
+            self.sample(t, [False, False, True, None], now)
+        self.assertFalse(t.observations['1'].visible)
+
+    def test_same_capture_is_not_multiple_frames_or_fresh_after_stall(self):
+        t = BattleHighlightStability()
+        frame = SimpleNamespace(shape=(900, 1600))
+        for now in (0, .05, .1):
+            self.sample(t, [True], now, frame)
+        self.assertIsNone(t.observations['1'].visible)
+        self.sample(t, [True], .2, SimpleNamespace(shape=(900, 1600)))
+        self.assertTrue(t.observations['1'].visible)
+        self.sample(t, [False], 1, SimpleNamespace(shape=(900, 1600)))
+        self.assertIsNone(t.observations['1'].visible)
+
+    def test_unknown_flash_and_resolution_change_clear_evidence_without_negative_fact(self):
+        t = BattleHighlightStability()
+        self.sample(t, [True], 0)
+        self.sample(t, [True], .05)
+        self.sample(t, [None], .1)
+        self.assertIsNone(t.observations['1'].visible)
+        self.sample(t, [True], .2)
+        self.assertIsNone(t.observations['1'].visible)
+        self.sample(t, [True], .25)
+        self.assertTrue(t.observations['1'].visible)
+        self.sample(t, [True], .3, SimpleNamespace(shape=(1080, 1920)))
+        self.assertIsNone(t.observations['1'].visible)
+        t.observe({}, .4)
+        self.assertFalse(t.observations)
+
+    def test_acknowledgement_cannot_reuse_pre_key_dark_samples(self):
+        t = BattleHighlightStability()
+        for now in (0, .05):
+            self.sample(t, [True], now)
+        self.sample(t, [False], .1)
+        self.sample(t, [False], .2)
+        t.arm_disappearance('1')
+        self.sample(t, [False], .3)
+        self.assertTrue(t.observations['1'].visible)
+        self.sample(t, [False], .4)
+        self.assertTrue(t.observations['1'].visible)
+        self.sample(t, [False], .46)
+        self.assertFalse(t.observations['1'].visible)
+
+    def test_reused_capture_buffer_counts_only_distinct_capture_stamps(self):
+        t = BattleHighlightStability()
+        frame = SimpleNamespace(shape=(900, 1600))
+        raw = {'1': BattleHighlightObservation(('skill',), 'predicate', True, 0)}
+        t.observe(raw, 0, frame=frame, sample_token=10)
+        t.observe(raw, .05, frame=frame, sample_token=10)
+        self.assertIsNone(t.observations['1'].visible)
+        t.observe(raw, .1, frame=frame, sample_token=11)
+        self.assertTrue(t.observations['1'].visible)
 
 
 class TestBattleHighlightState(unittest.TestCase):
@@ -90,6 +161,8 @@ class TestBattleHighlightState(unittest.TestCase):
         task.battle_pulses.clear()
         logic.step()
         self.assertFalse(logic.battle_highlights.observations['1'].visible)
+        self.assertIsNotNone(logic.pending)  # A single low frame is not disappearance.
+        confirm_dark_highlights(logic)
         self.assertIsNone(logic.pending)
 
     def test_ordinary_battle_without_ring_keeps_existing_release_contract(self):
@@ -163,6 +236,8 @@ class TestBattleHighlightState(unittest.TestCase):
             return False
 
         # Exercise the non-burst ultimate path and its immediate overflow check.
+        settle_highlights(logic)
+        task.observe_battle_skill_highlights.reset_mock()
         with patch.object(logic, '_release_burst_decision', return_value=None), \
                 patch.object(logic, '_try_overflow_battle_skill', side_effect=overflow):
             logic.step()
@@ -173,7 +248,7 @@ class TestBattleHighlightState(unittest.TestCase):
         self.assertFalse(logic._scene_conditions().facts())
         # Clearing is unknown, not a negative condition; the next ordinary
         # batch may establish the same ring afresh.
-        logic._observe_battle_highlights()
+        settle_highlights(logic)
         self.assertTrue(logic._battle_condition('2').satisfied)
 
 

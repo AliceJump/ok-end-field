@@ -19,7 +19,8 @@ def algorithm_digest():
     paths = ('src/data/burst_decision_table.py', 'src/data/release_burst_planner.py',
              'src/data/mechanism_prediction.py', 'src/data/battle_conditions.py', 'src/data/highlight_damage.py',
              'src/data/skill_timing.py', 'src/data/combo_queue.py', 'src/tasks/onetime/TimedCombatLogic.py',
-             'src/data/normal_attack_window.py', 'src/data/held_normal_forecast.py')
+             'src/data/normal_attack_window.py', 'src/data/held_normal_forecast.py',
+             'src/data/battle_highlight_stability.py')
     try:
         return hashlib.sha256(b''.join(p.encode()+b'\0'+(ROOT / p).read_bytes().replace(b'\r\n', b'\n')
                                        for p in paths)).hexdigest()
