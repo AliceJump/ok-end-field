@@ -96,6 +96,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         "Combat rotation and timing",
         (
             "TestConditionalRotation.py",
+            "TestEndAxisTimedCombat.py",
             "TestSkillRotation.py",
             "TestSkillScripts.py",
             "TestSkillSpPrediction.py",
