@@ -281,7 +281,7 @@ class RouteLearning:
         _, _, _, bucket, hint = min(candidates, key=lambda item: item[:4])
         return RouteYawCandidate(bucket * 5.0, hint)
 
-    def record_success(self, context, dx, dy, *, now, environment=None, inputs=(), verification="aligned"):
+    def record_success(self, context, dx, dy, *, now, target=None, environment=None, inputs=(), verification="aligned"):
         """Persist a caller-verified clean initial alignment, never a nav outcome."""
         if (
             not learning_allowed()
@@ -296,6 +296,7 @@ class RouteLearning:
             updated = previous.successful(
                 dx,
                 dy,
+                target=target,
                 now=now,
                 provenance=("initial-alignment",),
                 environment=environment or environment_for_context(context),

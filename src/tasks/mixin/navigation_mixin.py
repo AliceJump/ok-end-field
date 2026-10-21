@@ -608,6 +608,11 @@ class NavigationMixin(SearchMixin):
         detection_kind = "ocr" if ocr else "yolo" if use_yolo else "feature"
         profile = resolve_move_profile(move_profile, ocr=ocr, use_yolo=use_yolo)
 
+        def detect(detector, search_box):
+            if learning_session is None:
+                return detector(search_box)
+            return learning_session.detect_target(detector, box=search_box)
+
         def move_target(target):
             target = copy(target)
             if only_x:
@@ -688,12 +693,17 @@ class NavigationMixin(SearchMixin):
                     if not isinstance(ocr_frame_processor_list, list):
                         ocr_frame_processor_list = [ocr_frame_processor_list]
                     for ocr_frame_processor in ocr_frame_processor_list:
-                        result = self.ocr(
-                            match=ocr_match_or_feature_name_list,
-                            box=box,
-                            frame=frame,
-                            log=True,
-                            frame_processor=ocr_frame_processor,
+                        result = detect(
+                            lambda search_box, _processor=ocr_frame_processor, _frame=frame, _match=ocr_match_or_feature_name_list: (
+                                self.ocr(
+                                    match=_match,
+                                    box=search_box,
+                                    frame=_frame,
+                                    log=True,
+                                    frame_processor=_processor,
+                                )
+                            ),
+                            box,
                         )
                         if result:
                             break
@@ -716,11 +726,14 @@ class NavigationMixin(SearchMixin):
                     if learning_session is not None:
                         learning_session.frame_acquired(frame)
                     if use_yolo:
-                        result = self.yolo_detect(
-                            name=ocr_match_or_feature_name_list,
-                            frame=frame,
-                            box=feature_box,
-                            conf=threshold,
+                        result = detect(
+                            lambda search_box, _frame=frame, _name=ocr_match_or_feature_name_list: self.yolo_detect(
+                                name=_name,
+                                frame=_frame,
+                                box=search_box,
+                                conf=threshold,
+                            ),
+                            feature_box,
                         )
                     else:
                         for feature_name in ocr_match_or_feature_name_list:
@@ -729,11 +742,14 @@ class NavigationMixin(SearchMixin):
                             if self.active_time() - start_time >= 1:
                                 break
 
-                            result = self.find_feature(
-                                feature=feature_name,
-                                threshold=threshold,
-                                box=feature_box,
-                                **({"frame": frame} if learning_session is not None else {}),
+                            result = detect(
+                                lambda search_box, _name=feature_name, _frame=frame: self.find_feature(
+                                    feature=_name,
+                                    threshold=threshold,
+                                    box=search_box,
+                                    **({"frame": _frame} if learning_session is not None else {}),
+                                ),
+                                feature_box,
                             )
                             if result:
                                 break
@@ -753,6 +769,8 @@ class NavigationMixin(SearchMixin):
                 if is_num and (not ocr or ocr_target_detector is None):
                     result.y = result.y - int(self.height * ((525 - 486) / 1080))
                 observed_center = (result.x + result.width // 2, result.y + result.height // 2)
+                if learning_session is not None:
+                    learning_session.observe_target(observed_center)
                 if only_y:
                     result.x = self.screen_center()[0] - result.width // 2
                 if only_x:
@@ -828,6 +846,9 @@ class NavigationMixin(SearchMixin):
 
                     # 移动鼠标
                     if learning_session is not None:
+                        guided = learning_session.search_step(max_offset, only_x=only_x, only_y=only_y)
+                        if guided is not None:
+                            dx, dy = guided
                         learning_session.disturb("random_search")
                     self.active_and_send_mouse_delta(
                         0 if only_y else dx,

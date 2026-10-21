@@ -260,7 +260,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         minimum = max(4, int(round(8 * scale * scale)))
         return all(count >= minimum for count in counts)
 
-    def _detect_zip_line_icon_candidates(self, frame):
+    def _detect_zip_line_icon_candidates(self, frame, search_box=None):
         """仅在滑索椭圆内检测白色与黄色/金黄色图标，蓝色共享滑索不会进入候选。"""
         if frame is None or getattr(frame, "ndim", 0) < 2:
             return []
@@ -279,6 +279,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         right = min(width, center_x + radius_x + template_width)
         top = max(0, center_y - radius_y - template_height)
         bottom = min(height, center_y + radius_y + template_height)
+        if search_box is not None:
+            left = max(left, int(search_box.x))
+            top = max(top, int(search_box.y))
+            right = min(right, int(search_box.x + search_box.width))
+            bottom = min(bottom, int(search_box.y + search_box.height))
         if right - left < template_width or bottom - top < template_height:
             if callable(log_info):
                 log_info(
@@ -396,10 +401,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         bottom = min(self.height, int(round(center_y + bottom_offset)))
         return self.box_of_screen(left / self.width, top / self.height, right / self.width, bottom / self.height)
 
-    def _find_zip_line_template_target(self, zip_line, frame):
+    def _find_zip_line_template_target(self, zip_line, frame, search_box=None):
         """保持白色候选优先，并在局部分色 OCR 漏检时逐级放宽。"""
         pattern = self._zip_line_distance_pattern(zip_line)
-        candidates = self._detect_zip_line_icon_candidates(frame)
+        candidates = self._detect_zip_line_icon_candidates(
+            frame, **({"search_box": search_box} if search_box is not None else {})
+        )
         log_info = getattr(self, "log_info", None)
         if callable(log_info):
             log_info(f"[zipline-template] target={zip_line} candidate_count={len(candidates)}")
@@ -616,7 +623,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                             self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
                         frame = self.next_frame()
 
-            matched = self._find_zip_line_template_target(zip_line, frame)
+            if learning_session is not None:
+                matched = learning_session.detect_target(
+                    lambda search_box: self._find_zip_line_template_target(
+                        zip_line, frame, **({"search_box": search_box} if search_box is not None else {})
+                    )
+                )
+            else:
+                matched = self._find_zip_line_template_target(zip_line, frame)
             if matched is None:
                 misses += 1
                 if misses < self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
