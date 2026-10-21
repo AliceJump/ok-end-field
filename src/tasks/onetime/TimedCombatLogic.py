@@ -936,6 +936,8 @@ class TimedCombatLogic:
         if self._cycle_start is None:
             return
         if kind == "ult":
+            if self.release_burst is not None and token in self.release_burst.window_models:
+                return  # Future held-normal output is not instant cycle damage.
             quote = self.damage_quotes.get(self.team[int(token) - 1])
             self._cycle_bonus += quote.ult if quote else 0
         else:
@@ -1214,12 +1216,14 @@ class TimedCombatLogic:
                                                    quote.battle, gate, cost,
                                                    same_actor_duration=max(p.actionable for p in profiles)))
         main = self._burst_main_control
+        if main is not None and (not self._slot_available(main) or not self._allowed()):
+            main = None
         duration = self.release_burst.normal_durations.get(main)
         if main is not None and duration is not None and self._slot_available(main) and self._allowed():
             value = self.release_burst.price(main, "normal", now, state=self.release_burst.empty)
             if value is not None:
                 actions.append(ReleaseBurstAction(main, "normal", duration, value))
-        return self.release_burst.choose(actions, max(0.0, sp), now)
+        return self.release_burst.choose(actions, max(0.0, sp), now, main=main)
 
     def _use_timed_ultimate(self, token, profiles, *, burst_selected=False):
         started = self._clock()
@@ -1237,7 +1241,7 @@ class TimedCombatLogic:
             if not self.combat_runtime.confirm(token, "ult", ended):
                 self.combat_runtime.note_observation_gap(f"Unmodeled accepted ultimate: {token}")
         if self.release_burst is not None:
-            self.release_burst.confirm(token, "ult", started)
+            self.release_burst.confirm(token, "ult", started, recovered_at=ended)
         self._observe_bonus("ult", token)
         self._observe_phase_action(token, "ult")
         self._set_cooldowns(profiles, started)
@@ -1258,6 +1262,34 @@ class TimedCombatLogic:
         if not burst_selected:
             self._try_overflow_battle_skill(post_ult_sp, "终结技恢复")
         return True
+
+    def _try_anonymous_link_skill(self):
+        active_names = self._active_team_names()
+        link_profiles = {name: self.store.profiles(name, "link") for name in active_names}
+        links = tuple(profile for profiles in link_profiles.values() for profile in profiles)
+        if active_names and self._allowed(links, candidate_kind="link") and self.task.is_link_skill_ready():
+            started = self._clock()
+            self._arm_action_feedback()
+            if self.task.use_link_skill():
+                if self.combat_runtime is not None:
+                    self.combat_runtime.note_observation_gap("Link actor/phase not observed")
+                self._note_action_attempt("link")
+                if links:
+                    self._begin(links, started, kind="link")
+                else:
+                    self._clear_active(started)
+                if self.release_burst is not None:
+                    if links:
+                        self.release_burst.interrupt_normals(started, started + max(p.actionable for p in links))
+                    else:
+                        self.release_burst.window_casts.clear()
+                self._observe_bonus("link")
+                missing = [name for name, profiles in link_profiles.items() if not profiles]
+                self.task.log_info(
+                    "时间排轴: 连携技按现有就绪检测释放" + (f"；缺少时间轴 {missing}，不阻断释放" if missing else "")
+                )
+                return True
+        return False
 
     def step(self):
         """One refreshed HUD observation; no legacy strategy switches are read."""
@@ -1290,6 +1322,11 @@ class TimedCombatLogic:
                 if self._use_timed_ultimate(action.slot, profiles, burst_selected=True):
                     return
             elif action.kind == "battle" and self._try_battle_token(action.slot, sp, advance_cursor=False):
+                return
+            elif action.kind == "normal_window":
+                if self._try_anonymous_link_skill():
+                    return  # Unknown link value must not silently become zero.
+                self._hold(True)
                 return
 
         burst_action = self.phase_planner.next_action
@@ -1324,26 +1361,8 @@ class TimedCombatLogic:
         if self._try_overflow_battle_skill(sp, "主循环"):
             return
 
-        active_names = self._active_team_names()
-        link_profiles = {name: self.store.profiles(name, "link") for name in active_names}
-        links = tuple(profile for profiles in link_profiles.values() for profile in profiles)
-        if active_names and self._allowed(links, candidate_kind="link") and self.task.is_link_skill_ready():
-            started = self._clock()
-            self._arm_action_feedback()
-            if self.task.use_link_skill():
-                if self.combat_runtime is not None:
-                    self.combat_runtime.note_observation_gap("Link actor/phase not observed")
-                self._note_action_attempt("link")
-                if links:
-                    self._begin(links, started, kind="link")
-                else:
-                    self._clear_active(started)
-                self._observe_bonus("link")
-                missing = [name for name, profiles in link_profiles.items() if not profiles]
-                self.task.log_info(
-                    "时间排轴: 连携技按现有就绪检测释放" + (f"；缺少时间轴 {missing}，不阻断释放" if missing else "")
-                )
-                return
+        if self._try_anonymous_link_skill():
+            return
 
         if self.forced_main_control_slot is not None and now >= self.forced_main_control_until:
             self.forced_main_control_slot = None
