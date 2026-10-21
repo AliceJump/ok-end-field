@@ -52,6 +52,33 @@ class QueueTask(FakeTask):
 
 
 class TestComboQueueScheduling(unittest.TestCase):
+    def test_portrait_freshness_uses_wall_clock_after_confirmed_ultimate_freeze(self):
+        team = ['佩丽卡', '艾维文娜']
+        task = QueueTask(team, ['chr_0004_pelica', 'chr_0012_avywen'])
+        task.now = 10
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(team, reset_runtime=True)
+        logic._excluded_hud_seconds = 4.86
+        self.assertAlmostEqual(logic._clock(), 5.14)
+        logic._observe_combo_queue()
+        self.assertTrue(logic._combo_queue, 'A current portrait cannot be rejected by the gameplay freeze offset')
+        self.assertEqual(logic._combo_queue[0].character, '佩丽卡')
+        self.assertTrue(logic._try_link_skill())
+        self.assertIsNotNone(task.expected[0])
+        self.assertAlmostEqual(logic.started, task.link_skill_input_at - 4.86)
+        self.assertTrue(any('按当前队首释放（佩丽卡）' in message for message in task.messages))
+
+    def test_wall_clock_still_rejects_portraits_older_than_half_second_after_freeze(self):
+        team = ['佩丽卡', '艾维文娜']
+        task = QueueTask(team, ['chr_0004_pelica'])
+        task.now = 10
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
+        logic._configure_team(team, reset_runtime=True)
+        logic._excluded_hud_seconds = 4.86
+        with patch.object(task, 'observe_link_skills', return_value=observed(team, task.ids, now=9.4)):
+            logic._observe_combo_queue()
+        self.assertFalse(logic._combo_queue)
+
     def test_learned_tail_matches_bind_but_relearned_head_rejects_old_input(self):
         team = ["佩丽卡", "艾维文娜", "祀", "安塔尔"]
         buttons = read_combo_buttons()

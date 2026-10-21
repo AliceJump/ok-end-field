@@ -1297,7 +1297,9 @@ class TimedCombatLogic:
             return
         try:
             observation = observe(team=self.team)
-            queue = bind_combo_queue(observation, self.team, self.disabled_slots, self.store, self._clock())
+            # Portrait timestamps use monotonic wall time; gameplay time has
+            # confirmed cutscene freezes removed and cannot measure image age.
+            queue = bind_combo_queue(observation, self.team, self.disabled_slots, self.store, self._raw_clock())
         except (TaskDisabledException, FinishedException):
             raise
         except Exception:
@@ -1314,6 +1316,7 @@ class TimedCombatLogic:
                 or not self.task.is_link_skill_ready()):
             return False
         started = self._clock()
+        raw_started = self._raw_clock()
         self._arm_action_feedback()
         accepted = (self.task.use_link_skill(expected=self._combo_observation) if combo is not None
                     else self.task.use_link_skill())
@@ -1321,8 +1324,8 @@ class TimedCombatLogic:
         if not accepted:
             return False
         input_at = getattr(self.task, "link_skill_input_at", None)
-        if isinstance(input_at, (int, float)) and started <= input_at <= self._clock():
-            started = input_at  # The refresh/matching time is not animation progress.
+        if isinstance(input_at, (int, float)) and raw_started <= input_at <= self._raw_clock():
+            started = input_at - self._excluded_hud_seconds  # Match key time to the gameplay timeline.
         self._note_action_attempt("link", token)
         if links:
             self._begin(links, started, slot=token, kind="link")
@@ -1336,7 +1339,7 @@ class TimedCombatLogic:
             self.release_burst.confirm(token, "link", started)
         self._observe_bonus("link", token)
         if token is not None:
-            self.task.log_info(f"时间排轴: 连携技 {token}，按当前队首释放")
+            self.task.log_info(f"时间排轴: 连携技 {token}，按当前队首释放（{combo.character}）")
         else:
             missing = [name for name, profiles in by_name.items() if not profiles]
             self.task.log_info("时间排轴: 连携技按现有就绪检测释放"
