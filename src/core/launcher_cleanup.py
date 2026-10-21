@@ -102,10 +102,14 @@ class LauncherCleanup:
         self.parent_pid = kernel.GetProcessId(parent)
         if not self.parent_pid:
             raise OSError("Cannot identify the verified launcher parent")
-        folder = Path(shell.SHGetKnownFolderPath(shellcon.FOLDERID_LocalAppDataLow))
-        folder = folder / "Hypergryph" / "Endfield" / "sdklogs"
-        self.check_log = _LogTail(folder / "OneChannelLC.log")
-        self.sdk_log = _LogTail(folder / "u8sdk_pc.log")
+        # International launchers do not use the CN SDK completion contract.
+        # Do not touch CN log files when only game-exit tracking is needed.
+        self.check_log = self.sdk_log = None
+        if verify_sdk_logs:
+            folder = Path(shell.SHGetKnownFolderPath(shellcon.FOLDERID_LocalAppDataLow))
+            folder = folder / "Hypergryph" / "Endfield" / "sdklogs"
+            self.check_log = _LogTail(folder / "OneChannelLC.log")
+            self.sdk_log = _LogTail(folder / "u8sdk_pc.log")
         now = datetime.now()
         self.started = now.replace(microsecond=now.microsecond // 1000 * 1000)
 

@@ -750,13 +750,11 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
             self.kernel, 999, self.logger, verify_sdk_logs=False
         )
         game = Mock()
-        with (
-            patch.object(cleanup, "_wait_for_game_exit") as watch_exit,
-            patch.object(cleanup.check_log, "read") as cn_logs,
-        ):
+        self.assertIsNone(cleanup.check_log)
+        self.assertIsNone(cleanup.sdk_log)
+        with patch.object(cleanup, "_wait_for_game_exit") as watch_exit:
             cleanup._watch(game)
         watch_exit.assert_called_once_with(game)
-        cn_logs.assert_not_called()
         self.kernel.TerminateProcess.assert_not_called()
         self.kernel.CloseHandle.assert_called_once_with(999)
 
