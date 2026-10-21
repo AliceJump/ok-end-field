@@ -42,6 +42,7 @@ from src.tasks.mixin.zip_line_motion_cache import build_zip_line_route_fingerpri
 from src.tasks.mixin.zip_line_yaw_cache import (
     load_arrow_turn_motion,
     record_arrow_turn_motion,
+    yaw_environment,
 )
 from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 
@@ -661,7 +662,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         minimum = max(4, round(8 * scale * scale))
         return all(count >= minimum for count in counts)
 
-    def _detect_zip_line_icon_candidates(self, frame):
+    def _detect_zip_line_icon_candidates(self, frame, search_box=None):
         """仅在滑索椭圆内检测白色与黄色/金黄色图标，蓝色共享滑索不会进入候选。"""
         if frame is None or getattr(frame, "ndim", 0) < 2:
             return []
@@ -680,6 +681,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         right = min(width, center_x + radius_x + template_width)
         top = max(0, center_y - radius_y - template_height)
         bottom = min(height, center_y + radius_y + template_height)
+        if search_box is not None:
+            left = max(left, int(search_box.x))
+            top = max(top, int(search_box.y))
+            right = min(right, int(search_box.x + search_box.width))
+            bottom = min(bottom, int(search_box.y + search_box.height))
         if right - left < template_width or bottom - top < template_height:
             if callable(log_info):
                 log_info(
@@ -797,14 +803,16 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         bottom = min(self.height, round(center_y + bottom_offset))
         return self.box_of_screen(left / self.width, top / self.height, right / self.width, bottom / self.height)
 
-    def _find_zip_line_template_target(self, zip_line, frame, *, distance_tolerance=None):
+    def _find_zip_line_template_target(self, zip_line, frame, search_box=None, *, distance_tolerance=None):
         """保持白色候选优先，并在局部分色 OCR 漏检时逐级放宽。"""
         pattern = (
             self._zip_line_distance_pattern(zip_line)
             if distance_tolerance is None
             else self._zip_line_distance_matcher(zip_line, distance_tolerance)
         )
-        candidates = self._detect_zip_line_icon_candidates(frame)
+        candidates = self._detect_zip_line_icon_candidates(
+            frame, **({"search_box": search_box} if search_box is not None else {})
+        )
         log_info = getattr(self, "log_info", None)
         if callable(log_info):
             log_info(f"[zipline-template] target={zip_line} candidate_count={len(candidates)}")
@@ -1035,11 +1043,24 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                             self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
                         frame = self.next_frame()
 
-            matched = self._find_zip_line_template_target(
-                zip_line,
-                frame,
-                distance_tolerance=distance_tolerance,
-            )
+            target_kwargs = {}
+            if distance_tolerance is not None:
+                target_kwargs["distance_tolerance"] = distance_tolerance
+            if learning_session is not None:
+                matched = learning_session.detect_target(
+                    lambda search_box: self._find_zip_line_template_target(
+                        zip_line,
+                        frame,
+                        **({"search_box": search_box} if search_box is not None else {}),
+                        **target_kwargs,
+                    )
+                )
+            else:
+                matched = self._find_zip_line_template_target(
+                    zip_line,
+                    frame,
+                    **target_kwargs,
+                )
             if matched is None:
                 misses += 1
                 if misses < self._ZIP_LINE_TEMPLATE_MISS_LIMIT:
@@ -1193,7 +1214,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _wait_zip_line_prefeed_settled(self, start_reading, prefeed_dx):
         """Wait until replayed horizontal motion starts and then the arrow settles again."""
-        expected_yaw_delta = abs(float(prefeed_dx) * self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+        environment = yaw_environment(self.width, self.height, start_reading[0] if start_reading else 0)
+        expected_yaw_delta = abs(
+            float(prefeed_dx) * environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+        )
         if expected_yaw_delta < 1.0:
             self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
             return True
@@ -1274,7 +1298,15 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return current_yaw, True
 
         total_dx = 0
-        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw) if learning_allowed() else None
+        scope = vars(self).get("_initial_alignment_scope")
+        scroll = scope.session.environment.scroll if scope is not None else False
+        environment = yaw_environment(width, height, initial_yaw, scroll=scroll)
+        yaw_per_mouse = environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+        hint = (
+            load_arrow_turn_motion(width, height, current_yaw, target_yaw, environment=environment)
+            if learning_allowed()
+            else None
+        )
         if hint is not None:
             hint_dx, hint_samples = hint
             if self._send_zip_line_yaw_delta(hint_dx):
@@ -1311,7 +1343,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 -self._ZIP_LINE_ARROW_MAX_STEP_DEGREES,
                 min(self._ZIP_LINE_ARROW_MAX_STEP_DEGREES, desired_delta),
             )
-            move_dx = round(step_degrees / self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+            move_dx = round(step_degrees / yaw_per_mouse)
             if move_dx == 0 or not self._send_zip_line_yaw_delta(move_dx):
                 break
 
@@ -1340,8 +1372,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             )
             return target_yaw, False
 
-        if total_dx and learning_allowed():
-            record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx)
+        if total_dx:
+            if learning_allowed() and environment == yaw_environment(width, height, initial_yaw, scroll=scroll):
+                record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx, environment=environment)
         self.log_info(
             f"[zipline-yaw] normalized {initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
         )
@@ -1613,6 +1646,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 if context is not None:
                     reading = self._read_zip_line_settled_arrow_angle()
                     verified_yaw = reading is not None and reading[1] >= self._ZIP_LINE_ARROW_MIN_SCORE
+                    if verified_yaw:
+                        self._learning_start_yaw = float(reading[0]) % 360.0
                     context = replace(context, start_yaw_bucket=yaw_bucket(reading[0]) if verified_yaw else None)
                     confidence = "high" if verified_yaw else "medium"
                     if target_learning_epoch is not None and target_learning_epoch != learning_epoch():

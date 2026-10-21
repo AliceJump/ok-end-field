@@ -203,7 +203,7 @@ class TestLearningCore(unittest.TestCase):
             self.assertEqual(first.get(key).success_count, 3)
             self.assertTrue(second.update(key, lambda record: record.failed(now=2)))
             self.assertEqual(first.get(key).failure_count, 1)
-            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["schema_version"], 1)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["schema_version"], 2)
 
     def test_same_metadata_replace_invalidates_other_instances_and_path_aliases(self):
         with tempfile.TemporaryDirectory() as directory:

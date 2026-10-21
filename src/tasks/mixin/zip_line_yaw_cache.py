@@ -3,13 +3,18 @@ from __future__ import annotations
 import json
 import math
 import os
+import time
 from contextlib import suppress
 from pathlib import Path
 from threading import RLock
 
+from src.core.camera_input_config import read_saved_camera_settings
+from src.core.learning.environment import LearningEnvironment
+from src.core.learning.lookup import combine_records
+from src.core.learning.models import LearningRecord
 from src.core.learning.policy import learning_allowed
 
-_CACHE_VERSION = 1
+_CACHE_VERSION = 2
 _DEFAULT_CACHE_PATH = Path("tmp") / "zipline_yaw_cache.json"
 _CACHE_LOCK = RLock()
 _MAX_TURNS = 512
@@ -25,10 +30,12 @@ def _read_cache() -> dict:
         payload = json.loads(_DEFAULT_CACHE_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         return _empty_cache()
-    if not isinstance(payload, dict) or payload.get("version") != _CACHE_VERSION:
+    if not isinstance(payload, dict) or payload.get("version") not in (1, _CACHE_VERSION):
         return _empty_cache()
     if not isinstance(payload.get("turns"), dict):
         return _empty_cache()
+    if payload["version"] == 1:
+        return {"version": _CACHE_VERSION, "turns": {}, "legacy_turns": payload["turns"]}
     return payload
 
 
@@ -106,31 +113,81 @@ def _turn_key(width, height, start_yaw, target_yaw) -> str | None:
     )
 
 
-def load_arrow_turn_motion(width, height, start_yaw, target_yaw):
-    """Return ``(raw_dx, samples)`` for the same size and yaw buckets."""
+def yaw_environment(width, height, start_yaw, *, scroll=False):
+    values, fallback = read_saved_camera_settings()
+    return LearningEnvironment(
+        **values,
+        capture_size=(width, height),
+        scroll=scroll,
+        start_yaw=float(start_yaw) % 360.0,
+        fallback_fields=fallback,
+    )
+
+
+def _new_yaw_record(entries, requested, environment):
+    combined = None
+    for source_key, entry in entries.items():
+        try:
+            if json.loads(source_key)[1:3] != requested:
+                continue
+            record = LearningRecord.from_dict(entry)
+            if not record.observations or any(
+                sample.environment.scroll != environment.scroll for sample in record.observations
+            ):
+                continue
+            combined = combine_records(combined, record, environment)
+        except (KeyError, TypeError, ValueError):
+            continue
+    return combined
+
+
+def _legacy_yaw_motion(legacy_turns, requested, environment):
+    """Old counts intentionally stay unchanged, independently of new statistics."""
+    if not isinstance(legacy_turns, dict) or environment.scroll:
+        return None
+    candidates = []
+    for old_key, entry in legacy_turns.items():
+        try:
+            source_key = json.loads(old_key)
+            if source_key[1:3] != requested:
+                continue
+            count = entry["samples"]
+            dx = _finite_number(entry["mean_dx"])
+            if type(count) is not int or count <= 0 or dx is None or not 0 < abs(dx) <= 6000:
+                continue
+            candidates.append((source_key[0] == list(environment.capture_size), count, round(dx)))
+        except (KeyError, TypeError, ValueError):
+            continue
+    if not candidates:
+        return None
+    _, count, dx = max(candidates)
+    return dx, count
+
+
+def load_arrow_turn_motion(width, height, start_yaw, target_yaw, *, environment=None):
+    """Prefer converted new history; independently fall back to unconverted old counts."""
     if not learning_allowed():
         return None
     key = _turn_key(width, height, start_yaw, target_yaw)
     if key is None:
         return None
+    environment = environment or yaw_environment(width, height, start_yaw)
+    requested = json.loads(key)[1:]
     with _CACHE_LOCK:
-        entry = _read_cache()["turns"].get(key)
-    if not isinstance(entry, dict):
+        payload = _read_cache()
+    combined = _new_yaw_record(payload["turns"], requested, environment)
+    if combined is None:
+        return _legacy_yaw_motion(payload.get("legacy_turns"), requested, environment)
+    motion = combined.motion_for(environment)
+    if not motion.samples:
         return None
-    try:
-        samples = int(entry.get("samples", 0))
-    except (TypeError, ValueError, OverflowError):
-        return None
-    mean_dx = _finite_number(entry.get("mean_dx"))
-    if samples <= 0 or mean_dx is None:
-        return None
-    move_dx = round(mean_dx)
+    move_dx = round(motion.mean_dx)
     if move_dx == 0:
         return None
-    return move_dx, samples
+    return move_dx, motion.samples
 
 
-def record_arrow_turn_motion(width, height, start_yaw, target_yaw, total_dx) -> bool:
+def record_arrow_turn_motion(width, height, start_yaw, target_yaw, total_dx, *, environment=None) -> bool:
     """Learn a successful horizontal raw-mouse turn for matching size/yaw buckets."""
     if not learning_allowed():
         return False
@@ -138,31 +195,18 @@ def record_arrow_turn_motion(width, height, start_yaw, target_yaw, total_dx) -> 
     dx = _finite_number(total_dx)
     if key is None or dx is None or dx == 0:
         return False
+    environment = environment or yaw_environment(width, height, start_yaw)
+    key = json.dumps([*json.loads(key), environment.scroll], separators=(",", ":"))
     with _CACHE_LOCK:
         payload = _read_cache()
         turns = payload["turns"]
-        previous = turns.get(key)
-        if isinstance(previous, dict):
-            try:
-                samples = max(0, int(previous.get("samples", 0)))
-            except (TypeError, ValueError, OverflowError):
-                samples = 0
-            previous_dx = _finite_number(previous.get("mean_dx"))
-        else:
-            samples = 0
-            previous_dx = None
-
-        if samples <= 0 or previous_dx is None:
-            mean_dx = dx
-            samples = 1
-        else:
-            new_samples = samples + 1
-            alpha = 1.0 / min(new_samples, 20)
-            mean_dx = previous_dx + (dx - previous_dx) * alpha
-            samples = new_samples
-
+        try:
+            previous = LearningRecord.from_dict(turns[key]) if key in turns else LearningRecord()
+        except (KeyError, TypeError, ValueError):
+            previous = LearningRecord()
+        updated = previous.successful(dx, 0, now=time.time(), environment=environment, verification="yaw")
         turns.pop(key, None)
-        turns[key] = {"samples": samples, "mean_dx": mean_dx}
+        turns[key] = updated.to_dict()
         while len(turns) > _MAX_TURNS:
             turns.pop(next(iter(turns)))
         return _write_cache(payload)

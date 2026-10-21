@@ -40,6 +40,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         "Daily task flow",
         (
             "TestCreditQuickVisit.py",
+            "TestMainRecoveryFreshness.py",
             "TestDailyBattleToEnd.py",
             "TestGatherInitialLearning.py",
             "TestGatherRetransferLearning.py",
@@ -161,7 +162,9 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestParallelNavigation.py",
             "TestLearningCore.py",
             "TestLearningSession.py",
+            "TestLearningObservations.py",
             "TestInitialAlignmentLearning.py",
+            "TestTargetPriorGuidance.py",
             "TestRouteLearning.py",
             "TestRouteMigration.py",
             "TestNavigationMovement.py",
@@ -222,6 +225,8 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestRuntimeMixinFeatureClick.py",
             "TestTopmostMixin.py",
             "TestWindowOverlayTextRendering.py",
+            "TestEndfieldUi.py",
+            "TestEndfieldPanels.py",
         ),
     ),
     "runtime-platform": (

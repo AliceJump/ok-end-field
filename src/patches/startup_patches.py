@@ -16,6 +16,7 @@ def install_startup_patches():
     from src.patches.danger_switch_patch import install_danger_switch_patch
     from src.patches.double_spin_range_patch import install_double_spin_range_patch
     from src.patches.dynamic_config_patch import install_dynamic_config_patch
+    from src.patches.endfield_theme_patch import install_endfield_theme_patch
     from src.patches.enemy_direction_recovery_patch import install_enemy_direction_recovery_patch
     from src.patches.log_upload_patch import install_log_upload_patch
     from src.patches.no_frame_task_patch import install_no_frame_task_patch
@@ -53,4 +54,5 @@ def install_startup_patches():
     install_timed_team_detection_patch()
     install_win32_gdi_point_patch()
     install_qfluent_navigation_patch()
+    install_endfield_theme_patch()
     _PATCH_INSTALLED = True

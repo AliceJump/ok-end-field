@@ -1,7 +1,7 @@
 """Start Endfield with a signed, temporary, suspended official Games.exe parent.
 
 This is an alternative to the live-launcher startup/cleanup proposal in PR #558.
-The temporary parent is terminated only after matching SDK success log entries.
+Both official channels release only their owned parent after its fresh check succeeds.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import subprocess
 import time
 from ctypes import wintypes
 from pathlib import Path
+from urllib.parse import quote
 
 import psutil
 from ok.util.file import ensure_dir_for_file, read_json_file, write_json_file
@@ -30,8 +31,66 @@ OFFICIAL_SIGNERS = {
     "2B366F397E64A9494A553B70004E8CA1AAE02B9D",
     "FF4AF264C36A27F0C805936708EF8EC67B396225",
 }
+LAUNCHER_PRODUCTS = {
+    "Hypergryph": {"鹰角启动器", "Hypergryph Launcher"},
+    "Gryphline": {"GRYPHLINK"},
+}
 LAUNCHER_ID = "33a0a6296a20400d503c59ac0fd6341e"
 LAUNCHER_CACHE_FILE = "official_launcher.json"
+CHANNEL_REGISTRY_KEYS = {
+    "Hypergryph": r"Software\Hypergryph\Launcher\7cadd91e975e03634d178312268c57d6",
+    "Gryphline": r"Software\GRYPHLINK\Launcher\94005b4608518100ed8df1d8107356a8",
+}
+STEAM_ENDFIELD_APP_ID = "4732690"
+
+
+def _path_has_part(path: str, part: str) -> bool:
+    return part.casefold() in {item.casefold() for item in Path(os.path.abspath(path)).parts}
+
+
+def _game_company(game_path: str) -> str:
+    """Use Unity's installed company/product identity, independent of directory names."""
+    info = Path(os.path.abspath(game_path)).parent / "Endfield_Data" / "app.info"
+    try:
+        lines = info.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeError) as error:
+        raise RuntimeError("Cannot identify Endfield channel; repair the game or launch through its client") from error
+    if len(lines) >= 2 and lines[1].strip().casefold() == "endfield":
+        for company in LAUNCHER_PRODUCTS:
+            if lines[0].strip().casefold() == company.casefold():
+                return company
+    raise RuntimeError("Unrecognized Endfield channel; launch through its official client")
+
+
+def _platform_for_game(game_path: str) -> str | None:
+    """Route recognizable store installations through their platform client."""
+    folder = Path(os.path.abspath(game_path)).parent
+    if _path_has_part(game_path, "steamapps") and _path_has_part(game_path, "common"):
+        return "steam"
+    if (folder / ".egstore").is_dir():
+        return "epic"
+    return None
+
+
+def _launch_via_platform(game_path: str, arguments: str, platform: str, logger) -> bool:
+    if arguments.strip():
+        raise RuntimeError(
+            f"{platform} launch arguments cannot be forwarded by the platform URI; "
+            "set them in the platform client instead"
+        )
+    if platform == "steam":
+        uri = f"steam://rungameid/{STEAM_ENDFIELD_APP_ID}"
+    elif platform == "epic":
+        # Epic's documented protocol accepts an encoded installation directory,
+        # avoiding fragile or outdated Catalog/Artifact identifiers.
+        folder = str(Path(os.path.abspath(game_path)).parent).replace("\\", "/")
+        uri = f"com.epicgames.launcher://apps/{quote(folder, safe='')}?action=launch&silent=true"
+    else:
+        raise ValueError(f"Unsupported launch platform: {platform}")
+    logger.info(f"Requesting Endfield launch through {platform}")
+    os.startfile(uri)
+    return True
+
 
 
 def get_launcher_cache_path() -> str:
@@ -39,13 +98,14 @@ def get_launcher_cache_path() -> str:
     return config_path(LAUNCHER_CACHE_FILE)
 
 
-def verify_launcher(path: str) -> None:
-    """Validate Authenticode and the signer allowed by the CN launcher rule."""
+def verify_launcher(path: str, company: str | None = None) -> None:
+    """Share certificate trust; use the signed product identity to select a channel."""
     script = (
         "$ErrorActionPreference='Stop'; "
         "[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new(); "
         "$s=Get-AuthenticodeSignature -LiteralPath $env:OK_EF_VERIFY_LAUNCHER; "
-        "@{status=[int]$s.Status; signer=$s.SignerCertificate.Thumbprint} | ConvertTo-Json -Compress"
+        "$p=(Get-Item -LiteralPath $env:OK_EF_VERIFY_LAUNCHER).VersionInfo.ProductName; "
+        "@{status=[int]$s.Status; signer=$s.SignerCertificate.Thumbprint; product=$p} | ConvertTo-Json -Compress"
     )
     result = subprocess.run(
         [
@@ -72,6 +132,10 @@ def verify_launcher(path: str) -> None:
     signature = json.loads(result.stdout)
     if signature.get("status") != 0 or (signature.get("signer") or "").upper() not in OFFICIAL_SIGNERS:
         raise RuntimeError(f"Official launcher signature is invalid or unrecognized: {path}")
+    if company is not None:
+        products = {name.casefold() for name in LAUNCHER_PRODUCTS[company]}
+        if (signature.get("product") or "").strip().casefold() not in products:
+            raise RuntimeError(f"Official launcher product does not match {company}: {path}")
 
 
 def _cached_launcher() -> str:
@@ -95,13 +159,13 @@ def _save_cached_launcher(path: str, logger) -> None:
         logger.warning(f"Cannot persist official launcher path: {error}")
 
 
-def _registered_launchers() -> list[str]:
-    """Return launcher paths registered by the Hypergryph installer."""
+def _registered_launchers(company: str) -> list[str]:
+    """Query only the selected channel; never mix two installers' results."""
     import winreg
 
     key_path = rf"Software\Microsoft\Windows\CurrentVersion\Uninstall\{LAUNCHER_ID}"
     paths = []
-    for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+    for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE) if company == "Hypergryph" else ():
         for view in (winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY):
             try:
                 with winreg.OpenKey(root, key_path, 0, winreg.KEY_READ | view) as key:
@@ -111,6 +175,19 @@ def _registered_launchers() -> list[str]:
                     paths.append(path)
             except OSError:
                 continue
+    # Both launchers register install_path, under their own product key.
+    for view in (winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY):
+        try:
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, CHANNEL_REGISTRY_KEYS[company], 0, winreg.KEY_READ | view
+            ) as key:
+                location = winreg.QueryValueEx(key, "install_path")[0]
+            root = Path(location)
+            launcher = root if root.name.casefold() == "launcher.exe" else root / "Launcher.exe"
+            if launcher.is_file():
+                paths.append(str(launcher))
+        except OSError:
+            continue
     return paths
 
 
@@ -127,11 +204,14 @@ def _game_path_launchers(game_path: str) -> list[str]:
     return candidates
 
 
-def installed_launcher(game_path: str, logger) -> str:
-    """Find and verify the CN launcher, then persist the working path."""
-    candidates = [("cache", _cached_launcher())]
-    candidates.extend(("registry", path) for path in _registered_launchers())
-    candidates.extend(("game path", path) for path in _game_path_launchers(game_path))
+def installed_launcher(game_path: str, logger, company: str | None = None) -> str:
+    """Find and verify the selected-channel launcher, then cache its location."""
+    # Prefer the launcher adjacent to this installation over a cached launcher
+    # from another channel. Registry/cache serve as fallbacks for relocated games.
+    company = company or _game_company(game_path)
+    candidates = [("game path", path) for path in _game_path_launchers(game_path)]
+    candidates.extend(("registry", path) for path in _registered_launchers(company))
+    candidates.append(("cache", _cached_launcher()))
 
     seen = set()
     errors = []
@@ -143,7 +223,7 @@ def installed_launcher(game_path: str, logger) -> str:
             continue
         seen.add(normalized)
         try:
-            verify_launcher(path)
+            verify_launcher(path, company)
         except Exception as error:
             logger.warning(f"Cannot use official launcher from {source}: path={path}, error={error}")
             errors.append(error)
@@ -152,7 +232,7 @@ def installed_launcher(game_path: str, logger) -> str:
         logger.info(f"Verified official launcher: source={source}, path={path}")
         return path
 
-    message = "Official Hypergryph launcher not found; install or open the official launcher first"
+    message = "Official Hypergryph/GRYPHLINK launcher not found; install the matching launcher first"
     if errors:
         raise RuntimeError(message) from errors[-1]
     raise RuntimeError(message)
@@ -312,9 +392,10 @@ def prepare_launcher(kernel, logger, game_path: str):
     raise TimeoutError("Official Games.exe did not become ready within 30 seconds")
 
 
-def find_official_games_exe(game_path: str, logger) -> Path:
+def find_official_games_exe(game_path: str, logger, company: str | None = None) -> Path:
     """Choose the newest signed Games.exe within the verified official launcher."""
-    launcher = Path(installed_launcher(game_path, logger))
+    company = company or _game_company(game_path)
+    launcher = Path(installed_launcher(game_path, logger, company=company))
     candidates = []
     for folder in launcher.parent.iterdir():
         if not folder.is_dir():
@@ -331,7 +412,7 @@ def find_official_games_exe(game_path: str, logger) -> Path:
     failures = []
     for _, exe in sorted(candidates, reverse=True):
         try:
-            verify_launcher(str(exe))
+            verify_launcher(str(exe), company)
             return exe
         except Exception as error:
             failures.append(error)
@@ -339,9 +420,9 @@ def find_official_games_exe(game_path: str, logger) -> Path:
     raise RuntimeError("Cannot find a signed official Games.exe") from failures[-1]
 
 
-def create_temporary_parent(kernel, game_path: str, logger):
+def create_temporary_parent(kernel, game_path: str, logger, company: str | None = None):
     """Create our own suspended Games.exe, without touching running launcher processes."""
-    executable = find_official_games_exe(game_path, logger)
+    executable = find_official_games_exe(game_path, logger, company=company)
     startup = _StartupInfoEx()
     startup.StartupInfo.cb = ctypes.sizeof(_StartupInfo)
     process = _ProcessInfo()
@@ -476,30 +557,45 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
         logger.info("Endfield is already running; skipping launch")
         return True
 
+    platform = _platform_for_game(game_path)
+    if platform is not None:
+        return _launch_via_platform(game_path, arguments, platform, logger)
+
+    company = _game_company(game_path)
     kernel = _kernel32()
-    parent = create_temporary_parent(kernel, game_path, logger)
-    child_created = False
-    try:
-        # Snapshot existing log offsets BEFORE starting the new game process.
-        cleanup = LauncherCleanup(kernel, parent, logger)
-        if running_pids("Endfield.exe"):
+    # Parent compatibility is independent of the game's company/log directory.
+    # Prefer its own launcher, then try the other known official product once.
+    companies = [company, *(other for other in LAUNCHER_PRODUCTS if other != company)]
+    failures = []
+    for parent_company in companies:
+        parent = None
+        child_created = False
+        try:
+            parent = create_temporary_parent(kernel, game_path, logger, company=parent_company)
+            # Always watch the game's logs, including when its parent is cross-channel.
+            cleanup = LauncherCleanup(kernel, parent, logger, company=company)
+            if running_pids("Endfield.exe"):
+                return True
+            pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
+            child_created = True
+            note_game_started(cleanup.parent_pid, pid, logger)
+            logger.info(f"Created Endfield with suspended official launcher parent: pid={pid}, launcher={parent_company}")
+            if _start_cleanup(cleanup, pid, kernel, parent, logger):
+                parent = None  # The background watcher owns the process handle now.
             return True
-        pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
-        child_created = True
-        note_game_started(cleanup.parent_pid, pid, logger)
-        logger.info(f"Created Endfield with suspended official launcher parent: pid={pid}")
-        if _start_cleanup(cleanup, pid, kernel, parent, logger):
-            parent = None  # The background watcher owns the process handle now.
-        return True
-    finally:
-        if parent:
-            if not child_created:
-                # Failed before game creation; this is our own disposable process.
+        except Exception as error:
+            if child_created:
+                raise  # A post-creation failure must never trigger another launch.
+            logger.warning(f"Cannot launch Endfield using {parent_company}: {error}")
+            failures.append(error)
+        finally:
+            if parent:
                 try:
-                    if kernel.TerminateProcess(parent, 0):
+                    if not child_created:
+                        # Do not create another parent if disposal of this one fails.
+                        if not kernel.TerminateProcess(parent, 0):
+                            raise OSError("Could not terminate aborted owned temporary Games.exe")
                         forget_owned_parent(kernel.GetProcessId(parent), logger)
-                    else:
-                        logger.warning("Could not terminate aborted owned temporary Games.exe")
-                except Exception as error:
-                    logger.warning(f"Cannot discard aborted temporary Games.exe: {error}")
-            kernel.CloseHandle(parent)
+                finally:
+                    kernel.CloseHandle(parent)
+    raise failures[-1]

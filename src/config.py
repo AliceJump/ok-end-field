@@ -84,7 +84,7 @@ config = {
         "require_bg": True,  # 要求使用后台截图
     },
     "start_timeout": 120,  # 首次启动的 SDK/反作弊初始化可能超过 60 秒
-    "window_size": {"width": 1200, "height": 800, "min_width": 600, "min_height": 450},  # ok-script窗口大小
+    "window_size": {"width": 1440, "height": 900, "min_width": 600, "min_height": 450},  # ok-script窗口大小
     "supported_resolution": {
         "ratio": "16:9",  # 支持的游戏分辨率
         "min_size": (1600, 900),  # 支持的最低游戏分辨率（900P）
@@ -172,6 +172,7 @@ config = {
         ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
         ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],
+        ["src.tasks.onetime.FarmRelatedTask", "FarmRelatedTask"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],

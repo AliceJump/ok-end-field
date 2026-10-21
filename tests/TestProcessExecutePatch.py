@@ -26,7 +26,7 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import ok.util.process as process_mod
 import psutil
@@ -188,8 +188,200 @@ class TestZProcessExecutePatchStateRestored(unittest.TestCase):
         )
 
 
+class TestLauncherChannels(unittest.TestCase):
+    def test_game_channel_uses_company_not_installation_folder_name(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory) / "GRYPHLINK" / "renamed game"
+            (folder / "Endfield_Data").mkdir(parents=True)
+            info = folder / "Endfield_Data" / "app.info"
+            for company in ("Hypergryph", "Gryphline"):
+                info.write_text(f"{company}\nEndfield\n", encoding="utf-8-sig")
+                self.assertEqual(official_launcher._game_company(str(folder / "Endfield.exe")), company)
+            for content in ("Other\nEndfield\n", "Gryphline\nOther Game\n", "Gryphline"):
+                info.write_text(content, encoding="utf-8")
+                with self.assertRaisesRegex(RuntimeError, "channel"):
+                    official_launcher._game_company(str(folder / "Endfield.exe"))
+            info.unlink()
+            with self.assertRaisesRegex(RuntimeError, "channel"):
+                official_launcher._game_company(str(folder / "Endfield.exe"))
+
+    def test_registry_queries_do_not_cross_channels(self):
+        import winreg
+
+        with tempfile.TemporaryDirectory() as directory:
+            launcher = Path(directory) / "Launcher.exe"
+            launcher.touch()
+            for company in ("Hypergryph", "Gryphline"):
+                with (
+                    self.subTest(company=company),
+                    patch.object(winreg, "OpenKey") as open_key,
+                    patch.object(winreg, "QueryValueEx", return_value=(directory, winreg.REG_SZ)),
+                ):
+                    self.assertIn(str(launcher), official_launcher._registered_launchers(company))
+                queried = {call.args[1] for call in open_key.call_args_list}
+                expected = {official_launcher.CHANNEL_REGISTRY_KEYS[company]}
+                if company == "Hypergryph":
+                    expected.add(rf"Software\Microsoft\Windows\CurrentVersion\Uninstall\{official_launcher.LAUNCHER_ID}")
+                self.assertEqual(queried, expected)
+
+
 class TestOfficialLauncher(unittest.TestCase):
+
+    def test_detects_steam_and_epic_installations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            steam = root / "steamapps" / "common" / "EndField Game" / "Endfield.exe"
+            epic = root / "EpicGame" / "Endfield.exe"
+            (epic.parent / ".egstore").mkdir(parents=True)
+            self.assertEqual(official_launcher._platform_for_game(str(steam)), "steam")
+            self.assertEqual(official_launcher._platform_for_game(str(epic)), "epic")
+            self.assertIsNone(official_launcher._platform_for_game(str(root / "Endfield.exe")))
+
+    def test_steam_launch_routes_through_client_without_cn_parent(self):
+        path = os.path.abspath(os.path.join("steamapps", "common", "EndField Game", "Endfield.exe"))
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher.os, "startfile", create=True) as start,
+            patch.object(official_launcher, "create_temporary_parent") as parent,
+        ):
+            self.assertTrue(official_launcher.launch_game(path, "", Mock()))
+        start.assert_called_once_with("steam://rungameid/4732690")
+        parent.assert_not_called()
+
+    def test_epic_launch_uses_official_installation_path_uri(self):
+        from urllib.parse import quote
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".egstore").mkdir()
+            # The official protocol can use the installed directory; no
+            # deprecated Artifact ID or optional .mancpn manifest is required.
+            with (
+                patch.object(official_launcher, "running_pids", return_value=[]),
+                patch.object(official_launcher.os, "startfile", create=True) as start,
+                patch.object(official_launcher, "create_temporary_parent") as parent,
+            ):
+                self.assertTrue(official_launcher.launch_game(str(root / "Endfield.exe"), "", Mock()))
+            expected_path = quote(str(root).replace("\\", "/"), safe="")
+            start.assert_called_once_with(
+                f"com.epicgames.launcher://apps/{expected_path}?action=launch&silent=true"
+            )
+            parent.assert_not_called()
+
+    def test_platform_launch_rejects_arguments_instead_of_silently_dropping(self):
+        path = os.path.abspath(os.path.join("steamapps", "common", "EndField Game", "Endfield.exe"))
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher.os, "startfile", create=True) as start,
+            self.assertRaisesRegex(RuntimeError, "arguments"),
+        ):
+            official_launcher.launch_game(path, "-force-d3d11", Mock())
+        start.assert_not_called()
+
+    def test_gryphline_uses_the_shared_parent_cleanup(self):
+        game = os.path.abspath(os.path.join("GRYPHLINK", "games", "EndField Game", "Endfield.exe"))
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "_game_company", return_value="Gryphline"),
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+            patch.object(official_launcher, "create_process", return_value=456),
+        ):
+            self.assertTrue(official_launcher.launch_game(game, "", Mock()))
+        cleanup.assert_called_once_with(kernel, 321, unittest.mock.ANY, company="Gryphline")
+        cleanup.return_value.start.assert_called_once_with(456)
+
+    def test_cached_cn_launcher_never_overrides_international_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            intl = base / "GRYPHLINK" / "Launcher.exe"
+            cn = base / "Hypergryph Launcher" / "Launcher.exe"
+            for launcher in (intl, cn):
+                launcher.parent.mkdir()
+                launcher.touch()
+            game = intl.parent / "games" / "EndField Game" / "Endfield.exe"
+            logger = Mock()
+            with (
+                patch.object(official_launcher, "_game_company", return_value="Gryphline"),
+                patch.object(official_launcher, "_cached_launcher", return_value=str(cn)),
+                patch.object(official_launcher, "_registered_launchers", return_value=[str(cn)]),
+                patch.object(official_launcher, "verify_launcher"),
+                patch.object(official_launcher, "_save_cached_launcher"),
+            ):
+                self.assertEqual(official_launcher.installed_launcher(str(game), logger), str(intl))
+
+    def test_both_channels_accept_either_valid_official_fingerprint(self):
+        for company, products in official_launcher.LAUNCHER_PRODUCTS.items():
+            for status, fingerprint, accepted in (
+                *((0, signer, True) for signer in official_launcher.OFFICIAL_SIGNERS),
+                *((1, signer, False) for signer in official_launcher.OFFICIAL_SIGNERS),
+                (0, "new", False),
+            ):
+                with (
+                    self.subTest(company=company, status=status, signer=fingerprint),
+                    patch.object(official_launcher.subprocess, "run", return_value=types.SimpleNamespace(
+                        stdout=json.dumps({"status": status, "signer": fingerprint, "product": next(iter(products)),
+                                           "subject": "O=GRYPH FRONTIER PTE. LTD."}))),
+                ):
+                    if accepted:
+                        official_launcher.verify_launcher("renamed/Games.exe", company)
+                    else:
+                        with self.assertRaises(RuntimeError):
+                            official_launcher.verify_launcher("GRYPHLINK/Games.exe", company)
+
+    def test_mixed_candidates_and_cross_channel_cache_cannot_select_wrong_launcher(self):
+        for company, products in official_launcher.LAUNCHER_PRODUCTS.items():
+            correct_product = next(iter(products))
+            wrong_product = next(iter(next(value for key, value in official_launcher.LAUNCHER_PRODUCTS.items() if key != company)))
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                wrong, correct = str(root / "GRYPHLINK" / "Launcher.exe"), str(root / "renamed" / "Launcher.exe")
+
+                def signed_file(*args, correct=correct, correct_product=correct_product, wrong_product=wrong_product, **kwargs):
+                    product = correct_product if kwargs["env"]["OK_EF_VERIFY_LAUNCHER"] == correct else wrong_product
+                    return types.SimpleNamespace(stdout=json.dumps({"status": 0, "signer": next(iter(official_launcher.OFFICIAL_SIGNERS)), "product": product}))
+
+                with (
+                    self.subTest(company=company),
+                    patch.object(official_launcher, "_game_company", return_value=company),
+                    patch.object(official_launcher, "_game_path_launchers", return_value=[wrong]),
+                    patch.object(official_launcher, "_registered_launchers", return_value=[wrong, correct]) as registry,
+                    patch.object(official_launcher, "_cached_launcher", return_value=wrong),
+                    patch.object(official_launcher, "_save_cached_launcher"),
+                    patch.object(official_launcher.subprocess, "run", side_effect=signed_file),
+                ):
+                    self.assertEqual(official_launcher.installed_launcher("relocated/Endfield.exe", Mock()), correct)
+                registry.assert_called_once_with(company)
+
+    def test_newest_games_from_the_other_channel_is_rejected(self):
+        for company, products in official_launcher.LAUNCHER_PRODUCTS.items():
+            correct_product = next(iter(products))
+            wrong_product = next(iter(next(value for key, value in official_launcher.LAUNCHER_PRODUCTS.items() if key != company)))
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                for version in ("1.0", "2.0"):
+                    (root / version).mkdir()
+                    (root / version / "Games.exe").touch()
+
+                def signed_file(*args, correct_product=correct_product, wrong_product=wrong_product, **kwargs):
+                    path = kwargs["env"]["OK_EF_VERIFY_LAUNCHER"]
+                    product = wrong_product if Path(path).parent.name == "2.0" else correct_product
+                    return types.SimpleNamespace(stdout=json.dumps({"status": 0, "signer": next(iter(official_launcher.OFFICIAL_SIGNERS)), "product": product}))
+
+                with (
+                    self.subTest(company=company),
+                    patch.object(official_launcher, "_game_company", return_value=company),
+                    patch.object(official_launcher, "installed_launcher", return_value=str(root / "Launcher.exe")),
+                    patch.object(official_launcher.subprocess, "run", side_effect=signed_file),
+                ):
+                    self.assertEqual(official_launcher.find_official_games_exe("unused", Mock()), root / "1.0" / "Games.exe")
+
     def setUp(self):
+        patcher = patch.object(official_launcher, "_game_company", return_value="Hypergryph")
+        patcher.start()
+        self.addCleanup(patcher.stop)
         # These tests use fabricated process handles; the real journal is
         # covered separately with an isolated temporary config directory.
         for name in ("recover_owned_parents", "register_owned_parent", "note_game_started", "forget_owned_parent"):
@@ -292,8 +484,8 @@ class TestOfficialLauncher(unittest.TestCase):
                     official_launcher.installed_launcher("unused", logger),
                     str(launcher),
                 )
-        verify.assert_called_once_with(str(launcher))
-        registered.assert_called_once_with()
+        verify.assert_called_once_with(str(launcher), "Hypergryph")
+        registered.assert_called_once_with("Hypergryph")
         inferred.assert_called_once_with("unused")
 
     def test_installed_launcher_infers_from_game_path_and_persists(self):
@@ -323,9 +515,9 @@ class TestOfficialLauncher(unittest.TestCase):
                 json.loads(cache.read_text(encoding="utf-8")),
                 {"path": os.path.abspath(launcher)},
             )
-        verify.assert_called_once_with(str(launcher))
+        verify.assert_called_once_with(str(launcher), "Hypergryph")
 
-    def test_invalid_cached_launcher_falls_back_and_replaces_cache(self):
+    def test_inferred_launcher_takes_priority_over_stale_cache(self):
         logger = Mock()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -348,11 +540,7 @@ class TestOfficialLauncher(unittest.TestCase):
                     "_game_path_launchers",
                     return_value=[str(launcher)],
                 ),
-                patch.object(
-                    official_launcher,
-                    "verify_launcher",
-                    side_effect=[RuntimeError("bad signature"), None],
-                ),
+                patch.object(official_launcher, "verify_launcher") as verify,
             ):
                 self.assertEqual(
                     official_launcher.installed_launcher("unused", logger),
@@ -361,6 +549,34 @@ class TestOfficialLauncher(unittest.TestCase):
             self.assertEqual(
                 json.loads(cache.read_text(encoding="utf-8")),
                 {"path": os.path.abspath(launcher)},
+            )
+        verify.assert_called_once_with(str(launcher), "Hypergryph")
+        logger.warning.assert_not_called()
+
+    def test_invalid_cached_launcher_is_rejected_without_other_candidates(self):
+        logger = Mock()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stale = root / "stale" / "Launcher.exe"
+            stale.parent.mkdir()
+            stale.touch()
+            cache = root / "official_launcher.json"
+            cache.write_text(json.dumps({"path": str(stale)}), encoding="utf-8")
+            with (
+                patch.object(official_launcher, "get_launcher_cache_path", return_value=str(cache)),
+                patch.object(official_launcher, "_registered_launchers", return_value=[]),
+                patch.object(official_launcher, "_game_path_launchers", return_value=[]),
+                patch.object(
+                    official_launcher, "verify_launcher",
+                    side_effect=RuntimeError("bad signature"),
+                ) as verify,
+                self.assertRaisesRegex(RuntimeError, "not found"),
+            ):
+                official_launcher.installed_launcher("unused", logger)
+            verify.assert_called_once_with(str(stale), "Hypergryph")
+            self.assertEqual(
+                json.loads(cache.read_text(encoding="utf-8")),
+                {"path": str(stale)},
             )
         logger.warning.assert_called_once()
 
@@ -377,7 +593,7 @@ class TestOfficialLauncher(unittest.TestCase):
         ):
             self.assertTrue(official_launcher.launch_game(game_path, "-force-d3d11", logger))
         create.assert_called_once_with(kernel, game_path, "-force-d3d11", 321)
-        cleanup.assert_called_once_with(kernel, 321, logger)
+        cleanup.assert_called_once_with(kernel, 321, logger, company="Hypergryph")
         cleanup.return_value.start.assert_called_once_with(456)
         kernel.TerminateProcess.assert_not_called()
         kernel.CloseHandle.assert_not_called()  # Background watcher owns it.
@@ -416,8 +632,117 @@ class TestOfficialLauncher(unittest.TestCase):
         ):
             official_launcher.launch_game("unused", "", Mock())
         cleanup.return_value.start.assert_not_called()
-        kernel.TerminateProcess.assert_called_once_with(321, 0)
+        self.assertEqual(kernel.TerminateProcess.call_args_list, [call(321, 0), call(321, 0)])
+        self.assertEqual(kernel.CloseHandle.call_args_list, [call(321), call(321)])
+
+    def test_missing_or_invalid_preferred_parent_tries_other_product_in_both_directions(self):
+        for company in ("Hypergryph", "Gryphline"):
+            other = next(value for value in official_launcher.LAUNCHER_PRODUCTS if value != company)
+            kernel = Mock()
+            logger = Mock()
+            with (
+                self.subTest(company=company),
+                patch.object(official_launcher, "_game_company", return_value=company),
+                patch.object(official_launcher, "running_pids", return_value=[]),
+                patch.object(official_launcher, "_kernel32", return_value=kernel),
+                patch.object(official_launcher, "create_temporary_parent", side_effect=[RuntimeError("not found or invalid"), 321]) as prepare,
+                patch.object(official_launcher, "LauncherCleanup") as cleanup,
+                patch.object(official_launcher, "create_process", return_value=456) as create,
+            ):
+                self.assertTrue(official_launcher.launch_game("relocated/Endfield.exe", "-force-d3d11", logger))
+            self.assertEqual([c.kwargs["company"] for c in prepare.call_args_list], [company, other])
+            cleanup.assert_called_once_with(kernel, 321, logger, company=company)
+            create.assert_called_once_with(kernel, os.path.abspath("relocated/Endfield.exe"), "-force-d3d11", 321)
+            kernel.TerminateProcess.assert_not_called()
+
+    def test_game_creation_failure_discards_first_parent_before_using_other_type(self):
+        for company in ("Hypergryph", "Gryphline"):
+            kernel = Mock()
+            logger = Mock()
+
+            def created(kernel_arg, path, arguments, parent, kernel=kernel):
+                if parent == 321:
+                    raise OSError("first parent cannot start game")
+                kernel.TerminateProcess.assert_called_once_with(321, 0)
+                kernel.CloseHandle.assert_called_once_with(321)
+                return 456
+
+            with (
+                self.subTest(company=company),
+                patch.object(official_launcher, "_game_company", return_value=company),
+                patch.object(official_launcher, "running_pids", return_value=[]),
+                patch.object(official_launcher, "_kernel32", return_value=kernel),
+                patch.object(official_launcher, "create_temporary_parent", side_effect=[321, 654]) as prepare,
+                patch.object(official_launcher, "LauncherCleanup") as cleanup,
+                patch.object(official_launcher, "create_process", side_effect=created) as create,
+            ):
+                self.assertTrue(official_launcher.launch_game("unused", "", logger))
+            self.assertEqual(prepare.call_count, 2)
+            self.assertEqual(create.call_count, 2)
+            self.assertEqual(cleanup.call_args_list, [
+                call(kernel, 321, logger, company=company), call(kernel, 654, logger, company=company),
+            ])
+            cleanup.return_value.start.assert_called_once_with(456)
+
+    def test_parent_creation_error_uses_other_type_before_creating_game(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", side_effect=[OSError("access denied"), 321]) as prepare,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
+        ):
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        self.assertEqual(prepare.call_count, 2)
+        create.assert_called_once()
+
+    def test_no_retry_when_post_creation_bookkeeping_fails(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321) as prepare,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
+            patch.object(official_launcher, "note_game_started", side_effect=RuntimeError("journal failed")),
+            self.assertRaisesRegex(RuntimeError, "journal failed"),
+        ):
+            official_launcher.launch_game("unused", "", Mock())
+        prepare.assert_called_once()
+        create.assert_called_once()
+        kernel.TerminateProcess.assert_not_called()
         kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_failed_disposal_prevents_trying_another_parent(self):
+        kernel = Mock()
+        kernel.TerminateProcess.return_value = False
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321) as prepare,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", side_effect=OSError("create failed")),
+            self.assertRaisesRegex(OSError, "Could not terminate"),
+        ):
+            official_launcher.launch_game("unused", "", Mock())
+        prepare.assert_called_once()
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_external_game_during_fallback_prevents_second_game_creation(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], [], [789]]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", side_effect=[321, 654]) as prepare,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", side_effect=OSError("first launch failed")) as create,
+        ):
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        self.assertEqual(prepare.call_count, 2)
+        create.assert_called_once()
+        self.assertEqual(kernel.TerminateProcess.call_args_list, [call(321, 0), call(654, 0)])
+        self.assertEqual(kernel.CloseHandle.call_args_list, [call(321), call(654)])
 
     def test_watcher_unavailable_never_terminates_live_child_parent(self):
         kernel = Mock()
@@ -482,7 +807,7 @@ class TestOfficialLauncher(unittest.TestCase):
             ):
                 exe = official_launcher.find_official_games_exe("unused", logger)
             self.assertEqual(exe, base / "2.4.9" / "Games.exe")
-            verify.assert_called_once_with(str(exe))
+            verify.assert_called_once_with(str(exe), "Hypergryph")
 
     def test_journal_failure_discards_unattached_suspended_parent(self):
         import ctypes
@@ -596,7 +921,7 @@ class TestOfficialLauncher(unittest.TestCase):
 
 
 class TestTemporaryParentLogWatcher(unittest.TestCase):
-    """Same two-event completion gate as PR #558, but only terminate an owned parent."""
+    """Both channels only terminate our parent after its own fresh success line."""
 
     def setUp(self):
         from src.core import launcher_cleanup
@@ -638,18 +963,34 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
             cleanup._watch(game)
         return wait_for_exit
 
-    def test_both_current_sdk_signals_terminate_only_owned_parent(self):
-        cleanup = self._new_cleanup()
+
+    def test_international_reads_only_its_own_company_log(self):
+        self.logs = self.logs.parents[2] / "Gryphline" / "Endfield" / "sdklogs"
+        self.logs.mkdir(parents=True)
+        cleanup = self.cleanup_mod.LauncherCleanup(self.kernel, 999, self.logger, company="Gryphline")
+        self.assertEqual(cleanup.check_log.path, self.logs / "OneChannelLC.log")
+        cn_log = self.logs.parents[2] / "Hypergryph" / "Endfield" / "sdklogs" / "OneChannelLC.log"
+        stamp = cleanup.started.strftime("%m-%d %H:%M:%S.%f")[:-3]
+        cn_log.write_text(f"[{stamp}] Parent process check success:123\n", encoding="utf-8")
+        self._watch(cleanup)
+        self.kernel.TerminateProcess.assert_not_called()
+        self.kernel.reset_mock()
         self._write("OneChannelLC.log", "Parent process check success:123", cleanup)
-        self._write("u8sdk_pc.log", "OnU8V2InitCallback status :0", cleanup)
         self._watch(cleanup, ticks=(0, 0))
         self.kernel.TerminateProcess.assert_called_once_with(999, 0)
         self.kernel.CloseHandle.assert_called_once_with(999)
 
-    def test_one_signal_wrong_pid_or_error_status_never_terminates(self):
+    def test_parent_success_releases_owned_parent_without_waiting_for_sdk_init(self):
+        cleanup = self._new_cleanup()
+        self._write("OneChannelLC.log", "Parent process check success:123", cleanup)
+        self._watch(cleanup, ticks=(0, 0))
+        self.kernel.TerminateProcess.assert_called_once_with(999, 0)
+        self.kernel.CloseHandle.assert_called_once_with(999)
+
+    def test_wrong_pid_or_failed_parent_check_never_terminates(self):
         for check, sdk in (
             ("Parent process check success:456", "OnU8V2InitCallback status :0"),
-            ("Parent process check success:123", "OnU8V2InitCallback status :1"),
+            ("Parent process check failed:123", "OnU8V2InitCallback status :0"),
         ):
             with self.subTest(check=check, sdk=sdk):
                 for name in ("OneChannelLC.log", "u8sdk_pc.log"):
