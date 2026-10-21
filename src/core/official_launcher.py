@@ -9,8 +9,10 @@ from __future__ import annotations
 import ctypes
 import json
 import os
+import re
 import subprocess
 import time
+from urllib.parse import quote
 from ctypes import wintypes
 from pathlib import Path
 
@@ -32,6 +34,43 @@ OFFICIAL_SIGNERS = {
 }
 LAUNCHER_ID = "33a0a6296a20400d503c59ac0fd6341e"
 LAUNCHER_CACHE_FILE = "official_launcher.json"
+GRYPHLINE_REGISTRY_KEY = r"Software\GRYPHLINK\Launcher\94005b4608518100ed8df1d8107356a8"
+STEAM_ENDFIELD_APP_ID = "4732690"
+
+
+def _path_has_part(path: str, part: str) -> bool:
+    return part.casefold() in {item.casefold() for item in Path(os.path.abspath(path)).parts}
+
+
+def _platform_for_game(game_path: str) -> str | None:
+    """Route recognizable store installations through their platform client."""
+    folder = Path(os.path.abspath(game_path)).parent
+    if _path_has_part(game_path, "steamapps") and _path_has_part(game_path, "common"):
+        return "steam"
+    if (folder / ".egstore").is_dir():
+        return "epic"
+    return None
+
+
+def _launch_via_platform(game_path: str, arguments: str, platform: str, logger) -> bool:
+    if arguments.strip():
+        raise RuntimeError(
+            f"{platform} launch arguments cannot be forwarded by the platform URI; "
+            "set them in the platform client instead"
+        )
+    if platform == "steam":
+        uri = f"steam://rungameid/{STEAM_ENDFIELD_APP_ID}"
+    elif platform == "epic":
+        # Epic's documented protocol accepts an encoded installation directory,
+        # avoiding fragile or outdated Catalog/Artifact identifiers.
+        folder = str(Path(os.path.abspath(game_path)).parent).replace("\\", "/")
+        uri = f"com.epicgames.launcher://apps/{quote(folder, safe='')}?action=launch&silent=true"
+    else:
+        raise ValueError(f"Unsupported launch platform: {platform}")
+    logger.info(f"Requesting Endfield launch through {platform}")
+    os.startfile(uri)
+    return True
+
 
 
 def get_launcher_cache_path() -> str:
@@ -40,12 +79,12 @@ def get_launcher_cache_path() -> str:
 
 
 def verify_launcher(path: str) -> None:
-    """Validate Authenticode and the signer allowed by the CN launcher rule."""
+    """Validate Authenticode and a recognized official launcher publisher."""
     script = (
         "$ErrorActionPreference='Stop'; "
         "[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new(); "
         "$s=Get-AuthenticodeSignature -LiteralPath $env:OK_EF_VERIFY_LAUNCHER; "
-        "@{status=[int]$s.Status; signer=$s.SignerCertificate.Thumbprint} | ConvertTo-Json -Compress"
+        "@{status=[int]$s.Status; signer=$s.SignerCertificate.Thumbprint; subject=$s.SignerCertificate.Subject} | ConvertTo-Json -Compress"
     )
     result = subprocess.run(
         [
@@ -70,8 +109,19 @@ def verify_launcher(path: str) -> None:
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
     signature = json.loads(result.stdout)
-    if signature.get("status") != 0 or (signature.get("signer") or "").upper() not in OFFICIAL_SIGNERS:
-        raise RuntimeError(f"Official launcher signature is invalid or unrecognized: {path}")
+    if signature.get("status") != 0:
+        raise RuntimeError(f"Official launcher signature is invalid: {path}")
+    if (signature.get("signer") or "").upper() in OFFICIAL_SIGNERS:
+        return
+    # International GRYPHLINK can use GRYPH FRONTIER's publisher certificate.
+    # Require a valid Authenticode chain AND the verified publisher name; never
+    # accept arbitrary signed launchers merely because their file name matches.
+    subject = signature.get("subject") or ""
+    organization = re.search(r'(?:^|,\s*)O=(?:"([^"]+)"|([^,]+))', subject, re.IGNORECASE)
+    name = (organization.group(1) or organization.group(2) or "").strip() if organization else ""
+    if _path_has_part(path, "GRYPHLINK") and name.upper() == "GRYPH FRONTIER PTE. LTD.":
+        return
+    raise RuntimeError(f"Official launcher signature is invalid or unrecognized: {path}")
 
 
 def _cached_launcher() -> str:
@@ -111,6 +161,19 @@ def _registered_launchers() -> list[str]:
                     paths.append(path)
             except OSError:
                 continue
+    # Global official launcher registration (XXMI's GRYPHLINK lookup).
+    for view in (winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY):
+        try:
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, GRYPHLINE_REGISTRY_KEY, 0, winreg.KEY_READ | view
+            ) as key:
+                location = winreg.QueryValueEx(key, "install_path")[0]
+            root = Path(location)
+            launcher = root if root.name.casefold() == "launcher.exe" else root / "Launcher.exe"
+            if launcher.is_file():
+                paths.append(str(launcher))
+        except OSError:
+            continue
     return paths
 
 
@@ -128,16 +191,27 @@ def _game_path_launchers(game_path: str) -> list[str]:
 
 
 def installed_launcher(game_path: str, logger) -> str:
-    """Find and verify the CN launcher, then persist the working path."""
-    candidates = [("cache", _cached_launcher())]
+    """Find and verify the selected-channel launcher, then cache its location."""
+    # Prefer the launcher adjacent to this installation over a cached launcher
+    # from another channel. Registry/cache serve as fallbacks for relocated games.
+    candidates = [("game path", path) for path in _game_path_launchers(game_path)]
     candidates.extend(("registry", path) for path in _registered_launchers())
-    candidates.extend(("game path", path) for path in _game_path_launchers(game_path))
+    candidates.append(("cache", _cached_launcher()))
+    expected_channel = (
+        "gryphline" if _path_has_part(game_path, "GRYPHLINK")
+        else "hypergryph" if _path_has_part(game_path, "Hypergryph Launcher")
+        else None
+    )
 
     seen = set()
     errors = []
     for source, path in candidates:
         if not path:
             continue
+        if expected_channel is not None:
+            is_gryphline = _path_has_part(path, "GRYPHLINK")
+            if is_gryphline != (expected_channel == "gryphline"):
+                continue
         normalized = os.path.normcase(os.path.abspath(path))
         if normalized in seen:
             continue
@@ -152,7 +226,7 @@ def installed_launcher(game_path: str, logger) -> str:
         logger.info(f"Verified official launcher: source={source}, path={path}")
         return path
 
-    message = "Official Hypergryph launcher not found; install or open the official launcher first"
+    message = "Official Hypergryph/GRYPHLINK launcher not found; install the matching launcher first"
     if errors:
         raise RuntimeError(message) from errors[-1]
     raise RuntimeError(message)
@@ -476,12 +550,21 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
         logger.info("Endfield is already running; skipping launch")
         return True
 
+    platform = _platform_for_game(game_path)
+    if platform is not None:
+        return _launch_via_platform(game_path, arguments, platform, logger)
+
     kernel = _kernel32()
     parent = create_temporary_parent(kernel, game_path, logger)
     child_created = False
     try:
         # Snapshot existing log offsets BEFORE starting the new game process.
-        cleanup = LauncherCleanup(kernel, parent, logger)
+        # The CN SDK log contract is not established for GRYPHLINK. Preserve
+        # its suspended parent until game exit rather than applying CN log gates.
+        if _path_has_part(game_path, "GRYPHLINK"):
+            cleanup = LauncherCleanup(kernel, parent, logger, verify_sdk_logs=False)
+        else:
+            cleanup = LauncherCleanup(kernel, parent, logger)
         if running_pids("Endfield.exe"):
             return True
         pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)

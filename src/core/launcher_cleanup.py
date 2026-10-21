@@ -94,7 +94,8 @@ def _is_current(line: bytes, started: datetime) -> bool:
 class LauncherCleanup:
     """Snapshot both SDK logs before game creation, then own the temporary process handle."""
 
-    def __init__(self, kernel, parent, logger):
+    def __init__(self, kernel, parent, logger, verify_sdk_logs: bool = True):
+        self.verify_sdk_logs = verify_sdk_logs
         self.kernel = kernel
         self.parent = parent
         self.logger = logger
@@ -167,7 +168,11 @@ class LauncherCleanup:
             time.sleep(2)
 
     def _watch_startup(self, game) -> None:
-        """Observe SDK readiness, retaining the parent until readiness or game exit."""
+        """Observe CN SDK readiness; otherwise wait for game exit."""
+        if not self.verify_sdk_logs:
+            self.logger.info("International launcher has no verified CN SDK log contract; watching game exit")
+            self._wait_for_game_exit(game)
+            return
         checked = ready = False
         success = re.compile(rb"Parent process check success:" + str(self.parent_pid).encode() + rb"\s*$")
         deadline = time.monotonic() + _TIMEOUT

@@ -189,6 +189,112 @@ class TestZProcessExecutePatchStateRestored(unittest.TestCase):
 
 
 class TestOfficialLauncher(unittest.TestCase):
+
+    def test_detects_steam_and_epic_installations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            steam = root / "steamapps" / "common" / "EndField Game" / "Endfield.exe"
+            epic = root / "EpicGame" / "Endfield.exe"
+            (epic.parent / ".egstore").mkdir(parents=True)
+            self.assertEqual(official_launcher._platform_for_game(str(steam)), "steam")
+            self.assertEqual(official_launcher._platform_for_game(str(epic)), "epic")
+            self.assertIsNone(official_launcher._platform_for_game(str(root / "Endfield.exe")))
+
+    def test_steam_launch_routes_through_client_without_cn_parent(self):
+        path = os.path.abspath(os.path.join("steamapps", "common", "EndField Game", "Endfield.exe"))
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher.os, "startfile", create=True) as start,
+            patch.object(official_launcher, "create_temporary_parent") as parent,
+        ):
+            self.assertTrue(official_launcher.launch_game(path, "", Mock()))
+        start.assert_called_once_with("steam://rungameid/4732690")
+        parent.assert_not_called()
+
+    def test_epic_launch_uses_official_installation_path_uri(self):
+        from urllib.parse import quote
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".egstore").mkdir()
+            # The official protocol can use the installed directory; no
+            # deprecated Artifact ID or optional .mancpn manifest is required.
+            with (
+                patch.object(official_launcher, "running_pids", return_value=[]),
+                patch.object(official_launcher.os, "startfile", create=True) as start,
+                patch.object(official_launcher, "create_temporary_parent") as parent,
+            ):
+                self.assertTrue(official_launcher.launch_game(str(root / "Endfield.exe"), "", Mock()))
+            expected_path = quote(str(root).replace("\\", "/"), safe="")
+            start.assert_called_once_with(
+                f"com.epicgames.launcher://apps/{expected_path}?action=launch&silent=true"
+            )
+            parent.assert_not_called()
+
+    def test_platform_launch_rejects_arguments_instead_of_silently_dropping(self):
+        path = os.path.abspath(os.path.join("steamapps", "common", "EndField Game", "Endfield.exe"))
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher.os, "startfile", create=True) as start,
+            self.assertRaisesRegex(RuntimeError, "arguments"),
+        ):
+            official_launcher.launch_game(path, "-force-d3d11", Mock())
+        start.assert_not_called()
+
+    def test_gryphline_keeps_parent_until_game_exit(self):
+        game = os.path.abspath(os.path.join("GRYPHLINK", "games", "EndField Game", "Endfield.exe"))
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], []]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321),
+            patch.object(official_launcher, "LauncherCleanup") as cleanup,
+            patch.object(official_launcher, "create_process", return_value=456),
+        ):
+            self.assertTrue(official_launcher.launch_game(game, "", Mock()))
+        cleanup.assert_called_once_with(kernel, 321, unittest.mock.ANY, verify_sdk_logs=False)
+        cleanup.return_value.start.assert_called_once_with(456)
+
+    def test_cached_cn_launcher_never_overrides_international_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            intl = base / "GRYPHLINK" / "Launcher.exe"
+            cn = base / "Hypergryph Launcher" / "Launcher.exe"
+            for launcher in (intl, cn):
+                launcher.parent.mkdir()
+                launcher.touch()
+            game = intl.parent / "games" / "EndField Game" / "Endfield.exe"
+            logger = Mock()
+            with (
+                patch.object(official_launcher, "_cached_launcher", return_value=str(cn)),
+                patch.object(official_launcher, "_registered_launchers", return_value=[str(cn)]),
+                patch.object(official_launcher, "verify_launcher"),
+                patch.object(official_launcher, "_save_cached_launcher"),
+            ):
+                self.assertEqual(official_launcher.installed_launcher(str(game), logger), str(intl))
+
+    def test_international_signature_requires_valid_vendor_certificate(self):
+        for status, subject, accepted in (
+            (0, "CN=GRYPHLINK, O=GRYPH FRONTIER PTE. LTD., C=SG", True),
+            (1, "CN=GRYPHLINK, O=GRYPH FRONTIER PTE. LTD., C=SG", False),
+            (0, "CN=Other, O=Other Studio, C=SG", False),
+        ):
+            with (
+                self.subTest(status=status, subject=subject),
+                patch.object(
+                    official_launcher.subprocess,
+                    "run",
+                    return_value=types.SimpleNamespace(
+                        stdout=json.dumps({"status": status, "signer": "new", "subject": subject}),
+                    ),
+                ),
+            ):
+                if accepted:
+                    official_launcher.verify_launcher(r"C:\\GRYPHLINK\\2.4.9\\Games.exe")
+                else:
+                    with self.assertRaises(RuntimeError):
+                        official_launcher.verify_launcher(r"C:\\GRYPHLINK\\2.4.9\\Games.exe")
+
     def setUp(self):
         # These tests use fabricated process handles; the real journal is
         # covered separately with an isolated temporary config directory.
@@ -637,6 +743,22 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
         ):
             cleanup._watch(game)
         return wait_for_exit
+
+
+    def test_international_parent_waits_for_exit_without_cn_log_gates(self):
+        cleanup = self.cleanup_mod.LauncherCleanup(
+            self.kernel, 999, self.logger, verify_sdk_logs=False
+        )
+        game = Mock()
+        with (
+            patch.object(cleanup, "_wait_for_game_exit") as watch_exit,
+            patch.object(cleanup.check_log, "read") as cn_logs,
+        ):
+            cleanup._watch(game)
+        watch_exit.assert_called_once_with(game)
+        cn_logs.assert_not_called()
+        self.kernel.TerminateProcess.assert_not_called()
+        self.kernel.CloseHandle.assert_called_once_with(999)
 
     def test_both_current_sdk_signals_terminate_only_owned_parent(self):
         cleanup = self._new_cleanup()
