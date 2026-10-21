@@ -360,6 +360,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_last_debug_at = 0.0
         self._grid_nav_zip_line_cache: dict[str, ZipLineGraph] = {}
         self._grid_nav_zip_line_empty: set[str] = set()
+        self._grid_nav_zip_line_unavailable: set[str] = set()
         self._grid_nav_zip_line_start_hint: tuple[float, float] | None = None
         self._grid_nav_zip_line_failed_target_hint: tuple[float, float] | None = None
         self._grid_nav_zip_line_approach_entry_id: str | None = None
@@ -2268,6 +2269,15 @@ class GridNavigationMixin(RuntimeStateMixin):
             return None
 
         service = self._get_minimap_position_service()
+        capture_enabled = getattr(service, "experimental_capture_enabled", None)
+        if callable(capture_enabled):
+            try:
+                if capture_enabled():
+                    return self._grid_capture_zip_lines_for_map(service, map_id)
+            except Exception as exc:
+                self.log_warning(f"实验技术：读取抓包开关失败，本次不使用滑索（{type(exc).__name__}: {exc}）")
+                return None
+
         api_get = getattr(service, "_map_api_get", None)
         if not callable(api_get):
             return None
@@ -2327,6 +2337,43 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_zip_line_empty.add(map_id)
         return None
 
+    def _grid_capture_zip_lines_for_map(self, service, map_id: str) -> ZipLineGraph | None:
+        """实验抓包模式：按需读取完整滑索快照，不混用官方地图 mark 数据。"""
+        if map_id in self._grid_nav_zip_line_unavailable:
+            return None
+        loader = getattr(service, "capture_travel_pole_graph", None)
+        if not callable(loader):
+            self._grid_nav_zip_line_unavailable.add(map_id)
+            self.log_warning("实验技术：当前定位服务不支持抓包滑索接口，本次导航继续使用普通网格路线")
+            return None
+
+        include_shared = self._grid_cfg_bool(CONFIG_GRID_USE_SHARED_ZIP_LINES, False)
+        try:
+            result = loader(map_id=map_id, include_shared=include_shared)
+        except Exception as exc:
+            self._grid_nav_zip_line_unavailable.add(map_id)
+            self.log_warning(f"实验技术：读取抓包滑索失败（{type(exc).__name__}: {exc}），本次导航继续使用普通网格路线")
+            return None
+
+        graph = getattr(result, "graph", None)
+        reason = str(getattr(result, "reason", "") or "unknown")
+        cacheable = bool(getattr(result, "cacheable", False))
+        if isinstance(graph, ZipLineGraph) and graph:
+            self._grid_nav_zip_line_cache[map_id] = graph
+            summary = graph.summary()
+            self.log_info(
+                f"已加载抓包滑索：节点={summary['nodes']}，连接={summary['links']}，"
+                f"类型={summary['by_name']}，chapter={graph.nodes[0].level_id}"
+            )
+            return graph
+        if cacheable:
+            self._grid_nav_zip_line_empty.add(map_id)
+            self.log_info(f"抓包滑索快照已同步，但当前地图没有可用滑索（{reason}）")
+            return None
+        self._grid_nav_zip_line_unavailable.add(map_id)
+        self.log_info(f"抓包滑索暂不可用（{reason}），本次导航继续使用普通网格路线")
+        return None
+
     def _refresh_grid_zip_lines(self, map_id: str = "") -> None:
         """清理滑索快照，使下一次规划重新读取当前账号数据。
 
@@ -2337,9 +2384,11 @@ class GridNavigationMixin(RuntimeStateMixin):
         if map_id:
             self._grid_nav_zip_line_cache.pop(map_id, None)
             self._grid_nav_zip_line_empty.discard(map_id)
+            self._grid_nav_zip_line_unavailable.discard(map_id)
             return
         self._grid_nav_zip_line_cache.clear()
         self._grid_nav_zip_line_empty.clear()
+        self._grid_nav_zip_line_unavailable.clear()
 
     def _get_minimap_position_service(self):
         if self._grid_minimap_position_service is not None:

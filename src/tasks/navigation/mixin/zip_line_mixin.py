@@ -305,7 +305,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         - ``NOT_TRIGGERED``：已停稳且 WS 仍在起点附近，没触发滑索，返回失败交给外层重试；
         - ``WRONG_RACK``：停稳后既不在起点也不在目标附近，落到了别的滑索架，重新规划。
 
-        调用方负责点击并发送一次 E；本方法只轮询状态，不重复发送按键。
+        调用方负责点击鼠标左键；本方法只轮询状态，不重复发送按键。
         """
         if target_position is None:
             return False
@@ -408,7 +408,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 )
                 last_start_position = self._zip_line_ws_position()
                 self.click(after_sleep=0.1)
-                self.send_key("e")
                 if self._wait_zip_line_motion(
                     target_position=target_position,
                     start_position=last_start_position,
@@ -1104,8 +1103,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     def _try_click_on_zip_line(
         self, zip_line, max_attempts=5, lock_timeout=2, *, distance_tolerance=None, on_gate_confirmed=None
     ):
-        """执行一次黄色门控 + 点击 + E，返回 ``(成功, 失败原因)``。"""
-        stop_match, stop_box = self._zip_line_stop_state()
+        """执行一次黄色门控 + 鼠标左键点击，返回 ``(成功, 失败原因)``。"""
         lock_start = self.active_time()
         while True:
             gate_frame = self.next_frame()
@@ -1121,21 +1119,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.sleep(0.05)
 
         self.click(after_sleep=0.1)
-        for _ in range(max_attempts):
-            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
-            if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
-                return True, None
-        return False, "interaction"
+        return True, None
 
     def _legacy_click_on_zip_line(self, max_attempts=5):
-        """黄色门控耗尽后的 v1.1.11 式直接点击 + E 回退。"""
-        stop_match, stop_box = self._zip_line_stop_state()
-        for _ in range(max_attempts):
-            self.click(after_sleep=0.1)
-            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
-            if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
-                return True
-        return False
+        """黄色门控耗尽后只点击鼠标左键，由调用方等待实际移动结果。"""
+        self.click(after_sleep=0.1)
+        return True
 
     def _zip_line_motion_route_fingerprint(self, zip_line_list, config_key=None):
         """Resolve the exact config key + full list identity for motion reuse."""
@@ -1388,7 +1377,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             gate_retry_deadline = gate_retry_start + 20
             activated = False
             last_reason = None
-            interaction_failed = False
             for attempt in range(3):
                 on_gate = (
                     learning.confirm_zipline_gold_gate if learning is not None and not learning.session.closed else None
@@ -1403,8 +1391,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 if last_reason == "gate":
                     self.log_info(f"滑索{zip_line}金色门未通过，重新对中后重试（{attempt + 1}/3）")
                 else:
-                    interaction_failed = True
-                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，重新对中后重试（{attempt + 1}/3）")
+                    self.log_info(f"滑索{zip_line}未能触发，重新对中后重试（{attempt + 1}/3）")
                 if attempt >= 2 or self.active_time() >= gate_retry_deadline:
                     break
                 # Retry movement belongs to the same original-entry sample if the gate
@@ -1429,14 +1416,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 # A direct-click fallback has no gold-gate evidence and must not train.
                 if learning is not None and not learning.session.closed:
                     learning.fail()
-                if interaction_failed:
-                    self.log_info(f"滑索{zip_line}已点击但 E 未生效，不执行无门控回退", notify=True)
-                    raise RuntimeError(f"滑索{zip_line}点击后 E 连续未生效")
                 if last_reason == "gate":
-                    self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击 + E")
+                    self.log_info(f"滑索{zip_line}金色门重试耗尽，回退直接点击鼠标左键")
                     if not self._legacy_click_on_zip_line():
-                        self.log_info(f"滑索{zip_line}直接点击后 E 未生效", notify=True)
-                        raise RuntimeError(f"滑索{zip_line}直接点击并按 E 后仍未生效")
+                        self.log_info(f"滑索{zip_line}直接点击鼠标左键失败", notify=True)
+                        raise RuntimeError(f"滑索{zip_line}直接点击鼠标左键失败")
                 else:
                     self.log_info(f"滑索{zip_line}交互失败", notify=True)
                     raise RuntimeError(f"滑索{zip_line}交互失败")
@@ -1445,7 +1429,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         """用距离 OCR 对中并点击滑行；保留自动送货的兼容路径。
 
         对中走模板 OCR（``_align_zip_line_distance``），点击走黄色门控重试，两道都不过才回退
-        直接点击 + E。网格导航传入的距离容差会一路传给对中与门控，用于吸收地图坐标与游戏
+        直接点击鼠标左键。网格导航传入的距离容差会一路传给对中与门控，用于吸收地图坐标与游戏
         显示距离之间的偏差。``initial_move`` 是该段学到的历史鼠标位移，只在对中第一步预送。
         """
         self._align_and_activate_zip_line(
@@ -1459,7 +1443,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         start = self.active_time()
         while True:
             self.next_frame()
-            self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
             self.sleep(0.1)
             if self.ocr(match=stop_match, box=stop_box, log=True):
                 return
@@ -1560,7 +1543,6 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             start = self.active_time()
             while True:
                 self.next_frame()
-                self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
                 self.sleep(0.1)
                 if self.ocr(match=stop_match, box=stop_box, log=True):
                     break
@@ -1660,7 +1642,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         self.ensure_main()
 
     def ensure_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2, *, distance_tolerance=None):
-        """兼容入口：一次黄色门控 + 点击 + E，失败由调用方决定是否重新对中。"""
+        """兼容入口：一次黄色门控 + 鼠标左键点击，失败由调用方决定是否重新对中。"""
         success, _ = self._try_click_on_zip_line(
             zip_line,
             max_attempts=max_attempts,

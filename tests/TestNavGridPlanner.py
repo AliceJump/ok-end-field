@@ -313,6 +313,28 @@ class TestZipLinePlanning(unittest.TestCase):
         self.assertEqual(result.waypoints[route_step.entry_waypoint_index], first.xz)
         self.assertEqual(result.waypoints[route_step.exit_waypoint_index], second.xz)
 
+    def test_zip_line_is_traversable_in_both_directions(self):
+        grid = _grid(["o#o"])
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 2.5, 0.0, 0.5)
+        graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink("a", "b", distance_m=2.0, max_range_m=2.0)],
+        )
+
+        forward = GridPlanner(grid, zip_lines=graph).plan_cells((0, 0), (0, 2))
+        reverse = GridPlanner(grid, zip_lines=graph).plan_cells((0, 2), (0, 0))
+
+        self.assertTrue(forward.ok, forward)
+        self.assertEqual(
+            [(step.entry.node_id, step.exit.node_id) for step in forward.zip_line_steps[0].steps], [("a", "b")]
+        )
+        self.assertTrue(reverse.ok, reverse)
+        self.assertEqual(
+            [(step.entry.node_id, step.exit.node_id) for step in reverse.zip_line_steps[0].steps], [("b", "a")]
+        )
+        self.assertEqual(GridPlanner(grid, zip_lines=graph).zip_line_stats()["directed_edges"], 2)
+
     def test_zip_line_edge_cost_uses_grid_cell_units(self):
         grid = _grid(["o#o"], cell_size=0.5)
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.25, 0.0, 0.25)

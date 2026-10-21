@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import ClassVar
 from unittest.mock import MagicMock, patch
+from urllib import error as urllib_error
 
 from src.localization.capture_position_source import (
     CAPTURE_HEALTH_BACKEND_DOWN,
@@ -23,6 +24,11 @@ from src.localization.capture_position_source import (
     CaptureHealth,
     CapturePositionSource,
     map_id_for_scene,
+)
+from src.localization.capture_travel_poles import (
+    CaptureTravelPoleSource,
+    build_capture_travel_pole_graph,
+    parse_capture_travel_pole_snapshot,
 )
 from src.localization.minimap_position_mixin import (
     CAPTURE_RELOGIN_ATTEMPTS,
@@ -1102,3 +1108,221 @@ class CaptureRecoveryTest(unittest.TestCase):
         owner.relogin_same_account = MagicMock(side_effect=RuntimeError("未回到登录界面"))
         self.assertFalse(owner.force_new_capture_connection())
         self.assertTrue(any("自动重新登录失败" in w for w in owner.warnings), owner.warnings)
+
+
+class CaptureTravelPolesTest(unittest.TestCase):
+    """抓包滑索快照的字段转换、可信性与双向连接契约。"""
+
+    @staticmethod
+    def _node(node_id, component_id, *, chapter="domain_2", x=1.0, template="travel_pole_2", **overrides):
+        node = {
+            "chapterId": chapter,
+            "nodeId": node_id,
+            "componentId": component_id,
+            "templateId": template,
+            "mapId": 85,
+            "position": {"x": x, "y": 2.0, "z": 3.0},
+            "rotation": {"x": 0.0, "y": 270.0, "z": 0.0},
+            "defaultNext": 0,
+            "flag": 0,
+            "shared": False,
+            "origin": "self_or_preset",
+            "isDeactive": False,
+            "power": None,
+            "social": None,
+        }
+        node.update(overrides)
+        return node
+
+    @classmethod
+    def _payload(cls, *, nodes=None, links=None, **overrides):
+        payload = {
+            "flow": 1,
+            "flowStatus": "正在解码",
+            "connectionActive": True,
+            "updatedAt": 1791802263.33,
+            "revision": 3,
+            "syncedChapters": ["domain_2"],
+            "nodeCount": len(nodes or []),
+            "error": None,
+            "nodes": nodes or [],
+            "defaultLinks": links or [],
+            "defaultLinkCount": len(links or []),
+            "resolvedTargetCount": sum(bool(link.get("targetResolved")) for link in links or []),
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_converts_chapter_node_ids_and_default_link_as_bidirectional(self):
+        first = self._node(
+            10,
+            20,
+            power={"inPower": False, "needInPower": False, "powerCost": 0, "powerCostShow": 0},
+            social={"ownerId": "9007199254740993", "socialNodeId": 12, "preset": False},
+        )
+        second = self._node(20, 10, x=12.5)
+        payload = self._payload(
+            nodes=[first, second],
+            links=[
+                {
+                    "chapterId": "domain_2",
+                    "sourceNodeId": 10,
+                    "sourceComponentId": 20,
+                    "targetNodeId": 20,
+                    "targetResolved": True,
+                    "distance3D": 11.5,
+                    "yawToTarget": 90.0,
+                }
+            ],
+        )
+
+        snapshot = parse_capture_travel_pole_snapshot(payload)
+        result = build_capture_travel_pole_graph(snapshot, map_id="map02", include_shared=True)
+
+        self.assertTrue(result.cacheable)
+        self.assertIsNotNone(result.graph)
+        graph = result.graph
+        self.assertEqual(
+            {node.node_id for node in graph.nodes},
+            {"domain_2:10", "domain_2:20"},
+            "节点身份必须使用 (chapterId, nodeId)，不能拿 componentId 顶替",
+        )
+        self.assertEqual(graph.node("domain_2:10").template_id, "travel_pole_2")
+        self.assertEqual(snapshot.nodes[0].power["inPower"], False)
+        self.assertEqual(snapshot.nodes[0].social["ownerId"], "9007199254740993")
+        self.assertEqual(len(graph.links), 1)
+        link = graph.links[0]
+        self.assertEqual((link.first_id, link.second_id), ("domain_2:10", "domain_2:20"))
+        self.assertEqual(link.other("domain_2:10"), "domain_2:20")
+        self.assertEqual(link.other("domain_2:20"), "domain_2:10")
+
+    def test_unresolved_target_never_becomes_a_connection(self):
+        payload = self._payload(
+            nodes=[self._node(10, 100), self._node(20, 200, x=12.5)],
+            links=[
+                {
+                    "chapterId": "domain_2",
+                    "sourceNodeId": 10,
+                    "sourceComponentId": 100,
+                    "targetNodeId": 20,
+                    "targetResolved": False,
+                    "distance3D": 11.5,
+                    "yawToTarget": 90.0,
+                }
+            ],
+        )
+
+        result = build_capture_travel_pole_graph(
+            parse_capture_travel_pole_snapshot(payload),
+            map_id="map02",
+            include_shared=True,
+        )
+
+        self.assertIsNotNone(result.graph)
+        self.assertEqual(len(result.graph.nodes), 2)
+        self.assertEqual(result.graph.links, ())
+
+    def test_invalid_metadata_or_snapshot_error_rejects_the_graph(self):
+        cases = [
+            ({"connectionActive": False}, "connection_inactive"),
+            ({"flowStatus": "等待登录初始化"}, "flow_status:等待登录初始化"),
+            ({"error": "invalid factory message 222"}, "snapshot_error:invalid factory message 222"),
+            ({"syncedChapters": []}, "not_synced"),
+            ({"updatedAt": None}, "missing_updated_at"),
+        ]
+        for overrides, reason in cases:
+            with self.subTest(reason=reason):
+                payload = self._payload(nodes=[self._node(10, 100)], **overrides)
+                result = build_capture_travel_pole_graph(
+                    parse_capture_travel_pole_snapshot(payload),
+                    map_id="map02",
+                    include_shared=True,
+                )
+                self.assertIsNone(result.graph)
+                self.assertFalse(result.cacheable)
+                self.assertEqual(result.reason, reason)
+
+    def test_synced_empty_snapshot_is_a_stable_empty_result(self):
+        result = build_capture_travel_pole_graph(
+            parse_capture_travel_pole_snapshot(self._payload()),
+            map_id="map02",
+            include_shared=True,
+        )
+
+        self.assertIsNone(result.graph)
+        self.assertTrue(result.cacheable)
+        self.assertEqual(result.reason, "empty_nodes")
+
+    def test_shared_and_deactive_use_explicit_api_fields(self):
+        shared = self._node(10, 100, shared=True)
+        deactive = self._node(20, 200, x=12.5, isDeactive=True)
+        active = self._node(30, 300, x=25.0)
+        snapshot = parse_capture_travel_pole_snapshot(self._payload(nodes=[shared, deactive, active]))
+
+        without_shared = build_capture_travel_pole_graph(snapshot, map_id="map02", include_shared=False)
+        with_shared = build_capture_travel_pole_graph(snapshot, map_id="map02", include_shared=True)
+
+        self.assertEqual([node.node_id for node in without_shared.graph.nodes], ["domain_2:30"])
+        self.assertEqual(
+            {node.node_id for node in with_shared.graph.nodes},
+            {"domain_2:10", "domain_2:30"},
+        )
+        self.assertNotIn("domain_2:20", {node.node_id for node in with_shared.graph.nodes})
+
+    def test_same_node_id_in_another_chapter_is_not_mixed_into_map02(self):
+        domain_2 = self._node(10, 100)
+        domain_1 = self._node(10, 100, chapter="domain_1", x=40.0)
+        payload = self._payload(nodes=[domain_1, domain_2], syncedChapters=["domain_1", "domain_2"])
+
+        result = build_capture_travel_pole_graph(
+            parse_capture_travel_pole_snapshot(payload),
+            map_id="map02",
+            include_shared=True,
+        )
+
+        self.assertEqual([node.node_id for node in result.graph.nodes], ["domain_2:10"])
+
+    def test_http_404_explains_no_http_mode_and_degrades(self):
+        warnings: list[str] = []
+        source = CaptureTravelPoleSource(8765, log_warning=warnings.append, timeout=0.1)
+        http_error = urllib_error.HTTPError("http://127.0.0.1:8765/api/travel-poles", 404, "Not Found", {}, None)
+        with patch("src.localization.capture_travel_poles.request.urlopen", side_effect=http_error):
+            result = source.load(map_id="map02", include_shared=False)
+
+        self.assertIsNone(result.graph)
+        self.assertFalse(result.cacheable)
+        self.assertEqual(result.reason, "http_unavailable")
+        self.assertTrue(any("--no-http" in warning for warning in warnings), warnings)
+
+    def test_http_fetch_returns_converted_graph(self):
+        payload = self._payload(
+            nodes=[self._node(10, 100), self._node(20, 200, x=12.5)],
+            links=[
+                {
+                    "chapterId": "domain_2",
+                    "sourceNodeId": 10,
+                    "sourceComponentId": 100,
+                    "targetNodeId": 20,
+                    "targetResolved": True,
+                    "distance3D": 11.5,
+                    "yawToTarget": 90.0,
+                }
+            ],
+        )
+        with FakeBackend(payload) as backend:
+            result = CaptureTravelPoleSource(backend.port, timeout=0.2).load(map_id="map02", include_shared=False)
+
+        self.assertTrue(result.cacheable)
+        self.assertIsNotNone(result.graph)
+        self.assertEqual(len(result.graph.links), 1)
+        self.assertEqual(result.graph.links[0].other("domain_2:20"), "domain_2:10")
+
+    def test_unreachable_backend_degrades_without_exception(self):
+        warnings: list[str] = []
+        source = CaptureTravelPoleSource(19999, log_warning=warnings.append, timeout=0.1)
+
+        result = source.load(map_id="map02", include_shared=False)
+
+        self.assertIsNone(result.graph)
+        self.assertFalse(result.cacheable)
+        self.assertTrue(warnings)

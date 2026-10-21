@@ -126,11 +126,12 @@ class ZipLineNode:
     x: float
     y: float
     z: float
+    template_id: str = ""
 
     @property
     def connect_range_m(self) -> float:
         """该滑索架允许的最大连接距离。"""
-        return ZIP_LINE_RANGES[self.name]
+        return ZIP_LINE_RANGES.get(self.name, ZIP_LINE_RANGES[ZIP_LINE_NAME])
 
     @property
     def xz(self) -> tuple[float, float]:
@@ -150,7 +151,7 @@ class ZipLineNode:
 
 @dataclass(frozen=True)
 class ZipLineLink:
-    """两个滑索架之间的无向可连接边。"""
+    """两个滑索架之间的可连接边。滑索设施按双向通行建模。"""
 
     first_id: str
     second_id: str
@@ -158,7 +159,7 @@ class ZipLineLink:
     max_range_m: float
 
     def other(self, node_id: str) -> str:
-        """返回边的另一端节点 ID。"""
+        """返回从 ``node_id`` 出发可到达的另一端节点 ID。"""
         if node_id == self.first_id:
             return self.second_id
         if node_id == self.second_id:
@@ -213,7 +214,7 @@ class ZipLineGraph:
         return self._nodes_by_id[node_id]
 
     def links_for(self, node_id: str) -> tuple[ZipLineLink, ...]:
-        """返回节点的所有可连接边。"""
+        """返回节点可出发的所有连接边。"""
         return self._links_by_node.get(node_id, ())
 
     def for_map(self, map_id: str) -> ZipLineGraph:
@@ -296,6 +297,7 @@ class ZipLineGraph:
                     x=x,
                     y=y,
                     z=z,
+                    template_id=template_id,
                 )
 
         nodes = sorted(nodes_by_id.values(), key=lambda node: node.node_id)

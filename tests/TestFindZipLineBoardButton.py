@@ -135,10 +135,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             len([event for event in events if event[0] == "click"]),
             5,
         )
-        self.assertEqual(
-            len([event for event in events if event[0] == "key"]),
-            5,
-        )
+        self.assertFalse(any(event[0] == "key" for event in events))
         self.assertEqual(raised.exception.current_position, (10.0, 10.0))
         self.assertEqual(raised.exception.failed_target_position, (50.0, 50.0))
         self.assertEqual(

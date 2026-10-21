@@ -510,7 +510,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(stub._zip_line_target_is_gold_and_centered.call_count, 4)
         self.assertEqual(stub.sleep.call_count, 3)
         stub.click.assert_called_once()
-        stub.send_key.assert_called_once_with("e")
+        stub.send_key.assert_not_called()
 
     def test_gold_gate_is_checked_before_calibration_click(self):
         stub = self._stub()
@@ -525,33 +525,32 @@ class TestZipLineGoldGate(unittest.TestCase):
         result = ZipLineMixin.ensure_click_on_zip_line(stub, 108)
 
         self.assertTrue(result)
-        self.assertEqual(events[:3], ["gold_check", "click", "e"])
+        self.assertEqual(events, ["gold_check", "click"])
+        stub.send_key.assert_not_called()
 
-    def test_e_has_no_second_gold_gate_after_click(self):
+    def test_click_only_does_not_send_e_or_recheck_gold(self):
         stub = self._stub()
         stub._zip_line_target_is_gold_and_centered = Mock(return_value=True)
-        stub.ocr.return_value = []
 
         result = ZipLineMixin.ensure_click_on_zip_line(stub, 108)
 
         self.assertTrue(result)
         stub._zip_line_target_is_gold_and_centered.assert_called_once()
         stub.click.assert_called_once()
-        stub.send_key.assert_called_once_with("e")
-        stub.ocr.assert_called_once()
+        stub.send_key.assert_not_called()
+        stub.ocr.assert_not_called()
 
-    def test_e_retry_does_not_recheck_gold_after_click(self):
+    def test_click_only_does_not_repeat_input_after_activation(self):
         stub = self._stub()
         stub._zip_line_target_is_gold_and_centered = Mock(return_value=True)
-        stub.ocr.side_effect = [[SimpleNamespace(name="move")], []]
 
         result = ZipLineMixin.ensure_click_on_zip_line(stub, 108)
 
         self.assertTrue(result)
         stub._zip_line_target_is_gold_and_centered.assert_called_once()
         stub.click.assert_called_once()
-        self.assertEqual(stub.send_key.call_count, 2)
-        self.assertEqual(stub.ocr.call_count, 2)
+        stub.send_key.assert_not_called()
+        stub.ocr.assert_not_called()
 
     def test_gate_failure_realigns_with_same_fifty_pixel_tolerance(self):
         stub = self._stub()
@@ -593,7 +592,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         self.assertEqual(retry_kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_called_once_with()
 
-    def test_gate_retry_exhaustion_falls_back_to_direct_click_and_e(self):
+    def test_gate_retry_exhaustion_falls_back_to_direct_left_click(self):
         stub = self._stub()
         stub._align_zip_line_distance = Mock(return_value=True)
         stub._try_click_on_zip_line = Mock(return_value=(False, "gate"))
@@ -611,41 +610,14 @@ class TestZipLineGoldGate(unittest.TestCase):
             self.assertEqual(retry_call.kwargs["deadline"], 20.0)
         stub._legacy_click_on_zip_line.assert_called_once_with()
 
-    def test_interaction_failure_does_not_use_unlocked_legacy_fallback(self):
+    def test_legacy_fallback_clicks_left_once_without_gold_gate(self):
         stub = self._stub()
-        stub._align_zip_line_distance = Mock(return_value=True)
-        stub._try_click_on_zip_line = Mock(return_value=(False, "interaction"))
-        stub._legacy_click_on_zip_line = Mock(return_value=True)
-        stub.log_info = Mock()
-
-        with self.assertRaisesRegex(RuntimeError, "点击后 E 连续未生效"):
-            ZipLineMixin.zip_line_list_go(stub, [108])
-
-        self.assertEqual(stub._try_click_on_zip_line.call_count, 3)
-        stub._legacy_click_on_zip_line.assert_not_called()
-
-    def test_interaction_failure_stays_sticky_if_later_retry_hits_gate(self):
-        stub = self._stub()
-        stub._align_zip_line_distance = Mock(side_effect=[True, True, False])
-        stub._try_click_on_zip_line = Mock(side_effect=[(False, "interaction"), (False, "gate")])
-        stub._legacy_click_on_zip_line = Mock(return_value=True)
-        stub.log_info = Mock()
-
-        with self.assertRaisesRegex(RuntimeError, "点击后 E 连续未生效"):
-            ZipLineMixin.zip_line_list_go(stub, [108])
-
-        self.assertEqual(stub._try_click_on_zip_line.call_count, 2)
-        stub._legacy_click_on_zip_line.assert_not_called()
-
-    def test_legacy_fallback_repeats_click_and_e_without_gold_gate(self):
-        stub = self._stub()
-        stub.ocr.side_effect = [[SimpleNamespace(name="move")], []]
 
         result = ZipLineMixin._legacy_click_on_zip_line(stub, max_attempts=3)
 
         self.assertTrue(result)
-        self.assertEqual(stub.click.call_count, 2)
-        self.assertEqual(stub.send_key.call_count, 2)
+        stub.click.assert_called_once_with(after_sleep=0.1)
+        stub.send_key.assert_not_called()
 
     def test_test_route_completes_segments_without_dismount_or_target_search(self):
         stub = self._stub()

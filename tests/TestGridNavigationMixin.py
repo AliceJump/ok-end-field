@@ -312,14 +312,108 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertEqual(len(graph), 2)
         self.assertEqual(len(graph.links), 1)
 
+    def test_capture_disabled_keeps_existing_map_mark_source(self):
+        payload = {
+            "code": 0,
+            "data": {
+                "markTemplates": [{"id": "normal", "name": "滑索架"}],
+                "saveMarks": [
+                    {
+                        "id": "a",
+                        "templateId": "normal",
+                        "mapId": "test",
+                        "levelId": "lv1",
+                        "pos": {"x": 0.5, "y": 0.0, "z": 0.5},
+                    },
+                    {
+                        "id": "b",
+                        "templateId": "normal",
+                        "mapId": "test",
+                        "levelId": "lv1",
+                        "pos": {"x": 20.5, "y": 0.0, "z": 0.5},
+                    },
+                ],
+            },
+        }
+        self.task.experimental_capture_enabled = lambda: False
+        self.task.capture_travel_pole_graph = mock.Mock(side_effect=AssertionError("不应读取抓包滑索"))
+        self.task._map_ws_account = {"roleId": "r", "serverId": "s"}
+        self.task._map_api_get = mock.Mock(return_value=payload)
+        self.task.zip_line_list_go = lambda distances, **kwargs: None
+        self.task.config[CONFIG_GRID_USE_SHARED_ZIP_LINES] = True
+
+        with mock.patch("src.data.user_map_mark_store.persist_user_marks"):
+            graph = self.task._grid_zip_lines_for_map("test")
+
+        self.assertIsNotNone(graph)
+        self.assertEqual(len(graph), 2)
+        self.assertEqual(len(graph.links), 1)
+        self.task._map_api_get.assert_called_once()
+        self.task.capture_travel_pole_graph.assert_not_called()
+
+    def test_capture_enabled_uses_travel_poles_without_map_mark_api(self):
+        first = ZipLineNode("domain_2:10", "test", "domain_2", "travel_pole_2", 0.5, 0.0, 0.5)
+        second = ZipLineNode("domain_2:20", "test", "domain_2", "travel_pole_1", 20.5, 0.0, 0.5)
+        graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink(first.node_id, second.node_id, 20.0, 20.0)],
+        )
+        self.task.experimental_capture_enabled = lambda: True
+        self.task.capture_travel_pole_graph = mock.Mock(
+            return_value=SimpleNamespace(graph=graph, reason="ok", cacheable=True)
+        )
+        self.task._map_api_get = mock.Mock(side_effect=AssertionError("抓包模式不应读取地图 mark API"))
+        self.task.zip_line_list_go = lambda distances, **kwargs: None
+
+        loaded = self.task._grid_zip_lines_for_map("test")
+
+        self.assertIs(loaded, graph)
+        self.task.capture_travel_pole_graph.assert_called_once_with(map_id="test", include_shared=False)
+        self.task._map_api_get.assert_not_called()
+        self.assertIs(self.task._grid_zip_lines_for_map("test"), graph)
+        self.task.capture_travel_pole_graph.assert_called_once()
+
+    def test_capture_http_failure_degrades_to_grid_without_retrying_within_navigation(self):
+        self.task.experimental_capture_enabled = lambda: True
+        self.task.capture_travel_pole_graph = mock.Mock(
+            return_value=SimpleNamespace(graph=None, reason="http_unavailable", cacheable=False)
+        )
+        self.task._map_api_get = mock.Mock(side_effect=AssertionError("不应回退到旧地图 mark API"))
+        self.task.zip_line_list_go = lambda distances, **kwargs: None
+
+        self.assertIsNone(self.task._grid_zip_lines_for_map("test"))
+        self.assertIsNone(self.task._grid_zip_lines_for_map("test"))
+
+        self.task.capture_travel_pole_graph.assert_called_once()
+        self.assertEqual(self.task._grid_nav_zip_line_unavailable, {"test"})
+        self.assertTrue(any("抓包滑索暂不可用" in message for message in self.task.logs), self.task.logs)
+
+    def test_capture_synced_empty_snapshot_is_cached_as_empty(self):
+        self.task.experimental_capture_enabled = lambda: True
+        self.task.capture_travel_pole_graph = mock.Mock(
+            return_value=SimpleNamespace(graph=None, reason="empty_nodes", cacheable=True)
+        )
+        self.task.zip_line_list_go = lambda distances, **kwargs: None
+
+        self.assertIsNone(self.task._grid_zip_lines_for_map("test"))
+        self.assertIsNone(self.task._grid_zip_lines_for_map("test"))
+
+        self.task.capture_travel_pole_graph.assert_called_once()
+        self.assertEqual(self.task._grid_nav_zip_line_empty, {"test"})
+        self.task._refresh_grid_zip_lines("test")
+        self.assertEqual(self.task._grid_nav_zip_line_empty, set())
+        self.assertEqual(self.task._grid_nav_zip_line_unavailable, set())
+
     def test_refresh_grid_zip_lines_clears_cached_snapshot(self):
         self.task._grid_nav_zip_line_cache["test"] = object()
         self.task._grid_nav_zip_line_empty.add("other")
+        self.task._grid_nav_zip_line_unavailable.add("failed")
 
         self.task._refresh_grid_zip_lines()
 
         self.assertEqual(self.task._grid_nav_zip_line_cache, {})
         self.assertEqual(self.task._grid_nav_zip_line_empty, set())
+        self.assertEqual(self.task._grid_nav_zip_line_unavailable, set())
 
     def test_navigation_refreshes_zip_line_snapshot_at_start(self):
         refreshes = []

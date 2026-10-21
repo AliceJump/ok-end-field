@@ -120,6 +120,7 @@ from src.localization.capture_position_source import (
     CaptureHealth,
     CapturePositionSource,
 )
+from src.localization.capture_travel_poles import CaptureTravelPoleLoad, CaptureTravelPoleSource
 from src.localization.minimap_heading_mixin import MinimapHeadingMixin
 from src.localization.minimap_odometry import MinimapOdometry
 from src.localization.minimap_position_fusion import MinimapPositionFusion
@@ -248,6 +249,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         # 实验技术（抓包直通）状态：数据源实例与已消费的样本序号。
         # 直通模式下 sync_seq 每来一条新样本就 +1，导航据此失效"已走过的已知格"。
         self._minimap_capture_source: CapturePositionSource | None = None
+        self._minimap_capture_travel_pole_source: CaptureTravelPoleSource | None = None
         self._minimap_capture_launcher: BackendLauncher | None = None
         self._minimap_capture_installer: CaptureBackendInstaller | None = None
         #: 预下载线程句柄；非 None 表示已经起过一次，不再重复起
@@ -789,6 +791,21 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             )
             self._minimap_capture_source = source
         return source
+
+    def capture_travel_pole_source(self) -> CaptureTravelPoleSource:
+        """按当前配置端口返回按需拉取的滑索快照数据源。"""
+
+        port = int(self._cfg_int(CONFIG_EXPERIMENTAL_PORT, 8765))
+        source = self._minimap_capture_travel_pole_source
+        if source is None or source.port != port:
+            source = CaptureTravelPoleSource(port, log_warning=self.log_warning)
+            self._minimap_capture_travel_pole_source = source
+        return source
+
+    def capture_travel_pole_graph(self, *, map_id: str, include_shared: bool) -> CaptureTravelPoleLoad:
+        """读取一次抓包滑索快照；调用方负责仅在实验抓包模式下调用。"""
+
+        return self.capture_travel_pole_source().load(map_id=map_id, include_shared=include_shared)
 
     def capture_backend_launcher(self) -> BackendLauncher:
         """按当前配置返回后端拉起器（与游戏启动前的自动拉起共用同一个实例）。"""

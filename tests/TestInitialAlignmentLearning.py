@@ -293,24 +293,13 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         self.assertIsNone(self.store.get(context.fingerprint))
         task._legacy_click_on_zip_line.assert_called_once()
 
-    def test_gold_gate_saves_before_e_failure_but_does_not_train_twice(self):
-        # All three E retries must still have fresh target detections.
-        task = self.zip_task(
-            [gold_tests.TestZipLineGoldGate._matched_icon(1400, 800), gold_tests.TestZipLineGoldGate._matched_icon()]
-            * 4
-        )
+    def test_click_only_activation_saves_gold_gate_sample_once(self):
+        task = self.zip_task()
         context = self.zip_context(task)
-
-        def no_e(*args, on_gate_confirmed=None):
-            if on_gate_confirmed is not None:
-                on_gate_confirmed(task.next_frame())
-            return False, "interaction"
-
-        task._try_click_on_zip_line.side_effect = no_e
-        with self.assertRaisesRegex(RuntimeError, "E 连续未生效"):
-            self.run_zip(task)
+        self.run_zip(task)
         record = self.store.get(context.fingerprint)
         self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (1, 40, 20))
+        task.send_key.assert_not_called()
 
     def test_gate_retry_recorded_random_search_is_part_of_full_verified_motion(self):
         task = self.zip_task(
