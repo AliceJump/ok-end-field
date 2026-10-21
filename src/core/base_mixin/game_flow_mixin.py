@@ -430,6 +430,9 @@ class GameFlowMixin:
             return False
 
         if esc and self.active_time() >= getattr(self, "_next_main_recovery_time", 0):
+            self.next_frame()
+            if self.in_world():
+                return True
             self.log_info("主界面自然恢复等待结束，发送返回键")
             self.back()
             self._next_main_recovery_time = self.active_time() + self.once_sleep_time
