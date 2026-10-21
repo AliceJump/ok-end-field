@@ -26,7 +26,7 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import ok.util.process as process_mod
 import psutil
@@ -632,8 +632,117 @@ class TestOfficialLauncher(unittest.TestCase):
         ):
             official_launcher.launch_game("unused", "", Mock())
         cleanup.return_value.start.assert_not_called()
-        kernel.TerminateProcess.assert_called_once_with(321, 0)
+        self.assertEqual(kernel.TerminateProcess.call_args_list, [call(321, 0), call(321, 0)])
+        self.assertEqual(kernel.CloseHandle.call_args_list, [call(321), call(321)])
+
+    def test_missing_or_invalid_preferred_parent_tries_other_product_in_both_directions(self):
+        for company in ("Hypergryph", "Gryphline"):
+            other = next(value for value in official_launcher.LAUNCHER_PRODUCTS if value != company)
+            kernel = Mock()
+            logger = Mock()
+            with (
+                self.subTest(company=company),
+                patch.object(official_launcher, "_game_company", return_value=company),
+                patch.object(official_launcher, "running_pids", return_value=[]),
+                patch.object(official_launcher, "_kernel32", return_value=kernel),
+                patch.object(official_launcher, "create_temporary_parent", side_effect=[RuntimeError("not found or invalid"), 321]) as prepare,
+                patch.object(official_launcher, "LauncherCleanup") as cleanup,
+                patch.object(official_launcher, "create_process", return_value=456) as create,
+            ):
+                self.assertTrue(official_launcher.launch_game("relocated/Endfield.exe", "-force-d3d11", logger))
+            self.assertEqual([c.kwargs["company"] for c in prepare.call_args_list], [company, other])
+            cleanup.assert_called_once_with(kernel, 321, logger, company=company)
+            create.assert_called_once_with(kernel, os.path.abspath("relocated/Endfield.exe"), "-force-d3d11", 321)
+            kernel.TerminateProcess.assert_not_called()
+
+    def test_game_creation_failure_discards_first_parent_before_using_other_type(self):
+        for company in ("Hypergryph", "Gryphline"):
+            kernel = Mock()
+            logger = Mock()
+
+            def created(kernel_arg, path, arguments, parent, kernel=kernel):
+                if parent == 321:
+                    raise OSError("first parent cannot start game")
+                kernel.TerminateProcess.assert_called_once_with(321, 0)
+                kernel.CloseHandle.assert_called_once_with(321)
+                return 456
+
+            with (
+                self.subTest(company=company),
+                patch.object(official_launcher, "_game_company", return_value=company),
+                patch.object(official_launcher, "running_pids", return_value=[]),
+                patch.object(official_launcher, "_kernel32", return_value=kernel),
+                patch.object(official_launcher, "create_temporary_parent", side_effect=[321, 654]) as prepare,
+                patch.object(official_launcher, "LauncherCleanup") as cleanup,
+                patch.object(official_launcher, "create_process", side_effect=created) as create,
+            ):
+                self.assertTrue(official_launcher.launch_game("unused", "", logger))
+            self.assertEqual(prepare.call_count, 2)
+            self.assertEqual(create.call_count, 2)
+            self.assertEqual(cleanup.call_args_list, [
+                call(kernel, 321, logger, company=company), call(kernel, 654, logger, company=company),
+            ])
+            cleanup.return_value.start.assert_called_once_with(456)
+
+    def test_parent_creation_error_uses_other_type_before_creating_game(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", side_effect=[OSError("access denied"), 321]) as prepare,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
+        ):
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        self.assertEqual(prepare.call_count, 2)
+        create.assert_called_once()
+
+    def test_no_retry_when_post_creation_bookkeeping_fails(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321) as prepare,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
+            patch.object(official_launcher, "note_game_started", side_effect=RuntimeError("journal failed")),
+            self.assertRaisesRegex(RuntimeError, "journal failed"),
+        ):
+            official_launcher.launch_game("unused", "", Mock())
+        prepare.assert_called_once()
+        create.assert_called_once()
+        kernel.TerminateProcess.assert_not_called()
         kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_failed_disposal_prevents_trying_another_parent(self):
+        kernel = Mock()
+        kernel.TerminateProcess.return_value = False
+        with (
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", return_value=321) as prepare,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", side_effect=OSError("create failed")),
+            self.assertRaisesRegex(OSError, "Could not terminate"),
+        ):
+            official_launcher.launch_game("unused", "", Mock())
+        prepare.assert_called_once()
+        kernel.CloseHandle.assert_called_once_with(321)
+
+    def test_external_game_during_fallback_prevents_second_game_creation(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "running_pids", side_effect=[[], [], [789]]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_temporary_parent", side_effect=[321, 654]) as prepare,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", side_effect=OSError("first launch failed")) as create,
+        ):
+            self.assertTrue(official_launcher.launch_game("unused", "", Mock()))
+        self.assertEqual(prepare.call_count, 2)
+        create.assert_called_once()
+        self.assertEqual(kernel.TerminateProcess.call_args_list, [call(321, 0), call(654, 0)])
+        self.assertEqual(kernel.CloseHandle.call_args_list, [call(321), call(654)])
 
     def test_watcher_unavailable_never_terminates_live_child_parent(self):
         kernel = Mock()

@@ -19,9 +19,9 @@ Check the following in order:
 
 ### Official launcher requirements and channel startup
 
-CN and GRYPHLINK share one startup flow. The game installation's `Endfield_Data/app.info` identifies the company as `Hypergryph` or `Gryphline`. Each channel uses its own registry lookup, while adjacent launchers and the existing path cache must pass the same Windows Authenticode validation and shared official certificate fingerprint allowlist. The signed product name must match the selected game channel. Installation folder names and publisher names alone do not select or authorize a channel.
+CN and GRYPHLINK share one startup flow. The game installation's `Endfield_Data/app.info` identifies the company as `Hypergryph` or `Gryphline`. Each launcher type uses its own registry lookup. Adjacent launchers and cached paths must pass Windows Authenticode, the shared official fingerprint allowlist and the signed product name check for the type being attempted. The game's own type is preferred; if discovery, validation, temporary-parent creation or game-process creation fails, the failed parent is discarded before trying the other official type. Each type is attempted once. After a game process has been created, later failures or initialization timeouts never cause another launch. Fallback changes only the parent type, retaining the game channel, arguments and original company log directory. Installation folder names and publisher names alone do not select or authorize a channel.
 
-The app creates its own suspended official `Games.exe` as the game's immediate parent, without reusing or stopping user-owned launchers or clicking Start Game. Keep the matching official launcher installed and select `Endfield.exe` as the game path. Both direct-launch paths preserve custom arguments and do not inject language or channel arguments.
+The app creates its own suspended official `Games.exe` as the game's immediate parent, without reusing or stopping user-owned launchers or clicking Start Game. Keep at least one of the official launcher types installed and select `Endfield.exe` as the game path. Both direct-launch paths preserve custom arguments and do not inject language or channel arguments.
 
 Both channels watch only fresh complete records in `LocalAppDataLow/<company>/Endfield/sdklogs/OneChannelLC.log`. Once a current-launch `Parent process check success:<PID>` matches the owned temporary process, the app releases that process immediately. It no longer waits for the later SDK initialization callback in `u8sdk_pc.log`. This confirms the parent check, not account login or complete resource loading. A current GRYPHLINK live test confirmed that SDK initialization still succeeds after this early release; other client versions have not all been validated.
 
@@ -29,7 +29,7 @@ If the success record is missing after 120 seconds, the parent remains suspended
 
 Standard Steam installations launch through Steam's URI; Epic installations containing `.egstore/` launch through Epic's installation-directory URI. Their platform clients manage startup, without creating the temporary parent above or terminating Steam/Epic. Custom OK-EF arguments that cannot be forwarded cause an explicit error; configure them in the platform client. Complete Steam/Epic real-device startup validation remains outstanding.
 
-If the game company identity is missing or unrecognized, or a matching official launcher is unavailable, repair the installation or launch manually through the appropriate client. An already running game is still recognized without duplicate startup. Check `logs/ok-script.log` for startup failures.
+If the game company identity is missing or unrecognized, or both official launcher types are unavailable, repair the installation or launch manually through the appropriate client. An already running game is still recognized without duplicate startup. Check `logs/ok-script.log` for startup failures.
 
 ## Bug reports and feedback
 
