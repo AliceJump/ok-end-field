@@ -773,7 +773,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     def _wait_zip_line_prefeed_settled(self, start_reading, prefeed_dx):
         """Wait until replayed horizontal motion starts and then the arrow settles again."""
         environment = yaw_environment(self.width, self.height, start_reading[0] if start_reading else 0)
-        expected_yaw_delta = abs(float(prefeed_dx) * environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE))
+        expected_yaw_delta = abs(
+            float(prefeed_dx) * environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
+        )
         if expected_yaw_delta < 1.0:
             self.sleep(self._ZIP_LINE_ARROW_SETTLE_DELAY)
             return True
@@ -858,7 +860,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         scroll = scope.session.environment.scroll if scope is not None else False
         environment = yaw_environment(width, height, initial_yaw, scroll=scroll)
         yaw_per_mouse = environment.horizontal_yaw_gain(self._ZIP_LINE_ARROW_YAW_PER_MOUSE)
-        hint = load_arrow_turn_motion(width, height, current_yaw, target_yaw, environment=environment) if learning_allowed() else None
+        hint = (
+            load_arrow_turn_motion(width, height, current_yaw, target_yaw, environment=environment)
+            if learning_allowed()
+            else None
+        )
         if hint is not None:
             hint_dx, hint_samples = hint
             if self._send_zip_line_yaw_delta(hint_dx):
@@ -956,9 +962,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             interaction_failed = False
             for attempt in range(3):
                 on_gate = (
-                    learning.confirm_zipline_gold_gate
-                    if learning is not None and not learning.session.closed
-                    else None
+                    learning.confirm_zipline_gold_gate if learning is not None and not learning.session.closed else None
                 )
                 activated, last_reason = self._try_click_on_zip_line(
                     zip_line, **({"on_gate_confirmed": on_gate} if on_gate is not None else {})
