@@ -53,5 +53,38 @@ class TestPairLeftRight(unittest.TestCase):
         self.assertEqual(MouseRotationCalibration._pair_left_right([]), [])
 
 
+class _FakeArrowReader:
+    def __init__(self):
+        self._angle_refresh_delay = 0.1
+        self.sleeps = []
+        self.press_count = 0
+        self.read_options = []
+
+    def sleep(self, seconds):
+        self.sleeps.append(seconds)
+
+    def press_key(self, *args, **kwargs):
+        self.press_count += 1
+
+    def get_arrow_angle(self, **kwargs):
+        self.read_options.append(kwargs)
+        return 12.5, 0.9
+
+
+class TestReadArrowAngle(unittest.TestCase):
+    """滑索模式直接读箭头，不应再发送 W 刷新朝向。"""
+
+    def test_reads_without_pressing_w(self):
+        reader = _FakeArrowReader()
+
+        angle, score = MouseRotationCalibration._read_arrow_angle(reader)
+
+        self.assertEqual(angle, 12.5)
+        self.assertEqual(score, 0.9)
+        self.assertEqual(reader.sleeps, [0.1])
+        self.assertEqual(reader.press_count, 0)
+        self.assertEqual(reader.read_options, [{"smoothing_threshold": None}])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -68,6 +68,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestDeliveryRewardsClaim.py",
             "TestOutpostExchange.py",
             "TestYingTuoTask.py",
+            "TestDeliveryStateMachine.py",
         ),
     ),
     "combat-character-data": (
@@ -173,6 +174,35 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestZipLineTargetSelection.py",
             "TestPressEsc.py",
             "TestDemoLevelMixin.py",
+            "TestGridNavigationLayered.py",
+            "TestGridNavigationMixin.py",
+            "TestNavConfig.py",
+            "TestNavGridIO.py",
+            "TestNavGridPlanner.py",
+            "TestNavGridVerify.py",
+            "TestNavRouteFollower.py",
+            "TestNavState.py",
+            "TestNavFloorRuleVectors.py",
+            "TestNavLayeredMap.py",
+            "TestNavLayeredPlanner.py",
+            "TestNavZipLineGraph.py",
+            "TestSearchMixin.py",
+        ),
+    ),
+    "localization-minimap": (
+        "Minimap localization",
+        (
+            "TestCaptureBackendInstaller.py",
+            "TestCaptureBackendLauncher.py",
+            "TestCapturePositionSource.py",
+            "TestMinimapHeadingMixin.py",
+            "TestMinimapOdometry.py",
+            "TestMinimapPositionFusion.py",
+            "TestMinimapPositionMixin.py",
+            "TestMinimapRegionCheck.py",
+            "TestMinimapSampleStitch.py",
+            "TestMinimapScaleCapture.py",
+            "TestMinimapVisualAnchorChain.py",
         ),
     ),
     "vision-models": (
@@ -180,6 +210,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         (
             "TestYoloDetect.py",
             "TestYoloModelRegistry.py",
+            "TestRotatedTemplate.py",
         ),
     ),
     "gui-overlays": (
@@ -209,6 +240,14 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestScreenshotSidecar.py",
         ),
     ),
+    "runtime-state": (
+        "Runtime state bus",
+        (
+            "TestRuntimeStateArchitecture.py",
+            "TestRuntimeStateHub.py",
+            "TestRuntimeStateMixin.py",
+        ),
+    ),
     "localization-release": (
         "Localization and release",
         (
@@ -225,6 +264,9 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestItemMapQuery.py",
             "TestMapDeviceFingerprint.py",
             "TestMapDeviceRegistration.py",
+            "TestItemNavigatorOfficialMarks.py",
+            "TestMapMarkQuery.py",
+            "TestUserMapMarkStore.py",
         ),
     ),
 }

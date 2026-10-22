@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, call
 
 from src.image.hsv_config import HSVRange as hR
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 
 class TestZipLineTargetSelection(unittest.TestCase):

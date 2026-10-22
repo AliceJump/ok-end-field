@@ -1,5 +1,6 @@
 import unittest
 from types import SimpleNamespace
+from typing import ClassVar
 from unittest.mock import Mock, patch
 
 from src.core import global_config_store
@@ -30,7 +31,7 @@ from src.tasks.onetime.BattleTask import BattleTask
 class _DummyTask:
     name = "测试任务"
     icon = None
-    default_config = {
+    default_config: ClassVar = {
         "普通配置": 1,
         "隐藏配置": 2,
         "强制配置": 3,
@@ -39,9 +40,9 @@ class _DummyTask:
         "其他配置项": 6,
         "打开帮助": "帮助",
     }
-    config = dict(default_config)
-    config_description = {}
-    config_type = {
+    config: ClassVar = dict(default_config)
+    config_description: ClassVar = {}
+    config_type: ClassVar = {
         "隐藏配置": {"type": "drop_down", "options": [1, 2]},
         "强制配置": {"type": "global"},
         "配置选择": {
@@ -54,11 +55,11 @@ class _DummyTask:
         },
         "打开帮助": {"type": "button"},
     }
-    account_config_blacklist = {"隐藏配置"}
-    account_config_whitelist = {"隐藏配置", "强制配置", "额外配置"}
-    account_config_defaults = {"额外配置": 7}
-    account_config_description = {}
-    account_config_type = {}
+    account_config_blacklist: ClassVar = {"隐藏配置"}
+    account_config_whitelist: ClassVar = {"隐藏配置", "强制配置", "额外配置"}
+    account_config_defaults: ClassVar = {"额外配置": 7}
+    account_config_description: ClassVar = {}
+    account_config_type: ClassVar = {}
 
     @staticmethod
     def get_account_config_base_value(key, default=None):

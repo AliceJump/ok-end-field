@@ -154,7 +154,7 @@ class ReactionRule:
     same_element_only: bool  # 仅当新施加元素 == 已附着元素时触发
     consumes_all: bool  # 是否消耗全部前置层数/状态
     multiplier: float  # 专精 3 基础倍率（百分数）
-    scales_with_stacks: bool  # 是否 ×(1+异常等级)（异常等级=前置层数）
+    scales_with_stacks: bool  # 是否 x(1+异常等级)（异常等级=前置层数）
     applies: EffectType | None  # 结算后进入的持续状态
 
 

@@ -163,11 +163,9 @@ class NavigationMixin(SearchMixin):
                     result, pending_target = pending_target, None
                 return result
             if target_is_ocr:
-                return self.ocr(match=target, box=self.box_of_screen(0.635, 0.563, 0.724, 0.843) if not box else box)
+                return self.ocr(match=target, box=box if box else self.box_of_screen(0.635, 0.563, 0.724, 0.843))
             elif target_is_yolo:
-                return self.yolo_detect(
-                    name=target, box=self.box_of_screen(0.635, 0.563, 0.724, 0.843) if not box else box
-                )
+                return self.yolo_detect(name=target, box=box if box else self.box_of_screen(0.635, 0.563, 0.724, 0.843))
             else:
                 return self.find_feature(target, threshold=0.7, vertical_variance=target_vertical_variance)
 
@@ -639,15 +637,12 @@ class NavigationMixin(SearchMixin):
                 return 0, 0
             return dx, dy
 
-        if box:
-            feature_box = box
-        else:
-            feature_box = self.box_of_screen(
-                (1920 - 1550) / 1920,
-                150 / 1080,
-                1550 / 1920,
-                (1080 - 150) / 1080,
-            )
+        feature_box = box or self.box_of_screen(
+            (1920 - 1550) / 1920,
+            150 / 1080,
+            1550 / 1920,
+            (1080 - 150) / 1080,
+        )
         last_target = None
         last_target_fail_count = 0
         success = False
@@ -839,10 +834,7 @@ class NavigationMixin(SearchMixin):
                     last_target = None
                     last_target_fail_count = 0
                     dx = random.randint(-max_offset, max_offset)
-                    if not success:
-                        dy = 0
-                    else:
-                        dy = random.randint(-max_offset, max_offset)
+                    dy = 0 if not success else random.randint(-max_offset, max_offset)
 
                     # 移动鼠标
                     if learning_session is not None:

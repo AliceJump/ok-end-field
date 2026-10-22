@@ -1,4 +1,5 @@
 import unittest
+from typing import ClassVar
 from unittest.mock import Mock, patch
 
 from ok import Box
@@ -8,7 +9,7 @@ from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.battle_mixin import BattleMixin, _resolve_skill_bar_progress
-from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 
 
 class _EnsureMainHarness(GameFlowMixin):
@@ -214,11 +215,13 @@ class _RepeatingConfirmHarness(_ConfirmHarness):
 
 
 class _TaskMapHarness:
-    def __init__(self):
+    def __init__(self, arrived=True):
         self.box = type("Box", (), {"bottom_right": object(), "top": object()})()
         self.keys = []
         self.click_kwargs = []
         self.stable_waits = 0
+        self.arrived = arrived
+        self.wait_calls = []
 
     def ensure_main(self):
         pass
@@ -230,10 +233,17 @@ class _TaskMapHarness:
         return object()
 
     def wait_until(self, condition, **kwargs):
+        self.wait_calls.append(kwargs)
         return condition()
 
     def find_one(self, *args, **kwargs):
         return object()
+
+    def in_world(self):
+        return self.arrived
+
+    def _wait_for_transfer_arrival(self):
+        return MapMixin._wait_for_transfer_arrival(self)
 
     def box_of_screen(self, *args):
         return object()
@@ -243,6 +253,9 @@ class _TaskMapHarness:
 
     def wait_ui_stable(self, **kwargs):
         self.stable_waits += 1
+
+    def log_warning(self, message):
+        pass
 
     def to_near_transfer_point(self, need_track, need_location_list=None, need_reserve_icon_name=None):
         return True
@@ -652,6 +665,14 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertEqual(task.keys, [("j", {})])
         self.assertEqual(task.click_kwargs, [{}])
         self.assertEqual(task.stable_waits, 1)
+        self.assertEqual(task.wait_calls[-1]["settle_time"], 2.0)
+
+    def test_task_map_transition_requires_world_esc_after_transfer(self):
+        task = _TaskMapHarness(arrived=False)
+
+        result = MapMixin.task_to_transfer_point(task, need_location_list=[])
+
+        self.assertFalse(result)
 
     def test_in_team_rejects_missing_physical_slot_even_with_digit_hits(self):
         boxes = [Box(index * 100, 10, 20, 20) for index in range(1, 4)]
@@ -728,7 +749,7 @@ class TestStateDrivenWaits(unittest.TestCase):
 
         class StubTask:
             frame = np.zeros((10, 10, 3), dtype=np.uint8)
-            _battle_team = ["余烬", "赵昭"]
+            _battle_team: ClassVar = ["余烬", "赵昭"]
             detect_calls = 0
 
             def next_frame(self):
@@ -782,7 +803,7 @@ class TestStateDrivenWaits(unittest.TestCase):
         detect_team.return_value = ["余烬", "别礼"]
 
         class StubTask(BattleMixin):
-            _battle_team = ["余烬", "别礼"]
+            _battle_team: ClassVar = ["余烬", "别礼"]
             _call_count = 0
 
             def __init__(self):

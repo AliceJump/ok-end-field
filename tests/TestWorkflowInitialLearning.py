@@ -12,8 +12,6 @@ from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list
 from src.tasks.mixin.common import LiaisonResult
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.workflow_learning import (
     demo_entry_after_transfer,
     liaison_entry_after_transfer,
@@ -21,6 +19,8 @@ from src.tasks.mixin.workflow_learning import (
     take_workflow_context,
     trade_entry_after_visit,
 )
+from src.tasks.navigation.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 from src.tasks.onetime.DemoBattleTask import DemoBattleTask
 from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 from tests import TestInitialAlignmentLearning as initial_tests

@@ -319,9 +319,11 @@ class TestComboSkillAdapter(unittest.TestCase):
         for error_type in (TaskDisabledException, FinishedException):
             task = _Task()
             task.observe_link_skills()
-            with patch.object(task, "observe_link_skills", side_effect=error_type("stop")):
-                with self.assertRaises(error_type):
-                    task.use_link_skill()
+            with (
+                patch.object(task, "observe_link_skills", side_effect=error_type("stop")),
+                self.assertRaises(error_type),
+            ):
+                task.use_link_skill()
             self.assertFalse(task.keys)
             self.assertFalse(task._combo_skill_detector._slots)
 
@@ -330,9 +332,9 @@ class TestComboSkillAdapter(unittest.TestCase):
         with (
             patch.object(task, "observe_link_skills", side_effect=RuntimeError("probe failed")),
             patch.object(task, "press_combat_key", side_effect=RuntimeError("input failed")),
+            self.assertRaisesRegex(RuntimeError, "input failed"),
         ):
-            with self.assertRaisesRegex(RuntimeError, "input failed"):
-                task.use_link_skill()
+            task.use_link_skill()
 
     def test_team_probe_keeps_original_gender_template_before_name_merge(self):
         task = SimpleNamespace(
@@ -400,9 +402,11 @@ class TestComboSkillAdapter(unittest.TestCase):
 
     def test_failed_input_also_invalidates_cached_queue(self):
         task = _Task()
-        with patch.object(task, "press_combat_key", side_effect=RuntimeError("input failed")):
-            with self.assertRaisesRegex(RuntimeError, "input failed"):
-                task.use_link_skill()
+        with (
+            patch.object(task, "press_combat_key", side_effect=RuntimeError("input failed")),
+            self.assertRaisesRegex(RuntimeError, "input failed"),
+        ):
+            task.use_link_skill()
         self.assertFalse(task._combo_skill_detector._slots)
 
 

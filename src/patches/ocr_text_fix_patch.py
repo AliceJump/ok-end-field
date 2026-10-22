@@ -70,7 +70,7 @@ def _build_char_confusion(fix_map: dict[str, str]) -> dict[str, tuple[str, ...]]
     for wrong, correct in fix_map.items():
         if len(wrong) != len(correct):
             continue
-        for wc, cc in zip(wrong, correct):
+        for wc, cc in zip(wrong, correct, strict=False):
             if wc != cc:
                 char_map.setdefault(cc, set()).add(wc)
     return {correct_char: tuple(sorted(wrong_chars)) for correct_char, wrong_chars in char_map.items()}

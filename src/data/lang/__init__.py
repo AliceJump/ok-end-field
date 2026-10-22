@@ -182,7 +182,7 @@ class LangAccessor(_LangAccessorTyped):
             if value is None:
                 value = locale_dict.get(fallback_locale)
             if value is None:
-                for loc, v in locale_dict.items():
+                for _loc, v in locale_dict.items():
                     value = v
                     break
             if value is not None:

@@ -19,10 +19,10 @@ from src.core.learning.store import LearningStore
 from src.data.navigation_contexts import DELIVERY_DISPATCH_BOARD, DELIVERY_TRANSFER_BOARD
 from src.tasks.mixin.delivery_learning import delivery_learning_kwargs
 from src.tasks.mixin.navigation_learning import align_initial_target, initial_alignment
-from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.route_learning import route_context_for
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.mixin.zip_line_motion_cache import build_zip_line_route_fingerprint
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 from tests import TestNavigationMovement as movement_tests
 from tests import TestZipLineGoldGate as gold_tests
 from tests.TestLearningCore import workflow_context
@@ -76,7 +76,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
             task, *a, **k
         )
 
-        def pass_gate(*args, on_gate_confirmed=None):
+        def pass_gate(*args, on_gate_confirmed=None, **kwargs):
             if on_gate_confirmed is not None:
                 on_gate_confirmed(task.next_frame())
             return True, None
@@ -88,6 +88,11 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task.ocr.return_value = [box()]
         task.send_key = Mock()
         task.click = Mock()
+        task._normalize_values = ZipLineMixin._normalize_values
+        task._value_for_index = ZipLineMixin._value_for_index
+        task._zip_line_distance_matcher = ZipLineMixin._zip_line_distance_matcher
+        task.zip_line_target_select_mode = lambda: "OCR"
+        task._zip_line_stop_state = lambda: ZipLineMixin._zip_line_stop_state(task)
         return task
 
     def zip_context(self, task, *, yaw=90, config_key="route", distances=(108,), scroll=False, family=()):
@@ -97,6 +102,43 @@ class TestInitialAlignmentLearning(unittest.TestCase):
 
     def run_zip(self, task, **kwargs):
         return ZipLineMixin.zip_line_list_go(task, [108], config_key="route", stay_on_zip_line=True, **kwargs)
+
+    def test_grid_distance_tolerance_reaches_initial_learning_and_gate_retry(self):
+        task = self.zip_task(
+            [
+                gold_tests.TestZipLineGoldGate._matched_icon(1400, 800),
+                gold_tests.TestZipLineGoldGate._matched_icon(),
+                gold_tests.TestZipLineGoldGate._matched_icon(),
+            ]
+        )
+
+        def pass_gate(*args, on_gate_confirmed=None, **kwargs):
+            if on_gate_confirmed is not None:
+                on_gate_confirmed(task.next_frame())
+            return True, None
+
+        attempts = iter([False, True])
+        task._try_click_on_zip_line.side_effect = lambda *a, **k: (
+            pass_gate(*a, **k) if next(attempts) else (False, "gate")
+        )
+        align = task._align_zip_line_distance
+        task._align_zip_line_distance = Mock(side_effect=align)
+        self.run_zip(task, distance_tolerance=7)
+        calls = task._align_zip_line_distance.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertEqual([call.kwargs["distance_tolerance"] for call in calls], [7, 7])
+        self.assertIn("learning_session", calls[0].kwargs)
+        self.assertIs(calls[0].kwargs["learning_session"], calls[1].kwargs["learning_session"])
+        self.assertEqual(self.store.get(self.zip_context(task).fingerprint).success_count, 1)
+
+    def test_grid_distance_tolerance_survives_disabled_learning(self):
+        task = self.zip_task()
+        align = task._align_zip_line_distance
+        task._align_zip_line_distance = Mock(side_effect=align)
+        with deny_learning("post_battle"):
+            self.run_zip(task, distance_tolerance=7)
+        self.assertEqual(task._align_zip_line_distance.call_args.kwargs["distance_tolerance"], 7)
+        self.assertNotIn("learning_session", task._align_zip_line_distance.call_args.kwargs)
 
     def test_workflow_replays_before_first_detection_then_commits_without_arrival(self):
         events = []
@@ -205,7 +247,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         task = self.zip_task()
         context = self.zip_context(task)
 
-        def activate(*args, on_gate_confirmed=None):
+        def activate(*args, on_gate_confirmed=None, **kwargs):
             self.assertIsNone(self.store.get(context.fingerprint))
             on_gate_confirmed(task.next_frame())
             self.assertEqual(self.store.get(context.fingerprint).motion.mean_dx, 40)
@@ -257,24 +299,13 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         self.assertIsNone(self.store.get(context.fingerprint))
         task._legacy_click_on_zip_line.assert_called_once()
 
-    def test_gold_gate_saves_before_e_failure_but_does_not_train_twice(self):
-        # All three E retries must still have fresh target detections.
-        task = self.zip_task(
-            [gold_tests.TestZipLineGoldGate._matched_icon(1400, 800), gold_tests.TestZipLineGoldGate._matched_icon()]
-            * 4
-        )
+    def test_click_only_activation_saves_gold_gate_sample_once(self):
+        task = self.zip_task()
         context = self.zip_context(task)
-
-        def no_e(*args, on_gate_confirmed=None):
-            if on_gate_confirmed is not None:
-                on_gate_confirmed(task.next_frame())
-            return False, "interaction"
-
-        task._try_click_on_zip_line.side_effect = no_e
-        with self.assertRaisesRegex(RuntimeError, "E 连续未生效"):
-            self.run_zip(task)
+        self.run_zip(task)
         record = self.store.get(context.fingerprint)
         self.assertEqual((record.motion.samples, record.motion.mean_dx, record.motion.mean_dy), (1, 40, 20))
+        task.send_key.assert_not_called()
 
     def test_gate_retry_recorded_random_search_is_part_of_full_verified_motion(self):
         task = self.zip_task(
@@ -601,7 +632,7 @@ class TestInitialAlignmentLearning(unittest.TestCase):
         context = self.zip_context(task, family=family)
         self.seed(replace(context, config_key="source"))
         task.ocr.side_effect = [[], [], [box()]]
-        with patch("src.tasks.mixin.navigation_mixin.random.randint", return_value=64):
+        with patch("src.tasks.navigation.mixin.navigation_mixin.random.randint", return_value=64):
             self.run_zip(task, route_family=family)
         record = self.store.get(context.fingerprint)
         self.assertEqual((record.motion.samples, record.failure_count), (1, 0))

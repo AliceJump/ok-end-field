@@ -5,7 +5,7 @@ from src.data.world_map_utils import get_world_map_matcher
 from src.icons import Icons
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 
 
 class FarmRelatedTask(Common, LiaisonMixin, MapMixin):

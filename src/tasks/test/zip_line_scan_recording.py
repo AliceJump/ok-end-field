@@ -11,7 +11,7 @@ from ok.feature.Box import relative_box  # 保持生产代码的坐标换算
 
 from src.config import make_bottom_left_black  # 保存副本时遮挡 UID
 from src.image.hsv_config import HSVRange  # 复用生产颜色范围
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin  # 复用 PR 检测算法
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 复用 PR 检测算法
 
 DEFAULT_SCAN_DIR = str(Path("tmp") / "zipline_scans")  # 避免启动时清空截图目录
 

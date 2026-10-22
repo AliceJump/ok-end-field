@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import queue
@@ -63,10 +64,10 @@ def _scan_box(frame) -> tuple[int, int, int, int]:
     height, width = frame.shape[:2]
     cx, cy, semi_axis_x, semi_axis_y = _ellipse_geometry(frame)
     outer = _ELLIPSE_ANNULUS_SCALE[1]
-    x1 = max(0, int(round(cx - semi_axis_x * outer)))
-    y1 = max(0, int(round(cy - semi_axis_y * outer)))
-    x2 = min(width, int(round(cx + semi_axis_x * outer + 1)))
-    y2 = min(height, int(round(cy + semi_axis_y * outer + 1)))
+    x1 = max(0, round(cx - semi_axis_x * outer))
+    y1 = max(0, round(cy - semi_axis_y * outer))
+    x2 = min(width, round(cx + semi_axis_x * outer + 1))
+    y2 = min(height, round(cy + semi_axis_y * outer + 1))
     return x1, y1, x2, y2
 
 
@@ -89,15 +90,15 @@ def _observation_markers(frame, observation: EnemyDirectionObservation | None) -
 def _marker_center(frame, marker: EnemyDirectionMarker) -> tuple[int, int]:
     cx, cy, semi_axis_x, semi_axis_y = _ellipse_geometry(frame)
     radians = math.radians(marker.parameter_angle_deg)
-    x = int(round(cx + semi_axis_x * math.cos(radians)))
-    y = int(round(cy + semi_axis_y * math.sin(radians)))
+    x = round(cx + semi_axis_x * math.cos(radians))
+    y = round(cy + semi_axis_y * math.sin(radians))
     return x, y
 
 
 def _marker_box(frame, marker: EnemyDirectionMarker) -> tuple[int, int, int, int]:
     height, width = frame.shape[:2]
     x, y = _marker_center(frame, marker)
-    half = max(4, int(round(14 * height / 1080.0)))
+    half = max(4, round(14 * height / 1080.0))
     x1 = max(0, x - half)
     y1 = max(0, y - half)
     x2 = min(width, x + half + 1)
@@ -139,7 +140,7 @@ def _draw_marker_arc(frame, marker: EnemyDirectionMarker, color, thickness: int)
     cv2.ellipse(
         frame,
         (cx, cy),
-        (max(1, int(round(semi_axis_x))), max(1, int(round(semi_axis_y)))),
+        (max(1, round(semi_axis_x)), max(1, round(semi_axis_y))),
         0,
         marker.parameter_angle_deg - half_arc,
         marker.parameter_angle_deg + half_arc,
@@ -163,7 +164,7 @@ def _annotate_direction_frame(
     """Burn only detected fixed-width marker arcs; never draw rectangular hits."""
     annotated = frame
     height = annotated.shape[0]
-    thickness = max(2, int(round(3 * height / 1080.0)))
+    thickness = max(2, round(3 * height / 1080.0))
 
     for marker in _observation_markers(annotated, observation):
         _draw_marker_arc(annotated, marker, _DEBUG_HIT_COLOR, thickness)
@@ -180,7 +181,7 @@ def _annotate_direction_frame(
     if error:
         lines.append(f"error={error}")
 
-    line_step = max(22, int(round(30 * height / 1080.0)))
+    line_step = max(22, round(30 * height / 1080.0))
     for index, text in enumerate(lines):
         cv2.putText(
             annotated,
@@ -189,7 +190,7 @@ def _annotate_direction_frame(
             cv2.FONT_HERSHEY_SIMPLEX,
             max(0.55, height / 1800.0),
             _DEBUG_TEXT_COLOR,
-            max(1, int(round(height / 540.0))),
+            max(1, round(height / 540.0)),
             cv2.LINE_AA,
         )
     return annotated
@@ -348,10 +349,8 @@ def _log_direction_save_error_once(task, exc: Exception) -> None:
     task._enemy_direction_debug_save_error_logged = True
     logger = getattr(task, "log_debug", None)
     if callable(logger):
-        try:
+        with contextlib.suppress(Exception):
             logger(f"敌人方向检测调试帧保存失败: {exc}")
-        except Exception:
-            pass
 
 
 def _direction_artifact_worker(work_queue) -> None:
@@ -528,10 +527,8 @@ def draw_enemy_direction_debug(
     if frame is None or getattr(frame, "size", 0) == 0 or frame.ndim != 3:
         return
 
-    try:
+    with contextlib.suppress(Exception):
         _draw_live_overlay(task, frame, observation, streak, action)
-    except Exception:
-        pass
     _save_direction_frame(
         task,
         frame,

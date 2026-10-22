@@ -25,9 +25,9 @@ The UI shows it as a priority sequence of target ticket amounts, default `119000
 Auto Delivery can run as a standalone task or as the `⭐Auto Delivery` subtask of Daily Tasks. The standalone task keeps the full multi-account and test entries; the daily subtask reuses the daily task's account loop and only runs the full delivery flow.
 
 * With 「Multi-account mode」 enabled, the task switches through the accounts in the 「Account list」 one by one to run Auto Delivery.
-* With 「Multi-account independent configuration」 enabled, the same delivery task can override regular configs like target ticket amount and region switching per account; the zip-line config lives in 「Global Config / Zip Line Config」 and is shared across tasks, but each account can also have its own zip-line overrides on the account page.
+* With 「Multi-account independent configuration」 enabled, the same delivery task can override regular configs like target ticket amount, region switching, and arrival method per account; the zip-line config lives in 「Global Config / Zip Line Config」 and is shared across tasks, but each account can also have its own zip-line overrides on the account page.
 * The account list has one account per row; the old `账号, 密码` format is compatible but the password field is ignored. Account switching uses the 「Recent」 list on the game login page and does not enter a password.
-* The standalone task keeps 「Select test target」 plus a single 「Run mode」 selector with 「Normal delivery / Accept only / Deliver only」. The daily-task entry only shows the target ticket amount and region.
+* The standalone task keeps 「Select test target」 plus a single 「Run mode」 selector with 「Normal delivery / Accept only / Deliver only」. The daily-task entry shows the target ticket amount, region, and arrival method.
 * Auto Delivery is a fatal task inside Daily Tasks: only a fully confirmed submission returns success. A failure or exception stops the remaining daily flow and closes the game instead of running the final reset.
 
 ---
@@ -78,10 +78,13 @@ flowchart TD
     E -->|Deliver only| H[Read currently accepted commission]
     E -->|Normal delivery| G[Accept by target ticket amount] --> H
     H --> I[Locate task and teleport to departure area]
-    I --> J[Reach pickup point and confirm pickup]
-    J --> K[Recognize delivery target and board zip line]
-    K --> L[Travel along the configured delivery route]
-    L --> M[Navigate to destination and submit]
+    I --> J{Arrival method}
+    J -->|Zip line only| J1[Use configured zip-line sequence and marker search]
+    J -->|Grid navigation| J2[Navigate to pickup coordinates and combine zip lines with pathfinding]
+    J1 --> K[Confirm pickup and recognize delivery target]
+    J2 --> K
+    K --> L[Travel to the destination]
+    L --> M[Submit delivery]
     M --> N{Tracked target disappeared?}
     N -->|No| X[Failure]
     N -->|Yes| O{More delivery rounds?}
@@ -90,7 +93,7 @@ flowchart TD
     D --> Z
 ```
 
-Normal and daily delivery record the current stage (accept, transfer, pickup, post-pickup target recognition, zip line, submission). Any critical step that cannot be confirmed returns failure. In particular, a post-pickup failure does not attempt the Daily Tasks final-reset teleport.
+Normal and daily delivery record the current stage (accept, transfer, pickup, post-pickup target recognition, zip line, submission). Grid navigation uses pickup/destination coordinates and automatically combines zip lines with normal pathfinding; the legacy mode keeps the configured zip-line sequences. Any critical step that cannot be confirmed returns failure. In particular, a post-pickup failure does not attempt the Daily Tasks final-reset teleport.
 
 ### Changyun
 

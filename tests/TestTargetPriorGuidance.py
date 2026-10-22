@@ -13,7 +13,7 @@ from src.core.learning.policy import deny_learning
 from src.core.learning.routes import RouteLearning
 from src.core.learning.target_prior import roi_around
 from src.tasks.mixin.navigation_learning import align_initial_target, initial_alignment
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 from tests import TestInitialAlignmentLearning as initial_tests
 from tests import TestZipLineGoldGate as gold_tests
 from tests.TestInitialAlignmentLearning import box

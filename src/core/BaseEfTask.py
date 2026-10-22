@@ -1,3 +1,4 @@
+import contextlib
 import threading
 import time
 from datetime import datetime
@@ -185,10 +186,8 @@ class BaseEfTask(
                     return
             except Exception:
                 # 前台输入已开始后异常：清理（释放按键）并结束，不再次调用父类返回
-                try:
+                with contextlib.suppress(Exception):
                     interaction.send_key_up("esc", foreground=True)
-                except Exception:
-                    pass
                 return
         super().back(*args, after_sleep=after_sleep, **kwargs)
 
@@ -288,13 +287,10 @@ class BaseEfTask(
                 value_migrations.update(vtable)
         migrate_config_file_keys(self.__class__.__name__, key_migrations)
         migrate_config_values(self.__class__.__name__, value_migrations)
-        # 新「战斗模式」是由多个历史 bool 合并而来，必须在 verify_config
-        # 补默认值之前推导；账号覆盖同理，保留旧键以便回滚。
+        # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的旧键）之前，
+        # 把战斗模式与滑索旧值转存到对应所有者，避免数据被提前删除。
         migrate_task_battle_mode_selector(self.__class__.__name__)
         migrate_account_battle_mode_selectors()
-        # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的滑索键）之前，
-        # 把任务文件中的滑索旧值转存到全局 Zip Line Config.json，避免全局侧 legacy 收集
-        # 在任务文件滑索键已被删除后读不到值。
         migrate_task_zip_line_values_to_global(self.__class__.__name__)
         super().load_config()
 
@@ -450,10 +446,37 @@ class BaseEfTask(
                     )
                 )
                 self.login_flow(username)
+                self._ensure_capture_after_account_switch()
             else:
                 self.set_current_account("", "")
 
             yield repeat_idx, repeat_times
+
+    def _ensure_capture_after_account_switch(self) -> None:
+        """切号后确认抓包后端接管了新连接。
+
+        切号本身会重建 TCP 连接（游戏内退到登录界面再进入），后端按四元组自动接管，**登录密钥
+        随之重抓**——不需要为它做特殊处理。但"应该会发生"和"确实发生了"是两回事：如果后端那时
+        刚好没在跑，或者新连接落到了它不抓的端口上，这一轮的抓包就是空的，而任务照跑不误。
+
+        所以这里只做校验（必要时触发一次重建连接），不做别的。非抓包源没有这个方法，
+        用鸭子类型跳过。
+        """
+
+        getter = getattr(self, "get_runtime_position_service", None)
+        if not callable(getter):
+            return
+        try:
+            service = getter()
+        except Exception:
+            return
+        check = getattr(service, "ensure_capture_session", None)
+        if not callable(check):
+            return
+        try:
+            check(reason="切换账号后检查抓包")
+        except Exception as exc:  # 校验失败不该打断多账号流程
+            self.log_warning(f"切换账号后检查抓包会话失败，继续执行: {exc}")
 
     def handle_task_exception(self, e: Exception, prefix: str):
         """统一处理任务 run() 中的异常逻辑。
@@ -462,10 +485,8 @@ class BaseEfTask(
         - 根据配置 `发生异常时终止游戏` 决定是继续（记录日志）还是终止（记录并不抛出）
         - 对于 `TaskDisabledException` 总是重新抛出以便上层处理
         """
-        try:
+        with contextlib.suppress(Exception):
             self.screenshot(prefix)
-        except Exception:
-            pass
 
         if not self.config.get("发生异常时终止游戏", False):
             self.log_info("发生异常，继续游戏", notify=True)
@@ -487,10 +508,8 @@ class BaseEfTask(
         name = task_name or getattr(self, "current_task", None) or "UnknownTask"
         if runner is not None and hasattr(runner, "get_current_task_name"):
             name = task_name or runner.get_current_task_name() or name
-        try:
+        with contextlib.suppress(Exception):
             self.screenshot(f"fail_{name}")
-        except Exception:
-            pass
 
         if runner is not None and hasattr(runner, "set_task_failure"):
             runner.set_task_failure(message, task_name=task_name, screenshot_taken=True)
@@ -567,11 +586,8 @@ class BaseEfTask(
         # 3. 为所有配置项补充默认值（安全处理）
         for group_items in groups.values():
             for item in group_items:
-                if isinstance(item, str):
-                    key = item
-                else:
-                    # 处理 self.CFG_XXX 常量的情况
-                    key = str(item)
+                # 处理 self.CFG_XXX 常量的情况
+                key = item if isinstance(item, str) else str(item)
 
                 # 关键修复：避免 NoneType 错误
                 if key not in self.default_config:

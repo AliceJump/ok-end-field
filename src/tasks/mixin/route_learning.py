@@ -50,11 +50,14 @@ def _migrate_once(store):
 
 
 @contextmanager
-def zipline_initial_alignment(task, context, distance, *, need_scroll=None):
+def zipline_initial_alignment(task, context, distance, *, need_scroll=None, distance_tolerance=None):
     """Keep the initial movement observable across gold-gate retries."""
+    alignment_kwargs = {"distance_tolerance": distance_tolerance} if distance_tolerance is not None else {}
     with initial_alignment(task, context) as learning:
         if learning is None:
-            task._align_zip_line_distance(distance, need_scroll=need_scroll, tolerance=50, initial_move=None)
+            task._align_zip_line_distance(
+                distance, need_scroll=need_scroll, tolerance=50, initial_move=None, **alignment_kwargs
+            )
             yield None
             return
         learning.require_gold_gate = True
@@ -87,6 +90,7 @@ def zipline_initial_alignment(task, context, distance, *, need_scroll=None):
             tolerance=50,
             initial_move=None,
             learning_session=learning,
+            **alignment_kwargs,
         )
         if not result:
             learning.fail()

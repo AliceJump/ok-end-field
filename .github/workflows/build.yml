@@ -74,6 +74,15 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      # assets/nav-grid-data 是本功能用到的导航网格子模块（内容走 LFS）。
+      # actions/checkout 的 lfs 只覆盖主仓库，不会取子模块内容；少了这一步，
+      # 依赖真实网格范围的定位测试会在 CI 里拿到空地图。
+      - name: Init navigation grid data submodule
+        shell: pwsh
+        run: |
+          git submodule update --init assets/nav-grid-data
+          git -C assets/nav-grid-data lfs pull
+
       - name: Output immutable commit SHA
         id: sha
         shell: pwsh

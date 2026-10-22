@@ -1,10 +1,12 @@
 """鼠标视角旋转系数标定测试任务。
 
-通过现有输入接口发送已知鼠标相对位移（dx），并用 get_arrow_angle()
-读取小地图箭头朝向变化（Δyaw），实测当前输入接口的位移单位与
-游戏摄像机 yaw 旋转之间的关系：
+该任务默认角色已经在滑索上。通过现有输入接口发送已知鼠标相对位移（dx），
+并用 get_arrow_angle() 读取小地图箭头朝向变化（Δyaw），实测当前输入接口的
+位移单位与游戏摄像机 yaw 旋转之间的关系：
 
     yaw_per_pixel = Δyaw / dx
+
+滑索上鼠标转视角会直接刷新小地图箭头朝向，不需要按 W。
 
 本任务只负责标定测量与系数计算，不接入正式自动转向逻辑，
 也不把结果写入正式配置（第一版不做持久化）。
@@ -30,9 +32,8 @@ class MouseRotationCalibration(BaseEfTask):
     CALIBRATION_DX = 100  # 每个 sample 的测试位移量，正负方向交替
     CALIBRATION_DX_LIST = ""  # 标定位移列表（逗号分隔多个像素值，如 "200, 400, 800"）；留空则用 标定位移dx 单值
     REPEAT_COUNT = 4  # 标定采样次数（仅单位移模式下生效：正负交替 repeat 次）
-    W_HOLD_TIME = 0.3  # 按 W 刷新朝向时的长按时长（秒），太短角色不会真正位移/朝向不刷新
-    ANGLE_REFRESH_DELAY = 0.1  # 松开 W 后等待画面更新的时间（秒）
-    TURN_SETTLE_DELAY = 0.3  # 发送鼠标位移后、按 W 刷新前等待转向完成的时间（秒）
+    ANGLE_REFRESH_DELAY = 0.1  # 等待画面更新后再读取箭头角度的时间（秒）
+    TURN_SETTLE_DELAY = 0.3  # 发送鼠标位移后等待滑索视角转向完成的时间（秒）
     MIN_SCORE = 0.6  # 箭头角度检测最低置信度
 
     # 验证流程参数（标定后用系数反算位移实测验证；可通过任务配置覆盖）
@@ -48,14 +49,13 @@ class MouseRotationCalibration(BaseEfTask):
         self.name = "鼠标视角旋转系数标定"
         self.group_name = "工具与调试"
         self.group_icon = FluentIcon.DEVELOPER_TOOLS
-        self.description = "发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
+        self.description = "在滑索上发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
         self.visible = self.debug
 
         self.default_config = {
             "标定位移dx": self.CALIBRATION_DX,
             "标定位移列表(逗号分隔)": self.CALIBRATION_DX_LIST,
             "重复次数": self.REPEAT_COUNT,
-            "W长按时间(秒)": self.W_HOLD_TIME,
             "角度刷新等待(秒)": self.ANGLE_REFRESH_DELAY,
             "转向后等待(秒)": self.TURN_SETTLE_DELAY,
             "最低置信度": self.MIN_SCORE,
@@ -70,9 +70,8 @@ class MouseRotationCalibration(BaseEfTask):
             "标定位移dx": "每个 sample 的测试方向位移量，正负交替测试（标定位移列表留空时生效）",
             "标定位移列表(逗号分隔)": "一次标定多个位移量（如 200, 400, 800），每个位移正负各测一次，覆盖多量程；留空则只用 标定位移dx 单值",
             "重复次数": "标定采样次数，正负方向交替（仅单位移模式生效）",
-            "W长按时间(秒)": "按 W 刷新朝向时的长按时长，太短则朝向不刷新",
-            "角度刷新等待(秒)": "松开 W 后等待画面更新的时间",
-            "转向后等待(秒)": "发送鼠标位移后、按 W 刷新前等待转向完成的时间；太短可能在转向未完成时就按 W 刷新朝向",
+            "角度刷新等待(秒)": "等待画面刷新后再读取箭头角度的时间",
+            "转向后等待(秒)": "发送鼠标位移后等待滑索上的视角转动完成的时间，不按 W 刷新朝向",
             "最低置信度": "箭头角度检测的最低置信度，低于此值该 sample 作废",
             "验证目标角度(度)": "用标定系数反算位移并实测验证的角度；正值=向左转(鼠标左移)，负值=向右转，0=不验证",
             "验证角度列表(逗号分隔)": "一次验证多个角度（如 30, 90, 180, -90），每个角度都实测；留空则只用 验证目标角度(度) 单角度",
@@ -83,7 +82,6 @@ class MouseRotationCalibration(BaseEfTask):
         }
 
         # 运行时参数（在 run() 中从配置读取，默认取类常量）
-        self._w_hold_time = self.W_HOLD_TIME
         self._angle_refresh_delay = self.ANGLE_REFRESH_DELAY
         self._turn_settle_delay = self.TURN_SETTLE_DELAY
         self._min_score = self.MIN_SCORE
@@ -103,7 +101,6 @@ class MouseRotationCalibration(BaseEfTask):
         calibration_dx = int(self.config.get("标定位移dx", self.CALIBRATION_DX))
         calibration_dx_list_raw = str(self.config.get("标定位移列表(逗号分隔)", self.CALIBRATION_DX_LIST)).strip()
         repeat_count = max(1, int(self.config.get("重复次数", self.REPEAT_COUNT)))
-        self._w_hold_time = max(0.0, float(self.config.get("W长按时间(秒)", self.W_HOLD_TIME)))
         self._angle_refresh_delay = max(0.0, float(self.config.get("角度刷新等待(秒)", self.ANGLE_REFRESH_DELAY)))
         self._turn_settle_delay = max(0.0, float(self.config.get("转向后等待(秒)", self.TURN_SETTLE_DELAY)))
         self._min_score = max(0.0, min(1.0, float(self.config.get("最低置信度", self.MIN_SCORE))))
@@ -121,8 +118,8 @@ class MouseRotationCalibration(BaseEfTask):
 
         self.log_info(
             f"Calibration parameters:  dx={calibration_dx}  repeat={repeat_count}  "
-            f"w_hold_time={self._w_hold_time}  refresh_delay={self._angle_refresh_delay}  "
-            f"turn_settle_delay={self._turn_settle_delay}  min_score={self._min_score}"
+            f"refresh_delay={self._angle_refresh_delay}  turn_settle_delay={self._turn_settle_delay}  "
+            f"min_score={self._min_score}"
         )
 
         # 生成标定位移测试计划：列表非空时每个位移值正负各测一次（多量程）；
@@ -179,14 +176,13 @@ class MouseRotationCalibration(BaseEfTask):
             self._verify(angle, stats["k_pos"], stats["k_neg"], verify_count, verify_tolerance)
 
     def _read_arrow_angle(self):
-        """按 W 长按一小段时间刷新朝向，等待画面更新后读取箭头角度（关闭角度平滑）。
+        """等待画面更新后直接读取箭头角度（关闭角度平滑）。
 
-        - 必须长按：瞬时按键（down_time=0.02s）不足以让角色真正位移，小地图
-          朝向不会刷新，会读到陈旧角度；长按 _w_hold_time 秒让朝向更新。
+        - 任务默认角色已经在滑索上，鼠标转视角会直接刷新小地图箭头朝向，
+          不需要按 W。
         - 必须关闭默认的低分平滑：平滑会在 score 较低时返回上一帧角度，
           导致实际检测失败被误认为 Δyaw = 0。
         """
-        self.press_key("w", down_time=self._w_hold_time)
         self.sleep(self._angle_refresh_delay)
         angle, score = self.get_arrow_angle(smoothing_threshold=None)
         return angle, 0.0 if score is None else score
@@ -239,7 +235,7 @@ class MouseRotationCalibration(BaseEfTask):
                 self.log_info(f"Calibration sample rejected:  reason=input_failed  dx={dx}")
                 return None
 
-            # 发位移后先纯等待转向完成，再按 W 刷新朝向读角度，避免时序耦合
+            # 发位移后先等待滑索视角转向完成，再读取箭头角度
             self.sleep(self._turn_settle_delay)
 
             after_angle, after_score = self._read_arrow_angle()
@@ -417,7 +413,7 @@ class MouseRotationCalibration(BaseEfTask):
         """
         self.log_info(f"=== Verification: {target_yaw:+.2f}° ===", notify=True)
         k = k_neg if target_yaw > 0 else k_pos
-        dx = int(round(target_yaw / k)) if abs(k) > 1e-9 else 0
+        dx = round(target_yaw / k) if abs(k) > 1e-9 else 0
         if dx == 0:
             self.log_info("Verify skipped:  invalid k or dx = 0", notify=True)
             return
@@ -438,7 +434,7 @@ class MouseRotationCalibration(BaseEfTask):
                 self.log_info(f"verify {i}:  rejected reason=input_failed  dx={dx}")
                 continue
 
-            # 发位移后先纯等待转向完成，再按 W 刷新朝向读角度，避免时序耦合
+            # 发位移后先等待滑索视角转向完成，再读取箭头角度
             self.sleep(self._turn_settle_delay)
 
             after_angle, after_score = self._read_arrow_angle()

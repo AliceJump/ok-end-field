@@ -3,12 +3,6 @@ import unittest
 from src.core.config_migration import apply_value_migrations
 from src.tasks.onetime.DailyTask import DailyTask
 from src.tasks.onetime.DeliveryTask import DeliveryTask, _legacy_delivery_run_mode
-from src.tasks.trigger.ItemNavigatorTask import (
-    MAP_SOURCE_ACCOUNT,
-    MAP_SOURCE_AUTO,
-    MAP_SOURCE_MANUAL,
-    _legacy_map_source,
-)
 
 
 class TestConfigUiMigrations(unittest.TestCase):
@@ -35,11 +29,6 @@ class TestConfigUiMigrations(unittest.TestCase):
     def test_delivery_only_deliver_migrates_to_single_mode(self):
         config = {"仅接取": False, "仅送货": True}
         self.assertEqual(_legacy_delivery_run_mode(config, DeliveryTask.CFG_RUN_MODE), DeliveryTask.RUN_ONLY_DELIVER)
-
-    def test_map_source_migration_preserves_old_precedence(self):
-        self.assertEqual(_legacy_map_source({"content": "x", "地图账号": "a"}, "地图数据来源"), MAP_SOURCE_MANUAL)
-        self.assertEqual(_legacy_map_source({"content": "", "地图账号": "a"}, "地图数据来源"), MAP_SOURCE_ACCOUNT)
-        self.assertEqual(_legacy_map_source({"content": "", "地图账号": ""}, "地图数据来源"), MAP_SOURCE_AUTO)
 
 
 class TestUniqueSubConfigParents(unittest.TestCase):

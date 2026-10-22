@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 import cv2
 import numpy as np
@@ -27,7 +27,7 @@ _MIN_PARTIAL_RATIO = 0.02
 _AMBIGUOUS_MASK_RATIO = 0.05
 
 
-class SkillBarState(str, Enum):
+class SkillBarState(StrEnum):
     EMPTY = "empty"
     PARTIAL = "partial"
     FULL = "full"

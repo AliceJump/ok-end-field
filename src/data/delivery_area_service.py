@@ -1,4 +1,7 @@
+import math
 import re
+from collections.abc import Mapping
+from typing import Any
 
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.FeatureList import FeatureList
@@ -37,12 +40,56 @@ def _get_area_config(area_name: str) -> dict:
     return DELIVERY_AREA_CONFIG[area_name]
 
 
+def _get_named_config_name(entry: Any, entry_type: str) -> str:
+    if isinstance(entry, str):
+        name = entry
+    elif isinstance(entry, Mapping):
+        name = entry.get("name")
+    else:
+        name = None
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError(f"{entry_type}配置缺少有效名称: {entry!r}")
+    return name
+
+
+def _get_named_config_coordinate(entry: Any) -> tuple[float, float, float] | None:
+    if not isinstance(entry, Mapping):
+        return None
+    coordinate = entry.get("coordinate")
+    if not isinstance(coordinate, Mapping):
+        return None
+    try:
+        xyz = tuple(float(coordinate[axis]) for axis in ("x", "y", "z"))
+    except (KeyError, TypeError, ValueError):
+        return None
+    if not all(math.isfinite(value) for value in xyz):
+        return None
+    return xyz
+
+
+def _get_delivery_location_name(location: Any) -> str:
+    return _get_named_config_name(location, "送货地点")
+
+
+def _get_delivery_target_name(target: Any) -> str:
+    return _get_named_config_name(target, "送货终点")
+
+
 def get_delivery_locations(area_name: str, lang_accessor=None) -> list[str]:
     """Get the list of delivery locations for a specific area, optionally localized."""
     locations = _get_area_config(area_name)["delivery_locations"]
+    location_names = [_get_delivery_location_name(location) for location in locations]
     if lang_accessor is None:
-        return list(locations)
-    return [get_world_map_text(lang_accessor, location_name) for location_name in locations]
+        return location_names
+    return [get_world_map_text(lang_accessor, location_name) for location_name in location_names]
+
+
+def get_delivery_location_coordinate(area_name: str, location_name: str) -> tuple[float, float, float] | None:
+    """Return a delivery location's world ``(x, y, z)`` coordinate, or ``None`` when unavailable."""
+    for location in _get_area_config(area_name)["delivery_locations"]:
+        if _get_delivery_location_name(location) == location_name:
+            return _get_named_config_coordinate(location)
+    return None
 
 
 def get_delivery_targets(area_name: str, lang_accessor=None) -> list[str]:
@@ -50,11 +97,32 @@ def get_delivery_targets(area_name: str, lang_accessor=None) -> list[str]:
     area_config = _get_area_config(area_name)
     targets_by_location = area_config["delivery_targets_by_location"]
     targets = []
-    for location_name in area_config["delivery_locations"]:
-        targets.extend(targets_by_location.get(location_name, []))
+    for location in area_config["delivery_locations"]:
+        location_name = _get_delivery_location_name(location)
+        targets.extend(_get_delivery_target_name(target) for target in targets_by_location.get(location_name, []))
     if lang_accessor is None:
         return targets
     return [get_world_map_text(lang_accessor, target_name) for target_name in targets]
+
+
+def get_delivery_target_coordinate(
+    area_name: str,
+    target_name: str,
+    location_name: str | None = None,
+) -> tuple[float, float, float] | None:
+    """Return a target's world ``(x, y, z)`` coordinate, or ``None`` when it is not configured."""
+    area_config = _get_area_config(area_name)
+    targets_by_location = area_config["delivery_targets_by_location"]
+    location_names = (
+        [location_name]
+        if location_name
+        else [_get_delivery_location_name(location) for location in area_config["delivery_locations"]]
+    )
+    for current_location in location_names:
+        for target in targets_by_location.get(current_location, []):
+            if _get_delivery_target_name(target) == target_name:
+                return _get_named_config_coordinate(target)
+    return None
 
 
 def get_ocr_priority_locations(area_name: str, lang_accessor=None) -> list[str]:
@@ -68,16 +136,17 @@ def get_ocr_priority_locations(area_name: str, lang_accessor=None) -> list[str]:
 def get_full_cycle_targets(area_name: str, location_name: str, lang_accessor=None) -> list[str]:
     """Get the full cycle delivery targets for a specific location within an area, optionally localized."""
     targets = _get_area_config(area_name)["delivery_targets_by_location"].get(location_name, [])
+    target_names = [_get_delivery_target_name(target) for target in targets]
     if lang_accessor is None:
-        return list(targets)
-    return [get_world_map_text(lang_accessor, target_name) for target_name in targets]
+        return target_names
+    return [get_world_map_text(lang_accessor, target_name) for target_name in target_names]
 
 
 def extract_delivery_location(text: str, area_name: str, lang_accessor=None) -> str | None:
     """Extract the canonical location name from text by matching against known locations."""
     canonical_locations = get_delivery_locations(area_name)
     localized_locations = get_delivery_locations(area_name, lang_accessor=lang_accessor)
-    for canonical_name, localized_name in zip(canonical_locations, localized_locations):
+    for canonical_name, localized_name in zip(canonical_locations, localized_locations, strict=True):
         if canonical_name in text or localized_name in text:
             return canonical_name
     return None

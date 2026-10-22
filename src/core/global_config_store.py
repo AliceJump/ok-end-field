@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import threading
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +24,21 @@ from src.core.BattleConfig import (
     infer_legacy_combat_mode,
 )
 from src.core.config_migration import copy_migrated_config_keys
+from src.core.NavConfig import (
+    DEFAULT_NAV_CONFIG,
+    NAV_CONFIG_DESCRIPTION,
+    NAV_CONFIG_NAME,
+    NAV_CONFIG_TYPE,
+    NAV_CONTENT_KEY,
+    NAV_WS_ACCOUNT_KEY,
+)
 from src.core.paths import config_path
+from src.core.PositionConfig import (
+    DEFAULT_POSITION_CONFIG,
+    POSITION_CONFIG_DESCRIPTION,
+    POSITION_CONFIG_NAME,
+    POSITION_CONFIG_TYPE,
+)
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 from src.icons import Icons
@@ -34,19 +49,34 @@ ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME = "Ensure Main Once Action Sleep"
 TOPMOST_ENABLED_KEY = "窗口置顶"
 ZIP_LINE_CONFIG_NAME = "Zip Line Config"
 ZIP_LINE_SCROLL_KEY = "是否启用滚动放大视角"
+ZIP_LINE_TARGET_SELECT_KEY = "滑索目标选择方式"
+ZIP_LINE_TARGET_SELECT_OCR = "OCR"
+ZIP_LINE_TARGET_SELECT_DIRECT = "直接对准"
 ZIP_LINE_GROUP_KEY = "滑索配置分类"
 ZIP_LINE_DELIVERY_GROUP = "送货滑索"
 ZIP_LINE_GATHER_GROUP = "淤积点滑索"
+
+
+def _delivery_entry_name(entry: Any) -> str | None:
+    if isinstance(entry, Mapping):
+        entry = entry.get("name")
+    if entry is None:
+        return None
+    name = str(entry).strip()
+    return name or None
 
 
 def _zip_line_route_keys() -> list[str]:
     keys = []
     for area in DELIVERY_AREA_CONFIG.values():
         locations = area.get("delivery_locations", [])
-        keys.extend(locations)
-        keys.extend(f"通向{location}送货点" for location in locations)
+        location_names = [name for location in locations if (name := _delivery_entry_name(location))]
+        keys.extend(location_names)
+        keys.extend(f"通向{location}送货点" for location in location_names)
         for targets in area.get("delivery_targets_by_location", {}).values():
-            keys.extend(targets)
+            for target in targets:
+                if name := _delivery_entry_name(target):
+                    keys.append(name)
     keys.extend(stages_dict.get(STAGE_CATEGORY_ENERGY_POOLING, []))
     return list(dict.fromkeys(str(key) for key in keys if key))
 
@@ -56,6 +86,7 @@ ZIP_LINE_GATHER_KEYS = list(stages_dict.get(STAGE_CATEGORY_ENERGY_POOLING, []))
 ZIP_LINE_DELIVERY_KEYS = [key for key in ZIP_LINE_ROUTE_KEYS if key not in ZIP_LINE_GATHER_KEYS]
 ZIP_LINE_DEFAULT_CONFIG = {
     ZIP_LINE_SCROLL_KEY: False,
+    ZIP_LINE_TARGET_SELECT_KEY: ZIP_LINE_TARGET_SELECT_DIRECT,
     **dict.fromkeys(ZIP_LINE_ROUTE_KEYS, ""),
     ZIP_LINE_GROUP_KEY: ZIP_LINE_DELIVERY_GROUP,
 }
@@ -65,6 +96,12 @@ ZIP_LINE_CONFIG_DESCRIPTION = {
         "可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
         "建议启用此项时不要使用非白发或有白帽角色"
     ),
+    ZIP_LINE_TARGET_SELECT_KEY: (
+        "选择如何寻找下一滑索：\n"
+        "直接对准：使用滑索世界坐标计算方位，误差在 ±3° 内后执行；"
+        "点击未生效时调整俯仰角重试\n"
+        "OCR：使用画面中的距离数字进行对中和点击"
+    ),
     ZIP_LINE_GROUP_KEY: "选择要显示的滑索配置分类。",
     **dict.fromkeys(ZIP_LINE_ROUTE_KEYS, "滑索距离序列，用逗号分隔。"),
 }
@@ -73,9 +110,21 @@ ZIP_LINE_CONFIG_TYPE = {
         "type": "drop_down",
         "options": [ZIP_LINE_DELIVERY_GROUP, ZIP_LINE_GATHER_GROUP],
         "sub_configs": {
-            ZIP_LINE_DELIVERY_GROUP: [ZIP_LINE_SCROLL_KEY] + ZIP_LINE_DELIVERY_KEYS,
-            ZIP_LINE_GATHER_GROUP: [ZIP_LINE_SCROLL_KEY] + ZIP_LINE_GATHER_KEYS,
+            ZIP_LINE_DELIVERY_GROUP: [
+                ZIP_LINE_SCROLL_KEY,
+                ZIP_LINE_TARGET_SELECT_KEY,
+                *ZIP_LINE_DELIVERY_KEYS,
+            ],
+            ZIP_LINE_GATHER_GROUP: [
+                ZIP_LINE_SCROLL_KEY,
+                ZIP_LINE_TARGET_SELECT_KEY,
+                *ZIP_LINE_GATHER_KEYS,
+            ],
         },
+    },
+    ZIP_LINE_TARGET_SELECT_KEY: {
+        "type": "drop_down",
+        "options": [ZIP_LINE_TARGET_SELECT_DIRECT, ZIP_LINE_TARGET_SELECT_OCR],
     },
 }
 
@@ -109,11 +158,29 @@ zip_line_config_option = ConfigOption(
     config_type=ZIP_LINE_CONFIG_TYPE,
     icon=Icons.Zipline,
 )
+nav_config_option = ConfigOption(
+    NAV_CONFIG_NAME,
+    DEFAULT_NAV_CONFIG,
+    description="导航配置：定位真值、分辨率比例尺，以及网格、滑索、规划和行走参数",
+    config_description=NAV_CONFIG_DESCRIPTION,
+    config_type=NAV_CONFIG_TYPE,
+    icon=Icons.Navigation,
+)
+position_config_option = ConfigOption(
+    POSITION_CONFIG_NAME,
+    DEFAULT_POSITION_CONFIG,
+    description="应用级世界定位服务：WS、里程计、融合、视觉校正与抓包后端",
+    config_description=POSITION_CONFIG_DESCRIPTION,
+    config_type=POSITION_CONFIG_TYPE,
+    icon=Icons.Navigation,
+)
 GLOBAL_CONFIG_OPTIONS = [
     key_config_option,
     battle_config_option,
     ensure_main_once_action_sleep_option,
     zip_line_config_option,
+    nav_config_option,
+    position_config_option,
 ]
 
 _LOCK = threading.Lock()
@@ -122,6 +189,12 @@ _OPTIONS = {option.name: option for option in GLOBAL_CONFIG_OPTIONS}
 _MIGRATION_MARKER = "global_config_store_v2_task_scoped"
 _BATTLE_LEGACY_TASK_CONFIGS = ["DailyTask", "AutoCombatTask", "BattleTask"]
 _ZIP_LINE_LEGACY_TASK_CONFIGS = ["DeliveryTask", "DailyTask", "BattleTask"]
+_ITEM_NAVIGATOR_TASK = "ItemNavigatorTask"
+_ITEM_NAVIGATOR_MAP_SOURCE_KEY = "地图数据来源"
+_ITEM_NAVIGATOR_MAP_SOURCE_ACCOUNT = "账号配置"
+_ITEM_NAVIGATOR_MAP_SOURCE_MANUAL = "手动 content"
+_ITEM_NAVIGATOR_CONTENT_KEY = "content"
+_ITEM_NAVIGATOR_ACCOUNT_KEY = "地图账号"
 _ZIP_LINE_ACCOUNT_MIGRATION_MARKER = "zip_line_account_overrides_v1"
 _ZIP_LINE_KEY_MIGRATIONS = {
     # 历史任务配置中的固定键名，保留明确映射以确保迁移稳定。
@@ -182,10 +255,7 @@ def _backup_legacy_task_configs(state: dict[str, Any]) -> None:
 
 
 def _iter_legacy_config_data(option: ConfigOption):
-    if option.name == BATTLE_CONFIG_NAME:
-        task_config_names = _BATTLE_LEGACY_TASK_CONFIGS
-    else:
-        task_config_names = []
+    task_config_names = _BATTLE_LEGACY_TASK_CONFIGS if option.name == BATTLE_CONFIG_NAME else []
 
     for task_config_name in task_config_names:
         legacy_path = Path(config_path(f"{task_config_name}.json"))
@@ -369,6 +439,7 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
         _migrate_legacy_zip_line_account_overrides()
         state[_ZIP_LINE_ACCOUNT_MIGRATION_MARKER] = True
         _write_migration_state(state)
+
     if option.name in migrated_options:
         return
 
@@ -432,6 +503,46 @@ def migrate_task_zip_line_values_to_global(task_class_name: str) -> None:
         default_value = ZIP_LINE_DEFAULT_CONFIG.get(key)
         if key not in zlc or zlc.get(key) == default_value:
             zlc[key] = value
+
+
+def migrate_task_nav_values_to_global(task_class_name: str) -> None:
+    """Migrate published item-navigation map credentials into global Nav Config."""
+
+    if task_class_name != _ITEM_NAVIGATOR_TASK:
+        return
+
+    config_file = config_path(f"{task_class_name}.json")
+    data = read_json_file(config_file)
+    if not isinstance(data, dict):
+        return
+
+    nav_config = get_global_config(NAV_CONFIG_NAME)
+
+    source = str(data.get(_ITEM_NAVIGATOR_MAP_SOURCE_KEY) or "").strip()
+    content = str(data.get(_ITEM_NAVIGATOR_CONTENT_KEY) or "").strip()
+    account = str(data.get(_ITEM_NAVIGATOR_ACCOUNT_KEY) or "").strip()
+
+    # Master treated the selected source as authoritative and ignored stale values
+    # hidden under the other branches. Only migrate the branch that was active.
+    candidates: dict[str, str] = {}
+    if source == _ITEM_NAVIGATOR_MAP_SOURCE_MANUAL:
+        if content:
+            candidates[NAV_CONTENT_KEY] = content
+    elif source == _ITEM_NAVIGATOR_MAP_SOURCE_ACCOUNT:
+        if account:
+            candidates[NAV_WS_ACCOUNT_KEY] = account
+    elif not source:
+        if content:
+            candidates[NAV_CONTENT_KEY] = content
+        if account:
+            candidates[NAV_WS_ACCOUNT_KEY] = account
+
+    if not candidates:
+        return
+
+    for key, value in candidates.items():
+        if key not in nav_config or nav_config.get(key) == DEFAULT_NAV_CONFIG.get(key):
+            nav_config[key] = value
 
 
 def get_global_config(name: str) -> Config:
