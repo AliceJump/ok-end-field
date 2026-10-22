@@ -92,7 +92,6 @@ def _launch_via_platform(game_path: str, arguments: str, platform: str, logger) 
     return True
 
 
-
 def get_launcher_cache_path() -> str:
     """Return the persisted launcher-path cache location."""
     return config_path(LAUNCHER_CACHE_FILE)
@@ -579,7 +578,9 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
             pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
             child_created = True
             note_game_started(cleanup.parent_pid, pid, logger)
-            logger.info(f"Created Endfield with suspended official launcher parent: pid={pid}, launcher={parent_company}")
+            logger.info(
+                f"Created Endfield with suspended official launcher parent: pid={pid}, launcher={parent_company}"
+            )
             if _start_cleanup(cleanup, pid, kernel, parent, logger):
                 parent = None  # The background watcher owns the process handle now.
             return True

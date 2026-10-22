@@ -221,12 +221,13 @@ class TestLauncherChannels(unittest.TestCase):
                 queried = {call.args[1] for call in open_key.call_args_list}
                 expected = {official_launcher.CHANNEL_REGISTRY_KEYS[company]}
                 if company == "Hypergryph":
-                    expected.add(rf"Software\Microsoft\Windows\CurrentVersion\Uninstall\{official_launcher.LAUNCHER_ID}")
+                    expected.add(
+                        rf"Software\Microsoft\Windows\CurrentVersion\Uninstall\{official_launcher.LAUNCHER_ID}"
+                    )
                 self.assertEqual(queried, expected)
 
 
 class TestOfficialLauncher(unittest.TestCase):
-
     def test_detects_steam_and_epic_installations(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -263,9 +264,7 @@ class TestOfficialLauncher(unittest.TestCase):
             ):
                 self.assertTrue(official_launcher.launch_game(str(root / "Endfield.exe"), "", Mock()))
             expected_path = quote(str(root).replace("\\", "/"), safe="")
-            start.assert_called_once_with(
-                f"com.epicgames.launcher://apps/{expected_path}?action=launch&silent=true"
-            )
+            start.assert_called_once_with(f"com.epicgames.launcher://apps/{expected_path}?action=launch&silent=true")
             parent.assert_not_called()
 
     def test_platform_launch_rejects_arguments_instead_of_silently_dropping(self):
@@ -321,9 +320,20 @@ class TestOfficialLauncher(unittest.TestCase):
             ):
                 with (
                     self.subTest(company=company, status=status, signer=fingerprint),
-                    patch.object(official_launcher.subprocess, "run", return_value=types.SimpleNamespace(
-                        stdout=json.dumps({"status": status, "signer": fingerprint, "product": next(iter(products)),
-                                           "subject": "O=GRYPH FRONTIER PTE. LTD."}))),
+                    patch.object(
+                        official_launcher.subprocess,
+                        "run",
+                        return_value=types.SimpleNamespace(
+                            stdout=json.dumps(
+                                {
+                                    "status": status,
+                                    "signer": fingerprint,
+                                    "product": next(iter(products)),
+                                    "subject": "O=GRYPH FRONTIER PTE. LTD.",
+                                }
+                            )
+                        ),
+                    ),
                 ):
                     if accepted:
                         official_launcher.verify_launcher("renamed/Games.exe", company)
@@ -334,14 +344,22 @@ class TestOfficialLauncher(unittest.TestCase):
     def test_mixed_candidates_and_cross_channel_cache_cannot_select_wrong_launcher(self):
         for company, products in official_launcher.LAUNCHER_PRODUCTS.items():
             correct_product = next(iter(products))
-            wrong_product = next(iter(next(value for key, value in official_launcher.LAUNCHER_PRODUCTS.items() if key != company)))
+            wrong_product = next(
+                iter(next(value for key, value in official_launcher.LAUNCHER_PRODUCTS.items() if key != company))
+            )
             with tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 wrong, correct = str(root / "GRYPHLINK" / "Launcher.exe"), str(root / "renamed" / "Launcher.exe")
 
-                def signed_file(*args, correct=correct, correct_product=correct_product, wrong_product=wrong_product, **kwargs):
+                def signed_file(
+                    *args, correct=correct, correct_product=correct_product, wrong_product=wrong_product, **kwargs
+                ):
                     product = correct_product if kwargs["env"]["OK_EF_VERIFY_LAUNCHER"] == correct else wrong_product
-                    return types.SimpleNamespace(stdout=json.dumps({"status": 0, "signer": next(iter(official_launcher.OFFICIAL_SIGNERS)), "product": product}))
+                    return types.SimpleNamespace(
+                        stdout=json.dumps(
+                            {"status": 0, "signer": next(iter(official_launcher.OFFICIAL_SIGNERS)), "product": product}
+                        )
+                    )
 
                 with (
                     self.subTest(company=company),
@@ -358,7 +376,9 @@ class TestOfficialLauncher(unittest.TestCase):
     def test_newest_games_from_the_other_channel_is_rejected(self):
         for company, products in official_launcher.LAUNCHER_PRODUCTS.items():
             correct_product = next(iter(products))
-            wrong_product = next(iter(next(value for key, value in official_launcher.LAUNCHER_PRODUCTS.items() if key != company)))
+            wrong_product = next(
+                iter(next(value for key, value in official_launcher.LAUNCHER_PRODUCTS.items() if key != company))
+            )
             with tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 for version in ("1.0", "2.0"):
@@ -368,7 +388,11 @@ class TestOfficialLauncher(unittest.TestCase):
                 def signed_file(*args, correct_product=correct_product, wrong_product=wrong_product, **kwargs):
                     path = kwargs["env"]["OK_EF_VERIFY_LAUNCHER"]
                     product = wrong_product if Path(path).parent.name == "2.0" else correct_product
-                    return types.SimpleNamespace(stdout=json.dumps({"status": 0, "signer": next(iter(official_launcher.OFFICIAL_SIGNERS)), "product": product}))
+                    return types.SimpleNamespace(
+                        stdout=json.dumps(
+                            {"status": 0, "signer": next(iter(official_launcher.OFFICIAL_SIGNERS)), "product": product}
+                        )
+                    )
 
                 with (
                     self.subTest(company=company),
@@ -376,7 +400,9 @@ class TestOfficialLauncher(unittest.TestCase):
                     patch.object(official_launcher, "installed_launcher", return_value=str(root / "Launcher.exe")),
                     patch.object(official_launcher.subprocess, "run", side_effect=signed_file),
                 ):
-                    self.assertEqual(official_launcher.find_official_games_exe("unused", Mock()), root / "1.0" / "Games.exe")
+                    self.assertEqual(
+                        official_launcher.find_official_games_exe("unused", Mock()), root / "1.0" / "Games.exe"
+                    )
 
     def setUp(self):
         patcher = patch.object(official_launcher, "_game_company", return_value="Hypergryph")
@@ -567,7 +593,8 @@ class TestOfficialLauncher(unittest.TestCase):
                 patch.object(official_launcher, "_registered_launchers", return_value=[]),
                 patch.object(official_launcher, "_game_path_launchers", return_value=[]),
                 patch.object(
-                    official_launcher, "verify_launcher",
+                    official_launcher,
+                    "verify_launcher",
                     side_effect=RuntimeError("bad signature"),
                 ) as verify,
                 self.assertRaisesRegex(RuntimeError, "not found"),
@@ -645,7 +672,11 @@ class TestOfficialLauncher(unittest.TestCase):
                 patch.object(official_launcher, "_game_company", return_value=company),
                 patch.object(official_launcher, "running_pids", return_value=[]),
                 patch.object(official_launcher, "_kernel32", return_value=kernel),
-                patch.object(official_launcher, "create_temporary_parent", side_effect=[RuntimeError("not found or invalid"), 321]) as prepare,
+                patch.object(
+                    official_launcher,
+                    "create_temporary_parent",
+                    side_effect=[RuntimeError("not found or invalid"), 321],
+                ) as prepare,
                 patch.object(official_launcher, "LauncherCleanup") as cleanup,
                 patch.object(official_launcher, "create_process", return_value=456) as create,
             ):
@@ -679,9 +710,13 @@ class TestOfficialLauncher(unittest.TestCase):
                 self.assertTrue(official_launcher.launch_game("unused", "", logger))
             self.assertEqual(prepare.call_count, 2)
             self.assertEqual(create.call_count, 2)
-            self.assertEqual(cleanup.call_args_list, [
-                call(kernel, 321, logger, company=company), call(kernel, 654, logger, company=company),
-            ])
+            self.assertEqual(
+                cleanup.call_args_list,
+                [
+                    call(kernel, 321, logger, company=company),
+                    call(kernel, 654, logger, company=company),
+                ],
+            )
             cleanup.return_value.start.assert_called_once_with(456)
 
     def test_parent_creation_error_uses_other_type_before_creating_game(self):
@@ -689,7 +724,9 @@ class TestOfficialLauncher(unittest.TestCase):
         with (
             patch.object(official_launcher, "running_pids", return_value=[]),
             patch.object(official_launcher, "_kernel32", return_value=kernel),
-            patch.object(official_launcher, "create_temporary_parent", side_effect=[OSError("access denied"), 321]) as prepare,
+            patch.object(
+                official_launcher, "create_temporary_parent", side_effect=[OSError("access denied"), 321]
+            ) as prepare,
             patch.object(official_launcher, "LauncherCleanup"),
             patch.object(official_launcher, "create_process", return_value=456) as create,
         ):
@@ -962,7 +999,6 @@ class TestTemporaryParentLogWatcher(unittest.TestCase):
         ):
             cleanup._watch(game)
         return wait_for_exit
-
 
     def test_international_reads_only_its_own_company_log(self):
         self.logs = self.logs.parents[2] / "Gryphline" / "Endfield" / "sdklogs"
