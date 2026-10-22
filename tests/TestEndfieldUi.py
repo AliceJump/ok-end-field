@@ -13,12 +13,13 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from ok import og
 from PySide6.QtCore import QAbstractAnimation, QEvent, QPoint, QRect, Qt  # type: ignore
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics  # type: ignore
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics, QPalette  # type: ignore
 from PySide6.QtWidgets import (  # type: ignore
     QApplication,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QToolTip,
     QWidget,
 )
 from qfluentwidgets import SwitchButton, Theme, qconfig  # type: ignore
@@ -1385,6 +1386,35 @@ class NativeTextLayoutTest(unittest.TestCase):
         workspace.deleteLater()
         QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
         self.assertNotIn(workspace._sync_run_state, communicate.task._subscribers)
+
+    def test_tooltips_in_workspace_and_drawer_keep_the_native_background(self):
+        def tip_background(widget):
+            QToolTip.showText(widget.mapToGlobal(QPoint(2, 2)), "一键存放: ON", widget)
+            self.app.processEvents()
+            tip = next(w for w in QApplication.topLevelWidgets() if w.inherits("QTipLabel") and w.isVisible())
+            color = tip.palette().color(QPalette.Window).name(QColor.HexArgb)
+            QToolTip.hideText()
+            self.app.processEvents()
+            return color
+
+        page = QWidget()
+        row = QLabel("帝江号整理", page)
+        workspace = EndfieldWorkspaceTab("DAILY", "日常一条龙", [("帝江号", None, page)])
+        host = QWidget()
+        drawer = EndfieldTacticalDrawer(host)
+        workspace.show()
+        host.show()
+        drawer.show()
+        bare = QLabel("参照")
+        bare.show()
+        self.app.processEvents()
+        native = tip_background(bare)
+        # 容器样式表裸写会级联进提示框：透明底在屏幕上是黑块，深色底配黑字也看不清
+        for widget in (row, drawer.title_label, drawer.save_btn):
+            self.assertEqual(tip_background(widget), native, widget)
+        for widget in (bare, workspace, host):
+            widget.close()
+            widget.deleteLater()
 
 
 class NativeControlsTest(unittest.TestCase):

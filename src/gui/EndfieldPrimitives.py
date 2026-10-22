@@ -344,7 +344,6 @@ class EndfieldTag(ThemeRepaint, QWidget):
         self._text = text
         key, sep, value = text.partition(": ")
         self._parts = (key, value) if sep and not self.ink else (text, "")
-        self.setToolTip(text)
         self.setFixedSize(self.sizeHint())
         self.update()
 

@@ -406,7 +406,8 @@ class EndfieldWorkspaceTab(QWidget):
 
         self.stack = QStackedWidget(self)
         self.stack.setObjectName("EndfieldWorkspaceStack")
-        self.stack.setStyleSheet("background: transparent;")
+        # 必须带选择器：裸写会级联到子孙控件的原生提示框，透明底的提示窗显示为黑块
+        self.stack.setStyleSheet("#EndfieldWorkspaceStack { background: transparent; }")
 
         self._page_containers: dict[QWidget, QWidget] = {}
         # 编号页的任务行贴在一起，由 EndfieldEntryNumbering 维护间距
