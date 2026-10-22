@@ -1,6 +1,6 @@
 # 摄像机输入配置读取
 
-`src/core/camera_input_config.py` 提供普通键鼠默认相机的理论前馈参数。函数读取当前用户注册表中的保存设置，并校验安装文件、VFS 索引与三个相机资源包切片。客户端或配置资源更新后会报错，要求重新核验并更新配置数据。
+`src/core/camera_input_config.py` 提供普通键鼠默认相机的理论前馈初值。函数读取当前用户注册表中的保存设置，使用随包曲线计算，不读取或比对游戏安装文件。客户端更新、资源热更新和安装目录不可解析不会因此禁用转向。
 
 ```python
 from src.core.camera_input_config import (
@@ -8,12 +8,13 @@ from src.core.camera_input_config import (
     get_default_camera_yaw_ratio,
 )
 
-game_dir = r"D:\GAMES\Endfield Game"  # 调用方提供安装目录
-yaw = get_default_camera_yaw_ratio(1920, game_dir=game_dir)
-track = get_default_camera_vertical_track(1080, game_dir=game_dir)
+yaw = get_default_camera_yaw_ratio(1920)
+track = get_default_camera_vertical_track(1080)
 ```
 
-宽、高参数必须是 Unity 实际 `Screen.width` / `Screen.height`，不自动使用桌面、保存分辨率或缩放截图尺寸。完整文件哈希适合初始化调用，不能逐帧调用。当前支持国服 Windows 保存设置，未找到设置时不猜测灵敏度。
+宽、高参数必须是 Unity 实际 `Screen.width` / `Screen.height`，不自动使用桌面、保存分辨率或缩放截图尺寸。当前读取国服 Windows 保存设置；缺失、类型非法或超出曲线范围的字段各自回退到速度 0、反向关闭，其余字段保持实读值。`read_saved_camera_settings()` 返回使用基线的字段名，水平转向对相关字段只在降级状态变化时提示。
+
+两个查询函数都支持可选的 `settings` 快照（与 `read_saved_camera_settings()` 返回字典一致），供调用方避免重复读取。
 
 ## 水平
 
@@ -54,20 +55,20 @@ k_y = 0.5 × 0.63 / height × dragSpeed × C(S_y)
 
 ## 版本和适用边界
 
-配置数据位于 `assets/data/camera_input_profile.json`，仅包含计算所需的数值和版本校验信息；原始解包、二进制、反汇编及独立研究资料留在主仓库忽略目录。
+配置数据位于 `assets/data/camera_input_profile.json`，包含计算所需数值和基线日期。原始解包、二进制、反汇编及独立研究资料留在主仓库忽略目录。下列摘要和定位信息记录基线来源，不作为运行时的版本白名单。
 
 2026-10-19 核验的 GameAssembly SHA-256 为 `ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c`，metadata 为 `461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca`。重新定位的 Windows 鼠标回调 method 497826 / RVA `0x57097d0` 中相对输入乘 0.5；水平拖动 method 52899 / RVA `0x54a0fb0`，纵向拖动 method 52900 / RVA `0x54a2270`。当前 Lua 的水平/纵向速度分别为 0.9 / 0.63。相机曲线和倍率经当前 VFS manifest 定位、包 MD5 校验、专用解包和内嵌 type tree 完整读取；Rewired 配置正文与此前严格解析结果逐字节相同。
 
-函数没有读取运行中的相机状态和未保存的设置，也不能证明模拟接口发送的 dx/dy 与游戏收到的计数相等。实际控制仍需等待角度稳定并反馈校准。查询模块本身不执行转向；转向 Mixin 只把它作为理论前馈基准。
+函数没有读取运行中的相机状态和未保存的设置，也不能证明模拟接口发送的 dx/dy 与游戏收到的计数相等。默认值只提供初始估计，实际控制仍需等待角度稳定并反馈校准。水平闭环保留稳定观测、分段输入、有效数值检查和轮数限制；未启用朝向反馈的视角对准路径仍依赖后续目标对中判断，不能把理论值当作实际到位证明。
 
 ## 转向适配
 
 `MinimapHeadingMixin.yaw_per_pixel()` 使用 `get_default_camera_yaw_ratio()`，传入当前
-Unity 画面宽度和 `Endfield.exe` 所在目录，`minimap=False` 保持“鼠标右移 -> 罗盘方位角增大”
+Unity 画面宽度和当前保存设置，`minimap=False` 保持“鼠标右移 -> 罗盘方位角增大”
 的默认项目约定；游戏内反向设置会让返回值为负，闭环转向随之翻转鼠标方向。结果按
-`(画面宽度, 安装目录)` 缓存在任务实例上：函数包含安装文件与资源切片哈希校验，
-不能每次转向都调用。
+`(画面宽度, 水平灵敏度, 水平反向)` 缓存在任务实例上。每次查询重新检查保存设置，
+相同环境复用成功值，失败不缓存，允许后续查询恢复。
 
-游戏窗口路径或画面宽度不可用、客户端资源未通过核验、保存设置缺失时，转向接口直接拒绝执行，
-不回退到旧的手工 `yaw_per_pixel` 配置。旧的任务配置和全局导航配置入口已移除；
+画面宽度未知或默认参数产生非有限、零比率时，转向接口仍拒绝发送输入；保存设置缺失会使用默认字段。
+旧的任务配置和全局导航配置入口保持移除；
 `MouseRotationCalibration` 仅保留为诊断实际转视角比例的调试任务。

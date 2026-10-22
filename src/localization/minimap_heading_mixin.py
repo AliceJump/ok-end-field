@@ -25,18 +25,17 @@
                 self.log_info(f"到位: {res['heading']:.1f}°（{res['rounds']} 轮）")
 
 水平旋转系数由 :func:`src.core.camera_input_config.get_default_camera_yaw_ratio`
-按当前画面宽度和游戏安装目录计算，不再读取任务或全局导航配置里的手工标定值。
-该函数会校验客户端和摄像机资源；结果按 ``(画面宽度, 安装目录)`` 缓存在任务实例上，
-避免每次转向都重复读取大文件哈希。默认方向下鼠标右移使方位角增大；游戏反向设置会让
+按当前画面宽度和保存设置计算，不再读取任务或全局导航配置里的手工标定值。
+默认参数提供转向初值，实际效果通过朝向反馈修正；缓存随画面宽度、灵敏度和反向设置更新。
+默认方向下鼠标右移使方位角增大；游戏反向设置会让
 比率带负号，闭环除法随之翻转鼠标方向。
 """
 
 from __future__ import annotations
 
 import math
-from pathlib import Path
 
-from src.core.camera_input_config import get_default_camera_yaw_ratio
+from src.core.camera_input_config import get_default_camera_yaw_ratio, read_saved_camera_settings
 from src.localization.minimap_odometry import angle_delta, arrow_angle_to_bearing
 
 __all__ = [
@@ -133,41 +132,17 @@ class MinimapHeadingMixin:
         self._last_turn_result = None
         self._camera_yaw_ratio_cache = None
         self._camera_yaw_ratio_warning_key = None
-
-    def _camera_input_game_dir(self) -> str | None:
-        """从当前游戏窗口解析安装目录，供摄像机配置校验使用。"""
-        executor = getattr(self, "executor", None)
-        device_manager = getattr(executor, "device_manager", None)
-        candidates = []
-
-        hwnd_window = getattr(device_manager, "hwnd_window", None)
-        candidates.append(getattr(hwnd_window, "exe_full_path", None))
-
-        device_config = getattr(device_manager, "config", None)
-        getter = getattr(device_config, "get", None)
-        if callable(getter):
-            candidates.append(getter("pc_full_path"))
-
-        devices = getattr(device_manager, "device_dict", None)
-        if isinstance(devices, dict):
-            for device in devices.values():
-                if isinstance(device, dict) and device.get("device") == "windows":
-                    candidates.append(device.get("full_path"))
-
-        for candidate in candidates:
-            raw = str(candidate or "").strip()
-            if not raw:
-                continue
-            path = Path(raw)
-            if path.name.casefold() == "endfield.exe":
-                return str(path.parent)
-        return None
+        self._camera_settings_warning_fields = None
 
     def _camera_yaw_per_pixel(self) -> float:
-        """读取并缓存构建核验的摄像机水平比率。"""
+        """用当前保存设置计算初值；成功缓存随环境更新，失败允许下次重试。"""
         width = int(getattr(self, "width", 0) or 0)
-        game_dir = self._camera_input_game_dir()
-        key = (width, game_dir)
+        settings, fallback = read_saved_camera_settings()
+        fallback = tuple(name for name in fallback if name in ("speed_x", "reverse_x"))
+        if fallback and fallback != getattr(self, "_camera_settings_warning_fields", None):
+            self.log_warning("摄像机水平保存设置不可读，相关字段使用默认值")
+        self._camera_settings_warning_fields = fallback
+        key = (width, settings["speed_x"], settings["reverse_x"])
         cached = getattr(self, "_camera_yaw_ratio_cache", None)
         if cached is not None and cached[0] == key:
             return float(cached[1])
@@ -176,13 +151,11 @@ class MinimapHeadingMixin:
         value = 0.0
         if width <= 0:
             reason = "当前画面宽度未知"
-        elif not game_dir:
-            reason = "无法从游戏窗口解析安装目录"
         else:
             try:
-                value = float(get_default_camera_yaw_ratio(width, game_dir=game_dir))
+                value = float(get_default_camera_yaw_ratio(width, settings=settings))
             except (OSError, ValueError) as exc:
-                reason = f"客户端、资源或保存设置未通过核验: {exc}"
+                reason = f"默认相机参数不可用: {exc}"
             except Exception as exc:
                 reason = f"读取失败: {exc}"
 
@@ -195,9 +168,10 @@ class MinimapHeadingMixin:
                 self.log_warning(f"摄像机水平比率不可用：{reason}")
                 self._camera_yaw_ratio_warning_key = warning_key
         else:
-            self.log_info(f"摄像机水平比率={value:.6f}°/收到的相对X计数（画面宽 {width}px，安装目录 {game_dir}）")
+            self.log_info(f"摄像机水平比率初值={value:.6f}°/收到的相对X计数（画面宽 {width}px）")
+            self._camera_yaw_ratio_warning_key = None
 
-        self._camera_yaw_ratio_cache = (key, value)
+        self._camera_yaw_ratio_cache = (key, value) if value else None
         return value
 
     # ------------------------------------------------------------------ #
