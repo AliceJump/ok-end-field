@@ -14,7 +14,7 @@ track = get_default_camera_vertical_track(1080)
 
 宽、高参数必须是 Unity 实际 `Screen.width` / `Screen.height`，不自动使用桌面、保存分辨率或缩放截图尺寸。当前读取国服 Windows 保存设置；缺失、类型非法或超出曲线范围的字段各自回退到速度 0、反向关闭，其余字段保持实读值。`read_saved_camera_settings()` 返回使用基线的字段名，水平转向对相关字段只在降级状态变化时提示。
 
-两个查询函数都支持可选的 `settings` 快照（与 `read_saved_camera_settings()` 返回字典一致），供调用方避免重复读取。
+两个查询函数都支持可选的 `settings` 快照（与 `read_saved_camera_settings()` 返回字典一致），供调用方避免重复读取。快照中的数值速度越界或非有限时，只回退对应轴的速度到 0，保留反向和另一轴设置，并且不修改传入字典；错误的字段类型仍会报错。
 
 ## 水平
 

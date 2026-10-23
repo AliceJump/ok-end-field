@@ -96,7 +96,11 @@ def _read_axis(screen_size: int, axis: str, settings: dict | None) -> tuple[dict
     speed, reverse = settings[f"speed_{axis}"], settings[f"reverse_{axis}"]
     if isinstance(speed, bool) or not isinstance(speed, (int, float)) or type(reverse) is not bool:
         raise ValueError("Invalid camera speed or reverse setting")
-    curve = _evaluate_curve(config["speed_curve"], speed)
+    try:
+        curve = _evaluate_curve(config["speed_curve"], speed)
+    except ValueError:
+        speed = 0.0
+        curve = _evaluate_curve(config["speed_curve"], speed)
     input_gain = profile["native_mouse_factor"] * config["lua_speed"] * config["mouse_sensitivity"] / screen_size
     factors = (input_gain, config["drag_speed"], config["speed_factor"], curve)
     if any(not math.isfinite(value) or value <= 0 for value in factors):

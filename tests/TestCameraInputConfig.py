@@ -72,16 +72,36 @@ class TestCameraInputConfig(unittest.TestCase):
         self.assertAlmostEqual(self.vertical(speed=5)["linear_track_units_per_received_y"], ratio * 1.5)
         self.assertAlmostEqual(self.vertical(reverse=True)["linear_track_units_per_received_y"], -ratio)
 
-    def test_invalid_screen_size_or_speed_rejected(self):
+    def test_invalid_screen_size_or_setting_type_rejected(self):
         for value in (0, -1, True, 1920.0):
             with self.subTest(value=value):
                 with self.assertRaises(ValueError):
                     self.yaw(value)
                 with self.assertRaises(ValueError):
                     self.vertical(value)
-        for speed in (-5.1, 5.1, float("nan"), float("inf")):
+        for speed in (True, "fast", None):
             with self.subTest(speed=speed), self.assertRaises(ValueError):
                 self.yaw(speed=speed)
+        for reverse in (0, 1, "false", None):
+            with self.subTest(reverse=reverse), self.assertRaises(ValueError):
+                self.yaw(reverse=reverse)
+
+    def test_out_of_range_snapshot_speed_falls_back_only_for_that_axis(self):
+        for axis in ("x", "y"):
+            for speed in (-5.1, 5.1, float("nan"), float("inf")):
+                with self.subTest(axis=axis, speed=speed):
+                    settings = {"speed_x": 2.5, "reverse_x": True, "speed_y": -2.5, "reverse_y": True}
+                    settings[f"speed_{axis}"] = speed
+                    yaw = camera.get_default_camera_yaw_ratio(1920, settings=settings)
+                    vertical = camera.get_default_camera_vertical_track(1080, settings=settings)
+                    self.assertAlmostEqual(yaw, -0.084375 * (1.0 if axis == "x" else 1.25))
+                    self.assertAlmostEqual(
+                        vertical["linear_track_units_per_received_y"],
+                        -0.0002916666666666667 * (1.0 if axis == "y" else 0.75),
+                    )
+                    self.assertEqual(vertical["saved_speed_y"], 0.0 if axis == "y" else -2.5)
+                    self.assertTrue(vertical["saved_reverse_y"])
+                    self.assertIs(settings[f"speed_{axis}"], speed)
 
     def test_registry_float_bits_and_fresh_reads(self):
         import winreg
