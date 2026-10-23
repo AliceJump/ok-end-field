@@ -277,6 +277,11 @@ def _iter_legacy_zip_line_task_data():
 def _collect_legacy_values(option: ConfigOption) -> dict[str, Any]:
     candidates_by_key: dict[str, list[tuple[float, Any]]] = {}
     for data, mtime in _iter_legacy_config_data(option) or []:
+        if option.name == BATTLE_CONFIG_NAME:
+            data = dict(data)
+            copy_migrated_config_keys(data, _BATTLE_KEY_MIGRATIONS)
+            if KEY_LEGACY_COMBAT_MODE not in data and any(key in data for key in _BATTLE_MODE_LEGACY_KEYS):
+                data[KEY_LEGACY_COMBAT_MODE] = infer_legacy_combat_mode(data)
         for key, default_value in option.default_config.items():
             if key not in data:
                 continue
@@ -406,7 +411,9 @@ def migrate_account_battle_mode_selectors() -> None:
             for task_config in task_map.values():
                 if not isinstance(task_config, dict) or KEY_LEGACY_COMBAT_MODE in task_config:
                     continue
-                if any(key in task_config for key in _BATTLE_MODE_LEGACY_KEYS):
+                # Sparse account overrides must keep inheriting the omitted
+                # flags. BattleMixin combines them with the active base mode.
+                if all(key in task_config for key in _BATTLE_MODE_LEGACY_KEYS):
                     task_config[KEY_LEGACY_COMBAT_MODE] = infer_legacy_combat_mode(task_config)
         return data
 

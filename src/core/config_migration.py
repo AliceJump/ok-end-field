@@ -27,6 +27,32 @@ from src.core.paths import config_path
 _NO_MIGRATION = object()
 
 
+def collect_config_migrations(task_type: type) -> tuple[dict, dict]:
+    """Collect declared tables in MRO order, with the derived class winning."""
+    keys, values = {}, {}
+    for klass in reversed(task_type.__mro__):
+        keys.update(vars(klass).get("config_key_migrations", {}))
+        values.update(vars(klass).get("config_value_migrations", {}))
+    return keys, values
+
+
+def migrate_account_config(task_class_name: str, key_migrations: dict, value_migrations: dict) -> None:
+    """Apply the task's migrations to its sparse account segments only."""
+    if not key_migrations and not value_migrations:
+        return
+    from src.tasks.account.account_scope_store import update_overrides
+
+    def apply(store):
+        for task_map in (store.get("accounts") or {}).values():
+            segment = task_map.get(task_class_name)
+            if isinstance(segment, dict):
+                copy_migrated_config_keys(segment, key_migrations)
+                apply_value_migrations(segment, value_migrations)
+        return store
+
+    update_overrides(apply)
+
+
 def copy_migrated_config_keys(
     config: dict, migrations: dict[str, str], *, defaults: dict | None = None, copy_policy: str = "missing_only"
 ) -> bool:
@@ -61,7 +87,7 @@ def migrate_config_file_keys(task_class_name: str, migrations: dict[str, str]) -
     对 JSON 中的每个 key：
       - 匹配到 migrations 的 key（旧 key） → 同步值到对应的 value（新 key）
       - 匹配到 migrations 的 value（新 key） → 同步值到对应的 key（旧 key）
-    两边都不删除，JSON 中始终保留新旧两套 key，确保回滚安全。
+    本步骤不删除旧键；之后框架 verify_config 仍会移除 defaults 中不存在的键。
     若文件不存在或不是合法 dict，静默跳过。
     """
     if not migrations:
@@ -122,24 +148,29 @@ def migrate_config_values(task_class_name: str, value_migrations: dict) -> None:
 # ── 通用转换辅助函数 ──────────────────────────────────────
 
 
-def merge_bool_options(option_keys: dict):
+def merge_bool_options(option_keys: dict, *, defaults: list | None = None):
     """把多个旧布尔开关键合并为一个新多选列表键。
 
     Args:
         option_keys: {选项名: 旧配置键}，值为 True 的选项进入生成的列表。
+        defaults: 旧总开关开启但缺少子开关时使用的默认选项。
 
     Returns:
         供 config_value_migrations 使用的转换函数：
-          新键已存在，或不存在任何旧键 → _NO_MIGRATION（不生成）；
+          新键已是列表，或不存在任何旧键 → _NO_MIGRATION（不生成）；
+          旧总开关关闭时返回空列表，开启时继续按子开关筛选；
           否则返回按旧布尔值筛选出的选项列表（全部关闭时为空列表）。
     """
 
     def transform(config, new_key):
-        if new_key in config:
+        value = config.get(new_key)
+        if value is False:
+            return []
+        if new_key in config and value is not True:
             return _NO_MIGRATION
         present = [name for name, key in option_keys.items() if key in config]
         if not present:
-            return _NO_MIGRATION
+            return list(defaults) if value is True and defaults is not None else _NO_MIGRATION
         return [name for name, key in option_keys.items() if config.get(key)]
 
     return transform
@@ -153,11 +184,19 @@ def legacy_battle_mode_to_bool(config, new_key):
     """
     if isinstance(config.get(new_key), bool):
         return _NO_MIGRATION
-    old_value = config.get("战斗配置")
+    old_value = config.get(new_key, config.get("战斗配置"))
     if old_value == "使用独立配置":
         return True
     if old_value == "使用全局配置":
         return False
+    return _NO_MIGRATION
+
+
+def legacy_skill_release_to_list(config, new_key):
+    """Preserve historical compact skill strings in task/account configurations."""
+    value = config.get(new_key)
+    if isinstance(value, str):
+        return [char for char in value if char.strip()]
     return _NO_MIGRATION
 
 

@@ -19,6 +19,16 @@ def _pilot_table():
 
 
 class TestDailySplitConfigMigration(unittest.TestCase):
+    def test_existing_legacy_disabled_target_wins_over_enabled_source(self):
+        for importer, key in (
+            (split_config_migrator._import_boat_stages, "⭐帝江号收菜"),
+            (split_config_migrator._import_activity_rewards, "⭐活动奖励"),
+            (split_config_migrator._import_region_options, "⭐地区建设"),
+        ):
+            with self.subTest(importer=importer):
+                self.assertEqual(importer({key: ["source enabled"]}, {key: False}, key), [])
+                self.assertIs(importer({key: False}, {key: []}, key), split_config_migrator._NO_MIGRATION)
+
     def test_selection_imports_keep_earliest_operation_lists(self):
         for importer, ops_key in (
             (split_config_migrator._import_boat_stages, "帝江号收菜操作"),
