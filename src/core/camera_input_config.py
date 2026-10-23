@@ -1,4 +1,4 @@
-"""Read CN camera settings and calculate build-verified default input gains.
+"""Read saved camera settings and calculate default input gains.
 
 Counts refer to relative input RECEIVED by the game, not mouse_event dx sent
 by automation. Runtime overrides, unsaved settings, IFix and camera collision
@@ -7,7 +7,6 @@ remain outside this static default profile. No process memory is accessed.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 import struct
@@ -17,40 +16,12 @@ from pathlib import Path
 _PROFILE_PATH = Path(__file__).resolve().parents[2] / "assets/data/camera_input_profile.json"
 
 
-def _load_profile(game_dir: str | Path) -> dict:
-    """Reject a changed client, VFS index or camera bundle before using defaults."""
+def _load_profile() -> dict:
+    """Read bundled defaults without making game updates a runtime prerequisite."""
     profile = json.loads(_PROFILE_PATH.read_text(encoding="utf-8"))
     if profile["schema"] != 1:
         raise ValueError("Unsupported camera input profile schema")
-    root = Path(game_dir)
-    for name, expected in profile["installed_files"].items():
-        with (root / name).open("rb") as stream:
-            actual = hashlib.file_digest(stream, "sha256").hexdigest()
-        if actual != expected:
-            raise ValueError(f"Camera input profile requires a new client audit: {name}")
-    for item in profile["bundle_slices"]:
-        with (root / item["path"]).open("rb") as stream:
-            stream.seek(item["offset"])
-            raw = stream.read(item["length"])
-        if len(raw) != item["length"] or hashlib.sha256(raw).hexdigest() != item["sha256"]:
-            raise ValueError(f"Camera input profile requires a new resource audit: {item['path']}")
     return profile
-
-
-def _read_settings(profile: dict, axis: str) -> tuple[float, bool]:
-    """Read fresh PlayerPrefs values, preserving their DWORD float bit pattern."""
-    import winreg
-
-    config = profile["axes"][axis]
-    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, profile["registry_path"], 0, winreg.KEY_READ) as key:
-        speed_bits, speed_kind = winreg.QueryValueEx(key, config["speed_key"])
-        reverse, reverse_kind = winreg.QueryValueEx(key, config["reverse_key"])
-    if speed_kind != winreg.REG_DWORD or reverse_kind != winreg.REG_DWORD:
-        raise ValueError("Camera speed and reverse settings must be REG_DWORD")
-    speed = struct.unpack("<f", struct.pack("<I", speed_bits))[0]
-    if not math.isfinite(speed) or reverse not in (0, 1):
-        raise ValueError("Invalid persisted camera speed or reverse setting")
-    return speed, bool(reverse)
 
 
 def read_saved_camera_settings():
@@ -114,14 +85,22 @@ def _evaluate_curve(keys: list[dict], value: float) -> float:
     raise ValueError("Cannot evaluate camera curve")
 
 
-def _read_axis(screen_size: int, game_dir: str | Path, axis: str) -> tuple[dict, float, float, float, bool]:
+def _read_axis(screen_size: int, axis: str, settings: dict | None) -> tuple[dict, float, float, float, bool]:
     """Return profile, signed linear gain, input gain, saved speed and reverse."""
     if isinstance(screen_size, bool) or not isinstance(screen_size, int) or screen_size <= 0:
         raise ValueError("Actual Unity screen size must be a positive integer")
-    profile = _load_profile(game_dir)
+    profile = _load_profile()
     config = profile["axes"][axis]
-    speed, reverse = _read_settings(profile, axis)
-    curve = _evaluate_curve(config["speed_curve"], speed)
+    if settings is None:
+        settings, _ = read_saved_camera_settings()
+    speed, reverse = settings[f"speed_{axis}"], settings[f"reverse_{axis}"]
+    if isinstance(speed, bool) or not isinstance(speed, (int, float)) or type(reverse) is not bool:
+        raise ValueError("Invalid camera speed or reverse setting")
+    try:
+        curve = _evaluate_curve(config["speed_curve"], speed)
+    except ValueError:
+        speed = 0.0
+        curve = _evaluate_curve(config["speed_curve"], speed)
     input_gain = profile["native_mouse_factor"] * config["lua_speed"] * config["mouse_sensitivity"] / screen_size
     factors = (input_gain, config["drag_speed"], config["speed_factor"], curve)
     if any(not math.isfinite(value) or value <= 0 for value in factors):
@@ -130,7 +109,7 @@ def _read_axis(screen_size: int, game_dir: str | Path, axis: str) -> tuple[dict,
     return profile, sign * math.prod(factors), input_gain, speed, reverse
 
 
-def get_default_camera_yaw_ratio(screen_width: int, *, game_dir: str | Path, minimap: bool = False) -> float:
+def get_default_camera_yaw_ratio(screen_width: int, *, minimap: bool = False, settings: dict | None = None) -> float:
     """Return signed default yaw degrees per relative X count received by game.
 
     Pass actual Unity Screen.width, not desktop/saved/resized capture width.
@@ -138,16 +117,16 @@ def get_default_camera_yaw_ratio(screen_width: int, *, game_dir: str | Path, min
     character has settled facing the camera, as in zipline idle. The ordinary
     default camera has no horizontal angle limit. Other camera states may vary.
 
-    The CN saved sensitivity/reverse settings are read on each call. Build and
-    resource hashes are verified, so use this at initialization, not per frame.
-    Missing settings/files raise OSError; changed builds and unsupported values
-    raise ValueError. No silent sensitivity, resolution or version fallback.
+    Read current CN saved settings unless a settings snapshot is supplied.
+    Missing saved fields use the baseline from read_saved_camera_settings.
+    Bundled constants supply an initial estimate; actual control needs feedback.
+    No game installation files are read or compared with a pinned build.
     """
-    profile, gain, _, _, _ = _read_axis(screen_width, game_dir, "x")
+    profile, gain, _, _, _ = _read_axis(screen_width, "x", settings)
     return gain * profile["degrees_per_turn"] * (-1 if minimap else 1)
 
 
-def get_default_camera_vertical_track(screen_height: int, *, game_dir: str | Path) -> dict:
+def get_default_camera_vertical_track(screen_height: int, *, settings: dict | None = None) -> dict:
     """Read default vertical orbit gain, limits, acceleration and geometry.
 
     screen_height must be actual Unity Screen.height. The linear gain is TRACK
@@ -160,10 +139,10 @@ def get_default_camera_vertical_track(screen_height: int, *, game_dir: str | Pat
     aiming, collision, live configuration overrides or IFix. The baked inverse
     pitch lookup ends at track 0.99; do not extrapolate it to track 1.
 
-    Reads current CN saved Y settings and verifies the same installation inputs
-    as get_default_camera_yaw_ratio. Use at initialization, not per frame.
+    Uses the same saved-setting fallback and bundled-default policy as
+    get_default_camera_yaw_ratio; no game installation audit is required.
     """
-    profile, gain, input_gain, speed, reverse = _read_axis(screen_height, game_dir, "y")
+    profile, gain, input_gain, speed, reverse = _read_axis(screen_height, "y", settings)
     track = profile["vertical_track"]
     samples = []
     for value in (0.0, 0.2, 0.4, 0.6, 0.84, 1.0):

@@ -9,7 +9,6 @@
 """
 
 import unittest
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE, MinimapHeadingMixin
@@ -108,17 +107,17 @@ class TestCameraYawRatio(unittest.TestCase):
         task = MinimapHeadingMixin()
         task.width = 1920
         task.logs = []
-        task.executor = SimpleNamespace(
-            device_manager=SimpleNamespace(
-                hwnd_window=SimpleNamespace(exe_full_path=r"D:\Games\Endfield Game\Endfield.exe")
-            )
-        )
+        task.executor = None
         task._init_minimap_heading_mixin()
         task.log_info = lambda msg, notify=False: task.logs.append(str(msg))
         task.log_warning = lambda msg, notify=False: task.logs.append("WARN " + str(msg))
+        self.settings = {"speed_x": 0.0, "reverse_x": False, "speed_y": 0.0, "reverse_y": False}
+        self.saved = self.enterContext(
+            patch("src.localization.minimap_heading_mixin.read_saved_camera_settings", return_value=(self.settings, ()))
+        )
         return task
 
-    def test_uses_build_verified_camera_ratio_and_caches_it(self):
+    def test_uses_default_camera_ratio_without_game_directory_and_caches_it(self):
         task = self._task()
         with patch(
             "src.localization.minimap_heading_mixin.get_default_camera_yaw_ratio",
@@ -127,25 +126,47 @@ class TestCameraYawRatio(unittest.TestCase):
             self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
             self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
 
-        get_ratio.assert_called_once_with(1920, game_dir=r"D:\Games\Endfield Game")
+        get_ratio.assert_called_once_with(1920, settings=self.settings)
         self.assertTrue(any("0.084375" in msg for msg in task.logs))
 
-    def test_rejects_unverifiable_camera_ratio(self):
+    def test_retries_failed_default_parameters(self):
         task = self._task()
         with patch(
             "src.localization.minimap_heading_mixin.get_default_camera_yaw_ratio",
-            side_effect=ValueError("changed build"),
-        ):
+            side_effect=[ValueError("invalid defaults"), 0.084375],
+        ) as get_ratio:
             self.assertEqual(task.yaw_per_pixel(), 0.0)
+            self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
+            self.assertEqual(get_ratio.call_count, 2)
 
         self.assertTrue(any("不可用" in msg for msg in task.logs))
 
-    def test_rejects_missing_game_window_path(self):
+    def test_saved_speed_reverse_and_width_changes_invalidate_cache(self):
         task = self._task()
-        task.executor = None
+        self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
+        self.settings["speed_x"] = 5.0
+        self.assertAlmostEqual(task.yaw_per_pixel(), 0.1265625)
+        self.settings["reverse_x"] = True
+        self.assertAlmostEqual(task.yaw_per_pixel(), -0.1265625)
+        task.width = 3840
+        self.assertAlmostEqual(task.yaw_per_pixel(), -0.06328125)
 
+    def test_missing_settings_warn_once_and_recovered_settings_refresh_ratio(self):
+        task = self._task()
+        self.saved.return_value = (self.settings, ("speed_x",))
+        self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
+        self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
+        self.assertEqual(sum("使用默认值" in msg for msg in task.logs), 1)
+        self.settings["speed_x"] = 2.5
+        self.saved.return_value = (self.settings, ())
+        self.assertAlmostEqual(task.yaw_per_pixel(), 0.10546875)
+
+    def test_unknown_width_can_recover_in_same_instance(self):
+        task = self._task()
+        task.width = 0
         self.assertEqual(task.yaw_per_pixel(), 0.0)
-        self.assertTrue(any("安装目录" in msg for msg in task.logs))
+        task.width = 1920
+        self.assertAlmostEqual(task.yaw_per_pixel(), 0.084375)
 
     def test_accepts_signed_reverse_ratio(self):
         task = self._task()
@@ -158,6 +179,17 @@ class TestCameraYawRatio(unittest.TestCase):
 
 class TestTurnToBearing(unittest.TestCase):
     """覆盖闭环转向的轮数、误差和失败行为。"""
+
+    def test_default_ratio_closes_loop_without_game_window_or_matching_input_gain(self):
+        task = _FakeTurnTask(facing=0.0, k_error=0.8)
+        task.executor = None
+        task.yaw_per_pixel = lambda: MinimapHeadingMixin.yaw_per_pixel(task)
+        settings = {"speed_x": 0.0, "reverse_x": False}
+        with patch("src.localization.minimap_heading_mixin.read_saved_camera_settings", return_value=(settings, ())):
+            result = task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=3)
+        self.assertTrue(result["ok"], result)
+        self.assertGreater(result["rounds"], 1)
+        self.assertLessEqual(abs(result["error"]), 5.0)
 
     def test_already_at_target_does_nothing(self):
         task = _FakeTurnTask(facing=90.0)
