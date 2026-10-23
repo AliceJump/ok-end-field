@@ -17,7 +17,12 @@ from dataclasses import dataclass
 from typing import Any
 from urllib import error, request
 
-from src.nav.zip_line_graph import ZIP_LINE_NAME, ZipLineGraph, ZipLineLink, ZipLineNode
+from src.nav.zip_line_graph import (
+    LONG_RANGE_ZIP_LINE_NAME,
+    ZIP_LINE_NAME,
+    ZipLineGraph,
+    ZipLineNode,
+)
 
 __all__ = [
     "CAPTURE_TRAVEL_POLES_PATH",
@@ -34,6 +39,10 @@ __all__ = [
 CAPTURE_TRAVEL_POLES_PATH = "/api/travel-poles"
 _READY_FLOW_STATUS = "正在解码"
 _MAP_CHAPTER_PATTERN = re.compile(r"^map0*(\d+)$", re.IGNORECASE)
+_ZIP_LINE_NAME_BY_CAPTURE_TEMPLATE_ID = {
+    "travel_pole_1": ZIP_LINE_NAME,
+    "travel_pole_2": LONG_RANGE_ZIP_LINE_NAME,
+}
 
 
 def _finite_float(value: Any) -> float | None:
@@ -53,6 +62,11 @@ def _id_text(value: Any) -> str:
     if isinstance(value, float) and value.is_integer():
         return str(int(value))
     return str(value).strip()
+
+
+def _zip_line_name_for_capture_template(template_id: str) -> str:
+    """把抓包模板 ID 映射为现有滑索类型；未知类型保守按普通 80m 处理。"""
+    return _ZIP_LINE_NAME_BY_CAPTURE_TEMPLATE_ID.get(str(template_id or "").strip(), ZIP_LINE_NAME)
 
 
 def _vector(value: Any) -> tuple[float, float, float] | None:
@@ -268,9 +282,9 @@ def build_capture_travel_pole_graph(
 ) -> CaptureTravelPoleLoad:
     """把一次可信快照转换成现有 ``ZipLineGraph``。
 
-    只消费 ``defaultLinks`` 来确认两个滑索架相连，不按距离、供电线或
-    ComponentId 推导额外连接。确认后的设施连接按双向边供导航使用。
-    未解析的目标、失效节点和未选中的 chapter 都不产生边。
+    接口只提供节点，因此沿用地图滑索的原有规则，按节点三维位置和类型半径
+    重新计算双向连接。``defaultLinks`` 不参与建边；未选中的 chapter 和失效
+    节点不会进入后续计算。
     """
     invalid_reason = snapshot.invalid_reason()
     if invalid_reason:
@@ -296,7 +310,7 @@ def build_capture_travel_pole_graph(
             node_id=node.graph_id,
             map_id=str(map_id or ""),
             level_id=node.chapter_id,
-            name=node.template_id or ZIP_LINE_NAME,
+            name=_zip_line_name_for_capture_template(node.template_id),
             x=node.position[0],
             y=node.position[1],
             z=node.position[2],
@@ -305,28 +319,7 @@ def build_capture_travel_pole_graph(
         for node in sorted(nodes_by_key.values(), key=lambda item: item.key)
     ]
 
-    links_by_pair: dict[tuple[str, str], ZipLineLink] = {}
-    for default_link in snapshot.default_links:
-        if default_link.chapter_id != chapter_id or not default_link.target_resolved:
-            continue
-        source = nodes_by_key.get(default_link.source_key)
-        target = nodes_by_key.get(default_link.target_key)
-        if source is None or target is None:
-            continue
-        distance = default_link.distance_3d
-        if distance is None:
-            distance = math.dist(source.position, target.position)
-        if distance <= 0:
-            continue
-        first_id, second_id = sorted((source.graph_id, target.graph_id))
-        links_by_pair[(first_id, second_id)] = ZipLineLink(
-            first_id=first_id,
-            second_id=second_id,
-            distance_m=distance,
-            max_range_m=distance,
-        )
-
-    graph = ZipLineGraph(graph_nodes, links_by_pair.values())
+    graph = ZipLineGraph.from_nodes(graph_nodes)
     return CaptureTravelPoleLoad(graph=graph, snapshot=snapshot, reason="ok", cacheable=True)
 
 

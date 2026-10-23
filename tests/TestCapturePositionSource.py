@@ -35,6 +35,7 @@ from src.localization.minimap_position_mixin import (
     CAPTURE_RELOGIN_INTERVAL_SECONDS,
     MinimapPositionMixin,
 )
+from src.nav.zip_line_graph import LONG_RANGE_ZIP_LINE_NAME, ZIP_LINE_NAME
 
 
 def _state_payload(
@@ -1153,7 +1154,7 @@ class CaptureTravelPolesTest(unittest.TestCase):
         payload.update(overrides)
         return payload
 
-    def test_converts_chapter_node_ids_and_default_link_as_bidirectional(self):
+    def test_converts_chapter_node_ids_and_recomputes_bidirectional_connection(self):
         first = self._node(
             10,
             20,
@@ -1161,20 +1162,7 @@ class CaptureTravelPolesTest(unittest.TestCase):
             social={"ownerId": "9007199254740993", "socialNodeId": 12, "preset": False},
         )
         second = self._node(20, 10, x=12.5)
-        payload = self._payload(
-            nodes=[first, second],
-            links=[
-                {
-                    "chapterId": "domain_2",
-                    "sourceNodeId": 10,
-                    "sourceComponentId": 20,
-                    "targetNodeId": 20,
-                    "targetResolved": True,
-                    "distance3D": 11.5,
-                    "yawToTarget": 90.0,
-                }
-            ],
-        )
+        payload = self._payload(nodes=[first, second])
 
         snapshot = parse_capture_travel_pole_snapshot(payload)
         result = build_capture_travel_pole_graph(snapshot, map_id="map02", include_shared=True)
@@ -1193,10 +1181,39 @@ class CaptureTravelPolesTest(unittest.TestCase):
         self.assertEqual(len(graph.links), 1)
         link = graph.links[0]
         self.assertEqual((link.first_id, link.second_id), ("domain_2:10", "domain_2:20"))
+        self.assertEqual(link.max_range_m, 110.0)
         self.assertEqual(link.other("domain_2:10"), "domain_2:20")
         self.assertEqual(link.other("domain_2:20"), "domain_2:10")
 
-    def test_unresolved_target_never_becomes_a_connection(self):
+    def test_capture_template_ids_map_to_existing_zip_line_types(self):
+        templates = {
+            10: ("travel_pole_1", ZIP_LINE_NAME, False, 80.0),
+            20: ("travel_pole_2", LONG_RANGE_ZIP_LINE_NAME, True, 110.0),
+            30: ("travel_pole_future", ZIP_LINE_NAME, False, 80.0),
+        }
+        payload = self._payload(
+            nodes=[
+                self._node(node_id, node_id + 100, template=template_id)
+                for node_id, (template_id, _name, _is_long, _range) in templates.items()
+            ]
+        )
+
+        result = build_capture_travel_pole_graph(
+            parse_capture_travel_pole_snapshot(payload),
+            map_id="map02",
+            include_shared=True,
+        )
+
+        self.assertIsNotNone(result.graph)
+        for node_id, (template_id, expected_name, expected_is_long, expected_range) in templates.items():
+            with self.subTest(template_id=template_id):
+                node = result.graph.node(f"domain_2:{node_id}")
+                self.assertEqual(node.template_id, template_id)
+                self.assertEqual(node.name, expected_name)
+                self.assertEqual(node.is_long_range, expected_is_long)
+                self.assertEqual(node.connect_range_m, expected_range)
+
+    def test_nodes_connect_from_distance_without_using_default_link_resolution(self):
         payload = self._payload(
             nodes=[self._node(10, 100), self._node(20, 200, x=12.5)],
             links=[
@@ -1220,7 +1237,64 @@ class CaptureTravelPolesTest(unittest.TestCase):
 
         self.assertIsNotNone(result.graph)
         self.assertEqual(len(result.graph.nodes), 2)
-        self.assertEqual(result.graph.links, ())
+        self.assertEqual(len(result.graph.links), 1)
+        self.assertEqual(result.graph.links[0].max_range_m, 110.0)
+
+    def test_capture_nodes_use_existing_distance_and_pair_range_rules(self):
+        cases = [
+            (
+                "normal_pair_80m",
+                ("travel_pole_1", "travel_pole_1", 80.0),
+                False,
+                True,
+                80.0,
+            ),
+            (
+                "normal_long_pair_uses_80m",
+                ("travel_pole_1", "travel_pole_2", 100.0),
+                True,
+                False,
+                None,
+            ),
+            (
+                "long_pair_110m",
+                ("travel_pole_2", "travel_pole_2", 110.0),
+                False,
+                True,
+                110.0,
+            ),
+        ]
+        for name, (first_template, second_template, separation), target_resolved, has_link, max_range in cases:
+            with self.subTest(name=name):
+                payload = self._payload(
+                    nodes=[
+                        self._node(10, 100, x=1.0, template=first_template),
+                        self._node(20, 200, x=1.0 + separation, template=second_template),
+                    ],
+                    links=[
+                        {
+                            "chapterId": "domain_2",
+                            "sourceNodeId": 10,
+                            "sourceComponentId": 100,
+                            "targetNodeId": 20,
+                            "targetResolved": target_resolved,
+                            "distance3D": 1.0,
+                            "yawToTarget": 90.0,
+                        }
+                    ],
+                )
+                result = build_capture_travel_pole_graph(
+                    parse_capture_travel_pole_snapshot(payload),
+                    map_id="map02",
+                    include_shared=True,
+                )
+
+                self.assertIsNotNone(result.graph)
+                if has_link:
+                    self.assertEqual(len(result.graph.links), 1)
+                    self.assertEqual(result.graph.links[0].max_range_m, max_range)
+                else:
+                    self.assertEqual(result.graph.links, ())
 
     def test_invalid_metadata_or_snapshot_error_rejects_the_graph(self):
         cases = [
