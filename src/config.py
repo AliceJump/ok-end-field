@@ -134,6 +134,7 @@ config = {
         ["src.tasks.onetime.BoatOrganizeTask", "BoatOrganizeTask"],
         ["src.tasks.onetime.BoatHarvestTask", "BoatHarvestTask"],
         ["src.tasks.onetime.MailTask", "MailTask"],
+        ["src.tasks.onetime.MatrixCleanTask", "MatrixCleanTask"],
         ["src.tasks.onetime.DeliverySendTask", "DeliverySendTask"],
         ["src.tasks.onetime.RegionalBuildTask", "RegionalBuildTask"],
         ["src.tasks.onetime.CraftWeaponTask", "CraftWeaponTask"],

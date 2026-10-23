@@ -1,0 +1,224 @@
+from qfluentwidgets import FluentIcon
+
+from src.data.FeatureList import FeatureList as fL
+from src.icons import Icons
+from src.tasks.mixin.common import Common
+
+
+class MatrixCleanTask(Common):
+    """清理基质子任务：批量分解武器基质直到无可分解，日常任务经 DailyFeature 接入。
+
+    流程（对应游戏内「贵重品库/武器基质」手动分解操作）：
+    1. N 键（Valuables Key，支持用户改键）直达贵重品库；失败时回退
+       ESC 打开总控终端后点击「贵重品库」按钮；
+    2. 确认停在武器基质页（必要时点击顶部基质分页）；
+    3. 点击底栏分解入口（垃圾桶图标，复用 essence_throw_away 模板）进入分解模式；
+    4. 循环「快捷放入 → 分解 → 确认 → 关闭结果弹窗」，每批最多 200 个；
+    5. 网格出现「未拥有该类型道具」或分解按钮保持「无法分解」时判定无可分解，
+    结束并退出分解模式。
+    """
+
+    # 单批上限 200、库存上限 2000 对应最多 10 批；翻倍余量用于拦截异常循环
+    MAX_BATCHES = 20
+
+    # 底栏控件区（分解入口 / 快捷放入 / 分解按钮 / 退出）
+    _BOTTOM_BAR = (0.0, 0.80, 0.6, 0.98)
+    _BOTTOM_RIGHT = (0.55, 0.75, 1.0, 0.98)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "清理基质"
+        self.icon = Icons.Fetch
+        self.group_name = "日常任务"
+        self.group_icon = FluentIcon.CALENDAR
+        self.description = "前往「贵重品库/武器基质」分解全部可分解基质，直到无可分解。\n分解产出基建材料与调度券。"
+        self.support_multi_account = True
+
+    def run(self):
+        self.ensure_main(time_out=420)
+        return self.clean_matrix()
+
+    def clean_matrix(self):
+        """分解主流程：进贵重品库 → 分解模式 → 循环分解到无可分解 → 退出。"""
+        if not self._open_vault_essence_page():
+            return False
+        if not self._enter_dismantle_mode():
+            self._close_vault()
+            return False
+        success = self._dismantle_until_empty()
+        self._exit_dismantle_and_close()
+        return success
+
+    def _open_vault_essence_page(self):
+        """打开贵重品库并确认停在武器基质页。"""
+        for _ in range(2):
+            self.press_key("n", after_sleep=1.5)
+            if self._ensure_essence_page():
+                return True
+        # 回退路径：ESC 打开总控终端，点击右侧菜单网格的「贵重品库」
+        self.press_key("esc", after_sleep=1.5)
+        if not self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_190bd555,
+            box=self.box_of_screen(0.55, 0.3, 1.0, 0.9),
+            time_out=8,
+        ):
+            self.mark_task_failure("未找到贵重品库入口")
+            return False
+        if self._ensure_essence_page():
+            return True
+        self.mark_task_failure("进入武器基质页失败")
+        return False
+
+    def _ensure_essence_page(self):
+        """确认停在武器基质页；停在其他分页时点击顶部基质分页。"""
+        title_box = self.box_of_screen(0.0, 0.0, 0.4, 0.25)
+        if self.wait_ocr(
+            match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
+        ):
+            return True
+        self.click_relative(0.445, 0.055, after_sleep=1.5)
+        return bool(
+            self.wait_ocr(
+                match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
+            )
+        )
+
+    def _enter_dismantle_mode(self):
+        """点击底栏分解入口（垃圾桶图标）进入分解模式。"""
+        entry = self.wait_feature(
+            feature=fL.essence_throw_away,
+            box=self.box_of_screen(0.15, 0.80, 0.60, 0.98),
+            threshold=0.7,
+            time_out=6,
+            raise_if_not_found=False,
+        )
+        if not entry:
+            self.mark_task_failure("未找到分解入口按钮")
+            return False
+        self.click(entry)
+        hint = self.wait_ocr(
+            match=self.lang.matrix_clean_task.k_83c0c24d,
+            box=self.box.bottom,
+            time_out=6,
+            raise_if_not_found=False,
+        )
+        if not hint:
+            self.mark_task_failure("未进入分解模式")
+            return False
+        return True
+
+    def _dismantle_until_empty(self):
+        """循环分解直到无可分解。返回 True 表示正常结束。"""
+        batches = 0
+        for _ in range(self.MAX_BATCHES):
+            if self._no_item_left():
+                self.log_info(self.tr("基质清理完成，共分解 {count} 批").format(count=batches), notify=True)
+                return True
+            result = self._dismantle_one_batch()
+            if result is None:
+                return False
+            if not result:
+                break
+            batches += 1
+        else:
+            self.mark_task_failure(self.tr("分解批数达到安全上限 {max}，停止清理").format(max=self.MAX_BATCHES))
+            return False
+        self.log_info(self.tr("基质清理完成，共分解 {count} 批").format(count=batches), notify=True)
+        return True
+
+    def _no_item_left(self):
+        """结束标志：分解网格出现「未拥有该类型道具」。"""
+        return bool(
+            self.ocr(
+                match=self.lang.matrix_clean_task.k_75a84eb1,
+                box=self.box_of_screen(0.2, 0.2, 0.8, 0.8),
+            )
+        )
+
+    def _dismantle_one_batch(self):
+        """执行一批「快捷放入 → 分解 → 确认 → 关结果」。
+
+        Returns:
+            True: 本批分解完成，可继续下一批。
+            False: 已无可分解（正常结束信号）。
+            None: 流程异常。
+        """
+        if not self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_52e36ffd,
+            box=self.box_of_screen(*self._BOTTOM_BAR),
+            time_out=6,
+        ):
+            if self._no_item_left():
+                return False
+            self.mark_task_failure("未找到快捷放入按钮")
+            return None
+        self.sleep(0.8)
+        if not self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_2792e981,
+            box=self.box_of_screen(*self._BOTTOM_RIGHT),
+            time_out=4,
+            raise_if_not_found=False,
+        ):
+            # 分解按钮未点亮（仍为「无法分解」）说明快捷放入没有放入任何基质
+            if self._no_item_left() or self.ocr(
+                match=self.lang.matrix_clean_task.k_9c61417d,
+                box=self.box_of_screen(*self._BOTTOM_RIGHT),
+            ):
+                return False
+            self.mark_task_failure("未找到分解按钮")
+            return None
+        if not self.wait_ocr(
+            match=self.lang.matrix_clean_task.k_45030a0b,
+            box=self.box.center,
+            time_out=6,
+            raise_if_not_found=False,
+        ):
+            self.mark_task_failure("分解确认弹窗未出现")
+            return None
+        if not self._click_confirm_button():
+            self.mark_task_failure("未找到分解确认按钮")
+            return None
+        self._close_result_popup()
+        return True
+
+    def _click_confirm_button(self):
+        """点击分解确认弹窗右侧的「确认」按钮。"""
+        result = self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_b56d9ac6,
+            box=self.box_of_screen(0.45, 0.45, 0.9, 0.8),
+            time_out=4,
+            raise_if_not_found=False,
+        )
+        if result:
+            return True
+        return self.click_confirm(time_out=3)
+
+    def _close_result_popup(self):
+        """关闭「分解获得」结果弹窗：点击底部圆形确认按钮。"""
+        title_box = self.box_of_screen(0.2, 0.1, 0.8, 0.6)
+        if not self.wait_ocr(
+            match=self.lang.matrix_clean_task.k_92faab1e,
+            box=title_box,
+            time_out=8,
+            raise_if_not_found=False,
+        ):
+            return
+        for _ in range(4):
+            self.click_relative(0.5, 0.86, after_sleep=1)
+            if not self.ocr(match=self.lang.matrix_clean_task.k_92faab1e, box=title_box):
+                return
+        self.mark_task_failure("分解结果弹窗未能关闭")
+
+    def _exit_dismantle_and_close(self):
+        """退出分解模式并关闭贵重品库；失败仅记录，交由后续 ensure_main 兜底。"""
+        self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_feecb1e6,
+            box=self.box_of_screen(*self._BOTTOM_RIGHT),
+            time_out=5,
+            raise_if_not_found=False,
+        )
+        self.sleep(0.5)
+        self._close_vault()
+
+    def _close_vault(self):
+        self.press_key("esc", after_sleep=1)
