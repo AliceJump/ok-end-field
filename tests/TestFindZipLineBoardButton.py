@@ -298,8 +298,8 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             "滑索结束在非目标滑索架：WS=(50.00, 50.00)，距起点=56.57m，距目标=70.71m",
         )
 
-    def test_wait_zip_line_motion_keeps_waiting_at_target_without_template(self):
-        """停稳在目标附近但到达模板还没出现：继续等模板，既不重试也不重规划。"""
+    def test_wait_zip_line_motion_confirms_target_without_arrival_template(self):
+        """可信位置稳定进入目标半径时，即使到达模板不存在也应确认完成。"""
         events = []
         clock = {"t": 0.0}
         stub = SimpleNamespace(
@@ -312,7 +312,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
         )
 
-        self.assertFalse(
+        self.assertTrue(
             DeliveryTask._wait_zip_line_motion(
                 stub,
                 target_position=(0.0, 0.0),
@@ -323,6 +323,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             )
         )
         self.assertFalse(any("准备重试" in message for message in events))
+        self.assertTrue(any("按可信坐标确认完成" in message for message in events), events)
 
     def test_wait_zip_line_motion_retries_when_stopped_at_start_without_template(self):
         """模板没出现、WS 又停在起点：属于"未触发"，交给外层重试而不是重规划。"""

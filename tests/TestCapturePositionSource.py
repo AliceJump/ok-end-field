@@ -347,6 +347,24 @@ class PoseContractTest(unittest.TestCase):
         self.assertAlmostEqual(pose["heading"], 250.586)
         self.assertEqual(pose["heading_score"], 1.0, "朝向是上报真值，置信度给满")
 
+    def test_capture_pose_publishes_zip_line_position_contract_when_trusted(self):
+        pose = self._pose_for(_state_payload())
+
+        self.assertEqual(pose["ws"], (-243.2, -228.39))
+        self.assertEqual(pose["ws_xyz"], (-243.2, 259.47, -228.39))
+
+    def test_capture_pose_rejects_zip_line_position_contract_after_connection_ends(self):
+        pose = self._pose_for(
+            _state_payload(
+                flow=1,
+                flows=[_flows_entry(1, status="连接已结束")],
+            )
+        )
+
+        self.assertFalse(pose["position_trusted"])
+        self.assertIsNone(pose["ws"])
+        self.assertIsNone(pose["ws_xyz"])
+
     def test_rest_comes_from_reported_speed(self):
         self.assertTrue(self._pose_for(_state_payload(speed=0.0))["rest"])
         self.assertFalse(self._pose_for(_state_payload(speed=6.85))["rest"])

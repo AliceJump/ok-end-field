@@ -340,17 +340,21 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             if start_position is not None:
                 start_distance = math.dist(current_position, start_position)
 
-            if on_rack and target_distance <= threshold:
-                self.log_info(f"已到达下一滑索附近且到达模板存在：WS 距离={target_distance:.2f}m")
-                return True
+            if target_distance <= threshold:
+                if on_rack:
+                    self.log_info(f"已到达下一滑索附近且到达模板存在：WS 距离={target_distance:.2f}m")
+                    return True
+                if self.active_time() - last_position_changed_at >= stable_seconds:
+                    # 终点站不一定显示“选择下一个目标”的模板；可信坐标已稳定进入目标
+                    # 半径时即可确认乘坐完成，否则会空等到外层超时并误判为未触发。
+                    self.log_info(
+                        f"已到达目标滑索位置：WS 距离={target_distance:.2f}m，到达模板不存在，按可信坐标确认完成"
+                    )
+                    return True
 
             if self.active_time() - last_position_changed_at >= stable_seconds:
                 # 已经停稳，按"停在哪、模板在不在"区分。这里原来写成 on_rack 的两个分支，
                 # 两段"停稳后判定"几乎逐字重复，只有模板在时的日志级别与措辞不同。
-                if not on_rack and target_distance <= threshold:
-                    # 停在目标附近但到达模板还没出现：继续等模板，既不算到达也不算失败。
-                    self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
-                    continue
                 if start_distance is not None and start_distance <= threshold:
                     # 仍停在起点附近：没触发滑索。刚上索的一小段时间先继续等，避免 WS
                     # 还没走完一个推送周期就判定失败。

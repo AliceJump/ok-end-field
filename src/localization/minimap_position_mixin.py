@@ -1082,6 +1082,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 "sync_supported": False,
                 "sync_seq": self._minimap_capture_seq,
                 "distance_since_sync": 0.0,
+                "ws": None,
+                "ws_xyz": None,
             }
 
         # ``sync_seq`` 只在**换了连接**（换了一局）时推进：导航把它解释成"真重锚 → 世界坐标
@@ -1122,6 +1124,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             "just_synced": False,
             "sync_seq": self._minimap_capture_seq,
             "distance_since_sync": 0.0,
+            # 滑索执行仍以“原始 WS 坐标”为位置合同。抓包坐标本身就是绝对真值，
+            # 可信时同时发布到这里，避免滑索代码继续读取到 None。
+            "ws": (sample.x, sample.z) if trusted else None,
+            "ws_xyz": (sample.x, sample.y, sample.z) if trusted else None,
             # 以下字段只供状态展示，不进发布契约（build_world_pose 会略过未知键）。
             "capture_age": sample.age_seconds,
             "capture_speed": sample.speed,
