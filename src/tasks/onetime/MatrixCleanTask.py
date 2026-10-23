@@ -222,3 +222,15 @@ class MatrixCleanTask(Common):
 
     def _close_vault(self):
         self.press_key("esc", after_sleep=1)
+
+
+class MatrixCleanOnceTask(MatrixCleanTask):
+    """「业务与战斗 → 其他」的独立单次运行入口，复用清理基质全流程。
+
+    与 MatrixCleanTask（日常一条龙勾选行）是两个实例，配置互不影响；
+    框架按 group_name 单页签分组，故以子类提供第二个运行入口。
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "⭐清理基质"

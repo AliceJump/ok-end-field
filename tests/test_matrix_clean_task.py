@@ -201,7 +201,16 @@ class TestDailyWiring(unittest.TestCase):
 
         config_text = (_REPO_ROOT / "src" / "config.py").read_text(encoding="utf-8")
         self.assertIn("src.tasks.onetime.MatrixCleanTask", config_text)
+        # 独立单次运行入口（业务与战斗 → 其他）与一条龙入口分开注册
+        self.assertIn('"MatrixCleanOnceTask"', config_text)
         ast.parse(config_text)
+
+    def test_once_task_is_standalone_entry(self):
+        from src.tasks.onetime.MatrixCleanTask import MatrixCleanOnceTask, MatrixCleanTask
+
+        self.assertTrue(issubclass(MatrixCleanOnceTask, MatrixCleanTask))
+        # 框架按 name 存任务配置，两个入口必须不同名
+        self.assertNotEqual(MatrixCleanTask.__name__, MatrixCleanOnceTask.__name__)
 
     def test_ui_fallback_group_map(self):
         import ast
@@ -209,6 +218,16 @@ class TestDailyWiring(unittest.TestCase):
         ui_text = (_REPO_ROOT / "src" / "gui" / "components" / "EndfieldSectionMatrix.py").read_text(encoding="utf-8")
         self.assertIn('"清理基质": "其他任务"', ui_text)
         ast.parse(ui_text)
+
+    def test_theme_patch_group_mapping(self):
+        import ast
+
+        patch_text = (_REPO_ROOT / "src" / "patches" / "endfield_theme_patch.py").read_text(encoding="utf-8")
+        # 任务的 group_name 由此映射改写为四大分栏，缺行则任务不出现在任何分栏
+        self.assertIn('"MatrixCleanTask": "其他"', patch_text)
+        # 独立入口落在业务与战斗的「收尾」组（页签显示为「其他」）
+        self.assertIn('"MatrixCleanOnceTask": "收尾"', patch_text)
+        ast.parse(patch_text)
 
 
 if __name__ == "__main__":
