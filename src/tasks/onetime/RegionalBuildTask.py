@@ -92,7 +92,7 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
             buy_sell_dict[f"{area}买入价"] = 900
             buy_sell_dict[f"{area}卖出价"] = 4500
             buy_sell_dict[area] = True
-            price_keys.extend([f"{area}买入价", f"{area}卖出价"])
+            price_keys.extend([area, f"{area}买入价", f"{area}卖出价"])
             buy_sell_desc_dict[f"{area}买入价"] = f"{area}物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
             buy_sell_desc_dict[f"{area}卖出价"] = f"{area}物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
             buy_sell_desc_dict[area] = f"是否启用「地区建设/{area}物资调度/弹性需求物资」交易。"
@@ -126,9 +126,6 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
                 "买卖货": ["只买不卖", *price_keys],
             },
         }
-        for area in areas_list:
-            # 旧地区 bool 仅用于迁移兼容，不再作为买卖货的第二层开关。
-            self.config_type[area] = {"hidden": True}
         all_goods = []
         for goods_list in goods_dict.values():
             all_goods.extend(goods_list)
