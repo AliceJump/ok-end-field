@@ -139,6 +139,10 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         ),
     }
 
+    # Sparse legacy switches are read by _task_selected per item. Converting
+    # them into a full list would replace choices inherited from the task.
+    account_config_migration_skip_keys = frozenset(config_value_migrations)
+
     BOAT_STATE_TASK_KEYS = frozenset(
         {
             "⭐帝江号整理",

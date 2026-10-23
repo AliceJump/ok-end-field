@@ -1,4 +1,6 @@
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from typing import ClassVar
 from unittest.mock import Mock, patch
@@ -6,6 +8,7 @@ from unittest.mock import Mock, patch
 from src.core import global_config_store
 from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_KEY,
+    BATTLE_CONFIG_NAME,
     BATTLE_CONFIG_TYPE,
     BATTLE_ROOT_CONFIGS,
     KEY_COND_ENABLED,
@@ -532,6 +535,49 @@ class TestBattleConfigOverrides(unittest.TestCase):
 
 
 class TestBattleModeSelectorMigration(unittest.TestCase):
+    def test_global_first_load_preserves_old_task_mode_before_defaults_are_inserted(self):
+        from ok.util.config import Config
+        from ok.util.file import write_json_file
+
+        for legacy, expected in (
+            ({KEY_ENABLE_ROTATION: True}, LEGACY_COMBAT_MODE_ROTATION),
+            ({KEY_COND_ENABLED: True}, LEGACY_COMBAT_MODE_CONDITIONAL),
+            ({KEY_SKILL_ALLOWLIST: False}, LEGACY_COMBAT_MODE_NORMAL),
+        ):
+            with (
+                self.subTest(legacy=legacy),
+                tempfile.TemporaryDirectory() as tmp,
+                patch.object(Config, "config_folder", tmp),
+                patch.dict(global_config_store._CONFIGS, {}, clear=True),
+            ):
+                write_json_file(str(Path(tmp) / "BattleTask.json"), {**legacy, "后台结束战斗通知": False})
+                config = global_config_store.get_global_config(BATTLE_CONFIG_NAME)
+                self.assertEqual(config[KEY_LEGACY_COMBAT_MODE], expected)
+                self.assertFalse(config["完成通知"])
+                config.save_file()
+                global_config_store._CONFIGS.clear()
+                self.assertEqual(
+                    global_config_store.get_global_config(BATTLE_CONFIG_NAME)[KEY_LEGACY_COMBAT_MODE], expected
+                )
+
+    @patch("src.tasks.account.account_scope_store.update_overrides")
+    def test_partial_legacy_flags_do_not_pin_a_complete_account_mode(self, update_overrides):
+        global_config_store.migrate_account_battle_mode_selectors()
+        data = {"accounts": {"acc": {"BattleTask": {KEY_DAMAGE_ROTATION: False}}}}
+        update_overrides.call_args.args[0](data)
+        self.assertNotIn(KEY_LEGACY_COMBAT_MODE, data["accounts"]["acc"]["BattleTask"])
+
+    def test_partial_legacy_flags_inherit_the_current_task_mode(self):
+        task = object.__new__(BattleMixin)
+        task.config = {BATTLE_CONFIG_MODE_KEY: True, KEY_LEGACY_COMBAT_MODE: LEGACY_COMBAT_MODE_ROTATION}
+        task.battle_config_manager = BattleConfigManager({})
+        with patch.object(task, "_account_override_for", return_value={KEY_DAMAGE_ROTATION: False}):
+            self.assertEqual(task.get_battle_config(KEY_LEGACY_COMBAT_MODE), LEGACY_COMBAT_MODE_ROTATION)
+            task.config[KEY_LEGACY_COMBAT_MODE] = LEGACY_COMBAT_MODE_DAMAGE
+            self.assertEqual(task.get_battle_config(KEY_LEGACY_COMBAT_MODE), LEGACY_COMBAT_MODE_AUTO_FILTER)
+        with patch.object(task, "_account_override_for", return_value={KEY_COND_ENABLED: True}):
+            self.assertEqual(task.get_battle_config(KEY_LEGACY_COMBAT_MODE), LEGACY_COMBAT_MODE_CONDITIONAL)
+
     @patch("src.core.global_config_store.write_json_file")
     @patch("src.core.global_config_store.read_json_file")
     def test_task_file_old_flags_gain_selector_before_verify(self, read_json_file, write_json_file):
