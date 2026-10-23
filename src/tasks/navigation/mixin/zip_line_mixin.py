@@ -299,6 +299,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         target_position,
         start_position=None,
         *,
+        target_position_xyz=None,
+        start_position_xyz=None,
         timeout=60.0,
         near_distance=4.0,
         stable_seconds=6.0,
@@ -338,6 +340,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             if current_position is None:
                 self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
                 continue
+            xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
+            current_position_xyz = xyz_getter(frame=frame) if callable(xyz_getter) else None
 
             if last_position is None or math.dist(current_position, last_position) > ZIP_LINE_MOTION_CHANGE_METERS:
                 last_position = current_position
@@ -347,33 +351,55 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             start_distance = None
             if start_position is not None:
                 start_distance = math.dist(current_position, start_position)
+            ambiguous_overlap = (
+                start_distance is not None and start_distance <= threshold and target_distance <= threshold
+            )
+            use_xyz = (
+                ambiguous_overlap
+                and current_position_xyz is not None
+                and start_position_xyz is not None
+                and target_position_xyz is not None
+            )
+            if use_xyz:
+                target_distance = math.dist(current_position_xyz, target_position_xyz)
+                start_distance = math.dist(current_position_xyz, start_position_xyz)
+            elif ambiguous_overlap:
+                # 2D 重合但缺少三维高度时无法区分起点和终点，不能把当前状态当成到站。
+                target_distance = math.inf
 
-            if target_distance <= threshold:
+            stable = self.active_time() - last_position_changed_at >= stable_seconds
+            at_start = start_distance is not None and start_distance <= threshold
+            at_target = target_distance <= threshold
+
+            if at_start and stable:
+                # 已经停稳，按"停在哪、模板在不在"区分。这里原来写成 on_rack 的两个分支，
+                # 两段"停稳后判定"几乎逐字重复，只有模板在时的日志级别与措辞不同。
+                # 仍停在起点附近：没触发滑索。刚上索的一小段时间先继续等，避免 WS
+                # 还没走完一个推送周期就判定失败。
+                if self.active_time() - start < start_grace_seconds:
+                    self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
+                    continue
                 if on_rack:
-                    self.log_info(f"已到达下一滑索附近且到达模板存在：WS 距离={target_distance:.2f}m")
+                    self.log_info(f"到达模板存在且 WS 仍在起点附近：距离={start_distance:.2f}m，准备重试")
+                else:
+                    self.log_warning("WS 已在起点附近停稳但未触发滑索，准备重试")
+                return False
+
+            if at_target and not at_start:
+                distance_label = "3D 距离" if use_xyz else "WS 距离"
+                if on_rack:
+                    self.log_info(f"已到达下一滑索附近且到达模板存在：{distance_label}={target_distance:.2f}m")
                     return True
-                if self.active_time() - last_position_changed_at >= stable_seconds:
+                if stable:
                     # 终点站不一定显示“选择下一个目标”的模板；可信坐标已稳定进入目标
                     # 半径时即可确认乘坐完成，否则会空等到外层超时并误判为未触发。
                     self.log_info(
-                        f"已到达目标滑索位置：WS 距离={target_distance:.2f}m，到达模板不存在，按可信坐标确认完成"
+                        f"已到达目标滑索位置：{distance_label}={target_distance:.2f}m，"
+                        "到达模板不存在，按可信坐标确认完成"
                     )
                     return True
 
-            if self.active_time() - last_position_changed_at >= stable_seconds:
-                # 已经停稳，按"停在哪、模板在不在"区分。这里原来写成 on_rack 的两个分支，
-                # 两段"停稳后判定"几乎逐字重复，只有模板在时的日志级别与措辞不同。
-                if start_distance is not None and start_distance <= threshold:
-                    # 仍停在起点附近：没触发滑索。刚上索的一小段时间先继续等，避免 WS
-                    # 还没走完一个推送周期就判定失败。
-                    if self.active_time() - start < start_grace_seconds:
-                        self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
-                        continue
-                    if on_rack:
-                        self.log_info(f"到达模板存在且 WS 仍在起点附近：距离={start_distance:.2f}m，准备重试")
-                    else:
-                        self.log_warning("WS 已在起点附近停稳但未触发滑索，准备重试")
-                    return False
+            if stable:
                 # 停稳后既不在起点也不在目标附近：落到了别的滑索架，必须重新规划。
                 raise ZipLineReplanRequired(
                     ("到达了非目标滑索架：" if on_rack else "滑索结束在非目标滑索架：")
@@ -386,7 +412,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
         return False
 
-    def _direct_zip_line_go(self, target_bearing, target_position=None):
+    def _direct_zip_line_go(self, target_bearing, target_position=None, *, target_position_xyz=None):
         """按世界方位直接对准并点击目标，失败时调整俯仰角重试。"""
         aim = getattr(self, "pose_aim_view_to_bearing", None)
         if not callable(aim):
@@ -394,6 +420,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return False
 
         last_start_position = None
+        last_start_position_xyz = None
         applied_pitch = 0
         click_attempted = False
         try:
@@ -433,11 +460,15 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     f"实测={heading}，误差={error if error is not None else result.get('error')}"
                 )
                 last_start_position = self._zip_line_ws_position()
+                xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
+                last_start_position_xyz = xyz_getter() if callable(xyz_getter) else None
                 click_attempted = True
                 self.click(after_sleep=0.1)
                 if self._wait_zip_line_motion(
                     target_position=target_position,
                     start_position=last_start_position,
+                    target_position_xyz=target_position_xyz,
+                    start_position_xyz=last_start_position_xyz,
                 ):
                     return True
                 self.log_warning(f"直接对准第 {index + 1} 次点击未触发滑索")
@@ -1573,7 +1604,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             target_xyz = self._value_for_index(target_positions_3d, segment_index)
             if target_mode == ZIP_LINE_TARGET_SELECT_DIRECT and bearing is not None:
                 try:
-                    if not self._direct_zip_line_go(bearing, target_position):
+                    if not self._direct_zip_line_go(
+                        bearing,
+                        target_position,
+                        target_position_xyz=target_xyz,
+                    ):
                         raise RuntimeError(f"直接对准滑索目标失败: {float(bearing):.1f}°")
                 except ZipLineReplanRequired as exc:
                     if source_xyz is not None:
