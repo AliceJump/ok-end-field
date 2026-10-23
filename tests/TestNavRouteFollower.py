@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta
+from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, CELL_UNKNOWN, DenseGrid, GridMeta
 from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
     DONE,
@@ -148,6 +148,57 @@ class TestGridRouteFollower(unittest.TestCase):
         step = self.follower.update((-818.739, 41.731), heading=239.3, now=0.0)
 
         self.assertNotEqual(step.action, REPLAN)
+
+    @staticmethod
+    def _corner_follower(blocking_state, *, allow_unknown=False):
+        cells = np.full((6, 6), CELL_FREE, dtype=np.uint8)
+        cells[2, 2] = blocking_state
+        grid = DenseGrid(cells, GridMeta(origin=(0.0, 0.0, 0.0), cell_size=1.0, map_name="test"))
+        follower = GridRouteFollower(
+            grid,
+            FollowerConfig(
+                arrive_radius=1.0, goal_radius=0.1, allow_unknown=allow_unknown, margin=0, narrow_calibration=False
+            ),
+        )
+        follower.adopt(
+            PlanResult(
+                ok=True, cells=[(1, 1), (1, 2), (1, 3), (2, 3), (3, 3)], waypoints=[(1.5, 1.5), (1.5, 3.5), (3.5, 3.5)]
+            ),
+            goal=(3.5, 3.5),
+            start=(1.5, 1.5),
+        )
+        return follower
+
+    def test_near_corner_keeps_reachable_waypoint_without_replanning(self):
+        for state, allow_unknown in ((CELL_BLOCKED, False), (CELL_UNKNOWN, False), (CELL_UNKNOWN, True)):
+            with self.subTest(state=state, allow_unknown=allow_unknown):
+                follower = self._corner_follower(state, allow_unknown=allow_unknown)
+                step = follower.update((1.5, 2.5), heading=0.0, now=0.0)
+                self.assertEqual(step.action, WALK)
+                self.assertEqual(step.waypoint, (1.5, 3.5))
+                self.assertEqual(follower.waypoint_index, 1)
+                self.assertTrue(follower.planner.line_clear((1, 2), (1, 3)))
+                step = follower.update((1.5, 3.5), heading=90.0, now=0.1)
+                self.assertEqual(step.action, WALK)
+                self.assertEqual(step.waypoint, (3.5, 3.5))
+                self.assertEqual(follower.waypoint_index, 2)
+
+    def test_initial_waypoint_advance_preserves_blocked_corner(self):
+        for state in (CELL_BLOCKED, CELL_UNKNOWN):
+            with self.subTest(state=state):
+                follower = self._corner_follower(state)
+                follower._advance_initial_waypoints((1.5, 2.5))
+                self.assertEqual(follower.waypoint_index, 1)
+                follower._advance_initial_waypoints((1.5, 3.5))
+                self.assertEqual(follower.waypoint_index, 2)
+
+    def test_clear_corner_still_advances_inside_arrival_radius(self):
+        follower = self._corner_follower(CELL_FREE)
+        pos, goal = (1.5, 2.5), (3.5, 3.5)
+        step = follower.update(pos, heading=bearing_to_point(*pos, *goal), now=0.0)
+        self.assertEqual(step.action, WALK)
+        self.assertEqual(step.waypoint, goal)
+        self.assertEqual(follower.waypoint_index, 2)
 
     def test_long_initial_segment_does_not_trigger_false_off_route(self):
         """复现日志中的 48m 误判：起点仍属于上一航点所在段落。"""

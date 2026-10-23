@@ -3914,3 +3914,9 @@ msgstr "En espera"
 
 msgid "恢复默认大小"
 msgstr "Restaurar tamaño predeterminado"
+
+msgid "距中间航点小于该值且可直达下一航点时切换；否则继续靠近当前航点（米）"
+msgstr ""
+"Cambia al siguiente punto cuando la distancia al punto intermedio sea menor "
+"que este valor y se pueda ir directamente al siguiente; en caso contrario, "
+"sigue acercándose al punto actual (m)"

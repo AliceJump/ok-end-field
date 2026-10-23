@@ -87,7 +87,8 @@ def point_segment_distance(
 class FollowerConfig:
     """路线跟随参数。
 
-    距离均为世界米。``arrive_radius`` 控制中间航点切换，``goal_radius`` 控制最终到达；
+    距离均为世界米。``arrive_radius`` 控制中间航点切换；无法直达下一点时继续靠近当前点，
+    不仅因进入到达半径就重规划。``goal_radius`` 控制最终到达；
     ``off_route_radius`` 与 ``off_route_hold_s`` 同时满足才判定偏航，用于过滤定位抖动。
     其余墙距、未知格风险和航点合并参数会原样传给 :class:`GridPlanner`。
 
@@ -328,6 +329,7 @@ class GridRouteFollower:
         while (
             self.waypoint_index < waypoint_limit
             and distance_xz(pos, waypoints[self.waypoint_index]) <= self.config.arrive_radius
+            and self._shortcut_ok(pos, waypoints[self.waypoint_index], waypoints[self.waypoint_index + 1])
         ):
             arrived_index = self.waypoint_index
             self.waypoint_index += 1
@@ -639,6 +641,7 @@ class GridRouteFollower:
         while (
             self.waypoint_index < limit
             and distance_xz(start, waypoints[self.waypoint_index]) <= self.config.arrive_radius
+            and self._shortcut_ok(start, waypoints[self.waypoint_index], waypoints[self.waypoint_index + 1])
         ):
             self.waypoint_index += 1
 
