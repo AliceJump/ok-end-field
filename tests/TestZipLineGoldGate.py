@@ -642,6 +642,36 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub.align_ocr_or_find_target_to_center.assert_not_called()
         stub.strafe_search.assert_not_called()
 
+    def test_legacy_route_repeats_e_until_each_connection_arrives(self):
+        stub = self._stub()
+        stub._align_and_activate_zip_line = Mock()
+        stub.ocr.side_effect = [[], [], [SimpleNamespace(name="move")], [], [SimpleNamespace(name="leave")]]
+        events = []
+        stub.send_key.side_effect = lambda key: events.append(key)
+        stub.sleep.side_effect = lambda duration: events.append(("sleep", duration))
+        stub.log_info = Mock()
+
+        ZipLineMixin.zip_line_list_go(stub, [30, 36], stay_on_zip_line=True)
+
+        self.assertEqual(stub._align_and_activate_zip_line.call_count, 2)
+        self.assertEqual(stub.send_key.call_args_list, [call("e")] * 5)
+        self.assertEqual(events, ["e", ("sleep", 0.1)] * 5)
+
+    def test_grid_ocr_route_does_not_chain_past_planned_connection(self):
+        stub = self._stub()
+        stub.zip_line_target_select_mode = lambda: "OCR"
+        stub._align_and_activate_zip_line = Mock()
+        stub.ocr.side_effect = [[], [SimpleNamespace(name="move")]]
+        stub.log_info = Mock()
+
+        ZipLineMixin.zip_line_list_go(
+            stub, [30], target_bearing=[0.0], target_positions=[(10.0, 20.0)], stay_on_zip_line=True
+        )
+
+        stub._align_and_activate_zip_line.assert_called_once()
+        stub.send_key.assert_not_called()
+        self.assertEqual(stub.ocr.call_count, 2)
+
     def test_default_route_still_dismounts_at_end(self):
         stub = self._stub()
         stub._align_zip_line_distance = Mock(return_value=True)
