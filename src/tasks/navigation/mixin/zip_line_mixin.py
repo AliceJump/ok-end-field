@@ -1576,6 +1576,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             start = self.active_time()
             while True:
                 self.next_frame()
+                if bearing is None:
+                    # 距离序列可能跨过中间连接点，沿用旧送货路线的 E 连按；网格导航逐点到达。
+                    self.send_key("e")  # 滑索继续移动键无法在游戏内改绑。
                 self.sleep(0.1)
                 if self.ocr(match=stop_match, box=stop_box, log=True):
                     break
