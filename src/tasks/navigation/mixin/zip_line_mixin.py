@@ -3,7 +3,7 @@
 本模块同时服务自动送货与网格导航：
 
 - 自动送货先按滑索图标模板定位候选，再做局部分色 OCR 对中；模板连续漏检时回退全屏 OCR；
-- 网格导航优先使用世界方位直接对准，误差收敛到 ±3° 后执行；
+- 网格导航优先使用世界方位直接对准；严格目标为 ±3°，融合定位误差在 ±5° 内也允许点击；
 - 两者共用「登上滑索架」模板匹配、错误落点判定和 WS 状态检查。
 
 滑索架状态只以 ``move_to_the_target`` / ``move_to_the_target_2`` 模板为准；
@@ -49,11 +49,19 @@ from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 ZIP_LINE_TEMPLATE_THRESHOLD = 0.8
 ZIP_LINE_STATUS_BOX = (0.351, 0.943, 0.657, 0.981)
 ZIP_LINE_DIRECT_TOLERANCE_DEG = 3.0
+#: 融合定位的朝向估计存在小幅滞后/偏差；严格 ±3° 未收敛但误差仍很小时允许点击。
+ZIP_LINE_DIRECT_CLICK_GRACE_DEG = 5.0
 ZIP_LINE_DIRECT_PITCH_STEPS = (0, 24, -24, 48, -48)
 ZIP_LINE_MOTION_POLL_SECONDS = 0.2
 ZIP_LINE_MOTION_CHANGE_METERS = 0.5
 ZIP_LINE_BOARD_MOVE_DURATION_S = 0.12
 ZIP_LINE_BOARD_RECHECK_SETTLE_S = 0.25
+
+
+def _angle_delta_deg(target_yaw, current_yaw):
+    """返回目标相对当前朝向的最短有符号角度差。"""
+    return (float(target_yaw) - float(current_yaw) + 180.0) % 360.0 - 180.0
+
 
 #: 滑索图标二值模板（1080p 基准），按当前分辨率缩放后用于模板匹配。
 _ZIP_LINE_ICON_TEMPLATE_ROWS = (
@@ -387,11 +395,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         last_start_position = None
         applied_pitch = 0
+        click_attempted = False
         try:
             for index, pitch in enumerate(ZIP_LINE_DIRECT_PITCH_STEPS):
                 delta = pitch - applied_pitch
                 if delta:
-                    self.log_info(f"直接对准未触发滑索，调整俯仰角 {pitch:+d}px 后重试")
+                    self.log_info(f"上一轮未获得可点击角度，调整俯仰角 {pitch:+d}px 后重试")
                     self.active_and_send_mouse_delta(dx=0, dy=delta, steps=1, delay=0)
                     applied_pitch = pitch
                     self.sleep(0.2)
@@ -400,18 +409,31 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     tolerance=ZIP_LINE_DIRECT_TOLERANCE_DEG,
                     max_rounds=2,
                 )
-                if not result.get("ok"):
+                heading = result.get("heading")
+                error = None
+                if heading is not None:
+                    try:
+                        error = _angle_delta_deg(target_bearing, heading)
+                    except (TypeError, ValueError):
+                        error = None
+                if not result.get("ok") and (error is None or abs(error) > ZIP_LINE_DIRECT_CLICK_GRACE_DEG):
                     self.log_warning(
                         f"滑索方位误差未进入 ±{ZIP_LINE_DIRECT_TOLERANCE_DEG:g}°："
                         f"目标={float(target_bearing):.1f}°，"
-                        f"实测={result.get('heading')}，误差={result.get('error')}"
+                        f"实测={heading}，误差={result.get('error')}"
                     )
                     continue
+                if not result.get("ok"):
+                    self.log_info(
+                        f"滑索方位未进入严格 ±{ZIP_LINE_DIRECT_TOLERANCE_DEG:g}°，"
+                        f"但误差={error:.1f}°在点击宽限 ±{ZIP_LINE_DIRECT_CLICK_GRACE_DEG:g}°内，继续点击"
+                    )
                 self.log_info(
                     f"滑索方位已对准：目标={float(target_bearing):.1f}°，"
-                    f"实测={result.get('heading')}，误差={result.get('error')}"
+                    f"实测={heading}，误差={error if error is not None else result.get('error')}"
                 )
                 last_start_position = self._zip_line_ws_position()
+                click_attempted = True
                 self.click(after_sleep=0.1)
                 if self._wait_zip_line_motion(
                     target_position=target_position,
@@ -423,6 +445,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             if applied_pitch:
                 self.active_and_send_mouse_delta(dx=0, dy=-applied_pitch, steps=1, delay=0)
                 self.sleep(0.2)
+        if not click_attempted:
+            raise RuntimeError(
+                f"连续 {len(ZIP_LINE_DIRECT_PITCH_STEPS)} 次均未对准到可点击角度，"
+                f"点击宽限为 ±{ZIP_LINE_DIRECT_CLICK_GRACE_DEG:g}°"
+            )
         raise ZipLineReplanRequired(
             f"连续 {len(ZIP_LINE_DIRECT_PITCH_STEPS)} 次未移动到下一滑索，判定两滑索间存在阻挡，需要重新规划",
             current_position=last_start_position,
@@ -1165,7 +1192,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     @staticmethod
     def _zip_line_angle_delta(target_yaw, current_yaw):
         """Return the shortest signed yaw delta in (-180, 180]."""
-        return (float(target_yaw) - float(current_yaw) + 180.0) % 360.0 - 180.0
+        return _angle_delta_deg(target_yaw, current_yaw)
 
     def _read_zip_line_arrow_angle(self):
         """Read the minimap arrow without low-score smoothing so stale yaw cannot pass the gate."""

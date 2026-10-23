@@ -106,6 +106,50 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             events,
         )
 
+    def test_direct_zip_line_clicks_with_fusion_heading_error_within_grace(self):
+        events = []
+        stub = SimpleNamespace(
+            log_info=lambda msg: events.append(("info", msg)),
+            log_warning=lambda msg: events.append(("warning", msg)),
+            active_and_send_mouse_delta=lambda **kwargs: events.append(("mouse", kwargs)),
+            click=lambda **kwargs: events.append(("click", kwargs)),
+            sleep=lambda seconds: None,
+            _zip_line_ws_position=lambda: (10.0, 10.0),
+            _wait_zip_line_motion=lambda **kwargs: True,
+        )
+        stub.pose_aim_view_to_bearing = lambda target, **kwargs: {
+            "ok": False,
+            "heading": 356.0,
+            "error": -4.0,
+        }
+
+        self.assertTrue(DeliveryTask._direct_zip_line_go(stub, 0.0, target_position=(1.0, 2.0)))
+
+        self.assertEqual(len([event for event in events if event[0] == "click"]), 1)
+        self.assertTrue(any("在点击宽限" in event[1] for event in events if event[0] == "info"), events)
+
+    def test_direct_zip_line_does_not_block_link_when_it_never_clicked(self):
+        events = []
+        stub = SimpleNamespace(
+            log_info=lambda msg: events.append(("info", msg)),
+            log_warning=lambda msg: events.append(("warning", msg)),
+            active_and_send_mouse_delta=lambda **kwargs: events.append(("mouse", kwargs)),
+            click=lambda **kwargs: events.append(("click", kwargs)),
+            sleep=lambda seconds: None,
+            _zip_line_ws_position=lambda: (10.0, 10.0),
+            _wait_zip_line_motion=lambda **kwargs: False,
+        )
+        stub.pose_aim_view_to_bearing = lambda target, **kwargs: {
+            "ok": False,
+            "heading": 20.0,
+            "error": 20.0,
+        }
+
+        with self.assertRaisesRegex(RuntimeError, "未对准到可点击角度"):
+            DeliveryTask._direct_zip_line_go(stub, 0.0, target_position=(1.0, 2.0))
+
+        self.assertFalse(any(event[0] == "click" for event in events))
+
     def test_direct_zip_line_replans_after_five_failed_attempts(self):
         events = []
         stub = SimpleNamespace(
