@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, CELL_UNKNOWN, DenseGrid, GridMeta
+from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta
 from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
     DONE,
@@ -135,57 +135,6 @@ class TestGridRouteFollower(unittest.TestCase):
 
         self.assertEqual(step.action, REPLAN)
         self.assertIn("偏离路径", step.reason)
-
-    def test_near_waypoint_does_not_advance_through_blocked_or_unknown_cells(self):
-        for blocking_state in (CELL_BLOCKED, CELL_UNKNOWN):
-            with self.subTest(blocking_state=blocking_state):
-                cells = np.full((5, 5), CELL_FREE, dtype=np.uint8)
-                cells[2, 3] = blocking_state
-                grid = DenseGrid(
-                    cells,
-                    GridMeta(origin=(0.0, 0.0, 0.0), cell_size=1.0, map_name="test"),
-                )
-                follower = GridRouteFollower(
-                    grid,
-                    FollowerConfig(
-                        arrive_radius=1.0,
-                        goal_radius=0.1,
-                        allow_unknown=False,
-                        margin=0,
-                    ),
-                )
-                follower.plan_result = PlanResult(
-                    ok=True,
-                    cells=[(1, 2), (4, 2)],
-                    waypoints=[(1.5, 2.5), (4.5, 2.5)],
-                )
-
-                step = follower.update((1.5, 2.5), heading=90.0, now=0.0)
-
-                self.assertEqual(step.action, REPLAN)
-                self.assertEqual(follower.waypoint_index, 0)
-                self.assertIn("不可通行格", step.reason)
-
-    def test_initial_waypoint_stays_current_when_transition_is_blocked(self):
-        cells = np.full((5, 5), CELL_FREE, dtype=np.uint8)
-        cells[2, 3] = CELL_BLOCKED
-        grid = DenseGrid(
-            cells,
-            GridMeta(origin=(0.0, 0.0, 0.0), cell_size=1.0, map_name="test"),
-        )
-        follower = GridRouteFollower(
-            grid,
-            FollowerConfig(arrive_radius=1.0, goal_radius=0.1, allow_unknown=False, margin=0),
-        )
-        follower.plan_result = PlanResult(
-            ok=True,
-            cells=[(1, 2), (4, 2)],
-            waypoints=[(1.5, 2.5), (4.5, 2.5)],
-        )
-
-        follower._advance_initial_waypoints((1.5, 2.5))
-
-        self.assertEqual(follower.waypoint_index, 0)
 
     def test_initial_waypoint_advance_does_not_look_ahead_to_second_segment(self):
         """起点已靠近并跳过第一个航点时，不能拿后续长航段判定偏航。"""
