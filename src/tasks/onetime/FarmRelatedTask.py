@@ -1,3 +1,5 @@
+from enum import Enum
+
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
@@ -6,6 +8,14 @@ from src.icons import Icons
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
 from src.tasks.navigation.mixin.map_mixin import MapMixin
+
+
+class CollectResult(Enum):
+    """单批收取的结果。"""
+
+    SUCCESS = "success"
+    EXHAUSTED = "exhausted"
+    MISSING = "missing"
 
 
 class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
@@ -104,14 +114,45 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         self.wait_ui_stable()
         return self._collect_to_wuling_warehouse("自动农植机")
 
-    def _collect_to_wuling_warehouse(self, source_name):
+    def _collect_to_wuling_warehouse(self, source_name, max_misses=2, max_batches=5):
+        """反复点「存至武陵仓库」，直到确认框不再出现。
+
+        一次点击只收一批，故按批循环；某批连续点击都不弹确认框即判定收完。
+
+        Args:
+            source_name: 日志用的来源名。
+            max_misses: 每批最多点几次；点击可能没命中，故允许重试。
+            max_batches: 收取批数上限，防止确认框被误识别成一直存在。
+
+        Returns:
+            bool: 正常收完为 True；找不到按钮为 False。
         """
-        统一处理牧场和自动农植机的收取
+        collected = 0
+        for _ in range(max_batches):
+            result = self._collect_once(source_name, max_misses)
+            if result is CollectResult.MISSING:
+                self.log_info(f"{source_name}收取失败，已收取{collected}批")
+                return False
+            if result is CollectResult.EXHAUSTED:
+                break
+            collected += 1
+
+        self.log_info(f"{source_name}收取结束，共收取{collected}批")
+        return True
+
+    def _collect_once(self, source_name, max_misses=2) -> CollectResult:
+        """点「存至武陵仓库」并等待确认框，收一批。
+
+        点击后没弹确认框可能是没点中，故最多重试 max_misses 次。
+
+        Args:
+            source_name: 日志用的来源名。
+            max_misses: 最多点几次。
+
+        Returns:
+            CollectResult: SUCCESS 收到一批；EXHAUSTED 点满次数仍无确认框；MISSING 找不到按钮。
         """
-        self.log_info(f"开始点击{source_name}的存至武陵仓库按钮")
-        # 五次收取点击
-        for _ in range(5):
-            # 识别仓库存放按钮右端圆角并点击
+        for attempt in range(max_misses):
             if not self.wait_click_feature(
                 feature=fL.sentence_part_feature,
                 box=self.box_of_screen(0.93, 0.76, 0.98, 0.84),
@@ -120,13 +161,13 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
                 after_sleep=0.5,
             ):
                 self.mark_task_failure(f"未找到{source_name}的存至武陵仓库按钮")
-                return False
-            elif not self.wait_pop_up(time_out=5):
-                self.log_info(f"{source_name}未找到确认按钮，收取结束")
-                return True
+                return CollectResult.MISSING
 
-        self.log_info(f"已点击{source_name}的存至武陵仓库按钮")
-        return True
+            popped = self.wait_pop_up(time_out=5)
+            self.log_debug(f"{source_name}第{attempt + 1}次点击：确认框{'出现' if popped else '未出现'}")
+            if popped:
+                return CollectResult.SUCCESS
+        return CollectResult.EXHAUSTED
 
     def _click_farm_related(self):
         """
