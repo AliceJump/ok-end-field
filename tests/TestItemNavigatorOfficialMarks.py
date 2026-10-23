@@ -1,10 +1,67 @@
+import json
+import tempfile
+import threading
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
 from src.core.NavConfig import NAV_CONTENT_KEY
 from src.localization.ws_position_mixin import WsPositionMixin
 from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
+
+
+class TestMarkedPointMigration(unittest.TestCase):
+    def make_task(self, root):
+        task = object.__new__(ItemNavigatorTask)
+        task._marked_store = root / "custom-config" / "marked_points.json"
+        task._marked = {}
+        task._marked_lock = threading.Lock()
+        task._dirty = False
+        task._last_save_time = 0
+        task.log_info = mock.Mock()
+        task.log_error = mock.Mock()
+        task.tr = lambda message: message
+        return task
+
+    def test_save_failure_preserves_legacy_file_and_retries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            old_path = root / "assets/items/map/marked_points.json"
+            old_path.parent.mkdir(parents=True)
+            payload = {"map01": ["point-a", "point-b"]}
+            old_path.write_text(json.dumps(payload), encoding="utf-8")
+            task = self.make_task(root)
+            with mock.patch(
+                "src.tasks.trigger.ItemNavigatorTask.Path", side_effect=lambda *parts: root.joinpath(*parts)
+            ):
+                with mock.patch.object(Path, "replace", side_effect=OSError("disk full")):
+                    task._load_marked()
+                self.assertEqual(json.loads(old_path.read_text(encoding="utf-8")), payload)
+                self.assertFalse(task._marked_store.exists())
+                self.assertTrue(task._dirty)
+                task._load_marked()
+            self.assertFalse(old_path.exists())
+            self.assertFalse(task._dirty)
+            self.assertEqual(
+                set(json.loads(task._marked_store.read_text(encoding="utf-8"))["map01"]), set(payload["map01"])
+            )
+            task._marked.clear()
+            task._load_marked()
+            self.assertEqual(task._marked, {"map01": set(payload["map01"])})
+
+    def test_existing_new_marks_win_without_deleting_legacy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            task = self.make_task(root)
+            task._marked_store.parent.mkdir(parents=True)
+            task._marked_store.write_text(json.dumps({"map02": ["new"]}), encoding="utf-8")
+            old_path = root / "assets/items/map/marked_points.json"
+            old_path.parent.mkdir(parents=True)
+            old_path.write_text(json.dumps({"map01": ["old"]}), encoding="utf-8")
+            task._load_marked()
+            self.assertEqual(task._marked, {"map02": {"new"}})
+            self.assertTrue(old_path.exists())
 
 
 class _Service:
