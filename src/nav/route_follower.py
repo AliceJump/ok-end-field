@@ -87,8 +87,8 @@ def point_segment_distance(
 class FollowerConfig:
     """路线跟随参数。
 
-    距离均为世界米。``arrive_radius`` 控制中间航点切换，且切换还要求到下一航点的
-    连线可通行；``goal_radius`` 控制最终到达；
+    距离均为世界米。``arrive_radius`` 控制中间航点切换；无法直达下一点时继续靠近当前点，
+    不仅因进入到达半径就重规划。``goal_radius`` 控制最终到达；
     ``off_route_radius`` 与 ``off_route_hold_s`` 同时满足才判定偏航，用于过滤定位抖动。
     其余墙距、未知格风险和航点合并参数会原样传给 :class:`GridPlanner`。
 
@@ -325,31 +325,14 @@ class GridRouteFollower:
             )
 
         arrived_index = None
-        blocked_waypoint_index = None
         waypoint_limit = self._waypoint_limit(len(waypoints))
         while (
             self.waypoint_index < waypoint_limit
             and distance_xz(pos, waypoints[self.waypoint_index]) <= self.config.arrive_radius
+            and self._shortcut_ok(pos, waypoints[self.waypoint_index], waypoints[self.waypoint_index + 1])
         ):
-            if not self._waypoint_transition_clear(pos, self.waypoint_index, waypoint_limit):
-                blocked_waypoint_index = self.waypoint_index
-                break
             arrived_index = self.waypoint_index
             self.waypoint_index += 1
-
-        if blocked_waypoint_index is not None:
-            waypoint = waypoints[blocked_waypoint_index]
-            waypoint_distance = distance_xz(pos, waypoint)
-            self._reset_motion()
-            return self._step(
-                REPLAN,
-                waypoint,
-                target_bearing=bearing_to_point(pos[0], pos[1], waypoint[0], waypoint[1]),
-                heading_error=None,
-                waypoint_distance=waypoint_distance,
-                goal_distance=goal_distance,
-                reason="航点已进入到达半径，但到下一航点的连线被不可通行格阻挡",
-            )
 
         zip_line_step = self.current_zip_line_step()
         if zip_line_step is not None:
@@ -525,39 +508,6 @@ class GridRouteFollower:
             self.waypoint_index += 1
         return tuple(skipped), nearest
 
-    def _waypoint_transition_clear(
-        self,
-        position: tuple[float, float],
-        index: int,
-        waypoint_limit: int,
-    ) -> bool:
-        """到达半径内的航点还必须能安全看到当前点和下一航点。
-
-        圆形半径只能说明两点在欧氏距离上接近，不能说明中间没有墙。窄道拐角处，
-        当前位置可能已经进入当前航点半径，但直线前往下一航点会穿墙。此时切到下一
-        航点会让任务直接朝墙走，因此必须保留当前航点并请求从真实位置重新规划。
-
-        ``waypoint_limit`` 是当前连续行走段内允许作为目标的最后一个下标。滑索入口
-        前的最后一段仍要检查到入口的视线，但不能把滑索另一端的航点当成步行目标。
-        """
-        if self.plan_result is None or not self.plan_result.waypoints:
-            return False
-        waypoints = self.plan_result.waypoints
-        if index < 0 or index >= len(waypoints):
-            return False
-
-        here = self.grid.index_of_world(position[0], position[1])
-        current = self.grid.index_of_world(waypoints[index][0], waypoints[index][1])
-        if not self.planner.line_clear(here, current):
-            return False
-
-        next_index = index + 1
-        if next_index < len(waypoints) and next_index <= waypoint_limit:
-            following = self.grid.index_of_world(waypoints[next_index][0], waypoints[next_index][1])
-            if not self.planner.line_clear(here, following):
-                return False
-        return True
-
     def current_zip_line_step(self) -> ZipLineRouteStep | None:
         """返回下一项待执行的滑索步骤；没有待执行项时返回 ``None``。
 
@@ -691,7 +641,7 @@ class GridRouteFollower:
         while (
             self.waypoint_index < limit
             and distance_xz(start, waypoints[self.waypoint_index]) <= self.config.arrive_radius
-            and self._waypoint_transition_clear(start, self.waypoint_index, limit)
+            and self._shortcut_ok(start, waypoints[self.waypoint_index], waypoints[self.waypoint_index + 1])
         ):
             self.waypoint_index += 1
 

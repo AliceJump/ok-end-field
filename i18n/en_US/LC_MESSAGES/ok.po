@@ -3781,3 +3781,9 @@ msgstr "Waiting"
 
 msgid "恢复默认大小"
 msgstr "Restore default size"
+
+msgid "距中间航点小于该值且可直达下一航点时切换；否则继续靠近当前航点（米）"
+msgstr ""
+"Switch within this distance of an intermediate waypoint only when the next "
+"waypoint is directly reachable; otherwise keep approaching the current "
+"waypoint (m)"

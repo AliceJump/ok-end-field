@@ -139,7 +139,7 @@ GRID_NAV_CONFIG_DESCRIPTION: dict[str, str] = {
     CONFIG_GRID_WAYPOINT_TOLERANCE: "规划后允许合并航点的最大横向误差；越大航点越少",
     CONFIG_GRID_MAX_EXPAND: "A* 扩展节点数上限。触顶以『搜索规模超限』失败（与真的不可达区分），大图或未探索图上需调大",
     CONFIG_GRID_GOAL_RADIUS: "距最终目标小于该值即判定到达（世界 XZ 平面，米）",
-    CONFIG_GRID_WAYPOINT_RADIUS: "距中间航点小于该值且到下一航点的连线可通行时，才切到下一个航点（米）",
+    CONFIG_GRID_WAYPOINT_RADIUS: "距中间航点小于该值且可直达下一航点时切换；否则继续靠近当前航点（米）",
     CONFIG_GRID_HEADING_TOLERANCE: "朝向误差小于该值才持续按 W，否则先转向",
     CONFIG_GRID_TURN_TOLERANCE: "闭环转向要求达到的方位误差（度）",
     CONFIG_GRID_MAX_TURN_ROUNDS: "每个目标方位最多转几轮；每轮会按一次 W 让角色转身",
