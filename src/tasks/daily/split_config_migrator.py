@@ -40,6 +40,7 @@ from src.core.paths import config_path
 from src.data.world_map import areas_list
 from src.tasks.onetime.ActivityRewardTask import ActivityRewardTask
 from src.tasks.onetime.BoatHarvestTask import BoatHarvestTask
+from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 _STATE_FILE_NAME = "_daily_split_migrations.json"
 _BACKUP_DIR_NAME = "daily_split_migration_backup"
@@ -70,6 +71,8 @@ def _import_legacy_selection(
     """导入旧开关/操作列表；目标已有列表时保留目标值。"""
     if isinstance(target_config.get(target_key), list):
         return _NO_MIGRATION
+    if isinstance(target_config.get(target_key), bool):
+        source_config = {**source_config, target_key: target_config[target_key]}
     value = source_config.get(target_key)
     if isinstance(value, list):
         return value
@@ -103,13 +106,11 @@ def _import_region_options(source_config: dict, target_config: dict, target_key:
     """⭐地区建设：新列表值直接搬；旧三个布尔开关合并为选项列表。"""
     if isinstance(target_config.get(target_key), list):
         return _NO_MIGRATION
-    value = source_config.get(target_key)
-    if isinstance(value, list):
-        return value
-    option_keys = {"据点兑换": "⭐据点兑换", "买物资": "⭐买物资", "买卖货": "⭐买卖货"}
-    if not any(key in source_config for key in option_keys.values()):
-        return _NO_MIGRATION
-    return [name for name, key in option_keys.items() if source_config.get(key)]
+    if isinstance(target_config.get(target_key), bool):
+        source_config = {**source_config, target_key: target_config[target_key]}
+    if isinstance(source_config.get(target_key), list):
+        return source_config[target_key]
+    return RegionalBuildTask.config_value_migrations["⭐地区建设"](source_config, target_key)
 
 
 # 批次声明。键值映射的 dict 键 = 目标键名；值为来源键名（str）或转换函数（callable）。

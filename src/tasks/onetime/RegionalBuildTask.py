@@ -3,6 +3,7 @@ from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
+from src.core.config_migration import merge_bool_options
 from src.core.learning.policy import learning_epoch
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list, goods_dict, outpost_dict
@@ -61,6 +62,11 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
 
     OPTIONS: ClassVar[list[str]] = ["据点兑换", "买物资", "买卖货"]
     DEFAULT_OPTIONS: ClassVar[list[str]] = ["据点兑换", "买卖货"]
+    config_value_migrations: ClassVar = {
+        "⭐地区建设": merge_bool_options(
+            {"据点兑换": "⭐据点兑换", "买物资": "⭐买物资", "买卖货": "⭐买卖货"}, defaults=DEFAULT_OPTIONS
+        ),
+    }
     CFG_SHOP_WHITELIST = "购物白名单"
     CFG_BUY_GIFT = "是否买礼物"
     migrate_legacy_region_bools = True

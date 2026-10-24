@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
+from src.core.config_migration import legacy_bool_switch_to_list
 from src.data.characters_utils import get_contact_list_with_feature_list
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
@@ -13,6 +14,9 @@ class BoatHarvestTask(Common, LiaisonMixin):
     """帝江号收菜子任务：收集线索与制造舱助力，日常任务经 DailyFeature 接入。"""
 
     BOAT_STAGES: ClassVar = ["收集线索", "使用制造舱助力"]
+    config_value_migrations: ClassVar = {
+        "⭐帝江号收菜": legacy_bool_switch_to_list(ops_key="帝江号收菜操作", defaults=BOAT_STAGES),
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
