@@ -105,6 +105,8 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
 
     _LEGACY_DEFAULTS: ClassVar[dict[str, bool]] = {
         **dict.fromkeys(BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS + FARM_TASKS, True),
+        # 清理基质会分解库存，默认关闭，仅用户主动勾选后执行
+        "清理基质": False,
         "自动送货": False,
         "传送到帝江号右侧传送点": True,
     }
@@ -373,7 +375,8 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         self.default_config.update(
             {
                 self.CFG_BOAT_TASKS: list(self.BOAT_TASKS),
-                self.CFG_OTHER_TASKS: list(self.OTHER_TASKS),
+                # 清理基质默认不勾选：分解不可回滚，须用户主动开启
+                self.CFG_OTHER_TASKS: [task for task in self.OTHER_TASKS if task != "清理基质"],
                 self.CFG_BATTLE_TASKS: list(self.BATTLE_TASKS),
                 self.CFG_REWARD_TASKS: list(self.REWARD_TASKS),
                 self.CFG_FARM_TASKS: list(self.FARM_TASKS),
