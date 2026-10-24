@@ -120,6 +120,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestRecommendSkillDetector.py",
             "TestComboSkillDetector.py",
             "TestSkillAllowlist.py",
+            "TestSpecialCombatMechanics.py",
             "TestStateDrivenWaits.py",
             "TestSwitchCharIndex.py",
             "TestTimedCombatPartialTeam.py",
