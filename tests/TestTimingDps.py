@@ -244,7 +244,9 @@ class TestTimedDpsRuntime(unittest.TestCase):
         logic.step()
         task.points, task.now = 0, 20.1
         logic.step()
-        self.assertEqual(list(logic.cycle_samples), [(20, 160)])
+        self.assertEqual(len(logic.cycle_samples), 1)
+        self.assertAlmostEqual(logic.cycle_samples[0][0], 20)
+        self.assertEqual(logic.cycle_samples[0][1], 160)
         self.assertTrue(any("窗口实测，伤害未实测" in message for message in task.messages))
 
     def test_detected_team_activates_damage_plan_without_old_switches(self):

@@ -169,6 +169,21 @@ class TestSkillTiming(unittest.TestCase):
             self.assertAlmostEqual(store.battle_state("梨诺").duration, 60)
 
 
+def settle_highlights(logic):
+    """Supply four distinct synthetic frames before testing a calibrated quote."""
+    for _ in range(4):
+        logic.task.next_frame()
+        logic._observe_battle_highlights()
+
+
+def confirm_dark_highlights(logic):
+    """Post-key darkness must span enough distinct samples, not one dip."""
+    for _ in range(4):
+        logic.task.sleep(.06)
+        logic.task.next_frame()
+        logic._confirm_battle(logic.task.now)
+
+
 class FakeTask:
     def __init__(self):
         self.now = 0.0
@@ -184,6 +199,7 @@ class FakeTask:
         self.link = False
         self.ults = set()
         self.ult_frozen_seconds = 0.0
+        self.battle_pulses = set()
         self.exits = []
         self.exit_check_count = 0
         self.monitored = 0
@@ -226,6 +242,9 @@ class FakeTask:
 
     def send_key(self, token):
         self.keys.append(token)
+
+    def is_battle_skill_pulsing(self, token):
+        return token in self.battle_pulses
 
     def is_link_skill_ready(self):
         return self.link
@@ -299,10 +318,10 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 0.2
         logic._confirm_battle(task.now)
         self.assertIsNone(logic.pending)
-        self.assertAlmostEqual(logic.battle_retry_after["1"], 25.6)
+        self.assertAlmostEqual(logic.battle_retry_after["1"], logic.started + 25.6)
         task.now = 2
         self.assertFalse(logic._try_battle_token("1", 100))
-        task.now = 25.7
+        task.now = logic.battle_retry_after["1"] + .1
         self.assertTrue(logic._try_battle_token("1", 100))
 
     def test_si_ultimate_remains_available_during_unobserved_battle_replacements(self):
@@ -325,11 +344,11 @@ class TestTimedCombat(unittest.TestCase):
         task.sp = 100
         self.assertFalse(logic._try_battle_token("1", 99))
         self.assertTrue(logic._try_battle_token("1", 100))
-        task.now = 0.9
+        task.now = logic.started + .81
         logic._confirm_battle(task.now)
         self.assertIsNone(logic.pending)
         self.assertLess(logic.battle_retry_after["1"], 2)
-        task.now = 1.2
+        task.now = logic.battle_retry_after['1'] + .01
         self.assertTrue(logic._try_battle_token("1", 100))
 
     def test_low_cost_feedback_uses_two_fresh_frames_before_accepting_cast(self):
@@ -346,7 +365,7 @@ class TestTimedCombat(unittest.TestCase):
 
             def next_frame(self):
                 super().next_frame()
-                self.frame = band.copy()
+                self.frame = band.copy() if self.keys else np.zeros_like(band)
                 self.refreshes += 1
 
             def recover_target_too_far(self):
@@ -361,7 +380,7 @@ class TestTimedCombat(unittest.TestCase):
         logic.team[0] = "梨诺"
         logic.step()
         self.assertEqual(task.keys, ["1"])
-        self.assertEqual(task.refreshes, 2)
+        self.assertEqual(task.refreshes, 6)  # Four pre-key samples, then two feedback frames.
         self.assertEqual(len(recoveries), 1)
         self.assertEqual(logic.cursor, 0)
         self.assertNotIn("1", logic.state_until)
@@ -606,7 +625,7 @@ class TestTimedCombat(unittest.TestCase):
         task = FakeTask()
         logic = logic_for(task)
         logic.step()
-        task.now = 1
+        task.now = logic.started + .81
         logic.step()
 
         self.assertEqual(logic.cursor, 0)
@@ -791,7 +810,8 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 100
         logic.step()
         self.assertEqual(task.keys, ["e", "ult_1"])
-        self.assertEqual(task.now, 102)
+        self.assertGreater(task.now, 102)
+        self.assertLess(task.now, 103)
         self.assertEqual(logic.active, ())
         self.assertTrue(any("HUD 动画锁 2.00s" in message for message in task.messages))
 
@@ -815,10 +835,12 @@ class TestTimedCombat(unittest.TestCase):
         logic.cooldowns[battle.skill_id] = 105.0
 
         logic.step()  # Fake ultimate spends two seconds in a confirmed HUD freeze.
-        self.assertEqual(task.now, 102.0)
-        self.assertEqual(logic._clock(), 100.0)
-        self.assertEqual(logic._sp_wall_clock(), 100.0)
-        self.assertEqual(logic.state_until["2"] - logic._clock(), 5.0)
+        # This PR retains its 0.1s post-recovery failure probe. That script
+        # pause is gameplay time, unlike the confirmed two-second HUD freeze.
+        self.assertAlmostEqual(task.now, 102.1)
+        self.assertAlmostEqual(logic._clock(), 100.1)
+        self.assertAlmostEqual(logic._sp_wall_clock(), 100.1)
+        self.assertAlmostEqual(logic.state_until["2"] - logic._clock(), 4.9)
         self.assertFalse(logic._ready((battle,), slot="2", kind="battle"))
         self.assertAlmostEqual(logic._project_probe_expected(), 100.0)
         self.assertTrue(any("确认时停扣除 2.00s" in msg for msg in task.messages))
@@ -826,7 +848,7 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 105.0  # Gameplay advances three seconds after HUD recovery.
         self.assertEqual(logic._clock(), 103.0)
         self.assertEqual(logic.state_until["2"] - logic._clock(), 2.0)
-        self.assertAlmostEqual(logic._project_probe_expected(), 124.0)
+        self.assertAlmostEqual(logic._project_probe_expected(), 123.2)
         task.now = 107.0
         self.assertTrue(logic._ready((battle,), slot="2", kind="battle"))
 
@@ -870,7 +892,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.keys, ["1"])
         self.assertIsNone(logic.pending)
         self.assertEqual(logic.cursor, 1)
-        self.assertAlmostEqual(task.now - before, 0.1)
+        self.assertAlmostEqual(task.now - before, 0.45)  # Four .05s fake captures, .15s gaps and .1s feedback.
         self.assertTrue(any("消耗证据 25 SP <= 25，按键后直接视为成功" in message for message in task.messages))
 
     def test_precise_sp_readiness_uses_partial_bar_value(self):
@@ -900,7 +922,7 @@ class TestTimedCombat(unittest.TestCase):
         combat_clock["now"] = 20.0
         logic.step()
 
-        self.assertEqual(task.now, 10.0)
+        self.assertAlmostEqual(task.now, 10.35)  # Sampling advances automation time, not the injected combat clock.
         self.assertEqual(task.keys, ["1"])
 
     def test_cooldown_and_native_handoff_ignore_script_pause_duration(self):
@@ -939,7 +961,7 @@ class TestTimedCombat(unittest.TestCase):
         combat_clock["now"] += 8.0
         logic.step()
 
-        self.assertEqual(task.now, 5.0)
+        self.assertAlmostEqual(task.now, 5.35)
         self.assertEqual(task.keys, ["1"])
 
     def test_state_skill_is_not_pressed_again_while_state_is_active(self):
@@ -1129,27 +1151,37 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(logic.forced_battle_token, "1")
         self.assertEqual(task.keys, ["1"])
 
-        task.now = 0.5
+        task.now = logic.started + .5
         logic.step()
         self.assertEqual(task.keys, ["1", "1"])
         self.assertEqual(logic.active[0].skill_id, "chr_0031_mifu_normalskill_2")
         self.assertEqual(logic.pending, (50.0, "1", 50.0))
 
-    def test_zhuang_ultimate_prioritizes_free_first_battle(self):
+    def test_zhuang_ultimate_prioritizes_free_first_battle_on_white_pulse(self):
         task = FakeTask()
         task.sp = 0.0
         task.ults = {"1"}
         logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
-        logic.team = ["庄方宜", "佩丽卡", "诀", "洛茜"]
+        logic._configure_team(["庄方宜", "佩丽卡", "诀", "洛茜"], reset_runtime=True)
         logic.order = ["1"]
         logic.ult_order = ["1"]
         logic.team_mechanics = {"1": logic.mechanics["庄方宜"]}
 
         logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertIn("1", logic.free_battle_once)
+        self.assertEqual(logic.forced_battle_token, "1")
+        task.battle_pulses.add("1")
+        task.now = logic.release_burst.stances["1"].starts_at + .01
+        settle_highlights(logic)
+        logic.step()
         self.assertEqual(task.keys, ["ult_1", "1"])
+        self.assertIn("1", logic.free_battle_once)
+        self.assertIsNotNone(logic.pending)
+        task.battle_pulses.clear()
+        confirm_dark_highlights(logic)
         self.assertNotIn("1", logic.free_battle_once)
         self.assertIsNone(logic.forced_battle_token)
-        self.assertTrue(any("终结技恢复插入机制战技 1" in message for message in task.messages))
 
     def test_yvonne_main_control_window_allows_other_operator_ult(self):
         task = FakeTask()

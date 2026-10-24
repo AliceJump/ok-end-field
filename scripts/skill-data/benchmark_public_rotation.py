@@ -33,6 +33,9 @@ class ReplayHud:
     def active_time(self):
         return self.now
 
+    def next_frame(self):
+        """The offline HUD has no image source; the outer loop advances time."""
+
     def log_info(self, message):
         pass
 

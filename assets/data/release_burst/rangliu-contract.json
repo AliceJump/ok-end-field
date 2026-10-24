@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "scope": "reviewed_model_consumption_projection; not_observed_consumption_or_full_native_execution",
+  "suit": "壤流",
+  "suit_id": "suit_expend_spell01",
+  "pieces_required": 3,
+  "skill_rank": 1,
+  "native_inputs": {
+    "GameAssembly.dll": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "global-metadata.dat": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "event": {
+    "name": "OnConsumeBuff",
+    "value": 208,
+    "tags": [
+      "bf9d6e57",
+      "edaee3e6"
+    ]
+  },
+  "recipient": {
+    "source": "Owner",
+    "value": 4,
+    "unused_selector_fields_not_executed": true
+  },
+  "parameters": {
+    "atk_up": 0.10000000149011612,
+    "spell_dmg_up": 0.15000000596046448,
+    "duration": 25.0,
+    "max_stack": 3.0
+  },
+  "attributes": {
+    "52": "PulseDamageIncrease",
+    "54": "NaturalDamageIncrease"
+  },
+  "duration": 25.0,
+  "max_stacks": 3,
+  "damage_bonus_per_stack": 0.15000000596046448,
+  "elements": [
+    "电磁",
+    "自然"
+  ],
+  "records": {
+    "passive_equipsuit_expend_spell01": {
+      "raw_sha256": "6821d1e421219a22b10a9f088c0ef23517170a1e680ff0720a0f7d61d92f88a4",
+      "decoded_sha256": "1c2a16e6ef3d8e7e7c365f08d9640b0048c1d434c6d61ab9f59fb8202ac32daa",
+      "roundtrip_verified": true
+    },
+    "buff_equipsuit_expend_spell01": {
+      "raw_sha256": "00f9134050b984de7bc14dbb71b94d8ded15bb398ef1708a0136bf47b9d92dc4",
+      "decoded_sha256": "1adc98313b83e23317ce4e549c153b0c61a887b1f58b8c319a03fd1d87673645",
+      "roundtrip_verified": true
+    },
+    "buff_equipsuit_expend_spelldamage": {
+      "raw_sha256": "675c0ad7f87706d9b4d08149f0896e2817c4cad0ccc7122aaad371c067b3f23e",
+      "decoded_sha256": "576f994572cb65947bbd07d726b0e6a760fe14df5e669e1ccaecb2a4e80346c5",
+      "roundtrip_verified": true
+    }
+  },
+  "table_sources": {
+    "EquipSuitTable": "be23642aa53359e3af7a4395287164218448dfe646e0276637cc5b62385641e7",
+    "SkillPatchTable": "ebc67209aaae5f3e3e1e9aa5bbf6b15dbd81b7d5c7dabaa8cd88b9566cfb12ae",
+    "I18nTextTable_CN": "0e37782c480233f384bc3205ed0e7b699272161241411bff2d9c2373a3a979ba"
+  },
+  "boundaries": [
+    "initial_stack_count_unknown",
+    "actual_consumption_not_observed",
+    "no_same_cast_full_buff_assumption",
+    "per_stack_expiry",
+    "cap_refresh_policy_not_assumed",
+    "default_blackboards_not_selected_rank"
+  ]
+}
