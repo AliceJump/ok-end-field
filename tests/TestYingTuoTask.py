@@ -8,15 +8,37 @@ from src.tasks.onetime.YingTuoTask import YingTuoTask
 
 
 class _FakeYingTuoTask:
+    CHALLENGE_CLICK_ATTEMPTS = YingTuoTask.CHALLENGE_CLICK_ATTEMPTS
+    DETAIL_PAGE_TIMEOUT = YingTuoTask.DETAIL_PAGE_TIMEOUT
+    _same_bars = staticmethod(YingTuoTask._same_bars)
+
     def __init__(self):
         self.scroll_count = 0
         self.logs = []
         self.clicks = []
         self.drawn_boxes = []
         self.frame = np.zeros((100, 200, 3), dtype=np.uint8)
+        self.now = 0.0
+        # 每次点击灰条后是否进入详情页，用完后默认进入
+        self.detail_page_results = []
 
     def next_frame(self):
         return self.frame
+
+    def active_time(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
+
+    def wait_until(self, condition, **_kwargs):
+        return condition()
+
+    def _on_detail_page(self):
+        return self.detail_page_results.pop(0) if self.detail_page_results else True
+
+    def _detect_stable_bars(self, time_out=3.0):
+        return YingTuoTask._detect_stable_bars(self, time_out)
 
     def scroll_relative(self, *_args):
         self.scroll_count += 1
@@ -32,6 +54,10 @@ class _FakeYingTuoTask:
 
     def log_info(self, message):
         self.logs.append(message)
+
+
+def _bar(center_x, center_y):
+    return type("Bar", (), {"center_x": center_x, "center_y": center_y})()
 
 
 class TestYingTuoTask(unittest.TestCase):
@@ -81,6 +107,82 @@ class TestYingTuoTask(unittest.TestCase):
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[]):
             self.assertIsNone(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task.scroll_count, 4)
+
+    def test_waits_for_stable_bars_before_click(self):
+        """关卡段淡入时命中会跳变，两次检测一致后才点击。"""
+        task = _FakeYingTuoTask()
+        left = _bar(50.0, 25.0)
+        right = _bar(150.0, 25.0)
+        with patch(
+            "src.tasks.onetime.YingTuoTask.detect_gray_bars",
+            side_effect=[[right], [left, right], [left, right]],
+        ):
+            self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task.clicks, [(0.25, 0.25, {"after_sleep": 0.25})])
+
+    def test_retries_click_until_detail_page_opens(self):
+        task = _FakeYingTuoTask()
+        task.detail_page_results = [False, True]
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50.0, 25.0)]):
+            self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(len(task.clicks), 2)
+
+    def test_raises_when_detail_page_never_opens(self):
+        task = _FakeYingTuoTask()
+        task.detail_page_results = [False] * YingTuoTask.CHALLENGE_CLICK_ATTEMPTS
+        with (
+            patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50.0, 25.0)]),
+            self.assertRaisesRegex(Exception, "未进入关卡详情页"),
+        ):
+            YingTuoTask.find_normal_challenge(task)
+        self.assertEqual(len(task.clicks), YingTuoTask.CHALLENGE_CLICK_ATTEMPTS)
+
+    def test_return_presses_back_once_while_loading(self):
+        """退出副本的加载期间不再按返回，否则加载结束后海报页会被关掉。"""
+        task = Mock()
+        task.RETURN_LOADING_TIMEOUT = YingTuoTask.RETURN_LOADING_TIMEOUT
+        task.wait_until.side_effect = [True, "monument"]
+
+        self.assertTrue(YingTuoTask.return_to_monument(task))
+
+        task.back.assert_called_once_with()
+        _, kwargs = task.wait_until.call_args
+        self.assertEqual(kwargs["time_out"], YingTuoTask.RETURN_LOADING_TIMEOUT)
+        self.assertEqual(kwargs["settle_time"], 0.5)
+
+    def test_return_retries_back_while_detail_page_stays(self):
+        task = Mock()
+        task.wait_until.return_value = None
+
+        self.assertFalse(YingTuoTask.return_to_monument(task))
+
+        self.assertEqual(task.back.call_count, 3)
+        self.assertEqual(task.wait_until.call_count, 3)
+
+    def test_return_reenters_from_handbook_when_poster_closed(self):
+        task = Mock()
+        task.wait_until.side_effect = [True, "handbook"]
+        task._wait_monument.return_value = True
+        task.wait_click_feature.return_value = True
+
+        self.assertTrue(YingTuoTask.return_to_monument(task))
+
+        task.back.assert_called_once_with()
+        task.wait_click_feature.assert_called_once_with(
+            feature=fL.yingtuo_entrance, time_out=2, raise_if_not_found=False
+        )
+
+    def test_run_stops_after_two_empty_detail_pages(self):
+        """详情页没有未通关图标时，返回后仍会点同一张海报，第二次就结束。"""
+        task = Mock()
+        task.find_normal_challenge.return_value = True
+        task.wait_until.return_value = None
+
+        YingTuoTask.run.__wrapped__(task)
+
+        self.assertEqual(task.find_normal_challenge.call_count, 2)
+        task.return_to_monument.assert_called_once_with()
+        task.click.assert_not_called()
 
     def test_debug_overlay_draws_gray_bar_boxes(self):
         task = _FakeYingTuoTask()

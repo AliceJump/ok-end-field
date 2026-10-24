@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from ok import Box
 
 from src.data.FeatureList import FeatureList as fL
@@ -7,6 +9,12 @@ from src.tasks.mixin.battle_mixin import BattleMixin
 
 
 class YingTuoTask(BattleMixin):
+    # 打完关卡退出副本要加载，实测 22.7 秒，留足余量。
+    RETURN_LOADING_TIMEOUT: ClassVar = 90
+    # 点击灰条后等关卡详情页出现的时间与重试次数。
+    DETAIL_PAGE_TIMEOUT: ClassVar = 5
+    CHALLENGE_CLICK_ATTEMPTS: ClassVar = 3
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "影拓丰碑"
@@ -20,6 +28,7 @@ class YingTuoTask(BattleMixin):
         self.ensure_main(time_out=400)
         if not self.enter_yingtuo():
             return
+        empty_visits = 0
         while self.find_normal_challenge():
             self.log_info("检测到普通关卡灰条，处理本屏未通关关卡")
             results = (
@@ -34,8 +43,15 @@ class YingTuoTask(BattleMixin):
                 )
                 or []
             )
-            if not results:
-                self.log_info("检测到关卡灰条，但本屏没有未通关图标，继续向下滚动")
+            if results:
+                empty_visits = 0
+            else:
+                # 返回后仍会检测到同一组灰条，不设上限就会反复点同一张海报。
+                empty_visits += 1
+                if empty_visits >= 2:
+                    self.log_info("关卡详情页连续两次没有未通关图标，任务结束")
+                    return
+                self.log_info("关卡详情页没有未通关图标，返回海报页")
             for result in results:
                 self.click(result, after_sleep=0.25)
                 self.log_info("进入挑战页面，开始挑战")
@@ -80,10 +96,72 @@ class YingTuoTask(BattleMixin):
                     self.log_info("未能找到挑战开始按钮，返回失败")
                     raise Exception("未能找到挑战开始按钮")
                 self.log_info("挑战完成，继续寻找下一个普通关卡")
-            if not self.safe_back(feature=fL.yingtuo_monument, box=self.box_of_screen(0.002, 0.750, 0.990, 0.783)):
+            if not self.return_to_monument():
                 self.log_info("未能安全返回，任务结束")
                 return
         self.log_info("影拓丰碑任务完成", notify=True)
+
+    def return_to_monument(self):
+        """从关卡详情页返回海报页，返回是否已回到海报页。
+
+        打完关卡后按返回会退出副本并加载。加载期间再按返回，按键会在加载结束后生效，
+        把刚出现的海报页关回行动手册，所以离开详情页后只等待、不再按键。
+        """
+        for _ in range(3):
+            self.back()
+            if self.wait_until(lambda: not self._on_detail_page(), time_out=5, raise_if_not_found=False):
+                break
+        else:
+            self.log_info("按返回后仍停在关卡详情页")
+            return False
+        # 页面须稳定 0.5 秒：加载结束时海报页可能只闪一帧，随后落到行动手册。
+        page = self.wait_until(
+            self._monument_or_handbook,
+            time_out=self.RETURN_LOADING_TIMEOUT,
+            settle_time=0.5,
+            raise_if_not_found=False,
+        )
+        if page == "monument":
+            return True
+        if (
+            page == "handbook"
+            and self.wait_click_feature(feature=fL.yingtuo_entrance, time_out=2, raise_if_not_found=False)
+            and self._wait_monument(time_out=10)
+        ):
+            self.log_info("从行动手册重新进入影拓丰碑页面")
+            return True
+        return False
+
+    def _monument_or_handbook(self):
+        """当前在海报页返回 "monument"，在行动手册常驻页返回 "handbook"，都不是返回 None。"""
+        if self.find_one(
+            feature=fL.yingtuo_monument,
+            vertical_variance=0.05,
+            horizontal_variance=0.05,
+            box=self.box_of_screen(0.002, 0.750, 0.990, 0.783),
+        ):
+            return "monument"
+        if self.find_one(feature=fL.yingtuo_entrance):
+            return "handbook"
+        return None
+
+    def _wait_monument(self, time_out):
+        """等海报页标志连续 0.5 秒可见。"""
+        return self.wait_until(
+            lambda: self.find_one(
+                feature=fL.yingtuo_monument,
+                vertical_variance=0.05,
+                horizontal_variance=0.05,
+                box=self.box_of_screen(0.002, 0.750, 0.990, 0.783),
+            ),
+            time_out=time_out,
+            settle_time=0.5,
+            raise_if_not_found=False,
+        )
+
+    def _on_detail_page(self):
+        """关卡详情页右下角的「挑战影拓丰碑」按钮可见时，说明仍停在详情页。"""
+        return self.find_one(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965))
 
     def enter_yingtuo(self):
         self.log_info("开始影拓丰碑任务", notify=True)
@@ -105,24 +183,60 @@ class YingTuoTask(BattleMixin):
         return True
 
     def find_normal_challenge(self):
-        """寻找当前可打关卡；连续四次滚动后无灰条时结束。"""
-        for empty_scrolls in range(4):
-            frame = self.next_frame()
-            bars = self.detect_normal_challenge_bars(frame)
-            if bars:
-                leftmost_bar = bars[0]
-                frame_height, frame_width = frame.shape[:2]
-                self.log_info(f"检测到 {len(bars)} 条普通关卡灰条，点击最左侧灰条")
-                self.click_relative(
-                    leftmost_bar.center_x / frame_width,
-                    leftmost_bar.center_y / frame_height,
-                    after_sleep=0.25,
-                )
+        """寻找当前可打关卡并进入其详情页；连续四次滚动后无灰条时结束。"""
+        empty_scrolls = 0
+        attempts = 0
+        while empty_scrolls < 4:
+            bars, frame = self._detect_stable_bars()
+            if not bars:
+                empty_scrolls += 1
+                self.log_info(f"未检测到普通关卡灰条，继续向下滚动 ({empty_scrolls}/4)")
+                self.scroll_relative(0.5, 0.5, -5)
+                continue
+            if attempts >= self.CHALLENGE_CLICK_ATTEMPTS:
+                self.log_info("点击灰条后未进入关卡详情页")
+                raise Exception("点击灰条后未进入关卡详情页")
+            attempts += 1
+            leftmost_bar = bars[0]
+            frame_height, frame_width = frame.shape[:2]
+            self.log_info(f"检测到 {len(bars)} 条普通关卡灰条，点击最左侧灰条")
+            self.click_relative(
+                leftmost_bar.center_x / frame_width,
+                leftmost_bar.center_y / frame_height,
+                after_sleep=0.25,
+            )
+            if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
                 return True
-            self.log_info(f"未检测到普通关卡灰条，继续向下滚动 ({empty_scrolls + 1}/4)")
-            self.scroll_relative(0.5, 0.5, -5)
+            self.log_info(f"点击灰条后未进入关卡详情页，重新检测 ({attempts}/{self.CHALLENGE_CLICK_ATTEMPTS})")
         self.log_info("连续 4 次滚动未检测到普通关卡灰条")
         return None
+
+    def _detect_stable_bars(self, time_out=3.0):
+        """间隔 0.2 秒两次检测结果一致才采用，返回灰条列表与所用帧。
+
+        海报页出现后，下方关卡段约 0.55 秒才淡入完成，期间命中数在 0~5 条之间跳变；
+        滚动后的动画同理。超时仍不一致时采用最后一次结果。
+        """
+        start = self.active_time()
+        previous = None
+        while True:
+            frame = self.next_frame()
+            bars = self.detect_normal_challenge_bars(frame)
+            if previous is not None and self._same_bars(previous, bars, frame.shape[1]):
+                return bars, frame
+            if self.active_time() - start >= time_out:
+                return bars, frame
+            previous = bars
+            self.sleep(0.2)
+
+    @staticmethod
+    def _same_bars(first, second, frame_width):
+        """两组灰条数量相同、中心位置相差不超过画面宽度的 1% 时视为一致。"""
+        tolerance = frame_width * 0.01
+        return len(first) == len(second) and all(
+            abs(a.center_x - b.center_x) <= tolerance and abs(a.center_y - b.center_y) <= tolerance
+            for a, b in zip(first, second, strict=True)
+        )
 
     def detect_normal_challenge_bars(self, frame):
         """检测普通关卡灰条；启用调试叠加层时按 YOLO 的方式绘制检测框。"""
