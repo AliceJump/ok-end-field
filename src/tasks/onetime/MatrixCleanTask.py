@@ -7,22 +7,36 @@ from src.tasks.mixin.common import Common
 class MatrixCleanTask(Common):
     """清理基质子任务：批量分解武器基质直到无可分解，日常任务经 DailyFeature 接入。
 
-    流程（对应游戏内「贵重品库/武器基质」手动分解操作）：
-    1. N 键（Valuables Key，支持用户改键）直达贵重品库；失败时回退
-       ESC 打开总控终端后点击「贵重品库」按钮；
-    2. 确认停在武器基质页（必要时点击顶部基质分页）；
-    3. 点击底栏左侧工具组的垃圾桶图标（品质/降序/筛选之后）进入分解模式；
-    4. 循环「快捷放入 → 分解 → 确认 → 关闭结果弹窗」，每批最多 200 个；
-    5. 网格出现「未拥有该类型道具」或分解按钮保持「无法分解」时判定无可分解，
-    结束并退出分解模式。
+    流程（对应游戏内「贵重品库/武器基质」手动分解，2026-10-23 教程录屏）：
+    1. N 键直达贵重品库（失败回退 ESC 总控终端），确认停在武器基质页；
+    2. 点击底栏左侧垃圾桶图标进入分解模式；每分解一批后游戏自动退回
+       浏览模式，且分解模式内的筛选不跨会话保留，每批都要重新进入并设置；
+    3. 点击「快捷放入」：无筛选时游戏弹出筛选面板，依次选品质（稳定/
+       净态/高纯，从低到高逐类清理）与锁定状态「未上锁」，保存；
+    4. 再点「快捷放入」勾满单批 200，点「分解」→ 确认弹窗「确认」→
+       关闭「分解获得」结果弹窗，游戏自动退回浏览模式；
+    5. 分解按钮保持「无法分解」或网格「未拥有该类型道具」判定该品质
+       已清空，退出分解模式换下一品质；三类全空即完成。
     """
 
     # 单批上限 200、库存上限 2000 对应最多 10 批；翻倍余量用于拦截异常循环
     MAX_BATCHES = 20
 
-    # 底栏控件区（分解入口 / 快捷放入 / 分解按钮 / 退出）
+    # 分解品质从低到高（游戏筛选面板品质选项，无瑕基质不可分解不在其列）
+    _QUALITIES = ("k_7ba0a5b1", "k_16da2b84", "k_1a40e234")
+
+    # 底栏控件区（快捷放入 / 分解按钮 / 退出）
     _BOTTOM_BAR = (0.0, 0.80, 0.6, 0.98)
     _BOTTOM_RIGHT = (0.55, 0.75, 1.0, 0.98)
+    # 筛选面板（屏幕中央弹窗）搜索区
+    _FILTER_PANEL = (0.15, 0.15, 0.9, 0.9)
+    # 面板内：品质选项在上半区，锁定状态在下半区
+    _FILTER_QUALITY_AREA = (0.1, 0.15, 0.9, 0.6)
+    _FILTER_LOCK_AREA = (0.1, 0.4, 0.9, 0.85)
+
+    # 底栏左侧分解入口（垃圾桶图标）中心：品质下拉/降序/漏斗之后，
+    # 2026-10-24 用户标注截图红框像素标定
+    _DISMANTLE_ENTRY = (0.259, 0.93)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,14 +52,11 @@ class MatrixCleanTask(Common):
         return self.clean_matrix()
 
     def clean_matrix(self):
-        """分解主流程：进贵重品库 → 分解模式 → 循环分解到无可分解 → 退出。"""
+        """分解主流程：进贵重品库 → 逐品质循环分解到无可分解 → 关闭贵重品库。"""
         if not self._open_vault_essence_page():
             return False
-        if not self._enter_dismantle_mode():
-            self._close_vault()
-            return False
-        success = self._dismantle_until_empty()
-        self._exit_dismantle_and_close()
+        success = self._dismantle_by_quality()
+        self._close_vault()
         return success
 
     def _open_vault_essence_page(self):
@@ -87,18 +98,34 @@ class MatrixCleanTask(Common):
             )
         )
 
-    # 底栏左侧分解入口（垃圾桶图标）中心：品质下拉/降序/漏斗之后，
-    # 2026-10-24 用户标注截图红框像素标定
-    _DISMANTLE_ENTRY = (0.259, 0.93)
+    def _dismantle_by_quality(self):
+        """逐品质循环分解；返回 True 表示全部品质清空、正常结束。"""
+        lang = self.lang.matrix_clean_task
+        batches = 0
+        for quality in self._QUALITIES:
+            while True:
+                if batches >= self.MAX_BATCHES:
+                    self.mark_task_failure(
+                        self.tr("分解批数达到安全上限 {max}，停止清理").format(max=self.MAX_BATCHES)
+                    )
+                    return False
+                if not self._enter_dismantle_mode():
+                    return False
+                result = self._dismantle_one_batch(getattr(lang, quality))
+                if result is None:
+                    self._exit_dismantle_mode()
+                    return False
+                if not result:
+                    self._exit_dismantle_mode()
+                    break
+                batches += 1
+        self.log_info(self.tr("基质清理完成，共分解 {count} 批").format(count=batches), notify=True)
+        return True
 
     def _enter_dismantle_mode(self):
-        """点击底栏左侧工具组的垃圾桶图标进入分解模式。
-
-        纯图标无文字，定点点击；不要用 essence_throw_away 模板——
-        那是右上详情面板的单件分解垃圾桶（COCO 标注约 0.94/0.27），
-        全屏搜索在底栏匹配到的落点偏高约 90px，会点到物品网格末行
-        （2026-10-24 11:30 实测 (0.258, 0.865) 未进入分解模式）。
-        """
+        """进入分解模式；已在分解模式（上批未正常自动退出）则直接继续。"""
+        if self.ocr(match=self.lang.matrix_clean_task.k_83c0c24d, box=self.box.bottom):
+            return True
         self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1)
         hint = self.wait_ocr(
             match=self.lang.matrix_clean_task.k_83c0c24d,
@@ -111,62 +138,76 @@ class MatrixCleanTask(Common):
             return False
         return True
 
-    def _dismantle_until_empty(self):
-        """循环分解直到无可分解。返回 True 表示正常结束。"""
-        batches = 0
-        for _ in range(self.MAX_BATCHES):
-            if self._no_item_left():
-                self.log_info(self.tr("基质清理完成，共分解 {count} 批").format(count=batches), notify=True)
-                return True
-            result = self._dismantle_one_batch()
-            if result is None:
-                return False
-            if not result:
-                break
-            batches += 1
-        else:
-            self.mark_task_failure(self.tr("分解批数达到安全上限 {max}，停止清理").format(max=self.MAX_BATCHES))
-            return False
-        self.log_info(self.tr("基质清理完成，共分解 {count} 批").format(count=batches), notify=True)
-        return True
+    def _dismantle_one_batch(self, quality_match):
+        """执行一批「设置筛选 → 快捷放入 → 分解 → 确认 → 关结果」。
 
-    def _no_item_left(self):
-        """结束标志：分解网格出现「未拥有该类型道具」。"""
-        return bool(
-            self.ocr(
-                match=self.lang.matrix_clean_task.k_75a84eb1,
-                box=self.box_of_screen(0.2, 0.2, 0.8, 0.8),
-            )
-        )
+        首次进入分解模式无筛选，点「快捷放入」会弹出筛选面板；设置保存后
+        再点一次勾满单批。
 
-    def _dismantle_one_batch(self):
-        """执行一批「快捷放入 → 分解 → 确认 → 关结果」。
+        Args:
+            quality_match: 本批分解品质的 OCR matcher。
 
         Returns:
-            True: 本批分解完成，可继续下一批。
-            False: 已无可分解（正常结束信号）。
+            True: 本批分解完成。
+            False: 该品质已无可分解（正常换品质信号）。
             None: 流程异常。
         """
-        if not self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_52e36ffd,
-            box=self.box_of_screen(*self._BOTTOM_BAR),
-            time_out=6,
-        ):
-            if self._no_item_left():
-                return False
+        quick_box = self.box_of_screen(*self._BOTTOM_BAR)
+        if not self.wait_click_ocr(match=self.lang.matrix_clean_task.k_52e36ffd, box=quick_box, time_out=6):
             self.mark_task_failure("未找到快捷放入按钮")
             return None
-        self.sleep(0.8)
+        self.sleep(1)
+        panel_box = self.box_of_screen(*self._FILTER_PANEL)
+        if self.ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box):
+            if not self._apply_filter(quality_match):
+                return None
+            if not self.wait_click_ocr(match=self.lang.matrix_clean_task.k_52e36ffd, box=quick_box, time_out=6):
+                self.mark_task_failure("未找到快捷放入按钮")
+                return None
+            self.sleep(1)
+        return self._confirm_dismantle()
+
+    def _apply_filter(self, quality_match):
+        """在筛选面板选品质与「未上锁」并保存。"""
+        panel_box = self.box_of_screen(*self._FILTER_PANEL)
+        if not self.wait_ocr(
+            match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=3, raise_if_not_found=False
+        ):
+            self.mark_task_failure("筛选面板未弹出")
+            return False
+        if not self.wait_click_ocr(
+            match=quality_match, box=self.box_of_screen(*self._FILTER_QUALITY_AREA), time_out=4
+        ):
+            self.mark_task_failure("未找到品质筛选选项")
+            return False
+        if not self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_2396a6d9,
+            box=self.box_of_screen(*self._FILTER_LOCK_AREA),
+            time_out=4,
+        ):
+            self.mark_task_failure("未找到未上锁选项")
+            return False
+        if not self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=4
+        ):
+            self.mark_task_failure("未找到筛选保存按钮")
+            return False
+        self.sleep(1)
+        return True
+
+    def _confirm_dismantle(self):
+        """点击分解并走完确认与结果弹窗（完成后游戏自动退回浏览模式）。"""
+        right_box = self.box_of_screen(*self._BOTTOM_RIGHT)
         if not self.wait_click_ocr(
             match=self.lang.matrix_clean_task.k_2792e981,
-            box=self.box_of_screen(*self._BOTTOM_RIGHT),
+            box=right_box,
             time_out=4,
             raise_if_not_found=False,
         ):
             # 分解按钮未点亮（仍为「无法分解」）说明快捷放入没有放入任何基质
             if self._no_item_left() or self.ocr(
                 match=self.lang.matrix_clean_task.k_9c61417d,
-                box=self.box_of_screen(*self._BOTTOM_RIGHT),
+                box=right_box,
             ):
                 return False
             self.mark_task_failure("未找到分解按钮")
@@ -184,6 +225,15 @@ class MatrixCleanTask(Common):
             return None
         self._close_result_popup()
         return True
+
+    def _no_item_left(self):
+        """结束标志：分解网格出现「未拥有该类型道具」。"""
+        return bool(
+            self.ocr(
+                match=self.lang.matrix_clean_task.k_75a84eb1,
+                box=self.box_of_screen(0.2, 0.2, 0.8, 0.8),
+            )
+        )
 
     def _click_confirm_button(self):
         """点击分解确认弹窗右侧的「确认」按钮。"""
@@ -213,8 +263,8 @@ class MatrixCleanTask(Common):
                 return
         self.mark_task_failure("分解结果弹窗未能关闭")
 
-    def _exit_dismantle_and_close(self):
-        """退出分解模式并关闭贵重品库；失败仅记录，交由后续 ensure_main 兜底。"""
+    def _exit_dismantle_mode(self):
+        """退出分解模式（品质清空或异常中断时）；失败交由后续步骤兜底。"""
         self.wait_click_ocr(
             match=self.lang.matrix_clean_task.k_feecb1e6,
             box=self.box_of_screen(*self._BOTTOM_RIGHT),
@@ -222,7 +272,6 @@ class MatrixCleanTask(Common):
             raise_if_not_found=False,
         )
         self.sleep(0.5)
-        self._close_vault()
 
     def _close_vault(self):
         self.press_key("esc", after_sleep=1)
