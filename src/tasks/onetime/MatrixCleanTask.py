@@ -79,7 +79,9 @@ class MatrixCleanTask(Common):
             match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
         ):
             return True
-        self.click_relative(0.445, 0.055, after_sleep=1.5)
+        # 顶部分类行从左到右：搜索/武器/基质(立方体,中心x≈0.395)/装备(六边形,中心x≈0.438)/…
+        # 演示录屏 2026-10-23 24:10 与实测 2026-10-24 像素标定
+        self.click_relative(0.395, 0.055, after_sleep=1.5)
         return bool(
             self.wait_ocr(
                 match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
