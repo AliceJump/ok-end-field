@@ -32,6 +32,7 @@ from src.tasks.onetime.FarmRelatedTask import FarmRelatedTask
 from src.tasks.onetime.HomePointTask import HomePointTask
 from src.tasks.onetime.LiaisonGiftTask import LiaisonGiftTask
 from src.tasks.onetime.MailTask import MailTask
+from src.tasks.onetime.MatrixCleanTask import MatrixCleanTask
 from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 
@@ -65,7 +66,15 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
     CFG_TAIL_TASKS: ClassVar[str] = "收尾任务"
 
     BOAT_TASKS: ClassVar[list[str]] = ["送礼", "帝江号整理", "帝江号收菜"]
-    OTHER_TASKS: ClassVar[list[str]] = ["收邮件", "转交运送委托", "地区建设", "造装备", "收信用", "买信用商店"]
+    OTHER_TASKS: ClassVar[list[str]] = [
+        "收邮件",
+        "清理基质",
+        "转交运送委托",
+        "地区建设",
+        "造装备",
+        "收信用",
+        "买信用商店",
+    ]
     BATTLE_TASKS: ClassVar[list[str]] = ["刷体力", "演算"]
     REWARD_TASKS: ClassVar[list[str]] = ["活动奖励", "日常奖励"]
     FARM_TASKS: ClassVar[list[str]] = ["农牧相关"]
@@ -77,6 +86,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         "帝江号整理": "⭐帝江号整理",
         "帝江号收菜": "⭐帝江号收菜",
         "收邮件": "⭐收邮件",
+        "清理基质": "⭐清理基质",
         "转交运送委托": "⭐转交运送委托",
         "地区建设": "⭐地区建设",
         "造装备": "⭐造装备",
@@ -93,6 +103,8 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
 
     _LEGACY_DEFAULTS: ClassVar[dict[str, bool]] = {
         **dict.fromkeys(BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS + FARM_TASKS, True),
+        # 清理基质会分解库存，默认关闭，仅用户主动勾选后执行
+        "清理基质": False,
         "自动送货": False,
         "传送到帝江号右侧传送点": True,
     }
@@ -109,6 +121,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         CFG_OTHER_TASKS: _legacy_daily_task_list(
             [
                 ("收邮件", "⭐收邮件"),
+                ("清理基质", "⭐清理基质"),
                 ("转交运送委托", "⭐转交运送委托"),
                 ("地区建设", "⭐地区建设"),
                 ("造装备", "⭐造装备"),
@@ -205,6 +218,13 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             switch_key="⭐收邮件",
             run_method="run_mail",
             predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "收邮件"),
+        )
+        self.matrix_clean_feature = DailyFeature(
+            self,
+            MatrixCleanTask,
+            switch_key="⭐清理基质",
+            run_method="clean_matrix",
+            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "清理基质"),
         )
         self.delivery_send_feature = DailyFeature(
             self,
@@ -311,6 +331,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
                     "任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
                 ),
                 "⭐收邮件": "是否前往「邮箱」领取邮件。",
+                "⭐清理基质": "是否前往「贵重品库/武器基质」分解全部可分解基质，直到无可分解。",
                 "⭐转交运送委托": ("是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"),
                 "⭐自动送货": "是否执行自动接取并完成运输委托。",
                 "⭐造装备": (
@@ -342,7 +363,8 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         self.default_config.update(
             {
                 self.CFG_BOAT_TASKS: list(self.BOAT_TASKS),
-                self.CFG_OTHER_TASKS: list(self.OTHER_TASKS),
+                # 清理基质默认不勾选：分解不可回滚，须用户主动开启
+                self.CFG_OTHER_TASKS: [task for task in self.OTHER_TASKS if task != "清理基质"],
                 self.CFG_BATTLE_TASKS: list(self.BATTLE_TASKS),
                 self.CFG_REWARD_TASKS: list(self.REWARD_TASKS),
                 self.CFG_FARM_TASKS: list(self.FARM_TASKS),
@@ -418,6 +440,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self.organize_feature.plan_item(),
             self.harvest_feature.plan_item(),
             self.mail_feature.plan_item(),
+            self.matrix_clean_feature.plan_item(),
             self.delivery_send_feature.plan_item(),
             self.regional_feature.plan_item(),
             self.craft_feature.plan_item(),

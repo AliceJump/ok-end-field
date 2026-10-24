@@ -657,10 +657,13 @@ def reorganize_tasks_architecture(executor: Any) -> None:
         "BoatOrganizeTask": "帝江号",
         "LiaisonGiftTask": "帝江号",
         "MailTask": "其他",
+        "MatrixCleanTask": "其他",
         "DeliverySendTask": "其他",
         "RegionalBuildTask": "其他",
         "CraftWeaponTask": "其他",
         "WarehouseTransferTask": "收尾",
+        # 清理基质的独立单次运行入口：与一条龙勾选行分属两个页签
+        "MatrixCleanOnceTask": "收尾",
         "CreditCollectTask": "其他",
         "CreditShopTask": "其他",
         # 独立「自动送货」不在一条龙清单内（清单里的自动送货由 DailyDeliveryTask 执行）
