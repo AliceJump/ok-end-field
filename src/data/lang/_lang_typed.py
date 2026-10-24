@@ -376,6 +376,21 @@ class MatrixCleanTaskModule(_LangModuleBaseT):
     k_52e36ffd: re.Pattern[str]
     """快捷放入"""
 
+    k_7ba0a5b1: re.Pattern[str]
+    """稳定基质"""
+
+    k_16da2b84: re.Pattern[str]
+    """净态基质"""
+
+    k_1a40e234: re.Pattern[str]
+    """高纯基质"""
+
+    k_2396a6d9: re.Pattern[str]
+    """未上锁"""
+
+    k_fadf24db: re.Pattern[str]
+    """保存"""
+
     k_2792e981: re.Pattern[str]
     """^分解$"""
 
