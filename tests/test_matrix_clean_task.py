@@ -212,12 +212,27 @@ class TestDailyWiring(unittest.TestCase):
         # 框架按 name 存任务配置，两个入口必须不同名
         self.assertNotEqual(MatrixCleanTask.__name__, MatrixCleanOnceTask.__name__)
 
-    def test_dismantle_entry_uses_matrix_etch_ocr(self):
-        # essence_throw_away 是右上详情面板的单件分解按钮（标注中心约 0.94/0.27），
-        # 不是底栏分解模式入口；入口必须点底栏「基质蚀刻」（docstring 允许留警告文字）
+    def test_dismantle_entry_is_fixed_click(self):
+        # 分解入口是底栏左侧工具组的垃圾桶图标（纯图标无文字），定点点击；
+        # essence_throw_away 模板是右上详情面板的单件分解按钮，全屏匹配在
+        # 底栏落点偏高约 90px（2026-10-24 实测 (0.258, 0.865) 点到物品末行）
         src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        self.assertIn("k_4ef8754f", src_text)
+        self.assertIn("_DISMANTLE_ENTRY", src_text)
         self.assertNotIn("fL.", src_text)
+
+    def test_enter_dismantle_mode_clicks_entry_and_verifies_hint(self):
+        task = make_task()
+        task.wait_ocr = MagicMock(return_value=MagicMock())  # 「想要分解」出现
+        self.assertTrue(task._enter_dismantle_mode())
+        task.click_relative.assert_called_once_with(0.259, 0.93, after_sleep=1)
+        task.mark_task_failure.assert_not_called()
+
+    def test_enter_dismantle_mode_fails_without_hint(self):
+        task = make_task()
+        task.wait_ocr = MagicMock(return_value=None)
+        self.assertFalse(task._enter_dismantle_mode())
+        task.click_relative.assert_called_once()
+        task.mark_task_failure.assert_called_once_with("未进入分解模式")
 
     def test_ui_fallback_group_map(self):
         import ast
