@@ -314,29 +314,31 @@ class TestConfirmDismantle(unittest.TestCase):
 
 
 class TestCloseResultPopup(unittest.TestCase):
-    """结果弹窗关闭：点对勾直至标题消失，超次标记失败。"""
+    """结果弹窗关闭：点对勾直至标题消失；未弹出/关不上都判失败。"""
 
     def test_closes_after_click(self):
         task = make_task()
-        task.wait_ocr = MagicMock(side_effect=lambda **kw: [MagicMock()])  # 标题出现
+        task.wait_ocr = MagicMock(return_value=MagicMock())  # 标题出现
         task.ocr = MagicMock(return_value=None)  # 点击后标题消失
-        task._close_result_popup()
+        self.assertTrue(task._close_result_popup())
         task.click_relative.assert_called_once_with(0.5, 0.86, after_sleep=1)
+        task.mark_task_failure.assert_not_called()
+
+    def test_no_popup_is_failure(self):
+        # 确认后 8 秒无结果弹窗 = 分解未完成，不能把本批计为成功
+        task = make_task()
+        task.wait_ocr = MagicMock(return_value=None)
+        self.assertFalse(task._close_result_popup())
+        task.click_relative.assert_not_called()
+        task.mark_task_failure.assert_called_once_with("分解结果弹窗未出现")
 
     def test_marks_failure_after_retries(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=[MagicMock()])  # 标题出现
-        task.ocr = MagicMock(return_value=[MagicMock()])  # 标题一直不消失
-        task._close_result_popup()
+        task.wait_ocr = MagicMock(return_value=MagicMock())  # 标题出现
+        task.ocr = MagicMock(return_value=MagicMock())  # 标题一直不消失
+        self.assertFalse(task._close_result_popup())
         self.assertEqual(task.click_relative.call_count, 4)
-        task.mark_task_failure.assert_called_once()
-
-    def test_no_popup_is_noop(self):
-        task = make_task()
-        task.wait_ocr = MagicMock(return_value=None)
-        task._close_result_popup()
-        task.click_relative.assert_not_called()
-        task.mark_task_failure.assert_not_called()
+        task.mark_task_failure.assert_called_once_with("分解结果弹窗未能关闭")
 
 
 class TestDailyWiring(unittest.TestCase):
