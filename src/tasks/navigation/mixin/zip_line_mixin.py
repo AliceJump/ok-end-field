@@ -254,11 +254,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 continue
         return False
 
-    def _zip_line_ws_position(self, frame=None):
-        """读取滑索场景最新 WS 坐标；融合坐标不作为滑索到达依据。"""
+    def _zip_line_ws_positions(self, frame=None):
+        """从同一份 world pose 读取二维与三维 WS 坐标。"""
         world_pose_getter = getattr(self, "world_pose", None)
         if not callable(world_pose_getter):
-            return None
+            return None, None
         try:
             sample_frame = frame if frame is not None else self.next_frame()
             state = world_pose_getter(
@@ -266,33 +266,28 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 max_age=2.0,
             )
             if state is None:
-                return None
+                return None, None
             position = state.get("ws")
-            if position is None:
-                return None
-            return float(position[0]), float(position[1])
+            position_2d = None
+            if position is not None and len(position) >= 2:
+                position_2d = float(position[0]), float(position[1])
+            position_xyz = state.get("ws_xyz")
+            position_3d = None
+            if position_xyz is not None and len(position_xyz) >= 3:
+                position_3d = float(position_xyz[0]), float(position_xyz[1]), float(position_xyz[2])
+            return position_2d, position_3d
         except Exception:
-            return None
+            return None, None
+
+    def _zip_line_ws_position(self, frame=None):
+        """读取滑索场景最新 WS 坐标；融合坐标不作为滑索到达依据。"""
+        position, _ = self._zip_line_ws_positions(frame=frame)
+        return position
 
     def _zip_line_ws_position_xyz(self, frame=None):
         """读取最新 WS 三维坐标，用于区分同层投影但不同高度的滑索节点。"""
-        world_pose_getter = getattr(self, "world_pose", None)
-        if not callable(world_pose_getter):
-            return None
-        try:
-            sample_frame = frame if frame is not None else self.next_frame()
-            state = world_pose_getter(
-                frame=sample_frame,
-                max_age=2.0,
-            )
-            if state is None:
-                return None
-            position = state.get("ws_xyz")
-            if position is None or len(position) < 3:
-                return None
-            return float(position[0]), float(position[1]), float(position[2])
-        except Exception:
-            return None
+        _, position_xyz = self._zip_line_ws_positions(frame=frame)
+        return position_xyz
 
     def _wait_zip_line_motion(
         self,
@@ -339,12 +334,16 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 self.log_info("move_to_the_target / move_to_the_target_2 模板均不存在，滑索间移动中，继续等待")
                 moving_logged = True
 
-            current_position = self._zip_line_ws_position(frame=frame)
+            positions_getter = getattr(self, "_zip_line_ws_positions", None)
+            if callable(positions_getter):
+                current_position, current_position_xyz = positions_getter(frame=frame)
+            else:
+                current_position = self._zip_line_ws_position(frame=frame)
+                xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
+                current_position_xyz = xyz_getter(frame=frame) if callable(xyz_getter) else None
             if current_position is None:
                 self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
                 continue
-            xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
-            current_position_xyz = xyz_getter(frame=frame) if callable(xyz_getter) else None
 
             position_changed = (
                 last_position is None or math.dist(current_position, last_position) > ZIP_LINE_MOTION_CHANGE_METERS
@@ -471,9 +470,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     f"滑索方位已对准：目标={float(target_bearing):.1f}°，"
                     f"实测={heading}，误差={error if error is not None else result.get('error')}"
                 )
-                last_start_position = self._zip_line_ws_position()
-                xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
-                last_start_position_xyz = xyz_getter() if callable(xyz_getter) else None
+                positions_getter = getattr(self, "_zip_line_ws_positions", None)
+                if callable(positions_getter):
+                    last_start_position, last_start_position_xyz = positions_getter()
+                else:
+                    last_start_position = self._zip_line_ws_position()
+                    xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
+                    last_start_position_xyz = xyz_getter() if callable(xyz_getter) else None
                 click_attempted = True
                 self.click(after_sleep=0.1)
                 if self._wait_zip_line_motion(

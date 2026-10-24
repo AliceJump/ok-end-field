@@ -128,6 +128,25 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         self.assertEqual(len([event for event in events if event[0] == "click"]), 1)
         self.assertTrue(any("在点击宽限" in event[1] for event in events if event[0] == "info"), events)
 
+    def test_zip_line_positions_come_from_one_world_pose_sample(self):
+        calls = []
+        stub = SimpleNamespace(
+            next_frame=lambda: "frame",
+            world_pose=lambda **kwargs: (
+                calls.append(kwargs)
+                or {
+                    "ws": (1.0, 2.0),
+                    "ws_xyz": (1.0, 3.0, 2.0),
+                }
+            ),
+        )
+
+        position, position_xyz = DeliveryTask._zip_line_ws_positions(stub, frame="frame")
+
+        self.assertEqual(position, (1.0, 2.0))
+        self.assertEqual(position_xyz, (1.0, 3.0, 2.0))
+        self.assertEqual(len(calls), 1)
+
     def test_direct_zip_line_does_not_block_link_when_it_never_clicked(self):
         events = []
         stub = SimpleNamespace(
