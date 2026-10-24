@@ -501,7 +501,9 @@ class ItemNavigatorTask(
                     for k, v in (data or {}).items():
                         self._marked[k] = set(v or [])
                     # 自动保存到新路径
-                    self._save_marked()
+                    self._dirty = True
+                    if not self._save_marked():
+                        return
                     # 可选：删除旧文件
                     try:
                         old_path.unlink()
@@ -513,7 +515,7 @@ class ItemNavigatorTask(
         except Exception as e:
             self.log_error(f"加载 marked_points 失败: {e}")
 
-    def _save_marked(self):
+    def _save_marked(self) -> bool:
         try:
             with self._marked_lock:
                 data = {k: list(v) for k, v in self._marked.items()}
@@ -525,8 +527,10 @@ class ItemNavigatorTask(
                 # 更新最后保存时间
                 self._last_save_time = time.time()
                 self._dirty = False
+                return True
         except Exception as e:
             self.log_error(f"保存 marked_points 失败: {e}")
+            return False
 
     @staticmethod
     def _point_hash(pt: dict[str, float], item_name: str | None = None) -> str:
