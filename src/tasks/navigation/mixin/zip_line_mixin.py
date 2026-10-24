@@ -310,11 +310,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         一次轮询的判定结果：
 
-        - ``MOVING``：模板不存在，正在滑索间移动，继续等待；
-        - ``ARRIVED``：模板存在且 WS 到达目标附近，进入下一段；
-        - ``WAITING_TEMPLATE``：已停稳在目标附近但到达模板还没出现，继续等模板；
-        - ``NOT_TRIGGERED``：已停稳且 WS 仍在起点附近，没触发滑索，返回失败交给外层重试；
+        - ``MOVING``：位置仍在二维或三维变化，继续等待；
+        - ``ARRIVED``：可信位置进入目标半径；到达模板仅用于提前确认，不再是必要条件；
+        - ``NOT_TRIGGERED``：已停稳且仍在起点附近，没触发滑索，返回失败交给外层重试；
         - ``WRONG_RACK``：停稳后既不在起点也不在目标附近，落到了别的滑索架，重新规划。
+
+        起终点二维坐标重合时会优先用三维坐标仲裁。缺少可信三维高度时不能区分
+        起点和终点，按未到站处理；三维高度持续变化也会重置停稳计时。
 
         调用方负责点击鼠标左键；本方法只轮询状态，不重复发送按键。
         """
@@ -323,6 +325,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         start = self.active_time()
         moving_logged = False
         last_position: tuple[float, float] | None = None
+        last_position_xyz: tuple[float, float, float] | None = None
         last_position_changed_at = start
         threshold = max(0.1, float(near_distance))
         stable_seconds = max(0.1, float(stable_seconds))
@@ -343,8 +346,18 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
             current_position_xyz = xyz_getter(frame=frame) if callable(xyz_getter) else None
 
-            if last_position is None or math.dist(current_position, last_position) > ZIP_LINE_MOTION_CHANGE_METERS:
+            position_changed = (
+                last_position is None or math.dist(current_position, last_position) > ZIP_LINE_MOTION_CHANGE_METERS
+            )
+            xyz_changed = (
+                current_position_xyz is not None
+                and last_position_xyz is not None
+                and math.dist(current_position_xyz, last_position_xyz) > ZIP_LINE_MOTION_CHANGE_METERS
+            )
+            if position_changed or xyz_changed:
                 last_position = current_position
+                if current_position_xyz is not None:
+                    last_position_xyz = current_position_xyz
                 last_position_changed_at = self.active_time()
 
             target_distance = math.dist(current_position, target_position)
