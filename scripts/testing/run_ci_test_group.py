@@ -31,6 +31,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestConfigTransferPatch.py",
             "TestPreConfigPatch.py",
             "TestParamPreviewModel.py",
+            "TestParamPreviewPopupLifecycle.py",
             "TestTaskConfigLockPatch.py",
             "TestTaskConfigUiAudit.py",
             "TestConditionalRotationGui.py",
