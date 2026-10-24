@@ -137,48 +137,29 @@ class TestEnterDismantleMode(unittest.TestCase):
 
 
 class TestDismantleOneBatch(unittest.TestCase):
-    """单批流程：筛选面板弹出/不弹、二次弹面板（扩大范围提示）、快捷放入失败路径。"""
+    """单批流程：筛选面板弹出/不弹、快捷放入失败路径。
+
+    15:52 实测：面板「保存」即按筛选结果勾选物品并关面板，保存后直接
+    点分解——不存在第二次快捷放入。
+    """
 
     def test_filter_panel_flow(self):
         task = make_task()
-        # 快捷放入命中；ocr 首查命中「保存」（面板弹出）；
-        # _apply_filter 内 5 次点击（品质×3+未上锁+保存）全命中；
-        # 第二次快捷放入命中；第二次 ocr 未命中（无扩大范围提示）
+        # 快捷放入命中；ocr 命中「保存」（面板弹出）；_apply_filter 内 5 次
+        # 点击（品质×3+未上锁+保存）全命中
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.ocr = MagicMock(side_effect=[MagicMock(), None])
-        task.wait_ocr = MagicMock(return_value=MagicMock())
-        task._confirm_dismantle = MagicMock(return_value=True)
-        self.assertTrue(task._dismantle_one_batch())
-        self.assertEqual(task.wait_click_ocr.call_count, 7)  # 快捷放入×2 + 筛选×5
-        task._confirm_dismantle.assert_called_once()
-
-    def test_expand_hint_panel_is_closed(self):
-        # 勾满后剩余不足 200，游戏再弹面板邀你扩大范围；点「保存」关闭
-        task = make_task()
-        task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.ocr = MagicMock(return_value=MagicMock())  # 面板一直在
-        task.wait_ocr = MagicMock(return_value=MagicMock())
-        task._confirm_dismantle = MagicMock(return_value=True)
-        self.assertTrue(task._dismantle_one_batch())
-        # 快捷放入×2 + 筛选×5 + 关闭面板保存×1 = 8 次
-        self.assertEqual(task.wait_click_ocr.call_count, 8)
-
-    def test_expand_hint_close_failure(self):
-        task = make_task()
-        # 依次：快捷放入、品质×3、未上锁、保存、快捷放入#2 命中；关闭面板落空
-        task.wait_click_ocr = MagicMock(
-            side_effect=[MagicMock()] * 7 + [None]
-        )
         task.ocr = MagicMock(return_value=MagicMock())
         task.wait_ocr = MagicMock(return_value=MagicMock())
-        self.assertIsNone(task._dismantle_one_batch())
-        task.mark_task_failure.assert_called_once_with("未能关闭快捷放入提示面板")
+        task._confirm_dismantle = MagicMock(return_value=True)
+        self.assertTrue(task._dismantle_one_batch())
+        # 快捷放入×1 + 品质×3 + 未上锁 + 保存 = 6 次，无第二次快捷放入
+        self.assertEqual(task.wait_click_ocr.call_count, 6)
+        task._confirm_dismantle.assert_called_once()
 
     def test_no_panel_flow_skips_filter(self):
         task = make_task()
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.ocr = MagicMock(return_value=None)  # 面板未弹出（规则已生效）
-        task.wait_ocr = MagicMock(return_value=MagicMock())
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
         self.assertEqual(task.wait_click_ocr.call_count, 1)
@@ -190,11 +171,12 @@ class TestDismantleOneBatch(unittest.TestCase):
         self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("未找到快捷放入按钮")
 
-    def test_second_quick_add_missing_is_failure(self):
+    def test_filter_panel_lost_before_apply(self):
+        # 面板已检出但正式应用前消失（竞态）：标记失败而非误点底栏
         task = make_task()
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.ocr = MagicMock(return_value=MagicMock())  # 面板弹出
-        task.wait_ocr = MagicMock(return_value=None)
+        task.wait_ocr = MagicMock(return_value=None)  # _apply_filter 复查落空
         self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("筛选面板未弹出")
 
@@ -249,15 +231,29 @@ class TestApplyFilter(unittest.TestCase):
 
 
 class TestConfirmDismantle(unittest.TestCase):
-    """分解按钮 / 确认弹窗的失败与成功路径。"""
+    """分解按钮 / 确认弹窗的失败与成功路径。
+
+    15:52 新顺序：入口先做无法分解先行判定（_dismantle_disabled 连查
+    两次），命中即返回 False 结束循环，不再空等「分解」按钮。
+    """
 
     def test_dismantle_button_disabled_is_end(self):
+        # 「无法分解」在点击前就被识别，循环直接结束，不空等按钮
         task = make_task()
-        task.wait_click_ocr = MagicMock(return_value=None)  # ^分解$ 落空
         task._no_item_left = MagicMock(return_value=False)
         task.ocr = MagicMock(return_value=[MagicMock()])  # 命中「无法分解」
+        task.wait_click_ocr = MagicMock()  # 若被调用即说明顺序错误
         self.assertFalse(task._confirm_dismantle())
+        task.wait_click_ocr.assert_not_called()
         task.mark_task_failure.assert_not_called()
+
+    def test_no_item_left_flag_is_end(self):
+        # 网格出现「未拥有该类型道具」同样先行结束
+        task = make_task()
+        task._no_item_left = MagicMock(return_value=True)
+        task.wait_click_ocr = MagicMock()
+        self.assertFalse(task._confirm_dismantle())
+        task.wait_click_ocr.assert_not_called()
 
     def test_dismantle_button_missing_without_flag_is_failure(self):
         task = make_task()
@@ -270,6 +266,8 @@ class TestConfirmDismantle(unittest.TestCase):
     def test_confirm_button_missing_is_failure(self):
         task = make_task()
         # ^分解$ 命中；「确认」按钮 OCR 落空且 click_confirm 兜底也失败
+        task._no_item_left = MagicMock(return_value=False)
+        task.ocr = MagicMock(return_value=None)  # 先行判定未命中
         task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), None])
         task.wait_ocr = MagicMock(return_value=MagicMock())  # 标题命中
         task.click_confirm = MagicMock(return_value=False)
@@ -280,6 +278,8 @@ class TestConfirmDismantle(unittest.TestCase):
     def test_title_miss_still_clicks_confirm(self):
         # 标题未命中不判死：弹窗可能已出现（14:45 实测），直接点确认按钮
         task = make_task()
+        task._no_item_left = MagicMock(return_value=False)
+        task.ocr = MagicMock(return_value=None)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.wait_ocr = MagicMock(return_value=None)  # 标题未出现
         task._close_result_popup = MagicMock()
@@ -289,6 +289,8 @@ class TestConfirmDismantle(unittest.TestCase):
 
     def test_full_batch_success(self):
         task = make_task()
+        task._no_item_left = MagicMock(return_value=False)
+        task.ocr = MagicMock(return_value=None)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         # 确认弹窗标题出现（wait_ocr）；_close_result_popup 内部再查标题消失
         task.wait_ocr = MagicMock(side_effect=[MagicMock(), MagicMock()])

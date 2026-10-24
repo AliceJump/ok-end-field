@@ -13,12 +13,10 @@ class MatrixCleanTask(Common):
        浏览模式，分解模式内的快捷放入规则不跨会话保留，每批重新设置；
     3. 点击「快捷放入」弹出筛选面板：品质三项（稳定/净态/高纯，初始为空，
        逐项点勾 = 全部可分解基质；无瑕不可分解不在选项内）与锁定状态
-       「未上锁」，保存；
-    4. 再点「快捷放入」勾满单批 200；筛选结果不足 200 被全部放入时游戏
-       会再弹筛选面板邀你扩大范围，点「保存」关闭即可；
-    5. 点「分解」→ 确认弹窗「确认」→ 关闭「分解获得」结果弹窗，游戏
-       自动退回浏览模式；循环下一批直到「无法分解」/「未拥有该类型
-       道具」判定全部清空。
+       「未上锁」，保存——保存即按筛选结果勾选物品并关闭面板；
+    4. 点「分解」→ 确认弹窗「确认」→ 关闭「分解获得」结果弹窗，游戏
+       自动退回浏览模式，循环下一批；分解按钮为「无法分解」（无可
+       分解剩余）时直接结束循环。
     """
 
     # 单批上限 200、库存上限 2000 对应最多 10 批；翻倍余量用于拦截异常循环
@@ -136,38 +134,28 @@ class MatrixCleanTask(Common):
         return True
 
     def _dismantle_one_batch(self):
-        """执行一批「设置筛选 → 快捷放入 → 分解 → 确认 → 关结果」。
+        """执行一批「设置筛选 → 分解 → 确认 → 关结果」。
 
         首次进入分解模式无快捷放入规则，点「快捷放入」会弹出筛选面板；
-        保存后再点一次勾满单批。勾满后若剩余筛选结果不足 200，游戏会
-        再弹筛选面板邀你扩大范围，点「保存」关闭即可。
+        面板「保存」即按筛选结果勾选物品并关闭面板（15:52 实测确认），
+        保存后直接点分解，无需再点快捷放入。
 
         Returns:
             True: 本批分解完成。
             False: 已无可分解（正常结束信号）。
             None: 流程异常。
         """
-        quick_box = self.box_of_screen(*self._BOTTOM_BAR)
-        panel_box = self.box_of_screen(*self._FILTER_PANEL)
-        if not self.wait_click_ocr(match=self.lang.matrix_clean_task.k_52e36ffd, box=quick_box, time_out=6):
+        if not self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_52e36ffd,
+            box=self.box_of_screen(*self._BOTTOM_BAR),
+            time_out=6,
+        ):
             self.mark_task_failure("未找到快捷放入按钮")
             return None
         self.sleep(1)
-        if self.ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box):
+        if self.ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=self.box_of_screen(*self._FILTER_PANEL)):
             if not self._apply_filter():
                 return None
-            if not self.wait_click_ocr(match=self.lang.matrix_clean_task.k_52e36ffd, box=quick_box, time_out=6):
-                self.mark_task_failure("未找到快捷放入按钮")
-                return None
-            self.sleep(1)
-            # 勾满后剩余结果不足 200 时游戏再弹面板（扩大范围提示），关闭它
-            if self.ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box):
-                if not self.wait_click_ocr(
-                    match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=4
-                ):
-                    self.mark_task_failure("未能关闭快捷放入提示面板")
-                    return None
-                self.sleep(0.5)
         return self._confirm_dismantle()
 
     def _apply_filter(self):
@@ -201,19 +189,22 @@ class MatrixCleanTask(Common):
         return True
 
     def _confirm_dismantle(self):
-        """点击分解并走完确认与结果弹窗（完成后游戏自动退回浏览模式）。"""
+        """点击分解并走完确认与结果弹窗（完成后游戏自动退回浏览模式）。
+
+        保存筛选后按钮状态即定：无可分解保持「无法分解」，先行识别直接
+        结束循环，不空等「分解」按钮（15:52 实测空转轮等满 4 秒超时）。
+        """
         right_box = self.box_of_screen(*self._BOTTOM_RIGHT)
+        if self._dismantle_disabled():
+            return False
         if not self.wait_click_ocr(
             match=self.lang.matrix_clean_task.k_2792e981,
             box=right_box,
             time_out=4,
             raise_if_not_found=False,
         ):
-            # 分解按钮未点亮（仍为「无法分解」）说明快捷放入没有放入任何基质
-            if self._no_item_left() or self.ocr(
-                match=self.lang.matrix_clean_task.k_9c61417d,
-                box=right_box,
-            ):
+            # 保存后按钮仍可能在刷新，复查一次再定性
+            if self._dismantle_disabled():
                 return False
             self.mark_task_failure("未找到分解按钮")
             return None
@@ -230,6 +221,21 @@ class MatrixCleanTask(Common):
             return None
         self._close_result_popup()
         return True
+
+    def _dismantle_disabled(self):
+        """无可分解判定：按钮为「无法分解」或网格「未拥有该类型道具」。
+
+        连查两次防保存后按钮状态刷新的竞态。
+        """
+        right_box = self.box_of_screen(*self._BOTTOM_RIGHT)
+        for _ in range(2):
+            if self._no_item_left() or self.ocr(
+                match=self.lang.matrix_clean_task.k_9c61417d,
+                box=right_box,
+            ):
+                return True
+            self.sleep(0.5)
+        return False
 
     def _no_item_left(self):
         """结束标志：分解网格出现「未拥有该类型道具」。"""
