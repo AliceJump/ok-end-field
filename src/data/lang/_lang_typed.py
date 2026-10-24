@@ -379,6 +379,76 @@ class LoginMixinModule(_LangModuleBaseT):
     """上次"""
 
 
+class RestaurantTaskModule(_LangModuleBaseT):
+    """RestaurantTask — OCR 语言节点（值取自 zh_CN）"""
+
+    panel: re.Pattern[str]
+    """珍馐产出概率"""
+
+    ended: re.Pattern[str]
+    """经营结束"""
+
+    continue_button: re.Pattern[str]
+    """继续"""
+
+    complete_button: re.Pattern[str]
+    """完成"""
+
+    craftable: re.Pattern[str]
+    """可烹饪\\s*[：:]?\\s*(\\d+|∞)"""
+
+    countdown: re.Pattern[str]
+    """(?:\\d{1,2}\\s*[:：]\\s*\\d{2}|.*营业.*\\d+.*)"""
+
+    daily_theme: re.Pattern[str]
+    """缘缘本色"""
+
+    setup: re.Pattern[str]
+    """营业设定"""
+
+    counter: re.Pattern[str]
+    """开始经营"""
+
+    formal_start: re.Pattern[str]
+    """正式经营"""
+
+    reset_setup: re.Pattern[str]
+    """清空.*人员.*菜单.*设定"""
+
+    assign: re.Pattern[str]
+    """安排干员"""
+
+    picker: re.Pattern[str]
+    """厨房进驻干员"""
+
+    confirm: re.Pattern[str]
+    """确认"""
+
+    set_menu: re.Pattern[str]
+    """设定菜单"""
+
+    menu_requirements: re.Pattern[str]
+    """菜单要求"""
+
+    requirement_counts: re.Pattern[str]
+    """(\\d+)道菜品和(\\d+)种饮品"""
+
+    dish_tab: re.Pattern[str]
+    """全部菜品"""
+
+    drink_tab: re.Pattern[str]
+    """饮品"""
+
+    stock: re.Pattern[str]
+    """库存\\s*[：:]?\\s*(\\d+|∞)"""
+
+    start: re.Pattern[str]
+    """开始经营"""
+
+    dining: re.Pattern[str]
+    """用餐中"""
+
+
 class TakeDeliveryTaskModule(_LangModuleBaseT):
     """TakeDeliveryTask — OCR 语言节点（值取自 zh_CN）"""
 
@@ -740,6 +810,7 @@ class _LangAccessorTyped:
     game_flow_mixin: GameFlowMixinModule
     liaison_mixin: LiaisonMixinModule
     login_mixin: LoginMixinModule
+    RestaurantTask: RestaurantTaskModule
     TakeDeliveryTask: TakeDeliveryTaskModule
     WarehouseTransferTask: WarehouseTransferTaskModule
     world_map: WorldMapModule

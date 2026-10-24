@@ -3787,3 +3787,20 @@ msgstr ""
 "Switch within this distance of an intermediate waypoint only when the next "
 "waypoint is directly reachable; otherwise keep approaching the current "
 "waypoint (m)"
+
+msgid "缘缘庄传菜"
+msgstr "Yuan Yuan Inn orders"
+
+msgid ""
+"客栈4级、三间厨房及8格出餐台后，从缘缘庄柜台或经营中的厨房界面运行。自动配置厨师和菜单，优先补菜、预备两份库存并循环结算；仅支持中文和16:9窗口，忽略老饕。"
+msgstr ""
+"Requires an 8-slot serving counter. Requires Inn level 4 and three kitchens."
+" Start at the Yuan Yuan Inn counter or an active kitchen panel. Assigns "
+"chefs and menus, prioritizes missing dishes, prepares two spare portions, "
+"and settles repeated sessions. Chinese UI and 16:9 only; skips gourmands."
+
+msgid "经营轮次"
+msgstr "Business rounds"
+
+msgid "最多完成的经营局数；客源不足60时提前停止。"
+msgstr "Maximum completed sessions; stops early when patronage is below 60."

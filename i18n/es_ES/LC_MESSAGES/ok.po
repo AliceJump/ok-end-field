@@ -3920,3 +3920,22 @@ msgstr ""
 "Cambia al siguiente punto cuando la distancia al punto intermedio sea menor "
 "que este valor y se pueda ir directamente al siguiente; en caso contrario, "
 "sigue acercándose al punto actual (m)"
+
+msgid "缘缘庄传菜"
+msgstr "Pedidos de la posada Yuan Yuan"
+
+msgid ""
+"客栈4级、三间厨房及8格出餐台后，从缘缘庄柜台或经营中的厨房界面运行。自动配置厨师和菜单，优先补菜、预备两份库存并循环结算；仅支持中文和16:9窗口，忽略老饕。"
+msgstr ""
+"Requiere un mostrador de 8 espacios. Requiere posada de nivel 4 y tres "
+"cocinas. Inicia en el mostrador o en una cocina en servicio. Asigna "
+"cocineros y menú, prioriza platos pendientes, prepara dos porciones de "
+"reserva y repite las sesiones. Solo interfaz china y 16:9; omite a los "
+"gourmets."
+
+msgid "经营轮次"
+msgstr "Rondas de servicio"
+
+msgid "最多完成的经营局数；客源不足60时提前停止。"
+msgstr ""
+"Máximo de sesiones; se detiene antes si la clientela es inferior a 60."

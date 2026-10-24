@@ -1,0 +1,178 @@
+{
+  "panel": {
+    "zh_CN": {
+      "pattern": "珍馐产出概率"
+    },
+    "zh_TW": {
+      "pattern": "珍饈產出機率"
+    }
+  },
+  "ended": {
+    "zh_CN": {
+      "pattern": "经营结束"
+    },
+    "zh_TW": {
+      "pattern": "經營結束"
+    }
+  },
+  "continue_button": {
+    "zh_CN": {
+      "pattern": "继续"
+    },
+    "zh_TW": {
+      "pattern": "繼續"
+    }
+  },
+  "complete_button": {
+    "zh_CN": {
+      "pattern": "完成"
+    },
+    "zh_TW": {
+      "pattern": "完成"
+    }
+  },
+  "craftable": {
+    "zh_CN": {
+      "pattern": "可烹饪\\s*[：:]?\\s*(\\d+|∞)"
+    },
+    "zh_TW": {
+      "pattern": "可烹飪\\s*[：:]?\\s*(\\d+|∞)"
+    }
+  },
+  "countdown": {
+    "zh_CN": {
+      "pattern": "(?:\\d{1,2}\\s*[:：]\\s*\\d{2}|.*营业.*\\d+.*)"
+    },
+    "zh_TW": {
+      "pattern": "(?:\\d{1,2}\\s*[:：]\\s*\\d{2}|.*營業.*\\d+.*)"
+    }
+  },
+  "daily_theme": {
+    "zh_CN": {
+      "pattern": "缘缘本色"
+    },
+    "zh_TW": {
+      "pattern": "緣緣本色"
+    }
+  },
+  "setup": {
+    "zh_CN": {
+      "pattern": "营业设定"
+    },
+    "zh_TW": {
+      "pattern": "營業設定"
+    }
+  },
+  "counter": {
+    "zh_CN": {
+      "pattern": "开始经营"
+    },
+    "zh_TW": {
+      "pattern": "開始經營"
+    }
+  },
+  "formal_start": {
+    "zh_CN": {
+      "pattern": "正式经营"
+    },
+    "zh_TW": {
+      "pattern": "正式經營"
+    }
+  },
+  "reset_setup": {
+    "zh_CN": {
+      "pattern": "清空.*人员.*菜单.*设定"
+    },
+    "zh_TW": {
+      "pattern": "清空.*人員.*菜單.*設定"
+    }
+  },
+  "assign": {
+    "zh_CN": {
+      "pattern": "安排干员"
+    },
+    "zh_TW": {
+      "pattern": "安排幹員"
+    }
+  },
+  "picker": {
+    "zh_CN": {
+      "pattern": "厨房进驻干员"
+    },
+    "zh_TW": {
+      "pattern": "廚房進駐幹員"
+    }
+  },
+  "confirm": {
+    "zh_CN": {
+      "pattern": "确认"
+    },
+    "zh_TW": {
+      "pattern": "確認"
+    }
+  },
+  "set_menu": {
+    "zh_CN": {
+      "pattern": "设定菜单"
+    },
+    "zh_TW": {
+      "pattern": "設定菜單"
+    }
+  },
+  "menu_requirements": {
+    "zh_CN": {
+      "pattern": "菜单要求"
+    },
+    "zh_TW": {
+      "pattern": "菜單要求"
+    }
+  },
+  "requirement_counts": {
+    "zh_CN": {
+      "pattern": "(\\d+)道菜品和(\\d+)种饮品"
+    },
+    "zh_TW": {
+      "pattern": "(\\d+)道菜品和(\\d+)種飲品"
+    }
+  },
+  "dish_tab": {
+    "zh_CN": {
+      "pattern": "全部菜品"
+    },
+    "zh_TW": {
+      "pattern": "全部菜品"
+    }
+  },
+  "drink_tab": {
+    "zh_CN": {
+      "pattern": "饮品"
+    },
+    "zh_TW": {
+      "pattern": "飲品"
+    }
+  },
+  "stock": {
+    "zh_CN": {
+      "pattern": "库存\\s*[：:]?\\s*(\\d+|∞)"
+    },
+    "zh_TW": {
+      "pattern": "庫存\\s*[：:]?\\s*(\\d+|∞)"
+    }
+  },
+  "start": {
+    "zh_CN": {
+      "pattern": "开始经营"
+    },
+    "zh_TW": {
+      "pattern": "開始經營"
+    }
+  },
+  "dining": {
+    "zh_CN": {
+      "pattern": "用餐中"
+    },
+    "zh_TW": {
+      "pattern": "用餐中"
+    }
+  }
+}

@@ -152,6 +152,7 @@ config = {
         ["src.tasks.onetime.BattleTask", "BattleTask"],
         ["src.tasks.onetime.DemoDrawTask", "DemoDrawTask"],
         ["src.tasks.onetime.YingTuoTask", "YingTuoTask"],
+        ["src.tasks.onetime.RestaurantTask", "RestaurantTask"],
         ["src.tasks.onetime.TestStartGame", "TestStartGame"],
         ["src.tasks.test.TestReloginTask", "TestReloginTask"],
         ["src.tasks.test.RealtimeDetectTask", "RealtimeYoloScanTask"],
