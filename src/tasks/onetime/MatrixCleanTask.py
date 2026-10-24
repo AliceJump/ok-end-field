@@ -10,28 +10,26 @@ class MatrixCleanTask(Common):
     流程（对应游戏内「贵重品库/武器基质」手动分解，2026-10-23 教程录屏）：
     1. N 键直达贵重品库（失败回退 ESC 总控终端），确认停在武器基质页；
     2. 点击底栏左侧垃圾桶图标进入分解模式；每分解一批后游戏自动退回
-       浏览模式，且分解模式内的筛选不跨会话保留，每批都要重新进入并设置；
-    3. 点击「快捷放入」：无筛选时游戏弹出筛选面板，依次选品质（稳定/
-       净态/高纯，从低到高逐类清理）与锁定状态「未上锁」，保存；
-    4. 再点「快捷放入」勾满单批 200，点「分解」→ 确认弹窗「确认」→
-       关闭「分解获得」结果弹窗，游戏自动退回浏览模式；
-    5. 分解按钮保持「无法分解」或网格「未拥有该类型道具」判定该品质
-       已清空，退出分解模式换下一品质；三类全空即完成。
+       浏览模式，分解模式内的快捷放入规则不跨会话保留，每批重新设置；
+    3. 点击「快捷放入」弹出筛选面板：品质三项保持默认全选（=全部可分解
+       基质，稳定/净态/高纯；无瑕不可分解不在选项内），只点锁定状态
+       「未上锁」并保存；
+    4. 再点「快捷放入」勾满单批 200；筛选结果不足 200 被全部放入时游戏
+       会再弹筛选面板邀你扩大范围，点「保存」关闭即可；
+    5. 点「分解」→ 确认弹窗「确认」→ 关闭「分解获得」结果弹窗，游戏
+       自动退回浏览模式；循环下一批直到「无法分解」/「未拥有该类型
+       道具」判定全部清空。
     """
 
     # 单批上限 200、库存上限 2000 对应最多 10 批；翻倍余量用于拦截异常循环
     MAX_BATCHES = 20
-
-    # 分解品质从低到高（游戏筛选面板品质选项，无瑕基质不可分解不在其列）
-    _QUALITIES = ("k_7ba0a5b1", "k_16da2b84", "k_1a40e234")
 
     # 底栏控件区（快捷放入 / 分解按钮 / 退出）
     _BOTTOM_BAR = (0.0, 0.80, 0.6, 0.98)
     _BOTTOM_RIGHT = (0.55, 0.75, 1.0, 0.98)
     # 筛选面板（屏幕中央弹窗）搜索区
     _FILTER_PANEL = (0.15, 0.15, 0.9, 0.9)
-    # 面板内：品质选项在上半区，锁定状态在下半区
-    _FILTER_QUALITY_AREA = (0.1, 0.15, 0.9, 0.6)
+    # 面板内锁定状态选项（品质三项默认全选，无需点击）
     _FILTER_LOCK_AREA = (0.1, 0.4, 0.9, 0.85)
 
     # 底栏左侧分解入口（垃圾桶图标）中心：品质下拉/降序/漏斗之后，
@@ -99,28 +97,24 @@ class MatrixCleanTask(Common):
         )
 
     def _dismantle_by_quality(self):
-        """逐品质循环分解；返回 True 表示全部品质清空、正常结束。"""
-        lang = self.lang.matrix_clean_task
+        """循环分解直到无可分解；返回 True 表示正常结束。"""
         batches = 0
-        for quality in self._QUALITIES:
-            while True:
-                if batches >= self.MAX_BATCHES:
-                    self.mark_task_failure(
-                        self.tr("分解批数达到安全上限 {max}，停止清理").format(max=self.MAX_BATCHES)
-                    )
-                    return False
-                if not self._enter_dismantle_mode():
-                    return False
-                result = self._dismantle_one_batch(getattr(lang, quality))
-                if result is None:
-                    self._exit_dismantle_mode()
-                    return False
-                if not result:
-                    self._exit_dismantle_mode()
-                    break
-                batches += 1
-        self.log_info(self.tr("基质清理完成，共分解 {count} 批").format(count=batches), notify=True)
-        return True
+        for _ in range(self.MAX_BATCHES):
+            if not self._enter_dismantle_mode():
+                return False
+            result = self._dismantle_one_batch()
+            if result is None:
+                self._exit_dismantle_mode()
+                return False
+            if not result:
+                self._exit_dismantle_mode()
+                self.log_info(self.tr("基质清理完成，共分解 {count} 批").format(count=batches), notify=True)
+                return True
+            batches += 1
+        self.mark_task_failure(
+            self.tr("分解批数达到安全上限 {max}，停止清理").format(max=self.MAX_BATCHES)
+        )
+        return False
 
     def _enter_dismantle_mode(self):
         """进入分解模式；已在分解模式（上批未正常自动退出）则直接继续。"""
@@ -138,47 +132,48 @@ class MatrixCleanTask(Common):
             return False
         return True
 
-    def _dismantle_one_batch(self, quality_match):
+    def _dismantle_one_batch(self):
         """执行一批「设置筛选 → 快捷放入 → 分解 → 确认 → 关结果」。
 
-        首次进入分解模式无筛选，点「快捷放入」会弹出筛选面板；设置保存后
-        再点一次勾满单批。
-
-        Args:
-            quality_match: 本批分解品质的 OCR matcher。
+        首次进入分解模式无快捷放入规则，点「快捷放入」会弹出筛选面板；
+        保存后再点一次勾满单批。勾满后若剩余筛选结果不足 200，游戏会
+        再弹筛选面板邀你扩大范围，点「保存」关闭即可。
 
         Returns:
             True: 本批分解完成。
-            False: 该品质已无可分解（正常换品质信号）。
+            False: 已无可分解（正常结束信号）。
             None: 流程异常。
         """
         quick_box = self.box_of_screen(*self._BOTTOM_BAR)
+        panel_box = self.box_of_screen(*self._FILTER_PANEL)
         if not self.wait_click_ocr(match=self.lang.matrix_clean_task.k_52e36ffd, box=quick_box, time_out=6):
             self.mark_task_failure("未找到快捷放入按钮")
             return None
         self.sleep(1)
-        panel_box = self.box_of_screen(*self._FILTER_PANEL)
         if self.ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box):
-            if not self._apply_filter(quality_match):
+            if not self._apply_filter():
                 return None
             if not self.wait_click_ocr(match=self.lang.matrix_clean_task.k_52e36ffd, box=quick_box, time_out=6):
                 self.mark_task_failure("未找到快捷放入按钮")
                 return None
             self.sleep(1)
+            # 勾满后剩余结果不足 200 时游戏再弹面板（扩大范围提示），关闭它
+            if self.ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box):
+                if not self.wait_click_ocr(
+                    match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=4
+                ):
+                    self.mark_task_failure("未能关闭快捷放入提示面板")
+                    return None
+                self.sleep(0.5)
         return self._confirm_dismantle()
 
-    def _apply_filter(self, quality_match):
-        """在筛选面板选品质与「未上锁」并保存。"""
+    def _apply_filter(self):
+        """在筛选面板设置锁定状态「未上锁」并保存（品质三项默认全选）。"""
         panel_box = self.box_of_screen(*self._FILTER_PANEL)
         if not self.wait_ocr(
             match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=3, raise_if_not_found=False
         ):
             self.mark_task_failure("筛选面板未弹出")
-            return False
-        if not self.wait_click_ocr(
-            match=quality_match, box=self.box_of_screen(*self._FILTER_QUALITY_AREA), time_out=4
-        ):
-            self.mark_task_failure("未找到品质筛选选项")
             return False
         if not self.wait_click_ocr(
             match=self.lang.matrix_clean_task.k_2396a6d9,
@@ -187,9 +182,7 @@ class MatrixCleanTask(Common):
         ):
             self.mark_task_failure("未找到未上锁选项")
             return False
-        if not self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=4
-        ):
+        if not self.wait_click_ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=4):
             self.mark_task_failure("未找到筛选保存按钮")
             return False
         self.sleep(1)
