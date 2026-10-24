@@ -239,6 +239,45 @@ class ZipLineGraph:
         }
 
     @classmethod
+    def from_nodes(
+        cls,
+        nodes: Iterable[ZipLineNode],
+        *,
+        distance_tolerance_m: float = 1e-6,
+    ) -> ZipLineGraph:
+        """按现有距离规则连接节点。
+
+        同一地图且同一层级（层级都为空时不做限制）的节点按三维距离尝试连接；
+        只有两端都是长距滑索架时使用 110m，其余组合使用 80m。
+        """
+        sorted_nodes = sorted(nodes, key=lambda node: node.node_id)
+        links: list[ZipLineLink] = []
+        tolerance = max(0.0, float(distance_tolerance_m))
+        for index, first in enumerate(sorted_nodes):
+            for second in sorted_nodes[index + 1 :]:
+                if first.map_id != second.map_id:
+                    continue
+                if first.level_id and second.level_id and first.level_id != second.level_id:
+                    continue
+                distance = math.dist(first.xyz, second.xyz)
+                max_range = (
+                    ZIP_LINE_RANGES[LONG_RANGE_ZIP_LINE_NAME]
+                    if first.is_long_range and second.is_long_range
+                    else ZIP_LINE_RANGES[ZIP_LINE_NAME]
+                )
+                if distance <= 0.0 or distance > max_range + tolerance:
+                    continue
+                links.append(
+                    ZipLineLink(
+                        first_id=first.node_id,
+                        second_id=second.node_id,
+                        distance_m=distance,
+                        max_range_m=max_range,
+                    )
+                )
+        return cls(sorted_nodes, links)
+
+    @classmethod
     def from_mark_payloads(
         cls,
         payloads: Iterable[Any],
@@ -306,28 +345,4 @@ class ZipLineGraph:
         if not include_shared_zip_lines:
             nodes = [node for node in nodes if node.name not in SHARED_ZIP_LINE_NAMES]
 
-        links: list[ZipLineLink] = []
-        tolerance = max(0.0, float(distance_tolerance_m))
-        for index, first in enumerate(nodes):
-            for second in nodes[index + 1 :]:
-                if first.map_id != second.map_id:
-                    continue
-                if first.level_id and second.level_id and first.level_id != second.level_id:
-                    continue
-                distance = math.dist(first.xyz, second.xyz)
-                max_range = (
-                    ZIP_LINE_RANGES[LONG_RANGE_ZIP_LINE_NAME]
-                    if first.is_long_range and second.is_long_range
-                    else ZIP_LINE_RANGES[ZIP_LINE_NAME]
-                )
-                if distance <= 0.0 or distance > max_range + tolerance:
-                    continue
-                links.append(
-                    ZipLineLink(
-                        first_id=first.node_id,
-                        second_id=second.node_id,
-                        distance_m=distance,
-                        max_range_m=max_range,
-                    )
-                )
-        return cls(nodes, links)
+        return cls.from_nodes(nodes, distance_tolerance_m=distance_tolerance_m)

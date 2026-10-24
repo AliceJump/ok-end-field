@@ -106,6 +106,69 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             events,
         )
 
+    def test_direct_zip_line_clicks_with_fusion_heading_error_within_grace(self):
+        events = []
+        stub = SimpleNamespace(
+            log_info=lambda msg: events.append(("info", msg)),
+            log_warning=lambda msg: events.append(("warning", msg)),
+            active_and_send_mouse_delta=lambda **kwargs: events.append(("mouse", kwargs)),
+            click=lambda **kwargs: events.append(("click", kwargs)),
+            sleep=lambda seconds: None,
+            _zip_line_ws_position=lambda: (10.0, 10.0),
+            _wait_zip_line_motion=lambda **kwargs: True,
+        )
+        stub.pose_aim_view_to_bearing = lambda target, **kwargs: {
+            "ok": False,
+            "heading": 356.0,
+            "error": -4.0,
+        }
+
+        self.assertTrue(DeliveryTask._direct_zip_line_go(stub, 0.0, target_position=(1.0, 2.0)))
+
+        self.assertEqual(len([event for event in events if event[0] == "click"]), 1)
+        self.assertTrue(any("在点击宽限" in event[1] for event in events if event[0] == "info"), events)
+
+    def test_zip_line_positions_come_from_one_world_pose_sample(self):
+        calls = []
+        stub = SimpleNamespace(
+            next_frame=lambda: "frame",
+            world_pose=lambda **kwargs: (
+                calls.append(kwargs)
+                or {
+                    "ws": (1.0, 2.0),
+                    "ws_xyz": (1.0, 3.0, 2.0),
+                }
+            ),
+        )
+
+        position, position_xyz = DeliveryTask._zip_line_ws_positions(stub, frame="frame")
+
+        self.assertEqual(position, (1.0, 2.0))
+        self.assertEqual(position_xyz, (1.0, 3.0, 2.0))
+        self.assertEqual(len(calls), 1)
+
+    def test_direct_zip_line_does_not_block_link_when_it_never_clicked(self):
+        events = []
+        stub = SimpleNamespace(
+            log_info=lambda msg: events.append(("info", msg)),
+            log_warning=lambda msg: events.append(("warning", msg)),
+            active_and_send_mouse_delta=lambda **kwargs: events.append(("mouse", kwargs)),
+            click=lambda **kwargs: events.append(("click", kwargs)),
+            sleep=lambda seconds: None,
+            _zip_line_ws_position=lambda: (10.0, 10.0),
+            _wait_zip_line_motion=lambda **kwargs: False,
+        )
+        stub.pose_aim_view_to_bearing = lambda target, **kwargs: {
+            "ok": False,
+            "heading": 20.0,
+            "error": 20.0,
+        }
+
+        with self.assertRaisesRegex(RuntimeError, "未对准到可点击角度"):
+            DeliveryTask._direct_zip_line_go(stub, 0.0, target_position=(1.0, 2.0))
+
+        self.assertFalse(any(event[0] == "click" for event in events))
+
     def test_direct_zip_line_replans_after_five_failed_attempts(self):
         events = []
         stub = SimpleNamespace(
@@ -298,8 +361,8 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             "滑索结束在非目标滑索架：WS=(50.00, 50.00)，距起点=56.57m，距目标=70.71m",
         )
 
-    def test_wait_zip_line_motion_keeps_waiting_at_target_without_template(self):
-        """停稳在目标附近但到达模板还没出现：继续等模板，既不重试也不重规划。"""
+    def test_wait_zip_line_motion_confirms_target_without_arrival_template(self):
+        """可信位置稳定进入目标半径时，即使到达模板不存在也应确认完成。"""
         events = []
         clock = {"t": 0.0}
         stub = SimpleNamespace(
@@ -312,7 +375,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
         )
 
-        self.assertFalse(
+        self.assertTrue(
             DeliveryTask._wait_zip_line_motion(
                 stub,
                 target_position=(0.0, 0.0),
@@ -323,6 +386,152 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             )
         )
         self.assertFalse(any("准备重试" in message for message in events))
+        self.assertTrue(any("按可信坐标确认完成" in message for message in events), events)
+
+    def test_wait_zip_line_motion_does_not_confirm_vertical_target_at_start(self):
+        """起终点 X/Z 重合但高度不同：起点不能因到达模板存在而被误判为终点。"""
+        events = []
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: True,
+            _zip_line_ws_position=lambda frame=None: (0.0, 0.0),
+            _zip_line_ws_position_xyz=lambda frame=None: (0.0, 0.0, 0.0),
+            log_info=lambda msg: events.append(msg),
+            log_warning=lambda msg: events.append("WARN " + msg),
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertFalse(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(0.0, 0.0),
+                target_position_xyz=(0.0, 0.0, 10.0),
+                start_position_xyz=(0.0, 0.0, 0.0),
+                timeout=0.5,
+                near_distance=3.0,
+                stable_seconds=0.1,
+                start_grace_seconds=0.0,
+            )
+        )
+        self.assertTrue(any("准备重试" in message for message in events), events)
+
+    def test_wait_zip_line_motion_confirms_vertical_target_after_movement(self):
+        """同 X/Z 高差滑索在三维高度确认发生位移后可以正常到站。"""
+        clock = {"t": 0.0}
+        xyz_positions = iter([(0.0, 0.0, 0.0), (0.0, 0.0, 10.0), (0.0, 0.0, 10.0)])
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: False,
+            _zip_line_ws_position=lambda frame=None: (0.0, 0.0),
+            _zip_line_ws_position_xyz=lambda frame=None: next(xyz_positions),
+            log_info=lambda msg: None,
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertTrue(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(0.0, 0.0),
+                target_position_xyz=(0.0, 0.0, 10.0),
+                start_position_xyz=(0.0, 0.0, 0.0),
+                timeout=1.0,
+                near_distance=3.0,
+                stable_seconds=0.2,
+                start_grace_seconds=0.0,
+            )
+        )
+
+    def test_wait_zip_line_motion_height_changes_reset_stable_window(self):
+        """垂直滑行超过 stable_seconds 时，三维高度变化必须持续重置停稳计时。"""
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: False,
+            _zip_line_ws_position=lambda frame=None: (0.0, 0.0),
+            _zip_line_ws_position_xyz=lambda frame=None: (0.0, 0.0, min(10.0, clock["t"] * 10.0)),
+            log_info=lambda msg: None,
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertTrue(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(0.0, 0.0),
+                target_position_xyz=(0.0, 0.0, 10.0),
+                start_position_xyz=(0.0, 0.0, 0.0),
+                timeout=2.0,
+                near_distance=3.0,
+                stable_seconds=0.6,
+                start_grace_seconds=0.0,
+            )
+        )
+
+    def test_wait_zip_line_motion_first_xyz_sample_starts_vertical_motion_tracking(self):
+        """首个三维样本暂缺时，之后的首个有效三维样本也必须重置停稳计时。"""
+        clock = {"t": 0.0}
+        xyz_calls = {"count": 0}
+
+        def current_xyz(frame=None):
+            xyz_calls["count"] += 1
+            if xyz_calls["count"] == 1:
+                return None
+            return (0.0, 0.0, min(10.0, clock["t"] * 10.0))
+
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: False,
+            _zip_line_ws_position=lambda frame=None: (0.0, 0.0),
+            _zip_line_ws_position_xyz=current_xyz,
+            log_info=lambda msg: None,
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertTrue(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(0.0, 0.0),
+                target_position_xyz=(0.0, 0.0, 10.0),
+                start_position_xyz=(0.0, 0.0, 0.0),
+                timeout=2.0,
+                near_distance=3.0,
+                stable_seconds=0.6,
+                start_grace_seconds=0.0,
+            )
+        )
+
+    def test_wait_zip_line_motion_rejects_ambiguous_target_without_height(self):
+        """只有二维重合且没有三维高度时，必须保守判定为仍在起点。"""
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: True,
+            _zip_line_ws_position=lambda frame=None: (0.0, 0.0),
+            log_info=lambda msg: None,
+            log_warning=lambda msg: None,
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertFalse(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(0.0, 0.0),
+                timeout=0.5,
+                near_distance=3.0,
+                stable_seconds=0.1,
+                start_grace_seconds=0.0,
+            )
+        )
 
     def test_wait_zip_line_motion_retries_when_stopped_at_start_without_template(self):
         """模板没出现、WS 又停在起点：属于"未触发"，交给外层重试而不是重规划。"""

@@ -3,7 +3,7 @@
 本模块同时服务自动送货与网格导航：
 
 - 自动送货先按滑索图标模板定位候选，再做局部分色 OCR 对中；模板连续漏检时回退全屏 OCR；
-- 网格导航优先使用世界方位直接对准，误差收敛到 ±3° 后执行；
+- 网格导航优先使用世界方位直接对准；严格目标为 ±3°，融合定位误差在 ±5° 内也允许点击；
 - 两者共用「登上滑索架」模板匹配、错误落点判定和 WS 状态检查。
 
 滑索架状态只以 ``move_to_the_target`` / ``move_to_the_target_2`` 模板为准；
@@ -49,11 +49,19 @@ from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 ZIP_LINE_TEMPLATE_THRESHOLD = 0.8
 ZIP_LINE_STATUS_BOX = (0.351, 0.943, 0.657, 0.981)
 ZIP_LINE_DIRECT_TOLERANCE_DEG = 3.0
+#: 融合定位的朝向估计存在小幅滞后/偏差；严格 ±3° 未收敛但误差仍很小时允许点击。
+ZIP_LINE_DIRECT_CLICK_GRACE_DEG = 5.0
 ZIP_LINE_DIRECT_PITCH_STEPS = (0, 24, -24, 48, -48)
 ZIP_LINE_MOTION_POLL_SECONDS = 0.2
 ZIP_LINE_MOTION_CHANGE_METERS = 0.5
 ZIP_LINE_BOARD_MOVE_DURATION_S = 0.12
 ZIP_LINE_BOARD_RECHECK_SETTLE_S = 0.25
+
+
+def _angle_delta_deg(target_yaw, current_yaw):
+    """返回目标相对当前朝向的最短有符号角度差。"""
+    return (float(target_yaw) - float(current_yaw) + 180.0) % 360.0 - 180.0
+
 
 #: 滑索图标二值模板（1080p 基准），按当前分辨率缩放后用于模板匹配。
 _ZIP_LINE_ICON_TEMPLATE_ROWS = (
@@ -246,11 +254,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 continue
         return False
 
-    def _zip_line_ws_position(self, frame=None):
-        """读取滑索场景最新 WS 坐标；融合坐标不作为滑索到达依据。"""
+    def _zip_line_ws_positions(self, frame=None):
+        """从同一份 world pose 读取二维与三维 WS 坐标。"""
         world_pose_getter = getattr(self, "world_pose", None)
         if not callable(world_pose_getter):
-            return None
+            return None, None
         try:
             sample_frame = frame if frame is not None else self.next_frame()
             state = world_pose_getter(
@@ -258,39 +266,36 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 max_age=2.0,
             )
             if state is None:
-                return None
+                return None, None
             position = state.get("ws")
-            if position is None:
-                return None
-            return float(position[0]), float(position[1])
+            position_2d = None
+            if position is not None and len(position) >= 2:
+                position_2d = float(position[0]), float(position[1])
+            position_xyz = state.get("ws_xyz")
+            position_3d = None
+            if position_xyz is not None and len(position_xyz) >= 3:
+                position_3d = float(position_xyz[0]), float(position_xyz[1]), float(position_xyz[2])
+            return position_2d, position_3d
         except Exception:
-            return None
+            return None, None
+
+    def _zip_line_ws_position(self, frame=None):
+        """读取滑索场景最新 WS 坐标；融合坐标不作为滑索到达依据。"""
+        position, _ = self._zip_line_ws_positions(frame=frame)
+        return position
 
     def _zip_line_ws_position_xyz(self, frame=None):
         """读取最新 WS 三维坐标，用于区分同层投影但不同高度的滑索节点。"""
-        world_pose_getter = getattr(self, "world_pose", None)
-        if not callable(world_pose_getter):
-            return None
-        try:
-            sample_frame = frame if frame is not None else self.next_frame()
-            state = world_pose_getter(
-                frame=sample_frame,
-                max_age=2.0,
-            )
-            if state is None:
-                return None
-            position = state.get("ws_xyz")
-            if position is None or len(position) < 3:
-                return None
-            return float(position[0]), float(position[1]), float(position[2])
-        except Exception:
-            return None
+        _, position_xyz = self._zip_line_ws_positions(frame=frame)
+        return position_xyz
 
     def _wait_zip_line_motion(
         self,
         target_position,
         start_position=None,
         *,
+        target_position_xyz=None,
+        start_position_xyz=None,
         timeout=60.0,
         near_distance=4.0,
         stable_seconds=6.0,
@@ -300,11 +305,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         一次轮询的判定结果：
 
-        - ``MOVING``：模板不存在，正在滑索间移动，继续等待；
-        - ``ARRIVED``：模板存在且 WS 到达目标附近，进入下一段；
-        - ``WAITING_TEMPLATE``：已停稳在目标附近但到达模板还没出现，继续等模板；
-        - ``NOT_TRIGGERED``：已停稳且 WS 仍在起点附近，没触发滑索，返回失败交给外层重试；
+        - ``MOVING``：位置仍在二维或三维变化，继续等待；
+        - ``ARRIVED``：可信位置进入目标半径；到达模板仅用于提前确认，不再是必要条件；
+        - ``NOT_TRIGGERED``：已停稳且仍在起点附近，没触发滑索，返回失败交给外层重试；
         - ``WRONG_RACK``：停稳后既不在起点也不在目标附近，落到了别的滑索架，重新规划。
+
+        起终点二维坐标重合时会优先用三维坐标仲裁。缺少可信三维高度时不能区分
+        起点和终点，按未到站处理；三维高度持续变化也会重置停稳计时。
 
         调用方负责点击鼠标左键；本方法只轮询状态，不重复发送按键。
         """
@@ -313,6 +320,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         start = self.active_time()
         moving_logged = False
         last_position: tuple[float, float] | None = None
+        last_position_xyz: tuple[float, float, float] | None = None
         last_position_changed_at = start
         threshold = max(0.1, float(near_distance))
         stable_seconds = max(0.1, float(stable_seconds))
@@ -326,42 +334,83 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 self.log_info("move_to_the_target / move_to_the_target_2 模板均不存在，滑索间移动中，继续等待")
                 moving_logged = True
 
-            current_position = self._zip_line_ws_position(frame=frame)
+            positions_getter = getattr(self, "_zip_line_ws_positions", None)
+            if callable(positions_getter):
+                current_position, current_position_xyz = positions_getter(frame=frame)
+            else:
+                current_position = self._zip_line_ws_position(frame=frame)
+                xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
+                current_position_xyz = xyz_getter(frame=frame) if callable(xyz_getter) else None
             if current_position is None:
                 self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
                 continue
 
-            if last_position is None or math.dist(current_position, last_position) > ZIP_LINE_MOTION_CHANGE_METERS:
+            position_changed = (
+                last_position is None or math.dist(current_position, last_position) > ZIP_LINE_MOTION_CHANGE_METERS
+            )
+            xyz_changed = current_position_xyz is not None and (
+                last_position_xyz is None
+                or math.dist(current_position_xyz, last_position_xyz) > ZIP_LINE_MOTION_CHANGE_METERS
+            )
+            if position_changed or xyz_changed:
                 last_position = current_position
+                if current_position_xyz is not None:
+                    last_position_xyz = current_position_xyz
                 last_position_changed_at = self.active_time()
 
             target_distance = math.dist(current_position, target_position)
             start_distance = None
             if start_position is not None:
                 start_distance = math.dist(current_position, start_position)
+            ambiguous_overlap = (
+                start_distance is not None and start_distance <= threshold and target_distance <= threshold
+            )
+            use_xyz = (
+                ambiguous_overlap
+                and current_position_xyz is not None
+                and start_position_xyz is not None
+                and target_position_xyz is not None
+            )
+            if use_xyz:
+                target_distance = math.dist(current_position_xyz, target_position_xyz)
+                start_distance = math.dist(current_position_xyz, start_position_xyz)
+            elif ambiguous_overlap:
+                # 2D 重合但缺少三维高度时无法区分起点和终点，不能把当前状态当成到站。
+                target_distance = math.inf
 
-            if on_rack and target_distance <= threshold:
-                self.log_info(f"已到达下一滑索附近且到达模板存在：WS 距离={target_distance:.2f}m")
-                return True
+            stable = self.active_time() - last_position_changed_at >= stable_seconds
+            at_start = start_distance is not None and start_distance <= threshold
+            at_target = target_distance <= threshold
 
-            if self.active_time() - last_position_changed_at >= stable_seconds:
+            if at_start and stable:
                 # 已经停稳，按"停在哪、模板在不在"区分。这里原来写成 on_rack 的两个分支，
                 # 两段"停稳后判定"几乎逐字重复，只有模板在时的日志级别与措辞不同。
-                if not on_rack and target_distance <= threshold:
-                    # 停在目标附近但到达模板还没出现：继续等模板，既不算到达也不算失败。
+                # 仍停在起点附近：没触发滑索。刚上索的一小段时间先继续等，避免 WS
+                # 还没走完一个推送周期就判定失败。
+                if self.active_time() - start < start_grace_seconds:
                     self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
                     continue
-                if start_distance is not None and start_distance <= threshold:
-                    # 仍停在起点附近：没触发滑索。刚上索的一小段时间先继续等，避免 WS
-                    # 还没走完一个推送周期就判定失败。
-                    if self.active_time() - start < start_grace_seconds:
-                        self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
-                        continue
-                    if on_rack:
-                        self.log_info(f"到达模板存在且 WS 仍在起点附近：距离={start_distance:.2f}m，准备重试")
-                    else:
-                        self.log_warning("WS 已在起点附近停稳但未触发滑索，准备重试")
-                    return False
+                if on_rack:
+                    self.log_info(f"到达模板存在且 WS 仍在起点附近：距离={start_distance:.2f}m，准备重试")
+                else:
+                    self.log_warning("WS 已在起点附近停稳但未触发滑索，准备重试")
+                return False
+
+            if at_target and not at_start:
+                distance_label = "3D 距离" if use_xyz else "WS 距离"
+                if on_rack:
+                    self.log_info(f"已到达下一滑索附近且到达模板存在：{distance_label}={target_distance:.2f}m")
+                    return True
+                if stable:
+                    # 终点站不一定显示“选择下一个目标”的模板；可信坐标已稳定进入目标
+                    # 半径时即可确认乘坐完成，否则会空等到外层超时并误判为未触发。
+                    self.log_info(
+                        f"已到达目标滑索位置：{distance_label}={target_distance:.2f}m，"
+                        "到达模板不存在，按可信坐标确认完成"
+                    )
+                    return True
+
+            if stable:
                 # 停稳后既不在起点也不在目标附近：落到了别的滑索架，必须重新规划。
                 raise ZipLineReplanRequired(
                     ("到达了非目标滑索架：" if on_rack else "滑索结束在非目标滑索架：")
@@ -374,7 +423,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
         return False
 
-    def _direct_zip_line_go(self, target_bearing, target_position=None):
+    def _direct_zip_line_go(self, target_bearing, target_position=None, *, target_position_xyz=None):
         """按世界方位直接对准并点击目标，失败时调整俯仰角重试。"""
         aim = getattr(self, "pose_aim_view_to_bearing", None)
         if not callable(aim):
@@ -382,12 +431,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return False
 
         last_start_position = None
+        last_start_position_xyz = None
         applied_pitch = 0
+        click_attempted = False
         try:
             for index, pitch in enumerate(ZIP_LINE_DIRECT_PITCH_STEPS):
                 delta = pitch - applied_pitch
                 if delta:
-                    self.log_info(f"直接对准未触发滑索，调整俯仰角 {pitch:+d}px 后重试")
+                    self.log_info(f"上一轮未获得可点击角度，调整俯仰角 {pitch:+d}px 后重试")
                     self.active_and_send_mouse_delta(dx=0, dy=delta, steps=1, delay=0)
                     applied_pitch = pitch
                     self.sleep(0.2)
@@ -396,22 +447,43 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     tolerance=ZIP_LINE_DIRECT_TOLERANCE_DEG,
                     max_rounds=2,
                 )
-                if not result.get("ok"):
+                heading = result.get("heading")
+                error = None
+                if heading is not None:
+                    try:
+                        error = _angle_delta_deg(target_bearing, heading)
+                    except (TypeError, ValueError):
+                        error = None
+                if not result.get("ok") and (error is None or abs(error) > ZIP_LINE_DIRECT_CLICK_GRACE_DEG):
                     self.log_warning(
                         f"滑索方位误差未进入 ±{ZIP_LINE_DIRECT_TOLERANCE_DEG:g}°："
                         f"目标={float(target_bearing):.1f}°，"
-                        f"实测={result.get('heading')}，误差={result.get('error')}"
+                        f"实测={heading}，误差={result.get('error')}"
                     )
                     continue
+                if not result.get("ok"):
+                    self.log_info(
+                        f"滑索方位未进入严格 ±{ZIP_LINE_DIRECT_TOLERANCE_DEG:g}°，"
+                        f"但误差={error:.1f}°在点击宽限 ±{ZIP_LINE_DIRECT_CLICK_GRACE_DEG:g}°内，继续点击"
+                    )
                 self.log_info(
                     f"滑索方位已对准：目标={float(target_bearing):.1f}°，"
-                    f"实测={result.get('heading')}，误差={result.get('error')}"
+                    f"实测={heading}，误差={error if error is not None else result.get('error')}"
                 )
-                last_start_position = self._zip_line_ws_position()
+                positions_getter = getattr(self, "_zip_line_ws_positions", None)
+                if callable(positions_getter):
+                    last_start_position, last_start_position_xyz = positions_getter()
+                else:
+                    last_start_position = self._zip_line_ws_position()
+                    xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
+                    last_start_position_xyz = xyz_getter() if callable(xyz_getter) else None
+                click_attempted = True
                 self.click(after_sleep=0.1)
                 if self._wait_zip_line_motion(
                     target_position=target_position,
                     start_position=last_start_position,
+                    target_position_xyz=target_position_xyz,
+                    start_position_xyz=last_start_position_xyz,
                 ):
                     return True
                 self.log_warning(f"直接对准第 {index + 1} 次点击未触发滑索")
@@ -419,6 +491,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             if applied_pitch:
                 self.active_and_send_mouse_delta(dx=0, dy=-applied_pitch, steps=1, delay=0)
                 self.sleep(0.2)
+        if not click_attempted:
+            raise RuntimeError(
+                f"连续 {len(ZIP_LINE_DIRECT_PITCH_STEPS)} 次均未对准到可点击角度，"
+                f"点击宽限为 ±{ZIP_LINE_DIRECT_CLICK_GRACE_DEG:g}°"
+            )
         raise ZipLineReplanRequired(
             f"连续 {len(ZIP_LINE_DIRECT_PITCH_STEPS)} 次未移动到下一滑索，判定两滑索间存在阻挡，需要重新规划",
             current_position=last_start_position,
@@ -1161,7 +1238,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     @staticmethod
     def _zip_line_angle_delta(target_yaw, current_yaw):
         """Return the shortest signed yaw delta in (-180, 180]."""
-        return (float(target_yaw) - float(current_yaw) + 180.0) % 360.0 - 180.0
+        return _angle_delta_deg(target_yaw, current_yaw)
 
     def _read_zip_line_arrow_angle(self):
         """Read the minimap arrow without low-score smoothing so stale yaw cannot pass the gate."""
@@ -1542,7 +1619,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             target_xyz = self._value_for_index(target_positions_3d, segment_index)
             if target_mode == ZIP_LINE_TARGET_SELECT_DIRECT and bearing is not None:
                 try:
-                    if not self._direct_zip_line_go(bearing, target_position):
+                    if not self._direct_zip_line_go(
+                        bearing,
+                        target_position,
+                        target_position_xyz=target_xyz,
+                    ):
                         raise RuntimeError(f"直接对准滑索目标失败: {float(bearing):.1f}°")
                 except ZipLineReplanRequired as exc:
                     if source_xyz is not None:
