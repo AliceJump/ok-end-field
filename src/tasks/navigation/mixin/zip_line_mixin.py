@@ -349,10 +349,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             position_changed = (
                 last_position is None or math.dist(current_position, last_position) > ZIP_LINE_MOTION_CHANGE_METERS
             )
-            xyz_changed = (
-                current_position_xyz is not None
-                and last_position_xyz is not None
-                and math.dist(current_position_xyz, last_position_xyz) > ZIP_LINE_MOTION_CHANGE_METERS
+            xyz_changed = current_position_xyz is not None and (
+                last_position_xyz is None
+                or math.dist(current_position_xyz, last_position_xyz) > ZIP_LINE_MOTION_CHANGE_METERS
             )
             if position_changed or xyz_changed:
                 last_position = current_position

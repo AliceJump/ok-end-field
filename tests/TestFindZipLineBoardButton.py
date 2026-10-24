@@ -454,6 +454,41 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             )
         )
 
+    def test_wait_zip_line_motion_first_xyz_sample_starts_vertical_motion_tracking(self):
+        """首个三维样本暂缺时，之后的首个有效三维样本也必须重置停稳计时。"""
+        clock = {"t": 0.0}
+        xyz_calls = {"count": 0}
+
+        def current_xyz(frame=None):
+            xyz_calls["count"] += 1
+            if xyz_calls["count"] == 1:
+                return None
+            return (0.0, 0.0, min(10.0, clock["t"] * 10.0))
+
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: False,
+            _zip_line_ws_position=lambda frame=None: (0.0, 0.0),
+            _zip_line_ws_position_xyz=current_xyz,
+            log_info=lambda msg: None,
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertTrue(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(0.0, 0.0),
+                target_position_xyz=(0.0, 0.0, 10.0),
+                start_position_xyz=(0.0, 0.0, 0.0),
+                timeout=2.0,
+                near_distance=3.0,
+                stable_seconds=0.6,
+                start_grace_seconds=0.0,
+            )
+        )
+
     def test_wait_zip_line_motion_rejects_ambiguous_target_without_height(self):
         """只有二维重合且没有三维高度时，必须保守判定为仍在起点。"""
         clock = {"t": 0.0}
