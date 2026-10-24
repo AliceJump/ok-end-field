@@ -11,7 +11,7 @@ class MatrixCleanTask(Common):
     1. N 键（Valuables Key，支持用户改键）直达贵重品库；失败时回退
        ESC 打开总控终端后点击「贵重品库」按钮；
     2. 确认停在武器基质页（必要时点击顶部基质分页）；
-    3. 点击底栏「基质蚀刻 >>」按钮进入分解模式；
+    3. 点击底栏左侧工具组的垃圾桶图标（品质/降序/筛选之后）进入分解模式；
     4. 循环「快捷放入 → 分解 → 确认 → 关闭结果弹窗」，每批最多 200 个；
     5. 网格出现「未拥有该类型道具」或分解按钮保持「无法分解」时判定无可分解，
     结束并退出分解模式。
@@ -87,19 +87,19 @@ class MatrixCleanTask(Common):
             )
         )
 
-    def _enter_dismantle_mode(self):
-        """点击底栏「基质蚀刻 >>」按钮进入分解模式。
+    # 底栏左侧分解入口（垃圾桶图标）中心：品质下拉/降序/漏斗之后，
+    # 2026-10-24 用户标注截图红框像素标定
+    _DISMANTLE_ENTRY = (0.259, 0.93)
 
-        注意不要用 essence_throw_away 模板：那个垃圾桶在右上详情面板
-        （单件分解按钮，COCO 标注约 0.94/0.27），不是分解模式入口。
+    def _enter_dismantle_mode(self):
+        """点击底栏左侧工具组的垃圾桶图标进入分解模式。
+
+        纯图标无文字，定点点击；不要用 essence_throw_away 模板——
+        那是右上详情面板的单件分解垃圾桶（COCO 标注约 0.94/0.27），
+        全屏搜索在底栏匹配到的落点偏高约 90px，会点到物品网格末行
+        （2026-10-24 11:30 实测 (0.258, 0.865) 未进入分解模式）。
         """
-        if not self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_4ef8754f,
-            box=self.box_of_screen(0.5, 0.80, 1.0, 0.98),
-            time_out=6,
-        ):
-            self.mark_task_failure("未找到分解入口按钮")
-            return False
+        self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1)
         hint = self.wait_ocr(
             match=self.lang.matrix_clean_task.k_83c0c24d,
             box=self.box.bottom,

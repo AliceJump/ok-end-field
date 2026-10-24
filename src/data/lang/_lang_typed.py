@@ -361,8 +361,6 @@ class MatrixCleanTaskModule(_LangModuleBaseT):
     k_9ca99bd0: re.Pattern[str]
     """武器基质"""
 
-    k_4ef8754f: str
-    """基质蚀刻"""
     k_83c0c24d: re.Pattern[str]
     """想要分解"""
 
