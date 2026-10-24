@@ -11,9 +11,9 @@ class MatrixCleanTask(Common):
     1. N 键直达贵重品库（失败回退 ESC 总控终端），确认停在武器基质页；
     2. 点击底栏左侧垃圾桶图标进入分解模式；每分解一批后游戏自动退回
        浏览模式，分解模式内的快捷放入规则不跨会话保留，每批重新设置；
-    3. 点击「快捷放入」弹出筛选面板：品质三项保持默认全选（=全部可分解
-       基质，稳定/净态/高纯；无瑕不可分解不在选项内），只点锁定状态
-       「未上锁」并保存；
+    3. 点击「快捷放入」弹出筛选面板：品质三项（稳定/净态/高纯，初始为空，
+       逐项点勾 = 全部可分解基质；无瑕不可分解不在选项内）与锁定状态
+       「未上锁」，保存；
     4. 再点「快捷放入」勾满单批 200；筛选结果不足 200 被全部放入时游戏
        会再弹筛选面板邀你扩大范围，点「保存」关闭即可；
     5. 点「分解」→ 确认弹窗「确认」→ 关闭「分解获得」结果弹窗，游戏
@@ -29,8 +29,11 @@ class MatrixCleanTask(Common):
     _BOTTOM_RIGHT = (0.55, 0.75, 1.0, 0.98)
     # 筛选面板（屏幕中央弹窗）搜索区
     _FILTER_PANEL = (0.15, 0.15, 0.9, 0.9)
-    # 面板内锁定状态选项（品质三项默认全选，无需点击）
+    # 面板内：品质选项行（初始全空，需逐项勾选），锁定状态在其下
+    _FILTER_QUALITY_AREA = (0.1, 0.15, 0.9, 0.6)
     _FILTER_LOCK_AREA = (0.1, 0.4, 0.9, 0.85)
+    # 确认弹窗标题区（弹窗居中，标题在上部）
+    _CONFIRM_DIALOG = (0.2, 0.25, 0.8, 0.65)
 
     # 底栏左侧分解入口（垃圾桶图标）中心：品质下拉/降序/漏斗之后，
     # 2026-10-24 用户标注截图红框像素标定
@@ -168,21 +171,30 @@ class MatrixCleanTask(Common):
         return self._confirm_dismantle()
 
     def _apply_filter(self):
-        """在筛选面板设置锁定状态「未上锁」并保存（品质三项默认全选）。"""
+        """在筛选面板勾选全部三个品质与「未上锁」并保存。
+
+        面板弹出时品质三项初始为空，需逐项点勾（对应手动操作把
+        稳定/净态/高纯全部勾上 = 全部可分解基质）。
+        """
+        lang = self.lang.matrix_clean_task
         panel_box = self.box_of_screen(*self._FILTER_PANEL)
-        if not self.wait_ocr(
-            match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=3, raise_if_not_found=False
-        ):
+        if not self.wait_ocr(match=lang.k_fadf24db, box=panel_box, time_out=3, raise_if_not_found=False):
             self.mark_task_failure("筛选面板未弹出")
             return False
+        quality_box = self.box_of_screen(*self._FILTER_QUALITY_AREA)
+        for quality in (lang.k_7ba0a5b1, lang.k_16da2b84, lang.k_1a40e234):
+            if not self.wait_click_ocr(match=quality, box=quality_box, time_out=4):
+                self.mark_task_failure("未找到品质筛选选项")
+                return False
+            self.sleep(0.3)
         if not self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_2396a6d9,
+            match=lang.k_2396a6d9,
             box=self.box_of_screen(*self._FILTER_LOCK_AREA),
             time_out=4,
         ):
             self.mark_task_failure("未找到未上锁选项")
             return False
-        if not self.wait_click_ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=panel_box, time_out=4):
+        if not self.wait_click_ocr(match=lang.k_fadf24db, box=panel_box, time_out=4):
             self.mark_task_failure("未找到筛选保存按钮")
             return False
         self.sleep(1)
@@ -205,14 +217,14 @@ class MatrixCleanTask(Common):
                 return False
             self.mark_task_failure("未找到分解按钮")
             return None
-        if not self.wait_ocr(
+        # 标题作等待信号而非门槛：14:45 实测弹窗在、标题清晰，但 OCR 六秒
+        # 未命中（原因未复现）；确认按钮本身文字更大更稳，直接尝试点击
+        self.wait_ocr(
             match=self.lang.matrix_clean_task.k_45030a0b,
-            box=self.box.center,
-            time_out=6,
+            box=self.box_of_screen(*self._CONFIRM_DIALOG),
+            time_out=4,
             raise_if_not_found=False,
-        ):
-            self.mark_task_failure("分解确认弹窗未出现")
-            return None
+        )
         if not self._click_confirm_button():
             self.mark_task_failure("未找到分解确认按钮")
             return None
