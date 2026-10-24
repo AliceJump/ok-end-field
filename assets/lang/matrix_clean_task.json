@@ -31,30 +31,6 @@
       "pattern": "快捷放入"
     }
   },
-  "k_7ba0a5b1": {
-    "zh_CN": {
-      "pattern": "稳定基质"
-    },
-    "zh_TW": {
-      "pattern": "穩定基質"
-    }
-  },
-  "k_16da2b84": {
-    "zh_CN": {
-      "pattern": "净态基质"
-    },
-    "zh_TW": {
-      "pattern": "淨態基質"
-    }
-  },
-  "k_1a40e234": {
-    "zh_CN": {
-      "pattern": "高纯基质"
-    },
-    "zh_TW": {
-      "pattern": "高純基質"
-    }
-  },
   "k_2396a6d9": {
     "zh_CN": {
       "pattern": "未上锁"

@@ -66,25 +66,25 @@ class TestLangResource(unittest.TestCase):
 
 
 class TestDismantleByQuality(unittest.TestCase):
-    """逐品质循环：品质切换、批数统计、异常中断、上限拦截。"""
+    """批循环：正常结束、异常中断、上限拦截。"""
 
-    def test_all_qualities_empty_ends_normally(self):
+    def test_immediately_empty_ends_normally(self):
         task = make_task()
         task._enter_dismantle_mode = MagicMock(return_value=True)
-        task._dismantle_one_batch = MagicMock(return_value=False)  # 每品质第一批即空
+        task._dismantle_one_batch = MagicMock(return_value=False)
         task._exit_dismantle_mode = MagicMock()
         self.assertTrue(task._dismantle_by_quality())
-        self.assertEqual(task._dismantle_one_batch.call_count, len(MatrixCleanTask._QUALITIES))
-        task._exit_dismantle_mode.assert_called()
+        task._dismantle_one_batch.assert_called_once()
+        task._exit_dismantle_mode.assert_called_once()
         task.mark_task_failure.assert_not_called()
 
-    def test_each_quality_one_batch(self):
+    def test_stops_after_batches(self):
         task = make_task()
         task._enter_dismantle_mode = MagicMock(return_value=True)
-        task._dismantle_one_batch = MagicMock(side_effect=[True, False, True, False, True, False])
+        task._dismantle_one_batch = MagicMock(side_effect=[True, True, False])
         task._exit_dismantle_mode = MagicMock()
         self.assertTrue(task._dismantle_by_quality())
-        self.assertEqual(task._dismantle_one_batch.call_count, 6)
+        self.assertEqual(task._dismantle_one_batch.call_count, 3)
 
     def test_batch_failure_aborts(self):
         task = make_task()
@@ -136,38 +136,58 @@ class TestEnterDismantleMode(unittest.TestCase):
 
 
 class TestDismantleOneBatch(unittest.TestCase):
-    """单批流程：筛选面板弹出/不弹、快捷放入失败路径。"""
+    """单批流程：筛选面板弹出/不弹、二次弹面板（扩大范围提示）、快捷放入失败路径。"""
 
     def test_filter_panel_flow(self):
         task = make_task()
-        quality = task.lang.matrix_clean_task.k_7ba0a5b1
-        # 第一次 wait_click_ocr=快捷放入；ocr 首查命中「保存」（面板弹出）；
-        # _apply_filter 内 wait_ocr 保存命中 + 三次 wait_click_ocr 命中；
-        # 第二次快捷放入命中
+        # 快捷放入命中；ocr 首查命中「保存」（面板弹出）；
+        # _apply_filter 内 wait_ocr 保存命中 + 未上锁/保存两次点击命中；
+        # 第二次快捷放入命中；第二次 ocr 未命中（无扩大范围提示）
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.ocr = MagicMock(side_effect=[MagicMock(), None])
         task.wait_ocr = MagicMock(return_value=MagicMock())
         task._confirm_dismantle = MagicMock(return_value=True)
-        self.assertTrue(task._dismantle_one_batch(quality))
-        # 面板流程：快捷放入×2 + 品质/未上锁/保存×3 = 5 次点击
-        self.assertEqual(task.wait_click_ocr.call_count, 5)
+        self.assertTrue(task._dismantle_one_batch())
+        # 面板流程：快捷放入×2 + 未上锁/保存×2 = 4 次点击
+        self.assertEqual(task.wait_click_ocr.call_count, 4)
         task._confirm_dismantle.assert_called_once()
+
+    def test_expand_hint_panel_is_closed(self):
+        # 勾满后剩余不足 200，游戏再弹面板邀你扩大范围；点「保存」关闭
+        task = make_task()
+        task.wait_click_ocr = MagicMock(return_value=MagicMock())
+        task.ocr = MagicMock(return_value=MagicMock())  # 面板一直在
+        task.wait_ocr = MagicMock(return_value=MagicMock())
+        task._confirm_dismantle = MagicMock(return_value=True)
+        self.assertTrue(task._dismantle_one_batch())
+        # 快捷放入×2 + 未上锁/保存×2 + 关闭面板保存×1 = 5 次
+        self.assertEqual(task.wait_click_ocr.call_count, 5)
+
+    def test_expand_hint_close_failure(self):
+        task = make_task()
+        # 依次：快捷放入、未上锁、保存、快捷放入#2 命中；关闭面板的保存落空
+        task.wait_click_ocr = MagicMock(
+            side_effect=[MagicMock(), MagicMock(), MagicMock(), MagicMock(), None]
+        )
+        task.ocr = MagicMock(return_value=MagicMock())
+        task.wait_ocr = MagicMock(return_value=MagicMock())
+        self.assertIsNone(task._dismantle_one_batch())
+        task.mark_task_failure.assert_called_once_with("未能关闭快捷放入提示面板")
 
     def test_no_panel_flow_skips_filter(self):
         task = make_task()
-        quality = task.lang.matrix_clean_task.k_16da2b84
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.ocr = MagicMock(return_value=None)  # 面板未弹出（筛选已生效）
+        task.ocr = MagicMock(return_value=None)  # 面板未弹出（规则已生效）
         task.wait_ocr = MagicMock(return_value=MagicMock())
         task._confirm_dismantle = MagicMock(return_value=True)
-        self.assertTrue(task._dismantle_one_batch(quality))
+        self.assertTrue(task._dismantle_one_batch())
         self.assertEqual(task.wait_click_ocr.call_count, 1)
         task._confirm_dismantle.assert_called_once()
 
     def test_quick_add_missing_is_failure(self):
         task = make_task()
         task.wait_click_ocr = MagicMock(return_value=None)
-        self.assertIsNone(task._dismantle_one_batch("q"))
+        self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("未找到快捷放入按钮")
 
     def test_second_quick_add_missing_is_failure(self):
@@ -175,46 +195,39 @@ class TestDismantleOneBatch(unittest.TestCase):
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.ocr = MagicMock(return_value=MagicMock())  # 面板弹出
         task.wait_ocr = MagicMock(return_value=None)
-        self.assertIsNone(task._dismantle_one_batch("q"))
+        self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("筛选面板未弹出")
 
 
 class TestApplyFilter(unittest.TestCase):
-    """筛选面板：品质 + 未上锁 + 保存的点击与失败路径。"""
+    """筛选面板：未上锁 + 保存的点击与失败路径（品质默认全选不点击）。"""
 
     def test_panel_not_open_is_failure(self):
         task = make_task()
         task.wait_ocr = MagicMock(return_value=None)  # 「保存」未出现
-        self.assertFalse(task._apply_filter("q"))
+        self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("筛选面板未弹出")
-
-    def test_quality_missing_is_failure(self):
-        task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(side_effect=[None])  # 品质选项缺失
-        self.assertFalse(task._apply_filter("q"))
-        task.mark_task_failure.assert_called_once_with("未找到品质筛选选项")
 
     def test_unlock_missing_is_failure(self):
         task = make_task()
         task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), None])
-        self.assertFalse(task._apply_filter("q"))
+        task.wait_click_ocr = MagicMock(side_effect=[None])
+        self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("未找到未上锁选项")
 
     def test_save_missing_is_failure(self):
         task = make_task()
         task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), MagicMock(), None])
-        self.assertFalse(task._apply_filter("q"))
+        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), None])
+        self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("未找到筛选保存按钮")
 
     def test_full_flow(self):
         task = make_task()
         task.wait_ocr = MagicMock(return_value=MagicMock())
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        self.assertTrue(task._apply_filter("q"))
-        self.assertEqual(task.wait_click_ocr.call_count, 3)
+        self.assertTrue(task._apply_filter())
+        self.assertEqual(task.wait_click_ocr.call_count, 2)
         task.mark_task_failure.assert_not_called()
 
 
@@ -321,12 +334,14 @@ class TestDailyWiring(unittest.TestCase):
         self.assertIn("_DISMANTLE_ENTRY", src_text)
         self.assertNotIn("fL.", src_text)
 
-    def test_quality_order_low_to_high(self):
-        # 逐品质从低到高清理：稳定 → 净态 → 高纯（无瑕不可分解，不在其列）
-        self.assertEqual(
-            MatrixCleanTask._QUALITIES,
-            ("k_7ba0a5b1", "k_16da2b84", "k_1a40e234"),
-        )
+    def test_filter_keeps_all_qualities_selected(self):
+        # 品质三项（稳定/净态/高纯）默认全选即全部可分解基质，流程不点击
+        # 品质选项——点击是 toggle，会把对应品质排除出快捷放入
+        src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
+        self.assertNotIn("k_7ba0a5b1", src_text)
+        self.assertNotIn("k_16da2b84", src_text)
+        self.assertNotIn("k_1a40e234", src_text)
+        self.assertIn("k_2396a6d9", src_text)  # 只点未上锁
 
     def test_ui_fallback_group_map(self):
         import ast
