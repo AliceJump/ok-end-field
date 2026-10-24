@@ -52,7 +52,10 @@ class MatrixCleanTask(Common):
     def _open_vault_essence_page(self):
         """打开贵重品库并确认停在武器基质页。"""
         for _ in range(2):
-            self.press_key("n", after_sleep=1.5)
+            # 前台按键被前台锁拒绝时 send_key 返回 False，提前失败比空等 OCR 超时更直接
+            if not self.press_key("n", after_sleep=1.5):
+                self.mark_task_failure("按键注入失败：无法把游戏切到前台（请从 ok-ef.exe 正常启动）")
+                return False
             if self._ensure_essence_page():
                 return True
         # 回退路径：ESC 打开总控终端，点击右侧菜单网格的「贵重品库」
