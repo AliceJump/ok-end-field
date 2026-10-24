@@ -234,7 +234,9 @@ class MatrixCleanTask(Common):
         if not self._click_confirm_button():
             self.mark_task_failure("未找到分解确认按钮")
             return None
-        self._close_result_popup()
+        # 弹窗未关闭时不能把本批计为成功：下一批会顶在未关闭的弹窗上操作
+        if not self._close_result_popup():
+            return None
         return True
 
     def _dismantle_disabled(self):
@@ -274,7 +276,11 @@ class MatrixCleanTask(Common):
         return self.click_confirm(time_out=3)
 
     def _close_result_popup(self):
-        """关闭「分解获得」结果弹窗：点击底部圆形确认按钮。"""
+        """关闭「分解获得」结果弹窗；返回是否确认已关闭。
+
+        确认后 8 秒未见弹窗视作分解未完成（确认点击可能未落上），
+        四次点击后弹窗仍在同样交由上层判失败。
+        """
         title_box = self.box_of_screen(0.2, 0.1, 0.8, 0.6)
         if not self.wait_ocr(
             match=self.lang.matrix_clean_task.k_92faab1e,
@@ -282,12 +288,14 @@ class MatrixCleanTask(Common):
             time_out=8,
             raise_if_not_found=False,
         ):
-            return
+            self.mark_task_failure("分解结果弹窗未出现")
+            return False
         for _ in range(4):
             self.click_relative(0.5, 0.86, after_sleep=1)
             if not self.ocr(match=self.lang.matrix_clean_task.k_92faab1e, box=title_box):
-                return
+                return True
         self.mark_task_failure("分解结果弹窗未能关闭")
+        return False
 
     def _exit_dismantle_mode(self):
         """退出分解模式（品质清空或异常中断时）；失败交由后续步骤兜底。"""
