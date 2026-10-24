@@ -156,11 +156,10 @@ class TestDismantleOneBatch(unittest.TestCase):
 
     def test_filter_panel_flow(self):
         task = make_task()
-        # 网格有物品；快捷放入命中；ocr 命中「保存」（面板弹出）；
+        # 网格有物品；快捷放入命中；wait_ocr 命中「保存」（面板弹出）；
         # _apply_filter 内 5 次点击（品质×3+未上锁+保存）全命中
         task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.ocr = MagicMock(return_value=MagicMock())
         task.wait_ocr = MagicMock(return_value=MagicMock())
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
@@ -172,7 +171,7 @@ class TestDismantleOneBatch(unittest.TestCase):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.ocr = MagicMock(return_value=None)  # 面板未弹出（规则已生效）
+        task.wait_ocr = MagicMock(return_value=None)  # 面板未弹出（规则已生效）
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
         self.assertEqual(task.wait_click_ocr.call_count, 1)
@@ -190,8 +189,7 @@ class TestDismantleOneBatch(unittest.TestCase):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.ocr = MagicMock(return_value=MagicMock())  # 面板弹出
-        task.wait_ocr = MagicMock(return_value=None)  # _apply_filter 复查落空
+        task.wait_ocr = MagicMock(side_effect=[MagicMock(), None])  # 检出命中、复查落空
         self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("筛选面板未弹出")
 
@@ -365,6 +363,24 @@ class TestDailyWiring(unittest.TestCase):
         # 独立单次运行入口（业务与战斗 → 其他）与一条龙入口分开注册
         self.assertIn('"MatrixCleanOnceTask"', config_text)
         ast.parse(config_text)
+
+    def test_once_task_registered_after_daily_impl(self):
+        # DailyFeature._resolve_impl 按注册顺序 isinstance 匹配；
+        # MatrixCleanOnceTask 是 MatrixCleanTask 子类，若注册在前，
+        # 一条龙会解析到单次任务实例并读写错配置
+        config_text = (_REPO_ROOT / "src" / "config.py").read_text(encoding="utf-8")
+        self.assertLess(
+            config_text.index("MatrixCleanTask"),
+            config_text.index("MatrixCleanOnceTask"),
+        )
+
+    def test_matrix_clean_is_opt_in(self):
+        # 分解不可回滚：旧配置迁移与全新默认两条路径都不勾选清理基质
+        from src.tasks.onetime.DailyTask import DailyTask
+
+        daily_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "DailyTask.py").read_text(encoding="utf-8")
+        self.assertIs(DailyTask._LEGACY_DEFAULTS.get("清理基质"), False)
+        self.assertIn('if task != "清理基质"', daily_text)
 
     def test_once_task_is_standalone_entry(self):
         from src.tasks.onetime.MatrixCleanTask import MatrixCleanOnceTask, MatrixCleanTask

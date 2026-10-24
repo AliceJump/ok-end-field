@@ -161,8 +161,14 @@ class MatrixCleanTask(Common):
         ):
             self.mark_task_failure("未找到快捷放入按钮")
             return None
-        self.sleep(1)
-        if self.ocr(match=self.lang.matrix_clean_task.k_fadf24db, box=self.box_of_screen(*self._FILTER_PANEL)):
+        # 面板检测用带超时的等待：单次 OCR 在面板渲染慢时会漏检，漏检后
+        # 未勾选任何物品、按钮恒为「无法分解」，会被误判成清理完成
+        if self.wait_ocr(
+            match=self.lang.matrix_clean_task.k_fadf24db,
+            box=self.box_of_screen(*self._FILTER_PANEL),
+            time_out=2,
+            raise_if_not_found=False,
+        ):
             if not self._apply_filter():
                 return None
         return self._confirm_dismantle()
