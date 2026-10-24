@@ -212,6 +212,13 @@ class TestDailyWiring(unittest.TestCase):
         # 框架按 name 存任务配置，两个入口必须不同名
         self.assertNotEqual(MatrixCleanTask.__name__, MatrixCleanOnceTask.__name__)
 
+    def test_dismantle_entry_uses_matrix_etch_ocr(self):
+        # essence_throw_away 是右上详情面板的单件分解按钮（标注中心约 0.94/0.27），
+        # 不是底栏分解模式入口；入口必须点底栏「基质蚀刻」（docstring 允许留警告文字）
+        src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
+        self.assertIn("k_4ef8754f", src_text)
+        self.assertNotIn("fL.", src_text)
+
     def test_ui_fallback_group_map(self):
         import ast
 
