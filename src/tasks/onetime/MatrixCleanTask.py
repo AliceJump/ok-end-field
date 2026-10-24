@@ -168,9 +168,8 @@ class MatrixCleanTask(Common):
             box=self.box_of_screen(*self._FILTER_PANEL),
             time_out=2,
             raise_if_not_found=False,
-        ):
-            if not self._apply_filter():
-                return None
+        ) and not self._apply_filter():
+            return None
         return self._confirm_dismantle()
 
     def _apply_filter(self):
