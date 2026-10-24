@@ -44,8 +44,9 @@ class TestLangResource(unittest.TestCase):
 
     def test_lang_keys_compile_and_cover_code_refs(self):
         code = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        # 属性引用（self.lang.matrix_clean_task.k_xxx）与字符串引用（_QUALITIES 元组）
-        refs = set(re.findall(r"self\.lang\.matrix_clean_task\.(k_[0-9a-f]{8})", code))
+        # 属性引用（self.lang.matrix_clean_task.k_xxx / 局部 lang.k_xxx）与
+        # 字符串引用（元组字面量）
+        refs = set(re.findall(r"(?:self\.lang\.matrix_clean_task|(?<!\w)lang)\.(k_[0-9a-f]{8})", code))
         refs |= set(re.findall(r'"(k_[0-9a-f]{8})"', code))
         self.assertTrue(refs, "代码里没有任何语言键引用")
 
@@ -141,15 +142,14 @@ class TestDismantleOneBatch(unittest.TestCase):
     def test_filter_panel_flow(self):
         task = make_task()
         # 快捷放入命中；ocr 首查命中「保存」（面板弹出）；
-        # _apply_filter 内 wait_ocr 保存命中 + 未上锁/保存两次点击命中；
+        # _apply_filter 内 5 次点击（品质×3+未上锁+保存）全命中；
         # 第二次快捷放入命中；第二次 ocr 未命中（无扩大范围提示）
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.ocr = MagicMock(side_effect=[MagicMock(), None])
         task.wait_ocr = MagicMock(return_value=MagicMock())
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
-        # 面板流程：快捷放入×2 + 未上锁/保存×2 = 4 次点击
-        self.assertEqual(task.wait_click_ocr.call_count, 4)
+        self.assertEqual(task.wait_click_ocr.call_count, 7)  # 快捷放入×2 + 筛选×5
         task._confirm_dismantle.assert_called_once()
 
     def test_expand_hint_panel_is_closed(self):
@@ -160,14 +160,14 @@ class TestDismantleOneBatch(unittest.TestCase):
         task.wait_ocr = MagicMock(return_value=MagicMock())
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
-        # 快捷放入×2 + 未上锁/保存×2 + 关闭面板保存×1 = 5 次
-        self.assertEqual(task.wait_click_ocr.call_count, 5)
+        # 快捷放入×2 + 筛选×5 + 关闭面板保存×1 = 8 次
+        self.assertEqual(task.wait_click_ocr.call_count, 8)
 
     def test_expand_hint_close_failure(self):
         task = make_task()
-        # 依次：快捷放入、未上锁、保存、快捷放入#2 命中；关闭面板的保存落空
+        # 依次：快捷放入、品质×3、未上锁、保存、快捷放入#2 命中；关闭面板落空
         task.wait_click_ocr = MagicMock(
-            side_effect=[MagicMock(), MagicMock(), MagicMock(), MagicMock(), None]
+            side_effect=[MagicMock()] * 7 + [None]
         )
         task.ocr = MagicMock(return_value=MagicMock())
         task.wait_ocr = MagicMock(return_value=MagicMock())
@@ -200,7 +200,7 @@ class TestDismantleOneBatch(unittest.TestCase):
 
 
 class TestApplyFilter(unittest.TestCase):
-    """筛选面板：未上锁 + 保存的点击与失败路径（品质默认全选不点击）。"""
+    """筛选面板：品质三项逐一点勾 + 未上锁 + 保存。"""
 
     def test_panel_not_open_is_failure(self):
         task = make_task()
@@ -208,26 +208,43 @@ class TestApplyFilter(unittest.TestCase):
         self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("筛选面板未弹出")
 
+    def test_quality_missing_is_failure(self):
+        task = make_task()
+        task.wait_ocr = MagicMock(return_value=MagicMock())
+        # 第一个品质（稳定）就缺失
+        task.wait_click_ocr = MagicMock(side_effect=[None])
+        self.assertFalse(task._apply_filter())
+        task.mark_task_failure.assert_called_once_with("未找到品质筛选选项")
+
     def test_unlock_missing_is_failure(self):
         task = make_task()
         task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(side_effect=[None])
+        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), MagicMock(), MagicMock(), None])
         self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("未找到未上锁选项")
 
     def test_save_missing_is_failure(self):
         task = make_task()
         task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), None])
+        task.wait_click_ocr = MagicMock(
+            side_effect=[MagicMock(), MagicMock(), MagicMock(), MagicMock(), None]
+        )
         self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("未找到筛选保存按钮")
 
-    def test_full_flow(self):
+    def test_full_flow_checks_all_qualities(self):
+        lang = make_task().lang.matrix_clean_task
         task = make_task()
         task.wait_ocr = MagicMock(return_value=MagicMock())
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         self.assertTrue(task._apply_filter())
-        self.assertEqual(task.wait_click_ocr.call_count, 2)
+        # 品质三项逐一点勾（面板初始为空）+ 未上锁 + 保存 = 5 次点击
+        self.assertEqual(task.wait_click_ocr.call_count, 5)
+        clicked = [c.kwargs.get("match") for c in task.wait_click_ocr.call_args_list]
+        self.assertIn(lang.k_7ba0a5b1, clicked)
+        self.assertIn(lang.k_16da2b84, clicked)
+        self.assertIn(lang.k_1a40e234, clicked)
+        self.assertIn(lang.k_2396a6d9, clicked)
         task.mark_task_failure.assert_not_called()
 
 
@@ -250,12 +267,25 @@ class TestConfirmDismantle(unittest.TestCase):
         self.assertIsNone(task._confirm_dismantle())
         task.mark_task_failure.assert_called_once_with("未找到分解按钮")
 
-    def test_confirm_dialog_missing_is_failure(self):
+    def test_confirm_button_missing_is_failure(self):
         task = make_task()
-        task.wait_click_ocr = MagicMock(return_value=MagicMock())  # ^分解$ 命中
-        task.wait_ocr = MagicMock(return_value=None)  # 确认弹窗标题不出现
+        # ^分解$ 命中；「确认」按钮 OCR 落空且 click_confirm 兜底也失败
+        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), None])
+        task.wait_ocr = MagicMock(return_value=MagicMock())  # 标题命中
+        task.click_confirm = MagicMock(return_value=False)
+        task._close_result_popup = MagicMock()
         self.assertIsNone(task._confirm_dismantle())
-        task.mark_task_failure.assert_called_once_with("分解确认弹窗未出现")
+        task.mark_task_failure.assert_called_once_with("未找到分解确认按钮")
+
+    def test_title_miss_still_clicks_confirm(self):
+        # 标题未命中不判死：弹窗可能已出现（14:45 实测），直接点确认按钮
+        task = make_task()
+        task.wait_click_ocr = MagicMock(return_value=MagicMock())
+        task.wait_ocr = MagicMock(return_value=None)  # 标题未出现
+        task._close_result_popup = MagicMock()
+        self.assertTrue(task._confirm_dismantle())
+        task._close_result_popup.assert_called_once()
+        task.mark_task_failure.assert_not_called()
 
     def test_full_batch_success(self):
         task = make_task()
@@ -334,14 +364,21 @@ class TestDailyWiring(unittest.TestCase):
         self.assertIn("_DISMANTLE_ENTRY", src_text)
         self.assertNotIn("fL.", src_text)
 
-    def test_filter_keeps_all_qualities_selected(self):
-        # 品质三项（稳定/净态/高纯）默认全选即全部可分解基质，流程不点击
-        # 品质选项——点击是 toggle，会把对应品质排除出快捷放入
+    def test_filter_checks_all_qualities(self):
+        # 面板品质三项初始为空，必须逐项点勾（toggle）：只勾一项会把其他
+        # 品质排除出快捷放入，该类清完时整批落空（14:21 实测教训）
         src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        self.assertNotIn("k_7ba0a5b1", src_text)
-        self.assertNotIn("k_16da2b84", src_text)
-        self.assertNotIn("k_1a40e234", src_text)
-        self.assertIn("k_2396a6d9", src_text)  # 只点未上锁
+        for key in ("k_7ba0a5b1", "k_16da2b84", "k_1a40e234"):
+            self.assertIn(key, src_text)
+        self.assertIn("k_2396a6d9", src_text)
+
+    def test_confirm_dialog_title_is_wait_signal_not_gate(self):
+        # 确认弹窗标题只作等待信号：14:45 实测弹窗在、标题清晰，OCR 却六秒
+        # 未命中；标题未命中必须仍去点确认按钮（行为级测试
+        # test_title_miss_still_clicks_confirm 覆盖）
+        src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
+        self.assertIn("_CONFIRM_DIALOG", src_text)
+        self.assertNotIn("分解确认弹窗未出现", src_text)
 
     def test_ui_fallback_group_map(self):
         import ast
