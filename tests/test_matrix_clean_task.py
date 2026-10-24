@@ -137,16 +137,28 @@ class TestEnterDismantleMode(unittest.TestCase):
 
 
 class TestDismantleOneBatch(unittest.TestCase):
-    """单批流程：筛选面板弹出/不弹、快捷放入失败路径。
+    """单批流程：批开始空网格短路、筛选面板弹出/不弹、快捷放入失败路径。
 
     15:52 实测：面板「保存」即按筛选结果勾选物品并关面板，保存后直接
     点分解——不存在第二次快捷放入。
+    17:42 实测：空库时进入分解模式网格即显示「未拥有该类型道具」，
+    批开始必须先查该标志直接结束，不做任何筛选动作。
     """
+
+    def test_empty_grid_at_batch_start_is_end(self):
+        # 网格空标志在批开始即命中：直接结束，不点快捷放入
+        task = make_task()
+        task._no_item_left = MagicMock(return_value=True)
+        task.wait_click_ocr = MagicMock()
+        self.assertFalse(task._dismantle_one_batch())
+        task.wait_click_ocr.assert_not_called()
+        task.mark_task_failure.assert_not_called()
 
     def test_filter_panel_flow(self):
         task = make_task()
-        # 快捷放入命中；ocr 命中「保存」（面板弹出）；_apply_filter 内 5 次
-        # 点击（品质×3+未上锁+保存）全命中
+        # 网格有物品；快捷放入命中；ocr 命中「保存」（面板弹出）；
+        # _apply_filter 内 5 次点击（品质×3+未上锁+保存）全命中
+        task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.ocr = MagicMock(return_value=MagicMock())
         task.wait_ocr = MagicMock(return_value=MagicMock())
@@ -158,6 +170,7 @@ class TestDismantleOneBatch(unittest.TestCase):
 
     def test_no_panel_flow_skips_filter(self):
         task = make_task()
+        task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.ocr = MagicMock(return_value=None)  # 面板未弹出（规则已生效）
         task._confirm_dismantle = MagicMock(return_value=True)
@@ -167,6 +180,7 @@ class TestDismantleOneBatch(unittest.TestCase):
 
     def test_quick_add_missing_is_failure(self):
         task = make_task()
+        task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=None)
         self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("未找到快捷放入按钮")
@@ -174,6 +188,7 @@ class TestDismantleOneBatch(unittest.TestCase):
     def test_filter_panel_lost_before_apply(self):
         # 面板已检出但正式应用前消失（竞态）：标记失败而非误点底栏
         task = make_task()
+        task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.ocr = MagicMock(return_value=MagicMock())  # 面板弹出
         task.wait_ocr = MagicMock(return_value=None)  # _apply_filter 复查落空
