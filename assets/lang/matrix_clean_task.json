@@ -15,6 +15,14 @@
       "pattern": "武器基質"
     }
   },
+  "k_4ef8754f": {
+    "zh_CN": {
+      "pattern": "基质蚀刻"
+    },
+    "zh_TW": {
+      "pattern": "基質蝕刻"
+    }
+  },
   "k_83c0c24d": {
     "zh_CN": {
       "pattern": "想要分解"

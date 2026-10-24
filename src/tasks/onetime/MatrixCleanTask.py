@@ -1,6 +1,5 @@
 from qfluentwidgets import FluentIcon
 
-from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.mixin.common import Common
 
@@ -12,7 +11,7 @@ class MatrixCleanTask(Common):
     1. N 键（Valuables Key，支持用户改键）直达贵重品库；失败时回退
        ESC 打开总控终端后点击「贵重品库」按钮；
     2. 确认停在武器基质页（必要时点击顶部基质分页）；
-    3. 点击底栏分解入口（垃圾桶图标，复用 essence_throw_away 模板）进入分解模式；
+    3. 点击底栏「基质蚀刻 >>」按钮进入分解模式；
     4. 循环「快捷放入 → 分解 → 确认 → 关闭结果弹窗」，每批最多 200 个；
     5. 网格出现「未拥有该类型道具」或分解按钮保持「无法分解」时判定无可分解，
     结束并退出分解模式。
@@ -89,18 +88,18 @@ class MatrixCleanTask(Common):
         )
 
     def _enter_dismantle_mode(self):
-        """点击底栏分解入口（垃圾桶图标）进入分解模式。"""
-        entry = self.wait_feature(
-            feature=fL.essence_throw_away,
-            box=self.box_of_screen(0.15, 0.80, 0.60, 0.98),
-            threshold=0.7,
+        """点击底栏「基质蚀刻 >>」按钮进入分解模式。
+
+        注意不要用 essence_throw_away 模板：那个垃圾桶在右上详情面板
+        （单件分解按钮，COCO 标注约 0.94/0.27），不是分解模式入口。
+        """
+        if not self.wait_click_ocr(
+            match=self.lang.matrix_clean_task.k_4ef8754f,
+            box=self.box_of_screen(0.5, 0.80, 1.0, 0.98),
             time_out=6,
-            raise_if_not_found=False,
-        )
-        if not entry:
+        ):
             self.mark_task_failure("未找到分解入口按钮")
             return False
-        self.click(entry)
         hint = self.wait_ocr(
             match=self.lang.matrix_clean_task.k_83c0c24d,
             box=self.box.bottom,
