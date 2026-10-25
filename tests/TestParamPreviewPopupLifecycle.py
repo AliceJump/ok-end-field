@@ -7,7 +7,9 @@ from unittest.mock import MagicMock
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QEvent, QTimer, Qt
+from PySide6.QtCore import QEvent, QPointF, QTimer
+from PySide6.QtGui import QEnterEvent
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QWidget
 
 from src.gui.param_preview_popup import (
@@ -36,6 +38,7 @@ class TestParamPreviewPopupLifecycle(unittest.TestCase):
         self.card.card.setGeometry(0, 0, 400, 70)
         self.card.task = SimpleNamespace(name="接取委托")
         self.window.show()
+        self.window.activateWindow()
         self.app.processEvents()
         self.popup = MagicMock()
         self.popup.show_for_task.return_value = True
@@ -43,12 +46,14 @@ class TestParamPreviewPopupLifecycle(unittest.TestCase):
         ParamPreviewController._owner = None
         ParamPreviewController._hide_timer = QTimer(self.window)
         self.hover = _CardHoverFilter(self.card)
+        self.card.card.installEventFilter(self.hover)
         self.window.installEventFilter(self.hover)
 
     def tearDown(self):
         self.hover._show_timer.stop()
         ParamPreviewController._hide_timer.stop()
         self.window.removeEventFilter(self.hover)
+        self.card.card.removeEventFilter(self.hover)
         self.window.close()
         self.window.deleteLater()
         (
@@ -107,6 +112,33 @@ class TestParamPreviewPopupLifecycle(unittest.TestCase):
         fake._hide_anim.stop.assert_called_once()
         fake.hide.assert_called_once()
         fake.setWindowOpacity.assert_called_once_with(1.0)
+
+    def test_inactive_host_enter_timer_cannot_show_until_reactivated(self):
+        other_window = QWidget()
+        try:
+            ParamPreviewController.show_for(self.card)
+            other_window.show()
+            other_window.activateWindow()
+            self.app.processEvents()
+            self.assertFalse(self.window.isActiveWindow())
+            self.popup.reset_mock()
+            self.app.sendEvent(self.card.card, QEnterEvent(QPointF(), QPointF(), QPointF()))
+            self.assertTrue(self.hover._show_timer.isActive())
+            QTest.qWait(self.hover._show_timer.interval() + 20)
+            self.assertFalse(self.hover._show_timer.isActive())
+            self.popup.show.assert_not_called()
+            self.popup.show_for_task.assert_not_called()
+            self.popup.hide_immediately.assert_called()
+
+            self.window.activateWindow()
+            self.app.processEvents()
+            self.assertTrue(self.window.isActiveWindow())
+            self.app.sendEvent(self.card.card, QEnterEvent(QPointF(), QPointF(), QPointF()))
+            QTest.qWait(self.hover._show_timer.interval() + 20)
+            self.popup.show.assert_called_once()
+        finally:
+            other_window.close()
+            other_window.deleteLater()
 
 
 if __name__ == "__main__":

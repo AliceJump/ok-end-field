@@ -564,6 +564,7 @@ class ParamPreviewController:
         if (
             window is None
             or not window.isVisible()
+            or not window.isActiveWindow()
             or window.isMinimized()
             or not card.isVisible()
             or not card.card.isVisible()
