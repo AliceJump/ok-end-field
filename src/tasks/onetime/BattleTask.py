@@ -658,7 +658,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         能量淤积点的二次寻路：重新打开索引 → 进入副本详情 → 追踪传送 → 滑索 → 领取奖励。
 
         返回:
-            bool: 成功找到并点击『领取奖励』按钮时返回 True，否则 False。
+            bool: 普通模式确认奖励页后返回 True；额外模式保留放弃奖励流程。
         """
         self.log_info("当前副本为『能量淤积点』，开始进行二次寻路。")
         # F8 索引
@@ -698,7 +698,8 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         if self.battle_ctx.is_extra_mode:
             self.click_confirm()
             self.log_info("已放弃未领取的奖励")
-        return True
+            return True
+        return bool(self.wait_feature(feature=fL.get_claim_page, time_out=3, raise_if_not_found=False))
 
     def to_restart(self):
         """
@@ -1026,6 +1027,9 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             return list(recent.boxes) if recent else None
 
         def try_click_reward(deep_search=False):
+            if not self.battle_ctx.is_extra_mode and self.find_one(feature=fL.get_claim_page):
+                return True
+
             def check():
                 return self.wait_ocr(
                     match=re.compile(click_key),
@@ -1054,8 +1058,12 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 if self.battle_ctx.is_extra_mode:
                     self.click_confirm()
                     self.log_info("已放弃未领取的奖励")
+                    return True
 
-                return True
+                if self.wait_feature(feature=fL.get_claim_page, time_out=3, raise_if_not_found=False):
+                    return True
+                self.log_info("点击领取提示后未进入奖励页，继续寻找奖励点")
+                return False
             if not observations.has_recent_target():
                 detect_marker()
             self.click(key="middle", after_sleep=0.3)
@@ -1141,7 +1149,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             ):
                 raise RuntimeError("导航奖励点失败")
 
-            return try_click_reward(deep_search=True) or True
+            return bool(try_click_reward(deep_search=True))
 
         except Exception as e:
             if isinstance(e, TaskDisabledException):

@@ -27,6 +27,12 @@ class _ToEndTaskHarness:
     def wait_ocr(self, **kwargs):
         self.events.append("ocr_miss")
 
+    def find_one(self, **kwargs):
+        return None
+
+    def wait_feature(self, **kwargs):
+        return None
+
     def click(self, *args, **kwargs):
         self.events.append(("click", kwargs.get("key")))
 
@@ -103,6 +109,36 @@ class TestDailyBattleToEnd(unittest.TestCase):
         task.wait_ocr.assert_not_called()
         task.wait_click_ocr.assert_not_called()
 
+    def test_gather_retry_requires_reward_page_after_claim_click(self):
+        for page in (None, object()):
+            with self.subTest(page=bool(page)):
+                task = Mock()
+                task.battle_ctx = BattleContext()
+                task.lang.daily_battle_mixin.k_39d12e73_1 = "claim"
+                task._transfer_to_gather_stage.return_value = False
+                task._prepare_gather_navigation.return_value = False
+                task.wait_ocr.return_value = [object()]
+                task.wait_click_ocr.return_value = True
+                task.wait_feature.return_value = page
+                self.assertEqual(BattleTask._gather_retry_navigate(task), bool(page))
+                task.wait_click_ocr.assert_called_once()
+                task.wait_feature.assert_called_once_with(
+                    feature=fL.get_claim_page, time_out=3, raise_if_not_found=False
+                )
+                task.click_confirm.assert_not_called()
+
+    def test_gather_retry_extra_mode_does_not_require_reward_page(self):
+        task = Mock()
+        task.battle_ctx = BattleContext(is_extra_mode=True)
+        task.lang.daily_battle_mixin.k_b8a81b7a = "abandon"
+        task._transfer_to_gather_stage.return_value = False
+        task._prepare_gather_navigation.return_value = False
+        task.wait_ocr.return_value = [object()]
+        task.wait_click_ocr.return_value = True
+        self.assertTrue(BattleTask._gather_retry_navigate(task))
+        task.click_confirm.assert_called_once()
+        task.wait_feature.assert_not_called()
+
     def test_to_battle_passes_recovery_and_only_starts_after_entry(self):
         for entered in (True, False):
             with self.subTest(entered=entered):
@@ -176,7 +212,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
         ):
             result = feature.to_end()
 
-        self.assertTrue(result)
+        self.assertFalse(result)
         middle_click_indexes = [index for index, event in enumerate(task.events) if event == ("click", "middle")]
         self.assertEqual(0, len(middle_click_indexes))
         self.assertEqual(4, task.events.count("ocr_miss"))
@@ -190,7 +226,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
         feature.battle_ctx = BattleContext(category_name="gather")
 
         with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=True):
-            self.assertTrue(feature.to_end())
+            self.assertFalse(feature.to_end())
 
         self.assertNotIn(("click", "middle"), feature.events)
         self.assertEqual(0, feature.events.count("rotate"))
@@ -208,7 +244,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
 
         feature.yolo_detect = detect
         with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
-            self.assertTrue(feature.to_end())
+            self.assertFalse(feature.to_end())
 
         self.assertEqual(0, feature.events.count("rotate"))
         self.assertNotIn(("click", "middle"), feature.events)
@@ -227,11 +263,43 @@ class TestDailyBattleToEnd(unittest.TestCase):
 
         feature.yolo_detect = detect
         with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
-            self.assertTrue(feature.to_end())
+            self.assertFalse(feature.to_end())
 
         self.assertEqual(1, feature.events.count("mouse_delta"))
         self.assertIn(("seed", True), feature.events)
         self.assertEqual(1, feature.events.count(("click", "middle")))
+
+    def test_misleading_claim_text_does_not_confirm_reward_arrival(self):
+        feature = _make_impl(_ToEndTaskHarness())
+        feature.battle_ctx = BattleContext(category_name="normal")
+        feature.wait_ocr = Mock(return_value=[object()])
+        feature.click_with_alt = Mock()
+        feature.wait_feature = Mock(return_value=None)
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+            self.assertFalse(feature.to_end())
+        self.assertEqual(feature.click_with_alt.call_count, 3)
+        feature.wait_feature.assert_called_with(feature=fL.get_claim_page, time_out=3, raise_if_not_found=False)
+        self.assertIn("align", feature.events)
+
+    def test_missing_reward_page_can_recover_on_later_click(self):
+        feature = _make_impl(_ToEndTaskHarness())
+        feature.battle_ctx = BattleContext(category_name="normal")
+        feature.wait_ocr = Mock(return_value=[object()])
+        feature.click_with_alt = Mock()
+        feature.wait_feature = Mock(side_effect=[None, object()])
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+            self.assertTrue(feature.to_end())
+        self.assertEqual(feature.click_with_alt.call_count, 2)
+
+    def test_existing_reward_page_does_not_move_or_click(self):
+        feature = _make_impl(_ToEndTaskHarness())
+        feature.battle_ctx = BattleContext(category_name="normal")
+        feature.find_one = Mock(return_value=object())
+        feature.wait_ocr = Mock()
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+            self.assertTrue(feature.to_end())
+        feature.wait_ocr.assert_not_called()
+        self.assertEqual(feature.events, [])
 
     def test_rotate_search_sine_path_uses_preview_defaults_and_keeps_legacy_yaw_budget(self):
         feature = _make_impl(_ToEndTaskHarness())
@@ -292,7 +360,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
         feature.yolo_detect = lambda *args, **kwargs: []
 
         with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
-            self.assertTrue(feature.to_end())
+            self.assertFalse(feature.to_end())
 
         self.assertIn(("click", "middle"), feature.events)
         self.assertEqual(1, feature.events.count("rotate"))
@@ -310,7 +378,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
         ):
             result = feature.to_end()
 
-        self.assertTrue(result)
+        self.assertFalse(result)
         self.assertNotIn(("sleep", 1), task.events)
 
 

@@ -39,6 +39,7 @@ class TestGatherRetransferLearning(unittest.TestCase):
         task.ensure_main.side_effect = lambda: self.assertFalse(learning_allowed())
         task.wait_ui_stable.side_effect = lambda **kwargs: self.assertFalse(learning_allowed()) or True
         task.wait_ocr.return_value = [box()]
+        task.wait_feature = Mock(side_effect=lambda **kwargs: self.assertFalse(learning_allowed()) or True)
 
         def click_ocr(**kwargs):
             if kwargs.get("match") == task.lang.daily_battle_mixin.k_b0e3a2da:

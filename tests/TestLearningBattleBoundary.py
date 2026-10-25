@@ -105,6 +105,7 @@ class TestLearningBattleBoundary(unittest.TestCase):
         task._navigate_via_zip_line = zipline
         task.wait_ocr = Mock(side_effect=[False, [object()]])
         task.wait_click_ocr = Mock(return_value=True)
+        task.wait_feature = Mock(side_effect=lambda **kwargs: self.assertFalse(learning_allowed()) or True)
         task.navigate_until_target = Mock(return_value=True)
         task.align_ocr_or_find_target_to_center = lambda *args, **kwargs: (
             NavigationMixin.align_ocr_or_find_target_to_center(task, *args, **kwargs)
