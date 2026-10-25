@@ -113,6 +113,22 @@ def _import_region_options(source_config: dict, target_config: dict, target_key:
     return RegionalBuildTask.config_value_migrations["⭐地区建设"](source_config, target_key)
 
 
+def _import_account_region_options(source_config: dict, target_config: dict, target_key: str):
+    """Keep sparse legacy account choices sparse so omitted options inherit."""
+    if isinstance(target_config.get(target_key), list):
+        return _NO_MIGRATION
+    for legacy_key in RegionalBuildTask.LEGACY_OPTION_KEYS.values():
+        if legacy_key in source_config:
+            target_config.setdefault(legacy_key, source_config[legacy_key])
+    value = target_config.get(target_key, source_config.get(target_key, _NO_MIGRATION))
+    if all(key in target_config for key in RegionalBuildTask.LEGACY_OPTION_KEYS.values()):
+        complete = dict(target_config)
+        if value is not _NO_MIGRATION:
+            complete[target_key] = value
+        return _import_region_options(complete, {}, target_key)
+    return [] if value is False else value
+
+
 # 批次声明。键值映射的 dict 键 = 目标键名；值为来源键名（str）或转换函数（callable）。
 # 新批次往后追加即可，已完成批次受状态文件标记保护不会重复执行。
 DAILY_SPLIT_IMPORTS: dict[str, dict[str, dict[str, dict[str, Any]]]] = {
@@ -406,7 +422,8 @@ def _import_account_overrides(target_name: str, source_name: str, key_map: dict[
             for target_key, entry in key_map.items():
                 if not callable(entry) and target_key in target_segment:
                     continue
-                value = _resolve_entry_value(entry, source_segment, target_segment, target_key)
+                account_entry = _import_account_region_options if entry is _import_region_options else entry
+                value = _resolve_entry_value(account_entry, source_segment, target_segment, target_key)
                 if value is _NO_MIGRATION or target_segment.get(target_key, _NO_MIGRATION) == value:
                     continue
                 target_segment[target_key] = value

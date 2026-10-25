@@ -43,7 +43,9 @@ class TestConfigUiMigrations(unittest.TestCase):
                     task.load_config()
                 self.assertEqual(task.config[key], [])
                 self.assertEqual(read_json_file(path)[key], [])
-                self.assertEqual(get_account_task_overrides("user", task_name)[key], [])
+                # Regional account switches stay sparse for runtime inheritance.
+                expected = False if task_type is RegionalBuildTask else []
+                self.assertEqual(get_account_task_overrides("user", task_name)[key], expected)
 
     def test_child_task_legacy_false_is_not_replaced_by_enabled_defaults(self):
         from src.core.config_migration import collect_config_migrations

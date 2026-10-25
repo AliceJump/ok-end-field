@@ -110,6 +110,43 @@ class TestConfigKeyCopy(unittest.TestCase):
                 task.load_config()
             self.assertEqual(get_account_task_overrides("user", "DailyTask"), {"⭐送礼": False})
 
+    def test_regional_account_migration_keeps_partial_options_inherited(self):
+        from ok import BaseTask
+        from ok.util.config import Config
+
+        from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
+
+        cases = [
+            ({"⭐买物资": True}, {"据点兑换", "买物资", "买卖货"}),
+            ({"⭐据点兑换": False}, {"买卖货"}),
+            ({"⭐地区建设": False, "⭐买物资": True}, set()),
+            ({"⭐地区建设": [], "⭐买物资": True}, set()),
+            ({"⭐地区建设": ["买物资"], "⭐据点兑换": True}, {"买物资"}),
+        ]
+        for overrides, expected in cases:
+            with (
+                self.subTest(overrides=overrides),
+                tempfile.TemporaryDirectory() as tmp,
+                patch.object(Config, "config_folder", tmp),
+            ):
+                path = os.path.join(tmp, "account_scoped_overrides.json")
+                write_json_file(path, {"accounts": {"user": {"RegionalBuildTask": overrides}}})
+                task = object.__new__(RegionalBuildTask)
+                with (
+                    patch("src.tasks.daily.split_config_migrator.maybe_run_pending_config_imports"),
+                    patch.object(BaseTask, "load_config"),
+                ):
+                    task.load_config()
+                    task.load_config()
+                segment = get_account_task_overrides("user", "RegionalBuildTask")
+                self.assertEqual(segment, overrides)
+                task.config = {"⭐地区建设": ["据点兑换", "买卖货"]}
+                with patch.object(task, "_account_override_for", return_value=segment):
+                    self.assertEqual(task._regional_options(), expected)
+                    if overrides == {"⭐买物资": True}:
+                        task.config["⭐地区建设"] = []
+                        self.assertEqual(task._regional_options(), {"买物资"})
+
     def migrate(self, directory, *, replace_defaults):
         module = global_config_store if replace_defaults else config_migration
         with patch.object(module, "config_path", side_effect=lambda name: os.path.join(directory, name)):
