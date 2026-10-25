@@ -519,6 +519,14 @@ class ParamPreviewPopup(QWidget):
         self._hide_anim.stop()
         self._hide_anim.start()
 
+    def hide_immediately(self):
+        """宿主窗口消失时同步关闭，不留 90ms 淡出或在途动画。"""
+        self._show_anim.stop()
+        self._slide_anim.stop()
+        self._hide_anim.stop()
+        self.hide()
+        self.setWindowOpacity(1.0)
+
     def _finish_hide(self):
         self.hide()
         self.setWindowOpacity(1.0)  # 复位，下次弹出从头淡入
@@ -551,7 +559,18 @@ class ParamPreviewController:
 
     @classmethod
     def show_for(cls, card):
-        """显示/切换弹层（快速移动防竞态：先撤旧隐藏定时器）。"""
+        """显示/切换弹层；宿主不可见时禁止排队的悬停回调重新弹窗。"""
+        window = card.window()
+        if (
+            window is None
+            or not window.isVisible()
+            or not window.isActiveWindow()
+            or window.isMinimized()
+            or not card.isVisible()
+            or not card.card.isVisible()
+        ):
+            cls.hide_immediately()
+            return
         cls.cancel_hide()
         popup = cls._ensure_popup()
         if not popup.show_for_task(card):
@@ -569,6 +588,14 @@ class ParamPreviewController:
         """立即收起（滚动/缩放/任务刷新/切 tab 用）。"""
         cls.cancel_hide()
         cls._hide_now()
+
+    @classmethod
+    def hide_immediately(cls):
+        """宿主隐藏、最小化、关闭或失活：直接隐藏并清掉旧 owner。"""
+        cls.cancel_hide()
+        if cls._popup is not None:
+            cls._popup.hide_immediately()
+        cls._owner = None
 
     @classmethod
     def schedule_hide(cls):
@@ -658,9 +685,18 @@ class _CardHoverFilter(QObject):
                 elif etype == QEvent.Resize:
                     # 卡片自身变形（如展开配置卡）→ 弹层位置过时，收起
                     ParamPreviewController.hide()
+            elif obj is self._card.window():
+                if etype in (QEvent.Hide, QEvent.Close, QEvent.WindowDeactivate) or (
+                    etype == QEvent.WindowStateChange and obj.isMinimized()
+                ):
+                    # Qt.ToolTip 无父窗口；主窗口消失时必须同步停掉悬停 timer
+                    # 和淡出动画，否则 tooltip 会独自残留在游戏画面上。
+                    self._show_timer.stop()
+                    ParamPreviewController.hide_immediately()
+                elif etype in (QEvent.Resize, QEvent.Move):
+                    ParamPreviewController.hide()
             elif etype in (QEvent.Wheel, QEvent.Resize, QEvent.Move):
-                # 宿主列表滚动 / 主窗口缩放移动 → 立即收；弹层自身是独立
-                # 顶级窗口，事件到不了宿主过滤器 → 弹层内滚不收
+                # 宿主列表滚动/尺寸变化 → 收起；弹层内滚不收
                 ParamPreviewController.hide()
         except Exception:
             pass
