@@ -26,6 +26,10 @@ def _settled(read):
     return condition
 
 
+class YingTuoError(Exception):
+    """画面没有按预期切换。run() 捕获它、记失败并返回 False，一键日常的后续任务照常执行。"""
+
+
 class YingTuoTask(BattleMixin):
     CFG_CLAIM_REWARD: ClassVar[str] = "⭐领取影拓丰碑奖励"
     # 领奖开启且活动任务已全部完成时跳过整个任务；独立任务仍挑战其余海报，一键日常版跳过。
@@ -70,6 +74,14 @@ class YingTuoTask(BattleMixin):
         )
 
     def run(self):
+        try:
+            return self.run_yingtuo()
+        except YingTuoError as e:
+            # 直接抛出会中断整个一键日常。
+            self.mark_task_failure(str(e))
+            return False
+
+    def run_yingtuo(self):
         self.ensure_main(time_out=400)
         claim_enabled = self.config.get(self.CFG_CLAIM_REWARD, True)
         # 苦难任务属于影拓丰碑本身，领奖开关关闭时也要读出它是否完成。
@@ -160,12 +172,12 @@ class YingTuoTask(BattleMixin):
                 # 实录中打完普通关卡后，游戏把详情页切到了苦难模式；苦难任务撤离后也可能停在苦难模式。
                 if not self._set_hardship_mode(False):
                     self.log_info("未能关闭苦难模式，结束挑战")
-                    raise Exception("未能关闭苦难模式")
+                    raise YingTuoError("未能关闭苦难模式")
                 self.log_info("进入挑战页面，开始挑战")
                 self._click_challenge_and_enter()
                 if not self.battle_and_exit(transition_recovery=self._retry_entry):
                     self.log_info("战斗过程中发生错误，返回失败")
-                    raise Exception("战斗过程中发生错误")
+                    raise YingTuoError("战斗过程中发生错误")
                 if not self.wait_feature(
                     feature=fL.to_max_produce_num,
                     box=self.box_of_screen(0.934, 0.881, 0.977, 0.965),
@@ -174,7 +186,7 @@ class YingTuoTask(BattleMixin):
                     raise_if_not_found=False,
                 ):
                     self.log_info("未能找到挑战开始按钮，返回失败")
-                    raise Exception("未能找到挑战开始按钮")
+                    raise YingTuoError("未能找到挑战开始按钮")
                 self.log_info("挑战完成，继续寻找下一个普通关卡")
             if not self.return_to_monument():
                 self.log_info("未能返回海报页，结束挑战")
@@ -183,7 +195,7 @@ class YingTuoTask(BattleMixin):
         return True
 
     def _click_challenge_and_enter(self):
-        """在关卡详情页点「挑战影拓丰碑」，再在编队页点入场；任一按钮找不到时抛异常。"""
+        """在关卡详情页点「挑战影拓丰碑」，再在编队页点入场；任一按钮找不到时抛出 YingTuoError。"""
         if not self.wait_click_feature(
             feature=fL.to_max_produce_num,
             box=self.box_of_screen(0.934, 0.881, 0.977, 0.965),
@@ -192,7 +204,7 @@ class YingTuoTask(BattleMixin):
             raise_if_not_found=False,
         ):
             self.log_info("未能找到挑战开始按钮")
-            raise Exception("未能找到挑战开始按钮")
+            raise YingTuoError("未能找到挑战开始按钮")
         if not self.wait_click_feature(
             feature=fL.give_gift,
             box=self.box_of_screen(0.934, 0.881, 0.977, 0.965),
@@ -201,7 +213,7 @@ class YingTuoTask(BattleMixin):
             raise_if_not_found=False,
         ):
             self.log_info("未能进入战斗")
-            raise Exception("未能进入战斗")
+            raise YingTuoError("未能进入战斗")
 
     def _retry_entry(self):
         """等待入场期间，编队页的入场按钮仍在时再点一次。"""
@@ -229,10 +241,10 @@ class YingTuoTask(BattleMixin):
             return
         self._click_challenge_and_enter()
         if not self.wait_battle_space(transition_recovery=self._retry_entry):
-            raise Exception("苦难关卡未能进入协议空间")
+            raise YingTuoError("苦难关卡未能进入协议空间")
         self.log_info("已进入苦难关卡，撤离")
         if not self._evacuate():
-            raise Exception("按 ESC 后未出现撤离确认框")
+            raise YingTuoError("按 ESC 后未出现撤离确认框")
         page = self.wait_until(
             _settled(self._detail_or_monument),
             time_out=self.RETURN_LOADING_TIMEOUT,
@@ -240,12 +252,12 @@ class YingTuoTask(BattleMixin):
             raise_if_not_found=False,
         )
         if page is None:
-            raise Exception("撤离后未回到关卡详情页或海报页")
+            raise YingTuoError("撤离后未回到关卡详情页或海报页")
         if page == "detail":
             if not self._set_hardship_mode(False):
-                raise Exception("撤离后未能关闭苦难模式")
+                raise YingTuoError("撤离后未能关闭苦难模式")
             if not self.return_to_monument():
-                raise Exception("撤离后未能返回海报页")
+                raise YingTuoError("撤离后未能返回海报页")
         self.log_info("苦难任务已完成")
 
     def _evacuate(self):
@@ -541,7 +553,7 @@ class YingTuoTask(BattleMixin):
             # 点满次数就报错，不再检测：此时画面不明，检测为空会走空滚动并误报任务完成。
             if attempts >= self.CHALLENGE_CLICK_ATTEMPTS:
                 self.log_info("点击灰条后未进入关卡详情页")
-                raise Exception("点击灰条后未进入关卡详情页")
+                raise YingTuoError("点击灰条后未进入关卡详情页")
             self.log_info(f"点击灰条后未进入关卡详情页，重新检测 ({attempts}/{self.CHALLENGE_CLICK_ATTEMPTS})")
         self.log_info("连续 4 次滚动未检测到普通关卡灰条")
         return None
@@ -571,7 +583,7 @@ class YingTuoTask(BattleMixin):
                 return bars, frame
             if self.active_time() - start >= time_out:
                 self.log_info(f"灰条检测 {time_out:g} 秒内未稳定，结束挑战")
-                raise Exception(f"灰条检测 {time_out:g} 秒内未稳定")
+                raise YingTuoError(f"灰条检测 {time_out:g} 秒内未稳定")
             previous = bars
             self.sleep(0.2)
 

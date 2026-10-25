@@ -6,7 +6,7 @@ from unittest.mock import Mock, call, patch
 import numpy as np
 
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.onetime.YingTuoTask import YingTuoTask, _settled
+from src.tasks.onetime.YingTuoTask import YingTuoError, YingTuoTask, _settled
 
 
 class _FakeYingTuoTask:
@@ -201,7 +201,7 @@ class TestYingTuoTask(unittest.TestCase):
         task.wait_until.return_value = [object()]
         task._set_hardship_mode.return_value = False
 
-        with self.assertRaisesRegex(Exception, "未能关闭苦难模式"):
+        with self.assertRaisesRegex(YingTuoError, "未能关闭苦难模式"):
             YingTuoTask.challenge_normal_stages(task)
 
         task._click_challenge_and_enter.assert_not_called()
@@ -237,7 +237,7 @@ class TestYingTuoTask(unittest.TestCase):
         task.wait_until.return_value = "detail"
         task._set_hardship_mode.side_effect = [True, False]
 
-        with self.assertRaisesRegex(Exception, "未能关闭苦难模式"):
+        with self.assertRaisesRegex(YingTuoError, "未能关闭苦难模式"):
             YingTuoTask.challenge_hardship(task)
 
         task.return_to_monument.assert_not_called()
@@ -255,14 +255,14 @@ class TestYingTuoTask(unittest.TestCase):
         task = Mock()
         task.wait_until.return_value = None
 
-        with self.assertRaisesRegex(Exception, "撤离后未回到"):
+        with self.assertRaisesRegex(YingTuoError, "撤离后未回到"):
             YingTuoTask.challenge_hardship(task)
 
     def test_hardship_raises_when_evacuation_dialog_missing(self):
         task = Mock()
         task._evacuate.return_value = False
 
-        with self.assertRaisesRegex(Exception, "撤离确认框"):
+        with self.assertRaisesRegex(YingTuoError, "撤离确认框"):
             YingTuoTask.challenge_hardship(task)
 
         task.return_to_monument.assert_not_called()
@@ -415,7 +415,7 @@ class TestYingTuoTask(unittest.TestCase):
                 "src.tasks.onetime.YingTuoTask.detect_gray_bars",
                 side_effect=[[_bar(50.0, 25.0)], [_bar(150.0, 25.0)]] * 12,
             ),
-            self.assertRaisesRegex(Exception, "灰条检测.*未稳定"),
+            self.assertRaisesRegex(YingTuoError, "灰条检测.*未稳定"),
         ):
             YingTuoTask.find_normal_challenge(task)
         self.assertEqual(task.clicks, [])
@@ -428,7 +428,7 @@ class TestYingTuoTask(unittest.TestCase):
                 "src.tasks.onetime.YingTuoTask.detect_gray_bars",
                 side_effect=[[_bar(50.0, 25.0)], []] * 12,
             ),
-            self.assertRaisesRegex(Exception, "灰条检测.*未稳定"),
+            self.assertRaisesRegex(YingTuoError, "灰条检测.*未稳定"),
         ):
             YingTuoTask.find_normal_challenge(task)
         self.assertEqual(task.scroll_count, 0)
@@ -445,7 +445,7 @@ class TestYingTuoTask(unittest.TestCase):
         task.detail_page_results = [False] * YingTuoTask.CHALLENGE_CLICK_ATTEMPTS
         with (
             patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50.0, 25.0)]),
-            self.assertRaisesRegex(Exception, "未进入关卡详情页"),
+            self.assertRaisesRegex(YingTuoError, "未进入关卡详情页"),
         ):
             YingTuoTask.find_normal_challenge(task)
         self.assertEqual(len(task.clicks), YingTuoTask.CHALLENGE_CLICK_ATTEMPTS)
@@ -458,7 +458,7 @@ class TestYingTuoTask(unittest.TestCase):
         bars = [[_bar(50.0, 25.0)]] * (2 * YingTuoTask.CHALLENGE_CLICK_ATTEMPTS)
         with (
             patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", side_effect=bars + [[]] * 10),
-            self.assertRaisesRegex(Exception, "未进入关卡详情页"),
+            self.assertRaisesRegex(YingTuoError, "未进入关卡详情页"),
         ):
             YingTuoTask.find_normal_challenge(task)
         self.assertEqual(task.scroll_count, 0)

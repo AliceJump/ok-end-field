@@ -8,7 +8,7 @@ from ok import TaskDisabledException
 
 from src.data.lang import LangAccessor
 from src.image.reward_card_probe import CARD_CLAIMABLE, CARD_CLAIMED, CARD_UNFINISHED
-from src.tasks.onetime.YingTuoTask import YingTuoTask
+from src.tasks.onetime.YingTuoTask import YingTuoError, YingTuoTask
 
 # 任务格实测底色：未领取为暗红，已完成且已领取转为灰底，未完成是近黑底。
 # 黑与灰按亮度中位数分流：实录 V=29~42 为黑，V=70 为灰。
@@ -77,7 +77,8 @@ def _mock_task(claim_enabled=True, task_cls=YingTuoTask):
     task.CFG_CLAIM_REWARD = YingTuoTask.CFG_CLAIM_REWARD
     task.SKIP_WHEN_ACTIVITY_DONE = task_cls.SKIP_WHEN_ACTIVITY_DONE
     task.config = {YingTuoTask.CFG_CLAIM_REWARD: claim_enabled}
-    # 活动阶段用真实实现，才能检查它与其余海报阶段的先后顺序
+    # 主流程与活动阶段用真实实现，才能检查它与其余海报阶段的先后顺序
+    task.run_yingtuo = functools.partial(YingTuoTask.run_yingtuo, task)
     task.run_activity_stages = functools.partial(YingTuoTask.run_activity_stages, task)
     return task
 
@@ -378,16 +379,27 @@ class TestYingTuoReward(unittest.TestCase):
         task.challenge_normal_stages.assert_called_once_with(leftmost_only=True)
         self.assertIn("未跑完", _last_log(task))
 
-    def test_stage_c_still_runs_when_challenge_raises(self):
-        # 挑战中途报错同样要先领奖，再把错误抛给框架
+    def test_stage_c_still_runs_when_challenge_fails(self):
+        # 挑战中途画面不对同样要先领奖；失败只记给日常汇总，不中断一键日常的后续任务
         task = _mock_task()
         task.check_activity_tasks.side_effect = [(CARD_UNFINISHED, None), (CARD_CLAIMED, None)]
-        task.challenge_normal_stages.side_effect = Exception("未能进入战斗")
+        task.challenge_normal_stages.side_effect = YingTuoError("未能进入战斗")
 
-        with self.assertRaisesRegex(Exception, "未能进入战斗"):
-            YingTuoTask.run.__wrapped__(task)
+        self.assertIs(YingTuoTask.run.__wrapped__(task), False)
 
         self.assertEqual(task.check_activity_tasks.call_count, 2)
+        task.mark_task_failure.assert_called_once_with("未能进入战斗")
+
+    def test_unexpected_error_still_raises(self):
+        # 只有画面没按预期切换才记失败；代码错误照常抛出，保留调用栈
+        task = _mock_task()
+        task.check_activity_tasks.side_effect = [(CARD_UNFINISHED, None), (CARD_CLAIMED, None)]
+        task.challenge_normal_stages.side_effect = KeyError("bars")
+
+        with self.assertRaises(KeyError):
+            YingTuoTask.run.__wrapped__(task)
+
+        task.mark_task_failure.assert_not_called()
 
     def test_task_stop_skips_stage_c(self):
         # 用户停止任务时不再领奖，直接退出
