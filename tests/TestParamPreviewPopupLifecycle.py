@@ -9,7 +9,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QEvent, QPointF, QTimer
 from PySide6.QtGui import QEnterEvent
-from PySide6.QtTest import QTest
+from PySide6.QtTest import QSignalSpy
 from PySide6.QtWidgets import QApplication, QWidget
 
 from src.gui.param_preview_popup import (
@@ -122,9 +122,10 @@ class TestParamPreviewPopupLifecycle(unittest.TestCase):
             self.app.processEvents()
             self.assertFalse(self.window.isActiveWindow())
             self.popup.reset_mock()
+            inactive_timeout = QSignalSpy(self.hover._show_timer.timeout)
             self.app.sendEvent(self.card.card, QEnterEvent(QPointF(), QPointF(), QPointF()))
             self.assertTrue(self.hover._show_timer.isActive())
-            QTest.qWait(self.hover._show_timer.interval() + 20)
+            self.assertTrue(inactive_timeout.wait(1000))
             self.assertFalse(self.hover._show_timer.isActive())
             self.popup.show.assert_not_called()
             self.popup.show_for_task.assert_not_called()
@@ -133,8 +134,9 @@ class TestParamPreviewPopupLifecycle(unittest.TestCase):
             self.window.activateWindow()
             self.app.processEvents()
             self.assertTrue(self.window.isActiveWindow())
+            active_timeout = QSignalSpy(self.hover._show_timer.timeout)
             self.app.sendEvent(self.card.card, QEnterEvent(QPointF(), QPointF(), QPointF()))
-            QTest.qWait(self.hover._show_timer.interval() + 20)
+            self.assertTrue(active_timeout.wait(1000))
             self.popup.show.assert_called_once()
         finally:
             other_window.close()
