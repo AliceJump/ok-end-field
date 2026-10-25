@@ -4,6 +4,7 @@ import calendar
 import contextlib
 import io
 import json
+import os
 import subprocess
 import threading
 import time
@@ -66,7 +67,15 @@ def _build_logs_zip(note_text: str = ""):
 
         return True
 
-    def _read_snapshot_file(file_path: Path) -> bytes | None:
+    def _read_snapshot_file(file_path: Path, *, live_log: bool = False) -> bytes | None:
+        if live_log:
+            # 活跃日志持续追加，不能按截图的静置规则跳过；以打开时的长度截取快照。
+            try:
+                with file_path.open("rb") as log_file:
+                    return log_file.read(os.fstat(log_file.fileno()).st_size)
+            except FileNotFoundError:
+                logger.debug(f"skip rotated live log: {file_path}")
+                return None
         if not _wait_file_settled(file_path):
             logger.debug(f"skip unstable file: {file_path}")
             return None
@@ -99,7 +108,7 @@ def _build_logs_zip(note_text: str = ""):
                 for file_path in source_dir.rglob("*"):
                     if not file_path.is_file():
                         continue
-                    data = _read_snapshot_file(file_path)
+                    data = _read_snapshot_file(file_path, live_log=folder == "logs" and file_path.suffix == ".log")
                     if data is None:
                         continue
                     arcname = str(file_path.relative_to(Path.cwd())).replace("\\", "/")

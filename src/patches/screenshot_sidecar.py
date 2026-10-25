@@ -20,7 +20,7 @@ SIDECAR_SUFFIX = "_boxes.json"
 def serialize_boxes(ui_dict: dict, x_offset: float = 0, y_offset: float = 0) -> list:
     """把 ok-script 的 ui_dict 画框快照序列化为可 JSON 化的列表。
 
-    ui_dict 结构：``{key: [boxes, timestamp, QColor]}``，与
+    ui_dict 结构：``{key: [boxes, timestamp, QColor 或 RGB(A) 序列]}``，与
     ok.gui.debug.Screenshot 里绘制 _boxed.png 时的数据一致。
 
     Args:
@@ -33,7 +33,10 @@ def serialize_boxes(ui_dict: dict, x_offset: float = 0, y_offset: float = 0) -> 
     """
     boxes = []
     for key, value in ui_dict.items():
-        color = tuple([int(x) for x in value[2].getRgb()])
+        raw_color = value[2]
+        if hasattr(raw_color, "getRgb"):
+            raw_color = raw_color.getRgb()
+        color = tuple(int(x) for x in raw_color)
         for box in value[0]:
             width = box.width
             height = box.height
