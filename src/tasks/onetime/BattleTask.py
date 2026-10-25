@@ -1026,6 +1026,9 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             return list(recent.boxes) if recent else None
 
         def try_click_reward(deep_search=False):
+            if not self.battle_ctx.is_extra_mode and self.find_one(feature=fL.get_claim_page):
+                return True
+
             def check():
                 return self.wait_ocr(
                     match=re.compile(click_key),
@@ -1054,8 +1057,12 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 if self.battle_ctx.is_extra_mode:
                     self.click_confirm()
                     self.log_info("已放弃未领取的奖励")
+                    return True
 
-                return True
+                if self.wait_feature(feature=fL.get_claim_page, time_out=3, raise_if_not_found=False):
+                    return True
+                self.log_info("点击领取提示后未进入奖励页，继续寻找奖励点")
+                return False
             if not observations.has_recent_target():
                 detect_marker()
             self.click(key="middle", after_sleep=0.3)
@@ -1141,7 +1148,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             ):
                 raise RuntimeError("导航奖励点失败")
 
-            return try_click_reward(deep_search=True) or True
+            return bool(try_click_reward(deep_search=True))
 
         except Exception as e:
             if isinstance(e, TaskDisabledException):

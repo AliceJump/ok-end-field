@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from ok import TaskDisabledException
 
 from src.core.learning.policy import learning_allowed
+from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.navigation_detection_scope import NavigationDetectionScope, get_navigation_detection_scope
 from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 from tests.TestNavigationMixin import NavigationMixin
@@ -74,13 +75,20 @@ class TestNavigationDetectionScope(unittest.TestCase):
         task = _Task()
         task.battle_ctx = BattleContext()
         task.lang = SimpleNamespace(daily_battle_mixin=SimpleNamespace(k_b8a81b7a="abandon", k_39d12e73_1="claim"))
-        state = {"world": False, "claim": False}
+        state = {"world": False, "claim": False, "page": False}
         task.wait_ocr = Mock(side_effect=lambda **kwargs: [task.detection] if state["claim"] else [])
         task.find_feature = Mock(side_effect=lambda **kwargs: task.detection if state["world"] and marker else None)
         task.rotate_search = Mock(return_value=None)
         task._open_index = Mock()
         task.to_stage = Mock(return_value=True)
-        task.wait_feature = Mock(return_value=follow_button)
+        task.find_one = Mock(return_value=None)
+        task.wait_feature = Mock(
+            side_effect=lambda **kwargs: (
+                (task.detection if state["page"] else None)
+                if kwargs.get("feature") == fL.get_claim_page
+                else follow_button
+            )
+        )
 
         def ensure_main():
             self.assertFalse(learning_allowed())
@@ -97,7 +105,7 @@ class TestNavigationDetectionScope(unittest.TestCase):
             return True
 
         task.navigate_until_target = Mock(side_effect=navigate)
-        task.click_with_alt = Mock()
+        task.click_with_alt = Mock(side_effect=lambda *_args: state.update(page=True))
         task._gather_retry_navigate = Mock(return_value=False)
         task.mark_task_failure = Mock()
         task._find_end = lambda: BattleTask._find_end(task)
