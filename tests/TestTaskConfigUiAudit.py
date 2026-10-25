@@ -78,6 +78,7 @@ class TestConfigUiMigrations(unittest.TestCase):
             "⭐帝江号收菜": True,
             "⭐刷体力": False,
             "⭐演算": True,
+            "⭐影拓丰碑": False,
             "⭐自动送货": True,
             "⭐传送到帝江号右侧传送点": False,
         }
@@ -86,6 +87,15 @@ class TestConfigUiMigrations(unittest.TestCase):
         self.assertEqual(migrated[DailyTask.CFG_BATTLE_TASKS], ["演算"])
         self.assertEqual(migrated[DailyTask.CFG_DELIVERY_TASKS], ["自动送货"])
         self.assertEqual(migrated[DailyTask.CFG_TAIL_TASKS], [])
+
+    def test_daily_yingtuo_enters_battle_column_with_legacy_switch(self):
+        # 影拓丰碑并入战斗分栏后，旧版单独跑它的用户仍按原开关值迁移
+        for legacy_on in (True, False):
+            with self.subTest(legacy_on=legacy_on):
+                config = {"⭐刷体力": False, "⭐演算": False, "⭐影拓丰碑": legacy_on}
+                migrated, _ = apply_value_migrations(dict(config), DailyTask.config_value_migrations)
+                expected = ["影拓丰碑"] if legacy_on else []
+                self.assertEqual(migrated[DailyTask.CFG_BATTLE_TASKS], expected)
 
     def test_delivery_conflicting_legacy_flags_preserve_old_accept_priority(self):
         config = {"仅接取": True, "仅送货": True}

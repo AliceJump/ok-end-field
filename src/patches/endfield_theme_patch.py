@@ -669,6 +669,7 @@ def reorganize_tasks_architecture(executor: Any) -> None:
         "TakeDeliveryTask": "收尾",
         "DailyBattleTask": "战斗",
         "DemoBattleTask": "战斗",
+        "DailyYingTuoTask": "战斗",
         "ActivityRewardTask": "奖励",
         "DailyRewardTask": "奖励",
         # 农牧领取按一条龙执行顺序排在自动送货之前，行序见 _endfield_refresh_ui 的 roster 排序

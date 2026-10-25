@@ -3796,3 +3796,31 @@ msgstr "Starting…"
 
 msgid "游戏已连接"
 msgstr "Game Connected"
+
+msgid "日常影拓丰碑"
+msgstr "Daily Yingtuo Monument"
+
+msgid "一键日常专用，配置独立于「影拓丰碑」。"
+msgstr "For Daily Tasks, with settings separate from Yingtuo Monument."
+
+msgid "⭐领取影拓丰碑奖励"
+msgstr "⭐Claim Yingtuo Monument Rewards"
+
+msgid "先完成最左侧海报（当期活动）的普通关卡和苦难任务，再挑战其余海报的普通关卡"
+msgstr ""
+"Complete normal stages and hardship tasks for the leftmost poster (current "
+"event), then challenge normal stages on the remaining posters."
+
+msgid "选择参加一键日常的战斗任务；刷体力、演算与影拓丰碑连续执行。"
+msgstr ""
+"Choose Daily Tasks combat activities; stamina farming, computation and "
+"Yingtuo Monument run consecutively."
+
+msgid ""
+"是否在「活动中心」领取影拓丰碑的活动奖励。\n"
+"先看第一格：黑底说明活动任务未完成，先打最左侧海报的关卡和苦难任务，回来领奖后再打其余海报；灰底说明活动任务已全部完成，直接打其余海报。\n"
+"关闭后不领奖，其余流程不变。"
+msgstr ""
+"Claim Yingtuo Monument rewards in the Event Center.\n"
+"A black first card means event tasks remain: complete the leftmost poster's normal stages and hardship tasks, claim rewards, then continue with other posters. A gray card means event tasks are complete.\n"
+"Disabling this skips reward collection only."

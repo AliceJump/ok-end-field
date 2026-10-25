@@ -198,16 +198,17 @@ Current main one-time task indexes (matching their task-list order):
 | 10 | Buy Credit Shop |
 | 11 | Daily Stamina Farming |
 | 12 | Computation |
-| 13 | Event Rewards |
-| 14 | Daily Rewards |
-| 15 | Daily Auto Delivery |
-| 16 | Teleport to Dijiang right-side transfer point |
-| 17 | Accept Commission |
-| 18 | Warehouse Transfer |
-| 19 | Auto Delivery |
-| 20 | Stamina Farming |
-| 21 | Computation Draw |
-| 22 | Yingtuo Monument |
+| 13 | Daily Yingtuo Monument |
+| 14 | Event Rewards |
+| 15 | Daily Rewards |
+| 16 | Daily Auto Delivery |
+| 17 | Teleport to Dijiang right-side transfer point |
+| 18 | Accept Commission |
+| 19 | Warehouse Transfer |
+| 20 | Auto Delivery |
+| 21 | Stamina Farming |
+| 22 | Computation Draw |
+| 23 | Yingtuo Monument |
 
 
 > **Index auto-correction at startup**: tasks created through ok-ef's built-in 「Scheduled Tasks」 feature (the 「Scheduled Tasks」 tab in the GUI) store their `-t` argument in `configs/schedule_tasks_cache.json` and in the Windows scheduled task. On every app startup, it reads this app's tasks (`\ok-ef\`) from the cache, compares each name against the current `onetime_tasks` order, automatically rewrites `-t` to the correct current index, and syncs the Windows scheduled task. So after reordering `onetime_tasks` you don't need to fix the number manually — the next startup corrects it automatically; if this run was triggered by the scheduled task, it also corrects before running, ensuring the right task runs. Other ok-* apps' tasks (e.g. `\ok-gf2\`) are not modified.

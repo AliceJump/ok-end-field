@@ -3929,3 +3929,32 @@ msgstr "Iniciando…"
 
 msgid "游戏已连接"
 msgstr "Juego conectado"
+
+msgid "日常影拓丰碑"
+msgstr "Monumento Yingtuo diario"
+
+msgid "一键日常专用，配置独立于「影拓丰碑」。"
+msgstr ""
+"Para tareas diarias, con ajustes independientes del Monumento Yingtuo."
+
+msgid "⭐领取影拓丰碑奖励"
+msgstr "⭐Recoger recompensas del Monumento Yingtuo"
+
+msgid "先完成最左侧海报（当期活动）的普通关卡和苦难任务，再挑战其余海报的普通关卡"
+msgstr ""
+"Completa las fases normales y las tareas de dificultad del cartel izquierdo "
+"(evento actual), y después las fases normales de los demás carteles."
+
+msgid "选择参加一键日常的战斗任务；刷体力、演算与影拓丰碑连续执行。"
+msgstr ""
+"Elige las tareas diarias de combate; el consumo de energía, el cálculo y el "
+"Monumento Yingtuo se ejecutan seguidos."
+
+msgid ""
+"是否在「活动中心」领取影拓丰碑的活动奖励。\n"
+"先看第一格：黑底说明活动任务未完成，先打最左侧海报的关卡和苦难任务，回来领奖后再打其余海报；灰底说明活动任务已全部完成，直接打其余海报。\n"
+"关闭后不领奖，其余流程不变。"
+msgstr ""
+"Recoge recompensas del Monumento Yingtuo en el Centro de eventos.\n"
+"Si la primera tarjeta es negra, completa las fases normales y las tareas de dificultad del cartel izquierdo, recoge las recompensas y continúa con los demás. Si es gris, las tareas del evento ya están completas.\n"
+"Al desactivarlo solo se omite la recogida de recompensas."
