@@ -277,7 +277,22 @@ class YingTuoTask(BattleMixin):
     def battle_and_exit(self, transition_recovery=None):
         if not self.wait_battle_space(transition_recovery=transition_recovery):
             return False
-        self.auto_battle()
+
+        def challenge_state():
+            self.next_frame()
+            if self.in_combat():
+                return "combat"
+            return self.ocr(match=self.lang.daily_battle_mixin.k_4cc61900, box=self.box.bottom_right)
+
+        # 入场只表示加载完成；后续关卡可能还要靠近触碰点并交互才会开战。
+        state = self.strafe_search(challenge_state, keys=("w",), duration=0.25, passes=None, time_out=60)
+        if not state:
+            self.log_info("未找到挑战触碰点")
+            return False
+        if state != "combat":
+            self.press_key("f")
+        if not self.auto_battle():
+            return False
         if not self.wait_click_feature(
             feature=fL.left_battle,
             vertical_variance=0.1,

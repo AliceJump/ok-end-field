@@ -67,6 +67,7 @@ class TestYingTuoTask(unittest.TestCase):
             with self.subTest(entered=entered):
                 task = Mock()
                 task.wait_battle_space.return_value = entered
+                task.strafe_search.return_value = "combat"
                 recovery = Mock()
 
                 self.assertEqual(YingTuoTask.battle_and_exit(task, transition_recovery=recovery), entered)
@@ -74,6 +75,51 @@ class TestYingTuoTask(unittest.TestCase):
                 task.wait_battle_space.assert_called_once_with(transition_recovery=recovery)
                 self.assertEqual(task.auto_battle.call_count, int(entered))
                 self.assertEqual(task.wait_click_feature.call_count, int(entered))
+
+    def test_challenge_moves_to_touch_prompt_before_combat(self):
+        task = Mock()
+        prompt = [object()]
+        task.in_combat.side_effect = [False, False]
+        task.ocr.side_effect = [[], prompt]
+
+        def search(check, **kwargs):
+            self.assertEqual(kwargs["keys"], ("w",))
+            self.assertGreater(kwargs["time_out"], 0)
+            self.assertFalse(check())
+            task.move_keys("w", duration=kwargs["duration"])
+            return check()
+
+        task.strafe_search.side_effect = search
+        self.assertTrue(YingTuoTask.battle_and_exit(task))
+        task.press_key.assert_called_once_with("f")
+        self.assertLess(
+            task.mock_calls.index(unittest.mock.call.press_key("f")),
+            task.mock_calls.index(unittest.mock.call.auto_battle()),
+        )
+
+    def test_already_started_challenge_does_not_move_or_interact(self):
+        task = Mock()
+        task.in_combat.return_value = True
+        task.strafe_search.side_effect = lambda check, **kwargs: check()
+        self.assertTrue(YingTuoTask.battle_and_exit(task))
+        task.ocr.assert_not_called()
+        task.move_keys.assert_not_called()
+        task.press_key.assert_not_called()
+
+    def test_missing_touch_prompt_does_not_enter_combat_or_exit(self):
+        task = Mock()
+        task.strafe_search.return_value = None
+        self.assertFalse(YingTuoTask.battle_and_exit(task))
+        task.press_key.assert_not_called()
+        task.auto_battle.assert_not_called()
+        task.wait_click_feature.assert_not_called()
+
+    def test_failed_combat_does_not_try_to_exit(self):
+        task = Mock()
+        task.strafe_search.return_value = "combat"
+        task.auto_battle.return_value = False
+        self.assertFalse(YingTuoTask.battle_and_exit(task))
+        task.wait_click_feature.assert_not_called()
 
     def test_run_recovery_only_clicks_visible_entry_button(self):
         task = Mock()
