@@ -109,6 +109,36 @@ class TestDailyBattleToEnd(unittest.TestCase):
         task.wait_ocr.assert_not_called()
         task.wait_click_ocr.assert_not_called()
 
+    def test_gather_retry_requires_reward_page_after_claim_click(self):
+        for page in (None, object()):
+            with self.subTest(page=bool(page)):
+                task = Mock()
+                task.battle_ctx = BattleContext()
+                task.lang.daily_battle_mixin.k_39d12e73_1 = "claim"
+                task._transfer_to_gather_stage.return_value = False
+                task._prepare_gather_navigation.return_value = False
+                task.wait_ocr.return_value = [object()]
+                task.wait_click_ocr.return_value = True
+                task.wait_feature.return_value = page
+                self.assertEqual(BattleTask._gather_retry_navigate(task), bool(page))
+                task.wait_click_ocr.assert_called_once()
+                task.wait_feature.assert_called_once_with(
+                    feature=fL.get_claim_page, time_out=3, raise_if_not_found=False
+                )
+                task.click_confirm.assert_not_called()
+
+    def test_gather_retry_extra_mode_does_not_require_reward_page(self):
+        task = Mock()
+        task.battle_ctx = BattleContext(is_extra_mode=True)
+        task.lang.daily_battle_mixin.k_b8a81b7a = "abandon"
+        task._transfer_to_gather_stage.return_value = False
+        task._prepare_gather_navigation.return_value = False
+        task.wait_ocr.return_value = [object()]
+        task.wait_click_ocr.return_value = True
+        self.assertTrue(BattleTask._gather_retry_navigate(task))
+        task.click_confirm.assert_called_once()
+        task.wait_feature.assert_not_called()
+
     def test_to_battle_passes_recovery_and_only_starts_after_entry(self):
         for entered in (True, False):
             with self.subTest(entered=entered):
