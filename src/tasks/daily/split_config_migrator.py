@@ -40,6 +40,7 @@ from src.core.paths import config_path
 from src.data.world_map import areas_list
 from src.tasks.onetime.ActivityRewardTask import ActivityRewardTask
 from src.tasks.onetime.BoatHarvestTask import BoatHarvestTask
+from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 _STATE_FILE_NAME = "_daily_split_migrations.json"
 _BACKUP_DIR_NAME = "daily_split_migration_backup"
@@ -70,6 +71,8 @@ def _import_legacy_selection(
     """导入旧开关/操作列表；目标已有列表时保留目标值。"""
     if isinstance(target_config.get(target_key), list):
         return _NO_MIGRATION
+    if isinstance(target_config.get(target_key), bool):
+        source_config = {**source_config, target_key: target_config[target_key]}
     value = source_config.get(target_key)
     if isinstance(value, list):
         return value
@@ -103,13 +106,27 @@ def _import_region_options(source_config: dict, target_config: dict, target_key:
     """⭐地区建设：新列表值直接搬；旧三个布尔开关合并为选项列表。"""
     if isinstance(target_config.get(target_key), list):
         return _NO_MIGRATION
-    value = source_config.get(target_key)
-    if isinstance(value, list):
-        return value
-    option_keys = {"据点兑换": "⭐据点兑换", "买物资": "⭐买物资", "买卖货": "⭐买卖货"}
-    if not any(key in source_config for key in option_keys.values()):
+    if isinstance(target_config.get(target_key), bool):
+        source_config = {**source_config, target_key: target_config[target_key]}
+    if isinstance(source_config.get(target_key), list):
+        return source_config[target_key]
+    return RegionalBuildTask.config_value_migrations["⭐地区建设"](source_config, target_key)
+
+
+def _import_account_region_options(source_config: dict, target_config: dict, target_key: str):
+    """Keep sparse legacy account choices sparse so omitted options inherit."""
+    if isinstance(target_config.get(target_key), list):
         return _NO_MIGRATION
-    return [name for name, key in option_keys.items() if source_config.get(key)]
+    for legacy_key in RegionalBuildTask.LEGACY_OPTION_KEYS.values():
+        if legacy_key in source_config:
+            target_config.setdefault(legacy_key, source_config[legacy_key])
+    value = target_config.get(target_key, source_config.get(target_key, _NO_MIGRATION))
+    if all(key in target_config for key in RegionalBuildTask.LEGACY_OPTION_KEYS.values()):
+        complete = dict(target_config)
+        if value is not _NO_MIGRATION:
+            complete[target_key] = value
+        return _import_region_options(complete, {}, target_key)
+    return [] if value is False else value
 
 
 # 批次声明。键值映射的 dict 键 = 目标键名；值为来源键名（str）或转换函数（callable）。
@@ -405,7 +422,8 @@ def _import_account_overrides(target_name: str, source_name: str, key_map: dict[
             for target_key, entry in key_map.items():
                 if not callable(entry) and target_key in target_segment:
                     continue
-                value = _resolve_entry_value(entry, source_segment, target_segment, target_key)
+                account_entry = _import_account_region_options if entry is _import_region_options else entry
+                value = _resolve_entry_value(account_entry, source_segment, target_segment, target_key)
                 if value is _NO_MIGRATION or target_segment.get(target_key, _NO_MIGRATION) == value:
                     continue
                 target_segment[target_key] = value

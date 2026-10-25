@@ -3,6 +3,7 @@ from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
+from src.core.config_migration import merge_bool_options
 from src.core.learning.policy import learning_epoch
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list, goods_dict, outpost_dict
@@ -61,6 +62,11 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
 
     OPTIONS: ClassVar[list[str]] = ["据点兑换", "买物资", "买卖货"]
     DEFAULT_OPTIONS: ClassVar[list[str]] = ["据点兑换", "买卖货"]
+    LEGACY_OPTION_KEYS: ClassVar = {"据点兑换": "⭐据点兑换", "买物资": "⭐买物资", "买卖货": "⭐买卖货"}
+    config_value_migrations: ClassVar = {
+        "⭐地区建设": merge_bool_options(LEGACY_OPTION_KEYS, defaults=DEFAULT_OPTIONS),
+    }
+    account_config_migration_skip_keys = ("⭐地区建设",)
     CFG_SHOP_WHITELIST = "购物白名单"
     CFG_BUY_GIFT = "是否买礼物"
     migrate_legacy_region_bools = True
@@ -893,8 +899,24 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
                 self.log_info("调度券不足，跳过")
             self.log_info("已购买")
 
-    def run_regional(self):
+    def _regional_options(self):
         selected = set(self.config.get("⭐地区建设", self.DEFAULT_OPTIONS) or [])
+        overrides = self._account_override_for(self.__class__.__name__)
+        explicit = overrides.get("⭐地区建设")
+        if isinstance(explicit, list):
+            return set(explicit)
+        if explicit is False:
+            return set()
+        for option, legacy_key in self.LEGACY_OPTION_KEYS.items():
+            if legacy_key in overrides:
+                if overrides[legacy_key]:
+                    selected.add(option)
+                else:
+                    selected.discard(option)
+        return selected
+
+    def run_regional(self):
+        selected = self._regional_options()
         enabled_outpost = "据点兑换" in selected
         enabled_buy = "买物资" in selected
         enabled_trade = "买卖货" in selected

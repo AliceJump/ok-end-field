@@ -38,12 +38,14 @@ from src.core.BattleConfig import (
     DEFAULT_BATTLE_CONFIG,
     DEFAULT_LEGACY_COMBAT_MODE,
     KEY_BATTLE_INITIAL_WAIT,
+    KEY_COMPLETE_NOTIFY,
     KEY_COND_ENABLED,
     KEY_DAMAGE_ROTATION,
     KEY_ENABLE_ROTATION,
     KEY_LEGACY_COMBAT_MODE,
     KEY_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST,
+    KEY_SKILL_RELEASE,
     KEY_ULT_RELEASE_MODE,
     LEGACY_COMBAT_MODE_AUTO_FILTER,
     LEGACY_COMBAT_MODE_CONDITIONAL,
@@ -54,8 +56,9 @@ from src.core.BattleConfig import (
     ULT_RELEASE_MODE_ALT,
     ULT_RELEASE_MODE_HOLD,
     BattleConfigManager,
+    infer_legacy_combat_mode,
 )
-from src.core.config_migration import legacy_battle_mode_to_bool
+from src.core.config_migration import legacy_battle_mode_to_bool, legacy_skill_release_to_list
 from src.core.global_config_store import get_global_config
 from src.core.learning.policy import without_learning
 from src.core.sequence_parser import parse_sequence
@@ -224,9 +227,11 @@ class BattleMixin(BaseEfTask):
     # 配置键迁移：旧「战斗配置」下拉框 → 新「使用独立配置」开关
     config_key_migrations: ClassVar = {
         "战斗配置": BATTLE_CONFIG_MODE_KEY,
+        "后台结束战斗通知": KEY_COMPLETE_NOTIFY,
     }
     config_value_migrations: ClassVar = {
         BATTLE_CONFIG_MODE_KEY: legacy_battle_mode_to_bool,
+        KEY_SKILL_RELEASE: legacy_skill_release_to_list,
     }
 
     def __init__(self, *args, **kwargs):
@@ -274,7 +279,15 @@ class BattleMixin(BaseEfTask):
         raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
         if not self._parse_use_independent(raw_value):
             return global_value
-        return self.config.get(key, global_value)
+        value = self.config.get(key, global_value)
+        if key == KEY_LEGACY_COMBAT_MODE:
+            overrides = self._account_override_for(self.__class__.__name__)
+            flags = (KEY_COND_ENABLED, KEY_ENABLE_ROTATION, KEY_SKILL_ALLOWLIST, KEY_DAMAGE_ROTATION)
+            if key not in overrides and any(flag in overrides for flag in flags):
+                inherited = {flag: self._legacy_mode_flag(value, flag) for flag in flags}
+                inherited.update({flag: overrides[flag] for flag in flags if isinstance(overrides.get(flag), bool)})
+                value = infer_legacy_combat_mode(inherited)
+        return value
 
     @staticmethod
     def _legacy_mode_flag(mode: str, key: str):

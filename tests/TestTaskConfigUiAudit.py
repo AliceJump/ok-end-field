@@ -1,11 +1,76 @@
+import tempfile
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from src.core.config_migration import apply_value_migrations
+from src.tasks.onetime.ActivityRewardTask import ActivityRewardTask
+from src.tasks.onetime.BoatHarvestTask import BoatHarvestTask
 from src.tasks.onetime.DailyTask import DailyTask
 from src.tasks.onetime.DeliveryTask import DeliveryTask, _legacy_delivery_run_mode
+from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 
 class TestConfigUiMigrations(unittest.TestCase):
+    def test_old_child_false_survives_file_account_load_and_save(self):
+        from ok.util.config import Config
+        from ok.util.file import read_json_file, write_json_file
+
+        from src.tasks.account.account_scope_store import get_account_task_overrides
+
+        for task_type, key in (
+            (BoatHarvestTask, "⭐帝江号收菜"),
+            (ActivityRewardTask, "⭐活动奖励"),
+            (RegionalBuildTask, "⭐地区建设"),
+        ):
+            with (
+                self.subTest(task_type=task_type),
+                tempfile.TemporaryDirectory() as tmp,
+                patch.object(Config, "config_folder", tmp),
+            ):
+                task_name = task_type.__name__
+                path = str(Path(tmp) / f"{task_name}.json")
+                write_json_file(path, {key: False})
+                write_json_file(
+                    str(Path(tmp) / "account_scoped_overrides.json"),
+                    {"accounts": {"user": {task_name: {key: False}}}},
+                )
+                task = task_type(SimpleNamespace(scene=None, pause_start=None), SimpleNamespace())
+                with patch("src.tasks.daily.split_config_migrator.maybe_run_pending_config_imports"):
+                    task.load_config()
+                    task.config.save_file()
+                    task.load_config()
+                self.assertEqual(task.config[key], [])
+                self.assertEqual(read_json_file(path)[key], [])
+                # Regional account switches stay sparse for runtime inheritance.
+                expected = False if task_type is RegionalBuildTask else []
+                self.assertEqual(get_account_task_overrides("user", task_name)[key], expected)
+
+    def test_child_task_legacy_false_is_not_replaced_by_enabled_defaults(self):
+        from src.core.config_migration import collect_config_migrations
+
+        for task_type, key in (
+            (BoatHarvestTask, "⭐帝江号收菜"),
+            (ActivityRewardTask, "⭐活动奖励"),
+            (RegionalBuildTask, "⭐地区建设"),
+        ):
+            with self.subTest(task_type=task_type):
+                _, tables = collect_config_migrations(task_type)
+                migrated, _ = apply_value_migrations({key: False}, tables)
+                self.assertEqual(migrated[key], [])
+                migrated, changed = apply_value_migrations(migrated, tables)
+                self.assertFalse(changed)
+                self.assertEqual(migrated[key], [])
+
+    def test_account_daily_partial_switch_keeps_other_tasks_inherited(self):
+        task = object.__new__(DailyTask)
+        task.config = {DailyTask.CFG_BOAT_TASKS: ["帝江号整理"]}
+        with patch.object(task, "_account_override_for", return_value={"⭐送礼": False}):
+            self.assertFalse(task._task_selected(DailyTask.CFG_BOAT_TASKS, "送礼"))
+            self.assertTrue(task._task_selected(DailyTask.CFG_BOAT_TASKS, "帝江号整理"))
+            self.assertFalse(task._task_selected(DailyTask.CFG_BOAT_TASKS, "帝江号收菜"))
+
     def test_daily_legacy_bools_become_fixed_group_lists(self):
         config = {
             "⭐送礼": True,

@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
+from src.core.config_migration import legacy_bool_switch_to_list
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.mixin.common import Common
@@ -12,6 +13,9 @@ class ActivityRewardTask(Common, MouseScanMixin):
     """活动奖励子任务：每周事务/理智补给/刮刮乐，日常任务经 DailyFeature 接入。"""
 
     ACTIVITY_REWARDS: ClassVar = ["周常奖励", "理智补给", "刮刮乐"]
+    config_value_migrations: ClassVar = {
+        "⭐活动奖励": legacy_bool_switch_to_list(ops_key="活动奖励", defaults=ACTIVITY_REWARDS),
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
