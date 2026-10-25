@@ -227,7 +227,8 @@ class YingTuoTask(BattleMixin):
         """间隔 0.2 秒两次检测结果一致才采用，返回灰条列表与所用帧。
 
         海报页出现后，下方关卡段约 0.55 秒才淡入完成，期间命中数在 0~5 条之间跳变；
-        滚动后的动画同理。结果为空时，须从首次为空起连续为空满淡入时间才采用。超时仍不一致时采用最后一次结果。
+        滚动后的动画同理。结果为空时，须从首次为空起连续为空满淡入时间才采用。
+        超时仍未稳定时报错：此时画面状态不明，按最后一次结果点击可能点错，判为空可能误报没有关卡。
         """
         start = self.active_time()
         previous = None
@@ -246,7 +247,8 @@ class YingTuoTask(BattleMixin):
             ):
                 return bars, frame
             if self.active_time() - start >= time_out:
-                return bars, frame
+                self.log_info(f"灰条检测 {time_out:g} 秒内未稳定，结束挑战")
+                raise Exception(f"灰条检测 {time_out:g} 秒内未稳定")
             previous = bars
             self.sleep(0.2)
 

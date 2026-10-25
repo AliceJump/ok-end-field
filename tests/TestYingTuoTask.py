@@ -140,6 +140,32 @@ class TestYingTuoTask(unittest.TestCase):
             bars, _ = YingTuoTask._detect_stable_bars(task)
         self.assertEqual(bars, [bar])
 
+    def test_raises_without_click_when_bars_never_settle(self):
+        """超时仍未稳定时报错，不按最后一次结果点击。"""
+        task = _FakeYingTuoTask()
+        with (
+            patch(
+                "src.tasks.onetime.YingTuoTask.detect_gray_bars",
+                side_effect=[[_bar(50.0, 25.0)], [_bar(150.0, 25.0)]] * 12,
+            ),
+            self.assertRaisesRegex(Exception, "灰条检测.*未稳定"),
+        ):
+            YingTuoTask.find_normal_challenge(task)
+        self.assertEqual(task.clicks, [])
+
+    def test_raises_without_scroll_when_empty_result_never_settles(self):
+        """超时时最后一次为空但未满淡入时间，不当作空结果滚动。"""
+        task = _FakeYingTuoTask()
+        with (
+            patch(
+                "src.tasks.onetime.YingTuoTask.detect_gray_bars",
+                side_effect=[[_bar(50.0, 25.0)], []] * 12,
+            ),
+            self.assertRaisesRegex(Exception, "灰条检测.*未稳定"),
+        ):
+            YingTuoTask.find_normal_challenge(task)
+        self.assertEqual(task.scroll_count, 0)
+
     def test_retries_click_until_detail_page_opens(self):
         task = _FakeYingTuoTask()
         task.detail_page_results = [False, True]
