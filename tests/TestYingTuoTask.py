@@ -10,6 +10,7 @@ from src.tasks.onetime.YingTuoTask import YingTuoTask
 class _FakeYingTuoTask:
     CHALLENGE_CLICK_ATTEMPTS = YingTuoTask.CHALLENGE_CLICK_ATTEMPTS
     DETAIL_PAGE_TIMEOUT = YingTuoTask.DETAIL_PAGE_TIMEOUT
+    EMPTY_BARS_SETTLE_TIME = YingTuoTask.EMPTY_BARS_SETTLE_TIME
     _same_bars = staticmethod(YingTuoTask._same_bars)
 
     def __init__(self):
@@ -119,6 +120,14 @@ class TestYingTuoTask(unittest.TestCase):
         ):
             self.assertTrue(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task.clicks, [(0.25, 0.25, {"after_sleep": 0.25})])
+
+    def test_empty_bars_wait_for_fade_in(self):
+        """关卡段淡入前连续两次检测为空，不能就此认定没有关卡。"""
+        task = _FakeYingTuoTask()
+        bar = _bar(50.0, 25.0)
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", side_effect=[[], [], [bar], [bar]]):
+            bars, _ = YingTuoTask._detect_stable_bars(task)
+        self.assertEqual(bars, [bar])
 
     def test_retries_click_until_detail_page_opens(self):
         task = _FakeYingTuoTask()
