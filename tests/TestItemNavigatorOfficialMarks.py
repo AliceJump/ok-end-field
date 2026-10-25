@@ -56,10 +56,33 @@ class TestMarkedPointMigration(unittest.TestCase):
         task._marked_lock = threading.Lock()
         task._dirty = False
         task._last_save_time = 0
+        task._last_marked_save_attempt = None
         task.log_info = mock.Mock()
         task.log_error = mock.Mock()
         task.tr = lambda message: message
         return task
+
+    def test_failed_runtime_retries_are_throttled_without_game_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            task = self.make_task(Path(tmp))
+            task._dirty = True
+            task._navigator_window_missing_logged = False
+            with (
+                mock.patch.multiple(
+                    task,
+                    check_resolution=mock.Mock(),
+                    _is_game_window_alive=mock.Mock(return_value=False),
+                    _cleanup_navigator_runtime=mock.Mock(),
+                    _save_marked=mock.Mock(return_value=False),
+                    info_set=mock.Mock(),
+                ),
+                mock.patch("src.tasks.trigger.ItemNavigatorTask.time.time") as clock,
+            ):
+                for now, expected_attempts in ((100, 1), (101, 1), (103.1, 2)):
+                    clock.return_value = now
+                    ItemNavigatorTask.run.__wrapped__(task)
+                    self.assertEqual(task._save_marked.call_count, expected_attempts)
+            self.assertTrue(task._dirty)
 
     def test_save_failure_preserves_legacy_file_and_retries(self):
         with tempfile.TemporaryDirectory() as tmp:

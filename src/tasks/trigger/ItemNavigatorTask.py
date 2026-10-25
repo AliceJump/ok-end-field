@@ -197,6 +197,7 @@ class ItemNavigatorTask(
         # dirty-save 控制：标记后延迟合并写盘
         self._dirty = False
         self._last_save_time = 0.0
+        self._last_marked_save_attempt = None
         self._legacy_marked_source = None
         self._load_marked()
         # 标记按键状态：记录本次按住期间是否已标记（防止按住期间反复标记）
@@ -803,7 +804,10 @@ class ItemNavigatorTask(
         self.check_resolution()
         try:
             # 保存重试不依赖游戏窗口、定位数据或候选物品。
-            if self._dirty and (time.time() - self._last_save_time) > 3.0:
+            now = time.time()
+            last_attempt = self._last_marked_save_attempt
+            if self._dirty and now - self._last_save_time > 3.0 and (last_attempt is None or now - last_attempt > 3.0):
+                self._last_marked_save_attempt = now
                 self._save_marked()
             if not self._is_game_window_alive():
                 self._cleanup_navigator_runtime()
