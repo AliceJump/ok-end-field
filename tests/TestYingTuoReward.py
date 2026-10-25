@@ -80,14 +80,14 @@ def _mock_task(claim_enabled=True):
     return task
 
 
-def _run_task(claim_enabled=True, claims=(), challenge=True, poster=None):
+def _run_task(claim_enabled=True, claims=(), challenge=True, hardship=False):
     """用 Mock 替身跑 run()。
 
-    claims 依次作为两次领奖的顶格底色，poster 是阶段 A 读到的苦难任务海报名，
+    claims 依次作为两次领奖的顶格底色，hardship 是阶段 A 读到的苦难任务是否未完成，
     challenge 是普通关卡挑战的结果。
     """
     task = _mock_task(claim_enabled)
-    task.check_activity_tasks.side_effect = [(state, poster if i == 0 else None) for i, state in enumerate(claims)]
+    task.check_activity_tasks.side_effect = [(state, hardship and i == 0) for i, state in enumerate(claims)]
     task.enter_yingtuo.return_value = True
     task.challenge_normal_stages.return_value = challenge
     YingTuoTask.run.__wrapped__(task)
@@ -267,7 +267,7 @@ class TestYingTuoReward(unittest.TestCase):
 
         result = YingTuoTask.check_activity_tasks(task)
 
-        self.assertEqual(result, (CARD_UNFINISHED, None))
+        self.assertEqual(result, (CARD_UNFINISHED, False))
         task.ensure_main.assert_called()
 
     def test_missing_activity_entrance_returns_none_from_inner(self):
@@ -386,26 +386,26 @@ class TestYingTuoReward(unittest.TestCase):
 
     def test_hardship_runs_with_reward_switch_off(self):
         # 苦难任务属于影拓丰碑本身，不受领奖开关控制
-        task = _run_task(claim_enabled=False, claims=[CARD_UNFINISHED], poster="深林呓语")
+        task = _run_task(claim_enabled=False, claims=[CARD_UNFINISHED], hardship=True)
 
-        task.challenge_hardship.assert_called_once_with("深林呓语")
+        task.challenge_hardship.assert_called_once_with()
         # 不领奖就不必回主界面，留在海报页接着打其余海报
         task.enter_yingtuo.assert_called_once()
         self.assertEqual(task.challenge_normal_stages.call_args_list, [mock.call(leftmost_only=True), mock.call()])
 
-    def test_hardship_poster_read_across_line_break(self):
+    def test_hardship_task_read_across_line_break(self):
         # 任务卡折行可能落在「任意苦」与「难」之间，两行拼起来才能认出苦难任务
         lines = [
             SimpleNamespace(name="活动期间，挑战“深林呓语”任意苦", x=1325, y=364, width=283, height=30),
             SimpleNamespace(name="难模式关卡1次", x=1325, y=400, width=150, height=30),
         ]
 
-        self.assertEqual(YingTuoTask._find_hardship_poster(_Task(lines), _frame(UNFINISHED_CARD_BGR)), "深林呓语")
+        self.assertTrue(YingTuoTask._hardship_task_pending(_Task(lines), _frame(UNFINISHED_CARD_BGR)))
 
     def test_finished_hardship_task_is_ignored(self):
         lines = [SimpleNamespace(name="活动期间，挑战“深林呓语”任意苦难", x=1325, y=364, width=283, height=30)]
 
-        self.assertIsNone(YingTuoTask._find_hardship_poster(_Task(lines), _frame(CLAIMED_CARD_BGR)))
+        self.assertFalse(YingTuoTask._hardship_task_pending(_Task(lines), _frame(CLAIMED_CARD_BGR)))
 
     def test_normal_stage_task_is_not_hardship(self):
         lines = [
@@ -413,16 +413,16 @@ class TestYingTuoReward(unittest.TestCase):
             SimpleNamespace(name="“怨怒延展”", x=1325, y=400, width=120, height=30),
         ]
 
-        self.assertIsNone(YingTuoTask._find_hardship_poster(_Task(lines), _frame(UNFINISHED_CARD_BGR)))
+        self.assertFalse(YingTuoTask._hardship_task_pending(_Task(lines), _frame(UNFINISHED_CARD_BGR)))
 
     def test_hardship_runs_after_normal_stages(self):
-        task = _run_task(claims=[CARD_UNFINISHED, CARD_CLAIMED], poster="深林呓语")
+        task = _run_task(claims=[CARD_UNFINISHED, CARD_CLAIMED], hardship=True)
 
-        task.challenge_hardship.assert_called_once_with("深林呓语")
+        task.challenge_hardship.assert_called_once_with()
         self.assertEqual(_last_log(task), "影拓丰碑任务完成")
 
     def test_hardship_skipped_when_normal_stages_stop_early(self):
-        task = _run_task(claims=[CARD_UNFINISHED, CARD_UNFINISHED], challenge=False, poster="深林呓语")
+        task = _run_task(claims=[CARD_UNFINISHED, CARD_UNFINISHED], challenge=False, hardship=True)
 
         task.challenge_hardship.assert_not_called()
 

@@ -223,7 +223,7 @@ class TestYingTuoTask(unittest.TestCase):
         task = Mock()
         task.wait_until.return_value = "detail"
 
-        YingTuoTask.challenge_hardship(task, "深林呓语")
+        YingTuoTask.challenge_hardship(task)
 
         task._open_leftmost_poster.assert_called_once_with()
         task._click_challenge_and_enter.assert_called_once_with()
@@ -238,7 +238,7 @@ class TestYingTuoTask(unittest.TestCase):
         task._set_hardship_mode.side_effect = [True, False]
 
         with self.assertRaisesRegex(Exception, "未能关闭苦难模式"):
-            YingTuoTask.challenge_hardship(task, "深林呓语")
+            YingTuoTask.challenge_hardship(task)
 
         task.return_to_monument.assert_not_called()
 
@@ -246,7 +246,7 @@ class TestYingTuoTask(unittest.TestCase):
         task = Mock()
         task._set_hardship_mode.return_value = False
 
-        YingTuoTask.challenge_hardship(task, "深林呓语")
+        YingTuoTask.challenge_hardship(task)
 
         task._click_challenge_and_enter.assert_not_called()
         task.return_to_monument.assert_called_once_with()
@@ -256,14 +256,14 @@ class TestYingTuoTask(unittest.TestCase):
         task.wait_until.return_value = None
 
         with self.assertRaisesRegex(Exception, "撤离后未回到"):
-            YingTuoTask.challenge_hardship(task, "深林呓语")
+            YingTuoTask.challenge_hardship(task)
 
     def test_hardship_raises_when_evacuation_dialog_missing(self):
         task = Mock()
         task._evacuate.return_value = False
 
         with self.assertRaisesRegex(Exception, "撤离确认框"):
-            YingTuoTask.challenge_hardship(task, "深林呓语")
+            YingTuoTask.challenge_hardship(task)
 
         task.return_to_monument.assert_not_called()
 

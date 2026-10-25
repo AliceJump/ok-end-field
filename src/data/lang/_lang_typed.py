@@ -297,9 +297,6 @@ class DailyRoutineMixinModule(_LangModuleBaseT):
     k_2da75f4f: re.Pattern[str]
     """影拓|活动期间|普通模式"""
 
-    k_1b64c529: re.Pattern[str]
-    """挑战[“"「『](.+?)[”"」』]任意苦难"""
-
     k_ebbfb983: re.Pattern[str]
     """苦难"""
 

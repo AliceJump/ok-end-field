@@ -71,8 +71,8 @@ class YingTuoTask(BattleMixin):
     def run(self):
         self.ensure_main(time_out=400)
         claim_enabled = self.config.get(self.CFG_CLAIM_REWARD, True)
-        # 苦难任务属于影拓丰碑本身，领奖开关关闭时也要读出指定海报。
-        state, hardship_poster = self.check_activity_tasks(claim=claim_enabled)
+        # 苦难任务属于影拓丰碑本身，领奖开关关闭时也要读出它是否完成。
+        state, hardship_pending = self.check_activity_tasks(claim=claim_enabled)
         if not claim_enabled:
             self.log_info("已关闭『领取影拓丰碑奖励』，只读取活动任务，不领奖")
         if not self.enter_yingtuo():
@@ -82,7 +82,7 @@ class YingTuoTask(BattleMixin):
             self.log_info("活动任务已全部完成，直接挑战其余海报的普通关卡")
         else:
             # 先把活动任务做完并领奖，再打与活动无关的其余海报。
-            finished, state = self.run_activity_stages(hardship_poster, claim_enabled)
+            finished, state = self.run_activity_stages(hardship_pending, claim_enabled)
             if finished and claim_enabled and not self.enter_yingtuo():
                 return
         if finished:
@@ -96,7 +96,7 @@ class YingTuoTask(BattleMixin):
         else:
             self.log_info("影拓丰碑任务完成", notify=True)
 
-    def run_activity_stages(self, hardship_poster, claim_enabled):
+    def run_activity_stages(self, hardship_pending, claim_enabled):
         """活动阶段：打最左侧海报的普通关卡，再做苦难任务，开关开启时回主界面领奖。
 
         返回 ``(是否跑完, 领奖后的顶格底色)``；未领奖时底色为 None。
@@ -105,8 +105,8 @@ class YingTuoTask(BattleMixin):
         error = None
         try:
             finished = self.challenge_normal_stages(leftmost_only=True)
-            if finished and hardship_poster:
-                self.challenge_hardship(hardship_poster)
+            if finished and hardship_pending:
+                self.challenge_hardship()
         except TaskDisabledException:
             raise
         except Exception as e:
@@ -209,15 +209,15 @@ class YingTuoTask(BattleMixin):
             self.log_info("挑战入场按钮仍在，重试入场")
             self.click(button, after_sleep=0.5)
 
-    def challenge_hardship(self, poster):
-        """完成「挑战指定海报任意苦难模式关卡 1 次」：进入苦难关卡后立即撤离。
+    def challenge_hardship(self):
+        """完成「挑战指定海报任意苦难模式关卡 1 次」：进入最左侧海报的苦难关卡后立即撤离。
 
         进入关卡即计入挑战次数，不必打完。撤离后回到详情页时关掉苦难模式，免得下次进详情页仍停在苦难；
         回到海报页时不再回详情页关，普通关卡进场前会再确认一次。
         """
-        self.log_info(f"开始苦难任务：进入「{poster}」的苦难关卡后撤离")
+        self.log_info("开始苦难任务：进入最左侧海报的苦难关卡后撤离")
         if not self._open_leftmost_poster():
-            self.log_info(f"未能打开海报「{poster}」的关卡详情页，跳过苦难任务")
+            self.log_info("未能打开最左侧海报的关卡详情页，跳过苦难任务")
             return
         if not self._set_hardship_mode(True):
             self.log_info("未能开启苦难模式，跳过苦难任务")
@@ -298,13 +298,12 @@ class YingTuoTask(BattleMixin):
         return self._monument_or_handbook()
 
     def check_activity_tasks(self, claim=True):
-        """查看活动中心里影拓丰碑的活动任务，返回 ``(顶格底色, 苦难任务海报名)``。
+        """查看活动中心里影拓丰碑的活动任务，返回 ``(顶格底色, 苦难任务是否未完成)``。
 
         流程：按 F7 打开活动中心 → OCR 定位第一格任务 → ``claim`` 为真且红底就点一下
         （一键收取全部红卡）→ 读未完成的苦难任务 → 退回主界面。底色为 ``CARD_CLAIMED``（灰底，
         活动任务已全部完成）、``CARD_UNFINISHED``（黑底，还有没做完的任务）或
-        ``CARD_CLAIMABLE``（红底但找不到可点位置，奖励未领）。没有未完成的苦难任务时
-        海报名为 None。
+        ``CARD_CLAIMABLE``（红底但找不到可点位置，奖励未领）。
 
         领完必须退回主界面再交给 enter_yingtuo：停在活动中心时按 F8 唤不出地图。
         """
@@ -314,33 +313,34 @@ class YingTuoTask(BattleMixin):
         if state is None:
             # 打不开活动页时无法判断进度，按未完成处理，宁可多打一轮
             self.ensure_main()
-            return CARD_UNFINISHED, None
-        poster = self._find_hardship_poster(self.frame)
-        if poster:
-            self.log_info(f"苦难任务未完成，指定海报「{poster}」")
+            return CARD_UNFINISHED, False
+        hardship_pending = self._hardship_task_pending(self.frame)
+        if hardship_pending:
+            self.log_info("苦难任务未完成")
 
         # 活动中心可能叠了多层弹窗，先按一次 Esc 再交给 ensure_main 的两段稳定检查；
         # 停在活动页时 F8 唤不出地图，enter_yingtuo 会直接找不到入口。
         self.press_esc()
         self.ensure_main()
-        return state, poster
+        return state, hardship_pending
 
-    def _find_hardship_poster(self, frame):
-        """返回未完成（黑底）的苦难任务指定的海报名；没有这类任务时返回 None。
+    def _hardship_task_pending(self, frame):
+        """有未完成（黑底）的苦难任务时返回 True。
 
         任务卡写作「活动期间，挑战“深林呓语”任意苦难模式关卡1次」，会折成两行。
-        把与该行左对齐、紧接其下的一行拼起来再匹配，海报名取引号内的文字。
+        折行可能落在「苦」「难」之间，因此把与该行左对齐、紧接其下的一行拼起来再找「苦难」。
+        任务指定的海报就是最左侧海报，challenge_hardship 直接打开它，不必读海报名。
         """
         panel = self.box_of_screen(*self.REWARD_PANEL_BOX)
         boxes = self.ocr(box=panel, frame=frame)
+        pattern = self.lang.daily_routine_mixin.k_ebbfb983
         for box in boxes:
             text = "".join(
                 b.name for b in boxes if abs(b.x - box.x) <= box.height and box.y <= b.y <= box.y + 2 * box.height
             )
-            match = self.lang.daily_routine_mixin.k_1b64c529.search(text)
-            if match and card_state(frame, box) == CARD_UNFINISHED:
-                return match.group(1)
-        return None
+            if pattern.search(text) and card_state(frame, box) == CARD_UNFINISHED:
+                return True
+        return False
 
     def _visit_activity_center(self, claim):
         """打开活动中心，``claim`` 为真时领取影拓丰碑奖励；返回顶格底色，打不开活动页时返回 None。"""
