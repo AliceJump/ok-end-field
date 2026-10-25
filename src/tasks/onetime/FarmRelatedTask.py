@@ -87,7 +87,8 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
             self.mark_task_failure("未找到牧场地图图标")
             return False
         self.wait_ui_stable()
-        if not self._collect_to_wuling_warehouse("牧场"):
+        # 牧场目前仅收取1次即可收完
+        if not self._collect_to_wuling_warehouse("牧场", max_batches=1):
             return False
         # 地图中间等待并点击自动农植机地图图标
         if not self.wait_click_feature(
@@ -124,10 +125,11 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         box = self.box_of_screen(*self.WULING_TAB_BOX)
         return calculate_color_percentage(self.frame, self.TAB_SELECTED_COLOR, box) > 0.5
 
-    def _collect_to_wuling_warehouse(self, source_name, max_misses=2, max_batches=5):
+    def _collect_to_wuling_warehouse(self, source_name, max_misses=2, max_batches=3):
         """反复点「存至武陵仓库」，直到确认框不再出现。
 
         一次点击只收一批，故按批循环；某批连续点击都不弹确认框即判定收完。
+        目前农场最多收取3批即可收完。
 
         Args:
             source_name: 日志用的来源名。
