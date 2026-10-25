@@ -47,6 +47,15 @@ class TestScreenshotSidecar(unittest.TestCase):
         self.assertEqual(boxes[0]["name"], "无名字段")
         self.assertEqual(boxes[0]["text"], "无名字段")
 
+    def test_serialize_boxes_accepts_sequence_colors_alongside_qcolor(self):
+        for color in ((255, 60, 60), [255, 60, 60, 128]):
+            with self.subTest(color=color):
+                box = _fake_box(10, 20, 80, 40, name="btn")
+                boxes = serialize_boxes({"seq": ([box], 1.0, color), "qt": ([box], 1.0, _FakeColor())})
+                restored = json.loads(json.dumps(build_sidecar("a_original.png", boxes)))
+                self.assertEqual(restored["boxes"][0]["color"], list(color))
+                self.assertEqual(restored["boxes"][1]["color"], [255, 60, 60, 255])
+
     def test_render_boxed_image_draws_rectangle(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
