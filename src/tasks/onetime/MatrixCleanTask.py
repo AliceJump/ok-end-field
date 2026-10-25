@@ -103,8 +103,7 @@ class MatrixCleanTask(Common):
 
     def _dismantle_by_quality(self):
         """循环分解直到无可分解；返回 True 表示正常结束。"""
-        batches = 0
-        for _ in range(self.MAX_BATCHES):
+        for batches in range(self.MAX_BATCHES):
             if not self._enter_dismantle_mode():
                 return False
             result = self._dismantle_one_batch()
@@ -115,10 +114,7 @@ class MatrixCleanTask(Common):
                 self._exit_dismantle_mode()
                 self.log_info(self.tr("基质清理完成，共分解 {count} 批").format(count=batches), notify=True)
                 return True
-            batches += 1
-        self.mark_task_failure(
-            self.tr("分解批数达到安全上限 {max}，停止清理").format(max=self.MAX_BATCHES)
-        )
+        self.mark_task_failure(self.tr("分解批数达到安全上限 {max}，停止清理").format(max=self.MAX_BATCHES))
         return False
 
     def _enter_dismantle_mode(self):
@@ -164,12 +160,15 @@ class MatrixCleanTask(Common):
             return None
         # 面板检测用带超时的等待：单次 OCR 在面板渲染慢时会漏检，漏检后
         # 未勾选任何物品、按钮恒为「无法分解」，会被误判成清理完成
-        if self.wait_ocr(
-            match=self.lang.matrix_clean_task.k_fadf24db,
-            box=self.box_of_screen(*self._FILTER_PANEL),
-            time_out=2,
-            raise_if_not_found=False,
-        ) and not self._apply_filter():
+        if (
+            self.wait_ocr(
+                match=self.lang.matrix_clean_task.k_fadf24db,
+                box=self.box_of_screen(*self._FILTER_PANEL),
+                time_out=2,
+                raise_if_not_found=False,
+            )
+            and not self._apply_filter()
+        ):
             return None
         return self._confirm_dismantle()
 

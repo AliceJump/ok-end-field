@@ -166,13 +166,13 @@ class TestDismantleOneBatch(unittest.TestCase):
     def test_filter_panel_flow(self):
         task = make_task()
         # 网格有物品；快捷放入命中；wait_ocr 命中「保存」（面板弹出）；
-        # _apply_filter 内 5 次点击（品质×3+未上锁+保存）全命中
+        # _apply_filter 内 5 次点击（品质 3 次、未上锁、保存）全命中
         task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.wait_ocr = MagicMock(return_value=MagicMock())
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
-        # 快捷放入×1 + 品质×3 + 未上锁 + 保存 = 6 次，无第二次快捷放入
+        # 快捷放入 1 次、品质 3 次、未上锁、保存，共 6 次，无第二次快捷放入
         self.assertEqual(task.wait_click_ocr.call_count, 6)
         task._confirm_dismantle.assert_called_once()
 
@@ -230,9 +230,7 @@ class TestApplyFilter(unittest.TestCase):
     def test_save_missing_is_failure(self):
         task = make_task()
         task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(
-            side_effect=[MagicMock(), MagicMock(), MagicMock(), MagicMock(), None]
-        )
+        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), MagicMock(), MagicMock(), MagicMock(), None])
         self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("未找到筛选保存按钮")
 
