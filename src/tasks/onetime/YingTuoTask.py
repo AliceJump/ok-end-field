@@ -28,6 +28,8 @@ def _settled(read):
 
 class YingTuoTask(BattleMixin):
     CFG_CLAIM_REWARD: ClassVar[str] = "⭐领取影拓丰碑奖励"
+    # 领奖开启且活动任务已全部完成时跳过整个任务；独立任务仍挑战其余海报，一键日常版跳过。
+    SKIP_WHEN_ACTIVITY_DONE: ClassVar[bool] = False
 
     # 任务卡文本所在的右侧面板，限定 OCR 与红底检测范围。
     REWARD_PANEL_BOX: ClassVar = (0.62, 0.30, 0.99, 0.85)
@@ -74,6 +76,9 @@ class YingTuoTask(BattleMixin):
         state, hardship_pending = self.check_activity_tasks(claim=claim_enabled)
         if not claim_enabled:
             self.log_info("已关闭『领取影拓丰碑奖励』，只读取活动任务，不领奖")
+        elif state == CARD_CLAIMED and self.SKIP_WHEN_ACTIVITY_DONE:
+            self.log_info("活动任务已全部完成，跳过影拓丰碑", notify=True)
+            return
         if not self.enter_yingtuo():
             return
         finished = True

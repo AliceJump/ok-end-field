@@ -72,22 +72,23 @@ def _frame(bgr):
     return np.full((1080, 1920, 3), bgr, dtype=np.uint8)
 
 
-def _mock_task(claim_enabled=True):
+def _mock_task(claim_enabled=True, task_cls=YingTuoTask):
     task = mock.Mock()
     task.CFG_CLAIM_REWARD = YingTuoTask.CFG_CLAIM_REWARD
+    task.SKIP_WHEN_ACTIVITY_DONE = task_cls.SKIP_WHEN_ACTIVITY_DONE
     task.config = {YingTuoTask.CFG_CLAIM_REWARD: claim_enabled}
     # 活动阶段用真实实现，才能检查它与其余海报阶段的先后顺序
     task.run_activity_stages = functools.partial(YingTuoTask.run_activity_stages, task)
     return task
 
 
-def _run_task(claim_enabled=True, claims=(), challenge=True, hardship=False):
+def _run_task(claim_enabled=True, claims=(), challenge=True, hardship=False, task_cls=YingTuoTask):
     """用 Mock 替身跑 run()。
 
     claims 依次作为两次领奖的顶格底色，hardship 是阶段 A 读到的苦难任务是否未完成，
-    challenge 是普通关卡挑战的结果。
+    challenge 是普通关卡挑战的结果，task_cls 决定活动任务全部完成时是否跳过整个任务。
     """
-    task = _mock_task(claim_enabled)
+    task = _mock_task(claim_enabled, task_cls)
     task.check_activity_tasks.side_effect = [(state, hardship and i == 0) for i, state in enumerate(claims)]
     task.enter_yingtuo.return_value = True
     task.challenge_normal_stages.return_value = challenge
@@ -301,7 +302,7 @@ class TestYingTuoReward(unittest.TestCase):
         self.assertIsNone(YingTuoTask._visit_activity_center(task, True))
 
     def test_claimed_top_card_skips_to_other_posters(self):
-        # 第一阶段领完是灰底：活动任务已全部完成，跳过活动阶段，直接打其余海报
+        # 独立任务：第一阶段领完是灰底，说明活动任务已全部完成，跳过活动阶段，直接打其余海报
         task = _run_task(claims=[CARD_CLAIMED])
 
         task.challenge_normal_stages.assert_called_once_with()
@@ -456,6 +457,35 @@ class TestYingTuoReward(unittest.TestCase):
         self.assertTrue(issubclass(DailyYingTuoTask, YingTuoTask))
         self.assertEqual(DailyYingTuoTask.run, YingTuoTask.run)
         self.assertEqual(DailyYingTuoTask.CFG_CLAIM_REWARD, YingTuoTask.CFG_CLAIM_REWARD)
+
+    def test_daily_variant_skips_when_activity_done(self):
+        # 一键日常：活动任务已全部完成就不进影拓丰碑，其余海报只在活动未完成时顺带打
+        from src.tasks.onetime.DailyYingTuoTask import DailyYingTuoTask
+
+        task = _run_task(claims=[CARD_CLAIMED], task_cls=DailyYingTuoTask)
+
+        task.enter_yingtuo.assert_not_called()
+        task.challenge_normal_stages.assert_not_called()
+        self.assertEqual(_last_log(task), "活动任务已全部完成，跳过影拓丰碑")
+
+    def test_daily_variant_with_reward_switch_off_challenges_all_posters(self):
+        # 关闭领奖后日常版不再提前结束，每次都挑战全部海报
+        from src.tasks.onetime.DailyYingTuoTask import DailyYingTuoTask
+
+        task = _run_task(claim_enabled=False, claims=[CARD_CLAIMED], task_cls=DailyYingTuoTask)
+
+        task.enter_yingtuo.assert_called_once()
+        task.challenge_normal_stages.assert_called_once_with()
+        self.assertEqual(_last_log(task), "影拓丰碑任务完成")
+
+    def test_daily_variant_unfinished_activity_also_challenges_other_posters(self):
+        # 活动任务未完成时照常打完最左侧海报，再顺带打其余海报的遗漏关卡
+        from src.tasks.onetime.DailyYingTuoTask import DailyYingTuoTask
+
+        task = _run_task(claims=[CARD_UNFINISHED, CARD_CLAIMED], task_cls=DailyYingTuoTask)
+
+        self.assertEqual(task.challenge_normal_stages.call_args_list, [mock.call(leftmost_only=True), mock.call()])
+        self.assertEqual(_last_log(task), "影拓丰碑任务完成")
 
 
 if __name__ == "__main__":
