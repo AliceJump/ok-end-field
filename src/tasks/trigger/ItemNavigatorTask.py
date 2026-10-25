@@ -194,10 +194,10 @@ class ItemNavigatorTask(
         self._info_text_line_spacing = 1.35
         self._info_text_panel_alpha = 150  # 底板 alpha 回退值（对应「浮层背景透明度」59）
 
-        self._load_marked()
         # dirty-save 控制：标记后延迟合并写盘
         self._dirty = False
         self._last_save_time = 0.0
+        self._load_marked()
         # 标记按键状态：记录本次按住期间是否已标记（防止按住期间反复标记）
         self._mark_key_held_in_cycle = False
         # 按键按下计时：用于判断按住持续时间（None 表示当前未按下）

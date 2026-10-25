@@ -12,6 +12,32 @@ from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
 
 
 class TestMarkedPointMigration(unittest.TestCase):
+    def test_constructor_preserves_failed_migration_for_runtime_retry(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            old_path = root / "assets/items/map/marked_points.json"
+            old_path.parent.mkdir(parents=True)
+            payload = {"map01": ["point-a"]}
+            old_path.write_text(json.dumps(payload), encoding="utf-8")
+            with (
+                mock.patch("src.tasks.trigger.ItemNavigatorTask.config_folder", return_value=str(root)),
+                mock.patch("src.core.BaseEfTask.get_global_config", return_value={}),
+                mock.patch(
+                    "src.tasks.trigger.ItemNavigatorTask.Path", side_effect=lambda *parts: root.joinpath(*parts)
+                ),
+                mock.patch.object(Path, "replace", side_effect=OSError("disk full")),
+                mock.patch.object(ItemNavigatorTask, "log_error"),
+                mock.patch.object(ItemNavigatorTask, "log_info"),
+                mock.patch.object(ItemNavigatorTask, "tr", side_effect=lambda message: message),
+            ):
+                task = ItemNavigatorTask(SimpleNamespace(scene=None, pause_start=None), SimpleNamespace())
+            self.assertTrue(task._dirty)
+            self.assertEqual(task._last_save_time, 0.0)
+            self.assertTrue(old_path.exists())
+            self.assertTrue(task._save_marked())
+            self.assertFalse(task._dirty)
+            self.assertEqual(json.loads(task._marked_store.read_text(encoding="utf-8")), payload)
+
     def make_task(self, root):
         task = object.__new__(ItemNavigatorTask)
         task._marked_store = root / "custom-config" / "marked_points.json"
