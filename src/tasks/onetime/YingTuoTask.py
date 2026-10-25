@@ -291,6 +291,14 @@ class YingTuoTask(BattleMixin):
             return False
         if state != "combat":
             self.press_key("f")
+
+            def challenge_started():
+                self.next_frame()
+                return self.in_combat()
+
+            if not self.wait_until(challenge_started, time_out=10, raise_if_not_found=False):
+                self.log_info("触碰后挑战未启动")
+                return False
         if not self.auto_battle():
             return False
         if not self.wait_click_feature(

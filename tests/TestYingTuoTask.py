@@ -96,6 +96,44 @@ class TestYingTuoTask(unittest.TestCase):
             task.mock_calls.index(unittest.mock.call.press_key("f")),
             task.mock_calls.index(unittest.mock.call.auto_battle()),
         )
+        task.wait_until.assert_called_once()
+        self.assertEqual(task.wait_until.call_args.kwargs["time_out"], 10)
+
+    def test_touch_interaction_without_combat_returns_before_auto_battle(self):
+        task = Mock()
+        task.strafe_search.return_value = [object()]
+        task.in_combat.return_value = False
+
+        def wait_for_start(check, **kwargs):
+            self.assertEqual(kwargs["time_out"], 10)
+            self.assertFalse(kwargs["raise_if_not_found"])
+            return check()
+
+        task.wait_until.side_effect = wait_for_start
+        self.assertFalse(YingTuoTask.battle_and_exit(task))
+        task.press_key.assert_called_once_with("f")
+        task.next_frame.assert_called_once_with()
+        task.auto_battle.assert_not_called()
+        task.wait_click_feature.assert_not_called()
+
+    def test_touch_interaction_confirms_combat_before_auto_battle(self):
+        task = Mock()
+        task.strafe_search.return_value = [object()]
+        task.in_combat.side_effect = [False, True]
+
+        def wait_for_start(check, **_kwargs):
+            self.assertFalse(check())
+            return check()
+
+        task.wait_until.side_effect = wait_for_start
+        self.assertTrue(YingTuoTask.battle_and_exit(task))
+        self.assertEqual(task.next_frame.call_count, 2)
+        self.assertLess(
+            task.mock_calls.index(
+                unittest.mock.call.wait_until(unittest.mock.ANY, time_out=10, raise_if_not_found=False)
+            ),
+            task.mock_calls.index(unittest.mock.call.auto_battle()),
+        )
 
     def test_already_started_challenge_does_not_move_or_interact(self):
         task = Mock()
