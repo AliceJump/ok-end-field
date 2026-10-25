@@ -137,6 +137,36 @@ class TestYingTuoTask(unittest.TestCase):
             YingTuoTask.find_normal_challenge(task)
         self.assertEqual(len(task.clicks), YingTuoTask.CHALLENGE_CLICK_ATTEMPTS)
 
+    def test_raises_right_after_last_failed_click(self):
+        """点满次数后不再检测灰条：检测为空会走空滚动，最后误报任务完成。"""
+        task = _FakeYingTuoTask()
+        task.detail_page_results = [False] * YingTuoTask.CHALLENGE_CLICK_ATTEMPTS
+        # 每次稳定检测读 2 帧。
+        bars = [[_bar(50.0, 25.0)]] * (2 * YingTuoTask.CHALLENGE_CLICK_ATTEMPTS)
+        with (
+            patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", side_effect=bars + [[]] * 10),
+            self.assertRaisesRegex(Exception, "未进入关卡详情页"),
+        ):
+            YingTuoTask.find_normal_challenge(task)
+        self.assertEqual(task.scroll_count, 0)
+
+    def test_return_restarts_settle_when_page_changes(self):
+        """wait_until 只在条件为假时重新计时，页面类型一变条件须先返回假。"""
+        task = Mock()
+        task._monument_or_handbook.side_effect = ["handbook", "handbook", "monument", "monument"]
+        results = []
+
+        def wait_until(condition, **kwargs):
+            if "settle_time" not in kwargs:
+                return True
+            results.extend(condition() for _ in range(4))
+            return results[-1]
+
+        task.wait_until.side_effect = wait_until
+
+        self.assertTrue(YingTuoTask.return_to_monument(task))
+        self.assertEqual(results, [None, "handbook", None, "monument"])
+
     def test_return_presses_back_once_while_loading(self):
         """退出副本的加载期间不再按返回，否则加载结束后海报页会被关掉。"""
         task = Mock()

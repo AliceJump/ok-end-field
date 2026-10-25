@@ -115,8 +115,17 @@ class YingTuoTask(BattleMixin):
             self.log_info("按返回后仍停在关卡详情页")
             return False
         # 页面须稳定 0.5 秒：加载结束时海报页可能只闪一帧，随后落到行动手册。
+        # wait_until 只在条件为假时重新计时，所以页面类型一变就先返回 None。
+        last_page = None
+
+        def settled_page():
+            nonlocal last_page
+            page, previous = self._monument_or_handbook(), last_page
+            last_page = page
+            return page if page == previous else None
+
         page = self.wait_until(
-            self._monument_or_handbook,
+            settled_page,
             time_out=self.RETURN_LOADING_TIMEOUT,
             settle_time=0.5,
             raise_if_not_found=False,
@@ -193,9 +202,6 @@ class YingTuoTask(BattleMixin):
                 self.log_info(f"未检测到普通关卡灰条，继续向下滚动 ({empty_scrolls}/4)")
                 self.scroll_relative(0.5, 0.5, -5)
                 continue
-            if attempts >= self.CHALLENGE_CLICK_ATTEMPTS:
-                self.log_info("点击灰条后未进入关卡详情页")
-                raise Exception("点击灰条后未进入关卡详情页")
             attempts += 1
             leftmost_bar = bars[0]
             frame_height, frame_width = frame.shape[:2]
@@ -207,6 +213,10 @@ class YingTuoTask(BattleMixin):
             )
             if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
                 return True
+            # 点满次数就报错，不再检测：此时画面不明，检测为空会走空滚动并误报任务完成。
+            if attempts >= self.CHALLENGE_CLICK_ATTEMPTS:
+                self.log_info("点击灰条后未进入关卡详情页")
+                raise Exception("点击灰条后未进入关卡详情页")
             self.log_info(f"点击灰条后未进入关卡详情页，重新检测 ({attempts}/{self.CHALLENGE_CLICK_ATTEMPTS})")
         self.log_info("连续 4 次滚动未检测到普通关卡灰条")
         return None
