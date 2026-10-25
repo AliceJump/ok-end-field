@@ -34,8 +34,19 @@ class TestMarkedPointMigration(unittest.TestCase):
             self.assertTrue(task._dirty)
             self.assertEqual(task._last_save_time, 0.0)
             self.assertTrue(old_path.exists())
-            self.assertTrue(task._save_marked())
+            task.config = {}
+            with mock.patch.multiple(
+                task,
+                check_resolution=mock.Mock(),
+                _is_game_window_alive=mock.Mock(return_value=True),
+                _read_navigation_position=mock.Mock(return_value=(("map01", 0, 0, 0), "")),
+                _get_candidates_for_map=mock.Mock(return_value={}),
+                info_set=mock.Mock(),
+                sleep=mock.Mock(),
+            ):
+                ItemNavigatorTask.run.__wrapped__(task)
             self.assertFalse(task._dirty)
+            self.assertFalse(old_path.exists())
             self.assertEqual(json.loads(task._marked_store.read_text(encoding="utf-8")), payload)
 
     def make_task(self, root):
@@ -85,7 +96,10 @@ class TestMarkedPointMigration(unittest.TestCase):
             old_path = root / "assets/items/map/marked_points.json"
             old_path.parent.mkdir(parents=True)
             old_path.write_text(json.dumps({"map01": ["old"]}), encoding="utf-8")
-            task._load_marked()
+            with mock.patch(
+                "src.tasks.trigger.ItemNavigatorTask.Path", side_effect=lambda *parts: root.joinpath(*parts)
+            ):
+                task._load_marked()
             self.assertEqual(task._marked, {"map02": {"new"}})
             self.assertTrue(old_path.exists())
 

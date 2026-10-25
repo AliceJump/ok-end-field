@@ -197,6 +197,7 @@ class ItemNavigatorTask(
         # dirty-save 控制：标记后延迟合并写盘
         self._dirty = False
         self._last_save_time = 0.0
+        self._legacy_marked_source = None
         self._load_marked()
         # 标记按键状态：记录本次按住期间是否已标记（防止按住期间反复标记）
         self._mark_key_held_in_cycle = False
@@ -502,14 +503,8 @@ class ItemNavigatorTask(
                         self._marked[k] = set(v or [])
                     # 自动保存到新路径
                     self._dirty = True
-                    if not self._save_marked():
-                        return
-                    # 可选：删除旧文件
-                    try:
-                        old_path.unlink()
-                        self.log_info("旧文件已删除")
-                    except Exception:
-                        self.log_info("旧文件保留（删除失败）")
+                    self._legacy_marked_source = old_path
+                    self._save_marked()
                 except Exception as e:
                     self.log_error(f"迁移旧文件失败: {e}")
         except Exception as e:
@@ -527,6 +522,14 @@ class ItemNavigatorTask(
                 # 更新最后保存时间
                 self._last_save_time = time.time()
                 self._dirty = False
+                old_path = getattr(self, "_legacy_marked_source", None)
+                if old_path is not None:
+                    try:
+                        old_path.unlink(missing_ok=True)
+                        self._legacy_marked_source = None
+                        self.log_info("旧文件已删除")
+                    except OSError:
+                        self.log_info("旧文件保留（删除失败）")
                 return True
         except Exception as e:
             self.log_error(f"保存 marked_points 失败: {e}")
@@ -799,6 +802,9 @@ class ItemNavigatorTask(
     def run(self):
         self.check_resolution()
         try:
+            # 保存重试不依赖游戏窗口、定位数据或候选物品。
+            if self._dirty and (time.time() - self._last_save_time) > 3.0:
+                self._save_marked()
             if not self._is_game_window_alive():
                 self._cleanup_navigator_runtime()
                 if not self._navigator_window_missing_logged:
@@ -916,14 +922,6 @@ class ItemNavigatorTask(
 
         except Exception as e:
             self.log_error(f"ItemNavigatorTask 异常: {e}")
-
-        # 延迟保存：合并多次标记以减少 IO
-        try:
-            if self._dirty and (time.time() - self._last_save_time) > 3.0:
-                # 写盘由 _save_marked 维护 last_save_time 与 _dirty 标志
-                self._save_marked()
-        except Exception:
-            pass
 
         # lightweight sleep to avoid busy loop; polling interval intentionally not user-configured here
         self.sleep(0.2)
