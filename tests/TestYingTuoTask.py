@@ -129,6 +129,17 @@ class TestYingTuoTask(unittest.TestCase):
             bars, _ = YingTuoTask._detect_stable_bars(task)
         self.assertEqual(bars, [bar])
 
+    def test_empty_bars_time_from_first_empty_reading(self):
+        """淡入中命中会先有后无；空结果从首次为空起计时，不从开始检测起计时。"""
+        task = _FakeYingTuoTask()
+        bar = _bar(50.0, 25.0)
+        with patch(
+            "src.tasks.onetime.YingTuoTask.detect_gray_bars",
+            side_effect=[[bar], [], [], [], [bar], [bar]],
+        ):
+            bars, _ = YingTuoTask._detect_stable_bars(task)
+        self.assertEqual(bars, [bar])
+
     def test_retries_click_until_detail_page_opens(self):
         task = _FakeYingTuoTask()
         task.detail_page_results = [False, True]

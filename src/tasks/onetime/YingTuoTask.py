@@ -14,7 +14,7 @@ class YingTuoTask(BattleMixin):
     # 点击灰条后等关卡详情页出现的时间与重试次数。
     DETAIL_PAGE_TIMEOUT: ClassVar = 5
     CHALLENGE_CLICK_ATTEMPTS: ClassVar = 3
-    # 关卡段淡入约 0.55 秒，淡入前也会连续检测为空；空结果过了这段时间仍为空才采用。
+    # 关卡段淡入约 0.55 秒，淡入前也会连续检测为空；空结果连续保持这段时间才采用。
     EMPTY_BARS_SETTLE_TIME: ClassVar = 0.6
 
     def __init__(self, *args, **kwargs):
@@ -227,17 +227,22 @@ class YingTuoTask(BattleMixin):
         """间隔 0.2 秒两次检测结果一致才采用，返回灰条列表与所用帧。
 
         海报页出现后，下方关卡段约 0.55 秒才淡入完成，期间命中数在 0~5 条之间跳变；
-        滚动后的动画同理。结果为空时还须过了淡入时间才采用。超时仍不一致时采用最后一次结果。
+        滚动后的动画同理。结果为空时，须从首次为空起连续为空满淡入时间才采用。超时仍不一致时采用最后一次结果。
         """
         start = self.active_time()
         previous = None
+        empty_since = None
         while True:
             frame = self.next_frame()
             bars = self.detect_normal_challenge_bars(frame)
+            if bars:
+                empty_since = None
+            elif empty_since is None:
+                empty_since = self.active_time()
             if (
                 previous is not None
                 and self._same_bars(previous, bars, frame.shape[1])
-                and (bars or self.active_time() - start >= self.EMPTY_BARS_SETTLE_TIME)
+                and (bars or self.active_time() - empty_since >= self.EMPTY_BARS_SETTLE_TIME)
             ):
                 return bars, frame
             if self.active_time() - start >= time_out:
