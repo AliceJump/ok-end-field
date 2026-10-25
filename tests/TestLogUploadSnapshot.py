@@ -28,16 +28,43 @@ class TestLogUploadSnapshot(unittest.TestCase):
             log.write_bytes(initial)
             stat = os.fstat
 
-            def append_after_snapshot(fd):
-                result = stat(fd)
+            def append_later_record():
                 with log.open("ab") as writer:
                     writer.write(b"later record\n")
+
+            def append_after_snapshot(fd):
+                result = stat(fd)
+                append_later_record()
                 return result
 
-            with patch.object(log_upload_patch.os, "fstat", side_effect=append_after_snapshot):
+            with (
+                patch.object(log_upload_patch.os, "fstat", side_effect=append_after_snapshot),
+                patch.object(log_upload_patch.time, "sleep", side_effect=lambda _seconds: append_later_record()),
+            ):
                 archive = self.build_zip(root)
             with zipfile.ZipFile(archive) as zip_file:
                 self.assertEqual(zip_file.read("logs/ok-script.log"), initial)
+                self.assertEqual(zip_file.read("info.txt"), b"snapshot test")
+
+    def test_log_rotated_before_open_does_not_abort_remaining_export(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "logs").mkdir()
+            rotated = root / "logs" / "rotated.log"
+            rotated.write_bytes(b"old log\n")
+            (root / "logs" / "ok-script.log").write_bytes(b"remaining log\n")
+            original_open = Path.open
+
+            def rotate_before_open(path, *args, **kwargs):
+                if path == rotated and args == ("rb",):
+                    path.unlink()
+                return original_open(path, *args, **kwargs)
+
+            with patch.object(Path, "open", new=rotate_before_open):
+                archive = self.build_zip(root)
+            with zipfile.ZipFile(archive) as zip_file:
+                self.assertNotIn("logs/rotated.log", zip_file.namelist())
+                self.assertEqual(zip_file.read("logs/ok-script.log"), b"remaining log\n")
                 self.assertEqual(zip_file.read("info.txt"), b"snapshot test")
 
     def test_changing_screenshot_is_still_skipped(self):

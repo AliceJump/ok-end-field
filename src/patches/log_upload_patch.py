@@ -70,8 +70,12 @@ def _build_logs_zip(note_text: str = ""):
     def _read_snapshot_file(file_path: Path, *, live_log: bool = False) -> bytes | None:
         if live_log:
             # 活跃日志持续追加，不能按截图的静置规则跳过；以打开时的长度截取快照。
-            with file_path.open("rb") as log_file:
-                return log_file.read(os.fstat(log_file.fileno()).st_size)
+            try:
+                with file_path.open("rb") as log_file:
+                    return log_file.read(os.fstat(log_file.fileno()).st_size)
+            except FileNotFoundError:
+                logger.debug(f"skip rotated live log: {file_path}")
+                return None
         if not _wait_file_settled(file_path):
             logger.debug(f"skip unstable file: {file_path}")
             return None
