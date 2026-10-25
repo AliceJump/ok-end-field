@@ -530,6 +530,7 @@ class ItemNavigatorTask(
                         self._legacy_marked_source = None
                         self.log_info("旧文件已删除")
                     except OSError:
+                        self._dirty = True
                         self.log_info("旧文件保留（删除失败）")
                 return True
         except Exception as e:

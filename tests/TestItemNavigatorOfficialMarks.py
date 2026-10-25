@@ -84,6 +84,42 @@ class TestMarkedPointMigration(unittest.TestCase):
                     self.assertEqual(task._save_marked.call_count, expected_attempts)
             self.assertTrue(task._dirty)
 
+    def test_legacy_delete_failure_retries_cleanup_without_new_marks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            task = self.make_task(root)
+            old_path = root / "assets/items/map/marked_points.json"
+            old_path.parent.mkdir(parents=True)
+            payload = {"map01": ["point-a"]}
+            old_path.write_text(json.dumps(payload), encoding="utf-8")
+            with (
+                mock.patch(
+                    "src.tasks.trigger.ItemNavigatorTask.Path", side_effect=lambda *parts: root.joinpath(*parts)
+                ),
+                mock.patch("src.tasks.trigger.ItemNavigatorTask.time.time", return_value=100),
+                mock.patch.object(Path, "unlink", side_effect=OSError("file locked")),
+            ):
+                task._load_marked()
+            self.assertTrue(task._dirty)
+            self.assertTrue(old_path.exists())
+            self.assertEqual(json.loads(task._marked_store.read_text(encoding="utf-8")), payload)
+            task._navigator_window_missing_logged = False
+            with (
+                mock.patch.multiple(
+                    task,
+                    check_resolution=mock.Mock(),
+                    _is_game_window_alive=mock.Mock(return_value=False),
+                    _cleanup_navigator_runtime=mock.Mock(),
+                    info_set=mock.Mock(),
+                ),
+                mock.patch("src.tasks.trigger.ItemNavigatorTask.time.time", return_value=104),
+            ):
+                ItemNavigatorTask.run.__wrapped__(task)
+            self.assertFalse(task._dirty)
+            self.assertFalse(old_path.exists())
+            self.assertIsNone(task._legacy_marked_source)
+            self.assertEqual(json.loads(task._marked_store.read_text(encoding="utf-8")), payload)
+
     def test_save_failure_preserves_legacy_file_and_retries(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
