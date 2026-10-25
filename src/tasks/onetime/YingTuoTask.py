@@ -64,10 +64,7 @@ class YingTuoTask(BattleMixin):
         self.support_schedule_task = True
         self.default_config.update({self.CFG_CLAIM_REWARD: True})
         self.config_description[self.CFG_CLAIM_REWARD] = (
-            "是否在「活动中心」领取影拓丰碑的活动奖励。\n"
-            "先看第一格：黑底说明活动任务未完成，先打最左侧海报的关卡和苦难任务，回来领奖后再打其余海报；"
-            "灰底说明活动任务已全部完成，直接打其余海报。\n"
-            "关闭后不领奖，其余流程不变。"
+            "在「活动中心」领取影拓丰碑的活动奖励。\n关闭后只跳过领奖，关卡和苦难任务照常完成。"
         )
 
     def run(self):
