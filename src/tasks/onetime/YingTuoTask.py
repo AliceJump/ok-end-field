@@ -33,6 +33,8 @@ class YingTuoTask(BattleMixin):
     REWARD_PANEL_BOX: ClassVar = (0.62, 0.30, 0.99, 0.85)
     # 点击活动入口后，任务面板实测约 0.55 秒绘制完成，留足转场重试窗口。
     REWARD_PANEL_TIMEOUT: ClassVar = 6
+    # 绘制期间读到的底色不可信；同一底色连续保持这段时间才采用。
+    CARD_SETTLE_TIME: ClassVar = 1.0
     # 打完关卡退出副本要加载，实测 22.7 秒，留足余量。
     RETURN_LOADING_TIMEOUT: ClassVar = 90
     # 点击灰条后等关卡详情页出现的时间与重试次数。
@@ -366,9 +368,15 @@ class YingTuoTask(BattleMixin):
         """等到任务面板绘制完成，返回第一格卡片的底色；识别不到时按未完成处理。
 
         点击活动入口后右侧面板由游戏动画换页，刚点完取到的仍是上一页画面，
-        OCR 找不到任务格。沿用项目里 ``wait_until`` 的超时窗口逐帧重试。
+        OCR 找不到任务格。项目的 ``wait_until`` 默认取首个读数，实机曾把已领取的灰底读成未完成。
+        因此要求同一底色连续保持 ``CARD_SETTLE_TIME`` 秒。
         """
-        return self.wait_until(lambda: self._find_card_state(self.frame), time_out=time_out) or CARD_UNFINISHED
+        state = self.wait_until(
+            _settled(lambda: self._find_card_state(self.frame)),
+            time_out=time_out,
+            settle_time=self.CARD_SETTLE_TIME,
+        )
+        return state or CARD_UNFINISHED
 
     def _wait_card_settled(self, time_out=6):
         """等领奖后的重排落定，返回顶格新底色。
@@ -376,7 +384,7 @@ class YingTuoTask(BattleMixin):
         点完领取画面不会立刻刷新，直接取帧读到的仍是旧的红卡；这里等到顶格
         不再是红底为止，避免把「刚领完」误判成「还有红卡待领」。
         """
-        state = self.wait_until(self._settled_state, time_out=time_out)
+        state = self.wait_until(_settled(self._settled_state), time_out=time_out, settle_time=self.CARD_SETTLE_TIME)
         return state or CARD_UNFINISHED
 
     def _settled_state(self):

@@ -25,6 +25,7 @@ class _Task:
     width = 1920
     height = 1080
     REWARD_PANEL_BOX = YingTuoTask.REWARD_PANEL_BOX
+    CARD_SETTLE_TIME = YingTuoTask.CARD_SETTLE_TIME
 
     def __init__(self, ocr_boxes=None):
         self.ocr_boxes = ocr_boxes or []
@@ -196,12 +197,34 @@ class TestYingTuoReward(unittest.TestCase):
         task.press_esc.assert_called()
         task.ensure_main.assert_called_once()
 
+    def test_card_state_waits_for_stable_reading(self):
+        # 实机：活动做完后仍判为未完成；面板绘制期间的首个读数不能直接采用
+        task = _Task()
+        task.frame = "frame"
+        states = iter([CARD_UNFINISHED, CARD_CLAIMED, CARD_CLAIMED])
+        task._find_card_state = lambda _frame: next(states)
+        task.wait_until = mock.Mock(side_effect=task.wait_until)
+
+        self.assertEqual(YingTuoTask._wait_card_state(task, time_out=6), CARD_CLAIMED)
+        self.assertEqual(task.wait_until.call_args.kwargs["settle_time"], YingTuoTask.CARD_SETTLE_TIME)
+
+    def test_settled_state_waits_for_stable_reading(self):
+        # 领奖后卡片重排，中途读到的底色同样不能直接采用
+        task = _Task()
+        task.frame = "frame"
+        states = iter([CARD_UNFINISHED, CARD_CLAIMED, CARD_CLAIMED])
+        task._find_card_state = lambda _frame: next(states)
+        task.wait_until = mock.Mock(side_effect=task.wait_until)
+
+        self.assertEqual(YingTuoTask._wait_card_settled(task, time_out=6), CARD_CLAIMED)
+        self.assertEqual(task.wait_until.call_args.kwargs["settle_time"], YingTuoTask.CARD_SETTLE_TIME)
+
     def test_settled_state_ignores_stale_red_frame(self):
         # 点完领取画面不会立刻刷新，顶格仍是红卡；必须等它变灰/黑再判定，
         # 否则会把「刚领完」误判成「还有红卡待领」。
         task = _Task()
         task.frame = "frame"
-        states = iter([CARD_CLAIMABLE, CARD_CLAIMABLE, CARD_CLAIMED])
+        states = iter([CARD_CLAIMABLE, CARD_CLAIMABLE, CARD_CLAIMED, CARD_CLAIMED])
         task._find_card_state = lambda _frame: next(states)
 
         self.assertEqual(YingTuoTask._wait_card_settled(task, time_out=6), CARD_CLAIMED)
@@ -218,7 +241,7 @@ class TestYingTuoReward(unittest.TestCase):
         # 转场瞬间 OCR 找不到任务格，返回 None 也必须继续等，不能当成「已领完」
         task = _Task()
         task.frame = "frame"
-        states = iter([None, CARD_CLAIMABLE, CARD_UNFINISHED])
+        states = iter([None, CARD_CLAIMABLE, CARD_UNFINISHED, CARD_UNFINISHED])
         task._find_card_state = lambda _frame: next(states)
 
         self.assertEqual(YingTuoTask._wait_card_settled(task, time_out=6), CARD_UNFINISHED)
