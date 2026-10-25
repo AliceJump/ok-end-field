@@ -3829,3 +3829,21 @@ msgid ""
 msgstr ""
 "Claim rewards in the Event Center; skip this task once all event tasks are done.\n"
 "When off, no rewards are claimed and all posters are challenged every time."
+
+msgid "清理基质"
+msgstr "Clean Matrices"
+
+msgid "⭐清理基质"
+msgstr "⭐Clean Matrices"
+
+msgid ""
+"前往「贵重品库/武器基质」分解全部可分解基质，直到无可分解。\n"
+"分解产出基建材料与调度券。"
+msgstr ""
+"Open Valuables / Weapon Matrices and dismantle all eligible matrices until none remain.\n"
+"Dismantling yields infrastructure materials and dispatch tickets."
+
+msgid "是否前往「贵重品库/武器基质」分解全部可分解基质，直到无可分解。"
+msgstr ""
+"Whether to open Valuables / Weapon Matrices and dismantle all eligible "
+"matrices."

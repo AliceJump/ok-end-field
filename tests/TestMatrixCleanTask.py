@@ -69,6 +69,15 @@ class TestLangResource(unittest.TestCase):
 class TestDismantleByQuality(unittest.TestCase):
     """批循环：正常结束、异常中断、上限拦截。"""
 
+    def test_open_failure_restores_main_without_dismantling(self):
+        task = make_task()
+        task._open_vault_essence_page = MagicMock(return_value=False)
+        task._dismantle_by_quality = MagicMock()
+        task.ensure_main = MagicMock()
+        self.assertFalse(task.clean_matrix())
+        task.ensure_main.assert_called_once_with(time_out=420)
+        task._dismantle_by_quality.assert_not_called()
+
     def test_immediately_empty_ends_normally(self):
         task = make_task()
         task._enter_dismantle_mode = MagicMock(return_value=True)

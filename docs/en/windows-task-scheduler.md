@@ -191,24 +191,26 @@ Current main one-time task indexes (matching their task-list order):
 | 3 | Dijiang Organize |
 | 4 | Dijiang Harvest |
 | 5 | Collect Mail |
-| 6 | Handover Delivery Commissions |
-| 7 | Region Building |
-| 8 | Craft Equipment |
-| 9 | Collect Credit |
-| 10 | Buy Credit Shop |
-| 11 | Daily Stamina Farming |
-| 12 | Computation |
-| 13 | Daily Yingtuo Monument |
-| 14 | Event Rewards |
-| 15 | Daily Rewards |
-| 16 | Daily Auto Delivery |
-| 17 | Teleport to Dijiang right-side transfer point |
-| 18 | Accept Commission |
-| 19 | Warehouse Transfer |
-| 20 | Auto Delivery |
-| 21 | Stamina Farming |
-| 22 | Computation Draw |
-| 23 | Yingtuo Monument |
+| 6 | Clean Matrices (Daily) |
+| 7 | Handover Delivery Commissions |
+| 8 | Region Building |
+| 9 | Craft Equipment |
+| 10 | Collect Credit |
+| 11 | Buy Credit Shop |
+| 12 | Daily Stamina Farming |
+| 13 | Computation |
+| 14 | Daily Yingtuo Monument |
+| 15 | Event Rewards |
+| 16 | Daily Rewards |
+| 17 | Daily Auto Delivery |
+| 18 | Teleport to Dijiang right-side transfer point |
+| 19 | Accept Commission |
+| 20 | Warehouse Transfer |
+| 21 | Clean Matrices (Standalone) |
+| 22 | Auto Delivery |
+| 23 | Stamina Farming |
+| 24 | Computation Draw |
+| 25 | Yingtuo Monument |
 
 
 > **Index auto-correction at startup**: tasks created through ok-ef's built-in 「Scheduled Tasks」 feature (the 「Scheduled Tasks」 tab in the GUI) store their `-t` argument in `configs/schedule_tasks_cache.json` and in the Windows scheduled task. On every app startup, it reads this app's tasks (`\ok-ef\`) from the cache, compares each name against the current `onetime_tasks` order, automatically rewrites `-t` to the correct current index, and syncs the Windows scheduled task. So after reordering `onetime_tasks` you don't need to fix the number manually — the next startup corrects it automatically; if this run was triggered by the scheduled task, it also corrects before running, ensuring the right task runs. Other ok-* apps' tasks (e.g. `\ok-gf2\`) are not modified.

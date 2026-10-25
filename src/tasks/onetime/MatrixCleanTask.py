@@ -56,6 +56,7 @@ class MatrixCleanTask(Common):
     def clean_matrix(self):
         """分解主流程：进贵重品库 → 逐品质循环分解到无可分解 → 关闭贵重品库。"""
         if not self._open_vault_essence_page():
+            self.ensure_main(time_out=420)
             return False
         success = self._dismantle_by_quality()
         self._close_vault()

@@ -3963,3 +3963,21 @@ msgid ""
 msgstr ""
 "Recoge las recompensas en el Centro de eventos; omite esta tarea cuando todas las tareas del evento estén completas.\n"
 "Si se desactiva, no se recogen recompensas y se desafían todos los carteles cada vez."
+
+msgid "清理基质"
+msgstr "Limpiar matrices"
+
+msgid "⭐清理基质"
+msgstr "⭐Limpiar matrices"
+
+msgid ""
+"前往「贵重品库/武器基质」分解全部可分解基质，直到无可分解。\n"
+"分解产出基建材料与调度券。"
+msgstr ""
+"Abre Objetos de valor / Matrices de armas y desmantela todas las matrices disponibles.\n"
+"Obtendrás materiales de infraestructura y vales de suministro."
+
+msgid "是否前往「贵重品库/武器基质」分解全部可分解基质，直到无可分解。"
+msgstr ""
+"Abre Objetos de valor / Matrices de armas y desmantela todas las matrices "
+"disponibles."
