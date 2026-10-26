@@ -1028,6 +1028,16 @@ def install_endfield_theme_patch() -> None:
 
             self._endfield_workspaces = workspaces
 
+            # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
+            daily = next((ws for ws in workspaces if ws.category_code == "DAILY"), None)
+            if daily is not None:
+                from src.gui.EndfieldRunDock import EndfieldRunDock
+
+                self._endfield_run_dock = EndfieldRunDock(daily)
+                navigation.addWidget(
+                    "endfield_run_dock", self._endfield_run_dock, position=NavigationItemPosition.BOTTOM
+                )
+
             # 注入智能路由跳转：如果外部逻辑调用 switchTo(sub_tab)，自动路由至对应工作区并切换顶栏标签
             for ws in workspaces:
                 ws.tab_bar.tabChanged.connect(lambda _index: _close_drawer())

@@ -113,11 +113,24 @@ class EndfieldElidedLabel(QLabel):
 
 
 class EndfieldActionButton(QPushButton):
-    """Native push button painted as a cut-corner chip; signal yellow wipes in from the left on hover."""
+    """Native push button painted as a cut-corner chip; signal yellow wipes in from the left on hover.
 
-    def __init__(self, icon: Any, text: str, parent=None, *, primary: bool = False, chamfered: bool = True):
+    A signal button is the reverse: signal yellow at rest, ink wiping in on hover.
+    """
+
+    def __init__(
+        self,
+        icon: Any,
+        text: str,
+        parent=None,
+        *,
+        primary: bool = False,
+        signal: bool = False,
+        chamfered: bool = True,
+    ):
         super().__init__(text, parent)
         self.primary = primary
+        self.signal = signal
         self.chamfered = chamfered
         self._fluent_icon = icon
         self._keyboard_focus = False
@@ -172,23 +185,31 @@ class EndfieldActionButton(QPushButton):
             self._wipe_ani.stop()
             self._wipe = 0.0
 
+    def _icon_width(self) -> int:
+        """Icon plus its 8px gap to the label; an icon-only button centres the bare icon."""
+        if self.icon().isNull():
+            return 0
+        return self.iconSize().width() + (8 if self.text() else 0)
+
     def sizeHint(self):
-        icon_width = self.iconSize().width() + 8 if not self.icon().isNull() else 0
         cut_room = 8 if self.chamfered else 0
-        return QSize(self.fontMetrics().horizontalAdvance(self.text()) + icon_width + 32 + cut_room, 34)
+        return QSize(self.fontMetrics().horizontalAdvance(self.text()) + self._icon_width() + 32 + cut_room, 34)
 
     def paintEvent(self, event):
         colors = palette(dark_theme())
         base, ink = (colors["go"], colors["on_go"]) if self.primary else (colors["chip"], colors["text"])
+        band, band_ink = colors["signal"], colors["on_signal"]
+        if self.signal:
+            base, ink, band, band_ink = colors["signal"], colors["on_signal"], colors["on_signal"], colors["signal"]
         wipe = self._wipe
         if not self.isEnabled():
             base, ink, wipe = colors["disabled_bg"], colors["disabled_text"], 0.0
         elif self.isDown():
             base, ink, wipe = colors["primary_pressed"], colors["on_signal"], 0.0
         elif wipe >= 1.0:
-            base, ink, wipe = colors["signal"], colors["on_signal"], 0.0
+            base, ink, wipe = band, band_ink, 0.0
         elif wipe >= 0.35:
-            ink = colors["on_signal"]
+            ink = band_ink
         w, h = self.width(), self.height()
         shape = cut_path(w, h, 7 if h <= 30 else 8) if self.chamfered else QPainterPath()
         if not self.chamfered:
@@ -199,11 +220,11 @@ class EndfieldActionButton(QPushButton):
         painter.setBrush(QColor(base))
         painter.drawPath(shape)
         if wipe > 0:
-            band = QPainterPath()
-            band.addRect(QRectF(0, 0, w * wipe, h))
-            painter.setBrush(QColor(colors["signal"]))
-            painter.drawPath(shape.intersected(band))
-        icon_width = self.iconSize().width() + 8 if not self.icon().isNull() else 0
+            wiped = QPainterPath()
+            wiped.addRect(QRectF(0, 0, w * wipe, h))
+            painter.setBrush(QColor(band))
+            painter.drawPath(shape.intersected(wiped))
+        icon_width = self._icon_width()
         text_width = self.fontMetrics().horizontalAdvance(self.text())
         left = (w - text_width - icon_width) // 2 - (2 if self.chamfered else 0)
         if icon_width:
