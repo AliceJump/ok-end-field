@@ -537,7 +537,7 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
             self.next_frame()
 
             friend_name_piece = self.ocr(
-                match=re.compile(r"\d+$"),
+                match=re.compile(r"\d+[)）]?$"),
                 box=self.box_of_screen(800 / 1920, 430 / 1080, 1270 / 1920, 490 / 1080),
                 frame_processor=self.make_hsv_isolator(hR.DARK_GRAY_TEXT),
                 log=True,
