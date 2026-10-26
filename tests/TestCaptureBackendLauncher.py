@@ -570,7 +570,9 @@ class MixinWiringTest(unittest.TestCase):
 
     def test_launcher_is_reused_when_config_is_stable(self):
         owner = _FakeOwner({"使用实验技术": True, "实验技术后端程序路径": "D:/one/backend.exe"})
-        self.assertIs(owner.capture_backend_launcher(), owner.capture_backend_launcher())
+        first = owner.capture_backend_launcher()
+        second = owner.capture_backend_launcher()
+        self.assertIs(first, second)
 
     def test_stop_on_exit_is_off_by_default(self):
         """默认不停后端：它的状态绑在当前这一局连接上，关掉就等于丢登录握手。"""
