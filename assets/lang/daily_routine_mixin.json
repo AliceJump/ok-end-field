@@ -1195,6 +1195,14 @@
       "pattern": "Nhận"
     }
   },
+  "k_ed7e11a1": {
+    "zh_CN": {
+      "pattern": "丰碑"
+    },
+    "zh_TW": {
+      "pattern": "豐碑"
+    }
+  },
   "k_view_quote": {
     "zh_CN": {
       "string": "查看报价"
@@ -1237,6 +1245,22 @@
     },
     "vi_VN": {
       "string": "Xem Trả Giá"
+    }
+  },
+  "k_2da75f4f": {
+    "zh_CN": {
+      "pattern": "影拓|活动期间|普通模式"
+    },
+    "zh_TW": {
+      "pattern": "影拓|活動期間|普通模式"
+    }
+  },
+  "k_ebbfb983": {
+    "zh_CN": {
+      "pattern": "苦难"
+    },
+    "zh_TW": {
+      "pattern": "苦難"
     }
   }
 }

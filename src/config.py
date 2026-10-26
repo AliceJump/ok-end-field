@@ -141,6 +141,7 @@ config = {
         ["src.tasks.onetime.CreditShopTask", "CreditShopTask"],
         ["src.tasks.onetime.DailyBattleTask", "DailyBattleTask"],
         ["src.tasks.onetime.DemoBattleTask", "DemoBattleTask"],
+        ["src.tasks.onetime.DailyYingTuoTask", "DailyYingTuoTask"],
         ["src.tasks.onetime.ActivityRewardTask", "ActivityRewardTask"],
         ["src.tasks.onetime.DailyRewardTask", "DailyRewardTask"],
         ["src.tasks.onetime.DailyDeliveryTask", "DailyDeliveryTask"],

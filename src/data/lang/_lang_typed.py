@@ -288,8 +288,17 @@ class DailyRoutineMixinModule(_LangModuleBaseT):
     k_39d12e73_1: re.Pattern[str]
     """领取"""
 
+    k_ed7e11a1: re.Pattern[str]
+    """丰碑"""
+
     k_view_quote: str
     """查看报价"""
+
+    k_2da75f4f: re.Pattern[str]
+    """影拓|活动期间|普通模式"""
+
+    k_ebbfb983: re.Pattern[str]
+    """苦难"""
 
 
 class DailyShopMixinModule(_LangModuleBaseT):
