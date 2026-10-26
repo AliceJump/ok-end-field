@@ -1,0 +1,130 @@
+{
+  "k_190bd555": {
+    "zh_CN": {
+      "pattern": "贵重品库"
+    },
+    "zh_TW": {
+      "pattern": "貴重品庫"
+    }
+  },
+  "k_9ca99bd0": {
+    "zh_CN": {
+      "pattern": "武器基质"
+    },
+    "zh_TW": {
+      "pattern": "武器基質"
+    }
+  },
+  "k_83c0c24d": {
+    "zh_CN": {
+      "pattern": "想要分解"
+    },
+    "zh_TW": {
+      "pattern": "想要分解"
+    }
+  },
+  "k_52e36ffd": {
+    "zh_CN": {
+      "pattern": "快捷放入"
+    },
+    "zh_TW": {
+      "pattern": "快捷放入"
+    }
+  },
+  "k_7ba0a5b1": {
+    "zh_CN": {
+      "pattern": "稳定基质"
+    },
+    "zh_TW": {
+      "pattern": "穩定基質"
+    }
+  },
+  "k_16da2b84": {
+    "zh_CN": {
+      "pattern": "净态基质"
+    },
+    "zh_TW": {
+      "pattern": "淨態基質"
+    }
+  },
+  "k_1a40e234": {
+    "zh_CN": {
+      "pattern": "高纯基质"
+    },
+    "zh_TW": {
+      "pattern": "高純基質"
+    }
+  },
+  "k_2396a6d9": {
+    "zh_CN": {
+      "pattern": "未上锁"
+    },
+    "zh_TW": {
+      "pattern": "未上鎖"
+    }
+  },
+  "k_fadf24db": {
+    "zh_CN": {
+      "pattern": "保存"
+    },
+    "zh_TW": {
+      "pattern": "保存"
+    }
+  },
+  "k_2792e981": {
+    "zh_CN": {
+      "pattern": "^分解$"
+    },
+    "zh_TW": {
+      "pattern": "^分解$"
+    }
+  },
+  "k_9c61417d": {
+    "zh_CN": {
+      "pattern": "无法分解"
+    },
+    "zh_TW": {
+      "pattern": "無法分解"
+    }
+  },
+  "k_45030a0b": {
+    "zh_CN": {
+      "pattern": "确认分解"
+    },
+    "zh_TW": {
+      "pattern": "確認分解"
+    }
+  },
+  "k_b56d9ac6": {
+    "zh_CN": {
+      "pattern": "确认"
+    },
+    "zh_TW": {
+      "pattern": "確認"
+    }
+  },
+  "k_92faab1e": {
+    "zh_CN": {
+      "pattern": "分解获得"
+    },
+    "zh_TW": {
+      "pattern": "分解獲得"
+    }
+  },
+  "k_75a84eb1": {
+    "zh_CN": {
+      "pattern": "未拥有该类型"
+    },
+    "zh_TW": {
+      "pattern": "未擁有該類型"
+    }
+  },
+  "k_feecb1e6": {
+    "zh_CN": {
+      "pattern": "^退出$"
+    },
+    "zh_TW": {
+      "pattern": "^退出$"
+    }
+  }
+}
