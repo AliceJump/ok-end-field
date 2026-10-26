@@ -542,7 +542,9 @@ class MixedInTest(unittest.TestCase):
 
     def test_installer_is_reused_across_calls(self):
         owner = self._owner({})
-        self.assertIs(owner.capture_backend_installer(), owner.capture_backend_installer())
+        first = owner.capture_backend_installer()
+        second = owner.capture_backend_installer()
+        self.assertIs(first, second)
 
     def test_launch_waits_for_the_download_first(self):
         """**顺序**：必须先确保 exe 在本地，再拉起。反了就会让游戏先连上，这一局抓不到握手。
