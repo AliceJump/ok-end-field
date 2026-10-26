@@ -3787,3 +3787,12 @@ msgstr ""
 "Switch within this distance of an intermediate waypoint only when the next "
 "waypoint is directly reachable; otherwise keep approaching the current "
 "waypoint (m)"
+
+msgid "启动游戏"
+msgstr "Start Game"
+
+msgid "启动中…"
+msgstr "Starting…"
+
+msgid "游戏已连接"
+msgstr "Game Connected"

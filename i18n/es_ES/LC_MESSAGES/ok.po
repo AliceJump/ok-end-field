@@ -3920,3 +3920,12 @@ msgstr ""
 "Cambia al siguiente punto cuando la distancia al punto intermedio sea menor "
 "que este valor y se pueda ir directamente al siguiente; en caso contrario, "
 "sigue acercándose al punto actual (m)"
+
+msgid "启动游戏"
+msgstr "Iniciar juego"
+
+msgid "启动中…"
+msgstr "Iniciando…"
+
+msgid "游戏已连接"
+msgstr "Juego conectado"

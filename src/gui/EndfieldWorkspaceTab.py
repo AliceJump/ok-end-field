@@ -37,7 +37,7 @@ from src.gui.EndfieldPrimitives import (
     paint_contours,
     ui_tr,
 )
-from src.gui.EndfieldTheme import palette
+from src.gui.EndfieldTheme import TRI_STRIP, palette
 from src.gui.EndfieldTypography import field_font, ui_font
 
 logger = Logger.get_logger(__name__)
@@ -191,15 +191,31 @@ RUN_STATES = {
     "running": ("RUNNING", "运行中"),
     "paused": ("PAUSED", "已暂停"),
     "waiting": ("QUEUED", "等待执行"),
+    "online": ("ONLINE", "游戏已连接"),
 }
 
 
-class EndfieldRunState(ThemeRepaint, QWidget):
-    """Header run state in the tab label style: an English code over the status, led by a square marker."""
+def run_state(task: Any) -> str:
+    """State of a one-time task as its run controls show it: idle, waiting, running or paused."""
+    if task is None or not getattr(task, "enabled", False):
+        return "idle"
+    if getattr(task, "paused", False):
+        return "paused"
+    return "running" if getattr(task, "running", False) else "waiting"
 
-    def __init__(self, parent: QWidget | None = None):
+
+class EndfieldRunState(ThemeRepaint, QWidget):
+    """Run state in the tab label style: an English code over the status, led by a square marker.
+
+    Compact, only the marker shows and the status moves to the tooltip.
+    """
+
+    def __init__(self, parent: QWidget | None = None, *, marker_left: float = 0.5, text_left: int = 16):
         super().__init__(parent)
         self.state = "waiting"
+        self.compact = False
+        self.marker_left = marker_left
+        self.text_left = text_left
         self._label = ""
         self._pulse = 1.0
         self._code_font = field_font(9, label=True)
@@ -219,14 +235,24 @@ class EndfieldRunState(ThemeRepaint, QWidget):
 
     def set_state(self, state: str):
         self.state = state
-        code, label = RUN_STATES[state]
-        self._label = ui_tr(label)
-        width = max(
-            QFontMetrics(self._code_font).horizontalAdvance(code),
-            QFontMetrics(self._name_font).horizontalAdvance(self._label),
-        )
-        self.setFixedSize(16 + width + 2, 36)
+        self._label = ui_tr(RUN_STATES[state][1])
+        self._resize()
         self._sync_pulse()
+
+    def set_compact(self, compact: bool):
+        self.compact = compact
+        self._resize()
+
+    def _resize(self):
+        self.setToolTip(self._label if self.compact else "")
+        if self.compact:
+            self.setFixedSize(40, 24)
+        else:
+            width = max(
+                QFontMetrics(self._code_font).horizontalAdvance(RUN_STATES[self.state][0]),
+                QFontMetrics(self._name_font).horizontalAdvance(self._label),
+            )
+            self.setFixedSize(self.text_left + width + 2, 36)
         self.update()
 
     def _set_pulse(self, value):
@@ -253,12 +279,15 @@ class EndfieldRunState(ThemeRepaint, QWidget):
         colors = palette(is_dark_theme())
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        marker = QRectF(0.5, 20.5, 7, 7)
+        marker = QRectF(self.marker_left, 8.5 if self.compact else 20.5, 7, 7)
         if self.state == "running":
             fill = QColor(colors["signal"])
             fill.setAlphaF(self._pulse)
             painter.setPen(QColor(colors["text"]))
             painter.setBrush(fill)
+        elif self.state == "online":
+            painter.setPen(QColor(colors["text"]))
+            painter.setBrush(QColor(TRI_STRIP[2]))
         elif self.state == "paused":
             painter.setPen(Qt.NoPen)
             painter.setBrush(QColor(colors["text"]))
@@ -266,14 +295,14 @@ class EndfieldRunState(ThemeRepaint, QWidget):
             painter.setPen(QColor(colors["muted"]))
             painter.setBrush(Qt.NoBrush)
         painter.drawRect(marker)
-        painter.setPen(QColor(colors["muted"]))
-        painter.setFont(self._code_font)
-        painter.drawText(
-            QRectF(16, 2, self.width() - 16, 12), Qt.AlignLeft | Qt.AlignVCenter, RUN_STATES[self.state][0]
-        )
-        painter.setPen(QColor(colors["text"]))
-        painter.setFont(self._name_font)
-        painter.drawText(QRectF(16, 14, self.width() - 16, 20), Qt.AlignLeft | Qt.AlignVCenter, self._label)
+        if not self.compact:
+            left, width = self.text_left, self.width() - self.text_left
+            painter.setPen(QColor(colors["muted"]))
+            painter.setFont(self._code_font)
+            painter.drawText(QRectF(left, 2, width, 12), Qt.AlignLeft | Qt.AlignVCenter, RUN_STATES[self.state][0])
+            painter.setPen(QColor(colors["text"]))
+            painter.setFont(self._name_font)
+            painter.drawText(QRectF(left, 14, width, 20), Qt.AlignLeft | Qt.AlignVCenter, self._label)
         painter.end()
 
 
@@ -382,15 +411,15 @@ class EndfieldWorkspaceTab(QWidget):
             self.secondary_action_button = setting_btn
         if self._run_task is not None:
             self.pause_action_button = self._action_button(FluentIcon.PAUSE, "暂停", "workspacePauseAction")
-            self.pause_action_button.clicked.connect(self._pause_clicked)
+            self.pause_action_button.clicked.connect(self.pause_run)
             self.stop_action_button = self._action_button(OKIcon.STOP, "停止", "workspaceStopAction", primary=True)
-            self.stop_action_button.clicked.connect(self._stop_clicked)
+            self.stop_action_button.clicked.connect(self.stop_run)
         if primary_action is not None:
             action_text, action_callback = primary_action
             self._primary_text = ui_tr(action_text)
             self._primary_callback = action_callback
-            action_btn = self._action_button(FluentIcon.PLAY, action_text, "workspacePrimaryAction", primary=True)
-            action_btn.clicked.connect(self._start_clicked)
+            action_btn = self._action_button(FluentIcon.PLAY, action_text, "workspacePrimaryAction", signal=True)
+            action_btn.clicked.connect(self.start_run)
             self.primary_action_button = action_btn
         if self.action_row.count():
             self.header_layout.addLayout(self.action_row)
@@ -449,8 +478,10 @@ class EndfieldWorkspaceTab(QWidget):
         with suppress(Exception):
             qconfig.themeChanged.connect(self.apply_theme_colors)
 
-    def _action_button(self, icon: Any, text: str, name: str, *, primary: bool = False) -> EndfieldActionButton:
-        button = EndfieldActionButton(icon, ui_tr(text), self.header_bar, primary=primary)
+    def _action_button(
+        self, icon: Any, text: str, name: str, *, primary: bool = False, signal: bool = False
+    ) -> EndfieldActionButton:
+        button = EndfieldActionButton(icon, ui_tr(text), self.header_bar, primary=primary, signal=signal)
         button.setObjectName(name)
         button.setIconSize(QSize(14, 14))
         button.setFont(ui_font(14, QFont.DemiBold))
@@ -458,8 +489,12 @@ class EndfieldWorkspaceTab(QWidget):
         self.action_row.addWidget(button, 0, Qt.AlignVCenter)
         return button
 
-    def _start_clicked(self):
-        task = self._run_task() if self._run_task is not None else None
+    # 页眉和导航底部的运行控制区共用下面三个操作，“启动成功”提示只由页眉发一次
+    def run_task(self) -> Any:
+        return self._run_task() if self._run_task is not None else None
+
+    def start_run(self):
+        task = self.run_task()
         # 执行器从暂停恢复时 ok 自己会提示“启动成功”；执行器已在运行时由页眉补这条提示
         self._announce_start = (
             task is not None
@@ -468,33 +503,32 @@ class EndfieldWorkspaceTab(QWidget):
         )
         self._primary_callback()
 
-    def _pause_clicked(self):
-        task = self._run_task() if self._run_task is not None else None
+    def pause_run(self):
+        task = self.run_task()
         if task is not None:
             task.pause()
 
-    def _stop_clicked(self):
-        task = self._run_task() if self._run_task is not None else None
+    def stop_run(self):
+        task = self.run_task()
         if task is not None:
             task.disable()
             task.unpause()
 
     def _sync_run_state(self, *_args):
-        task = self._run_task() if self._run_task is not None else None
+        task = self.run_task()
         if task is None or self.primary_action_button is None:
             return
-        enabled = bool(getattr(task, "enabled", False))
-        paused = enabled and bool(getattr(task, "paused", False))
-        running = enabled and not paused and bool(getattr(task, "running", False))
-        self.primary_action_button.setText(ui_tr("继续") if paused else self._primary_text)
-        self.primary_action_button.setVisible(not enabled or paused)
+        state = run_state(task)
+        enabled = state != "idle"
+        self.primary_action_button.setText(ui_tr("继续") if state == "paused" else self._primary_text)
+        self.primary_action_button.setVisible(state in ("idle", "paused"))
         if self.pause_action_button is not None:
-            self.pause_action_button.setVisible(running)
+            self.pause_action_button.setVisible(state == "running")
         if self.stop_action_button is not None:
             self.stop_action_button.setVisible(enabled)
         if self.run_status is not None:
             if enabled:
-                self.run_status.set_state("paused" if paused else "running" if running else "waiting")
+                self.run_status.set_state(state)
             self.run_status.setVisible(enabled)
         if enabled and self._announce_start:
             self._announce_start = False

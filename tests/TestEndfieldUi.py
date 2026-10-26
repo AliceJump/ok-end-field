@@ -47,7 +47,8 @@ from src.gui.EndfieldCombatTab import (
     EndfieldCombatTab,
     resolve_battle_values,
 )
-from src.gui.EndfieldWorkspaceTab import EndfieldWorkspaceTab
+from src.gui.EndfieldRunDock import EndfieldRunDock
+from src.gui.EndfieldWorkspaceTab import RUN_STATES, EndfieldWorkspaceTab
 from src.image.enemy_health_probe import KEY_SAVE_ENEMY_PRESENCE_FRAMES
 from src.patches.endfield_theme_patch import (
     patch_about_content_layout,
@@ -1241,6 +1242,8 @@ class NativeTextLayoutTest(unittest.TestCase):
             "暂停",
             "停止",
         }
+        # 运行状态文字经变量传给 ui_tr，下面的源码扫描看不到
+        texts.update(label for _code, label in RUN_STATES.values())
         for path in [*root.glob("src/gui/**/*.py"), root / "src/patches/endfield_theme_patch.py"]:
             for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
                 if isinstance(node, ast.Call) and getattr(node.func, "id", None) == "ui_tr":
@@ -1258,7 +1261,7 @@ class NativeTextLayoutTest(unittest.TestCase):
 
         root = Path(__file__).resolve().parents[1]
         catalog = gettext.translation("ok", str(root / "i18n"), languages=["ja_JP"])
-        with patch.object(og, "app", SimpleNamespace(tr=catalog.gettext)):
+        with patch.object(og, "app", SimpleNamespace(tr=catalog.gettext)), patch.object(og, "device_manager", None):
             workspace = EndfieldWorkspaceTab(
                 "DAILY",
                 "日常一条龙",
@@ -1267,6 +1270,8 @@ class NativeTextLayoutTest(unittest.TestCase):
                 secondary_action=("一条龙设置", lambda: None),
             )
             drawer = EndfieldTacticalDrawer()
+            dock = EndfieldRunDock(workspace)
+        self.assertEqual(dock.launch_button.accessibleName(), "ゲーム起動")
         self.assertEqual(workspace.title_label.text(), "デイリールーチン")
         self.assertEqual(workspace.eyebrow_label.text(), "// DAILY ROUTINE")
         assert workspace.primary_action_button is not None and workspace.secondary_action_button is not None
@@ -1275,6 +1280,7 @@ class NativeTextLayoutTest(unittest.TestCase):
         self.assertEqual((drawer.save_btn.text(), drawer.run_once_btn.text()), ("保存して同期", "今すぐ単体実行"))
         workspace.deleteLater()
         drawer.deleteLater()
+        dock.deleteLater()
 
     def test_long_translated_tab_names_widen_the_tab_instead_of_eliding(self):
         workspace = EndfieldWorkspaceTab(
@@ -1386,6 +1392,88 @@ class NativeTextLayoutTest(unittest.TestCase):
         workspace.deleteLater()
         QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
         self.assertNotIn(workspace._sync_run_state, communicate.task._subscribers)
+
+    def test_run_dock_launches_the_game_and_mirrors_the_daily_header(self):
+        from ok.ui.qt.Communicate import communicate
+        from PySide6.QtCore import QCoreApplication, QEvent, QSize
+
+        calls = []
+        task = SimpleNamespace(
+            enabled=False,
+            paused=False,
+            running=False,
+            pause=lambda: calls.append("pause"),
+            disable=lambda: calls.append("disable"),
+            unpause=lambda: calls.append("unpause"),
+        )
+        device = {"connected": False}
+        controller = SimpleNamespace(starting=False, start=lambda: calls.append("launch"))
+        with (
+            patch.object(og, "app", SimpleNamespace(tr=lambda text: text, start_controller=controller)),
+            patch.object(og, "device_manager", SimpleNamespace(get_preferred_device=lambda: device)),
+            patch.object(og, "executor", SimpleNamespace(paused=False)),
+        ):
+            workspace = EndfieldWorkspaceTab(
+                "DAILY",
+                "日常一条龙",
+                [("帝江号", None, QWidget())],
+                primary_action=("开始一条龙", lambda: calls.append("start")),
+                run_task=lambda: task,
+            )
+            workspace.show_notification = lambda message, **_kwargs: None
+            dock = EndfieldRunDock(workspace)
+            dock.setCompacted(False)
+            launch, online, status = dock.launch_button, dock.game_status, dock.run_status
+            start, pause, stop = dock.start_button, dock.pause_button, dock.stop_button
+
+            def publish(event, *args, **state):
+                for key, value in state.items():
+                    setattr(task, key, value)
+                event.emit(*args)
+                for _ in range(4):
+                    self.app.processEvents()
+                return [w for w in (launch, online, status, start, pause, stop) if not w.isHidden()]
+
+            self.assertEqual(publish(communicate.task, task), [launch, start])
+            self.assertEqual((launch.text(), start.text(), start.signal), ("启动游戏", "开始一条龙", True))
+            self.assertEqual((start.x(), start.width(), start.height()), (0, dock.width(), 36))
+            launch.click()
+            # 游戏启动期间两行都不能点，避免一边拉起游戏一边排一条龙
+            publish(communicate.starting_emulator, False, None, 30)
+            self.assertEqual((launch.isEnabled(), start.isEnabled(), launch.text()), (False, False, "启动中…"))
+            device["connected"] = True
+            publish(communicate.starting_emulator, True, None, 0)
+            self.assertEqual(publish(communicate.adb_devices, True), [online, start])
+            self.assertEqual((online.text(), start.isEnabled()), ("游戏已连接", True))
+            start.click()
+            self.assertEqual(publish(communicate.task, task, enabled=True), [online, status, stop])
+            self.assertEqual((status.text(), stop.width()), ("等待执行", dock.width()))
+            self.assertEqual(publish(communicate.task, task, running=True), [online, status, pause, stop])
+            self.assertEqual(status.text(), "运行中")
+            self.assertEqual(
+                (pause.x(), pause.y(), stop.x() - pause.width(), stop.geometry().right()),
+                (0, stop.y(), 6, dock.width() - 1),
+            )
+            pause.click()
+            self.assertEqual(publish(communicate.task, task, paused=True), [online, status, start, stop])
+            self.assertEqual((start.text(), status.text()), ("继续", "已暂停"))
+            self.assertFalse(workspace.primary_action_button.isHidden())
+            # 导航收起时只留图标，文字移到提示里，成对的按钮改成上下排
+            dock.setCompacted(True)
+            self.assertEqual((dock.width(), start.size(), status.size()), (40, QSize(40, 36), QSize(40, 24)))
+            self.assertEqual((start.text(), start.toolTip(), status.toolTip()), ("", "继续", "已暂停"))
+            self.assertEqual(stop.y(), start.y() + 36 + 6)
+            stop.click()
+        self.assertEqual(calls, ["launch", "start", "pause", "disable", "unpause"])
+        dock.deleteLater()
+        workspace.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+        for event, slot in (
+            (communicate.task, dock.sync),
+            (communicate.adb_devices, dock.sync),
+            (communicate.starting_emulator, dock._launch_changed),
+        ):
+            self.assertNotIn(slot, event._subscribers)
 
     def test_tooltips_in_workspace_and_drawer_keep_the_native_background(self):
         def tip_background(widget):
@@ -1682,6 +1770,16 @@ class NativeControlsTest(unittest.TestCase):
                 self.assertEqual(button.grab().toImage().pixelColor(10, 10), QColor(colors["chip"]))
                 button.close()
                 button.deleteLater()
+                # 信号按钮反过来：平时黄底，悬停时墨色划入
+                signal = EndfieldActionButton(None, "开始一条龙", signal=True)
+                signal.resize(132, 36)
+                signal.show()
+                self.assertEqual(signal.grab().toImage().pixelColor(10, 10), QColor(colors["signal"]))
+                signal.enterEvent(QEnterEvent(QPointF(5, 5), QPointF(5, 5), QPointF(5, 5)))
+                signal._wipe_ani.setCurrentTime(WIPE_MS)
+                self.assertEqual(signal.grab().toImage().pixelColor(10, 10), QColor(colors["on_signal"]))
+                signal.close()
+                signal.deleteLater()
         finally:
             qconfig.set(qconfig.themeMode, saved, save=False)
 
