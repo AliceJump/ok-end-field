@@ -75,18 +75,6 @@ class DeliverySendTask(Common):
         self.log_info("转交委托奖励领取完成")
         return True
 
-    def _wait_delivery_reward_closed(self):  # 切换仓储标签前确认奖励遮罩消失
-        """等待奖励弹窗稳定消失，避免下一单的标签点击被遮挡。"""  # 仅用于转交任务
-        return self.wait_until(  # 等待过程由框架刷新画面
-            lambda: (  # 同时检查两种奖励弹窗标志
-                not self.find_one(feature=fL.reward_ok, box=self.box.bottom, threshold=0.8)  # 检查奖励按钮
-                and not self.ocr(match=self.lang.game_flow_mixin.k_8b2ca27a, box=self.box.bottom)  # 兼容文字提示
-            ),  # 两种标志都消失才继续
-            time_out=5,  # 遮罩未关闭时有限退出
-            settle_time=0.3,  # 排除关闭动画中的短暂漏检
-            raise_if_not_found=False,  # 失败交给地区收尾恢复
-        )  # 不改变全局奖励弹窗行为
-
     def delivery_send_others(self):
         self.info_set("current_task", "delivery_send_others")
 
@@ -115,7 +103,7 @@ class DeliverySendTask(Common):
                     )
                     break
 
-                if not self._wait_delivery_reward_closed() or not self.wait_click_ocr(  # 复用仓储页，切回本地列表
+                if not self.wait_click_ocr(  # 等待本地仓储标签出现后切回列表
                     match=self.lang.daily_routine_mixin.k_298d3284, box=self.box.top_left, time_out=5
                 ):
                     self.log_info(self.tr("{area}未找到本地仓储节点，返回主界面").format(area=self.tr(area)))

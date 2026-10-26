@@ -63,7 +63,6 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         feature.blind_spot_speed_up = Mock(return_value=quote_ready)
         feature.wait_click_feature = Mock(return_value=True)
         feature.wait_pop_up = Mock(return_value=True)
-        feature.wait_until = Mock(return_value=True)
         feature.box_of_screen = Mock(return_value=object())
         feature.box = SimpleNamespace(top_left=object(), bottom=object(), bottom_left=object())
         feature.lang = SimpleNamespace(
@@ -264,36 +263,22 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         self.assertEqual(events, ["武陵", "claim", "试验园区", "claim"])
         self.assertEqual(feature.wait_pop_up.call_count, 3)
 
-    def test_reward_close_timeout_stops_next_order_without_losing_success(self):
+    def test_local_node_timeout_stops_next_order_without_losing_success(self):
         feature = self.make_send_feature([True])
         quote = SimpleNamespace(name="查看报价")
         feature.wait_ocr.return_value = [quote, quote]
-        feature.wait_until.side_effect = [True, False]
+        feature.wait_click_ocr.side_effect = [True, False]
 
         with patch("src.tasks.onetime.DeliverySendTask.areas_list", ["武陵"]):
             self.assertTrue(feature.delivery_send_others())
 
-        feature.wait_click_ocr.assert_called_once()
+        self.assertEqual(feature.wait_click_ocr.call_count, 2)
         feature.wait_ocr.assert_called_once()
         feature.wait_click_feature.assert_called_once()
         feature.wait_pop_up.assert_called_once_with()
         feature.ensure_main.assert_called_once_with()
         feature.log_info.assert_any_call("武陵 已完成 1/2 次转交")
         feature.mark_task_failure.assert_not_called()
-
-    def test_reward_close_wait_requires_template_and_ocr_to_disappear(self):
-        for template_visible, text_visible in ((True, False), (False, True), (False, False)):
-            with self.subTest(template_visible=template_visible, text_visible=text_visible):
-                feature = self.make_send_feature([True])
-                feature.find_one = Mock(return_value=object() if template_visible else None)
-                feature.ocr = Mock(return_value=[object()] if text_visible else [])
-                feature.lang.game_flow_mixin = SimpleNamespace(k_8b2ca27a="确认")
-                feature.wait_until.side_effect = lambda condition, **kwargs: condition()
-
-                self.assertEqual(feature._wait_delivery_reward_closed(), not (template_visible or text_visible))
-                feature.find_one.assert_called_once_with(feature=fL.reward_ok, box=feature.box.bottom, threshold=0.8)
-                if not template_visible:
-                    feature.ocr.assert_called_once_with(match="确认", box=feature.box.bottom)
 
 
 if __name__ == "__main__":
