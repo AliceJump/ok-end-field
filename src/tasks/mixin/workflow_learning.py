@@ -59,7 +59,11 @@ def confirm_tracking_context(task, context, entry):
     if context is None:
         return None
     try:
-        task.ensure_main()
+        # Confirmation is observational only: ensure_main/is_main can click
+        # "结束拜访" and leave the friend's boat during a trade.
+        world = task.wait_until(task.in_world, time_out=2, raise_if_not_found=False)
+        if not world:
+            return None
         stable = task.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1)
     except TaskDisabledException:
         raise

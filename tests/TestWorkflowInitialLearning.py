@@ -49,6 +49,9 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         task.press_key = Mock()
         task.move_keys = Mock()
         task.ensure_main = Mock()
+        task.is_main = Mock()
+        task.in_world = Mock(return_value=True)
+        task.wait_until = Mock(side_effect=lambda predicate, **kwargs: predicate())
         task.ensure_map = Mock()
         task.ensure_in_friend_boat = Mock(return_value=True)
         task.to_near_transfer_point = Mock(return_value=True)
@@ -218,19 +221,37 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         record = self.store.get(entry.context.fingerprint)
         self.assertEqual((record.motion.samples, record.failure_count), (3, 1))
 
-    def test_map_close_waits_for_stable_main_before_replay_without_requiring_target(self):
+    def test_map_close_passively_confirms_world_before_replay_without_exiting_friend_boat(self):
         task = self.task()
         entry = self.trade_entry(task)
         self.fixtures.seed(entry.context, dx=100, dy=0)
         events = []
-        task.ensure_main.side_effect = lambda: events.append("main")
+        task.in_world.side_effect = lambda: events.append("world") or True
         task.wait_ui_stable.side_effect = lambda **kwargs: events.append("stable") or True
         task.active_and_send_mouse_delta.side_effect = lambda *a, **k: events.append("replay") or True
         task.find_feature.side_effect = lambda **kwargs: events.append("detect") or box()
         self.assertTrue(
             task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
         )
-        self.assertEqual(events[:4], ["main", "stable", "replay", "detect"])
+        self.assertEqual(events[:4], ["world", "stable", "replay", "detect"])
+        task.ensure_main.assert_not_called()
+        task.is_main.assert_not_called()
+
+    def test_unconfirmed_world_keeps_friend_visit_and_uses_original_visual_path(self):
+        task = self.task()
+        entry = self.trade_entry(task)
+        self.fixtures.seed(entry.context, dx=100, dy=0)
+        before = self.store.get(entry.context.fingerprint)
+        task.in_world.return_value = False
+        with patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")):
+            self.assertTrue(
+                task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
+            )
+        task.ensure_main.assert_not_called()
+        task.is_main.assert_not_called()
+        task.active_and_send_mouse_delta.assert_not_called()
+        self.assertEqual(task.wait_ui_stable.call_count, 1)
+        self.assertEqual(self.store.get(entry.context.fingerprint), before)
 
     def test_missing_tracking_button_and_missing_world_target_cannot_save(self):
         task = self.task()
@@ -272,11 +293,11 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                 task.active_and_send_mouse_delta.assert_not_called()
                 self.assertEqual(self.store.get(entry.context.fingerprint), before)
 
-    def test_learning_world_confirmation_errors_fall_back_but_main_stop_propagates(self):
+    def test_learning_world_confirmation_errors_fall_back_but_stop_propagates(self):
         for operation, error in (
-            ("ensure_main", RuntimeError("not main")),
+            ("in_world", RuntimeError("world detection failed")),
             ("wait_ui_stable", OSError("frame")),
-            ("ensure_main", TaskDisabledException()),
+            ("in_world", TaskDisabledException()),
         ):
             with self.subTest(operation=operation, error=type(error).__name__):
                 task = self.task()
@@ -298,10 +319,11 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                                 "map", fL.market_dispatch_terminal_out, learning_entry=entry
                             )
                         )
-                if operation == "ensure_main":
-                    # Only the pre-map entry check ran; failed world confirmation
-                    # must not start a second stability wait or touch experience.
+                if operation == "in_world":
+                    # No world proof: only the entry check may wait for stable frames.
                     self.assertEqual(task.wait_ui_stable.call_count, 1)
+                task.ensure_main.assert_not_called()
+                task.is_main.assert_not_called()
                 task.active_and_send_mouse_delta.assert_not_called()
                 self.assertEqual(self.store.get(entry.context.fingerprint), before)
 
