@@ -443,6 +443,8 @@ def main() -> int:
                 continue  # 仅指定 key 用中文前缀标题反查，不回退独立地名或物品名。
             if not isinstance(node, dict):
                 continue
+            if is_regex_like(node, "zh_CN"):
+                continue  # 带正则元字符的 pattern 由人工按各语言书写，官方纯文本写入会丢掉锚点语义。
             anchors = node_values(node)
             if not anchors:
                 continue

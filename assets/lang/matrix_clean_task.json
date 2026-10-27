@@ -5,6 +5,9 @@
     },
     "zh_TW": {
       "pattern": "貴重品庫"
+    },
+    "ko_KR": {
+      "pattern": "귀중품 창고"
     }
   },
   "k_9ca99bd0": {
@@ -13,6 +16,18 @@
     },
     "zh_TW": {
       "pattern": "武器基質"
+    },
+    "ja_JP": {
+      "pattern": "武器基質"
+    },
+    "ko_KR": {
+      "pattern": "무기 기질"
+    },
+    "id_ID": {
+      "pattern": "Esensi"
+    },
+    "th_TH": {
+      "pattern": "แก่นแท้"
     }
   },
   "k_83c0c24d": {
@@ -28,7 +43,13 @@
       "pattern": "快捷放入"
     },
     "zh_TW": {
-      "pattern": "快捷放入"
+      "pattern": "快速放入"
+    },
+    "ja_JP": {
+      "pattern": "クイック移動"
+    },
+    "ko_KR": {
+      "pattern": "일괄 선택"
     }
   },
   "k_7ba0a5b1": {
@@ -37,6 +58,42 @@
     },
     "zh_TW": {
       "pattern": "穩定基質"
+    },
+    "en_US": {
+      "pattern": "Stable Essence"
+    },
+    "ja_JP": {
+      "pattern": "安定基質"
+    },
+    "ko_KR": {
+      "pattern": "안정 기질"
+    },
+    "es_ES": {
+      "pattern": "Esencia estable"
+    },
+    "pt_BR": {
+      "pattern": "Essência Estável"
+    },
+    "de_DE": {
+      "pattern": "Stabile Essenz"
+    },
+    "fr_FR": {
+      "pattern": "Essence stable"
+    },
+    "id_ID": {
+      "pattern": "Esensi Stabil"
+    },
+    "it_IT": {
+      "pattern": "Essenza stabile"
+    },
+    "ru_RU": {
+      "pattern": "Стабильная эссенция"
+    },
+    "th_TH": {
+      "pattern": "แก่นแท้​เสถียร"
+    },
+    "vi_VN": {
+      "pattern": "Tinh Chất Ổn Định"
     }
   },
   "k_16da2b84": {
@@ -45,6 +102,42 @@
     },
     "zh_TW": {
       "pattern": "淨態基質"
+    },
+    "en_US": {
+      "pattern": "Clean Essence"
+    },
+    "ja_JP": {
+      "pattern": "透明基質"
+    },
+    "ko_KR": {
+      "pattern": "세련 기질"
+    },
+    "es_ES": {
+      "pattern": "Esencia limpia"
+    },
+    "pt_BR": {
+      "pattern": "Essência Limpa"
+    },
+    "de_DE": {
+      "pattern": "Klare Essenz"
+    },
+    "fr_FR": {
+      "pattern": "Essence propre"
+    },
+    "id_ID": {
+      "pattern": "Esensi Bersih"
+    },
+    "it_IT": {
+      "pattern": "Essenza nitida"
+    },
+    "ru_RU": {
+      "pattern": "Чистая эссенция"
+    },
+    "th_TH": {
+      "pattern": "แก่นแท้​สะอาด"
+    },
+    "vi_VN": {
+      "pattern": "Tinh Chất Sạch"
     }
   },
   "k_1a40e234": {
@@ -53,6 +146,42 @@
     },
     "zh_TW": {
       "pattern": "高純基質"
+    },
+    "en_US": {
+      "pattern": "Pure Essence"
+    },
+    "ja_JP": {
+      "pattern": "清浄基質"
+    },
+    "ko_KR": {
+      "pattern": "순수 기질"
+    },
+    "es_ES": {
+      "pattern": "Esencia pura"
+    },
+    "pt_BR": {
+      "pattern": "Essência Pura"
+    },
+    "de_DE": {
+      "pattern": "Reine Essenz"
+    },
+    "fr_FR": {
+      "pattern": "Essence pure"
+    },
+    "id_ID": {
+      "pattern": "Esensi Murni"
+    },
+    "it_IT": {
+      "pattern": "Essenza pura"
+    },
+    "ru_RU": {
+      "pattern": "Беспримесная эссенция"
+    },
+    "th_TH": {
+      "pattern": "แก่นแท้​บริสุทธิ์"
+    },
+    "vi_VN": {
+      "pattern": "Tinh Chất Tinh Khiết"
     }
   },
   "k_2396a6d9": {
@@ -61,6 +190,42 @@
     },
     "zh_TW": {
       "pattern": "未上鎖"
+    },
+    "en_US": {
+      "pattern": "Unlocked"
+    },
+    "ja_JP": {
+      "pattern": "アンロック"
+    },
+    "ko_KR": {
+      "pattern": "미잠금"
+    },
+    "es_ES": {
+      "pattern": "Desbloqueado"
+    },
+    "pt_BR": {
+      "pattern": "Desbloqueados"
+    },
+    "de_DE": {
+      "pattern": "Freigeschaltet"
+    },
+    "fr_FR": {
+      "pattern": "Déverrouillé(e)"
+    },
+    "id_ID": {
+      "pattern": "Terbuka"
+    },
+    "it_IT": {
+      "pattern": "Sbloccato"
+    },
+    "ru_RU": {
+      "pattern": "Открыто"
+    },
+    "th_TH": {
+      "pattern": "ปลดล็อก​แล้ว"
+    },
+    "vi_VN": {
+      "pattern": "Đã mở khóa"
     }
   },
   "k_fadf24db": {
@@ -68,7 +233,40 @@
       "pattern": "保存"
     },
     "zh_TW": {
+      "pattern": "儲存"
+    },
+    "en_US": {
+      "pattern": "Save"
+    },
+    "ja_JP": {
       "pattern": "保存"
+    },
+    "ko_KR": {
+      "pattern": "저장"
+    },
+    "es_ES": {
+      "pattern": "Guardar"
+    },
+    "pt_BR": {
+      "pattern": "Salvar"
+    },
+    "de_DE": {
+      "pattern": "Speichern"
+    },
+    "id_ID": {
+      "pattern": "Simpan"
+    },
+    "it_IT": {
+      "pattern": "Salva"
+    },
+    "ru_RU": {
+      "pattern": "Сохранить"
+    },
+    "th_TH": {
+      "pattern": "บันทึก"
+    },
+    "vi_VN": {
+      "pattern": "Lưu"
     }
   },
   "k_2792e981": {
@@ -85,6 +283,42 @@
     },
     "zh_TW": {
       "pattern": "無法分解"
+    },
+    "en_US": {
+      "pattern": "Cannot Disassemble"
+    },
+    "ja_JP": {
+      "pattern": "処分不可"
+    },
+    "ko_KR": {
+      "pattern": "분해 불가"
+    },
+    "es_ES": {
+      "pattern": "No se puede desensamblar"
+    },
+    "pt_BR": {
+      "pattern": "Não é possível desmontar"
+    },
+    "de_DE": {
+      "pattern": "Kann nicht zerlegt werden"
+    },
+    "fr_FR": {
+      "pattern": "Impossible à démonter"
+    },
+    "id_ID": {
+      "pattern": "Tidak Bisa Dibongkar"
+    },
+    "it_IT": {
+      "pattern": "Impossibile disassemblare"
+    },
+    "ru_RU": {
+      "pattern": "Нельзя разобрать"
+    },
+    "th_TH": {
+      "pattern": "แยก​ชิ้นส่วน​ไม่ได้"
+    },
+    "vi_VN": {
+      "pattern": "Không thể tháo dỡ"
     }
   },
   "k_45030a0b": {
@@ -100,7 +334,37 @@
       "pattern": "确认"
     },
     "zh_TW": {
-      "pattern": "確認"
+      "pattern": "確定"
+    },
+    "en_US": {
+      "pattern": "Confirm"
+    },
+    "es_ES": {
+      "pattern": "Confirmar"
+    },
+    "pt_BR": {
+      "pattern": "Confirmar"
+    },
+    "de_DE": {
+      "pattern": "Bestätigen"
+    },
+    "fr_FR": {
+      "pattern": "Confirmer"
+    },
+    "id_ID": {
+      "pattern": "Konfirmasi"
+    },
+    "it_IT": {
+      "pattern": "Conferma"
+    },
+    "ru_RU": {
+      "pattern": "Подтвердить"
+    },
+    "th_TH": {
+      "pattern": "ยืนยัน"
+    },
+    "vi_VN": {
+      "pattern": "Xác nhận"
     }
   },
   "k_92faab1e": {
@@ -109,6 +373,42 @@
     },
     "zh_TW": {
       "pattern": "分解獲得"
+    },
+    "en_US": {
+      "pattern": "Dismantling Results"
+    },
+    "ja_JP": {
+      "pattern": "処分入手"
+    },
+    "ko_KR": {
+      "pattern": "분해 후 획득"
+    },
+    "es_ES": {
+      "pattern": "Resultados del desmantelamiento"
+    },
+    "pt_BR": {
+      "pattern": "Resultados da Desmontagem"
+    },
+    "de_DE": {
+      "pattern": "Zerlegungsergebnisse"
+    },
+    "fr_FR": {
+      "pattern": "Résultats du démantèlement"
+    },
+    "id_ID": {
+      "pattern": "Hasil Pencopotan"
+    },
+    "it_IT": {
+      "pattern": "Risultati smantellamento"
+    },
+    "ru_RU": {
+      "pattern": "Результаты демонтажа"
+    },
+    "th_TH": {
+      "pattern": "ผลลัพธ์​การ​แยก​ชิ้นส่วน"
+    },
+    "vi_VN": {
+      "pattern": "Kết Quả Tháo Dỡ"
     }
   },
   "k_75a84eb1": {

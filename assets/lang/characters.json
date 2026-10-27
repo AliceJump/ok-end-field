@@ -1425,6 +1425,30 @@
     },
     "es_ES": {
       "string": "Si"
+    },
+    "pt_BR": {
+      "string": "Si"
+    },
+    "de_DE": {
+      "string": "Si"
+    },
+    "fr_FR": {
+      "string": "Si"
+    },
+    "id_ID": {
+      "string": "Si"
+    },
+    "it_IT": {
+      "string": "Si"
+    },
+    "ru_RU": {
+      "string": "Си"
+    },
+    "th_TH": {
+      "string": "ซือ"
+    },
+    "vi_VN": {
+      "string": "Si"
     }
   }
 }
