@@ -67,8 +67,9 @@ def confirm_tracking_context(task, context, entry):
         stable = task.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1)
         if not stable:
             return None
-        # A stable transition/loading frame is not proof we are still in-world.
-        if not task.wait_until(task.in_world, time_out=2, raise_if_not_found=False):
+        # Check the current stable frame once: a retrying wait could return
+        # after loading ends, without verifying the new frame is stable.
+        if not task.in_world():
             return None
     except TaskDisabledException:
         raise

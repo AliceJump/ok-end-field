@@ -256,17 +256,20 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         self.assertEqual(self.store.get(entry.context.fingerprint), before)
 
     def test_world_lost_after_stable_frames_cannot_replay_or_mutate_history(self):
-        """A loading screen after transient HUD detection cannot grant learning."""
+        """A false second world check must not wait for a later HUD recovery."""
         task = self.task()
         entry = self.trade_entry(task)
         self.fixtures.seed(entry.context, dx=100, dy=0)
         before = self.store.get(entry.context.fingerprint)
-        task.in_world.side_effect = [True, False]
+        # Transient HUD -> stable loading frame -> eventual HUD recovery.
+        # The last frame is not confirmed stable, so it must not be consumed.
+        task.in_world.side_effect = [True, False, True]
         with patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")):
             self.assertTrue(
                 task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
             )
         self.assertEqual(task.in_world.call_count, 2)
+        self.assertEqual(task.wait_until.call_count, 1)
         self.assertEqual(task.wait_ui_stable.call_count, 2)
         task.ensure_main.assert_not_called()
         task.is_main.assert_not_called()
