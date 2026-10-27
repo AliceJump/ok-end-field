@@ -222,6 +222,7 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         self.assertEqual((record.motion.samples, record.failure_count), (3, 1))
 
     def test_map_close_passively_confirms_world_before_replay_without_exiting_friend_boat(self):
+        """Require passive world proof before and after visual settling."""
         task = self.task()
         entry = self.trade_entry(task)
         self.fixtures.seed(entry.context, dx=100, dy=0)
@@ -233,11 +234,12 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         self.assertTrue(
             task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
         )
-        self.assertEqual(events[:4], ["world", "stable", "replay", "detect"])
+        self.assertEqual(events[:5], ["world", "stable", "world", "replay", "detect"])
         task.ensure_main.assert_not_called()
         task.is_main.assert_not_called()
 
     def test_unconfirmed_world_keeps_friend_visit_and_uses_original_visual_path(self):
+        """Unproven world state must never replay or exit a friend visit."""
         task = self.task()
         entry = self.trade_entry(task)
         self.fixtures.seed(entry.context, dx=100, dy=0)
@@ -251,6 +253,24 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         task.is_main.assert_not_called()
         task.active_and_send_mouse_delta.assert_not_called()
         self.assertEqual(task.wait_ui_stable.call_count, 1)
+        self.assertEqual(self.store.get(entry.context.fingerprint), before)
+
+    def test_world_lost_after_stable_frames_cannot_replay_or_mutate_history(self):
+        """A loading screen after transient HUD detection cannot grant learning."""
+        task = self.task()
+        entry = self.trade_entry(task)
+        self.fixtures.seed(entry.context, dx=100, dy=0)
+        before = self.store.get(entry.context.fingerprint)
+        task.in_world.side_effect = [True, False]
+        with patch("src.tasks.mixin.navigation_learning.get_learning_store", side_effect=AssertionError("lookup")):
+            self.assertTrue(
+                task.start_tracking_and_align_target("map", fL.market_dispatch_terminal_out, learning_entry=entry)
+            )
+        self.assertEqual(task.in_world.call_count, 2)
+        self.assertEqual(task.wait_ui_stable.call_count, 2)
+        task.ensure_main.assert_not_called()
+        task.is_main.assert_not_called()
+        task.active_and_send_mouse_delta.assert_not_called()
         self.assertEqual(self.store.get(entry.context.fingerprint), before)
 
     def test_missing_tracking_button_and_missing_world_target_cannot_save(self):
@@ -294,6 +314,7 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                 self.assertEqual(self.store.get(entry.context.fingerprint), before)
 
     def test_learning_world_confirmation_errors_fall_back_but_stop_propagates(self):
+        """Ordinary observation failures fall back; cancellation always propagates."""
         for operation, error in (
             ("in_world", RuntimeError("world detection failed")),
             ("wait_ui_stable", OSError("frame")),
