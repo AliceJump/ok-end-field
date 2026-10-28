@@ -1,5 +1,6 @@
 from qfluentwidgets import FluentIcon
 
+from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.mixin.common import Common
 
@@ -7,8 +8,8 @@ from src.tasks.mixin.common import Common
 class MatrixCleanTask(Common):
     """清理基质子任务：批量分解武器基质直到无可分解，日常任务经 DailyFeature 接入。
 
-    流程（对应游戏内「贵重品库/武器基质」手动分解，2026-10-23 教程录屏）：
-    1. N 键直达贵重品库（失败回退 ESC 总控终端），确认停在武器基质页；
+    流程（对应游戏内「贵重品库/武器基质」手动分解）：
+    1. N 键直达贵重品库，确认停在武器基质页；
     2. 点击底栏左侧垃圾桶图标进入分解模式；每分解一批后游戏自动退回
        浏览模式，分解模式内的快捷放入规则不跨会话保留，每批重新设置；
     3. 点击「快捷放入」弹出筛选面板：品质三项（稳定/净态/高纯，初始为空，
@@ -33,11 +34,8 @@ class MatrixCleanTask(Common):
     # 面板内：品质选项行（初始全空，需逐项勾选），锁定状态在其下
     _FILTER_QUALITY_AREA = (0.1, 0.15, 0.9, 0.6)
     _FILTER_LOCK_AREA = (0.1, 0.4, 0.9, 0.85)
-    # 确认弹窗标题区（弹窗居中，标题在上部）
-    _CONFIRM_DIALOG = (0.2, 0.25, 0.8, 0.65)
 
-    # 底栏左侧分解入口（垃圾桶图标）中心：品质下拉/降序/漏斗之后，
-    # 2026-10-24 用户标注截图红框像素标定
+    # 底栏左侧分解入口（垃圾桶图标）中心：品质下拉/降序/漏斗之后
     _DISMANTLE_ENTRY = (0.259, 0.93)
 
     def __init__(self, *args, **kwargs):
@@ -71,17 +69,6 @@ class MatrixCleanTask(Common):
                 return False
             if self._ensure_essence_page():
                 return True
-        # 回退路径：ESC 打开总控终端，点击右侧菜单网格的「贵重品库」
-        self.press_key("esc", after_sleep=1.5)
-        if not self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_190bd555,
-            box=self.box_of_screen(0.55, 0.3, 1.0, 0.9),
-            time_out=8,
-        ):
-            self.mark_task_failure("未找到贵重品库入口")
-            return False
-        if self._ensure_essence_page():
-            return True
         self.mark_task_failure("进入武器基质页失败")
         return False
 
@@ -92,12 +79,20 @@ class MatrixCleanTask(Common):
             match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
         ):
             return True
+
         # 顶部分类行从左到右：搜索/武器/基质(立方体,中心x≈0.395)/装备(六边形,中心x≈0.438)/…
-        # 演示录屏 2026-10-23 24:10 与实测 2026-10-24 像素标定
-        self.click_relative(0.395, 0.055, after_sleep=1.5)
+        # 分页点击可重复执行：低性能机器首次点击没生效时，每轮未识别到标题就补点一次
+        def click_essence_tab():
+            self.click_relative(0.395, 0.055, after_sleep=1.5)
+
+        click_essence_tab()
         return bool(
             self.wait_ocr(
-                match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
+                match=self.lang.matrix_clean_task.k_9ca99bd0,
+                box=title_box,
+                time_out=4,
+                raise_if_not_found=False,
+                post_action=click_essence_tab,
             )
         )
 
@@ -137,7 +132,7 @@ class MatrixCleanTask(Common):
         """执行一批「设置筛选 → 分解 → 确认 → 关结果」。
 
         首次进入分解模式无快捷放入规则，点「快捷放入」会弹出筛选面板；
-        面板「保存」即按筛选结果勾选物品并关闭面板（15:52 实测确认），
+        面板「保存」即按筛选结果勾选物品并关闭面板，
         保存后直接点分解，无需再点快捷放入。
 
         Returns:
@@ -146,7 +141,7 @@ class MatrixCleanTask(Common):
             None: 流程异常。
         """
         # 批开始先查网格空标志：无可分解时分解网格显示「未拥有该类型
-        # 道具」（17:42 实测空库仍走完快捷放入+筛选+保存约六秒）。此处
+        # 道具」（不先查则空库仍要走完快捷放入+筛选+保存，约六秒）。此处
         # 不能按按钮文字判断：未勾选物品（已选择 0/200）时按钮恒为
         # 「无法分解」，正常情况也一样
         if self._no_item_left():
@@ -206,14 +201,15 @@ class MatrixCleanTask(Common):
         """点击分解并走完确认与结果弹窗（完成后游戏自动退回浏览模式）。
 
         保存筛选后按钮状态即定：无可分解保持「无法分解」，先行识别直接
-        结束循环，不空等「分解」按钮（15:52 实测空转轮等满 4 秒超时）。
+        结束循环，不空等「分解」按钮（否则空转一轮要等满 4 秒超时）。
         """
-        right_box = self.box_of_screen(*self._BOTTOM_RIGHT)
         if self._dismantle_disabled():
             return False
-        if not self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_2792e981,
-            box=right_box,
+        # 亮起的「分解」按钮右侧图标与确认弹窗「确认」相同，复用同一模板；
+        # 灰色「无法分解」不带该图标
+        if not self.wait_click_feature(
+            fL.skip_dialog_confirm,
+            box=self.box_of_screen(*self._BOTTOM_RIGHT),
             time_out=4,
             raise_if_not_found=False,
         ):
@@ -222,15 +218,9 @@ class MatrixCleanTask(Common):
                 return False
             self.mark_task_failure("未找到分解按钮")
             return None
-        # 标题作等待信号而非门槛：14:45 实测弹窗在、标题清晰，但 OCR 六秒
-        # 未命中（原因未复现）；确认按钮本身文字更大更稳，直接尝试点击
-        self.wait_ocr(
-            match=self.lang.matrix_clean_task.k_45030a0b,
-            box=self.box_of_screen(*self._CONFIRM_DIALOG),
-            time_out=4,
-            raise_if_not_found=False,
-        )
-        if not self._click_confirm_button():
+        # 弹窗出现后底栏「分解」按钮仍带同一图标；click_confirm 只在弹窗
+        # 「确认」的标注位置附近查找，不会点回底栏
+        if not self.click_confirm():
             self.mark_task_failure("未找到分解确认按钮")
             return None
         # 弹窗未关闭时不能把本批计为成功：下一批会顶在未关闭的弹窗上操作
@@ -262,39 +252,29 @@ class MatrixCleanTask(Common):
             )
         )
 
-    def _click_confirm_button(self):
-        """点击分解确认弹窗右侧的「确认」按钮。"""
-        result = self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_b56d9ac6,
-            box=self.box_of_screen(0.45, 0.45, 0.9, 0.8),
-            time_out=4,
-            raise_if_not_found=False,
-        )
-        if result:
-            return True
-        return self.click_confirm(time_out=3)
-
     def _close_result_popup(self):
         """关闭「分解获得」结果弹窗；返回是否确认已关闭。
 
-        确认后 8 秒未见弹窗视作分解未完成（确认点击可能未落上），
-        四次点击后弹窗仍在同样交由上层判失败。
+        确认后 8 秒未见弹窗视作分解未完成（确认点击可能未落上）。
+        wait_pop_up 点击对勾后不查弹窗是否关闭，对勾仍在就补点；
+        共点四次后弹窗仍在同样交由上层判失败。
         """
-        title_box = self.box_of_screen(0.2, 0.1, 0.8, 0.6)
-        if not self.wait_ocr(
-            match=self.lang.matrix_clean_task.k_92faab1e,
-            box=title_box,
-            time_out=8,
-            raise_if_not_found=False,
-        ):
+        if not self.wait_pop_up(time_out=8, after_sleep=1):
             self.mark_task_failure("分解结果弹窗未出现")
             return False
-        for _ in range(4):
-            self.click_relative(0.5, 0.86, after_sleep=1)
-            if not self.ocr(match=self.lang.matrix_clean_task.k_92faab1e, box=title_box):
+        for _ in range(3):
+            ok_button = self._result_popup_ok()
+            if not ok_button:
                 return True
+            self.click(ok_button, after_sleep=1)
+        if not self._result_popup_ok():
+            return True
         self.mark_task_failure("分解结果弹窗未能关闭")
         return False
+
+    def _result_popup_ok(self):
+        """「分解获得」弹窗底部的对勾；弹窗已关闭时返回 None。"""
+        return self.find_one(fL.reward_ok, box=self.box.bottom, threshold=0.8)
 
     def _exit_dismantle_mode(self):
         """退出分解模式（品质清空或异常中断时）；失败交由后续步骤兜底。"""

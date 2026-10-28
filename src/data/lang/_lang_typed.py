@@ -364,9 +364,6 @@ class DeliveryTaskModule(_LangModuleBaseT):
 class MatrixCleanTaskModule(_LangModuleBaseT):
     """matrix_clean_task — OCR 语言节点（值取自 zh_CN）"""
 
-    k_190bd555: re.Pattern[str]
-    """贵重品库"""
-
     k_9ca99bd0: re.Pattern[str]
     """武器基质"""
 
@@ -391,20 +388,8 @@ class MatrixCleanTaskModule(_LangModuleBaseT):
     k_fadf24db: re.Pattern[str]
     """保存"""
 
-    k_2792e981: re.Pattern[str]
-    """^分解$"""
-
     k_9c61417d: re.Pattern[str]
     """无法分解"""
-
-    k_45030a0b: re.Pattern[str]
-    """确认分解"""
-
-    k_b56d9ac6: re.Pattern[str]
-    """确认"""
-
-    k_92faab1e: re.Pattern[str]
-    """分解获得"""
 
     k_75a84eb1: re.Pattern[str]
     """未拥有该类型"""

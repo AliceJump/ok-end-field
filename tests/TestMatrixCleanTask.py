@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
 
+from src.data.FeatureList import FeatureList as fL
 from src.data.lang import get_lang_accessor
 from src.tasks.onetime.MatrixCleanTask import MatrixCleanTask
 
@@ -32,6 +33,8 @@ def make_task():
     task.wait_click_ocr = MagicMock(return_value=None)
     task.wait_click_feature = MagicMock(return_value=None)
     task.click_confirm = MagicMock(return_value=True)
+    task.wait_pop_up = MagicMock(return_value=True)
+    task.find_one = MagicMock(return_value=None)
     task.ocr = MagicMock(return_value=None)
     task.mark_task_failure = MagicMock()
     task.log_info = MagicMock()
@@ -64,6 +67,44 @@ class TestLangResource(unittest.TestCase):
         module = accessor.matrix_clean_task
         for key in refs:
             self.assertIsNotNone(getattr(module, key), f"{key} 经 LangAccessor 取值为空")
+
+
+class TestOpenVaultEssencePage(unittest.TestCase):
+    """进入贵重品库：N 键两次都没进基质页就判失败，不走其他入口；分页点击带补点。"""
+
+    def test_fails_after_two_n_presses_without_esc(self):
+        task = make_task()
+        task.press_key = MagicMock(return_value=True)
+        task._ensure_essence_page = MagicMock(return_value=False)
+        self.assertFalse(task._open_vault_essence_page())
+        self.assertEqual([c.args[0] for c in task.press_key.call_args_list], ["n", "n"])
+        task.wait_click_ocr.assert_not_called()
+        task.mark_task_failure.assert_called_once_with("进入武器基质页失败")
+
+    def test_key_injection_failure_stops_immediately(self):
+        task = make_task()
+        task.press_key = MagicMock(return_value=False)
+        task._ensure_essence_page = MagicMock()
+        self.assertFalse(task._open_vault_essence_page())
+        task.press_key.assert_called_once()
+        task._ensure_essence_page.assert_not_called()
+
+    def test_already_on_essence_page_skips_tab_click(self):
+        task = make_task()
+        task.wait_ocr = MagicMock(return_value=MagicMock())
+        self.assertTrue(task._ensure_essence_page())
+        task.click_relative.assert_not_called()
+
+    def test_tab_click_retries_via_post_action(self):
+        task = make_task()
+        task.wait_ocr = MagicMock(side_effect=[None, MagicMock()])
+        self.assertTrue(task._ensure_essence_page())
+        task.click_relative.assert_called_once_with(0.395, 0.055, after_sleep=1.5)
+        # 第二次等待每轮未命中时由框架调用 post_action 补点分页
+        post_action = task.wait_ocr.call_args_list[1].kwargs["post_action"]
+        post_action()
+        self.assertEqual(task.click_relative.call_count, 2)
+        self.assertEqual(task.click_relative.call_args.args, (0.395, 0.055))
 
 
 class TestDismantleByQuality(unittest.TestCase):
@@ -148,10 +189,10 @@ class TestEnterDismantleMode(unittest.TestCase):
 class TestDismantleOneBatch(unittest.TestCase):
     """单批流程：批开始空网格短路、筛选面板弹出/不弹、快捷放入失败路径。
 
-    15:52 实测：面板「保存」即按筛选结果勾选物品并关面板，保存后直接
-    点分解——不存在第二次快捷放入。
-    17:42 实测：空库时进入分解模式网格即显示「未拥有该类型道具」，
-    批开始必须先查该标志直接结束，不做任何筛选动作。
+    面板「保存」即按筛选结果勾选物品并关面板，保存后直接点分解——
+    不存在第二次快捷放入。
+    空库时进入分解模式网格即显示「未拥有该类型道具」，批开始必须先查
+    该标志直接结束，不做任何筛选动作。
     """
 
     def test_empty_grid_at_batch_start_is_end(self):
@@ -253,8 +294,8 @@ class TestApplyFilter(unittest.TestCase):
 class TestConfirmDismantle(unittest.TestCase):
     """分解按钮 / 确认弹窗的失败与成功路径。
 
-    15:52 新顺序：入口先做无法分解先行判定（_dismantle_disabled 连查
-    两次），命中即返回 False 结束循环，不再空等「分解」按钮。
+    入口先做无法分解先行判定（_dismantle_disabled 连查两次），命中即
+    返回 False 结束循环，不再空等「分解」按钮。
     """
 
     def test_dismantle_button_disabled_is_end(self):
@@ -262,22 +303,20 @@ class TestConfirmDismantle(unittest.TestCase):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
         task.ocr = MagicMock(return_value=[MagicMock()])  # 命中「无法分解」
-        task.wait_click_ocr = MagicMock()  # 若被调用即说明顺序错误
         self.assertFalse(task._confirm_dismantle())
-        task.wait_click_ocr.assert_not_called()
+        task.wait_click_feature.assert_not_called()
         task.mark_task_failure.assert_not_called()
 
     def test_no_item_left_flag_is_end(self):
         # 网格出现「未拥有该类型道具」同样先行结束
         task = make_task()
         task._no_item_left = MagicMock(return_value=True)
-        task.wait_click_ocr = MagicMock()
         self.assertFalse(task._confirm_dismantle())
-        task.wait_click_ocr.assert_not_called()
+        task.wait_click_feature.assert_not_called()
 
     def test_dismantle_button_missing_without_flag_is_failure(self):
         task = make_task()
-        task.wait_click_ocr = MagicMock(return_value=None)
+        task.wait_click_feature = MagicMock(return_value=False)
         task._no_item_left = MagicMock(return_value=False)
         task.ocr = MagicMock(return_value=None)
         self.assertIsNone(task._confirm_dismantle())
@@ -285,66 +324,63 @@ class TestConfirmDismantle(unittest.TestCase):
 
     def test_confirm_button_missing_is_failure(self):
         task = make_task()
-        # ^分解$ 命中；「确认」按钮 OCR 落空且 click_confirm 兜底也失败
         task._no_item_left = MagicMock(return_value=False)
         task.ocr = MagicMock(return_value=None)  # 先行判定未命中
-        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), None])
-        task.wait_ocr = MagicMock(return_value=MagicMock())  # 标题命中
+        task.wait_click_feature = MagicMock(return_value=True)  # 「分解」已点击
         task.click_confirm = MagicMock(return_value=False)
         task._close_result_popup = MagicMock()
         self.assertIsNone(task._confirm_dismantle())
         task.mark_task_failure.assert_called_once_with("未找到分解确认按钮")
-
-    def test_title_miss_still_clicks_confirm(self):
-        # 标题未命中不判死：弹窗可能已出现（14:45 实测），直接点确认按钮
-        task = make_task()
-        task._no_item_left = MagicMock(return_value=False)
-        task.ocr = MagicMock(return_value=None)
-        task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.wait_ocr = MagicMock(return_value=None)  # 标题未出现
-        task._close_result_popup = MagicMock()
-        self.assertTrue(task._confirm_dismantle())
-        task._close_result_popup.assert_called_once()
-        task.mark_task_failure.assert_not_called()
+        task._close_result_popup.assert_not_called()
 
     def test_full_batch_success(self):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
         task.ocr = MagicMock(return_value=None)
-        task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        # 确认弹窗标题出现（wait_ocr）；_close_result_popup 内部再查标题消失
-        task.wait_ocr = MagicMock(side_effect=[MagicMock(), MagicMock()])
-        task._close_result_popup = MagicMock()
+        task.wait_click_feature = MagicMock(return_value=True)
+        task._close_result_popup = MagicMock(return_value=True)
         self.assertTrue(task._confirm_dismantle())
-        task.mark_task_failure.assert_not_called()
+        # 「分解」按钮与弹窗「确认」共用 skip_dialog_confirm 图标模板
+        self.assertEqual(task.wait_click_feature.call_args.args[0], fL.skip_dialog_confirm)
+        task.click_confirm.assert_called_once()
         task._close_result_popup.assert_called_once()
+        task.mark_task_failure.assert_not_called()
 
 
 class TestCloseResultPopup(unittest.TestCase):
-    """结果弹窗关闭：点对勾直至标题消失；未弹出/关不上都判失败。"""
+    """结果弹窗关闭：wait_pop_up 点对勾，对勾仍在就补点；未弹出/关不上都判失败。"""
 
     def test_closes_after_click(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())  # 标题出现
-        task.ocr = MagicMock(return_value=None)  # 点击后标题消失
         self.assertTrue(task._close_result_popup())
-        task.click_relative.assert_called_once_with(0.5, 0.86, after_sleep=1)
+        task.wait_pop_up.assert_called_once_with(time_out=8, after_sleep=1)
+        self.assertEqual(task.find_one.call_args.args[0], fL.reward_ok)
+        task.click.assert_not_called()
         task.mark_task_failure.assert_not_called()
 
     def test_no_popup_is_failure(self):
         # 确认后 8 秒无结果弹窗 = 分解未完成，不能把本批计为成功
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=None)
+        task.wait_pop_up = MagicMock(return_value=False)
         self.assertFalse(task._close_result_popup())
-        task.click_relative.assert_not_called()
+        task.find_one.assert_not_called()
         task.mark_task_failure.assert_called_once_with("分解结果弹窗未出现")
+
+    def test_clicks_again_while_ok_remains(self):
+        task = make_task()
+        ok_button = MagicMock()
+        task.find_one = MagicMock(side_effect=[ok_button, None])
+        self.assertTrue(task._close_result_popup())
+        task.click.assert_called_once_with(ok_button, after_sleep=1)
+        task.mark_task_failure.assert_not_called()
 
     def test_marks_failure_after_retries(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())  # 标题出现
-        task.ocr = MagicMock(return_value=MagicMock())  # 标题一直不消失
+        task.find_one = MagicMock(return_value=MagicMock())  # 对勾一直在
         self.assertFalse(task._close_result_popup())
-        self.assertEqual(task.click_relative.call_count, 4)
+        # wait_pop_up 点 1 次 + 补点 3 次，每次点击后都查一次对勾
+        self.assertEqual(task.click.call_count, 3)
+        self.assertEqual(task.find_one.call_count, 4)
         task.mark_task_failure.assert_called_once_with("分解结果弹窗未能关闭")
 
 
@@ -401,26 +437,18 @@ class TestDailyWiring(unittest.TestCase):
     def test_dismantle_entry_is_fixed_click(self):
         # 分解入口是底栏左侧工具组的垃圾桶图标（纯图标无文字），定点点击；
         # essence_throw_away 模板是右上详情面板的单件分解按钮，全屏匹配在
-        # 底栏落点偏高约 90px（2026-10-24 实测 (0.258, 0.865) 点到物品末行）
+        # 底栏落点偏高约 90px（(0.258, 0.865) 点到物品末行）
         src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
         self.assertIn("_DISMANTLE_ENTRY", src_text)
-        self.assertNotIn("fL.", src_text)
+        self.assertNotIn("essence_throw_away", src_text)
 
     def test_filter_checks_all_qualities(self):
         # 面板品质三项初始为空，必须逐项点勾（toggle）：只勾一项会把其他
-        # 品质排除出快捷放入，该类清完时整批落空（14:21 实测教训）
+        # 品质排除出快捷放入，该类清完时整批落空
         src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
         for key in ("k_7ba0a5b1", "k_16da2b84", "k_1a40e234"):
             self.assertIn(key, src_text)
         self.assertIn("k_2396a6d9", src_text)
-
-    def test_confirm_dialog_title_is_wait_signal_not_gate(self):
-        # 确认弹窗标题只作等待信号：14:45 实测弹窗在、标题清晰，OCR 却六秒
-        # 未命中；标题未命中必须仍去点确认按钮（行为级测试
-        # test_title_miss_still_clicks_confirm 覆盖）
-        src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        self.assertIn("_CONFIRM_DIALOG", src_text)
-        self.assertNotIn("分解确认弹窗未出现", src_text)
 
     def test_ui_fallback_group_map(self):
         import ast
