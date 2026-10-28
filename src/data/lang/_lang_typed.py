@@ -364,9 +364,6 @@ class DeliveryTaskModule(_LangModuleBaseT):
 class MatrixCleanTaskModule(_LangModuleBaseT):
     """matrix_clean_task — OCR 语言节点（值取自 zh_CN）"""
 
-    k_190bd555: re.Pattern[str]
-    """贵重品库"""
-
     k_9ca99bd0: re.Pattern[str]
     """武器基质"""
 

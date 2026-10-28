@@ -69,6 +69,44 @@ class TestLangResource(unittest.TestCase):
             self.assertIsNotNone(getattr(module, key), f"{key} 经 LangAccessor 取值为空")
 
 
+class TestOpenVaultEssencePage(unittest.TestCase):
+    """进入贵重品库：N 键两次都没进基质页就判失败，不走其他入口；分页点击带补点。"""
+
+    def test_fails_after_two_n_presses_without_esc(self):
+        task = make_task()
+        task.press_key = MagicMock(return_value=True)
+        task._ensure_essence_page = MagicMock(return_value=False)
+        self.assertFalse(task._open_vault_essence_page())
+        self.assertEqual([c.args[0] for c in task.press_key.call_args_list], ["n", "n"])
+        task.wait_click_ocr.assert_not_called()
+        task.mark_task_failure.assert_called_once_with("进入武器基质页失败")
+
+    def test_key_injection_failure_stops_immediately(self):
+        task = make_task()
+        task.press_key = MagicMock(return_value=False)
+        task._ensure_essence_page = MagicMock()
+        self.assertFalse(task._open_vault_essence_page())
+        task.press_key.assert_called_once()
+        task._ensure_essence_page.assert_not_called()
+
+    def test_already_on_essence_page_skips_tab_click(self):
+        task = make_task()
+        task.wait_ocr = MagicMock(return_value=MagicMock())
+        self.assertTrue(task._ensure_essence_page())
+        task.click_relative.assert_not_called()
+
+    def test_tab_click_retries_via_post_action(self):
+        task = make_task()
+        task.wait_ocr = MagicMock(side_effect=[None, MagicMock()])
+        self.assertTrue(task._ensure_essence_page())
+        task.click_relative.assert_called_once_with(0.395, 0.055, after_sleep=1.5)
+        # 第二次等待每轮未命中时由框架调用 post_action 补点分页
+        post_action = task.wait_ocr.call_args_list[1].kwargs["post_action"]
+        post_action()
+        self.assertEqual(task.click_relative.call_count, 2)
+        self.assertEqual(task.click_relative.call_args.args, (0.395, 0.055))
+
+
 class TestDismantleByQuality(unittest.TestCase):
     """批循环：正常结束、异常中断、上限拦截。"""
 

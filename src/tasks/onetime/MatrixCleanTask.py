@@ -9,7 +9,7 @@ class MatrixCleanTask(Common):
     """清理基质子任务：批量分解武器基质直到无可分解，日常任务经 DailyFeature 接入。
 
     流程（对应游戏内「贵重品库/武器基质」手动分解）：
-    1. N 键直达贵重品库（失败回退 ESC 总控终端），确认停在武器基质页；
+    1. N 键直达贵重品库，确认停在武器基质页；
     2. 点击底栏左侧垃圾桶图标进入分解模式；每分解一批后游戏自动退回
        浏览模式，分解模式内的快捷放入规则不跨会话保留，每批重新设置；
     3. 点击「快捷放入」弹出筛选面板：品质三项（稳定/净态/高纯，初始为空，
@@ -69,17 +69,6 @@ class MatrixCleanTask(Common):
                 return False
             if self._ensure_essence_page():
                 return True
-        # 回退路径：ESC 打开总控终端，点击右侧菜单网格的「贵重品库」
-        self.press_key("esc", after_sleep=1.5)
-        if not self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_190bd555,
-            box=self.box_of_screen(0.55, 0.3, 1.0, 0.9),
-            time_out=8,
-        ):
-            self.mark_task_failure("未找到贵重品库入口")
-            return False
-        if self._ensure_essence_page():
-            return True
         self.mark_task_failure("进入武器基质页失败")
         return False
 
@@ -90,11 +79,20 @@ class MatrixCleanTask(Common):
             match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
         ):
             return True
+
         # 顶部分类行从左到右：搜索/武器/基质(立方体,中心x≈0.395)/装备(六边形,中心x≈0.438)/…
-        self.click_relative(0.395, 0.055, after_sleep=1.5)
+        # 分页点击可重复执行：低性能机器首次点击没生效时，每轮未识别到标题就补点一次
+        def click_essence_tab():
+            self.click_relative(0.395, 0.055, after_sleep=1.5)
+
+        click_essence_tab()
         return bool(
             self.wait_ocr(
-                match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
+                match=self.lang.matrix_clean_task.k_9ca99bd0,
+                box=title_box,
+                time_out=4,
+                raise_if_not_found=False,
+                post_action=click_essence_tab,
             )
         )
 
