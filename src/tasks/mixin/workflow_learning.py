@@ -59,14 +59,24 @@ def confirm_tracking_context(task, context, entry):
     if context is None:
         return None
     try:
-        task.ensure_main()
+        # Confirmation is observational only: ensure_main/is_main can click
+        # "结束拜访" and leave the friend's boat during a trade.
+        world = task.wait_until(task.in_world, time_out=2, raise_if_not_found=False)
+        if not world:
+            return None
         stable = task.wait_ui_stable(stable_time=0.3, max_wait=2, refresh_interval=0.1)
+        if not stable:
+            return None
+        # Check the current stable frame once: a retrying wait could return
+        # after loading ends, without verifying the new frame is stable.
+        if not task.in_world():
+            return None
     except TaskDisabledException:
         raise
     except Exception as error:
         task.log_info(f"[workflow-learning] tracking entry unconfirmed; visual only: {error}")
         return None
-    if not stable or entry.epoch != learning_epoch() or not learning_allowed():
+    if entry.epoch != learning_epoch() or not learning_allowed():
         return None
     return context
 
