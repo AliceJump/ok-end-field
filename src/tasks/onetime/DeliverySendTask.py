@@ -71,7 +71,7 @@ class DeliverySendTask(Common):
             self.log_info("未找到 '确认' 按钮，可能未成功领取奖励")
             return False
 
-        # 返回仓储节点总览，让后续转交委托复用已经完成的地区导航。
+        # 停在「我转交的委托」页，后续可直接切换到本地仓储节点。
         self.log_info("转交委托奖励领取完成")
         return True
 
@@ -86,6 +86,14 @@ class DeliverySendTask(Common):
             count = 0
             self.log_info(self.tr("开始处理区域: {area}").format(area=self.tr(area)))
 
+            if not self.to_model_area(area, "仓储节点"):  # 每个地区只导航一次
+                self.ensure_main()  # 导航失败后恢复，再尝试下一地区
+                continue  # 不在未知页面继续转交
+
+            # 仅在领取流程真正完成时才置位，失败留到后续地区重试。
+            if not claim_rewards_done and self._claim_delivery_rewards_in_current_node():
+                claim_rewards_done = True
+
             while True:
                 if 0 < activity_num <= count:
                     self.log_info(
@@ -95,17 +103,10 @@ class DeliverySendTask(Common):
                     )
                     break
 
-                self.to_model_area(area, "仓储节点")
-
-                # 仅在领取流程真正完成时才置位，失败留到后续地区重试。
-                if not claim_rewards_done and self._claim_delivery_rewards_in_current_node():
-                    claim_rewards_done = True
-
-                if not self.wait_click_ocr(
+                if not self.wait_click_ocr(  # 等待本地仓储标签出现后切回列表
                     match=self.lang.daily_routine_mixin.k_298d3284, box=self.box.top_left, time_out=5
                 ):
                     self.log_info(self.tr("{area}未找到本地仓储节点，返回主界面").format(area=self.tr(area)))
-                    self.ensure_main()
                     break
 
                 results = self.wait_ocr(
@@ -116,7 +117,6 @@ class DeliverySendTask(Common):
 
                 if not results:
                     self.log_info(self.tr("{area} 当前没有货物装箱可操作，返回主界面").format(area=self.tr(area)))
-                    self.ensure_main()
                     break
 
                 if activity_num == 0:
@@ -170,12 +170,12 @@ class DeliverySendTask(Common):
                             self.log_info("转交完成，已领取奖励弹窗")
                         else:
                             self.log_info("未等到奖励弹窗，跳过本次活动")
-                self.ensure_main()
                 if not sent:
                     break
                 count += 1
                 send_count += 1
                 self.log_info(f"{area} 已完成 {count}/{activity_num} 次转交")
+            self.ensure_main()  # 本地区结束或失败时统一恢复，兼顾地区切换与任务收尾
         if send_count == 0:
             self.mark_task_failure("未完成任何转交运送委托操作")
             return False

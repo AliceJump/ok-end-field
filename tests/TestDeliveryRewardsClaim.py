@@ -177,6 +177,109 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         feature.click_confirm.assert_called_once_with()
         feature.wait_pop_up.assert_called_once_with()
 
+    def test_same_area_reuses_navigation_and_reads_fresh_mixed_orders(self):
+        feature = self.make_send_feature([True])
+        packing = SimpleNamespace(name="货物装箱")
+        old_quote = SimpleNamespace(name="查看报价", x=100)
+        fresh_quote = SimpleNamespace(name="查看报价", x=200)
+        feature.wait_ocr.side_effect = [[packing, old_quote], [fresh_quote]]
+        events = []
+        feature.to_model_area.side_effect = lambda *args: events.append("navigate") or True
+        feature.click.side_effect = lambda *args: events.append("order")
+        feature.wait_pop_up.side_effect = lambda: events.append("reward") or True
+        feature.ensure_main.side_effect = lambda: events.append("main")
+
+        with patch("src.tasks.onetime.DeliverySendTask.areas_list", ["武陵"]):
+            self.assertTrue(feature.delivery_send_others())
+
+        self.assertEqual(events, ["navigate", "order", "reward", "order", "reward", "main"])
+        feature.to_model_area.assert_called_once_with("武陵", "仓储节点")
+        self.assertEqual(feature.wait_click_ocr.call_count, 2)
+        self.assertEqual(feature.wait_ocr.call_count, 2)
+        self.assertIs(feature.click.call_args_list[0].args[0], packing)
+        self.assertIs(feature.click.call_args_list[1].args[0], fresh_quote)
+        features_clicked = [call.kwargs["feature"] for call in feature.wait_click_feature.call_args_list]
+        self.assertEqual(
+            features_clicked,
+            [fL.give_gift, fL.fill_max, fL.give_gift, fL.transfer_go, fL.transfer_go],
+        )
+        feature.blind_spot_speed_up.assert_called_once()
+
+    def test_second_order_failure_keeps_first_success_and_recovers_before_next_area(self):
+        feature = self.make_send_feature([True])
+        quote = SimpleNamespace(name="查看报价")
+        feature.wait_ocr.side_effect = [[quote, quote], [quote], []]
+        feature.wait_click_feature.side_effect = [True, False]
+        events = []
+        feature.to_model_area.side_effect = lambda area, model: events.append(area) or True
+        feature.ensure_main.side_effect = lambda: events.append("main")
+
+        self.assertTrue(self.run_send_others(feature))
+
+        self.assertEqual(events, ["武陵", "main", "试验园区", "main"])
+        self.assertEqual(feature.wait_ocr.call_count, 3)
+        self.assertEqual(feature.wait_click_feature.call_count, 2)
+        feature.wait_pop_up.assert_called_once_with()
+        feature.log_info.assert_any_call("武陵 已完成 1/2 次转交")
+        feature.mark_task_failure.assert_not_called()
+
+    def test_failed_area_navigation_recovers_without_claiming_or_transferring(self):
+        feature = self.make_send_feature([True])
+        events = []
+
+        def navigate(area, model):
+            events.append(area)
+            return area != "武陵"
+
+        feature.to_model_area.side_effect = navigate
+        feature.ensure_main.side_effect = lambda: events.append("main")
+        feature._claim_delivery_rewards_in_current_node.side_effect = lambda: events.append("claim") or True
+        feature.click.side_effect = lambda *args: events.append("order")
+
+        self.assertTrue(self.run_send_others(feature))
+
+        self.assertEqual(events, ["武陵", "main", "试验园区", "claim", "order", "main"])
+        feature._claim_delivery_rewards_in_current_node.assert_called_once_with()
+        feature.wait_click_ocr.assert_called_once()
+        feature.wait_ocr.assert_called_once()
+        feature.wait_pop_up.assert_called_once_with()
+
+    def test_failed_history_claim_is_retried_only_in_next_area(self):
+        feature = self.make_send_feature([False, True])
+        quote = SimpleNamespace(name="查看报价")
+        feature.wait_ocr.side_effect = [[quote, quote], [quote], [quote]]
+        events = []
+        feature.to_model_area.side_effect = lambda area, model: events.append(area) or True
+        claim_results = iter([False, True])
+
+        def claim():
+            events.append("claim")
+            return next(claim_results)
+
+        feature._claim_delivery_rewards_in_current_node.side_effect = claim
+
+        self.assertTrue(self.run_send_others(feature))
+
+        self.assertEqual(events, ["武陵", "claim", "试验园区", "claim"])
+        self.assertEqual(feature.wait_pop_up.call_count, 3)
+
+    def test_local_node_timeout_stops_next_order_without_losing_success(self):
+        feature = self.make_send_feature([True])
+        quote = SimpleNamespace(name="查看报价")
+        feature.wait_ocr.return_value = [quote, quote]
+        feature.wait_click_ocr.side_effect = [True, False]
+
+        with patch("src.tasks.onetime.DeliverySendTask.areas_list", ["武陵"]):
+            self.assertTrue(feature.delivery_send_others())
+
+        self.assertEqual(feature.wait_click_ocr.call_count, 2)
+        feature.wait_ocr.assert_called_once()
+        feature.wait_click_feature.assert_called_once()
+        feature.wait_pop_up.assert_called_once_with()
+        feature.ensure_main.assert_called_once_with()
+        feature.log_info.assert_any_call("武陵 已完成 1/2 次转交")
+        feature.mark_task_failure.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
