@@ -553,7 +553,7 @@ class YingTuoTask(BattleMixin):
         return True
 
     def find_normal_challenge(self, leftmost_only=False):
-        """寻找当前可打关卡并进入其详情页；连续四次滚动后无灰条时结束。
+        """扫描灰条模板；本屏任意已进入就滚动，否则进入第一条；滚动四次后结束。
 
         ``leftmost_only`` 为真时只看最左侧海报下方的灰条，没有就直接结束，不滚动。
         """
@@ -669,8 +669,9 @@ class YingTuoTask(BattleMixin):
             return False
         # 确认进入协议空间就登记，不依赖胜负；失败回主界面后仍应跳过。
         self._last_normal_entry_confirmed = True
-        if self._selected_poster_templates:
-            self._entered_poster_templates.extend(self._selected_poster_templates)
+        selected = getattr(self, "_selected_poster_templates", None)
+        if isinstance(selected, list) and selected:
+            self._entered_poster_templates.extend(selected)
             self._selected_poster_templates = []
             self.log_info(f"本轮已进入的海报模板：{len(self._entered_poster_templates)}")
 
