@@ -388,13 +388,6 @@ class LoginMixinModule(_LangModuleBaseT):
     """上次"""
 
 
-class MatrixCleanTaskModule(_LangModuleBaseT):
-    """matrix_clean_task — OCR 语言节点（值取自 zh_CN）"""
-
-    k_75a84eb1: re.Pattern[str]
-    """未拥有该类型"""
-
-
 class TakeDeliveryTaskModule(_LangModuleBaseT):
     """TakeDeliveryTask — OCR 语言节点（值取自 zh_CN）"""
 
@@ -756,7 +749,6 @@ class _LangAccessorTyped:
     game_flow_mixin: GameFlowMixinModule
     liaison_mixin: LiaisonMixinModule
     login_mixin: LoginMixinModule
-    matrix_clean_task: MatrixCleanTaskModule
     TakeDeliveryTask: TakeDeliveryTaskModule
     WarehouseTransferTask: WarehouseTransferTaskModule
     world_map: WorldMapModule
