@@ -7,7 +7,7 @@
 3. 好友菜单顶部模板匹配「添加好友」入口并点击；
 4. 陌生人列表右侧 OCR 定位可点的「添加好友」按钮，点一下发一个申请；
 5. 一屏没有按钮就继续下滑，滑到列表底部再点「换一批」；
-6. 每次点击后检查「好友列表已满」，满员提前结束。
+6. 每轮开始与每次点击后都检查「好友列表已满」；满员导致的失败申请不计入已发送。
 
 坐标
 ----
@@ -174,6 +174,10 @@ class BatchAddFriendsTask(Common):
         empty_batches = 0
         scrolls = 0
         while added < max_count and not self.exit_is_set():
+            # 列表已满时再点也不会发出申请：先在循环开头确认，避免把失败算成已发送
+            if self.friend_list_full():
+                self.log_info(self.tr("好友列表已满，提前结束"))
+                break
             # 同一批加到上限就先换一批，避免把一批陌生人加穿导致风控
             if batch_limit and added_in_batch >= batch_limit and self.change_batch():
                 added_in_batch = 0
@@ -183,14 +187,15 @@ class BatchAddFriendsTask(Common):
             button = self.find_add_button()
             if button is not None:
                 self.click_box(button, after_sleep=0.3)
+                # 点击后出现满员提示说明这次申请没有发出去，不能计入已发送
+                if self.friend_list_full():
+                    self.log_info(self.tr("好友列表已满，本次申请未发出，提前结束"))
+                    break
                 added += 1
                 added_in_batch += 1
                 scrolls = 0
                 empty_batches = 0
                 self.log_info(self.tr("已发送好友申请 {added}/{max}").format(added=added, max=max_count))
-                if self.friend_list_full():
-                    self.log_info(self.tr("好友列表已满，提前结束"))
-                    break
                 continue
             # 当前屏没有按钮：继续下滑，滑到底或判定到底后再换一批
             if scrolls < MAX_SCROLLS_PER_BATCH and not self.list_at_bottom():

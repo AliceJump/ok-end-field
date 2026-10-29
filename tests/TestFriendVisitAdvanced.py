@@ -1,8 +1,10 @@
 import unittest
+import unittest.mock
 
 import numpy as np
 from ok.feature.Box import Box
 
+import src.tasks.onetime.FriendVisitAdvanced as friend_visit
 from src.tasks.onetime.FriendVisitAdvanced import (
     LIST_COMPLETE_THRESHOLD,
     REMARK_PATTERN,
@@ -22,6 +24,7 @@ class _AdvHarness(FriendVisitAdvancedMixin):
         self._visit_templates = {}
         self._list_snapshot = None
         self.logs = []
+        self.errors = []
 
     @property
     def frame(self):
@@ -39,6 +42,10 @@ class _AdvHarness(FriendVisitAdvancedMixin):
     def log_warning(self, message, *args, **kwargs):
         self.logs.append(message)
 
+    def log_error(self, message, *args, **kwargs):
+        self.errors.append(message)
+        self.logs.append(message)
+
 
 def _row(text, key=None, remark=None):
     return {
@@ -48,6 +55,89 @@ def _row(text, key=None, remark=None):
         "enter": Box(0, 0, 10, 10),
         "name_box": Box(0, 0, 100, 10),
     }
+
+
+class _VisitOneHarness(FriendVisitAdvancedMixin):
+    """adv_visit_one 的返回值与快速拜访额度。"""
+
+    screen_width = 1920
+    screen_height = 1080
+
+    def __init__(self, quick_visits=0, enter_ok=True):
+        self._quick_visits = quick_visits
+        self._enter_ok = enter_ok
+        self._list_snapshot = None
+        self.quick_calls = 0
+        self.leave_calls = 0
+        self.logs = []
+
+    def adv_enter_ship(self, row, targets):
+        return self._enter_ok
+
+    def adv_open_guest_terminal(self):
+        return True
+
+    def adv_terminal_actions(self, targets):
+        pass
+
+    def adv_exit_guest_terminal(self):
+        pass
+
+    def adv_quick_visit_next(self, targets):
+        self.quick_calls += 1
+        return self.quick_calls <= self._quick_visits
+
+    def adv_leave_ship(self):
+        self.leave_calls += 1
+
+    def exit_is_set(self):
+        return False
+
+    def log_info(self, message, *args, **kwargs):
+        self.logs.append(message)
+
+    def log_warning(self, message, *args, **kwargs):
+        self.logs.append(message)
+
+
+class _VisitLoopHarness(_AdvHarness):
+    """advanced_visit 的计数与额度传递。"""
+
+    CFG_MAX_VISITS = "max"
+
+    def __init__(self, rows, visits_per_call, config=None):
+        super().__init__(config=config or {})
+        self._rows = rows
+        self._visits = list(visits_per_call)
+        self.limits = []
+
+    def adv_collect_pending_credit(self):
+        return True
+
+    def adv_enter_friend_list(self):
+        return True
+
+    def exit_is_set(self):
+        return False
+
+    def adv_remaining_counts(self):
+        return 5, 5
+
+    def adv_scan_rows(self):
+        return list(self._rows)
+
+    def adv_list_at_bottom(self):
+        return True
+
+    def adv_scroll_list(self):
+        pass
+
+    def adv_reopen_friend_list(self):
+        return True
+
+    def adv_visit_one(self, row, targets, limit=0):
+        self.limits.append(limit)
+        return self._visits.pop(0) if self._visits else 0
 
 
 class TestFriendVisitRowKey(unittest.TestCase):
@@ -163,6 +253,55 @@ class TestFriendVisitListBottom(unittest.TestCase):
         harness._list_snapshot = None
         harness._frame = frame.copy()
         self.assertFalse(harness.adv_list_at_bottom())
+
+
+class TestFriendVisitTemplateLoading(unittest.TestCase):
+    def test_load_template_warns_once_about_missing_image(self):
+        harness = _AdvHarness()
+        with unittest.mock.patch.object(friend_visit.cv2, "imread", return_value=None):
+            harness.adv_load_template("friend_visit/Missing.png")
+            harness.adv_load_template("friend_visit/Missing.png")
+        warnings = [message for message in harness.logs if "模板图片读取失败" in message]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("Missing.png", warnings[0])
+
+
+class TestAdvancedVisitVisitCount(unittest.TestCase):
+    def test_visit_one_returns_count_of_quick_visits(self):
+        harness = _VisitOneHarness(quick_visits=2)
+        self.assertEqual(harness.adv_visit_one(_row("甲#1"), ["总控中枢"]), 3)
+        self.assertEqual(harness.quick_calls, 3)
+
+    def test_visit_one_stops_quick_visit_at_remaining_quota(self):
+        harness = _VisitOneHarness(quick_visits=5)
+        self.assertEqual(harness.adv_visit_one(_row("甲#1"), ["总控中枢"], limit=2), 2)
+        self.assertEqual(harness.quick_calls, 1)
+
+    def test_visit_one_returns_zero_when_entering_ship_fails(self):
+        harness = _VisitOneHarness(enter_ok=False)
+        self.assertEqual(harness.adv_visit_one(_row("甲#1"), ["总控中枢"]), 0)
+        self.assertEqual(harness.leave_calls, 0)
+
+
+class TestAdvancedVisitQuota(unittest.TestCase):
+    def test_quota_is_passed_and_actual_visits_are_counted(self):
+        harness = _VisitLoopHarness([_row("甲#1"), _row("乙#2"), _row("丙#3")], [2, 1], {"max": 3})
+        self.assertTrue(harness.advanced_visit())
+        self.assertEqual(harness.limits, [3, 1])
+        self.assertTrue(any("共拜访 3 位好友" in message for message in harness.logs))
+
+    def test_skipped_friend_does_not_use_up_the_limit(self):
+        harness = _VisitLoopHarness([_row("甲#1"), _row("乙#2")], [0, 1], {"max": 3})
+        self.assertTrue(harness.advanced_visit())
+        self.assertEqual(harness.limits, [3, 3])
+        self.assertTrue(any("共拜访 1 位好友" in message for message in harness.logs))
+
+    def test_reopen_failure_after_bottom_is_logged(self):
+        harness = _VisitLoopHarness([], [], {"remark_only": True})
+        harness.CFG_REMARK_ONLY = "remark_only"
+        harness.adv_reopen_friend_list = lambda: False
+        self.assertFalse(harness.advanced_visit())
+        self.assertTrue(any("重新打开好友列表失败" in message for message in harness.errors))
 
 
 if __name__ == "__main__":

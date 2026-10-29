@@ -6,7 +6,7 @@
 ----
 1. 大世界 → Alt+点左上角菜单 → 「好友」→ 好友列表（与批量加好友同一套导航）；
 2. 用好友行里的「进船」按钮定位行，OCR 读出「名字#编号（备注）」；
-3. 名字里没有括号 = 没有备注 → 点开该好友资料 → 点「备注」→ 清空并输入新备注 → 确认 → 返回列表；
+3. 名字里没有括号 = 没有备注 → 点开该好友资料 → 点「备注」→ 输入新备注 → 确认 → 返回列表；
 4. 处理完一屏就滚动，列表到底即结束。
 
 配置
@@ -25,7 +25,7 @@ import re
 from qfluentwidgets import FluentIcon
 
 from src.tasks.mixin.common import Common
-from src.tasks.onetime.FriendVisitAdvanced import FriendVisitAdvancedMixin
+from src.tasks.onetime.FriendVisitAdvanced import CLUE_AVAILABLE_OFFSET, FriendVisitAdvancedMixin
 
 VISIT_TEMPLATE_DIR = "friend_visit"
 
@@ -41,6 +41,16 @@ MAX_ROUNDS = 300
 
 TEXT_REMARK = re.compile(r"备注")
 TEXT_CONFIRM = re.compile(r"^(确定|确认|保存|完成)$")
+#: 回读备注输入框时用「任意非空白字符」判断框里是否已经有文本
+TEXT_ANY_CHAR = re.compile(r"\S")
+
+
+class FriendListLostError(RuntimeError):
+    """无法确认已经回到好友列表。
+
+    此时下一轮会在好友资料页上按列表行扫描，处理的是错误的画面，因此调用方应结束
+    本次任务，而不是继续尝试。
+    """
 
 
 class BatchRemarkFriendsTask(FriendVisitAdvancedMixin, Common):
@@ -108,11 +118,15 @@ class BatchRemarkFriendsTask(FriendVisitAdvancedMixin, Common):
                 self.adv_scroll_list()
                 continue
             visited.add(row["key"])
-            if self.remark_one(row, remark):
-                handled += 1
-                self.log_info(f"已为好友 {row['text']} 添加备注：{remark}")
-            else:
-                self.log_warning(f"好友 {row['text']} 备注失败，跳过", images=[self.frame])
+            try:
+                if self.remark_one(row, remark):
+                    handled += 1
+                    self.log_info(f"已为好友 {row['text']} 添加备注：{remark}")
+                else:
+                    self.log_warning(f"好友 {row['text']} 备注失败，跳过", images=[self.frame])
+            except FriendListLostError as exc:
+                self.log_error(f"{exc}，好友批量备注结束")
+                break
             if max_count and handled >= max_count:
                 self.log_info(f"已达到最大处理数量 {max_count}，结束")
                 break
@@ -131,23 +145,33 @@ class BatchRemarkFriendsTask(FriendVisitAdvancedMixin, Common):
 
     def row_clue_available(self, row):
         """行内是否带「可情报交流」标记（MaaEnd ClueExchangeAvailable）。"""
-        region = self.adv_offset_box(row["enter"], self.CLUE_AVAILABLE_OFFSET)
+        region = self.adv_offset_box(row["enter"], CLUE_AVAILABLE_OFFSET)
         return self.adv_find_one(f"{VISIT_TEMPLATE_DIR}/ClueExchangeAvailable.png", region) is not None
 
     # ---------- 单个好友 ----------
 
     def remark_one(self, row, remark):
+        """给一位好友写备注。
+
+        返回 True 仅当「确认已点过 + 已回到好友列表 + 列表里看得到新备注」全部成立；
+        任何一步失败都返回 False，不再被 ``run()`` 算作已处理。回到好友列表属于清理
+        步骤，失败时抛 :class:`FriendListLostError`，由 ``run()`` 结束任务。
+        """
         self.click(row["name_box"], after_sleep=1.0)
-        if not self.open_remark_editor():
-            return False
+        applied = False
         try:
-            self.input_remark_text(remark)
-            if not self.confirm_remark():
-                return False
+            if self.open_remark_editor():
+                applied = self.input_remark_text(remark) and self.confirm_remark()
         finally:
-            self.back_to_friend_list()
+            # 打开备注入口也可能失败：无论成败都要关掉好友资料页再扫列表
+            returned = self.back_to_friend_list()
+        if not returned:
+            raise FriendListLostError("无法回到好友列表")
+        if not applied:
+            return False
         if not self.remark_visible_in_list(row["key"]):
             self.log_warning("返回列表后没有看到新备注，界面可能已经变化，请检查截图", images=[self.frame])
+            return False
         return True
 
     def remark_visible_in_list(self, key):
@@ -175,18 +199,56 @@ class BatchRemarkFriendsTask(FriendVisitAdvancedMixin, Common):
         return False
 
     def input_remark_text(self, remark):
-        """清空备注输入框并粘贴新文本（剪贴板粘贴，支持中文）。"""
+        """把备注写进输入框，返回是否确认已写入。
+
+        主路径用 ``input_text``：ok 的 PostMessageInteraction 以 WM_CHAR 逐字把文本
+        投递给游戏窗口，支持中文，也不要求游戏在前台。回读不到文本时才退回剪贴板
+        粘贴，并在粘贴前把游戏窗口切到前台，避免按键落到用户正在使用的其它应用。
+        备注框对「无备注好友」本来就是空的，主路径不需要清空操作。
+        """
+        self.click(self.adv_box(REMARK_INPUT_ROI), after_sleep=0.6)
+        self.input_text(remark)
+        self.sleep(0.6)
+        if self.remark_text_visible():
+            return True
+        self.log_warning("备注输入框回读不到文本，改用剪贴板粘贴")
+        return self.paste_remark_text(remark)
+
+    def remark_text_visible(self):
+        """OCR 回读备注输入框：能看到文本即视为输入已生效。"""
+        result = self.adv_find_text(self.adv_box(REMARK_INPUT_ROI), TEXT_ANY_CHAR, 0.5)
+        return result is not None and bool(str(result.name).strip())
+
+    def paste_remark_text(self, remark):
+        """剪贴板兜底：先确认游戏已在前台，再用 pyautogui 粘贴（支持中文）。"""
         import pyautogui
         import pyperclip
 
-        self.click(self.adv_box(REMARK_INPUT_ROI), after_sleep=0.6)
+        # EfInteraction 在 send_key_down 里会把游戏窗口置前，并等待它真正成为前台
+        self.send_key_down("ctrl")
+        self.send_key_up("ctrl")
+        if not self.game_window_in_foreground():
+            self.log_warning("游戏窗口没有成为前台，已放弃剪贴板粘贴，避免按键发给其它应用")
+            return False
+        # 主路径可能其实已经写入、只是 OCR 没回读到：先清空再粘贴，避免文本重复
         pyautogui.hotkey("ctrl", "a")
-        self.sleep(0.2)
         pyautogui.press("delete")
-        self.sleep(0.2)
         pyperclip.copy(remark)
+        self.sleep(0.2)
         pyautogui.hotkey("ctrl", "v")
         self.sleep(0.6)
+        return self.remark_text_visible()
+
+    def game_window_in_foreground(self):
+        """游戏窗口当前是否是系统前台窗口。"""
+        hwnd = self.get_game_hwnd()
+        if not hwnd:
+            return False
+        try:
+            import win32gui
+        except ImportError:  # 非 Windows 环境没有 pywin32
+            return False
+        return win32gui.GetForegroundWindow() == hwnd
 
     def confirm_remark(self):
         button = self.adv_find_text(self.adv_box(REMARK_CONFIRM_ROI), TEXT_CONFIRM, 0.6)

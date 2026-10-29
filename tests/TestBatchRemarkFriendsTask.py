@@ -2,7 +2,8 @@ import unittest
 
 from ok.feature.Box import Box
 
-from src.tasks.onetime.BatchRemarkFriendsTask import BatchRemarkFriendsTask
+from src.tasks.onetime.BatchRemarkFriendsTask import BatchRemarkFriendsTask, FriendListLostError
+from src.tasks.onetime.FriendVisitAdvanced import CLUE_AVAILABLE_OFFSET
 
 
 class _RemarkHarness(BatchRemarkFriendsTask):
@@ -10,6 +11,7 @@ class _RemarkHarness(BatchRemarkFriendsTask):
 
     screen_width = 1920
     screen_height = 1080
+    frame = None
 
     def __init__(self, rows, clue_keys=None):
         self.config = {}
@@ -28,6 +30,79 @@ class _RemarkHarness(BatchRemarkFriendsTask):
         return box
 
 
+class _ClueHarness(BatchRemarkFriendsTask):
+    """不替身 row_clue_available，用来验证它引用的常量与偏移。"""
+
+    screen_width = 1280
+    screen_height = 720
+    frame = None
+
+    def __init__(self):
+        self.config = {}
+        self._visit_templates = {}
+        self._list_snapshot = None
+        self.calls = []
+
+    def log_warning(self, message, *args, **kwargs):
+        pass
+
+    def adv_find_one(self, relative_path, box, threshold=0.9):
+        self.calls.append((relative_path, box))
+        return None
+
+
+class _RemarkOneHarness(BatchRemarkFriendsTask):
+    """remark_one 的成功判定与清理顺序。"""
+
+    screen_width = 1280
+    screen_height = 720
+    frame = None
+
+    def __init__(self, open_ok=True, input_ok=True, confirm_ok=True, back_ok=True, visible=True):
+        self.config = {}
+        self._visit_templates = {}
+        self._list_snapshot = None
+        self.logs = []
+        self.events = []
+        self._open_ok = open_ok
+        self._input_ok = input_ok
+        self._confirm_ok = confirm_ok
+        self._back_ok = back_ok
+        self._visible = visible
+
+    def log_info(self, message, *args, **kwargs):
+        self.logs.append(message)
+
+    def log_warning(self, message, *args, **kwargs):
+        self.logs.append(message)
+
+    def log_error(self, message, *args, **kwargs):
+        self.logs.append(message)
+
+    def click(self, box, *args, **kwargs):
+        self.events.append("click")
+
+    def open_remark_editor(self):
+        self.events.append("open")
+        return self._open_ok
+
+    def input_remark_text(self, remark):
+        self.events.append("input")
+        return self._input_ok
+
+    def confirm_remark(self):
+        self.events.append("confirm")
+        return self._confirm_ok
+
+    def back_to_friend_list(self):
+        self.events.append("back")
+        return self._back_ok
+
+    def remark_visible_in_list(self, key):
+        self.events.append("visible")
+        return self._visible
+
+
 def _row(text, remark=False):
     return {
         "text": text,
@@ -36,6 +111,28 @@ def _row(text, remark=False):
         "enter": Box(0, 0, 10, 10),
         "name_box": Box(0, 0, 100, 10),
     }
+
+
+class _RemarkOneRunHarness(_RemarkOneHarness):
+    """run() 在无法回到好友列表时必须结束，而不是继续扫描错误的画面。"""
+
+    def __init__(self):
+        super().__init__()
+        self.config = {BatchRemarkFriendsTask.CFG_REMARK_TEXT: "自动1"}
+        self._rows = [_row("甲#1")]
+
+    def adv_enter_friend_list(self):
+        return True
+
+    def adv_scan_rows(self):
+        return self._rows
+
+    def exit_is_set(self):
+        return False
+
+    def remark_one(self, row, remark):
+        self.events.append("remark_one")
+        raise FriendListLostError("无法回到好友列表")
 
 
 class TestPickRowToRemark(unittest.TestCase):
@@ -81,6 +178,61 @@ class TestRemarkTextHandling(unittest.TestCase):
         BatchRemarkFriendsTask.run.__wrapped__(task)
         self.assertTrue(any("备注内容" in message for message in logs))
         self.assertEqual(task._rows[0]["key"], "甲#1")
+
+
+class TestRowClueAvailable(unittest.TestCase):
+    def test_uses_module_level_offset_constant(self):
+        task = _ClueHarness()
+        row = {
+            "text": "甲#1",
+            "key": "甲#1",
+            "remark": False,
+            "enter": Box(100, 200, 20, 40),
+            "name_box": Box(0, 0, 10, 10),
+        }
+        self.assertFalse(task.row_clue_available(row))
+        self.assertEqual(len(task.calls), 1)
+        relative_path, region = task.calls[0]
+        self.assertTrue(relative_path.endswith("ClueExchangeAvailable.png"))
+        dx, dy, dw, dh = CLUE_AVAILABLE_OFFSET
+        self.assertEqual((region.x, region.y, region.width, region.height), (100 + dx, 200 + dy, 20 + dw, 40 + dh))
+
+
+class TestRemarkOneResult(unittest.TestCase):
+    def test_returns_true_only_when_remark_is_visible_in_list(self):
+        task = _RemarkOneHarness()
+        self.assertTrue(task.remark_one(_row("甲#1"), "自动1"))
+        self.assertEqual(task.events, ["click", "open", "input", "confirm", "back", "visible"])
+
+    def test_returns_false_when_remark_is_not_visible_after_returning(self):
+        task = _RemarkOneHarness(visible=False)
+        self.assertFalse(task.remark_one(_row("甲#1"), "自动1"))
+        self.assertIn("visible", task.events)
+
+    def test_editor_failure_still_returns_to_friend_list(self):
+        task = _RemarkOneHarness(open_ok=False)
+        self.assertFalse(task.remark_one(_row("甲#1"), "自动1"))
+        self.assertEqual(task.events, ["click", "open", "back"])
+        self.assertNotIn("input", task.events)
+
+    def test_confirm_failure_counts_as_failure(self):
+        task = _RemarkOneHarness(confirm_ok=False)
+        self.assertFalse(task.remark_one(_row("甲#1"), "自动1"))
+        self.assertIn("back", task.events)
+
+    def test_unable_to_return_to_list_stops_the_task(self):
+        task = _RemarkOneHarness(back_ok=False)
+        with self.assertRaises(FriendListLostError):
+            task.remark_one(_row("甲#1"), "自动1")
+
+
+class TestRunAbortsWhenFriendListIsLost(unittest.TestCase):
+    def test_run_stops_and_logs_after_list_is_lost(self):
+        task = _RemarkOneRunHarness()
+        BatchRemarkFriendsTask.run.__wrapped__(task)
+        self.assertEqual(task.events, ["remark_one"])
+        self.assertTrue(any("无法回到好友列表" in message for message in task.logs))
+        self.assertTrue(any("本次处理 0 位好友" in message for message in task.logs))
 
 
 if __name__ == "__main__":

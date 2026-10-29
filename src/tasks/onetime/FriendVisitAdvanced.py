@@ -191,35 +191,26 @@ class FriendVisitAdvancedMixin:
             if rows:
                 row = self.adv_pick_row(rows, visited, modes[mode_index], priority_re)
             if row is None:
-                if rows and self.adv_list_at_bottom():
+                # 扫不到可拜访的好友：已到底就切换筛选方式（或结束），否则继续下滑
+                if self.adv_list_at_bottom():
                     if mode_index + 1 < len(modes):
                         mode_index += 1
                         self.log_info(f"当前筛选方式已扫到底，切换到{self.adv_mode_name(modes[mode_index])}继续拜访")
-                        self._list_snapshot = None
                         if not self.adv_reopen_friend_list():
                             self.log_error("重新打开好友列表失败，高级拜访结束")
                             return False
                         continue
                     self.log_info("好友列表已扫到底，结束拜访")
                     break
-                if not rows:
-                    if self.adv_list_at_bottom():
-                        if mode_index + 1 < len(modes):
-                            mode_index += 1
-                            self._list_snapshot = None
-                            if not self.adv_reopen_friend_list():
-                                return False
-                            continue
-                        break
-                    self.adv_scroll_list()
-                    continue
                 self.adv_scroll_list()
                 continue
 
             visited.add(row["key"])
-            if not self.adv_visit_one(row, targets):
+            quota = max_visits - visited_count if max_visits else 0
+            visits = self.adv_visit_one(row, targets, quota)
+            if not visits:
                 self.log_info(f"好友 {row['text']} 本次未拜访（无可交流助力内容或进船失败）")
-            visited_count += 1
+            visited_count += visits
             if max_visits and visited_count >= max_visits:
                 self.log_info(f"已达到最大拜访次数 {max_visits}，结束拜访")
                 break
@@ -418,9 +409,15 @@ class FriendVisitAdvancedMixin:
 
     # ---------- 单个好友 ----------
 
-    def adv_visit_one(self, row, targets):
+    def adv_visit_one(self, row, targets, limit=0):
+        """拜访一位好友，返回本轮实际拜访的好友数；进船失败返回 0。
+
+        ``limit`` 是本次运行剩余的可拜访人数（0 表示不限）。快速拜访会直接切到下一位
+        好友，因此这里按实际拜访数返回，并在达到剩余额度时不再继续跳转。
+        """
         if not self.adv_enter_ship(row, targets):
-            return False
+            return 0
+        visits = 1
         try:
             while not self.exit_is_set():
                 if self.adv_open_guest_terminal():
@@ -428,13 +425,16 @@ class FriendVisitAdvancedMixin:
                     self.adv_exit_guest_terminal()
                 else:
                     self.log_warning("未找到访客终端入口，跳过该好友的终端操作")
+                if limit and visits >= limit:
+                    break
                 if not self.adv_quick_visit_next(targets):
                     break
+                visits += 1
         finally:
             # 出船/换人后列表必然不在尽头，清空静帧快照（MaaEnd attach.ready=false）
             self._list_snapshot = None
         self.adv_leave_ship()
-        return True
+        return visits
 
     def adv_enter_ship(self, row, targets):
         """点进船按钮 → 好友帝江号详情 → 判定有可做内容 → 再点一次进船。"""
@@ -646,7 +646,12 @@ class FriendVisitAdvancedMixin:
         if cache is None:
             cache = self._visit_templates = {}
         if relative_path not in cache:
-            cache[relative_path] = cv2.imread(os.path.join(TEMPLATE_ROOT, relative_path))
+            path = os.path.join(TEMPLATE_ROOT, relative_path)
+            image = cv2.imread(path)
+            if image is None:
+                # 结果（含 None）会缓存，因此同一路径只提示一次
+                self.log_warning(f"模板图片读取失败：{os.path.abspath(path)}")
+            cache[relative_path] = image
         return cache[relative_path]
 
     def adv_match(self, relative_path, box, threshold=THRESHOLD):
