@@ -3,10 +3,17 @@ from qfluentwidgets import FluentIcon
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.mixin.common import Common
+from src.tasks.onetime.FriendVisitAdvanced import FriendVisitAdvancedMixin
 
 
-class CreditCollectTask(Common):
+class CreditCollectTask(FriendVisitAdvancedMixin, Common):
     """收信用子任务：好友帝江号交流助力并收取信用，日常任务经 DailyFeature 接入。"""
+
+    CFG_ADVANCED = "高级拜访（移植 MaaEnd）"
+    CFG_ASSIST_TARGETS = "助力舱室"
+    CFG_REMARK_ONLY = "只拜访有备注的好友"
+    CFG_PRIORITY = "优先拜访名单"
+    CFG_MAX_VISITS = "最大拜访次数"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -20,13 +27,48 @@ class CreditCollectTask(Common):
         self.default_config.update(
             {
                 "尝试仅收培育室": True,
+                self.CFG_ADVANCED: False,
+                self.CFG_ASSIST_TARGETS: list(self.ASSIST_TARGETS),
+                self.CFG_REMARK_ONLY: False,
+                self.CFG_PRIORITY: "",
+                self.CFG_MAX_VISITS: 0,
             }
         )
+        self.config_type[self.CFG_ASSIST_TARGETS] = {
+            "type": "multi_selection",
+            "options": list(self.ASSIST_TARGETS),
+        }
+        self.config_type[self.CFG_MAX_VISITS] = {"min": 0, "max": 100}
+        self.config_type[self.CFG_ADVANCED] = {
+            "sub_configs": {
+                True: [
+                    self.CFG_ASSIST_TARGETS,
+                    self.CFG_REMARK_ONLY,
+                    self.CFG_PRIORITY,
+                    self.CFG_MAX_VISITS,
+                ]
+            }
+        }
         self.config_description.update(
             {
                 "尝试仅收培育室": (
                     "若选项开启，则优先尝试仅助力好友「帝江号」上的「培养仓」。\n如果不能，至少助力一次其它舱室。"
                 ),
+                self.CFG_ADVANCED: (
+                    "开启后改走移植自 MaaEnd 的高级拜访：\n"
+                    "以列表右上角的「助力 / 情报交流」剩余次数决定何时停止，"
+                    "进船后在访客终端依次做情报交流与所选舱室助力，并支持快速拜访下一位。\n"
+                    "关闭时保持原有拜访逻辑不变。仅适配简体中文界面。"
+                ),
+                self.CFG_ASSIST_TARGETS: "高级拜访时要在好友帝江号上助力的舱室，可多选。",
+                self.CFG_REMARK_ONLY: (
+                    "高级拜访时只拜访列表中带备注的好友；扫完一遍后仍会回退到全部好友，避免漏拜访。"
+                ),
+                self.CFG_PRIORITY: (
+                    "高级拜访时优先拜访这些好友，多个名字用逗号、顿号或空格分隔。\n"
+                    "按好友显示名匹配（含备注名）；留空表示不启用优先名单。"
+                ),
+                self.CFG_MAX_VISITS: "高级拜访最多拜访多少位好友，0 表示不限制。",
             }
         )
 
@@ -226,4 +268,6 @@ class CreditCollectTask(Common):
 
     def run_credit_collect(self):
         """收信用流程，独立运行与被日常执行（DailyFeature）共用。"""
+        if self.config.get(self.CFG_ADVANCED, False):
+            return self.advanced_visit()
         return self.collect_credit()
