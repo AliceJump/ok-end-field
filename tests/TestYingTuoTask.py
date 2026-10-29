@@ -47,6 +47,12 @@ class _FakeYingTuoTask:
     def _detect_stable_bars(self, time_out=3.0):
         return YingTuoTask._detect_stable_bars(self, time_out)
 
+    def _scroll_poster_after_matching(self, frame):
+        return YingTuoTask._scroll_poster_after_matching(self, frame)
+
+    def _click_bar_until_detail(self, bar, frame_height, frame_width):
+        return YingTuoTask._click_bar_until_detail(self, bar, frame_height, frame_width)
+
     def scroll_relative(self, *_args):
         self.scroll_count += 1
 
