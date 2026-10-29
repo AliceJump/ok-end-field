@@ -104,9 +104,10 @@ class MatrixCleanTask(Common):
         """进入分解模式；已在分解模式（上批未正常自动退出）则直接继续。"""
         if self.find_one(fL.matrix_dismantle_exit):
             return True
-        self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1)
         hint = self.wait_feature(
             fL.matrix_dismantle_exit,
+            pre_action=lambda: self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1),
+            settle_time=0,
             time_out=6,
             raise_if_not_found=False,
         )
