@@ -573,7 +573,9 @@ class YingTuoTask(BattleMixin):
             for bar in bars:
                 template = crop_poster_template(frame, bar.center_x, bar.center_y)
                 if template is None:
-                    raise YingTuoError("无法截取灰条中心对应的海报模板")
+                    # 屏幕边缘可能只露出半张海报，不能阻断其他完整海报的扫描。
+                    self.log_info("跳过无法完整截取模板的边缘海报灰条")
+                    continue
                 if matches_entered_template(template, self._entered_poster_templates):
                     has_entered_template = True
                     break
@@ -588,6 +590,8 @@ class YingTuoTask(BattleMixin):
                     self.log_info("向下滚动后海报页面没有变化，已到末尾或无法继续滚动")
                     return None
                 continue
+            if not candidates:
+                raise YingTuoError("灰条对应的海报模板均无法完整截取，页面状态不明")
             leftmost_bar, _ = candidates[0]
             frame_height, frame_width = frame.shape[:2]
             # 选择本屏第一条灰条时立即把整组近邻模板记为本轮已尝试：
@@ -686,7 +690,8 @@ class YingTuoTask(BattleMixin):
 
     def detect_normal_challenge_bars(self, frame):
         """检测普通关卡灰条；启用调试叠加层时按 YOLO 的方式绘制检测框。"""
-        bars = detect_gray_bars(frame, min_aspect_ratio=3.5)
+        # 六段海报的灰条实测仅宽 32–33/1920，通用默认下限 34 会漏掉整组。
+        bars = detect_gray_bars(frame, min_width_ratio=30 / 1920, min_aspect_ratio=3.5)
         if self._is_debug_overlay_enabled():
             debug_boxes = []
             for index, bar in enumerate(bars, start=1):

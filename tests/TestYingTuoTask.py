@@ -593,6 +593,33 @@ class TestYingTuoTask(unittest.TestCase):
         pairs = [(bar, template.copy()) for bar in bars]
         self.assertEqual(len(nearby_poster_templates(pairs, 200)), 5)
 
+    def test_partial_rightmost_poster_does_not_block_complete_group(self):
+        task = _FakeYingTuoTask()
+        bars = [_bar(50, 25), _bar(60, 25), _bar(198, 25)]
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=bars):
+            self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(len(task._entered_poster_templates), 2)
+        self.assertEqual(task.clicks, [(0.25, 0.25, {"after_sleep": 0.25})])
+
+    def test_six_short_gray_bars_survive_yingtuo_width_filter(self):
+        task = _FakeYingTuoTask()
+        task.frame = np.full((1080, 1920, 3), 48, dtype=np.uint8)
+        for x, width in ((122, 33), (161, 33), (200, 33), (239, 33), (279, 32), (318, 32)):
+            task.frame[824:832, x : x + width] = 120
+        task.frame[824:832, 400:428] = 120  # 小于影拓宽度下限的杂点。
+        task.frame[824:832, 500:533] = 250  # 亮白条仍应排除。
+        bars = task.detect_normal_challenge_bars(task.frame)
+        self.assertEqual([bar.width for bar in bars], [33, 33, 33, 33, 32, 32])
+
+    def test_only_incomplete_posters_fail_without_clicking_or_recording(self):
+        task = _FakeYingTuoTask()
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(198, 25)]):
+            with self.assertRaisesRegex(YingTuoError, "均无法完整截取"):
+                YingTuoTask.find_normal_challenge(task)
+        self.assertEqual(task._entered_poster_templates, [])
+        self.assertEqual(task.clicks, [])
+        self.assertFalse(task._last_normal_attempt_recorded)
+
     def test_nearby_poster_grouping_stops_at_gap_limit(self):
         template = np.arange(60, dtype=np.uint8).reshape(6, 10)
         bars = [_bar(x, 25) for x in (50, 60, 70, 80, 100, 150)]
