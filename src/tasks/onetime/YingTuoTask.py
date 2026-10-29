@@ -555,7 +555,6 @@ class YingTuoTask(BattleMixin):
         ``leftmost_only`` 为真时只看最左侧海报下方的灰条，没有就直接结束，不滚动。
         """
         empty_scrolls = 0
-        attempts = 0
         self._last_normal_attempt_recorded = False
         while empty_scrolls < 4:
             bars, frame = self._detect_stable_bars()
@@ -588,7 +587,6 @@ class YingTuoTask(BattleMixin):
                 self.log_info(f"本屏有已进入的灰条组合，向下滚动 ({empty_scrolls}/4)")
                 self.scroll_relative(0.5, 0.5, -5)
                 continue
-            attempts += 1
             leftmost_bar, _ = candidates[0]
             frame_height, frame_width = frame.shape[:2]
             # 选择本屏第一条灰条时立即把整组近邻模板记为本轮已尝试：
@@ -597,18 +595,34 @@ class YingTuoTask(BattleMixin):
             self._entered_poster_templates.extend(group)
             self._last_normal_attempt_recorded = True
             self.log_info(f"选中第一条灰条，立即记录 {len(group)} 张相邻海报模板（本轮累计 {len(self._entered_poster_templates)} 张）")
-            self.click_relative(
-                leftmost_bar.center_x / frame_width,
-                leftmost_bar.center_y / frame_height,
-                after_sleep=0.25,
-            )
-            if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
-                return True
-            # 点满次数就报错，不再检测：此时画面不明，检测为空会走空滚动并误报任务完成。
-            if attempts >= self.CHALLENGE_CLICK_ATTEMPTS:
-                self.log_info("点击灰条后未进入关卡详情页")
-                raise YingTuoError("点击灰条后未进入关卡详情页")
-            self.log_info(f"点击灰条后未进入关卡详情页，重新检测 ({attempts}/{self.CHALLENGE_CLICK_ATTEMPTS})")
+            for attempt in range(1, self.CHALLENGE_CLICK_ATTEMPTS + 1):
+                self.click_relative(
+                    leftmost_bar.center_x / frame_width,
+                    leftmost_bar.center_y / frame_height,
+                    after_sleep=0.25,
+                )
+                if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
+                    return True
+                # 重试同一个候选灰条：不能重新进入全屏模板过滤，否则刚登记的
+                # 模板会命中自己并提前滚走，也不能改点另一张海报。
+                if attempt < self.CHALLENGE_CLICK_ATTEMPTS:
+                    self.log_info(f"点击灰条后未进入详情页，重新定位同一灰条 ({attempt}/{self.CHALLENGE_CLICK_ATTEMPTS})")
+                    retry_bars, retry_frame = self._detect_stable_bars()
+                    if not retry_bars:
+                        raise YingTuoError("重试时原灰条已消失，页面状态不明")
+                    nearest = min(
+                        retry_bars,
+                        key=lambda bar: abs(bar.center_x - leftmost_bar.center_x) + abs(bar.center_y - leftmost_bar.center_y),
+                    )
+                    if (
+                        abs(nearest.center_x - leftmost_bar.center_x) > retry_frame.shape[1] * 0.01
+                        or abs(nearest.center_y - leftmost_bar.center_y) > retry_frame.shape[0] * 0.01
+                    ):
+                        raise YingTuoError("重试时无法定位原灰条，防止点到其他海报")
+                    leftmost_bar = nearest
+                    frame_height, frame_width = retry_frame.shape[:2]
+            self.log_info("点击灰条后未进入关卡详情页")
+            raise YingTuoError("点击灰条后未进入关卡详情页")
         self.log_info("连续 4 次滚动未发现本轮可进入的灰条组合")
         return None
 
