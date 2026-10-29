@@ -1,24 +1,18 @@
 """批量添加好友（陌生人推荐）。
 
-移植自 `MaaEnd/MaaEnd <https://github.com/MaaEnd/MaaEnd>`_（AGPL-3.0）：
+流程与 MaaEnd 的 ``BatchAddFriends`` 陌生人分支一致：
 
-- 流程：``assets/resource/pipeline/BatchAddFriends.json`` 陌生人分支；
-- 场景导航：``assets/resource/pipeline/SceneManager/SceneMenu.json``；
-- 模板：``assets/resource/image/BatchAddFriends/``、``assets/resource/image/SceneManager/``。
-
-识别方式与其保持一致，未自造资源：
-
-1. 大世界左上角菜单按钮做模板匹配，**Alt + 左键**打开菜单（MaaEnd ``AutoAltClickAction``）；
-2. 菜单列表里 OCR「好友」并点击；
+1. 大世界左上角菜单按钮做模板匹配，**Alt + 左键**打开菜单；
+2. 菜单总列表里 OCR「好友」并点击；
 3. 好友菜单顶部模板匹配「添加好友」入口并点击；
 4. 陌生人列表右侧 OCR 定位可点的「添加好友」按钮，点一下发一个申请；
-5. 一屏没有按钮就下滑，滑到底再点「换一批」；
+5. 一屏没有按钮就继续下滑，滑到列表底部再点「换一批」；
 6. 每次点击后检查「好友列表已满」，满员提前结束。
 
-分辨率
-------
-所有 ROI 与手势坐标都按 **1280x720** 标定（MaaEnd 原值），因此本任务**仅支持 720P**：
-其它分辨率会在开始前提示并直接退出，不做任何点击，避免坐标错位误点。
+坐标
+----
+所有 ROI 都按 **1280x720** 标定，运行时按 ``screen_width / 1280`` 等比换算 ROI，
+模板也按同样比例缩放，因此在项目支持的 16:9 分辨率（1080P/2K 等）下同样可用。
 """
 
 import os
@@ -29,15 +23,15 @@ from qfluentwidgets import FluentIcon
 
 from src.tasks.mixin.common import Common
 
-#: ROI 标定基准；本任务只接受这个分辨率
+#: ROI 与模板的标定基准分辨率
 BASE_WIDTH = 1280
 BASE_HEIGHT = 720
 
-# ---- MaaEnd 原始 ROI（1280x720 基准）----
-#: 大世界左上角菜单按钮
-WORLD_MENU_ROI = (0, 0, 200, 200)
-#: 菜单总列表（左侧全高），里面有「好友」项
-MENU_LIST_ROI = (0, 0, 400, 720)
+# ---- MaaEnd 原始 ROI（1280x720 基准，负值表示从右/下边缘算）----
+#: 大世界菜单按钮（MaaEnd 原值 [-200,0,200,200]，右锚 → 1080）
+WORLD_MENU_ROI = (1080, 0, 200, 200)
+#: 菜单总列表（MaaEnd 原值 [-400,0,400,720]，右锚 → 880），里面有「好友」项
+MENU_LIST_ROI = (880, 0, 400, 720)
 #: 好友菜单顶部，含「添加好友」入口图标
 ADD_ENTRY_ROI = (620, 0, 200, 120)
 #: 陌生人列表右侧区域，每个条目「添加好友」按钮所在列
@@ -48,8 +42,10 @@ CHANGE_BATCH_ROI = (1151, 648, 55, 26)
 FRIEND_FULL_ROI = (481, 108, 304, 29)
 #: 添加好友页左上角标题
 ADD_PAGE_TITLE_ROI = (0, 0, 200, 60)
+#: 陌生人列表区域，用于判断是否已经滑到底
+LIST_REGION_ROI = (46, 114, 1052, 498)
 
-#: 模板根目录（取自 MaaEnd）
+#: 模板根目录
 TEMPLATE_ROOT = os.path.join("assets", "templates")
 #: 大世界菜单按钮模板
 WORLD_MENU_TEMPLATES = ("scene_manager/WorldMenu.png",)
@@ -58,8 +54,14 @@ ADD_ENTRY_TEMPLATES = (
     "batch_add_friends/addFriend.png",
     "batch_add_friends/addFriend2.png",
 )
-#: 模板匹配阈值（MaaEnd 原值 0.8）
+#: 模板匹配阈值
 TEMPLATE_THRESHOLD = 0.8
+#: 单批内最多下滑几次；到底后不再滑
+MAX_SCROLLS_PER_BATCH = 6
+#: 连续多少批一个都没加上就认为没有更多可添加的好友
+MAX_EMPTY_BATCHES = 3
+#: 列表到底的静帧相似度阈值
+LIST_COMPLETE_THRESHOLD = 0.98
 
 FRIEND_ITEM_TEXT = re.compile(r"好友|(?i:friends)|フレンド|친구")
 ADD_BUTTON_TEXT = re.compile(r"添加好友|新增好友|(?i:add\s*friend)|フレンド追加")
@@ -68,7 +70,7 @@ FRIEND_FULL_TEXT = re.compile(r"好友列表已满|好友列表已滿")
 
 
 class BatchAddFriendsTask(Common):
-    """陌生人推荐批量发送好友申请。仅支持 720P。"""
+    """陌生人推荐批量发送好友申请。"""
 
     CFG_MAX_COUNT = "最大添加数量"
     CFG_BATCH_LIMIT = "换一批前最大添加数"
@@ -79,9 +81,7 @@ class BatchAddFriendsTask(Common):
         self.icon = FluentIcon.PEOPLE
         self.group_name = "日常任务"
         self.group_icon = FluentIcon.CALENDAR
-        self.description = (
-            "自动批量发送好友申请（陌生人推荐）。注意：过于频繁的添加好友可能会造成游戏风控。仅支持 720P 分辨率。"
-        )
+        self.description = "自动批量发送好友申请（陌生人推荐）。注意：过于频繁的添加好友可能会造成游戏风控。"
         self.default_config.update({self.CFG_MAX_COUNT: 20, self.CFG_BATCH_LIMIT: 10})
         self.config_type[self.CFG_BATCH_LIMIT] = {"min": 0, "max": 200}
         self.config_description.update(
@@ -93,31 +93,18 @@ class BatchAddFriendsTask(Common):
             }
         )
         self._template_cache = {}
+        self._list_snapshot = None
 
     def run(self):
-        if not self.ensure_720p():
-            return
-        # 游戏可能还停在加载、剧情、弹窗或别的菜单上，先回大世界再导航，
-        # 否则三个候选（添加好友入口 / 好友菜单项 / 大世界菜单按钮）会全部匹配不到。
+        self._template_cache = {}
+        self._list_snapshot = None
+        self.log_info(f"当前分辨率 {self.screen_width}x{self.screen_height}，好友坐标按 1280x720 等比换算")
+        # 游戏可能还停在加载、剧情、弹窗或别的菜单上，先回大世界再导航。
         self.ensure_main(time_out=180)
         if not self.enter_friend_add_page():
             self.log_error(self.tr("未能进入「好友 → 添加好友」页面，已停止"))
             return
         self.add_strangers()
-
-    # ---------- 前置检查 ----------
-
-    def ensure_720p(self):
-        """ROI 全部按 1280x720 标定，其它分辨率不执行，避免误点。"""
-        width, height = self.screen_width, self.screen_height
-        if (width, height) == (BASE_WIDTH, BASE_HEIGHT):
-            return True
-        self.log_error(
-            self.tr("批量添加好友仅支持 720P（1280x720），当前分辨率 {width}x{height}").format(
-                width=width, height=height
-            )
-        )
-        return False
 
     # ---------- 场景导航 ----------
 
@@ -157,7 +144,7 @@ class BatchAddFriendsTask(Common):
         return self.on_add_page()
 
     def open_world_menu(self):
-        """大世界左上角菜单按钮：Alt + 左键打开菜单。"""
+        """大世界菜单按钮：Alt + 左键打开菜单。"""
         position = self.find_template(WORLD_MENU_ROI, WORLD_MENU_TEMPLATES)
         if position is None:
             return False
@@ -184,12 +171,13 @@ class BatchAddFriendsTask(Common):
         batch_limit = int(self.config.get(self.CFG_BATCH_LIMIT, 10) or 0)
         added = 0
         added_in_batch = 0
-        scrolled = False
+        empty_batches = 0
+        scrolls = 0
         while added < max_count and not self.exit_is_set():
             # 同一批加到上限就先换一批，避免把一批陌生人加穿导致风控
             if batch_limit and added_in_batch >= batch_limit and self.change_batch():
                 added_in_batch = 0
-                scrolled = False
+                scrolls = 0
                 self.sleep(1.5)
                 continue
             button = self.find_add_button()
@@ -197,24 +185,29 @@ class BatchAddFriendsTask(Common):
                 self.click_box(button, after_sleep=0.3)
                 added += 1
                 added_in_batch += 1
-                scrolled = False
+                scrolls = 0
+                empty_batches = 0
                 self.log_info(self.tr("已发送好友申请 {added}/{max}").format(added=added, max=max_count))
                 if self.friend_list_full():
                     self.log_info(self.tr("好友列表已满，提前结束"))
                     break
                 continue
-            if not scrolled:
-                # 当前屏没有，再往下滚一屏；仍没有才认为到底
-                scrolled = True
+            # 当前屏没有按钮：继续下滑，滑到底或判定到底后再换一批
+            if scrolls < MAX_SCROLLS_PER_BATCH and not self.list_at_bottom():
+                scrolls += 1
                 self.scroll_list()
                 continue
-            if self.change_batch():
-                added_in_batch = 0
-                scrolled = False
-                self.sleep(1.5)
-                continue
-            self.log_info(self.tr("陌生人列表里没有更多可添加的好友"))
-            break
+            if not self.change_batch():
+                self.log_info(self.tr("陌生人列表里没有更多可添加的好友"))
+                break
+            # 连续几批都一个没加上，说明确实没人可加了
+            empty_batches = empty_batches + 1 if added_in_batch == 0 else 0
+            if empty_batches >= MAX_EMPTY_BATCHES:
+                self.log_info(self.tr("连续 {count} 批都没有可添加的好友，提前结束").format(count=empty_batches))
+                break
+            added_in_batch = 0
+            scrolls = 0
+            self.sleep(1.5)
         if added == 0:
             self.log_info(self.tr("没有发送任何好友申请"))
         else:
@@ -239,9 +232,29 @@ class BatchAddFriendsTask(Common):
         return True
 
     def scroll_list(self):
-        """滚动陌生人列表：鼠标滚轮比拖拽可靠（维护组推荐用法）。"""
-        self.scroll_relative(0.5, 0.5, -1)
-        self.sleep(0.8)
+        """滚动陌生人列表：鼠标滚轮比拖拽可靠。"""
+        self.scroll_relative(0.5, 0.5, -3)
+        self.sleep(0.6)
+        self.wait_ui_stable(stable_time=0.4, max_wait=2, refresh_interval=0.3)
+
+    def list_at_bottom(self):
+        """与上一次快照比较列表区域，静止即认为到底。"""
+        frame = self.frame
+        if frame is None:
+            return False
+        box = self._roi(LIST_REGION_ROI)
+        crop = frame[box.y : box.y + box.height, box.x : box.x + box.width]
+        if crop.size == 0:
+            return False
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        previous = self._list_snapshot
+        self._list_snapshot = gray
+        if previous is None or previous.shape != gray.shape:
+            return False
+        score = float(cv2.matchTemplate(gray, previous, cv2.TM_CCOEFF_NORMED)[0][0])
+        return score >= LIST_COMPLETE_THRESHOLD
+
+    # ---------- 模板匹配 ----------
 
     def find_template(self, roi, relative_paths):
         """在 roi 内做模板匹配，返回命中中心点或 None。"""
@@ -249,24 +262,39 @@ class BatchAddFriendsTask(Common):
         frame = self.frame
         if frame is None:
             return None
-        crop = frame[box.y : box.y + box.height, box.x : box.x + box.width]
-        if crop.size == 0:
+        x0, y0 = max(box.x, 0), max(box.y, 0)
+        x1 = min(box.x + box.width, frame.shape[1])
+        y1 = min(box.y + box.height, frame.shape[0])
+        if x1 <= x0 or y1 <= y0:
             return None
+        crop = frame[y0:y1, x0:x1]
         best = None
         for relative_path in relative_paths:
             template = self.load_template(relative_path)
             if template is None:
                 continue
+            template = self.rescale_template(template)
             height, width = template.shape[:2]
             if height > crop.shape[0] or width > crop.shape[1]:
                 continue
             result = cv2.matchTemplate(crop, template, cv2.TM_CCOEFF_NORMED)
             _, score, _, location = cv2.minMaxLoc(result)
             if score >= TEMPLATE_THRESHOLD and (best is None or score > best[0]):
-                best = (score, box.x + location[0] + width // 2, box.y + location[1] + height // 2)
+                best = (score, x0 + location[0] + width // 2, y0 + location[1] + height // 2)
         if best is None:
             return None
         return best[1], best[2]
+
+    def rescale_template(self, template):
+        """模板按 1280x720 截图，运行时按当前宽度等比缩放。"""
+        scale = (self.screen_width or BASE_WIDTH) / BASE_WIDTH
+        if scale == 1:
+            return template
+        return cv2.resize(
+            template,
+            (max(1, round(template.shape[1] * scale)), max(1, round(template.shape[0] * scale))),
+            interpolation=cv2.INTER_CUBIC if scale > 1 else cv2.INTER_AREA,
+        )
 
     def load_template(self, relative_path):
         if relative_path not in self._template_cache:

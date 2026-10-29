@@ -53,6 +53,10 @@ SCENE_TEMPLATE_DIR = "scene_manager"
 THRESHOLD = 0.9
 
 # ---- 列表页(1280x720) ----
+#: 大世界菜单按钮（原值 [-200,0,200,200]，从右边缘算）
+WORLD_MENU_ROI = (1080, 0, 200, 200)
+#: 菜单总列表，里面有「好友」项（原值 [-400,0,400,720]，从右边缘算）
+MENU_LIST_ROI = (880, 0, 400, 720)
 #: 「已在好友列表」锚点
 ON_FRIEND_LIST_ROI = (0, 0, 191, 136)
 #: 好友列表滚动区域
@@ -285,13 +289,13 @@ class FriendVisitAdvancedMixin:
         for _ in range(4):
             if self.adv_in_friend_list() and self.adv_wait_list_loaded():
                 return True
-            menu = self.adv_find_one(f"{SCENE_TEMPLATE_DIR}/WorldMenu.png", self.adv_box((0, 0, 200, 200)))
+            menu = self.adv_find_one(f"{SCENE_TEMPLATE_DIR}/WorldMenu.png", self.adv_box(WORLD_MENU_ROI))
             if menu is not None:
                 self.log_info("打开大世界菜单")
                 self.adv_click_alt(menu)
                 self.sleep(1.5)
                 continue
-            friend_item = self.adv_find_text(self.adv_box((880, 0, 400, 720)), re.compile(r"好友"))
+            friend_item = self.adv_find_text(self.adv_box(MENU_LIST_ROI), re.compile(r"好友"))
             if friend_item is not None:
                 self.log_info("点击菜单里的「好友」")
                 self.click(friend_item, after_sleep=1.2)
