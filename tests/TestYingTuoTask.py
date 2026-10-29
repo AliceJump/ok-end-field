@@ -638,6 +638,26 @@ class TestYingTuoTask(unittest.TestCase):
         self.assertEqual(task.scroll_count, 0)
         self.assertEqual(task.clicks, [])
 
+    def test_animated_clipped_poster_stops_when_bar_positions_do_not_advance(self):
+        task = _FakeYingTuoTask()
+        task._detect_stable_bars = Mock(return_value=([_bar(198, 25)], task.frame))
+        task._scroll_poster_after_matching = Mock(return_value=True)
+        with self.assertRaisesRegex(YingTuoError, "连续三次滚动未推进"):
+            YingTuoTask.find_normal_challenge(task)
+        self.assertEqual(task._scroll_poster_after_matching.call_count, 3)
+        self.assertEqual(task.clicks, [])
+        self.assertEqual(task._entered_poster_templates, [])
+
+    def test_clipped_poster_progress_resets_consecutive_stall_count(self):
+        task = _FakeYingTuoTask()
+        task._detect_stable_bars = Mock(side_effect=[
+            ([_bar(x, 25)], task.frame) for x in (198, 198, 2, 2, 198, 198, 50)
+        ])
+        task._scroll_poster_after_matching = Mock(return_value=True)
+        self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task._scroll_poster_after_matching.call_count, 6)
+        self.assertEqual(task.clicks, [(0.25, 0.25, {"after_sleep": 0.25})])
+
     def test_nearby_poster_grouping_stops_at_gap_limit(self):
         template = np.arange(60, dtype=np.uint8).reshape(6, 10)
         bars = [_bar(x, 25) for x in (50, 60, 70, 80, 100, 150)]

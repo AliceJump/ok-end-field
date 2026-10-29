@@ -555,6 +555,8 @@ class YingTuoTask(BattleMixin):
         ``leftmost_only`` 为真时只看最左侧海报下方的灰条，没有就直接结束，不滚动。
         """
         empty_scrolls = 0
+        clipped_stalls = 0
+        previous_clipped_bars = None
         self._last_normal_attempt_recorded = False
         while empty_scrolls < 4:
             bars, frame = self._detect_stable_bars()
@@ -564,6 +566,8 @@ class YingTuoTask(BattleMixin):
                     self.log_info("最左侧海报没有未通关的普通关卡")
                     return None
             if not bars:
+                clipped_stalls = 0
+                previous_clipped_bars = None
                 empty_scrolls += 1
                 self.log_info(f"未检测到普通关卡灰条，继续向下滚动 ({empty_scrolls}/4)")
                 self.scroll_relative(0.5, 0.5, -5)
@@ -582,6 +586,8 @@ class YingTuoTask(BattleMixin):
                 candidates.append((bar, template))
             # 本屏只要出现任意已进入的灰条，就跳过整个屏幕，不点击其余候选。
             if has_entered_template:
+                clipped_stalls = 0
+                previous_clipped_bars = None
                 if leftmost_only:
                     self.log_info("最左侧活动海报本轮已尝试，不再挑战")
                     return None
@@ -591,6 +597,14 @@ class YingTuoTask(BattleMixin):
                     return None
                 continue
             if not candidates:
+                # 背景动画可能让画面差异一直为真，另用灰条位置约束连续无进展。
+                if previous_clipped_bars is not None and self._same_bars(previous_clipped_bars, bars, frame.shape[1]):
+                    clipped_stalls += 1
+                else:
+                    clipped_stalls = 0
+                previous_clipped_bars = bars
+                if clipped_stalls >= 3:
+                    raise YingTuoError("残缺海报灰条连续三次滚动未推进")
                 if not leftmost_only and self._scroll_poster_after_matching(frame):
                     continue
                 raise YingTuoError("灰条对应的海报模板均无法完整截取，页面状态不明")
