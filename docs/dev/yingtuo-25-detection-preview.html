@@ -1,0 +1,61 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>影拓丰碑 25.png | 实际灰条检测和动态模板烧录</title>
+<style>
+:root{font-family:system-ui,'Microsoft YaHei',sans-serif;color-scheme:dark;background:#0d131b;color:#e8eef6}*{box-sizing:border-box}body{margin:0;padding:24px}main{max-width:1550px;margin:auto}h1{font-size:24px;margin:0 0 5px}h2{font-size:17px;margin:0 0 12px}p{color:#bbcbd9;line-height:1.55}button,.file{padding:10px 14px;background:#22425b;color:#dff1ff;border:1px solid #53748c;border-radius:8px;font-size:14px;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.buttons{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:18px 0}.file input{display:none}.status{background:#17293a;border:1px solid #335068;border-radius:10px;padding:12px;color:#e1effe;margin:12px 0}.panel{background:#17222e;border:1px solid #355066;border-radius:12px;padding:15px;margin:12px 0}.canvas-wrap{overflow:auto;background:#09131c;border-radius:8px}#annotated{width:100%;display:block}#templates{display:grid;grid-template-columns:repeat(auto-fill,minmax(154px,1fr));gap:12px}.template{background:#111b26;border:1px solid #41566d;border-radius:9px;padding:10px}.template img{display:block;margin:auto;height:190px;max-width:100%;object-fit:contain;image-rendering:auto}.template strong{font-size:13px}.template span{display:block;color:#a9bdcf;font-size:12px}.key{font-size:13px;padding:7px}.c1{color:#ffbc53}.c2{color:#ff7f82}.c3{color:#53e4c9}.c4{color:#8ca1bb}code{color:#9dd9f9}.small{font-size:12px;color:#a5bbcd}#cvload{font-size:12px;color:#a7b9c9}
+</style></head><body><main><h1>影拓丰碑 · 25.png 实际检测与模板烧录</h1>
+<p>从主仓当前引用的 <code>ok_templates@e2fdfec34ec4</code> 读取原始 <code>25.png</code>。通过 OpenCV.js 执行与仓库 <code>detect_gray_bars(..., min_aspect_ratio=3.5)</code> 相同的检测条件。检测结果自动叠加到原图；每条识别的灰条都按中心裁剪 <code>70×191</code> 像素的海报纹理。</p>
+<div class="buttons"><button id="load">重新载入 GitHub 25.png</button><label class="file">选择本地 25.png<input type="file" id="file" accept="image/png,image/jpeg,image/webp"></label><button id="run" disabled>重新运行实际检测</button><button id="save" disabled>下载烧录检测图 PNG</button><button id="saveGroup" disabled>下载首组模板 PNG</button></div>
+<div class="status" id="status">等待原图与 OpenCV.js 加载……</div><div class="small" id="cvload">OpenCV.js 加载中（若 CDN 不通，可下载 HTML 后在有网络的浏览器打开）</div>
+<section class="panel"><h2>真实原图 / 算法检测结果</h2>
+<div class="canvas-wrap"><canvas id="annotated" width="1920" height="1080"></canvas></div>
+<div class="key"><span class="c1">▰ 黄色：检测 ROI</span>　<span class="c2">▰ 红色：算法找到的灰条</span>　<span class="c3">▰ 绿色：首条及同组邻近灰条模板</span>　<span class="c4">▰ 灰蓝色：其余候选模板</span></div>
+<p class="small">绿色框仅来自真实检出的灰条中心计算，非手工指定灰条。分组阈值：连续中心间距 ≤ 图宽 6%；相对第一条最大跨度 ≤ 图宽 23%。检测结果为单帧验证，不代表跨帧稳定识别或模板匹配准确率。</p>
+</section><section class="panel"><h2>实际截取到的每条动态模板（灰条中心向上）</h2><p>选择首条时，绿色组的全部模板都会加入本轮已尝试集合；这些都是原图真实像素的裁切，而非示意图。</p><div id="templates">等待检测</div></section><section class="panel"><h2>检测参数</h2><p id="metrics">尚未运行</p><p class="small">Y 检测区域为 [1077/1440, 1115/1440]；局部背景高斯模糊 σx=W×12/2560、σy=H×4/1440；正对比阈值 8/255；开运算 3×2、闭运算 3×1；候选宽度 34–78/1920，候选高度 3–12/1440；最小宽高比 3.5；内部 Lab L ≤180。点击 GitHub 原始图可查看源数据。若 OpenCV.js 加载失败，此页不会伪造检测结果。</p></section>
+<p class="small">原图：<a href="https://github.com/AliceJump/ok-end-field-x-anylabeling-asset/blob/e2fdfec34ec4ba4d01efcb8dca6608975477d812/25.png">GitHub 25.png</a> ｜ 所用任务：<a href="https://github.com/AliceJump/ok-end-field/pull/628">PR #628</a></p></main>
+<script>
+const URL_25='https://raw.githubusercontent.com/AliceJump/ok-end-field-x-anylabeling-asset/e2fdfec34ec4ba4d01efcb8dca6608975477d812/25.png';
+const el=x=>document.getElementById(x),canvas=el('annotated'),ctx=canvas.getContext('2d',{willReadFrequently:true});let source=null,bars=[],groupCount=0,cvReady=false,templates=[];
+function status(s){el('status').textContent=s}function download(c,name){c.toBlob(blob=>{if(!blob){status('导出失败：浏览器禁止读取跨域图片');return}const a=document.createElement('a');const u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)},'image/png')}
+function loadImage(url,local=false){status((local?'读取本地':'下载 GitHub')+' 25.png…');const i=new Image();if(!local)i.crossOrigin='anonymous';i.onload=()=>{source=i;canvas.width=i.naturalWidth;canvas.height=i.naturalHeight;ctx.drawImage(i,0,0,canvas.width,canvas.height);status(`载入成功：${i.naturalWidth}×${i.naturalHeight}，${cvReady?'开始检测':'等待 OpenCV.js'}`);if(cvReady)detect()};i.onerror=()=>status('图片加载失败。可使用「选择本地 25.png」；不会显示伪造检测结果。');i.src=url}
+function cvInit(){if(window.cv && typeof cv.Mat==='function'){cvReady=true;el('cvload').textContent='OpenCV.js 已就绪。';el('run').disabled=false;if(source)detect();return}if(window.cv&&typeof cv.then==='function'){cv.then(c=>{window.cv=c;cvInit()}).catch(e=>status('OpenCV 初始化失败：'+e));return}setTimeout(cvInit,250)}
+function runs(a){const out=[];let s=-1;for(let x=0;x<a.length;x++){if(a[x]&&s<0)s=x;if(!a[x]&&s>=0){out.push([s,x-1]);s=-1}}if(s>=0)out.push([s,a.length-1]);return out}
+function mergeRuns(arr,gap){const o=[];for(const [s,e] of arr){if(o.length&&s-o[o.length-1][1]-1<=gap)o[o.length-1][1]=e;else o.push([s,e])}return o}
+function ratioRange(lo,hi,n,pad=0){let a=Math.max(1,Math.round(lo*n));return [a,Math.max(a,Math.round(hi*n)+pad)]}
+function cvDetectBars(){const c=cv,H=canvas.height,W=canvas.width;
+  const y1=Math.trunc(H*1077/1440),y2=Math.trunc(H*1115/1440),x1=0,x2=W;
+  let src,roi,gray,rgb,light,bg,diff,mask,openKer,closeKer,tmp;
+  try{
+    ctx.clearRect(0,0,W,H);ctx.drawImage(source,0,0,W,H);src=c.imread(canvas);roi=src.roi(new c.Rect(x1,y1,x2-x1,y2-y1));gray=new c.Mat();rgb=new c.Mat();light=new c.Mat();bg=new c.Mat();diff=new c.Mat();mask=new c.Mat();tmp=new c.Mat();
+    c.cvtColor(roi,gray,c.COLOR_RGBA2GRAY);c.cvtColor(roi,rgb,c.COLOR_RGBA2RGB);c.cvtColor(rgb,light,c.COLOR_RGB2Lab);let channels=new c.MatVector();c.split(light,channels);const L=channels.get(0).clone();channels.delete();light.delete();light=L;
+    c.GaussianBlur(gray,bg,new c.Size(0,0),Math.max(1,W*12/2560),Math.max(1,H*4/1440),c.BORDER_DEFAULT);
+    c.subtract(gray,bg,diff);c.threshold(diff,mask,(8/255)*255-1e-5,255,c.THRESH_BINARY);
+    openKer=c.getStructuringElement(c.MORPH_RECT,new c.Size(3,2));closeKer=c.getStructuringElement(c.MORPH_RECT,new c.Size(3,1));
+    c.morphologyEx(mask,tmp,c.MORPH_OPEN,openKer);c.morphologyEx(tmp,mask,c.MORPH_CLOSE,closeKer);
+    const hh=mask.rows,ww=mask.cols,data=mask.data,Ldata=light.data,minVertical=Math.max(1,Math.round(3/1440*H));const candidates=new Uint8Array(ww);
+    for(let x=0;x<ww;x++){let ct=0;for(let y=0;y<hh;y++)if(data[y*ww+x])ct++;candidates[x]=ct>=minVertical?1:0}
+    const [minW,maxW]=ratioRange(34/1920,78/1920,W),[minH,maxH]=ratioRange(3/1440,12/1440,H,1);const gap=Math.round(2/2560*W),found=[];
+    for(const [s,e] of mergeRuns(runs(candidates),gap)){
+      const bw=e-s+1;if(bw<minW||bw>maxW)continue;let top=hh,bottom=-1;
+      for(let y=0;y<hh;y++){let any=false;for(let x=s;x<=e;x++){if(data[y*ww+x]){any=true;break}}if(any){top=Math.min(top,y);bottom=Math.max(bottom,y)}}
+      if(bottom<top)continue;const bh=bottom-top+1;if(bh<minH||bh>maxH||bw/bh<3.5)continue;
+      const ax=s+1,bx=Math.max(s+2,e),ay=top+1,by=Math.max(top+2,bottom);let total=0,num=0;
+      for(let y=ay;y<Math.min(by,hh);y++)for(let x=ax;x<Math.min(bx,ww);x++){total+=Ldata[y*ww+x];num++}
+      if(num===0||total/num>180)continue;
+      const x=x1+s,y=y1+top;found.push({x,y,width:bw,height:bh,center_x:x+bw/2,center_y:y+bh/2})
+    }
+    return found.sort((a,b)=>a.x-b.x)
+  }finally{for(const obj of [src,roi,gray,rgb,light,bg,diff,mask,openKer,closeKer,tmp])if(obj&&obj.delete)obj.delete()}
+}
+function cropBounds(bar){const W=canvas.width,H=canvas.height;const half=Math.max(2,Math.round(W*35/1920));const cx=Math.round(bar.center_x),cy=Math.round(bar.center_y);return {x1:cx-half,x2:cx+half,y1:Math.round(cy-H*266/1080),y2:Math.round(cy-H*75/1080)}}
+function label(text,x,y,color){ctx.font=`bold ${Math.max(12,Math.round(canvas.width/100))}px system-ui`;ctx.lineWidth=4;ctx.strokeStyle='#001522';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y)}
+function detect(){if(!source||!cvReady)return;status('OpenCV.js 运行实际灰条检测中…');const start=performance.now();try{bars=cvDetectBars()}catch(e){status('检测函数出错（未生成假框）：'+(e.message||e));return}
+ const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.drawImage(source,0,0,W,H);ctx.fillStyle='rgba(255,186,69,.075)';ctx.fillRect(0,Math.floor(H*1077/1440),W,Math.floor(H*1115/1440)-Math.floor(H*1077/1440));ctx.strokeStyle='#ffbc53';ctx.lineWidth=Math.max(2,Math.round(W/700));ctx.strokeRect(1,Math.floor(H*1077/1440),W-2,Math.floor(H*1115/1440)-Math.floor(H*1077/1440));
+ groupCount=0;let prev=null;for(const bar of bars){if(prev!==null&&(bar.center_x-prev>W*.06||bar.center_x-bars[0].center_x>W*.23))break;groupCount++;prev=bar.center_x}
+ templates=[];const cards=[];bars.forEach((bar,i)=>{const b=cropBounds(bar),selected=i<groupCount,color=selected?'#53e4c9':'#899eb9';ctx.strokeStyle='#ff8080';ctx.lineWidth=3;ctx.strokeRect(bar.x,bar.y,bar.width,bar.height);ctx.strokeStyle=color;ctx.lineWidth=selected?4:2;const valid=b.x1>=0&&b.y1>=0&&b.x2<=W&&b.y2<=H&&b.x2>b.x1&&b.y2>b.y1;if(valid){ctx.strokeRect(b.x1,b.y1,b.x2-b.x1,b.y2-b.y1);label(`#${i+1} ${selected?'RECORDED':'OTHER'}`,b.x1,Math.max(22,b.y1-7),color);const c=document.createElement('canvas');c.width=b.x2-b.x1;c.height=b.y2-b.y1;c.getContext('2d').drawImage(source,b.x1,b.y1,c.width,c.height,0,0,c.width,c.height);templates.push({canvas:c,selected,index:i+1,bar});const node=document.createElement('div');node.className='template';const name=document.createElement('strong');name.textContent=`#${i+1} ${selected?'✓ 选中时立即加入':'候选但不加入'}`;const desc=document.createElement('span');desc.textContent=`中心 (${bar.center_x.toFixed(1)}, ${bar.center_y.toFixed(1)})`;const img=document.createElement('img');img.src=c.toDataURL('image/png');img.alt='25.png 实际裁剪模板 '+(i+1);const btn=document.createElement('button');btn.textContent='下载此模板';btn.onclick=()=>download(c,'yingtuo_25_template_'+String(i+1).padStart(2,'0')+'.png');node.append(name,img,desc,btn);cards.push(node)}else{label('invalid crop #'+(i+1),bar.x,Math.max(20,bar.y-10),'#ff5252')}});
+ const area=el('templates');area.replaceChildren(...cards);if(!bars.length)area.textContent='该截图实际未检测到灰条：没有裁剪模板。可核对图上检测带位置与图像分辨率。';
+ const ms=(performance.now()-start).toFixed(1);el('metrics').textContent=`源图 ${W}×${H}；OpenCV.js 检出 ${bars.length} 条灰条；首组相邻记录 ${groupCount} 条；模板实际可截 ${templates.length} 张；浏览器检测+绘图耗时 ${ms}ms。`;
+ status(`检测完成：${bars.length} 条灰条，首组 ${groupCount} 条纳入本轮记录；${ms}ms。此处为图 25 的真实像素与实际算法输出。`);el('save').disabled=false;el('saveGroup').disabled=!templates.some(x=>x.selected)
+}
+el('save').onclick=()=>download(canvas,'yingtuo_25_detected_burned.png');el('saveGroup').onclick=()=>{let n=0;for(const t of templates.filter(x=>x.selected)){setTimeout(()=>download(t.canvas,'yingtuo_25_selected_template_'+t.index+'.png'),n++*350)}};el('run').onclick=detect;el('load').onclick=()=>loadImage(URL_25+'?v='+Date.now());el('file').onchange=e=>{const f=e.target.files?.[0];if(f)loadImage(URL.createObjectURL(f),true)};
+function awaitCv(){const v=window.cv;if(v&&typeof v.Mat==='function')return cvInit();if(v&&typeof v.then==='function')return cvInit();setTimeout(awaitCv,350)};loadImage(URL_25);awaitCv();
+</script><script src="https://docs.opencv.org/4.x/opencv.js" async></script></body></html>
