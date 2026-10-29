@@ -379,6 +379,23 @@ class TestYingTuoReward(unittest.TestCase):
         task.challenge_normal_stages.assert_called_once_with(leftmost_only=True)
         self.assertIn("未跑完", _last_log(task))
 
+    def test_unfinished_or_abandoned_challenges_return_false_to_daily_runner(self):
+        for finished, abandoned in ((False, 0), (False, 2), (True, 2)):
+            with self.subTest(finished=finished, abandoned=abandoned):
+                task = _mock_task()
+                task.check_activity_tasks.return_value = (CARD_CLAIMED, False)
+                task.enter_yingtuo.return_value = True
+                def challenge(finished=finished, abandoned=abandoned):
+                    task._abandoned_normal_challenges = abandoned
+                    return finished
+                task.challenge_normal_stages.side_effect = challenge
+                self.assertIs(YingTuoTask.run.__wrapped__(task), False)
+                if abandoned:
+                    task.mark_task_failure.assert_called_once()
+                    self.assertIn("2", task.mark_task_failure.call_args.args[0])
+                else:
+                    task.mark_task_failure.assert_not_called()
+
     def test_stage_c_still_runs_when_challenge_fails(self):
         # 挑战中途画面不对同样要先领奖；失败只记给日常汇总，不中断一键日常的后续任务
         task = _mock_task()

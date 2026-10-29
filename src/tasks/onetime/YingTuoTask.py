@@ -113,11 +113,13 @@ class YingTuoTask(BattleMixin):
             finished = self.challenge_normal_stages()
         if not finished:
             self.log_info("影拓丰碑挑战未跑完，剩余关卡留待下次", notify=True)
-        elif self._abandoned_normal_challenges:
+        if self._abandoned_normal_challenges:
             self.mark_task_failure(
                 f"本轮 {self._abandoned_normal_challenges} 个已进入组合未正常完成，已跳过并尝试其他组合"
             )
-        elif state == CARD_UNFINISHED:
+        if not finished or self._abandoned_normal_challenges:
+            return False
+        if state == CARD_UNFINISHED:
             self.log_info("影拓丰碑关卡已打完，活动任务仍有未完成项，需手动处理", notify=True)
         elif state == CARD_CLAIMABLE:
             self.log_info("影拓丰碑活动奖励未领完，需手动领取", notify=True)
