@@ -20,7 +20,11 @@ function loadImage(url,local=false){status((local?'读取本地':'下载 GitHub'
 function cvInit(){if(window.cv && typeof cv.Mat==='function'){cvReady=true;el('cvload').textContent='OpenCV.js 已就绪。';el('run').disabled=false;if(source)detect();return}if(window.cv&&typeof cv.then==='function'){cv.then(c=>{window.cv=c;cvInit()}).catch(e=>status('OpenCV 初始化失败：'+e));return}setTimeout(cvInit,250)}
 function runs(a){const out=[];let s=-1;for(let x=0;x<a.length;x++){if(a[x]&&s<0)s=x;if(!a[x]&&s>=0){out.push([s,x-1]);s=-1}}if(s>=0)out.push([s,a.length-1]);return out}
 function mergeRuns(arr,gap){const o=[];for(const [s,e] of arr){if(o.length&&s-o[o.length-1][1]-1<=gap)o[o.length-1][1]=e;else o.push([s,e])}return o}
-function ratioRange(lo,hi,n,pad=0){let a=Math.max(1,Math.round(lo*n));return [a,Math.max(a,Math.round(hi*n)+pad)]}
+function roundHalfEven(value){
+  const lower=Math.floor(value);
+  return value-lower===0.5 ? lower+(lower%2) : Math.round(value);
+}
+function ratioRange(lo,hi,n,pad=0,roundMinimum=Math.round){let a=Math.max(1,roundMinimum(lo*n));return [a,Math.max(a,Math.round(hi*n)+pad)]}
 function cvDetectBars(){const c=cv,H=canvas.height,W=canvas.width;
   const y1=Math.trunc(H*1077/1440),y2=Math.trunc(H*1115/1440),x1=0,x2=W;
   let src,roi,gray,rgb,light,bg,diff,mask,openKer,closeKer,tmp;
@@ -33,7 +37,7 @@ function cvDetectBars(){const c=cv,H=canvas.height,W=canvas.width;
     c.morphologyEx(mask,tmp,c.MORPH_OPEN,openKer);c.morphologyEx(tmp,mask,c.MORPH_CLOSE,closeKer);
     const hh=mask.rows,ww=mask.cols,data=mask.data,Ldata=light.data,minVertical=Math.max(1,Math.round(3/1440*H));const candidates=new Uint8Array(ww);
     for(let x=0;x<ww;x++){let ct=0;for(let y=0;y<hh;y++)if(data[y*ww+x])ct++;candidates[x]=ct>=minVertical?1:0}
-    const [minW,maxW]=ratioRange(30/1920,78/1920,W),[minH,maxH]=ratioRange(3/1440,12/1440,H,1);const gap=Math.round(2/2560*W),found=[];
+    const [minW,maxW]=ratioRange(30/1920,78/1920,W,0,roundHalfEven),[minH,maxH]=ratioRange(3/1440,12/1440,H,1);const gap=Math.round(2/2560*W),found=[];
     for(const [s,e] of mergeRuns(runs(candidates),gap)){
       const bw=e-s+1;if(bw<minW||bw>maxW)continue;let top=hh,bottom=-1;
       for(let y=0;y<hh;y++){let any=false;for(let x=s;x<=e;x++){if(data[y*ww+x]){any=true;break}}if(any){top=Math.min(top,y);bottom=Math.max(bottom,y)}}

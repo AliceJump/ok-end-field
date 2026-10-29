@@ -619,6 +619,24 @@ class TestYingTuoTask(unittest.TestCase):
         self.assertEqual(task._entered_poster_templates, [])
         self.assertEqual(task.clicks, [])
         self.assertFalse(task._last_normal_attempt_recorded)
+        self.assertEqual(task.scroll_count, 2)
+
+    def test_incomplete_poster_scrolls_to_complete_candidate(self):
+        task = _FakeYingTuoTask()
+        task._detect_stable_bars = Mock(side_effect=[([_bar(198, 25)], task.frame), ([_bar(50, 25)], task.frame)])
+        task._scroll_poster_after_matching = Mock(return_value=True)
+        self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        task._scroll_poster_after_matching.assert_called_once_with(task.frame)
+        self.assertEqual(len(task._entered_poster_templates), 1)
+        self.assertEqual(task.clicks, [(0.25, 0.25, {"after_sleep": 0.25})])
+
+    def test_leftmost_only_incomplete_poster_does_not_scroll_to_other_posters(self):
+        task = _FakeYingTuoTask()
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(2, 25)]):
+            with self.assertRaisesRegex(YingTuoError, "均无法完整截取"):
+                YingTuoTask.find_normal_challenge(task, leftmost_only=True)
+        self.assertEqual(task.scroll_count, 0)
+        self.assertEqual(task.clicks, [])
 
     def test_nearby_poster_grouping_stops_at_gap_limit(self):
         template = np.arange(60, dtype=np.uint8).reshape(6, 10)

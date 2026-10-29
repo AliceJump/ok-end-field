@@ -591,6 +591,8 @@ class YingTuoTask(BattleMixin):
                     return None
                 continue
             if not candidates:
+                if not leftmost_only and self._scroll_poster_after_matching(frame):
+                    continue
                 raise YingTuoError("灰条对应的海报模板均无法完整截取，页面状态不明")
             leftmost_bar, _ = candidates[0]
             frame_height, frame_width = frame.shape[:2]
@@ -606,7 +608,7 @@ class YingTuoTask(BattleMixin):
         return None
 
     def _scroll_poster_after_matching(self, before_frame):
-        """已尝试模板只触发向下滚动；是否到页尾根据真实画面变化判断。
+        """已尝试或残缺海报向下滚动；是否到页尾根据真实画面变化判断。
 
         不消耗没有灰条的四次滚动预算。连续两次向下滚动后海报区域仍
         没有明显变化，视为到达末尾/卡住，不无限循环。
