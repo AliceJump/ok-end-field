@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
@@ -9,11 +11,13 @@ from src.tasks.onetime.FriendVisitAdvanced import FriendVisitAdvancedMixin
 class CreditCollectTask(FriendVisitAdvancedMixin, Common):
     """收信用子任务：好友帝江号交流助力并收取信用，日常任务经 DailyFeature 接入。"""
 
-    CFG_ADVANCED = "高级拜访（移植 MaaEnd）"
+    CFG_ADVANCED = "高级拜访"
     CFG_ASSIST_TARGETS = "助力舱室"
     CFG_REMARK_ONLY = "只拜访有备注的好友"
     CFG_PRIORITY = "优先拜访名单"
     CFG_MAX_VISITS = "最大拜访次数"
+    #: 早期版本把来源写进了键名，改成中性名称后把旧值搬过来
+    config_key_migrations: ClassVar = {"高级拜访（移植 MaaEnd）": CFG_ADVANCED}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -55,7 +59,7 @@ class CreditCollectTask(FriendVisitAdvancedMixin, Common):
                     "若选项开启，则优先尝试仅助力好友「帝江号」上的「培养仓」。\n如果不能，至少助力一次其它舱室。"
                 ),
                 self.CFG_ADVANCED: (
-                    "开启后改走移植自 MaaEnd 的高级拜访：\n"
+                    "开启后改走高阶拜访：\n"
                     "以列表右上角的「助力 / 情报交流」剩余次数决定何时停止，"
                     "进船后在访客终端依次做情报交流与所选舱室助力，并支持快速拜访下一位。\n"
                     "关闭时保持原有拜访逻辑不变。仅适配简体中文界面。"
