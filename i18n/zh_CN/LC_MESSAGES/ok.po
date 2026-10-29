@@ -3494,3 +3494,6 @@ msgstr ""
 
 msgid "是否前往「贵重品库/武器基质」分解全部可分解基质，直到无可分解。"
 msgstr "是否前往「贵重品库/武器基质」分解全部可分解基质，直到无可分解。"
+
+msgid "Game path does not exist, Please open game manually!"
+msgstr "The game path is not recorded yet. Please open the game manually once; the app will detect the window and remember the path automatically, so no manual configuration is needed."
