@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import ClassVar
 
-from ok.util.color import calculate_color_percentage
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
@@ -22,7 +21,6 @@ class CollectResult(Enum):
 class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
     # 地点页签选中时是近白底、未选中近黑，按浅色像素占比判断，不依赖 OCR
     WULING_TAB_BOX = (0.765, 0.896, 0.856, 0.939)
-    WULING_TAB_CENTER = (0.810, 0.918)
     TAB_SELECTED_COLOR: ClassVar[dict] = {"r": (180, 255), "g": (180, 255), "b": (180, 255)}
 
     def __init__(self, *args, **kwargs):
@@ -53,11 +51,15 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
 
         self.wait_ui_stable()
         self.log_info("切换到武陵地图")
-        if not self._wuling_tab_selected():
-            self.click(*self.WULING_TAB_CENTER, after_sleep=1)
-            if not self.wait_until(self._wuling_tab_selected, time_out=5, raise_if_not_found=False):
-                self.mark_task_failure("切换到武陵地图失败")
-                return False
+        if not self.click_until_color(
+            self.TAB_SELECTED_COLOR,
+            self.box_of_screen(*self.WULING_TAB_BOX),
+            threshold=0.5,
+            time_out=5,
+            raise_if_not_found=False,
+        ):
+            self.mark_task_failure("切换到武陵地图失败")
+            return False
         self.wait_ui_stable()
 
         self.log_info("进入『祀的画』")
@@ -115,15 +117,6 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
             return False
         self.wait_ui_stable()
         return self._collect_to_wuling_warehouse("自动农植机")
-
-    def _wuling_tab_selected(self):
-        """当前地图是否已切到武陵。
-
-        Returns:
-            bool: 武陵页签为选中态返回 True。
-        """
-        box = self.box_of_screen(*self.WULING_TAB_BOX)
-        return calculate_color_percentage(self.frame, self.TAB_SELECTED_COLOR, box) > 0.5
 
     def _collect_to_wuling_warehouse(self, source_name, max_misses=2, max_batches=3):
         """反复点「存至武陵仓库」，直到确认框不再出现。
