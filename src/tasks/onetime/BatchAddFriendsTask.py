@@ -48,9 +48,6 @@ CHANGE_BATCH_ROI = (1151, 648, 55, 26)
 FRIEND_FULL_ROI = (481, 108, 304, 29)
 #: 添加好友页左上角标题
 ADD_PAGE_TITLE_ROI = (0, 0, 200, 60)
-#: 列表下滑手势
-SWIPE_FROM = (640, 560)
-SWIPE_TO = (640, 220)
 
 #: 模板根目录（取自 MaaEnd）
 TEMPLATE_ROOT = os.path.join("assets", "templates")
@@ -161,25 +158,25 @@ class BatchAddFriendsTask(Common):
     def add_strangers(self):
         max_count = int(self.config.get(self.CFG_MAX_COUNT, 20))
         added = 0
-        swiped = False
+        scrolled = False
         while added < max_count and not self.exit_is_set():
             button = self.find_add_button()
             if button is not None:
                 self.click_box(button, after_sleep=0.3)
                 added += 1
-                swiped = False
+                scrolled = False
                 self.log_info(self.tr("已发送好友申请 {added}/{max}").format(added=added, max=max_count))
                 if self.friend_list_full():
                     self.log_info(self.tr("好友列表已满，提前结束"))
                     break
                 continue
-            if not swiped:
-                # 当前屏没有，再往下看一屏；仍没有才认为到底
-                swiped = True
-                self.swipe_list()
+            if not scrolled:
+                # 当前屏没有，再往下滚一屏；仍没有才认为到底
+                scrolled = True
+                self.scroll_list()
                 continue
             if self.change_batch():
-                swiped = False
+                scrolled = False
                 self.sleep(1.5)
                 continue
             self.log_info(self.tr("陌生人列表里没有更多可添加的好友"))
@@ -207,10 +204,10 @@ class BatchAddFriendsTask(Common):
         self.click_box(results[0], after_sleep=0)
         return True
 
-    def swipe_list(self):
-        start = self._point(*SWIPE_FROM)
-        end = self._point(*SWIPE_TO)
-        self.swipe(start[0], start[1], end[0], end[1], duration=0.8, after_sleep=1)
+    def scroll_list(self):
+        """滚动陌生人列表：鼠标滚轮比拖拽可靠（维护组推荐用法）。"""
+        self.scroll_relative(0.5, 0.5, -1)
+        self.sleep(0.8)
 
     def find_template(self, roi, relative_paths):
         """在 roi 内做模板匹配，返回命中中心点或 None。"""
@@ -247,14 +244,3 @@ class BatchAddFriendsTask(Common):
     def _roi(self, roi):
         x, y, width, height = roi
         return self.box_of_screen_scaled(BASE_WIDTH, BASE_HEIGHT, x, y, width_original=width, height_original=height)
-
-    def _point(self, x, y):
-        """按 1280x720 基准换算成当前分辨率的像素点。
-
-        注意不能用 ``box_of_screen_scaled``：只传起点时它的 to_x/to_y 为 0，
-        会算出负宽高并抛 "width and height must be greater than zero"。
-        """
-        return (
-            round(x * self.screen_width / BASE_WIDTH),
-            round(y * self.screen_height / BASE_HEIGHT),
-        )
