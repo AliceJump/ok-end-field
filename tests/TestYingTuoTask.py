@@ -692,6 +692,47 @@ class TestYingTuoTask(unittest.TestCase):
         # 连续两次滚动后海报仍无变化，而非消耗四次无灰条预算。
         self.assertEqual(task.scroll_count, 2)
 
+    def test_animated_matched_posters_stop_when_positions_do_not_advance(self):
+        task = _FakeYingTuoTask()
+        task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
+        task._detect_stable_bars = Mock(return_value=([_bar(50, 25)], task.frame))
+        task._scroll_poster_after_matching = Mock(return_value=True)
+        self.assertIsNone(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task._scroll_poster_after_matching.call_count, 6)
+        self.assertFalse(task._normal_scan_incomplete)
+        self.assertEqual(task.clicks, [])
+
+    def test_matched_position_progress_keeps_scanning_beyond_empty_budget(self):
+        task = _FakeYingTuoTask()
+        task._entered_poster_templates = [crop_poster_template(task.frame, x, 25) for x in (50, 60)]
+        task._detect_stable_bars = Mock(side_effect=[
+            ([_bar(x, 25)], task.frame) for x in [50, 60] * 5 + [150]
+        ])
+        task._scroll_poster_after_matching = Mock(return_value=True)
+        self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task._scroll_poster_after_matching.call_count, 10)
+        self.assertEqual(task.clicks, [(0.75, 0.25, {"after_sleep": 0.25})])
+
+    def test_mixed_stalled_screen_reports_incomplete_without_clicking_unseen_poster(self):
+        task = _FakeYingTuoTask()
+        task._entered_poster_templates = [crop_poster_template(task.frame, x, 25) for x in (50, 60)]
+        task.find_normal_challenge = lambda leftmost=False: YingTuoTask.find_normal_challenge(task, leftmost)
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(60, 25), _bar(150, 25)]):
+            self.assertFalse(YingTuoTask.challenge_normal_stages(task))
+        self.assertTrue(task._normal_scan_incomplete)
+        self.assertEqual(task.clicks, [])
+        self.assertEqual(len(task._entered_poster_templates), 2)
+
+    def test_all_recorded_stalled_screen_clears_old_incomplete_flag_and_completes(self):
+        task = _FakeYingTuoTask()
+        task._normal_scan_incomplete = True
+        task._entered_poster_templates = [crop_poster_template(task.frame, x, 25) for x in (50, 60, 150)]
+        task.find_normal_challenge = lambda leftmost=False: YingTuoTask.find_normal_challenge(task, leftmost)
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(60, 25), _bar(150, 25)]):
+            self.assertTrue(YingTuoTask.challenge_normal_stages(task))
+        self.assertFalse(task._normal_scan_incomplete)
+        self.assertEqual(task.clicks, [])
+
 
     def test_when_all_visible_gray_bars_entered_scrolls(self):
         task = _FakeYingTuoTask()
