@@ -1,8 +1,12 @@
+import ast
 import unittest
+from pathlib import Path
 
 from ok.feature.Box import Box
 
 from src.tasks.onetime.BatchAddFriendsTask import BatchAddFriendsTask
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class _AddHarness(BatchAddFriendsTask):
@@ -83,6 +87,27 @@ class TestAddStrangersCounting(unittest.TestCase):
         messages = [message for _, message in task.logs]
         self.assertTrue(any("已发送好友申请 2/20" in message for message in messages))
         self.assertTrue(any("共发送 2 个好友申请" in message for message in messages))
+
+
+class TestTaskRegistration(unittest.TestCase):
+    def test_batch_friend_tasks_are_appended_last(self):
+        """新任务必须追加在 onetime_tasks 末尾：`-t` 是按 1 起算的列表序号。"""
+        config_text = (_REPO_ROOT / "src" / "config.py").read_text(encoding="utf-8")
+        tasks = None
+        for node in ast.walk(ast.parse(config_text)):
+            if not isinstance(node, ast.Dict):
+                continue
+            for key, value in zip(node.keys, node.values, strict=True):
+                if isinstance(key, ast.Constant) and key.value == "onetime_tasks":
+                    tasks = [ast.literal_eval(item) for item in value.elts]
+        self.assertIsNotNone(tasks)
+        self.assertEqual(
+            tasks[-2:],
+            [
+                ["src.tasks.onetime.BatchAddFriendsTask", "BatchAddFriendsTask"],
+                ["src.tasks.onetime.BatchRemarkFriendsTask", "BatchRemarkFriendsTask"],
+            ],
+        )
 
 
 if __name__ == "__main__":

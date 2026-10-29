@@ -180,6 +180,38 @@ class TestRemarkTextHandling(unittest.TestCase):
         self.assertEqual(task._rows[0]["key"], "甲#1")
 
 
+class _ReadbackHarness(BatchRemarkFriendsTask):
+    """remark_text_visible 只认输入框里的完整备注文本。"""
+
+    screen_width = 1280
+    screen_height = 720
+    frame = None
+
+    def __init__(self, ocr_text):
+        self.config = {}
+        self._visit_templates = {}
+        self._list_snapshot = None
+        self._ocr_text = ocr_text
+
+    def adv_box(self, roi):
+        return Box(0, 0, 10, 10)
+
+    def adv_find_text(self, box, pattern, threshold=0.6):
+        # 与 ok 的 OCR 一致：用 match 正则去搜索识别到的整行文本
+        return Box(0, 0, 10, 10, name=self._ocr_text) if pattern.search(self._ocr_text) else None
+
+
+class TestRemarkTextReadback(unittest.TestCase):
+    def test_full_remark_is_recognized(self):
+        self.assertTrue(_ReadbackHarness("自动1").remark_text_visible("自动1"))
+
+    def test_placeholder_text_is_not_accepted_as_input(self):
+        self.assertFalse(_ReadbackHarness("请输入备注").remark_text_visible("自动1"))
+
+    def test_longer_text_does_not_count_as_full_match(self):
+        self.assertFalse(_ReadbackHarness("自动12").remark_text_visible("自动1"))
+
+
 class TestRowClueAvailable(unittest.TestCase):
     def test_uses_module_level_offset_constant(self):
         task = _ClueHarness()

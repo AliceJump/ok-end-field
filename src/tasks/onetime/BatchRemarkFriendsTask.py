@@ -41,8 +41,6 @@ MAX_ROUNDS = 300
 
 TEXT_REMARK = re.compile(r"备注")
 TEXT_CONFIRM = re.compile(r"^(确定|确认|保存|完成)$")
-#: 回读备注输入框时用「任意非空白字符」判断框里是否已经有文本
-TEXT_ANY_CHAR = re.compile(r"\S")
 
 
 class FriendListLostError(RuntimeError):
@@ -161,7 +159,9 @@ class BatchRemarkFriendsTask(FriendVisitAdvancedMixin, Common):
         applied = False
         try:
             if self.open_remark_editor():
-                applied = self.input_remark_text(remark) and self.confirm_remark()
+                # 回读只决定走不走剪贴板兜底；是否写成功以回到列表后的检查为准
+                self.input_remark_text(remark)
+                applied = self.confirm_remark()
         finally:
             # 打开备注入口也可能失败：无论成败都要关掉好友资料页再扫列表
             returned = self.back_to_friend_list()
@@ -199,25 +199,34 @@ class BatchRemarkFriendsTask(FriendVisitAdvancedMixin, Common):
         return False
 
     def input_remark_text(self, remark):
-        """把备注写进输入框，返回是否确认已写入。
+        """把备注写进输入框；返回 OCR 是否回读到完整备注。
 
         主路径用 ``input_text``：ok 的 PostMessageInteraction 以 WM_CHAR 逐字把文本
-        投递给游戏窗口，支持中文，也不要求游戏在前台。回读不到文本时才退回剪贴板
+        投递给游戏窗口，支持中文，也不要求游戏在前台。回读不到完整备注时才退回剪贴板
         粘贴，并在粘贴前把游戏窗口切到前台，避免按键落到用户正在使用的其它应用。
         备注框对「无备注好友」本来就是空的，主路径不需要清空操作。
+
+        回读结果只用于选择输入路径：OCR 对用户自定义文本（符号、生僻字）并不可靠，
+        备注是否真的写进游戏以 ``remark_one`` 回到列表后的检查为准。
         """
         self.click(self.adv_box(REMARK_INPUT_ROI), after_sleep=0.6)
         self.input_text(remark)
         self.sleep(0.6)
-        if self.remark_text_visible():
+        if self.remark_text_visible(remark):
             return True
-        self.log_warning("备注输入框回读不到文本，改用剪贴板粘贴")
-        return self.paste_remark_text(remark)
+        self.log_warning("备注输入框回读不到完整备注，改用剪贴板粘贴")
+        if self.paste_remark_text(remark):
+            return True
+        self.log_warning("粘贴后仍回读不到完整备注，继续确认，最终以好友列表里的备注为准")
+        return False
 
-    def remark_text_visible(self):
-        """OCR 回读备注输入框：能看到文本即视为输入已生效。"""
-        result = self.adv_find_text(self.adv_box(REMARK_INPUT_ROI), TEXT_ANY_CHAR, 0.5)
-        return result is not None and bool(str(result.name).strip())
+    def remark_text_visible(self, remark):
+        """OCR 回读备注输入框：读到完整备注文本才视为输入已生效。"""
+        target = remark.strip()
+        if not target:
+            return False
+        pattern = re.compile(r"^\s*" + re.escape(target) + r"\s*$")
+        return self.adv_find_text(self.adv_box(REMARK_INPUT_ROI), pattern, 0.5) is not None
 
     def paste_remark_text(self, remark):
         """剪贴板兜底：先确认游戏已在前台，再用 pyautogui 粘贴（支持中文）。"""
@@ -237,7 +246,7 @@ class BatchRemarkFriendsTask(FriendVisitAdvancedMixin, Common):
         self.sleep(0.2)
         pyautogui.hotkey("ctrl", "v")
         self.sleep(0.6)
-        return self.remark_text_visible()
+        return self.remark_text_visible(remark)
 
     def game_window_in_foreground(self):
         """游戏窗口当前是否是系统前台窗口。"""
