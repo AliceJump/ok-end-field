@@ -2,16 +2,18 @@
 
 移植自 `MaaEnd/MaaEnd <https://github.com/MaaEnd/MaaEnd>`_（AGPL-3.0）：
 
-- 流程来自 ``assets/resource/pipeline/BatchAddFriends.json`` 的陌生人分支；
-- 入口模板 ``addFriend.png`` / ``addFriend2.png`` 取自
-  ``assets/resource/image/BatchAddFriends/``（同为 AGPL-3.0）。
+- 流程：``assets/resource/pipeline/BatchAddFriends.json`` 陌生人分支；
+- 场景导航：``assets/resource/pipeline/SceneManager/SceneMenu.json``；
+- 模板：``assets/resource/image/BatchAddFriends/``、``assets/resource/image/SceneManager/``。
 
-识别方式与 MaaEnd 一致，不额外造模板：
+识别方式与其保持一致，未自造资源：
 
-- 在好友菜单顶部用模板匹配点「添加好友」入口；
-- 用 OCR 判据定位列表右侧可点的「添加好友」按钮；
-- 列表滑到底后点「换一批」；
-- 点完检查「好友列表已满」，满员提前结束。
+1. 大世界左上角菜单按钮做模板匹配，**Alt + 左键**打开菜单（MaaEnd ``AutoAltClickAction``）；
+2. 菜单列表里 OCR「好友」并点击；
+3. 好友菜单顶部模板匹配「添加好友」入口并点击；
+4. 陌生人列表右侧 OCR 定位可点的「添加好友」按钮，点一下发一个申请；
+5. 一屏没有按钮就下滑，滑到底再点「换一批」；
+6. 每次点击后检查「好友列表已满」，满员提前结束。
 
 分辨率
 ------
@@ -32,6 +34,10 @@ BASE_WIDTH = 1280
 BASE_HEIGHT = 720
 
 # ---- MaaEnd 原始 ROI（1280x720 基准）----
+#: 大世界左上角菜单按钮
+WORLD_MENU_ROI = (0, 0, 200, 200)
+#: 菜单总列表（左侧全高），里面有「好友」项
+MENU_LIST_ROI = (0, 0, 400, 720)
 #: 好友菜单顶部，含「添加好友」入口图标
 ADD_ENTRY_ROI = (620, 0, 200, 120)
 #: 陌生人列表右侧区域，每个条目「添加好友」按钮所在列
@@ -46,14 +52,21 @@ ADD_PAGE_TITLE_ROI = (0, 0, 200, 60)
 SWIPE_FROM = (640, 560)
 SWIPE_TO = (640, 220)
 
-#: 入口图标模板（取自 MaaEnd）
-TEMPLATE_DIR = os.path.join("assets", "templates", "batch_add_friends")
-TEMPLATE_NAMES = ("addFriend.png", "addFriend2.png")
-#: 入口模板匹配阈值（MaaEnd 原值 0.8）
-ENTRY_THRESHOLD = 0.8
+#: 模板根目录（取自 MaaEnd）
+TEMPLATE_ROOT = os.path.join("assets", "templates")
+#: 大世界菜单按钮模板
+WORLD_MENU_TEMPLATES = ("scene_manager/WorldMenu.png",)
+#: 好友菜单顶部「添加好友」入口模板
+ADD_ENTRY_TEMPLATES = (
+    "batch_add_friends/addFriend.png",
+    "batch_add_friends/addFriend2.png",
+)
+#: 模板匹配阈值（MaaEnd 原值 0.8）
+TEMPLATE_THRESHOLD = 0.8
 
-ADD_BUTTON_TEXT = re.compile(r"添加好友|新增好友|Add\s*Friend|フレンド追加", re.IGNORECASE)
-CHANGE_BATCH_TEXT = re.compile(r"换一批|換一批|Refresh\s*List|リスト更新", re.IGNORECASE)
+FRIEND_ITEM_TEXT = re.compile(r"好友|(?i:friends)|フレンド|친구")
+ADD_BUTTON_TEXT = re.compile(r"添加好友|新增好友|(?i:add\s*friend)|フレンド追加")
+CHANGE_BATCH_TEXT = re.compile(r"换一批|換一批|(?i:refresh\s*list)|リスト更新")
 FRIEND_FULL_TEXT = re.compile(r"好友列表已满|好友列表已滿")
 
 
@@ -73,12 +86,13 @@ class BatchAddFriendsTask(Common):
         )
         self.default_config.update({self.CFG_MAX_COUNT: 20})
         self.config_description.update({self.CFG_MAX_COUNT: "达到数量后自动停止。"})
-        self._entry_templates = None
+        self._template_cache = {}
 
     def run(self):
         if not self.ensure_720p():
             return
-        if not self.ensure_add_friend_page():
+        if not self.enter_friend_add_page():
+            self.log_error(self.tr("未能进入「好友 → 添加好友」页面，已停止"))
             return
         self.add_strangers()
 
@@ -96,20 +110,51 @@ class BatchAddFriendsTask(Common):
         )
         return False
 
-    def ensure_add_friend_page(self):
-        if self.on_add_page():
-            return True
-        entry = self.find_add_entry()
-        if entry is not None:
-            self.click(entry[0], entry[1])
-            self.sleep(1)
+    # ---------- 场景导航 ----------
+
+    def enter_friend_add_page(self):
+        """从当前界面一路走到「好友 → 添加好友」，最多尝试四轮。"""
+        for _ in range(4):
             if self.on_add_page():
                 return True
-        self.log_error(self.tr("未找到「添加好友」入口：请先打开「好友」页面，再运行本任务"))
-        return False
+            # 已在好友菜单：点顶部「添加好友」入口
+            entry = self.find_template(ADD_ENTRY_ROI, ADD_ENTRY_TEMPLATES)
+            if entry is not None:
+                self.log_info(self.tr("点击「添加好友」入口"))
+                self.click(entry[0], entry[1])
+                self.sleep(1.2)
+                continue
+            # 已在菜单总列表：点「好友」
+            friend = self.find_friend_menu_item()
+            if friend is not None:
+                self.log_info(self.tr("点击菜单里的「好友」"))
+                self.click_box(friend, after_sleep=1.2)
+                continue
+            # 在大世界：Alt+左键打开菜单
+            if not self.open_world_menu():
+                break
+        return self.on_add_page()
+
+    def open_world_menu(self):
+        """大世界左上角菜单按钮：Alt + 左键打开菜单。"""
+        position = self.find_template(WORLD_MENU_ROI, WORLD_MENU_TEMPLATES)
+        if position is None:
+            return False
+        self.send_key_down("alt")
+        try:
+            self.click(position[0], position[1])
+        finally:
+            # Alt 必须抬起，否则后续按键全变成 Alt 组合键
+            self.send_key_up("alt")
+        self.sleep(1.5)
+        return True
 
     def on_add_page(self):
         return bool(self.ocr(box=self._roi(ADD_PAGE_TITLE_ROI), match=ADD_BUTTON_TEXT, threshold=0.7))
+
+    def find_friend_menu_item(self):
+        results = self.ocr(box=self._roi(MENU_LIST_ROI), match=FRIEND_ITEM_TEXT, threshold=0.7)
+        return results[0] if results else None
 
     # ---------- 陌生人批量添加 ----------
 
@@ -129,13 +174,13 @@ class BatchAddFriendsTask(Common):
                     break
                 continue
             if not swiped:
-                # 当前屏没有再往下看一屏，仍没有才认为到底
+                # 当前屏没有，再往下看一屏；仍没有才认为到底
                 swiped = True
                 self.swipe_list()
                 continue
             if self.change_batch():
                 swiped = False
-                self.sleep(1)
+                self.sleep(1.5)
                 continue
             self.log_info(self.tr("陌生人列表里没有更多可添加的好友"))
             break
@@ -145,40 +190,6 @@ class BatchAddFriendsTask(Common):
             self.log_info(self.tr("批量添加好友结束，共发送 {count} 个好友申请").format(count=added))
 
     # ---------- 识别与操作 ----------
-
-    def find_add_entry(self):
-        """在好友菜单顶部用 MaaEnd 模板找「添加好友」入口，返回点击坐标或 None。"""
-        templates = self.entry_templates()
-        if not templates:
-            return None
-        box = self._roi(ADD_ENTRY_ROI)
-        frame = self.frame
-        if frame is None:
-            return None
-        crop = frame[box.y : box.y + box.height, box.x : box.x + box.width]
-        if crop.size == 0:
-            return None
-        best = None
-        for template in templates:
-            height, width = template.shape[:2]
-            if height > crop.shape[0] or width > crop.shape[1]:
-                continue
-            result = cv2.matchTemplate(crop, template, cv2.TM_CCOEFF_NORMED)
-            _, score, _, location = cv2.minMaxLoc(result)
-            if score >= ENTRY_THRESHOLD and (best is None or score > best[0]):
-                best = (score, box.x + location[0] + width // 2, box.y + location[1] + height // 2)
-        if best is None:
-            return None
-        return best[1], best[2]
-
-    def entry_templates(self):
-        if self._entry_templates is None:
-            self._entry_templates = []
-            for name in TEMPLATE_NAMES:
-                image = cv2.imread(os.path.join(TEMPLATE_DIR, name))
-                if image is not None:
-                    self._entry_templates.append(image)
-        return self._entry_templates
 
     def find_add_button(self):
         """在右侧列表区域找「添加好友」按钮；无结果返回 None。"""
@@ -192,13 +203,44 @@ class BatchAddFriendsTask(Common):
         results = self.ocr(box=self._roi(CHANGE_BATCH_ROI), match=CHANGE_BATCH_TEXT, threshold=0.7)
         if not results:
             return False
+        self.log_info(self.tr("点击「换一批」"))
         self.click_box(results[0], after_sleep=0)
         return True
 
     def swipe_list(self):
         start = self._point(*SWIPE_FROM)
         end = self._point(*SWIPE_TO)
-        self.swipe(start[0], start[1], end[0], end[1], duration=0.5, after_sleep=1)
+        self.swipe(start[0], start[1], end[0], end[1], duration=0.8, after_sleep=1)
+
+    def find_template(self, roi, relative_paths):
+        """在 roi 内做模板匹配，返回命中中心点或 None。"""
+        box = self._roi(roi)
+        frame = self.frame
+        if frame is None:
+            return None
+        crop = frame[box.y : box.y + box.height, box.x : box.x + box.width]
+        if crop.size == 0:
+            return None
+        best = None
+        for relative_path in relative_paths:
+            template = self.load_template(relative_path)
+            if template is None:
+                continue
+            height, width = template.shape[:2]
+            if height > crop.shape[0] or width > crop.shape[1]:
+                continue
+            result = cv2.matchTemplate(crop, template, cv2.TM_CCOEFF_NORMED)
+            _, score, _, location = cv2.minMaxLoc(result)
+            if score >= TEMPLATE_THRESHOLD and (best is None or score > best[0]):
+                best = (score, box.x + location[0] + width // 2, box.y + location[1] + height // 2)
+        if best is None:
+            return None
+        return best[1], best[2]
+
+    def load_template(self, relative_path):
+        if relative_path not in self._template_cache:
+            self._template_cache[relative_path] = cv2.imread(os.path.join(TEMPLATE_ROOT, relative_path))
+        return self._template_cache[relative_path]
 
     # ---------- 坐标换算 ----------
 
@@ -207,5 +249,12 @@ class BatchAddFriendsTask(Common):
         return self.box_of_screen_scaled(BASE_WIDTH, BASE_HEIGHT, x, y, width_original=width, height_original=height)
 
     def _point(self, x, y):
-        box = self.box_of_screen_scaled(BASE_WIDTH, BASE_HEIGHT, x, y)
-        return box.x, box.y
+        """按 1280x720 基准换算成当前分辨率的像素点。
+
+        注意不能用 ``box_of_screen_scaled``：只传起点时它的 to_x/to_y 为 0，
+        会算出负宽高并抛 "width and height must be greater than zero"。
+        """
+        return (
+            round(x * self.screen_width / BASE_WIDTH),
+            round(y * self.screen_height / BASE_HEIGHT),
+        )
