@@ -5,7 +5,7 @@ from ok import Box, TaskDisabledException
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.image.gray_bar_detector import detect_gray_bars
-from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template
+from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template, nearby_poster_templates
 from src.image.reward_card_probe import CARD_CLAIMABLE, CARD_CLAIMED, CARD_UNFINISHED, card_state
 from src.tasks.mixin.battle_mixin import BattleMixin
 
@@ -70,7 +70,7 @@ class YingTuoTask(BattleMixin):
 
         self.support_schedule_task = True
         self._entered_poster_templates = []
-        self._selected_poster_template = None
+        self._selected_poster_templates = []
         self._last_normal_entry_confirmed = False
         self._abandoned_normal_challenges = 0
         self.default_config.update({self.CFG_CLAIM_REWARD: True})
@@ -89,7 +89,7 @@ class YingTuoTask(BattleMixin):
     def run_yingtuo(self):
         # 仅在新任务开始时清空，活动与其余海报、退出重进期间保持本轮记录。
         self._entered_poster_templates.clear()
-        self._selected_poster_template = None
+        self._selected_poster_templates = []
         self._last_normal_entry_confirmed = False
         self._abandoned_normal_challenges = 0
         self.ensure_main(time_out=400)
@@ -559,7 +559,7 @@ class YingTuoTask(BattleMixin):
         """
         empty_scrolls = 0
         attempts = 0
-        self._selected_poster_template = None
+        self._selected_poster_templates = []
         while empty_scrolls < 4:
             bars, frame = self._detect_stable_bars()
             if leftmost_only:
@@ -573,24 +573,26 @@ class YingTuoTask(BattleMixin):
                 self.scroll_relative(0.5, 0.5, -5)
                 continue
             candidates = []
+            has_entered_template = False
             for bar in bars:
                 template = crop_poster_template(frame, bar.center_x, bar.center_y)
                 if template is None:
                     raise YingTuoError("无法截取灰条中心对应的海报模板")
                 if matches_entered_template(template, self._entered_poster_templates):
-                    self.log_info("灰条对应的海报模板本轮已进入，跳过")
-                else:
-                    candidates.append((bar, template))
-            if not candidates:
+                    has_entered_template = True
+                    break
+                candidates.append((bar, template))
+            # 本屏只要出现任意已进入的灰条，就跳过整个屏幕，不点击其余候选。
+            if has_entered_template:
                 if leftmost_only:
-                    self.log_info("最左侧海报灰条本轮均已进入，跳过")
+                    self.log_info("最左侧活动海报本轮已进入，不再挑战")
                     return None
                 empty_scrolls += 1
-                self.log_info(f"当前灰条均已进入，继续向下滚动 ({empty_scrolls}/4)")
+                self.log_info(f"本屏有已进入的灰条组合，向下滚动 ({empty_scrolls}/4)")
                 self.scroll_relative(0.5, 0.5, -5)
                 continue
             attempts += 1
-            leftmost_bar, template = candidates[0]
+            leftmost_bar, _ = candidates[0]
             frame_height, frame_width = frame.shape[:2]
             self.log_info(f"检测到 {len(bars)} 条普通关卡灰条，选择本轮未进入的组合")
             self.click_relative(
@@ -599,7 +601,9 @@ class YingTuoTask(BattleMixin):
                 after_sleep=0.25,
             )
             if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
-                self._selected_poster_template = template
+                # 进入任一灰条，按相邻间距将本组海报模板一并记录。
+                # 先缓存，只有协议空间真正入场后才加入本轮已进入集合。
+                self._selected_poster_templates = nearby_poster_templates(candidates, frame_width)
                 return True
             # 点满次数就报错，不再检测：此时画面不明，检测为空会走空滚动并误报任务完成。
             if attempts >= self.CHALLENGE_CLICK_ATTEMPTS:
@@ -665,9 +669,10 @@ class YingTuoTask(BattleMixin):
             return False
         # 确认进入协议空间就登记，不依赖胜负；失败回主界面后仍应跳过。
         self._last_normal_entry_confirmed = True
-        if self._selected_poster_template is not None:
-            self._entered_poster_templates.append(self._selected_poster_template.copy())
-            self.log_info(f"本轮已进入的灰条组合：{len(self._entered_poster_templates)}")
+        if self._selected_poster_templates:
+            self._entered_poster_templates.extend(self._selected_poster_templates)
+            self._selected_poster_templates = []
+            self.log_info(f"本轮已进入的海报模板：{len(self._entered_poster_templates)}")
 
         def challenge_state():
             self.next_frame()

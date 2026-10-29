@@ -46,3 +46,23 @@ def matches_entered_template(candidate: np.ndarray, entered_templates: list[np.n
         if float(score) >= _MATCH_THRESHOLD:
             return True
     return False
+
+
+def nearby_poster_templates(candidates: list[tuple], frame_width: int) -> list[np.ndarray]:
+    """从第一条灰条向右收集同组近邻；遇到大间隔或跨海报宽度即停。
+
+    candidates 按灰条 x 升序排列，元素为 (GrayBar, 已裁剪模板)。
+    这些模板先保持候选状态，直到确认进协议空间才一起加入已进入集合。
+    """
+    if not candidates:
+        return []
+    first_x = previous_x = candidates[0][0].center_x
+    max_gap = frame_width * 0.06
+    max_span = frame_width * 0.23
+    group = []
+    for bar, patch in candidates:
+        if bar.center_x - previous_x > max_gap or bar.center_x - first_x > max_span:
+            break
+        group.append(patch.copy())
+        previous_x = bar.center_x
+    return group
