@@ -119,6 +119,12 @@
       "file_name": "images/20.png",
       "width": 2560,
       "height": 1440
+    },
+    {
+      "id": 21,
+      "file_name": "images/matrix_clean.png",
+      "width": 1920,
+      "height": 1080
     }
   ],
   "annotations": [
@@ -3917,6 +3923,45 @@
       ],
       "area": 2400,
       "iscrowd": 0
+    },
+    {
+      "id": 293,
+      "image_id": 21,
+      "category_id": 293,
+      "bbox": [
+        1712,
+        859,
+        33,
+        33
+      ],
+      "area": 1089,
+      "iscrowd": 0
+    },
+    {
+      "id": 294,
+      "image_id": 21,
+      "category_id": 294,
+      "bbox": [
+        465,
+        978,
+        32,
+        32
+      ],
+      "area": 1024,
+      "iscrowd": 0
+    },
+    {
+      "id": 295,
+      "image_id": 21,
+      "category_id": 295,
+      "bbox": [
+        778,
+        534,
+        24,
+        25
+      ],
+      "area": 600,
+      "iscrowd": 0
     }
   ],
   "categories": [
@@ -5378,6 +5423,21 @@
     {
       "id": 292,
       "name": "login_in",
+      "supercategory": ""
+    },
+    {
+      "id": 293,
+      "name": "matrix_dismantle_exit",
+      "supercategory": ""
+    },
+    {
+      "id": 294,
+      "name": "matrix_quick_add",
+      "supercategory": ""
+    },
+    {
+      "id": 295,
+      "name": "matrix_empty_icon",
       "supercategory": ""
     }
   ]

@@ -391,20 +391,8 @@ class LoginMixinModule(_LangModuleBaseT):
 class MatrixCleanTaskModule(_LangModuleBaseT):
     """matrix_clean_task — OCR 语言节点（值取自 zh_CN）"""
 
-    k_83c0c24d: re.Pattern[str]
-    """想要分解"""
-
-    k_52e36ffd: re.Pattern[str]
-    """快捷放入"""
-
-    k_9c61417d: re.Pattern[str]
-    """无法分解"""
-
     k_75a84eb1: re.Pattern[str]
     """未拥有该类型"""
-
-    k_feecb1e6: re.Pattern[str]
-    """^退出$"""
 
 
 class TakeDeliveryTaskModule(_LangModuleBaseT):
