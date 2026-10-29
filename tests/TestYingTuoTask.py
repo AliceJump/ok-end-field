@@ -3,9 +3,11 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
+import cv2
 import numpy as np
 
 from src.data.FeatureList import FeatureList as fL
+from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template
 from src.tasks.onetime.YingTuoTask import YingTuoError, YingTuoTask, _settled
 
 
@@ -21,7 +23,9 @@ class _FakeYingTuoTask:
         self.logs = []
         self.clicks = []
         self.drawn_boxes = []
-        self.frame = np.zeros((100, 200, 3), dtype=np.uint8)
+        self.frame = np.random.default_rng(123).integers(0, 255, (100, 200, 3), dtype=np.uint8)
+        self._entered_poster_templates = []
+        self._selected_poster_template = None
         self.now = 0.0
         # 每次点击灰条后是否进入详情页，用完后默认进入
         self.detail_page_results = []
@@ -532,6 +536,90 @@ class TestYingTuoTask(unittest.TestCase):
         self.assertEqual(task.find_normal_challenge.call_count, 2)
         task.return_to_monument.assert_called_once_with()
         task.click.assert_not_called()
+
+    def test_poster_template_uses_only_poster_above_gray_bar(self):
+        frame = np.random.default_rng(19).integers(0, 255, (1080, 1920, 3), dtype=np.uint8)
+        template = crop_poster_template(frame, 124, 828)
+        self.assertEqual(template.shape, (191, 70))
+        self.assertTrue(np.array_equal(template, cv2.cvtColor(frame[562:753, 89:159], cv2.COLOR_BGR2GRAY)))
+
+    def test_template_matches_same_poster_but_not_different_poster(self):
+        task = _FakeYingTuoTask()
+        a = crop_poster_template(task.frame, 50, 25)
+        b = crop_poster_template(task.frame, 150, 25)
+        self.assertTrue(matches_entered_template(a, [a]))
+        self.assertFalse(matches_entered_template(b, [a]))
+
+    def test_entered_gray_bar_is_skipped_before_click(self):
+        task = _FakeYingTuoTask()
+        task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(150, 25)]):
+            self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task.clicks, [(0.75, 0.25, {"after_sleep": 0.25})])
+
+    def test_when_all_visible_gray_bars_entered_scrolls(self):
+        task = _FakeYingTuoTask()
+        task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25)]):
+            self.assertIsNone(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task.scroll_count, 4)
+        self.assertEqual(task.clicks, [])
+
+    def test_confirmed_entry_is_recorded_before_failed_battle(self):
+        task = Mock()
+        task._selected_poster_template = np.arange(30, dtype=np.uint8).reshape(5, 6)
+        task._entered_poster_templates = []
+        task.wait_battle_space.return_value = True
+        task.strafe_search.return_value = "combat"
+        task.auto_battle.return_value = False
+        self.assertFalse(YingTuoTask.battle_and_exit(task))
+        self.assertTrue(task._last_normal_entry_confirmed)
+        self.assertEqual(len(task._entered_poster_templates), 1)
+        self.assertTrue(np.array_equal(task._entered_poster_templates[0], task._selected_poster_template))
+
+    def test_unentered_battle_does_not_record_template(self):
+        task = Mock()
+        task._selected_poster_template = np.ones((5, 6), dtype=np.uint8)
+        task._entered_poster_templates = []
+        task.wait_battle_space.return_value = False
+        self.assertFalse(YingTuoTask.battle_and_exit(task))
+        self.assertEqual(task._entered_poster_templates, [])
+
+    def test_failed_entered_poster_resumes_other_poster(self):
+        task = Mock()
+        task.find_normal_challenge.side_effect = [True, False]
+        task.wait_until.return_value = [object()]
+        task.battle_and_exit.side_effect = lambda **_: setattr(task, "_last_normal_entry_confirmed", True) or False
+
+        self.assertTrue(YingTuoTask.challenge_normal_stages(task))
+        task._recover_entered_normal_challenge.assert_called_once_with("战斗未正常完成")
+        task.return_to_monument.assert_not_called()
+
+    def test_failed_unentered_poster_still_raises(self):
+        task = Mock()
+        task._last_normal_entry_confirmed = False
+        task.find_normal_challenge.return_value = True
+        task.wait_until.return_value = [object()]
+        task.battle_and_exit.return_value = False
+        task._recover_entered_normal_challenge.side_effect = (
+            lambda reason: YingTuoTask._recover_entered_normal_challenge(task, reason)
+        )
+        with self.assertRaisesRegex(YingTuoError, "战斗未正常完成"):
+            YingTuoTask.challenge_normal_stages(task)
+        task.ensure_main.assert_not_called()
+
+    def test_recover_entered_challenge_reenters_from_main(self):
+        task = Mock()
+        task._last_normal_entry_confirmed = True
+        task._abandoned_normal_challenges = 0
+        task._wait_monument.return_value = False
+        task.enter_yingtuo.return_value = True
+
+        YingTuoTask._recover_entered_normal_challenge(task, "挑战退出到主界面")
+
+        self.assertEqual(task._abandoned_normal_challenges, 1)
+        task.ensure_main.assert_called_once_with(time_out=180)
+        task.enter_yingtuo.assert_called_once_with()
 
     def test_debug_overlay_draws_gray_bar_boxes(self):
         task = _FakeYingTuoTask()

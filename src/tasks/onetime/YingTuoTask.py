@@ -5,6 +5,7 @@ from ok import Box, TaskDisabledException
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.image.gray_bar_detector import detect_gray_bars
+from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template
 from src.image.reward_card_probe import CARD_CLAIMABLE, CARD_CLAIMED, CARD_UNFINISHED, card_state
 from src.tasks.mixin.battle_mixin import BattleMixin
 
@@ -68,6 +69,10 @@ class YingTuoTask(BattleMixin):
         self.description = "先完成最左侧海报（当期活动）的普通关卡和苦难任务，再挑战其余海报的普通关卡"
 
         self.support_schedule_task = True
+        self._entered_poster_templates = []
+        self._selected_poster_template = None
+        self._last_normal_entry_confirmed = False
+        self._abandoned_normal_challenges = 0
         self.default_config.update({self.CFG_CLAIM_REWARD: True})
         self.config_description[self.CFG_CLAIM_REWARD] = (
             "在「活动中心」领取影拓丰碑的活动奖励。\n关闭后只跳过领奖，关卡和苦难任务照常完成。"
@@ -82,6 +87,11 @@ class YingTuoTask(BattleMixin):
             return False
 
     def run_yingtuo(self):
+        # 仅在新任务开始时清空，活动与其余海报、退出重进期间保持本轮记录。
+        self._entered_poster_templates.clear()
+        self._selected_poster_template = None
+        self._last_normal_entry_confirmed = False
+        self._abandoned_normal_challenges = 0
         self.ensure_main(time_out=400)
         claim_enabled = self.config.get(self.CFG_CLAIM_REWARD, True)
         # 苦难任务属于影拓丰碑本身，领奖开关关闭时也要读出它是否完成。
@@ -105,6 +115,10 @@ class YingTuoTask(BattleMixin):
             finished = self.challenge_normal_stages()
         if not finished:
             self.log_info("影拓丰碑挑战未跑完，剩余关卡留待下次", notify=True)
+        elif self._abandoned_normal_challenges:
+            self.mark_task_failure(
+                f"本轮 {self._abandoned_normal_challenges} 个已进入组合未正常完成，已跳过并尝试其他组合"
+            )
         elif state == CARD_UNFINISHED:
             self.log_info("影拓丰碑关卡已打完，活动任务仍有未完成项，需手动处理", notify=True)
         elif state == CARD_CLAIMABLE:
@@ -167,6 +181,7 @@ class YingTuoTask(BattleMixin):
                     self.log_info("关卡详情页连续两次没有未通关图标，结束挑战")
                     return False
                 self.log_info("关卡详情页没有未通关图标，返回海报页")
+            abandoned_poster = False
             for result in results:
                 self.click(result, after_sleep=0.25)
                 # 实录中打完普通关卡后，游戏把详情页切到了苦难模式；苦难任务撤离后也可能停在苦难模式。
@@ -175,9 +190,11 @@ class YingTuoTask(BattleMixin):
                     raise YingTuoError("未能关闭苦难模式")
                 self.log_info("进入挑战页面，开始挑战")
                 self._click_challenge_and_enter()
+                self._last_normal_entry_confirmed = False
                 if not self.battle_and_exit(transition_recovery=self._retry_entry):
-                    self.log_info("战斗过程中发生错误，返回失败")
-                    raise YingTuoError("战斗过程中发生错误")
+                    self._recover_entered_normal_challenge("战斗未正常完成")
+                    abandoned_poster = True
+                    break
                 if not self.wait_feature(
                     feature=fL.to_max_produce_num,
                     box=self.box_of_screen(0.934, 0.881, 0.977, 0.965),
@@ -185,14 +202,29 @@ class YingTuoTask(BattleMixin):
                     settle_time=0.5,
                     raise_if_not_found=False,
                 ):
-                    self.log_info("未能找到挑战开始按钮，返回失败")
-                    raise YingTuoError("未能找到挑战开始按钮")
+                    self._recover_entered_normal_challenge("未能返回关卡详情页")
+                    abandoned_poster = True
+                    break
                 self.log_info("挑战完成，继续寻找下一个普通关卡")
-            if not self.return_to_monument():
-                self.log_info("未能返回海报页，结束挑战")
-                return False
+            if not abandoned_poster and not self.return_to_monument():
+                self._recover_entered_normal_challenge("未能返回海报页")
         self.log_info("最左侧海报的普通关卡已全部打完" if leftmost_only else "影拓丰碑普通关卡已全部打完")
         return True
+
+    def _recover_entered_normal_challenge(self, reason):
+        """失败后重新进入海报页，并跳过本轮已经进入的组合。
+
+        未确认入场时不能归类为已进入，仍按异常终止处理。
+        """
+        if not self._last_normal_entry_confirmed:
+            raise YingTuoError(reason)
+        self._abandoned_normal_challenges += 1
+        self.log_info(f"{reason}；当前组合已进入过，恢复后跳过并继续扫描")
+        if self._wait_monument(time_out=3):
+            return
+        self.ensure_main(time_out=180)
+        if not self.enter_yingtuo():
+            raise YingTuoError("退出已进入的关卡后无法恢复影拓丰碑海报页")
 
     def _click_challenge_and_enter(self):
         """在关卡详情页点「挑战影拓丰碑」，再在编队页点入场；任一按钮找不到时抛出 YingTuoError。"""
@@ -527,6 +559,7 @@ class YingTuoTask(BattleMixin):
         """
         empty_scrolls = 0
         attempts = 0
+        self._selected_poster_template = None
         while empty_scrolls < 4:
             bars, frame = self._detect_stable_bars()
             if leftmost_only:
@@ -539,23 +572,41 @@ class YingTuoTask(BattleMixin):
                 self.log_info(f"未检测到普通关卡灰条，继续向下滚动 ({empty_scrolls}/4)")
                 self.scroll_relative(0.5, 0.5, -5)
                 continue
+            candidates = []
+            for bar in bars:
+                template = crop_poster_template(frame, bar.center_x, bar.center_y)
+                if template is None:
+                    raise YingTuoError("无法截取灰条中心对应的海报模板")
+                if matches_entered_template(template, self._entered_poster_templates):
+                    self.log_info("灰条对应的海报模板本轮已进入，跳过")
+                else:
+                    candidates.append((bar, template))
+            if not candidates:
+                if leftmost_only:
+                    self.log_info("最左侧海报灰条本轮均已进入，跳过")
+                    return None
+                empty_scrolls += 1
+                self.log_info(f"当前灰条均已进入，继续向下滚动 ({empty_scrolls}/4)")
+                self.scroll_relative(0.5, 0.5, -5)
+                continue
             attempts += 1
-            leftmost_bar = bars[0]
+            leftmost_bar, template = candidates[0]
             frame_height, frame_width = frame.shape[:2]
-            self.log_info(f"检测到 {len(bars)} 条普通关卡灰条，点击最左侧灰条")
+            self.log_info(f"检测到 {len(bars)} 条普通关卡灰条，选择本轮未进入的组合")
             self.click_relative(
                 leftmost_bar.center_x / frame_width,
                 leftmost_bar.center_y / frame_height,
                 after_sleep=0.25,
             )
             if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
+                self._selected_poster_template = template
                 return True
             # 点满次数就报错，不再检测：此时画面不明，检测为空会走空滚动并误报任务完成。
             if attempts >= self.CHALLENGE_CLICK_ATTEMPTS:
                 self.log_info("点击灰条后未进入关卡详情页")
                 raise YingTuoError("点击灰条后未进入关卡详情页")
             self.log_info(f"点击灰条后未进入关卡详情页，重新检测 ({attempts}/{self.CHALLENGE_CLICK_ATTEMPTS})")
-        self.log_info("连续 4 次滚动未检测到普通关卡灰条")
+        self.log_info("连续 4 次滚动未发现本轮可进入的灰条组合")
         return None
 
     def _detect_stable_bars(self, time_out=3.0):
@@ -612,6 +663,11 @@ class YingTuoTask(BattleMixin):
     def battle_and_exit(self, transition_recovery=None):
         if not self.wait_battle_space(transition_recovery=transition_recovery):
             return False
+        # 确认进入协议空间就登记，不依赖胜负；失败回主界面后仍应跳过。
+        self._last_normal_entry_confirmed = True
+        if self._selected_poster_template is not None:
+            self._entered_poster_templates.append(self._selected_poster_template.copy())
+            self.log_info(f"本轮已进入的灰条组合：{len(self._entered_poster_templates)}")
 
         def challenge_state():
             self.next_frame()
