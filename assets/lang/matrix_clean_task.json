@@ -1,12 +1,4 @@
 {
-  "k_9ca99bd0": {
-    "zh_CN": {
-      "pattern": "武器基质"
-    },
-    "zh_TW": {
-      "pattern": "武器基質"
-    }
-  },
   "k_83c0c24d": {
     "zh_CN": {
       "pattern": "想要分解"
@@ -21,46 +13,6 @@
     },
     "zh_TW": {
       "pattern": "快捷放入"
-    }
-  },
-  "k_7ba0a5b1": {
-    "zh_CN": {
-      "pattern": "稳定基质"
-    },
-    "zh_TW": {
-      "pattern": "穩定基質"
-    }
-  },
-  "k_16da2b84": {
-    "zh_CN": {
-      "pattern": "净态基质"
-    },
-    "zh_TW": {
-      "pattern": "淨態基質"
-    }
-  },
-  "k_1a40e234": {
-    "zh_CN": {
-      "pattern": "高纯基质"
-    },
-    "zh_TW": {
-      "pattern": "高純基質"
-    }
-  },
-  "k_2396a6d9": {
-    "zh_CN": {
-      "pattern": "未上锁"
-    },
-    "zh_TW": {
-      "pattern": "未上鎖"
-    }
-  },
-  "k_fadf24db": {
-    "zh_CN": {
-      "pattern": "保存"
-    },
-    "zh_TW": {
-      "pattern": "保存"
     }
   },
   "k_9c61417d": {

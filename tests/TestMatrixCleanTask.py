@@ -13,9 +13,30 @@ from unittest.mock import MagicMock
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.lang import get_lang_accessor
+from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.tasks.onetime.MatrixCleanTask import MatrixCleanTask
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+class TestColorWait(unittest.TestCase):
+    def test_click_until_color_only_clicks_when_unmatched(self):
+        task = MagicMock()
+        task.frame = object()
+        def wait(condition, **kwargs):
+            result = condition()
+            if not result and kwargs.get("post_action"):
+                kwargs["post_action"]()
+            return result
+        task.wait_until.side_effect = wait
+        task.wait_color.side_effect = lambda *args, **kwargs: RuntimeMixin.wait_color(task, *args, **kwargs)
+        box = object()
+        task.calculate_color_percentage.return_value = 0.9
+        self.assertTrue(RuntimeMixin.click_until_color(task, {}, box, threshold=0.8))
+        task.click_box.assert_not_called()
+        task.calculate_color_percentage.return_value = 0.2
+        self.assertFalse(RuntimeMixin.click_until_color(task, {}, box, threshold=0.8))
+        task.click_box.assert_called_once()
 
 
 def make_task():
@@ -35,6 +56,7 @@ def make_task():
     task.click_confirm = MagicMock(return_value=True)
     task.wait_pop_up = MagicMock(return_value=True)
     task.find_one = MagicMock(return_value=None)
+    task.click_until_color = MagicMock(return_value=True)
     task.ocr = MagicMock(return_value=None)
     task.mark_task_failure = MagicMock()
     task.log_info = MagicMock()
@@ -91,20 +113,13 @@ class TestOpenVaultEssencePage(unittest.TestCase):
 
     def test_already_on_essence_page_skips_tab_click(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())
         self.assertTrue(task._ensure_essence_page())
-        task.click_relative.assert_not_called()
+        task.click_until_color.assert_called_once()
 
     def test_tab_click_retries_via_post_action(self):
         task = make_task()
-        task.wait_ocr = MagicMock(side_effect=[None, MagicMock()])
-        self.assertTrue(task._ensure_essence_page())
-        task.click_relative.assert_called_once_with(0.395, 0.055, after_sleep=1.5)
-        # 第二次等待每轮未命中时由框架调用 post_action 补点分页
-        post_action = task.wait_ocr.call_args_list[1].kwargs["post_action"]
-        post_action()
-        self.assertEqual(task.click_relative.call_count, 2)
-        self.assertEqual(task.click_relative.call_args.args, (0.395, 0.055))
+        task.click_until_color = MagicMock(return_value=False)
+        self.assertFalse(task._ensure_essence_page())
 
 
 class TestDismantleByQuality(unittest.TestCase):
@@ -206,22 +221,22 @@ class TestDismantleOneBatch(unittest.TestCase):
 
     def test_filter_panel_flow(self):
         task = make_task()
-        # 网格有物品；快捷放入命中；wait_ocr 命中「保存」（面板弹出）；
-        # _apply_filter 内 5 次点击（品质 3 次、未上锁、保存）全命中
+        # 网格有物品，快捷放入后检测到筛选面板并保存。
         task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.wait_ocr = MagicMock(return_value=MagicMock())
+        task.wait_feature = MagicMock(return_value=MagicMock())
+        task.wait_click_feature = MagicMock(return_value=True)
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
-        # 快捷放入 1 次、品质 3 次、未上锁、保存，共 6 次，无第二次快捷放入
-        self.assertEqual(task.wait_click_ocr.call_count, 6)
+        # 快捷放入只点击一次，保存按钮使用模板点击。
+        self.assertEqual(task.wait_click_ocr.call_count, 1)
         task._confirm_dismantle.assert_called_once()
 
     def test_no_panel_flow_skips_filter(self):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.wait_ocr = MagicMock(return_value=None)  # 面板未弹出（规则已生效）
+        task.wait_feature = MagicMock(return_value=None)  # 面板未弹出（规则已生效）
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
         self.assertEqual(task.wait_click_ocr.call_count, 1)
@@ -239,7 +254,7 @@ class TestDismantleOneBatch(unittest.TestCase):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
         task.wait_click_ocr = MagicMock(return_value=MagicMock())
-        task.wait_ocr = MagicMock(side_effect=[MagicMock(), None])  # 检出命中、复查落空
+        task.wait_feature = MagicMock(side_effect=[MagicMock(), None])  # 检出命中、复查落空
         self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("筛选面板未弹出")
 
@@ -249,45 +264,40 @@ class TestApplyFilter(unittest.TestCase):
 
     def test_panel_not_open_is_failure(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=None)  # 「保存」未出现
+        task.wait_feature = MagicMock(return_value=None)  # 保存图标未出现
         self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("筛选面板未弹出")
 
     def test_quality_missing_is_failure(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())
+        task.wait_feature = MagicMock(return_value=MagicMock())
         # 第一个品质（稳定）就缺失
-        task.wait_click_ocr = MagicMock(side_effect=[None])
+        task.click_until_color = MagicMock(return_value=False)
         self.assertFalse(task._apply_filter())
-        task.mark_task_failure.assert_called_once_with("未找到品质筛选选项")
+        task.mark_task_failure.assert_called_once_with("筛选选项未选中")
 
     def test_unlock_missing_is_failure(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), MagicMock(), MagicMock(), None])
+        task.wait_feature = MagicMock(return_value=MagicMock())
+        task.click_until_color = MagicMock(side_effect=[True, True, True, False])
         self.assertFalse(task._apply_filter())
-        task.mark_task_failure.assert_called_once_with("未找到未上锁选项")
+        task.mark_task_failure.assert_called_once_with("筛选选项未选中")
 
     def test_save_missing_is_failure(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(side_effect=[MagicMock(), MagicMock(), MagicMock(), MagicMock(), None])
+        task.wait_feature = MagicMock(return_value=MagicMock())
+        task.wait_click_feature = MagicMock(return_value=None)
         self.assertFalse(task._apply_filter())
         task.mark_task_failure.assert_called_once_with("未找到筛选保存按钮")
 
     def test_full_flow_checks_all_qualities(self):
         lang = make_task().lang.matrix_clean_task
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())
-        task.wait_click_ocr = MagicMock(return_value=MagicMock())
+        task.wait_feature = MagicMock(return_value=MagicMock())
+        task.wait_click_feature = MagicMock(return_value=True)
         self.assertTrue(task._apply_filter())
-        # 品质三项逐一点勾（面板初始为空）+ 未上锁 + 保存 = 5 次点击
-        self.assertEqual(task.wait_click_ocr.call_count, 5)
-        clicked = [c.kwargs.get("match") for c in task.wait_click_ocr.call_args_list]
-        self.assertIn(lang.k_7ba0a5b1, clicked)
-        self.assertIn(lang.k_16da2b84, clicked)
-        self.assertIn(lang.k_1a40e234, clicked)
-        self.assertIn(lang.k_2396a6d9, clicked)
+        self.assertEqual(task.click_until_color.call_count, 4)
+        task.wait_click_feature.assert_called_once()
         task.mark_task_failure.assert_not_called()
 
 
@@ -443,12 +453,9 @@ class TestDailyWiring(unittest.TestCase):
         self.assertNotIn("essence_throw_away", src_text)
 
     def test_filter_checks_all_qualities(self):
-        # 面板品质三项初始为空，必须逐项点勾（toggle）：只勾一项会把其他
-        # 品质排除出快捷放入，该类清完时整批落空
+        # 品质三项和未上锁均需确认选中，避免排除可分解物品。
         src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        for key in ("k_7ba0a5b1", "k_16da2b84", "k_1a40e234"):
-            self.assertIn(key, src_text)
-        self.assertIn("k_2396a6d9", src_text)
+        self.assertIn("for x, y in self._FILTER_SWATCHES", src_text)
 
     def test_ui_fallback_group_map(self):
         import ast
