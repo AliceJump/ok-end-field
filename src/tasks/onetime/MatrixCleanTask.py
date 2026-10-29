@@ -29,14 +29,14 @@ class MatrixCleanTask(Common):
     # 底栏控件区（快捷放入 / 分解按钮 / 退出）
     _BOTTOM_BAR = (0.0, 0.80, 0.6, 0.98)
     _BOTTOM_RIGHT = (0.55, 0.75, 1.0, 0.98)
-    # 筛选面板（屏幕中央弹窗）搜索区
-    _FILTER_PANEL = (0.15, 0.15, 0.9, 0.9)
-    # 面板内：品质选项行（初始全空，需逐项勾选），锁定状态在其下
-    _FILTER_QUALITY_AREA = (0.1, 0.15, 0.9, 0.6)
-    _FILTER_LOCK_AREA = (0.1, 0.4, 0.9, 0.85)
+    # 筛选面板保存按钮图标搜索区
+    _FILTER_SAVE_ICON = (0.78, 0.72, 0.86, 0.8)
 
     # 底栏左侧分解入口（垃圾桶图标）中心：品质下拉/降序/漏斗之后
     _DISMANTLE_ENTRY = (0.259, 0.93)
+    # 选项背景的无文字区域；选中为浅灰，未选中为深色。
+    _FILTER_SWATCHES = ((0.27, 0.355), (0.48, 0.355), (0.69, 0.355), (0.27, 0.505))
+    _FILTER_LIGHT = {"r": (140, 255), "g": (140, 255), "b": (140, 255)}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -74,26 +74,14 @@ class MatrixCleanTask(Common):
 
     def _ensure_essence_page(self):
         """确认停在武器基质页；停在其他分页时点击顶部基质分页。"""
-        title_box = self.box_of_screen(0.0, 0.0, 0.4, 0.25)
-        if self.wait_ocr(
-            match=self.lang.matrix_clean_task.k_9ca99bd0, box=title_box, time_out=4, raise_if_not_found=False
-        ):
-            return True
-
-        # 顶部分类行从左到右：搜索/武器/基质(立方体,中心x≈0.395)/装备(六边形,中心x≈0.438)/…
-        # 分页点击可重复执行：低性能机器首次点击没生效时，每轮未识别到标题就补点一次
-        def click_essence_tab():
-            self.click_relative(0.395, 0.055, after_sleep=1.5)
-
-        click_essence_tab()
-        return bool(
-            self.wait_ocr(
-                match=self.lang.matrix_clean_task.k_9ca99bd0,
-                box=title_box,
-                time_out=4,
-                raise_if_not_found=False,
-                post_action=click_essence_tab,
-            )
+        # 基质页签选中时背景为黄色，取避开图标的区域检测和点击。
+        return self.click_until_color(
+            {"r": (220, 255), "g": (200, 255), "b": (0, 90)},
+            self.box_of_screen(0.374, 0.01, 0.384, 0.025),
+            threshold=0.8,
+            time_out=4,
+            after_sleep=1.5,
+            raise_if_not_found=False,
         )
 
     def _dismantle_by_quality(self):
@@ -153,12 +141,12 @@ class MatrixCleanTask(Common):
         ):
             self.mark_task_failure("未找到快捷放入按钮")
             return None
-        # 面板检测用带超时的等待：单次 OCR 在面板渲染慢时会漏检，漏检后
-        # 未勾选任何物品、按钮恒为「无法分解」，会被误判成清理完成
+        # 等待筛选界面的保存图标，兼容面板渲染延迟。
         if (
-            self.wait_ocr(
-                match=self.lang.matrix_clean_task.k_fadf24db,
-                box=self.box_of_screen(*self._FILTER_PANEL),
+            self.wait_feature(
+                fL.transfer_go,
+                box=self.box_of_screen(*self._FILTER_SAVE_ICON),
+                threshold=0.8,
                 time_out=2,
                 raise_if_not_found=False,
             )
@@ -173,25 +161,17 @@ class MatrixCleanTask(Common):
         面板弹出时品质三项初始为空，需逐项点勾（对应手动操作把
         稳定/净态/高纯全部勾上 = 全部可分解基质）。
         """
-        lang = self.lang.matrix_clean_task
-        panel_box = self.box_of_screen(*self._FILTER_PANEL)
-        if not self.wait_ocr(match=lang.k_fadf24db, box=panel_box, time_out=3, raise_if_not_found=False):
+        save_box = self.box_of_screen(*self._FILTER_SAVE_ICON)
+        if not self.wait_feature(fL.transfer_go, box=save_box, threshold=0.8, time_out=3, raise_if_not_found=False):
             self.mark_task_failure("筛选面板未弹出")
             return False
-        quality_box = self.box_of_screen(*self._FILTER_QUALITY_AREA)
-        for quality in (lang.k_7ba0a5b1, lang.k_16da2b84, lang.k_1a40e234):
-            if not self.wait_click_ocr(match=quality, box=quality_box, time_out=4):
-                self.mark_task_failure("未找到品质筛选选项")
+        for x, y in self._FILTER_SWATCHES:
+            # 选项空白区域用于检测背景，点击该区域直到选中。
+            box = self.box_of_screen(x, y, x + 0.02, y + 0.015)
+            if not self.click_until_color(self._FILTER_LIGHT, box, time_out=3, after_sleep=0.3):
+                self.mark_task_failure("筛选选项未选中")
                 return False
-            self.sleep(0.3)
-        if not self.wait_click_ocr(
-            match=lang.k_2396a6d9,
-            box=self.box_of_screen(*self._FILTER_LOCK_AREA),
-            time_out=4,
-        ):
-            self.mark_task_failure("未找到未上锁选项")
-            return False
-        if not self.wait_click_ocr(match=lang.k_fadf24db, box=panel_box, time_out=4):
+        if not self.wait_click_feature(fL.transfer_go, box=save_box, threshold=0.8, time_out=4, raise_if_not_found=False):
             self.mark_task_failure("未找到筛选保存按钮")
             return False
         self.sleep(1)

@@ -1353,3 +1353,52 @@ class RuntimeMixin:
                 x=x, y=y, width=width, height=height, to_x=to_x, to_y=to_y, match=match_text
             )
         )
+
+    def wait_color(self, color, box, threshold=0.8, time_out=0, pre_action=None, post_action=None,
+                   settle_time=-1, raise_if_not_found=False):
+        """等待指定区域中颜色占比达到阈值。
+
+        Args:
+            color: RGB 通道的取值范围，例如 {"r": (0, 255), "g": (0, 255), "b": (0, 255)}。
+            box: 检测区域，支持 Box 或已命名区域。
+            threshold: 匹配颜色的像素占比下限，范围 [0, 1]。
+            time_out: 等待超时秒数，0 使用框架默认值。
+            pre_action: 每次检测前执行的动作。
+            post_action: 检测未满足时执行的动作。
+            settle_time: 条件需要保持的稳定时间，-1 使用框架默认值。
+            raise_if_not_found: 超时后是否抛出异常。
+
+        Returns:
+            检测成功时返回传入的区域；超时未找到时返回 None。
+        """
+        def matches():
+            if self.frame is None:
+                return None
+            return box if self.calculate_color_percentage(color, box) >= threshold else None
+
+        return self.wait_until(matches, time_out=time_out, pre_action=pre_action, post_action=post_action,
+                               settle_time=settle_time, raise_if_not_found=raise_if_not_found)
+
+    def click_until_color(self, color, box, threshold=0.8, time_out=0, settle_time=-1,
+                          raise_if_not_found=False, relative_x=0.5, relative_y=0.5, after_sleep=1):
+        """反复点击区域，直到区域颜色占比达到阈值。
+
+        Args:
+            color: RGB 通道的取值范围。
+            box: 检测和点击区域，支持 Box 或已命名区域。
+            threshold: 匹配颜色的像素占比下限，范围 [0, 1]。
+            time_out: 等待超时秒数，0 使用框架默认值。
+            settle_time: 条件需要保持的稳定时间，-1 使用框架默认值。
+            raise_if_not_found: 超时后是否抛出异常。
+            relative_x: 点击位置在区域内的水平比例。
+            relative_y: 点击位置在区域内的垂直比例。
+            after_sleep: 点击后的等待秒数。
+
+        Returns:
+            bool: 颜色达到阈值时为 True；超时未达到时为 False。
+        """
+        return bool(self.wait_color(
+            color, box, threshold=threshold, time_out=time_out, settle_time=settle_time,
+            raise_if_not_found=raise_if_not_found,
+            post_action=lambda: self.click_box(box, relative_x, relative_y, after_sleep=after_sleep),
+        ))
