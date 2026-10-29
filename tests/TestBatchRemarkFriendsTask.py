@@ -187,29 +187,36 @@ class _ReadbackHarness(BatchRemarkFriendsTask):
     screen_height = 720
     frame = None
 
-    def __init__(self, ocr_text):
+    def __init__(self, ocr_texts):
         self.config = {}
         self._visit_templates = {}
         self._list_snapshot = None
-        self._ocr_text = ocr_text
+        self._ocr_texts = list(ocr_texts)
 
     def adv_box(self, roi):
         return Box(0, 0, 10, 10)
 
-    def adv_find_text(self, box, pattern, threshold=0.6):
-        # 与 ok 的 OCR 一致：用 match 正则去搜索识别到的整行文本
-        return Box(0, 0, 10, 10, name=self._ocr_text) if pattern.search(self._ocr_text) else None
+    def ocr(self, *args, **kwargs):
+        return [Box(0, 0, 10, 10, name=text) for text in self._ocr_texts]
 
 
 class TestRemarkTextReadback(unittest.TestCase):
     def test_full_remark_is_recognized(self):
-        self.assertTrue(_ReadbackHarness("自动1").remark_text_visible("自动1"))
+        self.assertTrue(_ReadbackHarness(["自动1"]).remark_text_visible("自动1"))
+
+    def test_split_text_with_spaces_still_matches(self):
+        self.assertTrue(_ReadbackHarness(["自 动", "1"]).remark_text_visible("自动1"))
 
     def test_placeholder_text_is_not_accepted_as_input(self):
-        self.assertFalse(_ReadbackHarness("请输入备注").remark_text_visible("自动1"))
+        self.assertFalse(_ReadbackHarness(["请输入备注"]).remark_text_visible("自动1"))
 
-    def test_longer_text_does_not_count_as_full_match(self):
-        self.assertFalse(_ReadbackHarness("自动12").remark_text_visible("自动1"))
+    def test_partial_text_is_not_accepted(self):
+        # 逐字投递时丢字：只写进「自动」不能被当成完整备注
+        self.assertFalse(_ReadbackHarness(["自动"]).remark_text_visible("自动1"))
+
+    def test_extra_ocr_text_does_not_block_the_match(self):
+        # OCR 把输入框附近的内容一起读进来时不该误判为没写入
+        self.assertTrue(_ReadbackHarness(["备注", "自动1"]).remark_text_visible("自动1"))
 
 
 class TestRowClueAvailable(unittest.TestCase):
@@ -251,6 +258,12 @@ class TestRemarkOneResult(unittest.TestCase):
         task = _RemarkOneHarness(confirm_ok=False)
         self.assertFalse(task.remark_one(_row("甲#1"), "自动1"))
         self.assertIn("back", task.events)
+
+    def test_unverified_input_skips_confirm_and_fails(self):
+        task = _RemarkOneHarness(input_ok=False)
+        self.assertFalse(task.remark_one(_row("甲#1"), "自动1"))
+        self.assertEqual(task.events, ["click", "open", "input", "back"])
+        self.assertNotIn("confirm", task.events)
 
     def test_unable_to_return_to_list_stops_the_task(self):
         task = _RemarkOneHarness(back_ok=False)
