@@ -663,7 +663,8 @@ class TestYingTuoTask(unittest.TestCase):
             self.assertTrue(YingTuoTask.find_normal_challenge(task))
             self.assertIsNone(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(len(task._entered_poster_templates), 2)
-        self.assertEqual(task.scroll_count, 4)
+        # 静止海报连续两次滚动均未推进后结束，不使用无灰条的四次预算。
+        self.assertEqual(task.scroll_count, 2)
         self.assertEqual(len(task.clicks), 1)
 
     def test_failed_entered_poster_resumes_other_poster(self):
