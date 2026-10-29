@@ -559,17 +559,25 @@ class TestYingTuoTask(unittest.TestCase):
         # 即使右侧还有未匹配条，只要屏上任意一条已经进入就向下滚动。
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
-        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(150, 25)]):
-            self.assertIsNone(YingTuoTask.find_normal_challenge(task))
-        self.assertEqual(task.scroll_count, 2)
+        task._detect_stable_bars = Mock(side_effect=[
+            ([_bar(50, 25), _bar(150, 25)], task.frame),
+            ([_bar(50, 25)], task.frame), ([_bar(50, 25)], task.frame),
+        ])
+        task._scroll_poster_after_matching = Mock(side_effect=[True, False])
+        self.assertIsNone(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task._scroll_poster_after_matching.call_count, 2)
         self.assertEqual(task.clicks, [])
 
     def test_entered_later_gray_bar_also_scrolls_instead_of_clicking_first(self):
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, 150, 25)]
-        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(150, 25)]):
-            self.assertIsNone(YingTuoTask.find_normal_challenge(task))
-        self.assertEqual(task.scroll_count, 2)
+        task._detect_stable_bars = Mock(side_effect=[
+            ([_bar(50, 25), _bar(150, 25)], task.frame),
+            ([_bar(150, 25)], task.frame), ([_bar(150, 25)], task.frame),
+        ])
+        task._scroll_poster_after_matching = Mock(side_effect=[True, False])
+        self.assertIsNone(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task._scroll_poster_after_matching.call_count, 2)
         self.assertEqual(task.clicks, [])
 
     def test_unseen_screen_selects_first_bar_and_nearby_templates(self):
@@ -699,7 +707,6 @@ class TestYingTuoTask(unittest.TestCase):
         task._scroll_poster_after_matching = Mock(return_value=True)
         self.assertIsNone(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task._scroll_poster_after_matching.call_count, 6)
-        self.assertFalse(task._normal_scan_incomplete)
         self.assertEqual(task.clicks, [])
 
     def test_matched_position_progress_keeps_scanning_beyond_empty_budget(self):
@@ -713,25 +720,52 @@ class TestYingTuoTask(unittest.TestCase):
         self.assertEqual(task._scroll_poster_after_matching.call_count, 10)
         self.assertEqual(task.clicks, [(0.75, 0.25, {"after_sleep": 0.25})])
 
-    def test_mixed_stalled_screen_reports_incomplete_without_clicking_unseen_poster(self):
+    def test_end_page_attempts_each_remaining_group_and_records_before_click(self):
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, x, 25) for x in (50, 60)]
-        task.find_normal_challenge = lambda leftmost=False: YingTuoTask.find_normal_challenge(task, leftmost)
-        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(60, 25), _bar(150, 25)]):
-            self.assertFalse(YingTuoTask.challenge_normal_stages(task))
-        self.assertTrue(task._normal_scan_incomplete)
-        self.assertEqual(task.clicks, [])
-        self.assertEqual(len(task._entered_poster_templates), 2)
+        bars = [_bar(x, 25) for x in (50, 60, 100, 110, 150, 160)]
+        recorded_at_click = []
+        original_click = task.click_relative
+        def click_with_record_check(x, y, **kwargs):
+            recorded_at_click.append(len(task._entered_poster_templates))
+            original_click(x, y, **kwargs)
+        task.click_relative = click_with_record_check
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=bars):
+            self.assertTrue(YingTuoTask.find_normal_challenge(task))
+            self.assertTrue(YingTuoTask.find_normal_challenge(task))
+            self.assertIsNone(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(recorded_at_click, [4, 6])
+        self.assertEqual([click[0] for click in task.clicks], [0.5, 0.75])
+        self.assertEqual(len(task._entered_poster_templates), 6)
 
-    def test_all_recorded_stalled_screen_clears_old_incomplete_flag_and_completes(self):
+    def test_all_recorded_stalled_screen_completes_without_clicking(self):
         task = _FakeYingTuoTask()
-        task._normal_scan_incomplete = True
         task._entered_poster_templates = [crop_poster_template(task.frame, x, 25) for x in (50, 60, 150)]
         task.find_normal_challenge = lambda leftmost=False: YingTuoTask.find_normal_challenge(task, leftmost)
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(60, 25), _bar(150, 25)]):
             self.assertTrue(YingTuoTask.challenge_normal_stages(task))
-        self.assertFalse(task._normal_scan_incomplete)
         self.assertEqual(task.clicks, [])
+
+    def test_end_page_uses_fresh_detection_instead_of_pre_scroll_coordinates(self):
+        task = _FakeYingTuoTask()
+        task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
+        task._detect_stable_bars = Mock(side_effect=[
+            ([_bar(50, 25), _bar(150, 25)], task.frame),
+            ([_bar(50, 25), _bar(100, 25)], task.frame),
+        ])
+        task._scroll_poster_after_matching = Mock(return_value=False)
+        self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task.clicks, [(0.5, 0.25, {"after_sleep": 0.25})])
+        self.assertEqual(len(task._entered_poster_templates), 2)
+
+    def test_position_stall_at_end_still_selects_unattempted_group(self):
+        task = _FakeYingTuoTask()
+        task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
+        task._detect_stable_bars = Mock(return_value=([_bar(50, 25), _bar(150, 25)], task.frame))
+        task._scroll_poster_after_matching = Mock(return_value=True)
+        self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task._scroll_poster_after_matching.call_count, 6)
+        self.assertEqual(task.clicks, [(0.75, 0.25, {"after_sleep": 0.25})])
 
 
     def test_when_all_visible_gray_bars_entered_scrolls(self):
@@ -767,11 +801,12 @@ class TestYingTuoTask(unittest.TestCase):
         bars = [_bar(50, 25), _bar(60, 25), _bar(150, 25)]
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=bars):
             self.assertTrue(YingTuoTask.find_normal_challenge(task))
+            self.assertTrue(YingTuoTask.find_normal_challenge(task))
             self.assertIsNone(YingTuoTask.find_normal_challenge(task))
-        self.assertEqual(len(task._entered_poster_templates), 2)
+        self.assertEqual(len(task._entered_poster_templates), 3)
         # 静止海报连续两次滚动均未推进后结束，不使用无灰条的四次预算。
-        self.assertEqual(task.scroll_count, 2)
-        self.assertEqual(len(task.clicks), 1)
+        self.assertEqual(task.scroll_count, 4)
+        self.assertEqual(len(task.clicks), 2)
 
     def test_failed_entered_poster_resumes_other_poster(self):
         task = Mock()

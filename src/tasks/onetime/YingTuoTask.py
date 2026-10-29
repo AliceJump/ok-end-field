@@ -155,7 +155,6 @@ class YingTuoTask(BattleMixin):
 
         ``leftmost_only`` 为真时只挑战最左侧海报的关卡。
         """
-        self._normal_scan_incomplete = False
         empty_visits = 0
         while self.find_normal_challenge(leftmost_only):
             self.log_info("检测到普通关卡灰条，处理本屏未通关关卡")
@@ -206,9 +205,6 @@ class YingTuoTask(BattleMixin):
                 self.log_info("挑战完成，继续寻找下一个普通关卡")
             if not abandoned_poster and not self.return_to_monument():
                 self._recover_entered_normal_challenge("未能返回海报页")
-        if self._normal_scan_incomplete:
-            self.log_info("仍有未尝试的完整海报，普通关卡扫描未完成")
-            return False
         self.log_info("最左侧海报的普通关卡已全部打完" if leftmost_only else "影拓丰碑普通关卡已全部打完")
         return True
 
@@ -557,14 +553,14 @@ class YingTuoTask(BattleMixin):
         """本屏任意模板已记录就滚动，否则进入首条；无灰条累计四次后结束。
 
         ``leftmost_only`` 为真时只看最左侧海报下方的灰条，没有就直接结束，不滚动。
-        已记录灰条连续六次没有位移时停止；仍有未尝试模板则标记扫描未完成。
+        确认滚动到末尾后，改为逐组选择本屏未记录模板，直到本页全部尝试过。
         """
         empty_scrolls = 0
         clipped_stalls = 0
         previous_clipped_bars = None
         matched_stalls = 0
         previous_matched_bars = None
-        self._normal_scan_incomplete = False
+        at_end = False
         self._last_normal_attempt_recorded = False
         while empty_scrolls < 4:
             bars, frame = self._detect_stable_bars()
@@ -574,6 +570,8 @@ class YingTuoTask(BattleMixin):
                     self.log_info("最左侧海报没有未通关的普通关卡")
                     return None
             if not bars:
+                if at_end:
+                    return None
                 clipped_stalls = 0
                 previous_clipped_bars = None
                 matched_stalls = 0
@@ -594,13 +592,12 @@ class YingTuoTask(BattleMixin):
                     has_entered_template = True
                     continue
                 candidates.append((bar, template))
-            # 本屏只要出现任意已进入的灰条，就跳过整个屏幕，不点击其余候选。
-            if has_entered_template:
+            # 正常扫描命中任意记录就跳屏；确认末尾后才允许补打同屏未尝试组。
+            if has_entered_template and not at_end:
                 clipped_stalls = 0
                 previous_clipped_bars = None
                 if leftmost_only:
                     self.log_info("最左侧活动海报本轮已尝试，不再挑战")
-                    self._normal_scan_incomplete = bool(candidates)
                     return None
                 if previous_matched_bars is not None and self._same_bars(previous_matched_bars, bars, frame.shape[1]):
                     matched_stalls += 1
@@ -608,15 +605,17 @@ class YingTuoTask(BattleMixin):
                     matched_stalls = 0
                 previous_matched_bars = bars
                 if matched_stalls >= 6:
-                    self.log_info("已尝试海报灰条连续六次滚动未推进，结束扫描")
-                    self._normal_scan_incomplete = bool(candidates)
-                    return None
+                    self.log_info("灰条连续六次滚动未推进，按页尾重新检测剩余组合")
+                    at_end = True
+                    continue
                 self.log_info("本屏有本轮已尝试的灰条组合，直接滚动并确认是否推进")
                 if not self._scroll_poster_after_matching(frame):
-                    self.log_info("向下滚动后海报页面没有变化，已到末尾或无法继续滚动")
-                    self._normal_scan_incomplete = bool(candidates)
-                    return None
+                    self.log_info("滚动后海报没有变化，按页尾重新检测剩余组合")
+                    at_end = True
                 continue
+            if at_end and not candidates and has_entered_template:
+                self.log_info("页尾可完整识别的灰条组合本轮均已尝试")
+                return None
             if not candidates:
                 matched_stalls = 0
                 previous_matched_bars = None
