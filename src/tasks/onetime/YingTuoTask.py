@@ -5,7 +5,7 @@ from ok import Box, TaskDisabledException
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.image.gray_bar_detector import detect_gray_bars
-from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template, nearby_poster_templates
+from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template, nearby_poster_templates, poster_view_changed
 from src.image.reward_card_probe import CARD_CLAIMABLE, CARD_CLAIMED, CARD_UNFINISHED, card_state
 from src.tasks.mixin.battle_mixin import BattleMixin
 
@@ -583,9 +583,10 @@ class YingTuoTask(BattleMixin):
                 if leftmost_only:
                     self.log_info("最左侧活动海报本轮已尝试，不再挑战")
                     return None
-                empty_scrolls += 1
-                self.log_info(f"本屏有已进入的灰条组合，向下滚动 ({empty_scrolls}/4)")
-                self.scroll_relative(0.5, 0.5, -5)
+                self.log_info("本屏有本轮已尝试的灰条组合，直接滚动并确认是否推进")
+                if not self._scroll_poster_after_matching(frame):
+                    self.log_info("向下滚动后海报页面没有变化，已到末尾或无法继续滚动")
+                    return None
                 continue
             leftmost_bar, _ = candidates[0]
             frame_height, frame_width = frame.shape[:2]
@@ -595,36 +596,55 @@ class YingTuoTask(BattleMixin):
             self._entered_poster_templates.extend(group)
             self._last_normal_attempt_recorded = True
             self.log_info(f"选中第一条灰条，立即记录 {len(group)} 张相邻海报模板（本轮累计 {len(self._entered_poster_templates)} 张）")
-            for attempt in range(1, self.CHALLENGE_CLICK_ATTEMPTS + 1):
-                self.click_relative(
-                    leftmost_bar.center_x / frame_width,
-                    leftmost_bar.center_y / frame_height,
-                    after_sleep=0.25,
-                )
-                if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
-                    return True
-                # 重试同一个候选灰条：不能重新进入全屏模板过滤，否则刚登记的
-                # 模板会命中自己并提前滚走，也不能改点另一张海报。
-                if attempt < self.CHALLENGE_CLICK_ATTEMPTS:
-                    self.log_info(f"点击灰条后未进入详情页，重新定位同一灰条 ({attempt}/{self.CHALLENGE_CLICK_ATTEMPTS})")
-                    retry_bars, retry_frame = self._detect_stable_bars()
-                    if not retry_bars:
-                        raise YingTuoError("重试时原灰条已消失，页面状态不明")
-                    nearest = min(
-                        retry_bars,
-                        key=lambda bar: abs(bar.center_x - leftmost_bar.center_x) + abs(bar.center_y - leftmost_bar.center_y),
-                    )
-                    if (
-                        abs(nearest.center_x - leftmost_bar.center_x) > retry_frame.shape[1] * 0.01
-                        or abs(nearest.center_y - leftmost_bar.center_y) > retry_frame.shape[0] * 0.01
-                    ):
-                        raise YingTuoError("重试时无法定位原灰条，防止点到其他海报")
-                    leftmost_bar = nearest
-                    frame_height, frame_width = retry_frame.shape[:2]
-            self.log_info("点击灰条后未进入关卡详情页")
-            raise YingTuoError("点击灰条后未进入关卡详情页")
+            self._click_bar_until_detail(leftmost_bar, frame_height, frame_width)
+            return True
         self.log_info("连续 4 次滚动未发现本轮可进入的灰条组合")
         return None
+
+    def _scroll_poster_after_matching(self, before_frame):
+        """已尝试模板只触发向下滚动；是否到页尾根据真实画面变化判断。
+
+        不消耗没有灰条的四次滚动预算。连续两次向下滚动后海报区域仍
+        没有明显变化，视为到达末尾/卡住，不无限循环。
+        """
+        previous = before_frame
+        for _ in range(2):
+            self.scroll_relative(0.5, 0.5, -5)
+            _, current = self._detect_stable_bars()
+            if poster_view_changed(previous, current):
+                return True
+            previous = current
+        return False
+
+    def _click_bar_until_detail(self, bar, frame_height, frame_width):
+        """仅重试当前灰条，不重新选择其他海报或重复添加模板。"""
+        for attempt in range(1, self.CHALLENGE_CLICK_ATTEMPTS + 1):
+            self.click_relative(
+                bar.center_x / frame_width,
+                bar.center_y / frame_height,
+                after_sleep=0.25,
+            )
+            if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
+                return
+            if attempt == self.CHALLENGE_CLICK_ATTEMPTS:
+                break
+            self.log_info(f"点击灰条后未进入详情页，重试同一灰条 ({attempt}/{self.CHALLENGE_CLICK_ATTEMPTS})")
+            retry_bars, retry_frame = self._detect_stable_bars()
+            if not retry_bars:
+                raise YingTuoError("重试时原灰条已消失，页面状态不明")
+            nearest = min(
+                retry_bars,
+                key=lambda item: abs(item.center_x - bar.center_x) + abs(item.center_y - bar.center_y),
+            )
+            if (
+                abs(nearest.center_x - bar.center_x) > retry_frame.shape[1] * 0.01
+                or abs(nearest.center_y - bar.center_y) > retry_frame.shape[0] * 0.01
+            ):
+                raise YingTuoError("重试时无法定位原灰条，防止点到其他海报")
+            bar = nearest
+            frame_height, frame_width = retry_frame.shape[:2]
+        self.log_info("点击灰条后未进入关卡详情页")
+        raise YingTuoError("点击灰条后未进入关卡详情页")
 
     def _detect_stable_bars(self, time_out=3.0):
         """间隔 0.2 秒两次检测结果一致才采用，返回灰条列表与所用帧。

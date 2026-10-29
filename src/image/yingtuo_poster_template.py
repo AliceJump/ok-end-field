@@ -66,3 +66,26 @@ def nearby_poster_templates(candidates: list[tuple], frame_width: int) -> list[n
         group.append(patch.copy())
         previous_x = bar.center_x
     return group
+
+
+def poster_view_changed(before: np.ndarray, after: np.ndarray) -> bool:
+    """判断海报页是否因滚动发生实际变化，忽略灰条检测带。
+
+    仅比较上方海报纹理区域的低分辨率采样以限制 4K CPU 开销。
+    阈值是保守初值，需实际录屏确认滚动幅度及动态特效的影响。
+    """
+    if before is None or after is None or before.shape != after.shape:
+        return False
+    h, w = before.shape[:2]
+    y1, y2 = round(h * 0.16), round(h * 0.72)
+    x1, x2 = round(w * 0.03), round(w * 0.97)
+    if y2 <= y1 or x2 <= x1:
+        return False
+
+    def sample(frame):
+        area = frame[y1:y2, x1:x2]
+        gray = cv2.cvtColor(area, cv2.COLOR_BGR2GRAY) if area.ndim == 3 else area
+        return cv2.resize(gray, (160, 80), interpolation=cv2.INTER_AREA).astype(np.float32)
+
+    delta = np.abs(sample(after) - sample(before))
+    return bool(delta.mean() >= 2.5 and np.count_nonzero(delta > 8) / delta.size >= 0.05)

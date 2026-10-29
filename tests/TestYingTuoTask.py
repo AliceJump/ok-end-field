@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 from src.data.FeatureList import FeatureList as fL
-from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template, nearby_poster_templates
+from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template, nearby_poster_templates, poster_view_changed
 from src.tasks.onetime.YingTuoTask import YingTuoError, YingTuoTask, _settled
 
 
@@ -555,7 +555,7 @@ class TestYingTuoTask(unittest.TestCase):
         task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(150, 25)]):
             self.assertIsNone(YingTuoTask.find_normal_challenge(task))
-        self.assertEqual(task.scroll_count, 4)
+        self.assertEqual(task.scroll_count, 2)
         self.assertEqual(task.clicks, [])
 
     def test_entered_later_gray_bar_also_scrolls_instead_of_clicking_first(self):
@@ -563,7 +563,7 @@ class TestYingTuoTask(unittest.TestCase):
         task._entered_poster_templates = [crop_poster_template(task.frame, 150, 25)]
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(150, 25)]):
             self.assertIsNone(YingTuoTask.find_normal_challenge(task))
-        self.assertEqual(task.scroll_count, 4)
+        self.assertEqual(task.scroll_count, 2)
         self.assertEqual(task.clicks, [])
 
     def test_unseen_screen_selects_first_bar_and_nearby_templates(self):
@@ -580,20 +580,54 @@ class TestYingTuoTask(unittest.TestCase):
             task._entered_poster_templates[1], crop_poster_template(task.frame, 60, 25)
         ))
 
-    def test_nearby_poster_grouping_stops_at_large_gap_and_span(self):
+    def test_nearby_poster_grouping_stops_at_span_limit(self):
         template = np.arange(60, dtype=np.uint8).reshape(6, 10)
-        # 连续近邻连成一组，但单组宽度有上限，避免吞并下一张海报。
+        # 相邻间距 10 < 12，只有总跨度超过 46 时才被截断。
+        bars = [_bar(x, 25) for x in (50, 60, 70, 80, 90, 100)]
+        pairs = [(bar, template.copy()) for bar in bars]
+        self.assertEqual(len(nearby_poster_templates(pairs, 200)), 5)
+
+    def test_nearby_poster_grouping_stops_at_gap_limit(self):
+        template = np.arange(60, dtype=np.uint8).reshape(6, 10)
         bars = [_bar(x, 25) for x in (50, 60, 70, 80, 100, 150)]
         pairs = [(bar, template.copy()) for bar in bars]
-        nearby = nearby_poster_templates(pairs, 200)
-        self.assertEqual(len(nearby), 4)
+        self.assertEqual(len(nearby_poster_templates(pairs, 200)), 4)
+
+    def test_view_changed_uses_poster_area_not_gray_bar_region(self):
+        first = np.zeros((1080, 1920, 3), dtype=np.uint8)
+        after = first.copy()
+        after[808:836, :] = 240
+        self.assertFalse(poster_view_changed(first, after))
+        after[400:600, 100:1800] = 240
+        self.assertTrue(poster_view_changed(first, after))
+
+    def test_several_entered_screens_do_not_consume_empty_scroll_budget(self):
+        task = _FakeYingTuoTask()
+        bar0 = _bar(50, 25)
+        bar1 = _bar(150, 25)
+        task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
+        task._detect_stable_bars = Mock(side_effect=[([bar0], task.frame)] * 6 + [([bar1], task.frame)])
+        task._scroll_poster_after_matching = Mock(return_value=True)
+
+        self.assertTrue(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(task._scroll_poster_after_matching.call_count, 6)
+        self.assertEqual(task.clicks, [(0.75, 0.25, {"after_sleep": 0.25})])
+
+    def test_matched_screen_stops_when_real_scroll_cannot_advance(self):
+        task = _FakeYingTuoTask()
+        task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25)]):
+            self.assertIsNone(YingTuoTask.find_normal_challenge(task))
+        # 连续两次滚动后海报仍无变化，而非消耗四次无灰条预算。
+        self.assertEqual(task.scroll_count, 2)
+
 
     def test_when_all_visible_gray_bars_entered_scrolls(self):
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25)]):
             self.assertIsNone(YingTuoTask.find_normal_challenge(task))
-        self.assertEqual(task.scroll_count, 4)
+        self.assertEqual(task.scroll_count, 2)
         self.assertEqual(task.clicks, [])
 
     def test_battle_does_not_defer_or_duplicate_template_recording(self):
