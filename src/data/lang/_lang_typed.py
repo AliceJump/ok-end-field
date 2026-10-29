@@ -361,43 +361,6 @@ class DeliveryTaskModule(_LangModuleBaseT):
     """交货"""
 
 
-class MatrixCleanTaskModule(_LangModuleBaseT):
-    """matrix_clean_task — OCR 语言节点（值取自 zh_CN）"""
-
-    k_9ca99bd0: re.Pattern[str]
-    """武器基质"""
-
-    k_83c0c24d: re.Pattern[str]
-    """想要分解"""
-
-    k_52e36ffd: re.Pattern[str]
-    """快捷放入"""
-
-    k_7ba0a5b1: re.Pattern[str]
-    """稳定基质"""
-
-    k_16da2b84: re.Pattern[str]
-    """净态基质"""
-
-    k_1a40e234: re.Pattern[str]
-    """高纯基质"""
-
-    k_2396a6d9: re.Pattern[str]
-    """未上锁"""
-
-    k_fadf24db: re.Pattern[str]
-    """保存"""
-
-    k_9c61417d: re.Pattern[str]
-    """无法分解"""
-
-    k_75a84eb1: re.Pattern[str]
-    """未拥有该类型"""
-
-    k_feecb1e6: re.Pattern[str]
-    """^退出$"""
-
-
 class GameFlowMixinModule(_LangModuleBaseT):
     """game_flow_mixin — OCR 语言节点（值取自 zh_CN）"""
 
@@ -423,6 +386,25 @@ class LoginMixinModule(_LangModuleBaseT):
 
     k_20275ef2: re.Pattern[str]
     """上次"""
+
+
+class MatrixCleanTaskModule(_LangModuleBaseT):
+    """matrix_clean_task — OCR 语言节点（值取自 zh_CN）"""
+
+    k_83c0c24d: re.Pattern[str]
+    """想要分解"""
+
+    k_52e36ffd: re.Pattern[str]
+    """快捷放入"""
+
+    k_9c61417d: re.Pattern[str]
+    """无法分解"""
+
+    k_75a84eb1: re.Pattern[str]
+    """未拥有该类型"""
+
+    k_feecb1e6: re.Pattern[str]
+    """^退出$"""
 
 
 class TakeDeliveryTaskModule(_LangModuleBaseT):
@@ -783,10 +765,10 @@ class _LangAccessorTyped:
     daily_shop_mixin: DailyShopMixinModule
     daily_trade_mixin: DailyTradeMixinModule
     DeliveryTask: DeliveryTaskModule
-    matrix_clean_task: MatrixCleanTaskModule
     game_flow_mixin: GameFlowMixinModule
     liaison_mixin: LiaisonMixinModule
     login_mixin: LoginMixinModule
+    matrix_clean_task: MatrixCleanTaskModule
     TakeDeliveryTask: TakeDeliveryTaskModule
     WarehouseTransferTask: WarehouseTransferTaskModule
     world_map: WorldMapModule
