@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 
 from ok.feature.Box import Box
 
@@ -271,6 +272,64 @@ class TestRemarkOneResult(unittest.TestCase):
             task.remark_one(_row("甲#1"), "自动1")
 
 
+class _GlobalKeyHarness(BatchRemarkFriendsTask):
+    """press_global_key 只在前台确认通过时发送按键。"""
+
+    screen_width = 1280
+    screen_height = 720
+    frame = None
+
+    def __init__(self, foreground):
+        self.config = {}
+        self._visit_templates = {}
+        self._list_snapshot = None
+        self._foreground = foreground
+        self.logs = []
+
+    def log_warning(self, message, *args, **kwargs):
+        self.logs.append(message)
+
+    def game_window_in_foreground(self):
+        return self._foreground
+
+
+class _PasteHarness(BatchRemarkFriendsTask):
+    """剪贴板兜底的按键顺序与失焦中断。"""
+
+    screen_width = 1280
+    screen_height = 720
+    frame = None
+
+    def __init__(self, key_results, visible=True):
+        self.config = {}
+        self._visit_templates = {}
+        self._list_snapshot = None
+        self._key_results = list(key_results)
+        self._visible = visible
+        self.keys = []
+        self.logs = []
+
+    def log_warning(self, message, *args, **kwargs):
+        self.logs.append(message)
+
+    def send_key_down(self, key, *args, **kwargs):
+        self.keys.append(("down", key))
+
+    def send_key_up(self, key, *args, **kwargs):
+        self.keys.append(("up", key))
+
+    def press_global_key(self, *keys):
+        sent = self._key_results.pop(0) if self._key_results else False
+        self.keys.append(keys if sent else ("blocked", *keys))
+        return sent
+
+    def sleep(self, *args, **kwargs):
+        pass
+
+    def remark_text_visible(self, remark):
+        return self._visible
+
+
 class TestRunAbortsWhenFriendListIsLost(unittest.TestCase):
     def test_run_stops_and_logs_after_list_is_lost(self):
         task = _RemarkOneRunHarness()
@@ -278,6 +337,50 @@ class TestRunAbortsWhenFriendListIsLost(unittest.TestCase):
         self.assertEqual(task.events, ["remark_one"])
         self.assertTrue(any("无法回到好友列表" in message for message in task.logs))
         self.assertTrue(any("本次处理 0 位好友" in message for message in task.logs))
+
+
+class TestGlobalKeyFocusGuard(unittest.TestCase):
+    def test_key_is_not_sent_when_game_is_not_foreground(self):
+        import pyautogui
+
+        harness = _GlobalKeyHarness(foreground=False)
+        with unittest.mock.patch.object(pyautogui, "hotkey") as hotkey:
+            self.assertFalse(harness.press_global_key("ctrl", "v"))
+        hotkey.assert_not_called()
+        self.assertTrue(any("不在前台" in message for message in harness.logs))
+
+    def test_key_is_sent_when_game_is_foreground(self):
+        import pyautogui
+
+        harness = _GlobalKeyHarness(foreground=True)
+        with unittest.mock.patch.object(pyautogui, "hotkey") as hotkey:
+            self.assertTrue(harness.press_global_key("ctrl", "v"))
+        hotkey.assert_called_once_with("ctrl", "v")
+
+
+class TestPasteRemarkText(unittest.TestCase):
+    def test_clear_and_paste_keys_are_all_sent_when_focus_is_kept(self):
+        harness = _PasteHarness([True, True, True], visible=True)
+        with unittest.mock.patch("pyperclip.copy"):
+            self.assertTrue(harness.paste_remark_text("自动1"))
+        self.assertEqual(
+            harness.keys,
+            [("down", "ctrl"), ("up", "ctrl"), ("ctrl", "a"), ("delete",), ("ctrl", "v")],
+        )
+
+    def test_ctrl_v_is_not_sent_after_focus_is_lost_during_the_wait(self):
+        harness = _PasteHarness([True, True, False], visible=True)
+        with unittest.mock.patch("pyperclip.copy"):
+            self.assertFalse(harness.paste_remark_text("自动1"))
+        self.assertIn(("blocked", "ctrl", "v"), harness.keys)
+        self.assertNotIn(("ctrl", "v"), harness.keys)
+
+    def test_clear_stops_when_focus_is_lost_before_delete(self):
+        harness = _PasteHarness([True, False], visible=True)
+        with unittest.mock.patch("pyperclip.copy") as copy:
+            self.assertFalse(harness.paste_remark_text("自动1"))
+        self.assertIn(("blocked", "delete"), harness.keys)
+        copy.assert_not_called()
 
 
 if __name__ == "__main__":

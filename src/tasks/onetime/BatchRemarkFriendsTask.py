@@ -230,27 +230,41 @@ class BatchRemarkFriendsTask(FriendVisitAdvancedMixin, Common):
         return target in recognized
 
     def paste_remark_text(self, remark):
-        """剪贴板兜底：先确认游戏已在前台，再用 pyautogui 粘贴（支持中文）。"""
-        import pyautogui
+        """剪贴板兜底：每次全局按键前都复核前台窗口，再粘贴（支持中文）。"""
         import pyperclip
 
         # EfInteraction 在 send_key_down 里会把游戏窗口置前，并等待它真正成为前台
         self.send_key_down("ctrl")
         self.send_key_up("ctrl")
-        if not self.game_window_in_foreground():
-            self.log_warning("游戏窗口没有成为前台，已放弃剪贴板粘贴，避免按键发给其它应用")
+        # 主路径可能其实已经写入、只是 OCR 没回读到：先清空再粘贴，避免文本重复。
+        # 每个全局按键前都重新确认前台，用户中途切走窗口时立即停手。
+        if not self.press_global_key("ctrl", "a"):
             return False
-        # 主路径可能其实已经写入、只是 OCR 没回读到：先清空再粘贴，避免文本重复
-        pyautogui.hotkey("ctrl", "a")
-        pyautogui.press("delete")
+        if not self.press_global_key("delete"):
+            return False
         pyperclip.copy(remark)
         self.sleep(0.2)
-        pyautogui.hotkey("ctrl", "v")
+        if not self.press_global_key("ctrl", "v"):
+            return False
         self.sleep(0.6)
         visible = self.remark_text_visible(remark)
         if not visible:
             self.log_warning("剪贴板粘贴后仍回读不到完整备注，取消保存")
         return visible
+
+    def press_global_key(self, *keys):
+        """游戏窗口在前台时才发送全局按键；不在前台就直接放弃并返回 False。
+
+        pyautogui 发出的按键会落到系统前台窗口，因此每次发送前都要确认游戏仍是前台，
+        不能只在开始兜底时检查一次。
+        """
+        if not self.game_window_in_foreground():
+            self.log_warning("游戏窗口不在前台，已取消发送按键，避免按键发给其它应用")
+            return False
+        import pyautogui
+
+        pyautogui.hotkey(*keys)
+        return True
 
     def game_window_in_foreground(self):
         """游戏窗口当前是否是系统前台窗口。"""
