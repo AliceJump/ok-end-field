@@ -71,6 +71,7 @@ class BatchAddFriendsTask(Common):
     """陌生人推荐批量发送好友申请。仅支持 720P。"""
 
     CFG_MAX_COUNT = "最大添加数量"
+    CFG_BATCH_LIMIT = "换一批前最大添加数"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -81,13 +82,24 @@ class BatchAddFriendsTask(Common):
         self.description = (
             "自动批量发送好友申请（陌生人推荐）。注意：过于频繁的添加好友可能会造成游戏风控。仅支持 720P 分辨率。"
         )
-        self.default_config.update({self.CFG_MAX_COUNT: 20})
-        self.config_description.update({self.CFG_MAX_COUNT: "达到数量后自动停止。"})
+        self.default_config.update({self.CFG_MAX_COUNT: 20, self.CFG_BATCH_LIMIT: 10})
+        self.config_type[self.CFG_BATCH_LIMIT] = {"min": 0, "max": 200}
+        self.config_description.update(
+            {
+                self.CFG_MAX_COUNT: "达到数量后自动停止。",
+                self.CFG_BATCH_LIMIT: (
+                    "同一批陌生人最多添加多少个就点「换一批」，默认 10。\n0 表示不加限制，把当前这一批能加的都加完。"
+                ),
+            }
+        )
         self._template_cache = {}
 
     def run(self):
         if not self.ensure_720p():
             return
+        # 游戏可能还停在加载、剧情、弹窗或别的菜单上，先回大世界再导航，
+        # 否则三个候选（添加好友入口 / 好友菜单项 / 大世界菜单按钮）会全部匹配不到。
+        self.ensure_main(time_out=180)
         if not self.enter_friend_add_page():
             self.log_error(self.tr("未能进入「好友 → 添加好友」页面，已停止"))
             return
@@ -110,8 +122,12 @@ class BatchAddFriendsTask(Common):
     # ---------- 场景导航 ----------
 
     def enter_friend_add_page(self):
-        """从当前界面一路走到「好友 → 添加好友」，最多尝试四轮。"""
-        for _ in range(4):
+        """从当前界面一路走到「好友 → 添加好友」。
+
+        界面可能还在切换（加载、剧情、弹窗），单轮什么都匹配不到时不要立刻放弃：
+        先等画面稳定，再尝试退回大世界重走一遍。
+        """
+        for attempt in range(6):
             if self.on_add_page():
                 return True
             # 已在好友菜单：点顶部「添加好友」入口
@@ -128,8 +144,16 @@ class BatchAddFriendsTask(Common):
                 self.click_box(friend, after_sleep=1.2)
                 continue
             # 在大世界：Alt+左键打开菜单
-            if not self.open_world_menu():
-                break
+            if self.open_world_menu():
+                continue
+            # 三个候选都没匹配到：界面可能还没就绪，或卡在别的弹窗里
+            if attempt >= 2:
+                self.log_info(self.tr("未识别到好友入口，先返回大世界再重试"))
+                self.ensure_main(time_out=60)
+            else:
+                self.log_info(self.tr("未识别到好友入口，等待界面稳定后重试"))
+                self.wait_ui_stable(stable_time=0.5, max_wait=3, refresh_interval=0.3)
+                self.sleep(0.8)
         return self.on_add_page()
 
     def open_world_menu(self):
@@ -157,13 +181,22 @@ class BatchAddFriendsTask(Common):
 
     def add_strangers(self):
         max_count = int(self.config.get(self.CFG_MAX_COUNT, 20))
+        batch_limit = int(self.config.get(self.CFG_BATCH_LIMIT, 10) or 0)
         added = 0
+        added_in_batch = 0
         scrolled = False
         while added < max_count and not self.exit_is_set():
+            # 同一批加到上限就先换一批，避免把一批陌生人加穿导致风控
+            if batch_limit and added_in_batch >= batch_limit and self.change_batch():
+                added_in_batch = 0
+                scrolled = False
+                self.sleep(1.5)
+                continue
             button = self.find_add_button()
             if button is not None:
                 self.click_box(button, after_sleep=0.3)
                 added += 1
+                added_in_batch += 1
                 scrolled = False
                 self.log_info(self.tr("已发送好友申请 {added}/{max}").format(added=added, max=max_count))
                 if self.friend_list_full():
@@ -176,6 +209,7 @@ class BatchAddFriendsTask(Common):
                 self.scroll_list()
                 continue
             if self.change_batch():
+                added_in_batch = 0
                 scrolled = False
                 self.sleep(1.5)
                 continue
