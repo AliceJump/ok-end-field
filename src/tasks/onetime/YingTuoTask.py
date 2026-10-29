@@ -7,6 +7,7 @@ from src.icons import Icons
 from src.image.gray_bar_detector import detect_gray_bars
 from src.image.reward_card_probe import CARD_CLAIMABLE, CARD_CLAIMED, CARD_UNFINISHED, card_state
 from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.search_mixin import SearchMixin
 
 
 def _settled(read):
@@ -30,7 +31,13 @@ class YingTuoError(Exception):
     """画面没有按预期切换。run() 捕获它、记失败并返回 False，一键日常的后续任务照常执行。"""
 
 
-class YingTuoTask(BattleMixin):
+class YingTuoTask(SearchMixin, BattleMixin):
+    """影拓丰碑。
+
+    需要 ``SearchMixin`` 提供 ``strafe_search``：当期第一关入场即开战，其余海报的关卡
+    仍要按 W 走位找到触碰点再按 F 才会开战（见 ``battle_and_exit``）。
+    """
+
     CFG_CLAIM_REWARD: ClassVar[str] = "⭐领取影拓丰碑奖励"
     # 领奖开启且活动任务已全部完成时跳过整个任务；独立任务仍挑战其余海报，一键日常版跳过。
     SKIP_WHEN_ACTIVITY_DONE: ClassVar[bool] = False
@@ -327,9 +334,12 @@ class YingTuoTask(BattleMixin):
 
         state = self._visit_activity_center(claim)
         if state is None:
-            # 打不开活动页时无法判断进度，按未完成处理，宁可多打一轮
+            # 打不开活动页时无法判断进度，按未完成处理，宁可多打一轮。
+            # 苦难任务同样按「未完成」处理：它只是进关卡后立刻撤离，代价十几秒，
+            # 而误判成已完成会让活动任务永远差一项，只能手动处理。
+            self.log_info("活动页未打开，苦难任务按未完成处理")
             self.ensure_main()
-            return CARD_UNFINISHED, False
+            return CARD_UNFINISHED, True
         hardship_pending = self._hardship_task_pending(self.frame)
         if hardship_pending:
             self.log_info("苦难任务未完成")
