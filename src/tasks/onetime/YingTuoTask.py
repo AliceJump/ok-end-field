@@ -70,8 +70,7 @@ class YingTuoTask(BattleMixin):
 
         self.support_schedule_task = True
         self._entered_poster_templates = []
-        self._selected_poster_templates = []
-        self._last_normal_entry_confirmed = False
+        self._last_normal_attempt_recorded = False
         self._abandoned_normal_challenges = 0
         self.default_config.update({self.CFG_CLAIM_REWARD: True})
         self.config_description[self.CFG_CLAIM_REWARD] = (
@@ -89,8 +88,7 @@ class YingTuoTask(BattleMixin):
     def run_yingtuo(self):
         # 仅在新任务开始时清空，活动与其余海报、退出重进期间保持本轮记录。
         self._entered_poster_templates.clear()
-        self._selected_poster_templates = []
-        self._last_normal_entry_confirmed = False
+        self._last_normal_attempt_recorded = False
         self._abandoned_normal_challenges = 0
         self.ensure_main(time_out=400)
         claim_enabled = self.config.get(self.CFG_CLAIM_REWARD, True)
@@ -190,7 +188,6 @@ class YingTuoTask(BattleMixin):
                     raise YingTuoError("未能关闭苦难模式")
                 self.log_info("进入挑战页面，开始挑战")
                 self._click_challenge_and_enter()
-                self._last_normal_entry_confirmed = False
                 if not self.battle_and_exit(transition_recovery=self._retry_entry):
                     self._recover_entered_normal_challenge("战斗未正常完成")
                     abandoned_poster = True
@@ -212,11 +209,11 @@ class YingTuoTask(BattleMixin):
         return True
 
     def _recover_entered_normal_challenge(self, reason):
-        """失败后重新进入海报页，并跳过本轮已经进入的组合。
+        """失败后恢复海报页，跳过本轮已选择过的灰条组合。
 
-        未确认入场时不能归类为已进入，仍按异常终止处理。
+        如果还没记录选中的灰条，则无法确认本轮尝试范围，仍按异常终止。
         """
-        if not self._last_normal_entry_confirmed:
+        if not self._last_normal_attempt_recorded:
             raise YingTuoError(reason)
         self._abandoned_normal_challenges += 1
         self.log_info(f"{reason}；当前组合已进入过，恢复后跳过并继续扫描")
@@ -559,7 +556,7 @@ class YingTuoTask(BattleMixin):
         """
         empty_scrolls = 0
         attempts = 0
-        self._selected_poster_templates = []
+        self._last_normal_attempt_recorded = False
         while empty_scrolls < 4:
             bars, frame = self._detect_stable_bars()
             if leftmost_only:
@@ -585,7 +582,7 @@ class YingTuoTask(BattleMixin):
             # 本屏只要出现任意已进入的灰条，就跳过整个屏幕，不点击其余候选。
             if has_entered_template:
                 if leftmost_only:
-                    self.log_info("最左侧活动海报本轮已进入，不再挑战")
+                    self.log_info("最左侧活动海报本轮已尝试，不再挑战")
                     return None
                 empty_scrolls += 1
                 self.log_info(f"本屏有已进入的灰条组合，向下滚动 ({empty_scrolls}/4)")
@@ -594,16 +591,18 @@ class YingTuoTask(BattleMixin):
             attempts += 1
             leftmost_bar, _ = candidates[0]
             frame_height, frame_width = frame.shape[:2]
-            self.log_info(f"检测到 {len(bars)} 条普通关卡灰条，选择本轮未进入的组合")
+            # 选择本屏第一条灰条时立即把整组近邻模板记为本轮已尝试：
+            # 不等待详情页、协议空间和战斗结果。点击失败也不重复选这组。
+            group = nearby_poster_templates(candidates, frame_width)
+            self._entered_poster_templates.extend(group)
+            self._last_normal_attempt_recorded = True
+            self.log_info(f"选中第一条灰条，立即记录 {len(group)} 张相邻海报模板（本轮累计 {len(self._entered_poster_templates)} 张）")
             self.click_relative(
                 leftmost_bar.center_x / frame_width,
                 leftmost_bar.center_y / frame_height,
                 after_sleep=0.25,
             )
             if self.wait_until(self._on_detail_page, time_out=self.DETAIL_PAGE_TIMEOUT, raise_if_not_found=False):
-                # 进入任一灰条，按相邻间距将本组海报模板一并记录。
-                # 先缓存，只有协议空间真正入场后才加入本轮已进入集合。
-                self._selected_poster_templates = nearby_poster_templates(candidates, frame_width)
                 return True
             # 点满次数就报错，不再检测：此时画面不明，检测为空会走空滚动并误报任务完成。
             if attempts >= self.CHALLENGE_CLICK_ATTEMPTS:
@@ -667,14 +666,7 @@ class YingTuoTask(BattleMixin):
     def battle_and_exit(self, transition_recovery=None):
         if not self.wait_battle_space(transition_recovery=transition_recovery):
             return False
-        # 确认进入协议空间就登记，不依赖胜负；失败回主界面后仍应跳过。
-        self._last_normal_entry_confirmed = True
-        selected = getattr(self, "_selected_poster_templates", None)
-        if isinstance(selected, list) and selected:
-            self._entered_poster_templates.extend(selected)
-            self._selected_poster_templates = []
-            self.log_info(f"本轮已进入的海报模板：{len(self._entered_poster_templates)}")
-
+        # 本轮已尝试模板在点击灰条时就已记录，进入战斗不重复登记。
         def challenge_state():
             self.next_frame()
             if self.in_combat():

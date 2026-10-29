@@ -25,7 +25,6 @@ class _FakeYingTuoTask:
         self.drawn_boxes = []
         self.frame = np.random.default_rng(123).integers(0, 255, (100, 200, 3), dtype=np.uint8)
         self._entered_poster_templates = []
-        self._selected_poster_templates = []
         self.now = 0.0
         # 每次点击灰条后是否进入详情页，用完后默认进入
         self.detail_page_results = []
@@ -573,12 +572,12 @@ class TestYingTuoTask(unittest.TestCase):
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=bars):
             self.assertTrue(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task.clicks, [(0.25, 0.25, {"after_sleep": 0.25})])
-        self.assertEqual(len(task._selected_poster_templates), 2)
+        self.assertEqual(len(task._entered_poster_templates), 2)
         self.assertTrue(np.array_equal(
-            task._selected_poster_templates[0], crop_poster_template(task.frame, 50, 25)
+            task._entered_poster_templates[0], crop_poster_template(task.frame, 50, 25)
         ))
         self.assertTrue(np.array_equal(
-            task._selected_poster_templates[1], crop_poster_template(task.frame, 60, 25)
+            task._entered_poster_templates[1], crop_poster_template(task.frame, 60, 25)
         ))
 
     def test_nearby_poster_grouping_stops_at_large_gap_and_span(self):
@@ -597,36 +596,42 @@ class TestYingTuoTask(unittest.TestCase):
         self.assertEqual(task.scroll_count, 4)
         self.assertEqual(task.clicks, [])
 
-    def test_confirmed_entry_is_recorded_before_failed_battle(self):
+    def test_battle_does_not_defer_or_duplicate_template_recording(self):
         task = Mock()
-        task._selected_poster_templates = [
-            np.arange(30, dtype=np.uint8).reshape(5, 6),
-            np.arange(30, 60, dtype=np.uint8).reshape(5, 6),
-        ]
-        task._entered_poster_templates = []
+        template = np.arange(30, dtype=np.uint8).reshape(5, 6)
+        task._entered_poster_templates = [template]
         task.wait_battle_space.return_value = True
         task.strafe_search.return_value = "combat"
         task.auto_battle.return_value = False
         self.assertFalse(YingTuoTask.battle_and_exit(task))
-        self.assertTrue(task._last_normal_entry_confirmed)
-        self.assertEqual(len(task._entered_poster_templates), 2)
-        self.assertEqual(task._selected_poster_templates, [])
-        self.assertTrue(np.array_equal(task._entered_poster_templates[0], np.arange(30).reshape(5, 6)))
-        self.assertTrue(np.array_equal(task._entered_poster_templates[1], np.arange(30, 60).reshape(5, 6)))
+        self.assertEqual(len(task._entered_poster_templates), 1)
+        self.assertTrue(np.array_equal(task._entered_poster_templates[0], template))
 
-    def test_unentered_battle_does_not_record_template(self):
-        task = Mock()
-        task._selected_poster_templates = [np.ones((5, 6), dtype=np.uint8)]
-        task._entered_poster_templates = []
-        task.wait_battle_space.return_value = False
-        self.assertFalse(YingTuoTask.battle_and_exit(task))
-        self.assertEqual(task._entered_poster_templates, [])
+    def test_click_attempt_records_even_when_detail_never_opens(self):
+        task = _FakeYingTuoTask()
+        task.detail_page_results = [False] * YingTuoTask.CHALLENGE_CLICK_ATTEMPTS
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25)]):
+            with self.assertRaisesRegex(YingTuoError, "未进入关卡详情页"):
+                YingTuoTask.find_normal_challenge(task)
+        self.assertEqual(len(task._entered_poster_templates), 1)
+        self.assertTrue(task._last_normal_attempt_recorded)
+
+    def test_selected_group_is_skipped_on_next_scan(self):
+        task = _FakeYingTuoTask()
+        bars = [_bar(50, 25), _bar(60, 25), _bar(150, 25)]
+        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=bars):
+            self.assertTrue(YingTuoTask.find_normal_challenge(task))
+            self.assertIsNone(YingTuoTask.find_normal_challenge(task))
+        self.assertEqual(len(task._entered_poster_templates), 2)
+        self.assertEqual(task.scroll_count, 4)
+        self.assertEqual(len(task.clicks), 1)
 
     def test_failed_entered_poster_resumes_other_poster(self):
         task = Mock()
         task.find_normal_challenge.side_effect = [True, False]
         task.wait_until.return_value = [object()]
-        task.battle_and_exit.side_effect = lambda **_: setattr(task, "_last_normal_entry_confirmed", True) or False
+        task._last_normal_attempt_recorded = True
+        task.battle_and_exit.return_value = False
 
         self.assertTrue(YingTuoTask.challenge_normal_stages(task))
         task._recover_entered_normal_challenge.assert_called_once_with("战斗未正常完成")
@@ -634,7 +639,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_failed_unentered_poster_still_raises(self):
         task = Mock()
-        task._last_normal_entry_confirmed = False
+        task._last_normal_attempt_recorded = False
         task.find_normal_challenge.return_value = True
         task.wait_until.return_value = [object()]
         task.battle_and_exit.return_value = False
@@ -647,7 +652,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_recover_entered_challenge_reenters_from_main(self):
         task = Mock()
-        task._last_normal_entry_confirmed = True
+        task._last_normal_attempt_recorded = True
         task._abandoned_normal_challenges = 0
         task._wait_monument.return_value = False
         task.enter_yingtuo.return_value = True

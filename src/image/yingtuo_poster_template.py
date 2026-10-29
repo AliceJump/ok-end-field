@@ -1,4 +1,4 @@
-"""影拓丰碑本轮已进入灰条对应的海报动态模板：截取、匹配，不持久化。"""
+"""影拓丰碑本轮已选择灰条对应的海报动态模板：截取、匹配，不持久化。"""
 
 import cv2
 import numpy as np
@@ -52,7 +52,7 @@ def nearby_poster_templates(candidates: list[tuple], frame_width: int) -> list[n
     """从第一条灰条向右收集同组近邻；遇到大间隔或跨海报宽度即停。
 
     candidates 按灰条 x 升序排列，元素为 (GrayBar, 已裁剪模板)。
-    这些模板先保持候选状态，直到确认进协议空间才一起加入已进入集合。
+    选择第一条灰条时，这些模板立即一并加入本轮已尝试集合。
     """
     if not candidates:
         return []
