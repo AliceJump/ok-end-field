@@ -67,30 +67,15 @@ def make_task():
 
 
 class TestLangResource(unittest.TestCase):
-    """语言资源完整性：代码引用的键全部存在且可编译。"""
+    """空列表识别使用图标，不依赖语言资源。"""
 
     def test_lang_keys_compile_and_cover_code_refs(self):
         code = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        # 属性引用（self.lang.matrix_clean_task.k_xxx / 局部 lang.k_xxx）与
-        # 字符串引用（元组字面量）
-        refs = set(re.findall(r"(?:self\.lang\.matrix_clean_task|(?<!\w)lang)\.(k_[0-9a-f]{8})", code))
-        refs |= set(re.findall(r'"(k_[0-9a-f]{8})"', code))
-        self.assertTrue(refs, "代码里没有任何语言键引用")
-
-        data = json.loads((_REPO_ROOT / "assets" / "lang" / "matrix_clean_task.json").read_text(encoding="utf-8"))
-        self.assertEqual(refs - set(data), set(), "代码引用了 JSON 里不存在的键")
-        self.assertEqual(set(data) - refs, set(), "JSON 里有未被代码使用的键")
-
-        for key, locales in data.items():
-            for locale in ("zh_CN", "zh_TW"):
-                pattern = locales.get(locale, {}).get("pattern")
-                self.assertTrue(pattern, f"{key} 缺 {locale} pattern")
-                re.compile(pattern)  # 必须是合法正则
-
-        accessor = get_lang_accessor("zh_CN")
-        module = accessor.matrix_clean_task
-        for key in refs:
-            self.assertIsNotNone(getattr(module, key), f"{key} 经 LangAccessor 取值为空")
+        self.assertNotIn("self.lang.matrix_clean_task", code)
+        task = make_task()
+        task.find_one = MagicMock(return_value=MagicMock())
+        self.assertTrue(task._no_item_left())
+        task.find_one.assert_called_once_with(fL.matrix_empty_icon, box=task.box_of_screen.return_value)
 
 
 class TestOpenVaultEssencePage(unittest.TestCase):
@@ -184,20 +169,20 @@ class TestEnterDismantleMode(unittest.TestCase):
 
     def test_already_in_mode_skips_click(self):
         task = make_task()
-        task.ocr = MagicMock(return_value=MagicMock())  # 底栏已有「想要分解」
+        task.find_one = MagicMock(return_value=MagicMock())  # 退出图标已出现
         self.assertTrue(task._enter_dismantle_mode())
         task.click_relative.assert_not_called()
 
     def test_clicks_entry_and_verifies_hint(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=MagicMock())  # 点击后「想要分解」出现
+        task.wait_feature = MagicMock(return_value=MagicMock())  # 点击后退出图标出现
         self.assertTrue(task._enter_dismantle_mode())
         task.click_relative.assert_called_once_with(0.259, 0.93, after_sleep=1)
         task.mark_task_failure.assert_not_called()
 
     def test_fails_without_hint(self):
         task = make_task()
-        task.wait_ocr = MagicMock(return_value=None)
+        task.wait_feature = MagicMock(return_value=None)
         self.assertFalse(task._enter_dismantle_mode())
         task.click_relative.assert_called_once()
         task.mark_task_failure.assert_called_once_with("未进入分解模式")
@@ -216,9 +201,9 @@ class TestDismantleOneBatch(unittest.TestCase):
         # 网格空标志在批开始即命中：直接结束，不点快捷放入
         task = make_task()
         task._no_item_left = MagicMock(return_value=True)
-        task.wait_click_ocr = MagicMock()
+        task.wait_click_feature = MagicMock()
         self.assertFalse(task._dismantle_one_batch())
-        task.wait_click_ocr.assert_not_called()
+        task.wait_click_feature.assert_not_called()
         task.mark_task_failure.assert_not_called()
 
     def test_filter_panel_flow(self):
@@ -231,23 +216,23 @@ class TestDismantleOneBatch(unittest.TestCase):
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
         # 快捷放入只点击一次，保存按钮使用模板点击。
-        self.assertEqual(task.wait_click_ocr.call_count, 1)
+        self.assertEqual(task.wait_click_feature.call_count, 2)
         task._confirm_dismantle.assert_called_once()
 
     def test_no_panel_flow_skips_filter(self):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
-        task.wait_click_ocr = MagicMock(return_value=MagicMock())
+        task.wait_click_feature = MagicMock(return_value=True)
         task.wait_feature = MagicMock(return_value=None)  # 面板未弹出（规则已生效）
         task._confirm_dismantle = MagicMock(return_value=True)
         self.assertTrue(task._dismantle_one_batch())
-        self.assertEqual(task.wait_click_ocr.call_count, 1)
+        self.assertEqual(task.wait_click_feature.call_count, 1)
         task._confirm_dismantle.assert_called_once()
 
     def test_quick_add_missing_is_failure(self):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
-        task.wait_click_ocr = MagicMock(return_value=None)
+        task.wait_click_feature = MagicMock(return_value=None)
         self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("未找到快捷放入按钮")
 
@@ -255,7 +240,7 @@ class TestDismantleOneBatch(unittest.TestCase):
         # 面板已检出但正式应用前消失（竞态）：标记失败而非误点底栏
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
-        task.wait_click_ocr = MagicMock(return_value=MagicMock())
+        task.wait_click_feature = MagicMock(return_value=True)
         task.wait_feature = MagicMock(side_effect=[MagicMock(), None])  # 检出命中、复查落空
         self.assertIsNone(task._dismantle_one_batch())
         task.mark_task_failure.assert_called_once_with("筛选面板未弹出")
@@ -313,18 +298,11 @@ class TestConfirmDismantle(unittest.TestCase):
     def test_dismantle_button_disabled_is_end(self):
         # 「无法分解」在点击前就被识别，循环直接结束，不空等按钮
         task = make_task()
-        task._no_item_left = MagicMock(return_value=False)
-        task.ocr = MagicMock(return_value=[MagicMock()])  # 命中「无法分解」
+        task.wait_click_feature = MagicMock(return_value=False)
+        task.find_one = MagicMock(return_value=MagicMock())
         self.assertFalse(task._confirm_dismantle())
-        task.wait_click_feature.assert_not_called()
+        task.find_one.assert_called_once_with(fL.matrix_dismantle_exit)
         task.mark_task_failure.assert_not_called()
-
-    def test_no_item_left_flag_is_end(self):
-        # 网格出现「未拥有该类型道具」同样先行结束
-        task = make_task()
-        task._no_item_left = MagicMock(return_value=True)
-        self.assertFalse(task._confirm_dismantle())
-        task.wait_click_feature.assert_not_called()
 
     def test_dismantle_button_missing_without_flag_is_failure(self):
         task = make_task()
@@ -332,7 +310,7 @@ class TestConfirmDismantle(unittest.TestCase):
         task._no_item_left = MagicMock(return_value=False)
         task.ocr = MagicMock(return_value=None)
         self.assertIsNone(task._confirm_dismantle())
-        task.mark_task_failure.assert_called_once_with("未找到分解按钮")
+        task.mark_task_failure.assert_called_once_with("未找到分解按钮且已退出分解模式")
 
     def test_confirm_button_missing_is_failure(self):
         task = make_task()
