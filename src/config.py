@@ -176,6 +176,10 @@ config = {
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
         ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],
         ["src.tasks.onetime.FarmRelatedTask", "FarmRelatedTask"],
+        # 新增任务只追加在末尾：`-t` 以 1 起算的数字序号定位 onetime_tasks 里的任务，
+        # 插在中间会让旧计划任务 / 快捷方式的 `-t` 序号指向别的任务。
+        ["src.tasks.onetime.BatchAddFriendsTask", "BatchAddFriendsTask"],
+        ["src.tasks.onetime.BatchRemarkFriendsTask", "BatchRemarkFriendsTask"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],
