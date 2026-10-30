@@ -1,23 +1,31 @@
-"""OLED 模糊遮罩的区域回调与叠加窗门禁。
+"""OLED 模糊遮罩的区域回调、叠加窗门禁与遮挡保持。
 
 ok 框架只在项目配置提供 ``blur_area`` 回调时才注册「启用模糊 / 模糊算法 /
 模糊间隔」这三个基础选项，并把回调返回的矩形用前景叠加窗盖在游戏画面上。
-这里锁定两件事：
+这里锁定三件事：
 
 1. 区域回调的契约，避免以后改区域时把「比例 → 像素」算错；
 2. 叠加窗门禁——只开「启用模糊」也要能把窗口建出来（否则遮挡 UID 实际不生效），
-   但窗口内的调试框仍严格跟随 Debug 开关。
+   但窗口内的调试框仍严格跟随 Debug 开关；
+3. 遮挡保持——任务触发过一次之后，空闲或窗口短暂不可见都不应把遮挡撤掉。
 """
 
+import threading
 import unittest
 from types import SimpleNamespace
 from unittest import mock
 
+import numpy as np
 from ok import App, og
 from ok.feature.Box import Box
 
 from src.config import OLED_BLUR_RECTS, blur_area, config
 from src.patches.overlay_blur_gate_patch import blur_masking_requested, should_create_overlay
+from src.patches.overlay_blur_persist_patch import (
+    _restore_blur_images_if_cleared,
+    _snapshot_blur_images,
+    install_overlay_blur_persist_patch,
+)
 
 
 class TestOledBlurArea(unittest.TestCase):
@@ -134,6 +142,85 @@ class TestOverlayBlurGate(unittest.TestCase):
         view_before = App.get_overlay_view
         install_overlay_blur_gate_patch()
         self.assertIs(App.get_overlay_view, view_before)
+
+
+class TestOverlayBlurPersist(unittest.TestCase):
+    """任务触发过一次遮挡后，空闲或窗口不可见都不应把它撤掉。"""
+
+    @classmethod
+    def setUpClass(cls):
+        install_overlay_blur_persist_patch()
+
+    def _processor(self, enabled=True):
+        from ok.util.blur import BlurOverlayProcessor
+
+        state = {"enabled": enabled}
+        processor = BlurOverlayProcessor(
+            blur_area=lambda width, height: [],
+            enabled=lambda: state["enabled"],
+            emit_patches=mock.Mock(),
+            clear_patches=mock.Mock(),
+            exit_event=threading.Event(),
+            algorithm=lambda: "Blur",
+            interval=lambda: 1,
+        )
+        self.addCleanup(processor.exit_event.set)
+        return processor, state
+
+    @staticmethod
+    def _frame():
+        return np.zeros((8, 8, 3), dtype=np.uint8)
+
+    def test_hiding_window_keeps_existing_patches(self):
+        processor, _ = self._processor()
+        processor.visible = True
+        processor.overlay_active = True
+        processor.set_visible(False)
+        processor.clear_patches.assert_not_called()
+
+    def test_next_frame_without_visible_keeps_patches(self):
+        processor, _ = self._processor()
+        processor.visible = False
+        processor.overlay_active = True
+        processor.next_frame(self._frame())
+        processor.clear_patches.assert_not_called()
+
+    def test_disabling_the_feature_still_clears_patches(self):
+        processor, state = self._processor()
+        state["enabled"] = False
+        processor.visible = True
+        processor.overlay_active = True
+        processor.next_frame(self._frame())
+        processor.clear_patches.assert_called_once()
+
+    def test_active_follows_feature_switch_not_visibility(self):
+        processor, _ = self._processor()
+        processor.visible = False
+        self.assertTrue(processor._active())
+
+    def test_snapshot_and_restore_round_trip(self):
+        overlay = SimpleNamespace(blur_images=[(0, 0, 4, 4, "patch")])
+        saved = _snapshot_blur_images(overlay)
+        overlay.blur_images = []
+        self.assertTrue(_restore_blur_images_if_cleared(overlay, saved))
+        self.assertEqual(overlay.blur_images, [(0, 0, 4, 4, "patch")])
+
+    def test_restore_keeps_newer_patches(self):
+        overlay = SimpleNamespace(blur_images=["newer"])
+        self.assertFalse(_restore_blur_images_if_cleared(overlay, ["older"]))
+        self.assertEqual(overlay.blur_images, ["newer"])
+
+    def test_restore_without_snapshot_is_noop(self):
+        overlay = SimpleNamespace(blur_images=[])
+        self.assertFalse(_restore_blur_images_if_cleared(overlay, []))
+        self.assertEqual(overlay.blur_images, [])
+
+    def test_install_is_idempotent(self):
+        from ok.ui.overlay import Win32GdiOverlay
+
+        before = Win32GdiOverlay.update_overlay
+        install_overlay_blur_persist_patch()
+        self.assertIs(Win32GdiOverlay.update_overlay, before)
 
 
 if __name__ == "__main__":
