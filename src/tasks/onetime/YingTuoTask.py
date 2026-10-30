@@ -13,6 +13,7 @@ from src.image.yingtuo_poster_template import (
     poster_view_changed,
 )
 from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.search_mixin import SearchMixin
 
 
 def _settled(read):
@@ -36,7 +37,13 @@ class YingTuoError(Exception):
     """画面没有按预期切换。run() 捕获它、记失败并返回 False，一键日常的后续任务照常执行。"""
 
 
-class YingTuoTask(BattleMixin):
+class YingTuoTask(SearchMixin, BattleMixin):
+    """影拓丰碑。
+
+    需要 ``SearchMixin`` 提供 ``strafe_search``：当期第一关入场即开战，其余海报的关卡
+    仍要按 W 走位找到触碰点再按 F 才会开战（见 ``battle_and_exit``）。
+    """
+
     CFG_CLAIM_REWARD: ClassVar[str] = "⭐领取影拓丰碑奖励"
     # 领奖开启且活动任务已全部完成时跳过整个任务；独立任务仍挑战其余海报，一键日常版跳过。
     SKIP_WHEN_ACTIVITY_DONE: ClassVar[bool] = False
