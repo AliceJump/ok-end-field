@@ -5,8 +5,6 @@ mock 全部 UI 交互（OCR / 模板 / 点击 / 按键），只驱动状态机�
 ``lang`` 用真实 LangAccessor 加载，顺带验证语言 JSON 可用。
 """
 
-import json
-import re
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -189,6 +187,14 @@ class TestEnterDismantleMode(unittest.TestCase):
         task.click_relative.assert_called_once()
         task.mark_task_failure.assert_called_once_with("未进入分解模式")
 
+    def test_retry_does_not_click_after_mode_appears(self):
+        task = make_task()
+        task.find_one = MagicMock(side_effect=[None, MagicMock()])
+        task.wait_feature = MagicMock(return_value=MagicMock())
+        self.assertTrue(task._enter_dismantle_mode())
+        task.wait_feature.call_args.kwargs["pre_action"]()
+        task.click_relative.assert_not_called()
+
 
 class TestDismantleOneBatch(unittest.TestCase):
     """单批流程：批开始空网格短路、筛选面板弹出/不弹、快捷放入失败路径。
@@ -280,7 +286,6 @@ class TestApplyFilter(unittest.TestCase):
         task.mark_task_failure.assert_called_once_with("未找到筛选保存按钮")
 
     def test_full_flow_checks_all_qualities(self):
-        lang = make_task().lang.matrix_clean_task
         task = make_task()
         task.wait_feature = MagicMock(return_value=MagicMock())
         task.wait_click_feature = MagicMock(return_value=True)
@@ -291,33 +296,32 @@ class TestApplyFilter(unittest.TestCase):
 
 
 class TestConfirmDismantle(unittest.TestCase):
-    """分解按钮 / 确认弹窗的失败与成功路径。
-
-    入口先做无法分解先行判定（_dismantle_disabled 连查两次），命中即
-    返回 False 结束循环，不再空等「分解」按钮。
-    """
+    """空列表、分解按钮及确认弹窗的结束与失败路径。"""
 
     def test_dismantle_button_disabled_is_end(self):
-        # 「无法分解」在点击前就被识别，循环直接结束，不空等按钮
         task = make_task()
-        task.wait_click_feature = MagicMock(return_value=False)
-        task.find_one = MagicMock(return_value=MagicMock())
+        task._dismantle_disabled = MagicMock(return_value=True)
         self.assertFalse(task._confirm_dismantle())
-        task.find_one.assert_called_once_with(fL.matrix_dismantle_exit)
+        task.wait_click_feature.assert_not_called()
         task.mark_task_failure.assert_not_called()
 
     def test_dismantle_button_missing_without_flag_is_failure(self):
         task = make_task()
         task.wait_click_feature = MagicMock(return_value=False)
-        task._no_item_left = MagicMock(return_value=False)
-        task.ocr = MagicMock(return_value=None)
+        task._dismantle_disabled = MagicMock(return_value=False)
         self.assertIsNone(task._confirm_dismantle())
-        task.mark_task_failure.assert_called_once_with("未找到分解按钮且已退出分解模式")
+        task.mark_task_failure.assert_called_once_with("未找到分解按钮，无法确认清理完成")
+
+    def test_empty_icon_appears_after_button_timeout(self):
+        task = make_task()
+        task.wait_click_feature = MagicMock(return_value=False)
+        task._dismantle_disabled = MagicMock(side_effect=[False, True])
+        self.assertFalse(task._confirm_dismantle())
+        task.mark_task_failure.assert_not_called()
 
     def test_confirm_button_missing_is_failure(self):
         task = make_task()
-        task._no_item_left = MagicMock(return_value=False)
-        task.ocr = MagicMock(return_value=None)  # 先行判定未命中
+        task._dismantle_disabled = MagicMock(return_value=False)
         task.wait_click_feature = MagicMock(return_value=True)  # 「分解」已点击
         task.click_confirm = MagicMock(return_value=False)
         task._close_result_popup = MagicMock()
@@ -327,8 +331,7 @@ class TestConfirmDismantle(unittest.TestCase):
 
     def test_full_batch_success(self):
         task = make_task()
-        task._no_item_left = MagicMock(return_value=False)
-        task.ocr = MagicMock(return_value=None)
+        task._dismantle_disabled = MagicMock(return_value=False)
         task.wait_click_feature = MagicMock(return_value=True)
         task._close_result_popup = MagicMock(return_value=True)
         self.assertTrue(task._confirm_dismantle())

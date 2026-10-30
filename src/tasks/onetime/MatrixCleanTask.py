@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
@@ -17,8 +19,7 @@ class MatrixCleanTask(Common):
        「未上锁」，保存——保存即按筛选结果勾选物品并关闭面板；
     4. 点「分解」→ 确认弹窗「确认」→ 关闭「分解获得」结果弹窗，游戏
        自动退回浏览模式，循环下一批；
-    5. 结束判定：批开始检测到空列表图标，或保存筛选后
-       分解按钮图标未出现且仍在分解模式，结束循环。批开始
+    5. 结束判定：批开始或保存筛选后检测到空列表图标，结束循环。批开始
        不能按按钮文字判断——未勾选物品（已选择 0/200）时按钮恒为
        「无法分解」。
     """
@@ -27,7 +28,6 @@ class MatrixCleanTask(Common):
     MAX_BATCHES = 20
 
     # 底栏控件区（快捷放入 / 分解按钮 / 退出）
-    _BOTTOM_BAR = (0.0, 0.80, 0.6, 0.98)
     _BOTTOM_RIGHT = (0.55, 0.75, 1.0, 0.98)
     # 筛选面板保存按钮图标搜索区
     _FILTER_SAVE_ICON = (0.78, 0.72, 0.86, 0.8)
@@ -36,7 +36,7 @@ class MatrixCleanTask(Common):
     _DISMANTLE_ENTRY = (0.259, 0.93)
     # 选项背景的无文字区域；选中为浅灰，未选中为深色。
     _FILTER_SWATCHES = ((0.27, 0.355), (0.48, 0.355), (0.69, 0.355), (0.27, 0.505))
-    _FILTER_LIGHT = {"r": (140, 255), "g": (140, 255), "b": (140, 255)}
+    _FILTER_LIGHT: ClassVar[dict] = {"r": (140, 255), "g": (140, 255), "b": (140, 255)}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -104,9 +104,13 @@ class MatrixCleanTask(Common):
         """进入分解模式；已在分解模式（上批未正常自动退出）则直接继续。"""
         if self.find_one(fL.matrix_dismantle_exit):
             return True
+        def click_entry_if_needed():
+            if not self.find_one(fL.matrix_dismantle_exit):
+                self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1)
+
         hint = self.wait_feature(
             fL.matrix_dismantle_exit,
-            pre_action=lambda: self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1),
+            pre_action=click_entry_if_needed,
             settle_time=0,
             time_out=6,
             raise_if_not_found=False,
@@ -182,8 +186,10 @@ class MatrixCleanTask(Common):
     def _confirm_dismantle(self):
         """点击分解并走完确认与结果弹窗（完成后游戏自动退回浏览模式）。
 
-        等待可用的分解按钮；若按钮未出现且仍在分解模式，则结束循环。
+        只有检测到空列表图标才判定清理完成；按钮识别失败时报告异常。
         """
+        if self._dismantle_disabled():
+            return False
         # 亮起的「分解」按钮右侧图标与确认弹窗「确认」相同，复用同一模板；
         # 灰色「无法分解」不带该图标
         if not self.wait_click_feature(
@@ -192,9 +198,9 @@ class MatrixCleanTask(Common):
             time_out=4,
             raise_if_not_found=False,
         ):
-            if self.find_one(fL.matrix_dismantle_exit):
+            if self._dismantle_disabled():
                 return False
-            self.mark_task_failure("未找到分解按钮且已退出分解模式")
+            self.mark_task_failure("未找到分解按钮，无法确认清理完成")
             return None
         # 弹窗出现后底栏「分解」按钮仍带同一图标；click_confirm 只在弹窗
         # 「确认」的标注位置附近查找，不会点回底栏
@@ -205,6 +211,10 @@ class MatrixCleanTask(Common):
         if not self._close_result_popup():
             return None
         return True
+
+    def _dismantle_disabled(self):
+        """仅在出现空列表图标时确认没有可分解物品。"""
+        return self._no_item_left()
 
     def _no_item_left(self):
         """检测空列表提示左侧图标。"""
