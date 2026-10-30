@@ -121,6 +121,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
 
     def test_light_search_uses_yingtuo_forward_steps(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         task._text.return_value = False
         task.strafe_search.return_value = [object()]
         BaiQuArenaTask._fight(task)
@@ -143,6 +144,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
 
     def test_missing_light_never_starts_auto_battle(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         task._text.return_value = False
         task.strafe_search.return_value = None
         with self.assertRaisesRegex(RuntimeError, "触碰点"):
@@ -152,6 +154,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
 
     def test_no_settlement_is_not_treated_as_success(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         task._text.return_value = False
         task.strafe_search.return_value = "combat"
         task._wait_state.return_value = None

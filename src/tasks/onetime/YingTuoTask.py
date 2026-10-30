@@ -760,28 +760,8 @@ class YingTuoTask(SearchMixin, BattleMixin):
         if not self.wait_battle_space(transition_recovery=transition_recovery):
             return False
 
-        # 本轮已尝试模板在点击灰条时就已记录，进入战斗不重复登记。
-        def challenge_state():
-            self.next_frame()
-            if self.in_combat():
-                return "combat"
-            return self.ocr(match=self.lang.daily_battle_mixin.k_4cc61900, box=self.box.bottom_right)
-
-        # 入场只表示加载完成；后续关卡可能还要靠近触碰点并交互才会开战。
-        state = self.strafe_search(challenge_state, keys=("w",), duration=0.25, passes=None, time_out=60)
-        if not state:
-            self.log_info("未找到挑战触碰点")
+        if not self.start_touch_challenge():  # 共用光点搜索与开战确认，入场时不重复登记模板
             return False
-        if state != "combat":
-            self.press_key("f")
-
-            def challenge_started():
-                self.next_frame()
-                return self.in_combat()
-
-            if not self.wait_until(challenge_started, time_out=10, raise_if_not_found=False):
-                self.log_info("触碰后挑战未启动")
-                return False
         if not self.auto_battle():
             return False
         if not self.wait_click_feature(

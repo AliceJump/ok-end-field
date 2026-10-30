@@ -180,23 +180,8 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
         if not self.wait_battle_space(time_out=60):  # 等待进入协议空间
             raise RuntimeError("百趣演武入场超时")  # 防止在加载阶段移动
 
-        def challenge_state():  # 每一步移动后判断触碰提示或已开战
-            self.next_frame()  # 沿用影拓的刷新方式
-            if self.in_combat():  # 支持中途继续已开始的战斗
-                return "combat"  # 无需再次触碰
-            return self.ocr(
-                match=self.lang.daily_battle_mixin.k_4cc61900, box=self.box.bottom_right
-            )  # 复用触碰文字匹配
-
-        state = self.strafe_search(
-            challenge_state, keys=("w",), duration=0.25, passes=None, time_out=60
-        )  # 小步向前搜索光点
-        if not state:  # 未找到交互时停止
-            raise RuntimeError("未找到百趣演武触碰点")  # 保留场景便于诊断
-        if state != "combat":  # 交互提示出现后才触碰
-            self.press_key("f")  # 启动挑战
-            if not self.wait_until(self.in_combat, time_out=10, raise_if_not_found=False):  # 验证战斗开始
-                raise RuntimeError("触碰后百趣演武挑战未启动")  # 不将空场景当作胜利
+        if not self.start_touch_challenge():  # 与影拓共用光点搜索、触碰和开战确认
+            raise RuntimeError("未能找到触碰点或启动百趣演武挑战")  # 失败时保留当前场景
         if not self.auto_battle() or not self._wait_state({"next", "final"}, timeout=20):  # 战斗返回后仍需看到活动结算
             raise RuntimeError("未确认百趣演武战斗结算")  # 不凭战斗超时宣告成功
 
