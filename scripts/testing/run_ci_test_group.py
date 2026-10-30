@@ -27,7 +27,6 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         "Configuration and task UI",
         (
             "TestConfigKeyCopy.py",
-            "TestOledBlurArea.py",
             "TestConfigTabPrewarm.py",
             "TestConfigTransferPatch.py",
             "TestPreConfigPatch.py",
@@ -232,6 +231,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestWindowOverlayTextRendering.py",
             "TestEndfieldUi.py",
             "TestEndfieldPanels.py",
+            "TestOledBlurArea.py",
         ),
     ),
     "runtime-platform": (

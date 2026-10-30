@@ -136,6 +136,19 @@ class TestOverlayBlurGate(unittest.TestCase):
             App.get_overlay_view(self._owner(use_overlay=True))
             overlay_cls.return_value.set_boxes_enabled.assert_called_once_with(True)
 
+    def test_overlay_construction_failure_does_not_break_startup(self):
+        # 构造失败只能表现为「没有遮挡」，不能从 initialize_overlay 冒到启动流程
+        with (
+            mock.patch.object(og, "executor", self._executor()),
+            mock.patch("ok.ui.overlay.Win32GdiOverlay", side_effect=RuntimeError("no desktop")),
+        ):
+            owner = self._owner(use_overlay=False)
+            self.assertIsNone(App.get_overlay_view(owner))
+            self.assertIsNone(owner.overlay_window)
+
+            App.initialize_overlay(owner)
+            self.assertIsNone(owner.overlay_window)
+
     def test_enabling_blur_at_runtime_builds_overlay(self):
         """运行中才打开模糊时，第一批补丁要把窗口补建出来并直接交给它。"""
         state = {"blur": False}

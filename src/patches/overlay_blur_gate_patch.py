@@ -23,6 +23,10 @@ from __future__ import annotations
 
 import contextlib
 
+from ok.util.logger import Logger
+
+logger = Logger.get_logger(__name__)
+
 _PATCH_INSTALLED = False
 
 
@@ -91,13 +95,20 @@ def install_overlay_blur_gate_patch():
         from ok.core.events import communicate
         from ok.ui.overlay import Win32GdiOverlay
 
-        owner.overlay_window = Win32GdiOverlay(
-            _source_hwnd(),
-            exit_event=getattr(owner, "exit_event", None),
-        )
-        communicate.window.connect(owner.overlay_window.update_overlay)
-        # 关键：boxes 仍严格跟随 Debug 开关，模糊生效不等于要画调试框。
-        owner.overlay_window.set_boxes_enabled(use_overlay_enabled(owner))
+        # 构造失败必须是「这次没有遮挡」而不是「启动失败」：initialize_overlay 位于
+        # OK.start() 的启动路径上，异常会一路冒到主流程。
+        try:
+            overlay = Win32GdiOverlay(
+                _source_hwnd(),
+                exit_event=getattr(owner, "exit_event", None),
+            )
+            communicate.window.connect(overlay.update_overlay)
+            # 关键：boxes 仍严格跟随 Debug 开关，模糊生效不等于要画调试框。
+            overlay.set_boxes_enabled(use_overlay_enabled(owner))
+        except Exception as exc:
+            logger.warning(f"overlay blur: 无法创建叠加窗，本次运行退回无遮挡：{exc}")
+            return None
+        owner.overlay_window = overlay
         # 建窗时游戏窗口可能还没连上，补一次几何播种；连上了就是幂等的。
         sync = getattr(owner, "sync_overlay_source", None)
         if callable(sync):
