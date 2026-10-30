@@ -99,7 +99,7 @@ jobs:
 
       - name: Install uv
         run: |
-          pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
+          pip install uv==0.11.28 # 固定 uv 版本，与 uv.lock 生成版本一致
           # 准备最小校验环境：创建空 venv 并只装 packaging（marker 解析），
           # 供 --no-sync 校验使用，避免同步项目全量依赖
           uv venv .venv
@@ -112,11 +112,11 @@ jobs:
 
       - name: Install uv
         run: |
-          pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
+          pip install uv==0.11.28 # 固定 uv 版本，与 uv.lock 生成版本一致
           # 准备最小内联环境：只需 ok-script/pyappify 本体（依赖链为纯标准库），
           # 避免 uv run 同步项目全量依赖（PySide6/opencv 等数百 MB）
           uv venv .venv
-          uv pip install --python .venv --no-deps ok-script==2.0.7b1 pyappify==1.0.13
+          uv pip install --python .venv --no-deps ok-script==2.0.17 pyappify==1.0.13
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         env:
@@ -337,11 +337,11 @@ jobs:
 
       - name: Install uv
         run: |
-          pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
+          pip install uv==0.11.28 # 固定 uv 版本，与 uv.lock 生成版本一致
           # 准备最小内联环境：只需 ok-script/pyappify 本体（依赖链为纯标准库），
           # 避免 uv run 同步项目全量依赖（PySide6/opencv 等数百 MB）
           uv venv .venv
-          uv pip install --python .venv --no-deps ok-script==2.0.7b1 pyappify==1.0.13
+          uv pip install --python .venv --no-deps ok-script==2.0.17 pyappify==1.0.13
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         env:
@@ -426,11 +426,11 @@ jobs:
 
       - name: Install uv
         run: |
-          pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
+          pip install uv==0.11.28 # 固定 uv 版本，与 uv.lock 生成版本一致
           # 准备最小内联环境：只需 ok-script/pyappify 本体（依赖链为纯标准库），
           # 避免 uv run 同步项目全量依赖（PySide6/opencv 等数百 MB）
           uv venv .venv
-          uv pip install --python .venv --no-deps ok-script==2.0.7b1 pyappify==1.0.13
+          uv pip install --python .venv --no-deps ok-script==2.0.17 pyappify==1.0.13
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         env:
