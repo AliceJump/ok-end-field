@@ -706,6 +706,9 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
             # 价格校验在采集前：buy_only 时不需要卖出价
             buy_price = self.config.get(f"{area}买入价", 0)
             sell_price = self.config.get(f"{area}卖出价", 0)
+            if type(buy_price) is not int or (not buy_only and type(sell_price) is not int):
+                self.log_error(f"{area} 买卖价格配置无效，跳过该地区买卖货")
+                continue
             if not buy_price or (not buy_only and not sell_price):
                 self.log_info("未找到所需价格配置")
                 continue
