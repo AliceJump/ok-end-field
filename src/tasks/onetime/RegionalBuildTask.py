@@ -629,7 +629,11 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
         self.log_info(f"推荐购买 | 名称:{buy_good.good_name} | 价格:{buy_good.good_price}")
 
         try:
-            sell_goods = [good for good in processed_goods if good.friend_price > sell_price]
+            sell_goods = [
+                good
+                for good in processed_goods
+                if good.friend_price is not None and good.friend_price > sell_price
+            ]
         except TypeError:
             self.log_error("好友价格数据异常，无法进行出售分析")
             sell_goods = []
