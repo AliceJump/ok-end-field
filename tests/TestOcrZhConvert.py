@@ -72,6 +72,21 @@ class OcrZhConvertTextTestCase(unittest.TestCase):
         other = object()
         self.assertIs(ocr_zh_convert.convert_matcher(other), other)
 
+    def test_strict_conversion_returns_none_when_unavailable(self):
+        with patch.object(ocr_zh_convert, "_get_converters", return_value=None):
+            self.assertIsNone(ocr_zh_convert.convert_text("豐碑"))
+            # 严格版的 pattern / matcher 也要报告失败，而不是悄悄返回原文
+            self.assertIs(ocr_zh_convert.convert_pattern(re.compile("豐碑")), ocr_zh_convert.CONVERSION_FAILED)
+            self.assertIs(ocr_zh_convert.convert_matcher("豐碑"), ocr_zh_convert.CONVERSION_FAILED)
+            # 宽松版仍然返回原文，保持旧契约
+            self.assertEqual(ocr_zh_convert.to_simplified("豐碑"), "豐碑")
+
+    def test_convert_matcher_list_fails_as_a_whole(self):
+        # 用没被其他用例转换过的文本，避免命中 lru_cache 里的成功结果
+        with patch.object(ocr_zh_convert, "_get_converters", return_value=None):
+            matcher = ["盛開", re.compile("盛開")]
+            self.assertIs(ocr_zh_convert.convert_matcher(matcher), ocr_zh_convert.CONVERSION_FAILED)
+
 
 class OcrZhConvertPatchTestCase(unittest.TestCase):
     """匹配层补丁行为（安装一次，类结束后还原全局函数）。"""
@@ -160,6 +175,37 @@ class OcrZhConvertPatchTestCase(unittest.TestCase):
         with patch.object(ocr_zh_convert_patch, "_prepare", side_effect=RuntimeError("boom")):
             self.assertEqual(self._box_module.find_boxes_by_name(boxes, re.compile("丰碑")), [])
             self.assertEqual(self._box_module.find_boxes_by_name(boxes, re.compile("豐碑")), boxes)
+
+    def test_iterator_input_is_not_exhausted(self):
+        # 一次性迭代器：快路径与回退都必须用物化后的列表，不能把耗尽的迭代器交回去
+        boxes = [_box("豐碑留名·魔林"), _box("確認", y=60)]
+        self.assertEqual(self._box_module.find_boxes_by_name(iter(boxes), re.compile("丰碑")), [boxes[0]])
+
+        already_simplified = [_box("confirm_btn")]
+        self.assertEqual(
+            self._box_module.find_boxes_by_name(iter(already_simplified), "confirm_btn"),
+            already_simplified,
+        )
+        self.assertIs(self._box_module.find_box_by_name(iter(boxes), re.compile("苦难")), None)
+
+    def test_partial_conversion_failure_falls_back_to_original(self):
+        # 文本侧归一失败、pattern 侧成功：必须整体回退，不能拿简体 pattern 去匹配繁体原文
+        boxes = [_box("觸碰！")]
+        real_convert_text = ocr_zh_convert_patch.convert_text
+
+        def flaky(text):
+            return None if text == "觸碰！" else real_convert_text(text)
+
+        with patch.object(ocr_zh_convert_patch, "convert_text", side_effect=flaky):
+            # 原文 pattern 本来就能命中，补丁不能把它弄坏
+            self.assertEqual(self._box_module.find_boxes_by_name(boxes, re.compile("觸碰")), boxes)
+            # 简体 pattern 也不能靠"半归一"命中
+            self.assertEqual(self._box_module.find_boxes_by_name(boxes, re.compile("触碰")), [])
+
+    def test_pattern_conversion_failure_falls_back_to_original(self):
+        boxes = [_box("觸碰")]
+        with patch.object(ocr_zh_convert_patch, "convert_matcher", return_value=ocr_zh_convert.CONVERSION_FAILED):
+            self.assertEqual(self._box_module.find_boxes_by_name(boxes, re.compile("觸碰")), boxes)
 
 
 if __name__ == "__main__":
