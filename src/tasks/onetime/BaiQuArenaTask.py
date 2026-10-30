@@ -68,32 +68,48 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
     def _activity_page(self):  # 判断已返回活动中心
         return self._text(self.lang.baiqu_arena.activity_center, (0, 0, 0.2, 0.10))  # 活动中心标题不会出现在副本中
 
+    def _team_button(self):  # 编队确认图标使用独立区域，避免和结算按钮混淆
+        return self.find_one(
+            fL.give_gift, box=self.box_of_screen(0.944, 0.900, 0.969, 0.941), use_gray_scale=True
+        )  # 复用现有勾选模板
+
+    def _mechanics_close_button(self):  # 机制弹窗右上角的白色关闭图标
+        return self.find_one(
+            fL.close,
+            box=self.box_of_screen(0.84, 0.30, 0.88, 0.35),
+            use_gray_scale=True,
+            frame_processor=lambda crop: 255 - crop,
+        )  # 搜索区域反色后复用现有黑色关闭模板
+
     def _draw_page(self):  # 抽牌页有固定青色抽牌按钮
         height, width = self.frame.shape[:2]  # 使用当前缓存帧
         patch = self.frame[
             int(height * 0.74) : int(height * 0.78), int(width * 0.87) : int(width * 0.90)
         ]  # 实测按钮左侧空白区
         cyan = (patch[:, :, 0] > 200) & (patch[:, :, 1] > 150) & (patch[:, :, 2] < 150)  # 按钮的高亮青色
-        return bool(
-            patch.size and cyan.mean() > 0.5 and self._text(self.lang.baiqu_arena.draw, (0.9, 0.70, 1, 0.81))
-        )  # 颜色命中后核对抽牌文字
+        return bool(patch.size and cyan.mean() > 0.5)  # 使用实测青色按钮识别抽牌页
+
+    def _challenge_button(self):  # 开始挑战只接受抽牌页中的白色启用按钮
+        if not self._draw_page():  # 限制颜色判断的页面上下文
+            return None  # 其他页面不点击
+        height, width = self.frame.shape[:2]  # 使用当前帧尺寸
+        patch = self.frame[
+            int(height * 0.89) : int(height * 0.94), int(width * 0.81) : int(width * 0.86)
+        ]  # 实测按钮空白区，避开文字和装饰
+        if patch.size and (patch.min(axis=2) > 230).mean() > 0.9:  # 灰色禁用按钮不能通过
+            return self.box_of_screen(0.75, 0.88, 0.975, 0.95)  # 返回实测完整按钮区域以点击中心
+        return None  # 按钮尚未启用时继续等待
 
     def _state(self):  # 识别可恢复的活动阶段，未知画面不进行点击
-        if self._next_round_button() and self._text(
-            self.lang.baiqu_arena.next_round, (0.60, 0.78, 0.69, 0.85)
-        ):  # 模板优先识别首轮结算
+        if self._next_round_button():  # 限定区域的继续按钮直接识别首轮结算
             return "next"  # 等待进入第二轮
-        if self._leave_button() and self._text(
-            self.lang.baiqu_arena.leave, (0.86, 0.88, 0.97, 0.96)
-        ):  # 核对最终退出文本
+        if self._leave_button():  # 限定区域的退出图标识别最终结算
             return "final"  # 最终结算
         if self._draw_page():  # 已在抽牌阶段时保留已有手牌
             return "draw"  # 继续本轮抽牌
-        if self.find_one(fL.give_gift, box=self.box_of_screen(0.944, 0.900, 0.969, 0.941)) and self._text(
-            self.lang.baiqu_arena.start, (0.80, 0.86, 1, 0.97)
-        ):  # 编队确认与结算的区域不同
+        if self._team_button():  # 编队确认与结算的区域不同
             return "team"  # 等待出战
-        if self._text(self.lang.baiqu_arena.mechanics, (0.1, 0.15, 0.9, 0.5)):  # 入场机制弹窗
+        if self._mechanics_close_button():  # 入场机制弹窗使用关闭图标定位
             return "mechanics"  # 只关闭已识别的说明
         if self.find_one(fL.battle_space_left) and self._text(
             self.lang.baiqu_arena.current_round, (0.04, 0.23, 0.25, 0.30)
@@ -160,23 +176,19 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
             ):  # 等待新牌完整翻开，禁止超时后补点
                 raise RuntimeError("抽牌后未确认牌面变化")  # 未证实抽牌成功则停止，避免多抽
             self.log_info(f"百趣演武已抽 {count + 1} 张")  # 记录本轮实际牌数
-        self.wait_click_ocr(
-            match=self.lang.baiqu_arena.challenge, box=self.box.bottom_right, time_out=5, raise_if_not_found=True
-        )  # 开始挑战按钮无对应图标，使用 OCR
-        if not self._wait_state({"team"}):  # 等待编队页面
-            raise RuntimeError("未进入百趣演武编队页")  # 不盲点确认
+        self._click_transition(self._challenge_button, {"team"})  # 仅点击已启用的开始按钮并确认编队页
 
     def _enter_battle(self):  # 确认编队后等待入场
         self._click_transition(
-            lambda: self.find_one(fL.give_gift, box=self.box_of_screen(0.944, 0.900, 0.969, 0.941)),
+            self._team_button,
             {"mechanics", "space"},
             point=(0.90, 0.92),
             timeout=60,
         )  # 加载期间不按 ESC
 
     def _fight(self):  # 按影拓流程靠近光点并复用自动战斗
-        if self._text(self.lang.baiqu_arena.mechanics, (0.1, 0.15, 0.9, 0.5)):  # 只处理已确认的机制弹窗
-            self.click_relative(0.86, 0.326)  # 关闭按钮为实测截图估计位置
+        if self._mechanics_close_button():  # 模板确认机制弹窗关闭按钮
+            self._click_transition(self._mechanics_close_button, {"space"})  # 关闭后验证回到副本
         if not self.wait_battle_space(time_out=60):  # 等待进入协议空间
             raise RuntimeError("百趣演武入场超时")  # 防止在加载阶段移动
 

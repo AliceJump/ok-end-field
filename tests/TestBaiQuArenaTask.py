@@ -55,21 +55,21 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task.wait_until.side_effect = flip
         BaiQuArenaTask._draw_cards(task)
         task.click_relative.assert_called_once_with(0.95, 0.76)
-        task.wait_click_ocr.assert_called_once()
+        task._click_transition.assert_called_once_with(task._challenge_button, {"team"})
 
     def test_resuming_over_ten_does_not_draw_an_extra_card(self):
         task = Mock(frame=card_frame(4, over_ten=True))
         task._draw_page.return_value = True
         BaiQuArenaTask._draw_cards(task)
         task.click_relative.assert_not_called()
-        task.wait_click_ocr.assert_called_once()
+        task._click_transition.assert_called_once_with(task._challenge_button, {"team"})
 
     def test_full_hand_below_threshold_starts_challenge(self):
         task = Mock(frame=card_frame(5))
         task._draw_page.return_value = True
         BaiQuArenaTask._draw_cards(task)
         task.click_relative.assert_not_called()
-        task.wait_click_ocr.assert_called_once()
+        task._click_transition.assert_called_once_with(task._challenge_button, {"team"})
 
     def test_missing_card_change_stops_without_retry_or_start(self):
         task = Mock(frame=card_frame(2))
@@ -78,7 +78,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "牌面变化"):
             BaiQuArenaTask._draw_cards(task)
         task.click_relative.assert_called_once()
-        task.wait_click_ocr.assert_not_called()
+        task._click_transition.assert_not_called()
 
     def test_unknown_draw_page_never_clicks(self):
         task = Mock()
@@ -86,6 +86,41 @@ class TestBaiQuArenaTask(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             BaiQuArenaTask._draw_cards(task)
         task.click_relative.assert_not_called()
+
+    def test_button_pages_do_not_require_ocr(self):
+        for state, detector in (
+            ("next", "_next_round_button"),
+            ("final", "_leave_button"),
+            ("team", "_team_button"),
+            ("mechanics", "_mechanics_close_button"),
+        ):
+            with self.subTest(state=state):
+                task = Mock()
+                for name in (
+                    "_next_round_button",
+                    "_leave_button",
+                    "_team_button",
+                    "_mechanics_close_button",
+                    "_draw_page",
+                ):
+                    getattr(task, name).return_value = None
+                getattr(task, detector).return_value = object()
+                self.assertEqual(BaiQuArenaTask._state(task), state)
+                task._text.assert_not_called()
+
+    def test_start_button_requires_draw_page_and_enabled_background(self):
+        for draw_page in (False, True):
+            for background in (140, 255):
+                with self.subTest(draw_page=draw_page, background=background):
+                    frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
+                    if draw_page:
+                        frame[790:850, 1650:1750] = (240, 190, 80)
+                    frame[950:1025, 1440:1870] = background
+                    task = Mock(frame=frame)
+                    task._draw_page.side_effect = lambda task=task: BaiQuArenaTask._draw_page(task)
+                    button = BaiQuArenaTask._challenge_button(task)
+                    self.assertEqual(button is not None, draw_page and background == 255)
+                    task._text.assert_not_called()
 
     def test_transition_does_not_repeat_click_when_source_disappears(self):
         task = Mock()
@@ -122,7 +157,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
     def test_light_search_uses_yingtuo_forward_steps(self):
         task = Mock()
         task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
-        task._text.return_value = False
+        task._mechanics_close_button.return_value = None
         task.strafe_search.return_value = [object()]
         BaiQuArenaTask._fight(task)
         task.strafe_search.assert_called_once()
@@ -145,7 +180,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
     def test_missing_light_never_starts_auto_battle(self):
         task = Mock()
         task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
-        task._text.return_value = False
+        task._mechanics_close_button.return_value = None
         task.strafe_search.return_value = None
         with self.assertRaisesRegex(RuntimeError, "触碰点"):
             BaiQuArenaTask._fight(task)
@@ -155,7 +190,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
     def test_no_settlement_is_not_treated_as_success(self):
         task = Mock()
         task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
-        task._text.return_value = False
+        task._mechanics_close_button.return_value = None
         task.strafe_search.return_value = "combat"
         task._wait_state.return_value = None
         with self.assertRaisesRegex(RuntimeError, "战斗结算"):
