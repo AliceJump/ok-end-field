@@ -35,15 +35,6 @@ class BaiquArenaModule(_LangModuleBaseT):
     title: str
     """百趣演武"""
 
-    completed: str
-    """挑战完成"""
-
-    interrupted: str
-    """挑战中断"""
-
-    current_round: re.Pattern[str]
-    """当前.*第.*轮"""
-
 
 class CharactersModule(_LangModuleBaseT):
     """characters — OCR 语言节点（值取自 zh_CN）"""

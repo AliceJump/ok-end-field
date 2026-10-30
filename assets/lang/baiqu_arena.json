@@ -1,7 +1,4 @@
 {
   "activity_center": {"zh_CN": {"pattern": "活动中心"}, "zh_TW": {"pattern": "活動中心"}},
-  "title": {"zh_CN": {"string": "百趣演武"}, "zh_TW": {"string": "百趣演武"}},
-  "completed": {"zh_CN": {"string": "挑战完成"}, "zh_TW": {"string": "挑戰完成"}},
-  "interrupted": {"zh_CN": {"string": "挑战中断"}, "zh_TW": {"string": "挑戰中斷"}},
-  "current_round": {"zh_CN": {"pattern": "当前.*第.*轮"}, "zh_TW": {"pattern": "當前.*第.*輪"}}
+  "title": {"zh_CN": {"string": "百趣演武"}, "zh_TW": {"string": "百趣演武"}}
 }

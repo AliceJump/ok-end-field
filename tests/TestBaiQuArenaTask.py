@@ -106,7 +106,15 @@ class TestBaiQuArenaTask(unittest.TestCase):
                     getattr(task, name).return_value = None
                 getattr(task, detector).return_value = object()
                 self.assertEqual(BaiQuArenaTask._state(task), state)
-                task._text.assert_not_called()
+                task.ocr.assert_not_called()
+
+    def test_battle_space_uses_template_without_round_ocr(self):
+        task = Mock()
+        for name in ("_next_round_button", "_leave_button", "_draw_page", "_team_button", "_mechanics_close_button"):
+            getattr(task, name).return_value = None
+        task.find_one.return_value = object()
+        self.assertEqual(BaiQuArenaTask._state(task), "space")
+        task.ocr.assert_not_called()
 
     def test_start_button_requires_draw_page_and_enabled_background(self):
         for draw_page in (False, True):
@@ -120,7 +128,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
                     task._draw_page.side_effect = lambda task=task: BaiQuArenaTask._draw_page(task)
                     button = BaiQuArenaTask._challenge_button(task)
                     self.assertEqual(button is not None, draw_page and background == 255)
-                    task._text.assert_not_called()
+                    task.ocr.assert_not_called()
 
     def test_transition_does_not_repeat_click_when_source_disappears(self):
         task = Mock()
@@ -222,22 +230,24 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task.ensure_main.assert_not_called()
         task.press_key.assert_not_called()
 
-    def test_interrupted_final_result_is_not_reported_as_success(self):
+    def test_final_settlement_exits_without_reading_result(self):
         task = Mock()
         task._wait_state.return_value = "final"
-        task._text.side_effect = [False, True]
-        with self.assertRaisesRegex(RuntimeError, "挑战中断"):
-            BaiQuArenaTask._run_once(task)
+        task.ocr.side_effect = AssertionError("Result OCR must not run")
+        self.assertTrue(BaiQuArenaTask._run_once(task))
         task._click_transition.assert_called_once_with(task._leave_button, {"activity"})
         task._open_activity.assert_not_called()
+        task.ocr.assert_not_called()
 
-    def test_unrecognized_final_result_preserves_the_screen(self):
-        task = Mock()
+    def test_failed_exit_stops_remaining_games_without_counting(self):
+        task = Mock(config={"刷取次数": 3})
+        task._run_once.side_effect = lambda: BaiQuArenaTask._run_once(task)
         task._wait_state.return_value = "final"
-        task._text.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "结果未识别"):
-            BaiQuArenaTask._run_once(task)
-        task._click_transition.assert_not_called()
+        task._click_transition.side_effect = RuntimeError("页面切换失败")
+        with self.assertRaisesRegex(RuntimeError, "页面切换失败"):
+            BaiQuArenaTask.run.__wrapped__(task)
+        task._run_once.assert_called_once()
+        self.assertFalse(any("已完成" in call.args[0] for call in task.log_info.call_args_list))
 
     def test_default_run_completes_one_game(self):
         task = Mock(config={})
@@ -267,16 +277,17 @@ class TestBaiQuArenaTask(unittest.TestCase):
             2,
         )
 
-    def test_interrupted_run_does_not_start_remaining_games(self):
+    def test_early_final_settlement_counts_and_continues_remaining_games(self):
         task = Mock(config={"刷取次数": 3})
         task._run_once.side_effect = lambda: BaiQuArenaTask._run_once(task)
-        task._wait_state.side_effect = ["activity", "draw", "team", "space", "final"]
-        task._text.side_effect = [False, True]
-        with self.assertRaisesRegex(RuntimeError, "挑战中断"):
-            BaiQuArenaTask.run.__wrapped__(task)
-        task._open_activity.assert_called_once()
-        task._click_transition.assert_called_once_with(task._leave_button, {"activity"})
-        task._run_once.assert_called_once()
+        task._wait_state.side_effect = ["activity", "draw", "team", "space", "final"] * 3
+        task.ocr.side_effect = AssertionError("Result OCR must not run")
+        self.assertTrue(BaiQuArenaTask.run.__wrapped__(task))
+        self.assertEqual(task._open_activity.call_count, 3)
+        self.assertEqual(task._fight.call_count, 3)
+        self.assertEqual(task._click_transition.call_count, 3)
+        self.assertEqual(task._run_once.call_count, 3)
+        task.ocr.assert_not_called()
 
     def test_out_of_range_count_never_starts(self):
         for count in (0, -1, 1000):

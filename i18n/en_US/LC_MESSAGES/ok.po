@@ -3857,5 +3857,5 @@ msgstr "Complete the configured number of Baiqu Martial Trials runs: draw until 
 msgid "刷取次数"
 msgstr "Number of runs"
 
-msgid "每次包含两轮挑战，挑战失败时停止；中途启动会将当前局计为一次。"
-msgstr "Each run includes two rounds. Stop on challenge failure; resuming a run counts as one run."
+msgid "每次最多包含两轮挑战，挑战中断也计为一次；中途启动会将当前局计为一次。"
+msgstr "Each run includes up to two rounds. An interrupted challenge also counts as one run; resuming a run counts as one run."

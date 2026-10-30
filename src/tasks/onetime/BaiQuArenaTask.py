@@ -49,24 +49,23 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
         self.default_config.update({"刷取次数": 1})  # 默认仅完成一局
         self.config_type["刷取次数"] = {"min": 1, "max": 999}  # GUI 使用有界整数输入
         self.config_description["刷取次数"] = (
-            "每次包含两轮挑战，挑战失败时停止；中途启动会将当前局计为一次。"  # 说明计数与失败行为
+            "每次最多包含两轮挑战，挑战中断也计为一次；中途启动会将当前局计为一次。"  # 说明结算计数方式
         )
-
-    def _text(self, matcher, region):  # OCR 仅用于页面语义核对
-        return self.ocr(match=matcher, box=self.box_of_screen(*region))  # 限制识别范围
 
     def _next_round_button(self):  # 第一轮结算按钮
         return self.find_one(
             fL.skip_dialog_confirm, box=self.box_of_screen(0.66, 0.78, 0.72, 0.86), use_gray_scale=True
         )  # 实测继续下轮的模板区域
 
-    def _leave_button(self):  # 第二轮结算退出按钮
+    def _leave_button(self):  # 挑战完成或中断共用退出按钮
         return self.find_one(
             fL.give_gift, box=self.box_of_screen(0.84, 0.90, 0.86, 0.94), use_gray_scale=True
         )  # 实测离开演算的勾选图标
 
     def _activity_page(self):  # 判断已返回活动中心
-        return self._text(self.lang.baiqu_arena.activity_center, (0, 0, 0.2, 0.10))  # 活动中心标题不会出现在副本中
+        return self.ocr(
+            match=self.lang.baiqu_arena.activity_center, box=self.box_of_screen(0, 0, 0.2, 0.10)
+        )  # 活动中心标题不会出现在副本中
 
     def _team_button(self):  # 编队确认图标使用独立区域，避免和结算按钮混淆
         return self.find_one(
@@ -111,9 +110,7 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
             return "team"  # 等待出战
         if self._mechanics_close_button():  # 入场机制弹窗使用关闭图标定位
             return "mechanics"  # 只关闭已识别的说明
-        if self.find_one(fL.battle_space_left) and self._text(
-            self.lang.baiqu_arena.current_round, (0.04, 0.23, 0.25, 0.30)
-        ):  # 协议空间标识配合活动轮次，避免恢复到其他副本
+        if self.find_one(fL.battle_space_left):  # 使用协议空间模板识别入场，不读取轮次文字
             return "space"  # 继续触碰光点或战斗
         if self._activity_page():  # 可以从活动中心启动或确认退出
             return "activity"  # 活动选择阶段
@@ -211,8 +208,8 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
         count = int(self.config.get("刷取次数", 1))  # 兼容尚未保存新配置的用户
         if not 1 <= count <= 999:  # 运行时同样验证配置范围
             raise ValueError("百趣演武刷取次数必须在 1 到 999 之间")  # 无效配置不启动挑战
-        for index in range(count):  # 按整局计数，每局包含两轮战斗
-            self._run_once()  # 失败直接向上传递，禁止开始下一局
+        for index in range(count):  # 按结算计数，挑战完成或中断均计一次
+            self._run_once()  # 页面切换或战斗流程异常仍停止任务
             self.log_info(f"百趣演武已完成 {index + 1}/{count} 局")  # 仅在确认返回活动中心后记录进度
         return True  # 所有配置局数均已完成
 
@@ -238,17 +235,10 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
                 self._fight()  # 触碰光点并战斗
             elif state == "next":  # 第一轮结算
                 self._click_transition(self._next_round_button, {"draw"})  # 使用指定模板继续第二轮
-            elif state == "final":  # 第二轮结算
-                completed = bool(self._text(self.lang.baiqu_arena.completed, (0.03, 0.15, 0.35, 0.30)))  # 核对完成标题
-                if not completed and not self._text(
-                    self.lang.baiqu_arena.interrupted, (0.03, 0.15, 0.35, 0.30)
-                ):  # 未识别成功或失败标题则保持现场
-                    raise RuntimeError("百趣演武结算结果未识别")  # 不从未知结果推断成功
-                self._click_transition(self._leave_button, {"activity"})  # 成功或失败均验证返回活动中心
-                if not completed:  # 战斗失败也及时离开结算
-                    raise RuntimeError("百趣演武挑战中断，已返回活动中心")  # 报告失败，不自动重开
-                self.log_info("百趣演武本局完成")  # 仅在退出得到验证后报告完成
-                return True  # 一次任务完成一局
+            elif state == "final":  # 挑战完成或中断均按一次结算处理
+                self._click_transition(self._leave_button, {"activity"})  # 模板退出并验证返回活动中心
+                self.log_info("百趣演武本局结束")  # 不再区分战斗胜负
+                return True  # 退出结算后计入刷取次数
             else:  # 未识别状态不能跳过
                 raise RuntimeError("未识别百趣演武当前阶段")  # 停止并保留现场
             state = self._wait_state({"draw", "team", "mechanics", "space", "next", "final"})  # 每步重新观察页面

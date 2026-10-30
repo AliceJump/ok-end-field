@@ -3991,5 +3991,5 @@ msgstr "Completa el número configurado de partidas de Pruebas marciales Baiqu: 
 msgid "刷取次数"
 msgstr "Número de partidas"
 
-msgid "每次包含两轮挑战，挑战失败时停止；中途启动会将当前局计为一次。"
-msgstr "Cada partida incluye dos rondas. Se detiene si el desafío falla; reanudar una partida cuenta como una partida."
+msgid "每次最多包含两轮挑战，挑战中断也计为一次；中途启动会将当前局计为一次。"
+msgstr "Cada partida incluye hasta dos rondas. Un desafío interrumpido también cuenta como una partida; reanudar una partida cuenta como una partida."
