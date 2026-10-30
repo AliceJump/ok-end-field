@@ -147,6 +147,17 @@ class TestBaiQuArenaTask(unittest.TestCase):
                     self.assertEqual(button is not None, draw_page and background == 255)
                     task.ocr.assert_not_called()
 
+    def test_full_hand_with_disabled_draw_button_remains_draw_page(self):
+        frame = card_frame(5)
+        frame[800:850, 1650:1750] = (212, 208, 193)
+        frame[950:1025, 1440:1870] = 255
+        task = Mock(frame=frame)
+        self.assertTrue(BaiQuArenaTask._draw_page(task))
+        task._draw_page.side_effect = lambda: BaiQuArenaTask._draw_page(task)
+        self.assertIsNotNone(BaiQuArenaTask._challenge_button(task))
+        frame[950:1025, 1440:1870] = 140
+        self.assertFalse(BaiQuArenaTask._draw_page(task))
+
     def test_transition_does_not_repeat_click_when_source_disappears(self):
         task = Mock()
         task._wait_state.return_value = None
@@ -228,7 +239,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
         self.assertEqual(task._draw_cards.call_count, 2)
         self.assertEqual(task._fight.call_count, 2)
         task._click_transition.assert_any_call(task._next_round_button, {"draw"})
-        task._click_transition.assert_any_call(task._leave_button, {"activity"})
+        task._click_transition.assert_any_call(task._leave_button, {"activity"}, timeout=60)
         task.ensure_main.assert_not_called()
 
     def test_resume_final_settlement_does_not_start_another_run(self):
@@ -252,7 +263,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task._wait_state.return_value = "final"
         task.ocr.side_effect = AssertionError("Result OCR must not run")
         self.assertTrue(BaiQuArenaTask._run_once(task))
-        task._click_transition.assert_called_once_with(task._leave_button, {"activity"})
+        task._click_transition.assert_called_once_with(task._leave_button, {"activity"}, timeout=60)
         task._open_activity.assert_not_called()
         task.ocr.assert_not_called()
 

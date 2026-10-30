@@ -92,7 +92,14 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
             int(height * 0.74) : int(height * 0.78), int(width * 0.87) : int(width * 0.90)
         ]  # 实测按钮左侧空白区
         cyan = (patch[:, :, 0] > 200) & (patch[:, :, 1] > 150) & (patch[:, :, 2] < 150)  # 按钮的高亮青色
-        return bool(patch.size and cyan.mean() > 0.5)  # 使用实测青色按钮识别抽牌页
+        if patch.size and cyan.mean() > 0.5:  # 抽牌可用时通过青色按钮识别
+            return True  # 普通抽牌页
+        if arena_cards(self.frame) != 5:  # 满手牌后抽牌按钮变灰，必须确认五张牌
+            return False  # 未满手牌且无青色按钮不认定为抽牌页
+        start = self.frame[
+            int(height * 0.89) : int(height * 0.94), int(width * 0.81) : int(width * 0.86)
+        ]  # 同时核对开始挑战按钮的白色背景
+        return bool(start.size and (start.min(axis=2) > 230).mean() > 0.9)  # 避免其他白色牌面误判
 
     def _challenge_button(self):  # 开始挑战只接受抽牌页中的白色启用按钮
         if not self._draw_page():  # 限制颜色判断的页面上下文
@@ -241,7 +248,7 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
             elif state == "next":  # 第一轮结算
                 self._click_transition(self._next_round_button, {"draw"})  # 使用指定模板继续第二轮
             elif state == "final":  # 挑战完成或中断均按一次结算处理
-                self._click_transition(self._leave_button, {"activity"})  # 模板退出并验证返回活动中心
+                self._click_transition(self._leave_button, {"activity"}, timeout=60)  # 退出后留足活动页加载时间
                 self.log_info("百趣演武本局结束")  # 不再区分战斗胜负
                 return True  # 退出结算后计入刷取次数
             else:  # 未识别状态不能跳过
