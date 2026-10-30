@@ -203,6 +203,7 @@ dependencies = [
     { name = "numpy" },
     { name = "ok-script" },
     { name = "onnxocr-ppocrv5" },
+    { name = "opencc" },
     { name = "opencv-python" },
     { name = "openvino" },
     { name = "pillow" },
@@ -230,6 +231,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.0.0" },
     { name = "ok-script", specifier = "==2.0.7b1" },
     { name = "onnxocr-ppocrv5", specifier = "==0.0.14" },
+    { name = "opencc", specifier = "==1.2.0" },
     { name = "opencv-python", specifier = "==4.12.0.88" },
     { name = "openvino", specifier = "==2026.0.0" },
     { name = "pillow", specifier = ">=10.0.0" },
@@ -282,6 +284,17 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b3/cb/5eb9b54177a26576ddf190bbf077e21d3b60f840108328591c963272211f/onnxocr_ppocrv5-0.0.14.tar.gz", hash = "sha256:503e59486fa97a5dd941f75801fd1cc56629bf1c38c766385392a09c86e67d89", size = 19160874, upload-time = "2026-03-10T18:15:16.064Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cc/29/672c338769a4265febbc1ac91618dae7bc26229d2af1f8179038f8282166/onnxocr_ppocrv5-0.0.14-py3-none-any.whl", hash = "sha256:0eeb3affd03f05381cf4315eb2172116e6c309d3a4a231c12d8d6fae1b830caf", size = 19173226, upload-time = "2026-03-10T18:15:00.021Z" },
+]
+
+[[package]]
+name = "opencc"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/92/92f4519221b833801be1d037cde747f04c4e29e33bd7574b36b898d9e2bf/opencc-1.2.0.tar.gz", hash = "sha256:2bb913c7ed388466b26d38af4c8c4bb419ddb503235d070f0ee1b24998ef8bca", size = 3420630, upload-time = "2026-01-22T09:23:12.382Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/89/c3654977ae86211342356c5f455a26d93dd47222c2444e945aab6a4f91cc/opencc-1.2.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c9851a7b7d50e4c5d52c71972cedbb618542a342ed57ce396be8988bfefdf040", size = 1376098, upload-time = "2026-01-22T09:23:04.052Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/f8/fc8c5f25243a886dcf15329060e3596e4ab967ee2e277920e4feb6067211/opencc-1.2.0-cp312-cp312-manylinux2014_x86_64.whl", hash = "sha256:1f105a05fc76c29a1090cb613996aef26b60525e745e8471dc4485dfe17f2e08", size = 1655493, upload-time = "2026-01-22T09:23:05.387Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/f6/0900195298326bd038469f3db571afd73b893a30fe92648f6418162a4cb8/opencc-1.2.0-cp312-cp312-win_amd64.whl", hash = "sha256:76cf42a9666ac5402478f7fad2f603d253096aa5c41199b173e08d49a9af8046", size = 1763621, upload-time = "2026-01-22T09:53:13.748Z" },
 ]
 
 [[package]]

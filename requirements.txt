@@ -40,6 +40,8 @@ ok-script==2.0.7b1
     # via ok-end-field
 onnxocr-ppocrv5==0.0.14
     # via ok-end-field
+opencc==1.2.0
+    # via ok-end-field
 opencv-python==4.12.0.88
     # via ok-end-field
 openvino==2026.0.0
