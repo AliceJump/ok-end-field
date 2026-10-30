@@ -189,6 +189,14 @@ class TestBaiQuArenaTask(unittest.TestCase):
         self.assertEqual(task.click_box.call_count, 3)
         self.assertEqual([call.args[1] for call in task._wait_state.call_args_list], [3, 3, 3, 60])
 
+    def test_last_click_waits_even_if_source_is_still_visible(self):
+        task = Mock()
+        task._wait_state.side_effect = [None, None, None, "activity"]
+        locate = Mock(return_value=object())
+        self.assertEqual(BaiQuArenaTask._click_transition(task, locate, {"activity"}, timeout=60), "activity")
+        self.assertEqual(task.click_box.call_count, 3)
+        self.assertEqual([call.args[1] for call in task._wait_state.call_args_list], [3, 3, 3, 60])
+
     def test_both_settlements_bypass_generic_combat_wait(self):
         for next_round, final in ((True, False), (False, True)):
             task = Mock()
