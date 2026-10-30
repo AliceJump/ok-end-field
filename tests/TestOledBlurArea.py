@@ -1,15 +1,23 @@
-"""OLED 模糊遮罩的区域回调。
+"""OLED 模糊遮罩的区域回调与叠加窗门禁。
 
 ok 框架只在项目配置提供 ``blur_area`` 回调时才注册「启用模糊 / 模糊算法 /
 模糊间隔」这三个基础选项，并把回调返回的矩形用前景叠加窗盖在游戏画面上。
-这里锁定回调的契约，避免以后改区域时把「比例 → 像素」算错。
+这里锁定两件事：
+
+1. 区域回调的契约，避免以后改区域时把「比例 → 像素」算错；
+2. 叠加窗门禁——只开「启用模糊」也要能把窗口建出来（否则遮挡 UID 实际不生效），
+   但窗口内的调试框仍严格跟随 Debug 开关。
 """
 
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 
+from ok import App, og
 from ok.feature.Box import Box
 
 from src.config import OLED_BLUR_RECTS, blur_area, config
+from src.patches.overlay_blur_gate_patch import blur_masking_requested, should_create_overlay
 
 
 class TestOledBlurArea(unittest.TestCase):
@@ -43,6 +51,89 @@ class TestOledBlurArea(unittest.TestCase):
     def test_invalid_size_returns_empty(self):
         self.assertEqual(blur_area(0, 0), [])
         self.assertEqual(blur_area(-10, 1080), [])
+
+
+class TestOverlayBlurGate(unittest.TestCase):
+    """只开「启用模糊」时也要建出叠加窗，但调试框仍跟随 Debug 开关。"""
+
+    @classmethod
+    def setUpClass(cls):
+        from src.patches.overlay_blur_gate_patch import install_overlay_blur_gate_patch
+
+        install_overlay_blur_gate_patch()
+
+    @staticmethod
+    def _executor(enable_blur=True, has_blur_area=True):
+        return SimpleNamespace(
+            blur_overlay_processor=object() if has_blur_area else None,
+            basic_options={"Enable Blur": enable_blur},
+        )
+
+    @staticmethod
+    def _owner(use_overlay=False):
+        return SimpleNamespace(
+            ok_config={"use_overlay": use_overlay},
+            overlay_window=None,
+            exit_event=None,
+            sync_overlay_source=lambda: None,
+        )
+
+    def test_blur_not_requested_without_executor(self):
+        with mock.patch.object(og, "executor", None):
+            self.assertFalse(blur_masking_requested())
+
+    def test_blur_not_requested_without_blur_area(self):
+        with mock.patch.object(og, "executor", self._executor(has_blur_area=False)):
+            self.assertFalse(blur_masking_requested())
+
+    def test_blur_not_requested_when_enable_blur_off(self):
+        with mock.patch.object(og, "executor", self._executor(enable_blur=False)):
+            self.assertFalse(blur_masking_requested())
+
+    def test_blur_requested_when_configured_and_enabled(self):
+        with mock.patch.object(og, "executor", self._executor()):
+            self.assertTrue(blur_masking_requested())
+
+    def test_overlay_allowed_for_blur_only(self):
+        with mock.patch.object(og, "executor", self._executor()):
+            self.assertTrue(should_create_overlay(self._owner(use_overlay=False)))
+
+    def test_overlay_allowed_for_debug_switch(self):
+        with mock.patch.object(og, "executor", None):
+            self.assertTrue(should_create_overlay(self._owner(use_overlay=True)))
+
+    def test_overlay_denied_when_neither(self):
+        with mock.patch.object(og, "executor", None):
+            self.assertFalse(should_create_overlay(self._owner(use_overlay=False)))
+
+    def test_get_overlay_view_returns_none_when_denied(self):
+        with mock.patch.object(og, "executor", None):
+            self.assertIsNone(App.get_overlay_view(self._owner(use_overlay=False)))
+
+    def test_blur_only_creates_window_with_boxes_disabled(self):
+        with (
+            mock.patch.object(og, "executor", self._executor()),
+            mock.patch("ok.ui.overlay.Win32GdiOverlay") as overlay_cls,
+        ):
+            owner = self._owner(use_overlay=False)
+            view = App.get_overlay_view(owner)
+            self.assertIs(view, overlay_cls.return_value)
+            overlay_cls.return_value.set_boxes_enabled.assert_called_once_with(False)
+
+    def test_debug_switch_creates_window_with_boxes_enabled(self):
+        with (
+            mock.patch.object(og, "executor", None),
+            mock.patch("ok.ui.overlay.Win32GdiOverlay") as overlay_cls,
+        ):
+            App.get_overlay_view(self._owner(use_overlay=True))
+            overlay_cls.return_value.set_boxes_enabled.assert_called_once_with(True)
+
+    def test_install_is_idempotent(self):
+        from src.patches.overlay_blur_gate_patch import install_overlay_blur_gate_patch
+
+        view_before = App.get_overlay_view
+        install_overlay_blur_gate_patch()
+        self.assertIs(App.get_overlay_view, view_before)
 
 
 if __name__ == "__main__":
