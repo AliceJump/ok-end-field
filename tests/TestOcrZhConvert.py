@@ -207,6 +207,18 @@ class OcrZhConvertPatchTestCase(unittest.TestCase):
         with patch.object(ocr_zh_convert_patch, "convert_matcher", return_value=ocr_zh_convert.CONVERSION_FAILED):
             self.assertEqual(self._box_module.find_boxes_by_name(boxes, re.compile("觸碰")), boxes)
 
+    def test_context_sensitive_conversion_keeps_original_match(self):
+        # OpenCC 是词语上下文相关的：「乾坤」保留，但「乾[坤]」里的「乾」会转成「干」。
+        # 归一后的 pattern 失配时，必须用原始参数补查，不能丢掉原本有效的匹配。
+        boxes = [_box("乾坤")]
+        self.assertEqual(self._box_module.find_boxes_by_name(boxes, re.compile("乾[坤]")), boxes)
+        self.assertIs(self._box_module.find_box_by_name(boxes, re.compile("乾[坤]")), boxes[0])
+
+    def test_context_sensitive_pattern_still_matches(self):
+        # 补查不能反过来破坏归一本身的价值：简体 pattern 仍要能命中繁体文本
+        boxes = [_box("乾坤")]
+        self.assertEqual(self._box_module.find_boxes_by_name(boxes, re.compile("乾坤")), boxes)
+
 
 if __name__ == "__main__":
     unittest.main()

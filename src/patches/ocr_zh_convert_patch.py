@@ -21,6 +21,9 @@ ok-ww 的做法是在 ``config.py`` 打开 ``'ocr': {'auto_simplify': True}``，
 - 归一后的文本放在匹配用替身里，原始 ``Box`` 不被复制、不被改写。
 - **归一必须两侧同时成功**：任一侧转换失败（``CONVERSION_FAILED``）就整体退回
   原始参数，绝不出现「pattern 已归一、文本没归一」这种反而更容易失配的组合。
+- **归一失配后补查一次原文**：OpenCC 的转换是词语上下文相关的（``乾坤`` 保留、
+  ``乾[坤]`` 里的 ``乾`` 却会转成 ``干``），归一后的正则可能不再命中原文能命中的
+  文本。无命中时用原始参数再查一次，保证结果不会比不打补丁更差。
 - 传入的 ``boxes`` 若是迭代器，先物化一次，快路径与异常回退都用这一份，
   不会把已耗尽的迭代器交回框架。
 - 归一不可用（未安装 OpenCC）或任何异常都退回框架原实现。
@@ -116,6 +119,11 @@ def _make_find_boxes_by_name(original):
                 return original(materialized, names)
             normalized, converted_names, originals = prepared
             matched = original(normalized, converted_names)
+            if not matched:
+                # OpenCC 的转换是词语上下文相关的（如「乾坤」保留，而「乾[坤]」里的
+                # 「乾」会转成「干」）。归一可能把原本有效的匹配弄丢，无命中时用原始
+                # 参数补查一次，保证结果不会比不打补丁更差。
+                matched = original(materialized, names)
         except Exception:
             return original(materialized, names)
         return [originals.get(id(box), box) for box in matched]
@@ -136,6 +144,9 @@ def _make_find_box_by_name(original):
                 return original(materialized, names)
             normalized, converted_names, originals = prepared
             matched = original(normalized, converted_names)
+            if matched is None:
+                # 同上：归一失配不代表原文失配，用原始参数补查一次。
+                matched = original(materialized, names)
         except Exception:
             return original(materialized, names)
         return originals.get(id(matched), matched) if matched is not None else None
