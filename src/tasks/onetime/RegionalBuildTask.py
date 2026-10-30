@@ -629,7 +629,11 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
         self.log_info(f"推荐购买 | 名称:{buy_good.good_name} | 价格:{buy_good.good_price}")
 
         try:
-            sell_goods = [good for good in processed_goods if good.friend_price > sell_price]
+            sell_goods = [
+                good
+                for good in processed_goods
+                if good.friend_price is not None and good.friend_price > sell_price
+            ]
         except TypeError:
             self.log_error("好友价格数据异常，无法进行出售分析")
             sell_goods = []
@@ -702,6 +706,9 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
             # 价格校验在采集前：buy_only 时不需要卖出价
             buy_price = self.config.get(f"{area}买入价", 0)
             sell_price = self.config.get(f"{area}卖出价", 0)
+            if type(buy_price) is not int or (not buy_only and type(sell_price) is not int):
+                self.log_error(f"{area} 买卖价格配置无效，跳过该地区买卖货")
+                continue
             if not buy_price or (not buy_only and not sell_price):
                 self.log_info("未找到所需价格配置")
                 continue
