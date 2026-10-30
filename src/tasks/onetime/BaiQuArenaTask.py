@@ -62,10 +62,8 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
             fL.give_gift, box=self.box_of_screen(0.84, 0.90, 0.86, 0.94), use_gray_scale=True
         )  # 实测离开演算的勾选图标
 
-    def _activity_page(self):  # 在左侧活动列表中匹配演武关键词或对应语言名称
-        return self.ocr(
-            match=self.lang.baiqu_arena.title, box=self.box_of_screen(0, 0.15, 0.2, 0.90)
-        )  # 限定列表区域，避开结算页左上角的同名标题
+    def _activity_page(self):  # 在左侧区域匹配各语言对应的演武关键词
+        return self.ocr(match=self.lang.baiqu_arena.title, box=self.box.left)  # 入口识别使用公共左侧区域
 
     def _team_button(self):  # 编队确认图标使用独立区域，避免和结算按钮混淆
         return self.find_one(
@@ -143,7 +141,7 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
     def _open_activity(self):  # 在活动中心选择百趣演武
         self.wait_click_ocr(
             match=self.lang.baiqu_arena.title,
-            box=self.box_of_screen(0, 0.15, 0.2, 0.90),
+            box=self.box.left,
             time_out=10,
             raise_if_not_found=True,
         )  # 必须选中本活动，不能沿用其他活动的入口
