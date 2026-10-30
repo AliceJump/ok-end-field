@@ -11,9 +11,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
 
+from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.data.FeatureList import FeatureList as fL
 from src.data.lang import get_lang_accessor
-from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.tasks.onetime.MatrixCleanTask import MatrixCleanTask
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -23,11 +23,13 @@ class TestColorWait(unittest.TestCase):
     def test_click_until_color_only_clicks_when_unmatched(self):
         task = MagicMock()
         task.frame = object()
+
         def wait(condition, **kwargs):
             result = condition()
             if not result and kwargs.get("post_action"):
                 kwargs["post_action"]()
             return result
+
         task.wait_until.side_effect = wait
         task.wait_color.side_effect = lambda *args, **kwargs: RuntimeMixin.wait_color(task, *args, **kwargs)
         box = object()
