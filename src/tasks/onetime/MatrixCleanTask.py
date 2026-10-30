@@ -104,13 +104,9 @@ class MatrixCleanTask(Common):
         """进入分解模式；已在分解模式（上批未正常自动退出）则直接继续。"""
         if self.find_one(fL.matrix_dismantle_exit):
             return True
-        def click_entry_if_needed():
-            if not self.find_one(fL.matrix_dismantle_exit):
-                self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1)
-
         hint = self.wait_feature(
             fL.matrix_dismantle_exit,
-            pre_action=click_entry_if_needed,
+            pre_action=lambda: self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1),
             settle_time=0,
             time_out=6,
             raise_if_not_found=False,
@@ -188,7 +184,7 @@ class MatrixCleanTask(Common):
 
         只有检测到空列表图标才判定清理完成；按钮识别失败时报告异常。
         """
-        if self._dismantle_disabled():
+        if self._no_item_left():
             return False
         # 亮起的「分解」按钮右侧图标与确认弹窗「确认」相同，复用同一模板；
         # 灰色「无法分解」不带该图标
@@ -198,7 +194,7 @@ class MatrixCleanTask(Common):
             time_out=4,
             raise_if_not_found=False,
         ):
-            if self._dismantle_disabled():
+            if self._no_item_left():
                 return False
             self.mark_task_failure("未找到分解按钮，无法确认清理完成")
             return None
@@ -211,10 +207,6 @@ class MatrixCleanTask(Common):
         if not self._close_result_popup():
             return None
         return True
-
-    def _dismantle_disabled(self):
-        """仅在出现空列表图标时确认没有可分解物品。"""
-        return self._no_item_left()
 
     def _no_item_left(self):
         """检测空列表提示左侧图标。"""
