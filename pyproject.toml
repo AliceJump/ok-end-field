@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Endfield game automation built on ok-script"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "ok-script==2.0.7b1",
+    "ok-script==2.0.17",
     "PySide6-Essentials==6.11.1",
     "PySide6-Fluent-Widgets==1.10.5",
     "PySideSix-Frameless-Window==0.7.3",
@@ -22,6 +22,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mcp==2.3.0",
     "playwright>=1.55,<2",
     "polib>=1.2,<2",
     "pypinyin>=0.55,<1",
@@ -31,6 +32,9 @@ dev = [
 
 [tool.uv]
 package = false
+exclude-dependencies = [
+    { package = { name = "ok-script" }, dependencies = ["mcp"] },
+]
 override-dependencies = [
     "pywin32==311; sys_platform == 'win32'",
 ] # Only Windows can install pywin32

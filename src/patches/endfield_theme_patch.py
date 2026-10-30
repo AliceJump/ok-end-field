@@ -933,6 +933,7 @@ def install_endfield_theme_patch() -> None:
 
         # 2. 拦截 addSubInterface 收集所有原生的子 Tab，避免它们直接堆砌在左侧侧边栏
         pending_tabs: list[dict[str, Any]] = []
+        temporary_navigation_keys: list[str] = []
 
         def _collector_add_sub_interface(
             widget: Any, icon: Any, text: str, position: Any = None, parent: Any = None
@@ -946,6 +947,12 @@ def install_endfield_theme_patch() -> None:
                     "parent": parent,
                 }
             )
+            # Newer ok-script reorders these navigation items during its own
+            # constructor, before our collected tabs become workspace pages.
+            if widget.objectName() in ("EditTaskTab", "PluginTab"):
+                key = widget.objectName()
+                self.navigationInterface.addItem(key, icon, text, position=position)
+                temporary_navigation_keys.append(key)
             return None
 
         self.addSubInterface = _collector_add_sub_interface
@@ -953,6 +960,8 @@ def install_endfield_theme_patch() -> None:
         try:
             orig_init(self, *args, **kwargs)
         finally:
+            for key in temporary_navigation_keys:
+                self.navigationInterface.removeWidget(key)
             # 恢复原生的 addSubInterface
             self.addSubInterface = lambda widget, icon, text, position=None, parent=None: orig_add_sub_interface(
                 self, widget, icon, text, position, parent
