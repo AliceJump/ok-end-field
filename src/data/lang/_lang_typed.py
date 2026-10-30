@@ -44,24 +44,6 @@ class BaiquArenaModule(_LangModuleBaseT):
     current_round: re.Pattern[str]
     """当前.*第.*轮"""
 
-    draw: str
-    """抽牌"""
-
-    challenge: str
-    """开始挑战"""
-
-    start: str
-    """开始演算"""
-
-    mechanics: str
-    """机制特性"""
-
-    next_round: str
-    """继续下轮"""
-
-    leave: str
-    """离开演算"""
-
 
 class CharactersModule(_LangModuleBaseT):
     """characters — OCR 语言节点（值取自 zh_CN）"""

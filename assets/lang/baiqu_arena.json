@@ -3,11 +3,5 @@
   "title": {"zh_CN": {"string": "百趣演武"}, "zh_TW": {"string": "百趣演武"}},
   "completed": {"zh_CN": {"string": "挑战完成"}, "zh_TW": {"string": "挑戰完成"}},
   "interrupted": {"zh_CN": {"string": "挑战中断"}, "zh_TW": {"string": "挑戰中斷"}},
-  "current_round": {"zh_CN": {"pattern": "当前.*第.*轮"}, "zh_TW": {"pattern": "當前.*第.*輪"}},
-  "draw": {"zh_CN": {"string": "抽牌"}, "zh_TW": {"string": "抽牌"}},
-  "challenge": {"zh_CN": {"string": "开始挑战"}, "zh_TW": {"string": "開始挑戰"}},
-  "start": {"zh_CN": {"string": "开始演算"}, "zh_TW": {"string": "開始演算"}},
-  "mechanics": {"zh_CN": {"string": "机制特性"}, "zh_TW": {"string": "機制特性"}},
-  "next_round": {"zh_CN": {"string": "继续下轮"}, "zh_TW": {"string": "繼續下輪"}},
-  "leave": {"zh_CN": {"string": "离开演算"}, "zh_TW": {"string": "離開演算"}}
+  "current_round": {"zh_CN": {"pattern": "当前.*第.*轮"}, "zh_TW": {"pattern": "當前.*第.*輪"}}
 }
