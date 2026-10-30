@@ -11,7 +11,12 @@ ok 框架的前景叠加窗有一道硬门禁：``ok_config['use_overlay']``（�
 
 本补丁把「创建窗口」的条件放宽为 ``use_overlay`` **或**「模糊已开启」，而窗口内的
 ``boxes`` 仍严格跟随 ``use_overlay``：只开模糊时不会顺带画调试框，也不会启动
-Alt+右键的坐标拾取。任何异常都退回框架原行为。
+Alt+右键的坐标拾取。另外补上「运行中才打开模糊」的补丁信号处理，避免必须重启
+才能看到遮挡。任何异常都退回框架原行为。
+
+注：ok-script **v2.0.20 起上游已自行修复这道门禁**（``_OverlayConfigMixin._overlay_needed``
+与 ``_on_blur_patches``）。本补丁是给当前 pin 的 ``2.0.7b1`` 做的向后移植，仓库把
+ok-script 升级到 2.0.20 之后应当整体移除。
 """
 
 from __future__ import annotations
@@ -119,11 +124,41 @@ def install_overlay_blur_gate_patch():
 
     def patched_initialize_overlay(self):
         """启动时按持久化状态初始化；模糊开启时也要把窗口建出来。"""
+        _connect_blur_signals(self)
         if not should_create_overlay(self):
             return
         overlay = _ensure_overlay(self)
         if overlay is not None:
             overlay.set_boxes_enabled(use_overlay_enabled(self))
+
+    def _connect_blur_signals(owner):
+        """挂上模糊补丁信号，处理「运行中才打开模糊」的情况。
+
+        用户在设置里开启模糊时，窗口几何事件不会再触发，窗口还没建出来就收不到
+        补丁。这里在收到第一批补丁时补建窗口并把当前补丁直接交给它。
+        """
+        from ok.core.events import communicate
+
+        if getattr(owner, "_blur_gate_listener", None) is not None:
+            return
+
+        def on_blur_patches(patches):
+            if getattr(owner, "overlay_window", None) is not None:
+                return
+            if not should_create_overlay(owner):
+                return
+            overlay = _ensure_overlay(owner)
+            if overlay is not None:
+                overlay.update_blur_patches(patches)
+
+        def on_clear_blur_patches():
+            if not should_create_overlay(owner) and getattr(owner, "overlay_window", None) is not None:
+                owner._close_overlay(wait=False)
+
+        owner._blur_gate_listener = on_blur_patches
+        owner._blur_gate_clear_listener = on_clear_blur_patches
+        communicate.blur_overlay.connect(on_blur_patches)
+        communicate.clear_blur_overlay.connect(on_clear_blur_patches)
 
     App.get_overlay_view = patched_get_overlay_view
     HeadlessApp.get_overlay_view = patched_get_overlay_view

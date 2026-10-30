@@ -136,6 +136,29 @@ class TestOverlayBlurGate(unittest.TestCase):
             App.get_overlay_view(self._owner(use_overlay=True))
             overlay_cls.return_value.set_boxes_enabled.assert_called_once_with(True)
 
+    def test_enabling_blur_at_runtime_builds_overlay(self):
+        """运行中才打开模糊时，第一批补丁要把窗口补建出来并直接交给它。"""
+        state = {"blur": False}
+
+        class _Basic(dict):
+            def get(self, key, default=None):
+                return state["blur"] if key == "Enable Blur" else default
+
+        executor = SimpleNamespace(blur_overlay_processor=object(), basic_options=_Basic())
+        with (
+            mock.patch.object(og, "executor", executor),
+            mock.patch("ok.ui.overlay.Win32GdiOverlay") as overlay_cls,
+        ):
+            owner = self._owner(use_overlay=False)
+            App.initialize_overlay(owner)
+            self.assertIsNone(owner.overlay_window)
+
+            state["blur"] = True
+            owner._blur_gate_listener([(0, 0, 2, 2, "patch")])
+
+            self.assertIs(owner.overlay_window, overlay_cls.return_value)
+            overlay_cls.return_value.update_blur_patches.assert_called_once()
+
     def test_install_is_idempotent(self):
         from src.patches.overlay_blur_gate_patch import install_overlay_blur_gate_patch
 
