@@ -154,6 +154,7 @@ config = {
         ["src.tasks.onetime.DeliveryTask", "DeliveryTask"],
         ["src.tasks.onetime.BattleTask", "BattleTask"],
         ["src.tasks.onetime.DemoDrawTask", "DemoDrawTask"],
+        ["src.tasks.onetime.BaiQuArenaTask", "BaiQuArenaTask"],
         ["src.tasks.onetime.YingTuoTask", "YingTuoTask"],
         ["src.tasks.onetime.TestStartGame", "TestStartGame"],
         ["src.tasks.test.TestReloginTask", "TestReloginTask"],

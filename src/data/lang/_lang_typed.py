@@ -26,6 +26,43 @@ class AutoSkipDialogTaskModule(_LangModuleBaseT):
     """结束会话"""
 
 
+class BaiquArenaModule(_LangModuleBaseT):
+    """baiqu_arena — OCR 语言节点（值取自 zh_CN）"""
+
+    activity_center: re.Pattern[str]
+    """活动中心"""
+
+    title: str
+    """百趣演武"""
+
+    completed: str
+    """挑战完成"""
+
+    interrupted: str
+    """挑战中断"""
+
+    current_round: re.Pattern[str]
+    """当前.*第.*轮"""
+
+    draw: str
+    """抽牌"""
+
+    challenge: str
+    """开始挑战"""
+
+    start: str
+    """开始演算"""
+
+    mechanics: str
+    """机制特性"""
+
+    next_round: str
+    """继续下轮"""
+
+    leave: str
+    """离开演算"""
+
+
 class CharactersModule(_LangModuleBaseT):
     """characters — OCR 语言节点（值取自 zh_CN）"""
 
@@ -757,6 +794,7 @@ class _LangAccessorTyped:
     """self.lang 的类型化声明（仅类型提示，运行时由 __getattr__ 动态加载）"""
 
     AutoSkipDialogTask: AutoSkipDialogTaskModule
+    baiqu_arena: BaiquArenaModule
     characters: CharactersModule
     daily_battle_mixin: DailyBattleMixinModule
     daily_buy_mixin: DailyBuyMixinModule

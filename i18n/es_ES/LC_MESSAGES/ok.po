@@ -3981,3 +3981,9 @@ msgid "是否前往「贵重品库/武器基质」分解全部可分解基质，
 msgstr ""
 "Abre Objetos de valor / Matrices de armas y desmantela todas las matrices "
 "disponibles."
+
+msgid "百趣演武"
+msgstr "Pruebas marciales Baiqu"
+
+msgid "完成一局百趣演武：每轮抽至战力超过10或满5张，自动完成两轮战斗。"
+msgstr "Completa una partida de Pruebas marciales Baiqu: roba hasta superar 10 de poder o tener 5 cartas y combate las dos rondas automáticamente."

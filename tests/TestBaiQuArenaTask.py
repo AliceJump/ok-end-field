@@ -1,0 +1,209 @@
+import unittest
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import cv2
+import numpy as np
+
+from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.onetime.BaiQuArenaTask import BaiQuArenaTask, arena_cards, arena_over_ten
+
+FIXTURES = Path(__file__).parent / "fixtures" / "baiqu_arena"
+
+
+def screenshot(name, size=(1920, 1080)):
+    # 仅保留实测的牌头和提示条，避免保存 UID 与其他无关画面。
+    frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
+    for region, (top, bottom) in {"heads": (240, 330), "warning": (850, 900)}.items():
+        frame[top:bottom] = cv2.imread(str(FIXTURES / f"{name}_{region}.png"))
+    return cv2.resize(frame, size)
+
+
+class TestBaiQuArenaTask(unittest.TestCase):
+    def test_real_cards_and_scrolling_power_bar_at_multiple_sizes(self):
+        for size in ((1920, 1080), (1280, 720), (2560, 1440)):
+            for name, count, over_ten in (
+                ("empty", 0, False),
+                ("one", 1, False),
+                ("two", 2, False),
+                ("three", 3, False),
+                ("four_over_ten", 4, True),
+            ):
+                with self.subTest(size=size, name=name):
+                    frame = screenshot(name, size)
+                    self.assertEqual(arena_cards(frame), count)
+                    self.assertEqual(arena_over_ten(frame), over_ten)
+
+    def test_dialog_white_background_is_not_a_full_hand(self):
+        self.assertLess(arena_cards(screenshot("enemy_dialog")), 5)
+
+    def test_red_outside_warning_region_does_not_stop_drawing(self):
+        frame = screenshot("three")
+        frame[:200] = (0, 0, 255)
+        frame[950:] = (0, 0, 255)
+        self.assertFalse(arena_over_ten(frame))
+
+    def test_draws_once_then_stops_when_power_exceeds_ten(self):
+        task = Mock()
+        task.frame = screenshot("three")
+        task._draw_page.return_value = True
+
+        def flip(condition, **kwargs):
+            task.frame = screenshot("four_over_ten")
+            self.assertTrue(condition())
+            self.assertGreater(kwargs["settle_time"], 0)
+            return True
+
+        task.wait_until.side_effect = flip
+        BaiQuArenaTask._draw_cards(task)
+        task.click_relative.assert_called_once_with(0.95, 0.76)
+        task.wait_click_ocr.assert_called_once()
+
+    def test_resuming_over_ten_does_not_draw_an_extra_card(self):
+        task = Mock(frame=screenshot("four_over_ten"))
+        task._draw_page.return_value = True
+        BaiQuArenaTask._draw_cards(task)
+        task.click_relative.assert_not_called()
+        task.wait_click_ocr.assert_called_once()
+
+    def test_full_hand_below_threshold_starts_challenge(self):
+        task = Mock()
+        task._draw_page.return_value = True
+        with patch("src.tasks.onetime.BaiQuArenaTask.arena_cards", return_value=5):
+            BaiQuArenaTask._draw_cards(task)
+        task.click_relative.assert_not_called()
+        task.wait_click_ocr.assert_called_once()
+
+    def test_missing_card_change_stops_without_retry_or_start(self):
+        task = Mock(frame=screenshot("two"))
+        task._draw_page.return_value = True
+        task.wait_until.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "牌面变化"):
+            BaiQuArenaTask._draw_cards(task)
+        task.click_relative.assert_called_once()
+        task.wait_click_ocr.assert_not_called()
+
+    def test_unknown_draw_page_never_clicks(self):
+        task = Mock()
+        task._draw_page.return_value = False
+        with self.assertRaises(RuntimeError):
+            BaiQuArenaTask._draw_cards(task)
+        task.click_relative.assert_not_called()
+
+    def test_transition_does_not_repeat_click_when_source_disappears(self):
+        task = Mock()
+        task._wait_state.return_value = None
+        locate = Mock(side_effect=[object(), None])
+        with self.assertRaises(RuntimeError):
+            BaiQuArenaTask._click_transition(task, locate, {"draw"})
+        task.click_box.assert_called_once()
+
+    def test_failed_transition_has_bounded_retries(self):
+        task = Mock()
+        task._wait_state.return_value = None
+        with self.assertRaises(RuntimeError):
+            BaiQuArenaTask._click_transition(task, Mock(return_value=object()), {"draw"})
+        self.assertEqual(task.click_box.call_count, 3)
+
+    def test_transition_allows_loading_after_source_disappears(self):
+        task = Mock()
+        task._wait_state.side_effect = [None, "activity"]
+        locate = Mock(side_effect=[object(), None])
+        self.assertEqual(BaiQuArenaTask._click_transition(task, locate, {"activity"}), "activity")
+        task.click_box.assert_called_once()
+        self.assertEqual([call.args[1] for call in task._wait_state.call_args_list], [3, 15])
+
+    def test_both_settlements_bypass_generic_combat_wait(self):
+        for next_round, final in ((True, False), (False, True)):
+            task = Mock()
+            task._next_round_button.return_value = next_round
+            task._leave_button.return_value = final
+            with patch.object(BattleMixin, "is_battle_settlement") as generic:
+                self.assertTrue(BaiQuArenaTask.is_battle_settlement(task))
+                generic.assert_not_called()
+
+    def test_light_search_uses_yingtuo_forward_steps(self):
+        task = Mock()
+        task._text.return_value = False
+        task.strafe_search.return_value = [object()]
+        BaiQuArenaTask._fight(task)
+        task.strafe_search.assert_called_once()
+        options = task.strafe_search.call_args.kwargs
+        self.assertEqual(options["keys"], ("w",))
+        self.assertEqual(options["duration"], 0.25)
+        self.assertEqual(options["time_out"], 60)
+        task.press_key.assert_called_once_with("f")
+        task.auto_battle.assert_called_once()
+
+    def test_inner_combat_exit_detects_activity_settlement(self):
+        for next_round, final in ((True, False), (False, True)):
+            task = Mock()
+            task._next_round_button.return_value = next_round
+            task._leave_button.return_value = final
+            with patch.object(BattleMixin, "_check_single_exit_condition") as generic:
+                self.assertTrue(BaiQuArenaTask._check_single_exit_condition(task))
+                generic.assert_not_called()
+
+    def test_missing_light_never_starts_auto_battle(self):
+        task = Mock()
+        task._text.return_value = False
+        task.strafe_search.return_value = None
+        with self.assertRaisesRegex(RuntimeError, "触碰点"):
+            BaiQuArenaTask._fight(task)
+        task.press_key.assert_not_called()
+        task.auto_battle.assert_not_called()
+
+    def test_no_settlement_is_not_treated_as_success(self):
+        task = Mock()
+        task._text.return_value = False
+        task.strafe_search.return_value = "combat"
+        task._wait_state.return_value = None
+        with self.assertRaisesRegex(RuntimeError, "战斗结算"):
+            BaiQuArenaTask._fight(task)
+
+    def test_two_rounds_exit_to_activity_without_main_world_wait(self):
+        task = Mock()
+        task._wait_state.side_effect = ["activity", "draw", "team", "space", "next", "draw", "team", "space", "final"]
+        self.assertTrue(BaiQuArenaTask.run.__wrapped__(task))
+        self.assertEqual(task._draw_cards.call_count, 2)
+        self.assertEqual(task._fight.call_count, 2)
+        task._click_transition.assert_any_call(task._next_round_button, {"draw"})
+        task._click_transition.assert_any_call(task._leave_button, {"activity"})
+        task.ensure_main.assert_not_called()
+
+    def test_resume_final_settlement_does_not_start_another_run(self):
+        task = Mock()
+        task._wait_state.return_value = "final"
+        self.assertTrue(BaiQuArenaTask.run.__wrapped__(task))
+        task._open_activity.assert_not_called()
+        task._fight.assert_not_called()
+
+    def test_unknown_start_does_not_escape_out_of_an_unrecognized_battle(self):
+        task = Mock()
+        task._wait_state.return_value = None
+        task.is_main.return_value = False
+        with self.assertRaises(RuntimeError):
+            BaiQuArenaTask.run.__wrapped__(task)
+        task.ensure_main.assert_not_called()
+        task.press_key.assert_not_called()
+
+    def test_interrupted_final_result_is_not_reported_as_success(self):
+        task = Mock()
+        task._wait_state.return_value = "final"
+        task._text.side_effect = [False, True]
+        with self.assertRaisesRegex(RuntimeError, "挑战中断"):
+            BaiQuArenaTask.run.__wrapped__(task)
+        task._click_transition.assert_called_once_with(task._leave_button, {"activity"})
+        task._open_activity.assert_not_called()
+
+    def test_unrecognized_final_result_preserves_the_screen(self):
+        task = Mock()
+        task._wait_state.return_value = "final"
+        task._text.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "结果未识别"):
+            BaiQuArenaTask.run.__wrapped__(task)
+        task._click_transition.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

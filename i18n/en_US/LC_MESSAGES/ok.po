@@ -3847,3 +3847,9 @@ msgid "是否前往「贵重品库/武器基质」分解全部可分解基质，
 msgstr ""
 "Whether to open Valuables / Weapon Matrices and dismantle all eligible "
 "matrices."
+
+msgid "百趣演武"
+msgstr "Baiqu Martial Trials"
+
+msgid "完成一局百趣演武：每轮抽至战力超过10或满5张，自动完成两轮战斗。"
+msgstr "Complete one Baiqu Martial Trials run: draw until power exceeds 10 or you hold 5 cards, then fight both rounds automatically."
