@@ -1,5 +1,4 @@
 import unittest
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import cv2
@@ -8,48 +7,47 @@ import numpy as np
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.onetime.BaiQuArenaTask import BaiQuArenaTask, arena_cards, arena_over_ten
 
-FIXTURES = Path(__file__).parent / "fixtures" / "baiqu_arena"
 
-
-def screenshot(name, size=(1920, 1080)):
-    # 仅保留实测的牌头和提示条，避免保存 UID 与其他无关画面。
+def card_frame(count=0, over_ten=False, size=(1920, 1080)):
+    # 内存构造牌头、数字和警告条，只验证颜色判定；不依赖截图文件。
     frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
-    for region, (top, bottom) in {"heads": (240, 330), "warning": (850, 900)}.items():
-        frame[top:bottom] = cv2.imread(str(FIXTURES / f"{name}_{region}.png"))
+    for index in range(count):
+        left = 160 + index * 277
+        frame[250:320, left : left + 170] = 240
+        frame[260:295, left + 20 : left + 35] = 40
+    if over_ten:
+        frame[860:895, 1300:1580] = (30, 50, 240)
     return cv2.resize(frame, size)
 
 
 class TestBaiQuArenaTask(unittest.TestCase):
-    def test_real_cards_and_scrolling_power_bar_at_multiple_sizes(self):
+    def test_card_headers_and_warning_at_multiple_sizes(self):
         for size in ((1920, 1080), (1280, 720), (2560, 1440)):
-            for name, count, over_ten in (
-                ("empty", 0, False),
-                ("one", 1, False),
-                ("two", 2, False),
-                ("three", 3, False),
-                ("four_over_ten", 4, True),
-            ):
-                with self.subTest(size=size, name=name):
-                    frame = screenshot(name, size)
-                    self.assertEqual(arena_cards(frame), count)
-                    self.assertEqual(arena_over_ten(frame), over_ten)
+            for count in range(6):
+                for over_ten in (False, True):
+                    with self.subTest(size=size, count=count, over_ten=over_ten):
+                        frame = card_frame(count, over_ten, size)
+                        self.assertEqual(arena_cards(frame), count)
+                        self.assertEqual(arena_over_ten(frame), over_ten)
 
     def test_dialog_white_background_is_not_a_full_hand(self):
-        self.assertLess(arena_cards(screenshot("enemy_dialog")), 5)
+        frame = card_frame(5)
+        frame[200:350] = 240
+        self.assertEqual(arena_cards(frame), 0)
 
     def test_red_outside_warning_region_does_not_stop_drawing(self):
-        frame = screenshot("three")
+        frame = card_frame(3)
         frame[:200] = (0, 0, 255)
         frame[950:] = (0, 0, 255)
         self.assertFalse(arena_over_ten(frame))
 
     def test_draws_once_then_stops_when_power_exceeds_ten(self):
         task = Mock()
-        task.frame = screenshot("three")
+        task.frame = card_frame(3)
         task._draw_page.return_value = True
 
         def flip(condition, **kwargs):
-            task.frame = screenshot("four_over_ten")
+            task.frame = card_frame(4, over_ten=True)
             self.assertTrue(condition())
             self.assertGreater(kwargs["settle_time"], 0)
             return True
@@ -60,22 +58,21 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task.wait_click_ocr.assert_called_once()
 
     def test_resuming_over_ten_does_not_draw_an_extra_card(self):
-        task = Mock(frame=screenshot("four_over_ten"))
+        task = Mock(frame=card_frame(4, over_ten=True))
         task._draw_page.return_value = True
         BaiQuArenaTask._draw_cards(task)
         task.click_relative.assert_not_called()
         task.wait_click_ocr.assert_called_once()
 
     def test_full_hand_below_threshold_starts_challenge(self):
-        task = Mock()
+        task = Mock(frame=card_frame(5))
         task._draw_page.return_value = True
-        with patch("src.tasks.onetime.BaiQuArenaTask.arena_cards", return_value=5):
-            BaiQuArenaTask._draw_cards(task)
+        BaiQuArenaTask._draw_cards(task)
         task.click_relative.assert_not_called()
         task.wait_click_ocr.assert_called_once()
 
     def test_missing_card_change_stops_without_retry_or_start(self):
-        task = Mock(frame=screenshot("two"))
+        task = Mock(frame=card_frame(2))
         task._draw_page.return_value = True
         task.wait_until.return_value = False
         with self.assertRaisesRegex(RuntimeError, "牌面变化"):
