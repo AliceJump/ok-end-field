@@ -1666,6 +1666,33 @@ class BattleMixin(BaseEfTask):
             )
         )
 
+    def start_touch_challenge(self):  # 已入场后搜索触碰点；调用任务需同时具备 SearchMixin
+        """沿用影拓的小步搜索，确认已开战或触碰成功后返回；不处理结算。"""
+
+        def challenge_state():  # 每步移动后使用新画面判断
+            self.next_frame()  # 刷新搜索帧
+            if self.in_combat():  # 已开战时直接继续，避免重复交互
+                return "combat"  # 区分战斗和触碰提示
+            return self.ocr(match=self.lang.daily_battle_mixin.k_4cc61900, box=self.box.bottom_right)  # 搜索触碰提示
+
+        state = self.strafe_search(
+            challenge_state, keys=("w",), duration=0.25, passes=None, time_out=60
+        )  # 有界向前搜索
+        if not state:  # 无交互提示时不盲按 F
+            self.log_info("未找到挑战触碰点")  # 保留影拓的失败原因
+            return False  # 由任务决定失败处理
+        if state != "combat":  # 找到提示后触碰启动
+            self.press_key("f")  # 触发挑战
+
+            def challenge_started():  # 验证实际进入战斗
+                self.next_frame()  # 避免复用交互前的画面
+                return self.in_combat()  # 复用公共战斗检测
+
+            if not self.wait_until(challenge_started, time_out=10, raise_if_not_found=False):  # 有界等待开战
+                self.log_info("触碰后挑战未启动")  # 不能把空场景当作完成
+                return False  # 禁止调用后续自动战斗
+        return True  # 已确认开战
+
     def wait_battle_space(self, transition_recovery=None, time_out=300):
         """按当前画面验证入场；上一步恢复由调用方提供，超时仅作 watchdog。"""
         start = self.active_time()

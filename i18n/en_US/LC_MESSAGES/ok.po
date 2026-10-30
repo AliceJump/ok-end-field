@@ -3847,3 +3847,15 @@ msgid "是否前往「贵重品库/武器基质」分解全部可分解基质，
 msgstr ""
 "Whether to open Valuables / Weapon Matrices and dismantle all eligible "
 "matrices."
+
+msgid "百趣演武"
+msgstr "Arena of Games"
+
+msgid "按配置次数完成百趣演武：每轮抽至战力超过10或满5张，每局自动完成两轮战斗。"
+msgstr "Complete the configured number of Arena of Games runs: draw until power exceeds 10 or you hold 5 cards, then fight both rounds each run."
+
+msgid "刷取次数"
+msgstr "Number of runs"
+
+msgid "每次最多包含两轮挑战，挑战中断也计为一次；中途启动会将当前局计为一次。"
+msgstr "Each run includes up to two rounds. An interrupted challenge also counts as one run; resuming a run counts as one run."

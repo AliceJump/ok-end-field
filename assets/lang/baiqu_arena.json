@@ -1,0 +1,10 @@
+{
+  "title": {
+    "zh_CN": {"pattern": "演武"},
+    "zh_TW": {"pattern": "演武"},
+    "en_US": {"pattern": "Arena"},
+    "ja_JP": {"pattern": "演武"},
+    "ko_KR": {"pattern": "연무"},
+    "es_ES": {"pattern": "Arena"}
+  }
+}

@@ -13,6 +13,7 @@ from src.image.yingtuo_poster_template import (
     nearby_poster_templates,
     poster_view_changed,
 )
+from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.onetime.YingTuoTask import YingTuoError, YingTuoTask, _settled
 
 
@@ -95,6 +96,7 @@ class TestYingTuoTask(unittest.TestCase):
         for entered in (True, False):
             with self.subTest(entered=entered):
                 task = Mock()
+                task.start_touch_challenge.side_effect = lambda task=task: BattleMixin.start_touch_challenge(task)
                 task.wait_battle_space.return_value = entered
                 task.strafe_search.return_value = "combat"
                 recovery = Mock()
@@ -107,6 +109,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_challenge_moves_to_touch_prompt_before_combat(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         prompt = [object()]
         task.in_combat.side_effect = [False, False]
         task.ocr.side_effect = [[], prompt]
@@ -130,6 +133,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_touch_interaction_without_combat_returns_before_auto_battle(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         task.strafe_search.return_value = [object()]
         task.in_combat.return_value = False
 
@@ -147,6 +151,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_touch_interaction_confirms_combat_before_auto_battle(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         task.strafe_search.return_value = [object()]
         task.in_combat.side_effect = [False, True]
 
@@ -166,6 +171,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_already_started_challenge_does_not_move_or_interact(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         task.in_combat.return_value = True
         task.strafe_search.side_effect = lambda check, **kwargs: check()
         self.assertTrue(YingTuoTask.battle_and_exit(task))
@@ -175,6 +181,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_missing_touch_prompt_does_not_enter_combat_or_exit(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         task.strafe_search.return_value = None
         self.assertFalse(YingTuoTask.battle_and_exit(task))
         task.press_key.assert_not_called()
@@ -183,6 +190,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_failed_combat_does_not_try_to_exit(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         task.strafe_search.return_value = "combat"
         task.auto_battle.return_value = False
         self.assertFalse(YingTuoTask.battle_and_exit(task))
@@ -788,6 +796,7 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_battle_does_not_defer_or_duplicate_template_recording(self):
         task = Mock()
+        task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         template = np.arange(30, dtype=np.uint8).reshape(5, 6)
         task._entered_poster_templates = [template]
         task.wait_battle_space.return_value = True

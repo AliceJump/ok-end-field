@@ -26,6 +26,13 @@ class AutoSkipDialogTaskModule(_LangModuleBaseT):
     """结束会话"""
 
 
+class BaiquArenaModule(_LangModuleBaseT):
+    """baiqu_arena — OCR 语言节点（值取自 zh_CN）"""
+
+    title: re.Pattern[str]
+    """演武"""
+
+
 class CharactersModule(_LangModuleBaseT):
     """characters — OCR 语言节点（值取自 zh_CN）"""
 
@@ -757,6 +764,7 @@ class _LangAccessorTyped:
     """self.lang 的类型化声明（仅类型提示，运行时由 __getattr__ 动态加载）"""
 
     AutoSkipDialogTask: AutoSkipDialogTaskModule
+    baiqu_arena: BaiquArenaModule
     characters: CharactersModule
     daily_battle_mixin: DailyBattleMixinModule
     daily_buy_mixin: DailyBuyMixinModule

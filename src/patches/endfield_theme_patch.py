@@ -648,6 +648,7 @@ def reorganize_tasks_architecture(executor: Any) -> None:
         "BattleTask": "副本",
         "YingTuoTask": "副本",
         "DemoDrawTask": "副本",
+        "BaiQuArenaTask": "副本",
         "AutoCombatTask": "副本",
         # 启动一次游戏：原属旧「日常任务」页，随日常任务汇总页一起归入业务与战斗的「收尾」
         "TestStartGame": "收尾",
