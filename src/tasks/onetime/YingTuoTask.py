@@ -363,9 +363,12 @@ class YingTuoTask(BattleMixin):
 
         state = self._visit_activity_center(claim)
         if state is None:
-            # 打不开活动页时无法判断进度，按未完成处理，宁可多打一轮
+            # 打不开活动页时无法判断进度，按未完成处理，宁可多打一轮。
+            # 苦难任务同样按「未完成」处理：它只是进关卡后立刻撤离，代价十几秒，
+            # 而误判成已完成会让活动任务永远差一项，只能手动处理。
+            self.log_info("活动页未打开，苦难任务按未完成处理")
             self.ensure_main()
-            return CARD_UNFINISHED, False
+            return CARD_UNFINISHED, True
         hardship_pending = self._hardship_task_pending(self.frame)
         if hardship_pending:
             self.log_info("苦难任务未完成")

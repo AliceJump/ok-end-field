@@ -285,14 +285,14 @@ class TestYingTuoReward(unittest.TestCase):
         self.assertEqual(state, CARD_CLAIMED)
 
     def test_missing_activity_entrance_is_treated_as_unfinished(self):
-        # 打不开活动页就判断不了进度，按未完成处理继续挑战；仍要回主界面
+        # 打不开活动页就判断不了进度，按未完成处理继续挑战；苦难任务同样视为待做，仍要回主界面
         task = mock.Mock()
         task.wait_click_ocr = mock.Mock(return_value=False)
         task._visit_activity_center = mock.Mock(return_value=None)
 
         result = YingTuoTask.check_activity_tasks(task)
 
-        self.assertEqual(result, (CARD_UNFINISHED, False))
+        self.assertEqual(result, (CARD_UNFINISHED, True))
         task.ensure_main.assert_called()
 
     def test_missing_activity_entrance_returns_none_from_inner(self):
