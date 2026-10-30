@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 
 import cv2
 import numpy as np
+from ok import Box
 
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.onetime.BaiQuArenaTask import BaiQuArenaTask, arena_cards, arena_over_ten
@@ -115,6 +116,22 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task.find_one.return_value = object()
         self.assertEqual(BaiQuArenaTask._state(task), "space")
         task.ocr.assert_not_called()
+
+    def test_lower_activity_entry_is_kept_but_body_and_web_text_are_rejected(self):
+        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+            with self.subTest(size=(width, height)):
+                task = Mock(frame=np.zeros((height, width, 3), dtype=np.uint8))
+                task.box.left = Box(0, 0, width // 2, height)
+                task._activity_box.side_effect = lambda task=task: BaiQuArenaTask._activity_box(task)
+                lower_entry = Mock(x=width * 0.05, y=height * 0.82)
+                description = Mock(x=width * 0.43, y=height * 0.76)
+                web_text = Mock(x=width * 0.146, y=height * 0.31)
+                task.ocr.return_value = [description, web_text, lower_entry]
+                self.assertEqual(BaiQuArenaTask._activity_page(task), [lower_entry])
+                region = task.ocr.call_args.kwargs["box"]
+                self.assertEqual((region.x, region.width), (0, width // 2))
+                self.assertLess(region.y, lower_entry.y)
+                self.assertGreater(region.y + region.height, lower_entry.y)
 
     def test_start_button_requires_draw_page_and_enabled_background(self):
         for draw_page in (False, True):
