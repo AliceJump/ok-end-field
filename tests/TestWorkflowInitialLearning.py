@@ -374,6 +374,39 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                 self.assertIs(task.active_and_send_mouse_delta, sender)
                 self.assertEqual(self.store.get(entry.context.fingerprint), before)
 
+    def test_market_analysis_keeps_valid_sales_when_friend_price_is_missing(self):
+        task = self.task()
+        goods = [
+            {"good": SimpleNamespace(name="missing"), "good_piece": [SimpleNamespace(name="100")],
+             "friend_name_piece": [], "stock_quantity": 1},
+            {"good": SimpleNamespace(name="sale"), "good_piece": [SimpleNamespace(name="200")],
+             "friend_name_piece": [SimpleNamespace(name="friend"), SimpleNamespace(name="5000")],
+             "stock_quantity": 2},
+        ]
+        buy, sales, can_buy = RegionalBuildTask.analyze_goods_info(task, goods, 150, 4500)
+        self.assertEqual(buy.good_name, "missing")
+        self.assertTrue(can_buy)
+        self.assertEqual([good.good_name for good in sales], ["sale"])
+
+    def test_buy_only_ignores_invalid_sell_price_and_buys(self):
+        task = self.task()
+        area = areas_list[0]
+        task.config = {area: True, "只买不卖": True, f"{area}买入价": 900, f"{area}卖出价": "invalid"}
+        task.lang.daily_trade_mixin = SimpleNamespace(k_33fb3f9c="market", k_d6bdcc47="back", k_7cf40bbd="buy")
+        good = SimpleNamespace(good_price=100, name_box=SimpleNamespace(name="good"))
+        task.to_model_area = Mock(return_value=True)
+        task.wait_click_ocr = Mock(return_value=True)
+        task.collect_market_goods_info = Mock(return_value=(good, None))
+        task.plus_max = Mock(return_value=True)
+        task.wait_pop_up = Mock()
+        task.tr = lambda value: value
+
+        self.assertEqual(RegionalBuildTask.buy_sell(task, target_areas=[area]), (True, False))
+        task.collect_market_goods_info.assert_called_once_with(buy_only=True)
+        task.click.assert_any_call(good.name_box)
+        task.plus_max.assert_called_once()
+        task.wait_pop_up.assert_called_once()
+
     def test_buy_sell_passes_entry_only_after_go_and_confirmed_new_visit(self):
         task = self.task()
         area = areas_list[0]
