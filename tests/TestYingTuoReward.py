@@ -385,9 +385,11 @@ class TestYingTuoReward(unittest.TestCase):
                 task = _mock_task()
                 task.check_activity_tasks.return_value = (CARD_CLAIMED, False)
                 task.enter_yingtuo.return_value = True
+
                 def challenge(finished=finished, abandoned=abandoned):
                     task._abandoned_normal_challenges = abandoned
                     return finished
+
                 task.challenge_normal_stages.side_effect = challenge
                 self.assertIs(YingTuoTask.run.__wrapped__(task), False)
                 if abandoned:

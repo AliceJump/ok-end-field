@@ -5,8 +5,13 @@ from ok import Box, TaskDisabledException
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.image.gray_bar_detector import detect_gray_bars
-from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template, nearby_poster_templates, poster_view_changed
 from src.image.reward_card_probe import CARD_CLAIMABLE, CARD_CLAIMED, CARD_UNFINISHED, card_state
+from src.image.yingtuo_poster_template import (
+    crop_poster_template,
+    matches_entered_template,
+    nearby_poster_templates,
+    poster_view_changed,
+)
 from src.tasks.mixin.battle_mixin import BattleMixin
 
 
@@ -639,7 +644,9 @@ class YingTuoTask(BattleMixin):
             group = nearby_poster_templates(candidates, frame_width)
             self._entered_poster_templates.extend(group)
             self._last_normal_attempt_recorded = True
-            self.log_info(f"选中第一条灰条，立即记录 {len(group)} 张相邻海报模板（本轮累计 {len(self._entered_poster_templates)} 张）")
+            self.log_info(
+                f"选中第一条灰条，立即记录 {len(group)} 张相邻海报模板（本轮累计 {len(self._entered_poster_templates)} 张）"
+            )
             self._click_bar_until_detail(leftmost_bar, frame_height, frame_width)
             return True
         self.log_info("连续 4 次滚动未发现本轮可进入的灰条组合")
@@ -745,6 +752,7 @@ class YingTuoTask(BattleMixin):
     def battle_and_exit(self, transition_recovery=None):
         if not self.wait_battle_space(transition_recovery=transition_recovery):
             return False
+
         # 本轮已尝试模板在点击灰条时就已记录，进入战斗不重复登记。
         def challenge_state():
             self.next_frame()

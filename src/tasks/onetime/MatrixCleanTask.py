@@ -171,7 +171,9 @@ class MatrixCleanTask(Common):
             if not self.click_until_color(self._FILTER_LIGHT, box, time_out=3, after_sleep=0.3):
                 self.mark_task_failure("筛选选项未选中")
                 return False
-        if not self.wait_click_feature(fL.transfer_go, box=save_box, threshold=0.8, time_out=4, raise_if_not_found=False):
+        if not self.wait_click_feature(
+            fL.transfer_go, box=save_box, threshold=0.8, time_out=4, raise_if_not_found=False
+        ):
             self.mark_task_failure("未找到筛选保存按钮")
             return False
         self.sleep(1)

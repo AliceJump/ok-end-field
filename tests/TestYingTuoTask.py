@@ -7,7 +7,12 @@ import cv2
 import numpy as np
 
 from src.data.FeatureList import FeatureList as fL
-from src.image.yingtuo_poster_template import crop_poster_template, matches_entered_template, nearby_poster_templates, poster_view_changed
+from src.image.yingtuo_poster_template import (
+    crop_poster_template,
+    matches_entered_template,
+    nearby_poster_templates,
+    poster_view_changed,
+)
 from src.tasks.onetime.YingTuoTask import YingTuoError, YingTuoTask, _settled
 
 
@@ -559,10 +564,13 @@ class TestYingTuoTask(unittest.TestCase):
         # 即使右侧还有未匹配条，只要屏上任意一条已经进入就向下滚动。
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
-        task._detect_stable_bars = Mock(side_effect=[
-            ([_bar(50, 25), _bar(150, 25)], task.frame),
-            ([_bar(50, 25)], task.frame), ([_bar(50, 25)], task.frame),
-        ])
+        task._detect_stable_bars = Mock(
+            side_effect=[
+                ([_bar(50, 25), _bar(150, 25)], task.frame),
+                ([_bar(50, 25)], task.frame),
+                ([_bar(50, 25)], task.frame),
+            ]
+        )
         task._scroll_poster_after_matching = Mock(side_effect=[True, False])
         self.assertIsNone(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task._scroll_poster_after_matching.call_count, 2)
@@ -571,10 +579,13 @@ class TestYingTuoTask(unittest.TestCase):
     def test_entered_later_gray_bar_also_scrolls_instead_of_clicking_first(self):
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, 150, 25)]
-        task._detect_stable_bars = Mock(side_effect=[
-            ([_bar(50, 25), _bar(150, 25)], task.frame),
-            ([_bar(150, 25)], task.frame), ([_bar(150, 25)], task.frame),
-        ])
+        task._detect_stable_bars = Mock(
+            side_effect=[
+                ([_bar(50, 25), _bar(150, 25)], task.frame),
+                ([_bar(150, 25)], task.frame),
+                ([_bar(150, 25)], task.frame),
+            ]
+        )
         task._scroll_poster_after_matching = Mock(side_effect=[True, False])
         self.assertIsNone(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task._scroll_poster_after_matching.call_count, 2)
@@ -587,12 +598,8 @@ class TestYingTuoTask(unittest.TestCase):
             self.assertTrue(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task.clicks, [(0.25, 0.25, {"after_sleep": 0.25})])
         self.assertEqual(len(task._entered_poster_templates), 2)
-        self.assertTrue(np.array_equal(
-            task._entered_poster_templates[0], crop_poster_template(task.frame, 50, 25)
-        ))
-        self.assertTrue(np.array_equal(
-            task._entered_poster_templates[1], crop_poster_template(task.frame, 60, 25)
-        ))
+        self.assertTrue(np.array_equal(task._entered_poster_templates[0], crop_poster_template(task.frame, 50, 25)))
+        self.assertTrue(np.array_equal(task._entered_poster_templates[1], crop_poster_template(task.frame, 60, 25)))
 
     def test_nearby_poster_grouping_stops_at_span_limit(self):
         template = np.arange(60, dtype=np.uint8).reshape(6, 10)
@@ -658,9 +665,9 @@ class TestYingTuoTask(unittest.TestCase):
 
     def test_clipped_poster_progress_resets_consecutive_stall_count(self):
         task = _FakeYingTuoTask()
-        task._detect_stable_bars = Mock(side_effect=[
-            ([_bar(x, 25)], task.frame) for x in (198, 198, 2, 2, 198, 198, 50)
-        ])
+        task._detect_stable_bars = Mock(
+            side_effect=[([_bar(x, 25)], task.frame) for x in (198, 198, 2, 2, 198, 198, 50)]
+        )
         task._scroll_poster_after_matching = Mock(return_value=True)
         self.assertTrue(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task._scroll_poster_after_matching.call_count, 6)
@@ -712,9 +719,7 @@ class TestYingTuoTask(unittest.TestCase):
     def test_matched_position_progress_keeps_scanning_beyond_empty_budget(self):
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, x, 25) for x in (50, 60)]
-        task._detect_stable_bars = Mock(side_effect=[
-            ([_bar(x, 25)], task.frame) for x in [50, 60] * 5 + [150]
-        ])
+        task._detect_stable_bars = Mock(side_effect=[([_bar(x, 25)], task.frame) for x in [50, 60] * 5 + [150]])
         task._scroll_poster_after_matching = Mock(return_value=True)
         self.assertTrue(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task._scroll_poster_after_matching.call_count, 10)
@@ -726,9 +731,11 @@ class TestYingTuoTask(unittest.TestCase):
         bars = [_bar(x, 25) for x in (50, 60, 100, 110, 150, 160)]
         recorded_at_click = []
         original_click = task.click_relative
+
         def click_with_record_check(x, y, **kwargs):
             recorded_at_click.append(len(task._entered_poster_templates))
             original_click(x, y, **kwargs)
+
         task.click_relative = click_with_record_check
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=bars):
             self.assertTrue(YingTuoTask.find_normal_challenge(task))
@@ -742,17 +749,21 @@ class TestYingTuoTask(unittest.TestCase):
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, x, 25) for x in (50, 60, 150)]
         task.find_normal_challenge = lambda leftmost=False: YingTuoTask.find_normal_challenge(task, leftmost)
-        with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(60, 25), _bar(150, 25)]):
+        with patch(
+            "src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[_bar(50, 25), _bar(60, 25), _bar(150, 25)]
+        ):
             self.assertTrue(YingTuoTask.challenge_normal_stages(task))
         self.assertEqual(task.clicks, [])
 
     def test_end_page_uses_fresh_detection_instead_of_pre_scroll_coordinates(self):
         task = _FakeYingTuoTask()
         task._entered_poster_templates = [crop_poster_template(task.frame, 50, 25)]
-        task._detect_stable_bars = Mock(side_effect=[
-            ([_bar(50, 25), _bar(150, 25)], task.frame),
-            ([_bar(50, 25), _bar(100, 25)], task.frame),
-        ])
+        task._detect_stable_bars = Mock(
+            side_effect=[
+                ([_bar(50, 25), _bar(150, 25)], task.frame),
+                ([_bar(50, 25), _bar(100, 25)], task.frame),
+            ]
+        )
         task._scroll_poster_after_matching = Mock(return_value=False)
         self.assertTrue(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task.clicks, [(0.5, 0.25, {"after_sleep": 0.25})])
@@ -766,7 +777,6 @@ class TestYingTuoTask(unittest.TestCase):
         self.assertTrue(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task._scroll_poster_after_matching.call_count, 6)
         self.assertEqual(task.clicks, [(0.75, 0.25, {"after_sleep": 0.25})])
-
 
     def test_when_all_visible_gray_bars_entered_scrolls(self):
         task = _FakeYingTuoTask()
@@ -825,8 +835,8 @@ class TestYingTuoTask(unittest.TestCase):
         task.find_normal_challenge.return_value = True
         task.wait_until.return_value = [object()]
         task.battle_and_exit.return_value = False
-        task._recover_entered_normal_challenge.side_effect = (
-            lambda reason: YingTuoTask._recover_entered_normal_challenge(task, reason)
+        task._recover_entered_normal_challenge.side_effect = lambda reason: (
+            YingTuoTask._recover_entered_normal_challenge(task, reason)
         )
         with self.assertRaisesRegex(YingTuoError, "战斗未正常完成"):
             YingTuoTask.challenge_normal_stages(task)

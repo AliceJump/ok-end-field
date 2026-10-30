@@ -1354,8 +1354,17 @@ class RuntimeMixin:
             )
         )
 
-    def wait_color(self, color, box, threshold=0.8, time_out=0, pre_action=None, post_action=None,
-                   settle_time=-1, raise_if_not_found=False):
+    def wait_color(
+        self,
+        color,
+        box,
+        threshold=0.8,
+        time_out=0,
+        pre_action=None,
+        post_action=None,
+        settle_time=-1,
+        raise_if_not_found=False,
+    ):
         """等待指定区域中颜色占比达到阈值。
 
         Args:
@@ -1371,16 +1380,33 @@ class RuntimeMixin:
         Returns:
             检测成功时返回传入的区域；超时未找到时返回 None。
         """
+
         def matches():
             if self.frame is None:
                 return None
             return box if self.calculate_color_percentage(color, box) >= threshold else None
 
-        return self.wait_until(matches, time_out=time_out, pre_action=pre_action, post_action=post_action,
-                               settle_time=settle_time, raise_if_not_found=raise_if_not_found)
+        return self.wait_until(
+            matches,
+            time_out=time_out,
+            pre_action=pre_action,
+            post_action=post_action,
+            settle_time=settle_time,
+            raise_if_not_found=raise_if_not_found,
+        )
 
-    def click_until_color(self, color, box, threshold=0.8, time_out=0, settle_time=-1,
-                          raise_if_not_found=False, relative_x=0.5, relative_y=0.5, after_sleep=1):
+    def click_until_color(
+        self,
+        color,
+        box,
+        threshold=0.8,
+        time_out=0,
+        settle_time=-1,
+        raise_if_not_found=False,
+        relative_x=0.5,
+        relative_y=0.5,
+        after_sleep=1,
+    ):
         """反复点击区域，直到区域颜色占比达到阈值。
 
         Args:
@@ -1397,8 +1423,14 @@ class RuntimeMixin:
         Returns:
             bool: 颜色达到阈值时为 True；超时未达到时为 False。
         """
-        return bool(self.wait_color(
-            color, box, threshold=threshold, time_out=time_out, settle_time=settle_time,
-            raise_if_not_found=raise_if_not_found,
-            post_action=lambda: self.click_box(box, relative_x, relative_y, after_sleep=after_sleep),
-        ))
+        return bool(
+            self.wait_color(
+                color,
+                box,
+                threshold=threshold,
+                time_out=time_out,
+                settle_time=settle_time,
+                raise_if_not_found=raise_if_not_found,
+                post_action=lambda: self.click_box(box, relative_x, relative_y, after_sleep=after_sleep),
+            )
+        )
