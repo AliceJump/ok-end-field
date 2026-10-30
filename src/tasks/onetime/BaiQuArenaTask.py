@@ -151,6 +151,11 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
             state = self._wait_state(states, min(3, timeout))  # 按钮仍存在时尽早重试，避免空等十五秒
             if state:  # 页面转移完成
                 return state  # 返回实际目标状态
+        else:  # 最后一次点击也可能刚刚开始加载
+            if not locate():  # 来源按钮消失时继续等待目标页面
+                state = self._wait_state(states, timeout)  # 保留完整加载等待
+                if state:  # 页面最终到达目标
+                    return state  # 返回目标状态
         raise RuntimeError("百趣演武页面切换失败")  # 保留当前进度并停止
 
     def _open_activity(self):  # 在活动中心选择百趣演武

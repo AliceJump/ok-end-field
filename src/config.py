@@ -154,7 +154,6 @@ config = {
         ["src.tasks.onetime.DeliveryTask", "DeliveryTask"],
         ["src.tasks.onetime.BattleTask", "BattleTask"],
         ["src.tasks.onetime.DemoDrawTask", "DemoDrawTask"],
-        ["src.tasks.onetime.BaiQuArenaTask", "BaiQuArenaTask"],
         ["src.tasks.onetime.YingTuoTask", "YingTuoTask"],
         ["src.tasks.onetime.TestStartGame", "TestStartGame"],
         ["src.tasks.test.TestReloginTask", "TestReloginTask"],
@@ -177,6 +176,7 @@ config = {
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
         ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],
         ["src.tasks.onetime.FarmRelatedTask", "FarmRelatedTask"],
+        ["src.tasks.onetime.BaiQuArenaTask", "BaiQuArenaTask"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],

@@ -181,6 +181,14 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task.click_box.assert_called_once()
         self.assertEqual([call.args[1] for call in task._wait_state.call_args_list], [3, 15])
 
+    def test_last_click_allows_loading_after_source_disappears(self):
+        task = Mock()
+        task._wait_state.side_effect = [None, None, None, "activity"]
+        locate = Mock(side_effect=[object(), object(), object(), None])
+        self.assertEqual(BaiQuArenaTask._click_transition(task, locate, {"activity"}, timeout=60), "activity")
+        self.assertEqual(task.click_box.call_count, 3)
+        self.assertEqual([call.args[1] for call in task._wait_state.call_args_list], [3, 3, 3, 60])
+
     def test_both_settlements_bypass_generic_combat_wait(self):
         for next_round, final in ((True, False), (False, True)):
             task = Mock()
