@@ -1,7 +1,7 @@
 {
   "title": {
-    "zh_CN": {"string": "百趣演武"},
-    "zh_TW": {"string": "百趣演武"},
+    "zh_CN": {"pattern": "演武"},
+    "zh_TW": {"pattern": "演武"},
     "en_US": {"string": "Arena of Games"},
     "ja_JP": {"string": "百趣演武"},
     "ko_KR": {"string": "다채로운 연무"},

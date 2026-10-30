@@ -29,8 +29,8 @@ class AutoSkipDialogTaskModule(_LangModuleBaseT):
 class BaiquArenaModule(_LangModuleBaseT):
     """baiqu_arena — OCR 语言节点（值取自 zh_CN）"""
 
-    title: str
-    """百趣演武"""
+    title: re.Pattern[str]
+    """演武"""
 
 
 class CharactersModule(_LangModuleBaseT):
