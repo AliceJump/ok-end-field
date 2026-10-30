@@ -43,9 +43,14 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
         super().__init__(*args, **kwargs)  # 初始化项目任务基类
         self.name = "百趣演武"  # GUI 任务名称
         self.description = (
-            "完成一局百趣演武：每轮抽至战力超过10或满5张，自动完成两轮战斗。"  # 明确简单抽牌策略和执行范围
+            "按配置次数完成百趣演武：每轮抽至战力超过10或满5张，每局自动完成两轮战斗。"  # 明确简单抽牌策略和执行范围
         )
         self.icon = Icons.SwordChallenge  # 复用演武图标
+        self.default_config.update({"刷取次数": 1})  # 默认仅完成一局
+        self.config_type["刷取次数"] = {"min": 1, "max": 999}  # GUI 使用有界整数输入
+        self.config_description["刷取次数"] = (
+            "每次包含两轮挑战，挑战失败时停止；中途启动会将当前局计为一次。"  # 说明计数与失败行为
+        )
 
     def _text(self, matcher, region):  # OCR 仅用于页面语义核对
         return self.ocr(match=matcher, box=self.box_of_screen(*region))  # 限制识别范围
@@ -206,6 +211,15 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
         )  # 沿用父类连续两次判定，不等待队伍 HUD 消失
 
     def run(self):  # GUI 和 MCP 共用完整业务流程
+        count = int(self.config.get("刷取次数", 1))  # 兼容尚未保存新配置的用户
+        if not 1 <= count <= 999:  # 运行时同样验证配置范围
+            raise ValueError("百趣演武刷取次数必须在 1 到 999 之间")  # 无效配置不启动挑战
+        for index in range(count):  # 按整局计数，每局包含两轮战斗
+            self._run_once()  # 失败直接向上传递，禁止开始下一局
+            self.log_info(f"百趣演武已完成 {index + 1}/{count} 局")  # 仅在确认返回活动中心后记录进度
+        return True  # 所有配置局数均已完成
+
+    def _run_once(self):  # 完成或恢复一局，结束时回到活动中心
         state = self._wait_state(
             {"activity", "draw", "team", "mechanics", "space", "next", "final"}, timeout=3
         )  # 优先恢复本局已有阶段

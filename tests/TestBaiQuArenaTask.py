@@ -161,7 +161,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
     def test_two_rounds_exit_to_activity_without_main_world_wait(self):
         task = Mock()
         task._wait_state.side_effect = ["activity", "draw", "team", "space", "next", "draw", "team", "space", "final"]
-        self.assertTrue(BaiQuArenaTask.run.__wrapped__(task))
+        self.assertTrue(BaiQuArenaTask._run_once(task))
         self.assertEqual(task._draw_cards.call_count, 2)
         self.assertEqual(task._fight.call_count, 2)
         task._click_transition.assert_any_call(task._next_round_button, {"draw"})
@@ -171,7 +171,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
     def test_resume_final_settlement_does_not_start_another_run(self):
         task = Mock()
         task._wait_state.return_value = "final"
-        self.assertTrue(BaiQuArenaTask.run.__wrapped__(task))
+        self.assertTrue(BaiQuArenaTask._run_once(task))
         task._open_activity.assert_not_called()
         task._fight.assert_not_called()
 
@@ -180,7 +180,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task._wait_state.return_value = None
         task.is_main.return_value = False
         with self.assertRaises(RuntimeError):
-            BaiQuArenaTask.run.__wrapped__(task)
+            BaiQuArenaTask._run_once(task)
         task.ensure_main.assert_not_called()
         task.press_key.assert_not_called()
 
@@ -189,7 +189,7 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task._wait_state.return_value = "final"
         task._text.side_effect = [False, True]
         with self.assertRaisesRegex(RuntimeError, "挑战中断"):
-            BaiQuArenaTask.run.__wrapped__(task)
+            BaiQuArenaTask._run_once(task)
         task._click_transition.assert_called_once_with(task._leave_button, {"activity"})
         task._open_activity.assert_not_called()
 
@@ -198,8 +198,55 @@ class TestBaiQuArenaTask(unittest.TestCase):
         task._wait_state.return_value = "final"
         task._text.return_value = False
         with self.assertRaisesRegex(RuntimeError, "结果未识别"):
-            BaiQuArenaTask.run.__wrapped__(task)
+            BaiQuArenaTask._run_once(task)
         task._click_transition.assert_not_called()
+
+    def test_default_run_completes_one_game(self):
+        task = Mock(config={})
+        self.assertTrue(BaiQuArenaTask.run.__wrapped__(task))
+        task._run_once.assert_called_once()
+
+    def test_configured_runs_complete_two_rounds_each(self):
+        task = Mock(config={"刷取次数": 2})
+        task._run_once.side_effect = lambda: BaiQuArenaTask._run_once(task)
+        task._wait_state.side_effect = [
+            "activity",
+            "draw",
+            "team",
+            "space",
+            "next",
+            "draw",
+            "team",
+            "space",
+            "final",
+        ] * 2
+        self.assertTrue(BaiQuArenaTask.run.__wrapped__(task))
+        self.assertEqual(task._open_activity.call_count, 2)
+        self.assertEqual(task._fight.call_count, 4)
+        self.assertEqual(task._draw_cards.call_count, 4)
+        self.assertEqual(
+            sum(call.args == (task._leave_button, {"activity"}) for call in task._click_transition.call_args_list),
+            2,
+        )
+
+    def test_interrupted_run_does_not_start_remaining_games(self):
+        task = Mock(config={"刷取次数": 3})
+        task._run_once.side_effect = lambda: BaiQuArenaTask._run_once(task)
+        task._wait_state.side_effect = ["activity", "draw", "team", "space", "final"]
+        task._text.side_effect = [False, True]
+        with self.assertRaisesRegex(RuntimeError, "挑战中断"):
+            BaiQuArenaTask.run.__wrapped__(task)
+        task._open_activity.assert_called_once()
+        task._click_transition.assert_called_once_with(task._leave_button, {"activity"})
+        task._run_once.assert_called_once()
+
+    def test_out_of_range_count_never_starts(self):
+        for count in (0, -1, 1000):
+            with self.subTest(count=count):
+                task = Mock(config={"刷取次数": count})
+                with self.assertRaises(ValueError):
+                    BaiQuArenaTask.run.__wrapped__(task)
+                task._run_once.assert_not_called()
 
 
 if __name__ == "__main__":
