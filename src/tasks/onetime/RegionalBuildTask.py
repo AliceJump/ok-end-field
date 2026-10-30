@@ -634,7 +634,6 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
                 for good in processed_goods
                 if good.friend_price is not None and good.friend_price > sell_price
             ]
-            sell_goods.sort(key=lambda good: good.friend_price, reverse=True)
         except TypeError:
             self.log_error("好友价格数据异常，无法进行出售分析")
             sell_goods = []

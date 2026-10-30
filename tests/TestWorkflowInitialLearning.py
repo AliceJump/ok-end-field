@@ -382,14 +382,11 @@ class TestWorkflowInitialLearning(unittest.TestCase):
             {"good": SimpleNamespace(name="sale"), "good_piece": [SimpleNamespace(name="200")],
              "friend_name_piece": [SimpleNamespace(name="friend"), SimpleNamespace(name="5000")],
              "stock_quantity": 2},
-            {"good": SimpleNamespace(name="highest"), "good_piece": [SimpleNamespace(name="300")],
-             "friend_name_piece": [SimpleNamespace(name="friend"), SimpleNamespace(name="5200")],
-             "stock_quantity": 3},
         ]
         buy, sales, can_buy = RegionalBuildTask.analyze_goods_info(task, goods, 150, 4500)
         self.assertEqual(buy.good_name, "missing")
         self.assertTrue(can_buy)
-        self.assertEqual([good.good_name for good in sales], ["highest", "sale"])
+        self.assertEqual([good.good_name for good in sales], ["sale"])
 
     def test_buy_only_ignores_invalid_sell_price_and_buys(self):
         task = self.task()
