@@ -4,10 +4,13 @@ from typing import ClassVar
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
+from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
 from src.icons import Icons
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
+from src.tasks.daily.daily_feature import DailyFeature
 from src.tasks.navigation.mixin.map_mixin import MapMixin
+from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 
 
 class CollectResult(Enum):
@@ -29,10 +32,19 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         self.icon = Icons.Collect
         self.group_name = "日常任务"
         self.group_icon = FluentIcon.CALENDAR
-        self.description = "『祀的画』中农牧领取。"
+        self.description = "领取『祀的画』农牧和武陵城自动农植机产出。"
         self.support_multi_account = True
+        self.default_config.update({"祀的画": True, "武陵城": True})
+        self.default_config_group.update({"收取地区": ["祀的画", "武陵城"]})
 
-    def run(self):  # 执行农牧标记筛选
+    def run(self):  # 按地区配置收取
+        if self.config.get("祀的画", True) and not self._collect_painting():  # 保留原有收取顺序
+            return False  # 收取失败时停止
+        if self.config.get("武陵城", True):  # 可独立开启武陵城
+            return self._collect_wuling_farmer()  # 收取武陵城农植机
+        return True  # 未启用其他地区时结束
+
+    def _collect_painting(self):  # 执行祀的画农牧收取
         if not self.transfer_to_home_point():  # 进入帝江号
             self.mark_task_failure("进入帝江号失败，无法筛选农牧标记")
             return False
@@ -116,7 +128,50 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
             self.mark_task_failure("未找到自动农植机列表按钮")
             return False
         self.wait_ui_stable()
-        return self._collect_to_wuling_warehouse("自动农植机")
+        if not self._collect_to_wuling_warehouse("自动农植机"):
+            return False
+        return True
+
+    def _collect_wuling_farmer(self):  # 复用能量淤积点流程定位武陵城地图
+        battle = self.get_task_by_class(BattleTask)  # 使用已注册的刷体力任务方法
+        if battle is None:  # 没有注册任务时不尝试盲目定位
+            self.mark_task_failure("未找到刷体力任务，无法定位武陵城")  # 记录失败原因
+            return False  # 中止当前任务
+        previous = battle.battle_ctx  # 避免污染刷体力任务的配置和运行状态
+        battle.battle_ctx = BattleContext(stage_name="武陵城", category_name=STAGE_CATEGORY_ENERGY_POOLING)  # 定位目标
+        try:  # 不论成功或失败均恢复上下文
+            with DailyFeature(self, BattleTask, "")._account_context(battle):  # 复用账号上下文注入和恢复
+                battle._open_index()  # 复用 F8 打开索引
+                if not battle.to_stage():  # 复用淤积点分类和武陵城查看按钮
+                    self.mark_task_failure("未找到武陵城能量淤积点")  # 避免进入错误地图
+                    return False  # 不执行后续收取
+        finally:  # 防止异常影响后续刷体力任务
+            battle.battle_ctx = previous  # 恢复原上下文
+        if not self.wait_feature(fL.map_filter_icon, time_out=20, raise_if_not_found=False):  # 等待地图真正加载
+            self.mark_task_failure("未进入武陵城地图")  # 防止对错误页面操作
+            return False  # 中止后续收取
+        if not self._click_farm_related():  # 复用已有农牧标记筛选
+            self.mark_task_failure("筛选武陵城农牧标记失败")  # 避免点击错误图标
+            return False  # 中止后续收取
+        self.click_relative(0.966, 0.565)  # 地图截图估算的缩放条底端
+        self.wait_ui_stable()  # 等待地图和标记稳定
+        if not self.wait_click_feature(
+            feature=fL.auto_farmer_on_map,
+            box=self.box_of_screen(0.30, 0.20, 0.65, 0.65),
+            time_out=5,
+            raise_if_not_found=False,
+        ):  # 复用祀的画农植机图标的搜索方式
+            self.mark_task_failure("武陵城地图未找到自动农植机")  # 不盲点其他图标
+            return False  # 中止后续收取
+        if not self.wait_feature(
+            fL.sentence_part_feature,
+            box=self.box_of_screen(0.93, 0.76, 0.98, 0.84),
+            time_out=10,
+            raise_if_not_found=False,
+        ):  # 武陵城机器直接打开详情，不经过机器列表
+            self.mark_task_failure("未打开武陵城自动农植机详情")  # 不在未知页面继续点击
+            return False  # 停止任务
+        return self._collect_to_wuling_warehouse("武陵城自动农植机")  # 复用原有收取方法
 
     def _collect_to_wuling_warehouse(self, source_name, max_misses=2, max_batches=3):
         """反复点「存至武陵仓库」，直到确认框不再出现。

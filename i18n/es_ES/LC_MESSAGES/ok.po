@@ -3993,3 +3993,15 @@ msgstr "Número de partidas"
 
 msgid "每次最多包含两轮挑战，挑战中断也计为一次；中途启动会将当前局计为一次。"
 msgstr "Cada partida incluye hasta dos rondas. Un desafío interrumpido también cuenta como una partida; reanudar una partida cuenta como una partida."
+
+msgid "领取『祀的画』农牧和武陵城自动农植机产出。"
+msgstr "Recoge la producción agrícola y ganadera de Pintura de Si y de la cultivadora automática de Ciudad de Wuling."
+
+msgid "是否领取『祀的画』农牧和武陵城自动农植机产出，并存入武陵仓库。"
+msgstr "Recoge la producción de Pintura de Si y de la cultivadora automática de Ciudad de Wuling y guárdala en el depósito de Wuling."
+
+msgid "祀的画"
+msgstr "Pintura de Si"
+
+msgid "收取地区"
+msgstr "Zonas de recogida"

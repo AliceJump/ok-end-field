@@ -65,6 +65,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestDailyConfigMigration.py",
             "TestDailySplitConfigMigration.py",
             "TestDailyDeliveryTask.py",
+            "TestFarmRelatedTask.py",
             "TestDeliveryAreaConfig.py",
             "TestDeliveryFullCycle.py",
             "TestDeliveryRewardsClaim.py",
