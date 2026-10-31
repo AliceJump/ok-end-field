@@ -13,7 +13,7 @@ class TestFarmRelatedTask(unittest.TestCase):
         battle.battle_ctx = old_context
         task.get_task_by_class.return_value = battle
         task._click_farm_related.return_value = True
-        task.find_one.return_value = object()
+        task.wait_click_feature.return_value = object()
         task.wait_feature.return_value = object()
         task._collect_to_wuling_warehouse.return_value = True
         return task, battle, old_context
@@ -31,7 +31,8 @@ class TestFarmRelatedTask(unittest.TestCase):
         self.assertIs(battle.battle_ctx, old_context)
         battle._open_index.assert_called_once()
         task._click_farm_related.assert_called_once()
-        task.scroll_relative.assert_called_once_with(0.5, 0.5, -5)
+        task.scroll_relative.assert_called_once_with(0.5, 0.5, -15)
+        task.wait_ui_stable.assert_called_once()
         task._collect_to_wuling_warehouse.assert_called_once_with("武陵城自动农植机")
 
     def test_existing_painting_collection_runs_before_wuling(self):
@@ -57,11 +58,11 @@ class TestFarmRelatedTask(unittest.TestCase):
             FarmRelatedTask._collect_wuling_farmer(task)
         self.assertIs(battle.battle_ctx, old_context)
 
-    def test_missing_map_icon_stops_after_bounded_search(self):
+    def test_missing_map_icon_stops_without_collecting(self):
         task, battle, old_context = self.make_task()
-        task.find_one.return_value = None
+        task.wait_click_feature.return_value = None
         self.assertFalse(FarmRelatedTask._collect_wuling_farmer(task))
-        self.assertEqual(task.scroll_relative.call_count, 8)
+        task.scroll_relative.assert_called_once_with(0.5, 0.5, -15)
         task._collect_to_wuling_warehouse.assert_not_called()
         self.assertIs(battle.battle_ctx, old_context)
 

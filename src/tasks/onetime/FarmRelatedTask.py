@@ -142,23 +142,25 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         if not self._click_farm_related():  # 复用已有农牧标记筛选
             self.mark_task_failure("筛选武陵城农牧标记失败")  # 避免点击错误图标
             return False  # 中止后续收取
-        for _ in range(8):  # 地图从不同缩放等级开始，分段缩小并搜索
-            self.scroll_relative(0.5, 0.5, -5)  # 按实测方向缩小地图
-            self.sleep(0.5)  # 等待地图标记更新
-            target = self.find_one(fL.auto_farmer_on_map, horizontal_variance=1, vertical_variance=1)  # 使用已有模板
-            if target:  # 找到机器后验证详情页
-                self.click_box(target)  # 点击地图图标
-                if self.wait_feature(
-                    fL.sentence_part_feature,
-                    box=self.box_of_screen(0.93, 0.76, 0.98, 0.84),
-                    time_out=10,
-                    raise_if_not_found=False,
-                ):  # 武陵城机器直接打开详情，不经过机器列表
-                    return self._collect_to_wuling_warehouse("武陵城自动农植机")  # 复用原有收取方法
-                self.mark_task_failure("未打开武陵城自动农植机详情")  # 不在未知页面继续点击
-                return False  # 停止任务
-        self.mark_task_failure("武陵城地图未找到自动农植机")  # 搜索次数有界
-        return False  # 明确报告失败
+        self.scroll_relative(0.5, 0.5, -15)  # 缩小地图，显示农植机标记
+        self.wait_ui_stable()  # 等待地图和标记稳定
+        if not self.wait_click_feature(
+            feature=fL.auto_farmer_on_map,
+            box=self.box_of_screen(0.30, 0.20, 0.65, 0.65),
+            time_out=5,
+            raise_if_not_found=False,
+        ):  # 复用祀的画农植机图标的搜索方式
+            self.mark_task_failure("武陵城地图未找到自动农植机")  # 不盲点其他图标
+            return False  # 中止后续收取
+        if not self.wait_feature(
+            fL.sentence_part_feature,
+            box=self.box_of_screen(0.93, 0.76, 0.98, 0.84),
+            time_out=10,
+            raise_if_not_found=False,
+        ):  # 武陵城机器直接打开详情，不经过机器列表
+            self.mark_task_failure("未打开武陵城自动农植机详情")  # 不在未知页面继续点击
+            return False  # 停止任务
+        return self._collect_to_wuling_warehouse("武陵城自动农植机")  # 复用原有收取方法
 
     def _collect_to_wuling_warehouse(self, source_name, max_misses=2, max_batches=3):
         """反复点「存至武陵仓库」，直到确认框不再出现。
