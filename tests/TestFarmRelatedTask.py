@@ -1,14 +1,29 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
+from src.core.global_config_store import KEY_CONFIG_NAME
 from src.tasks.onetime.FarmRelatedTask import FarmRelatedTask
+from tests.TestAccountKeyConfig import BASE_KEYS, _PressTask
 
 
 class TestFarmRelatedTask(unittest.TestCase):
     def make_task(self):
         task = Mock()
         battle = Mock()
+        task.current_user = "current user"
+        task.current_account_id = "current account"
+        task._is_account_override_enabled.return_value = True
+        battle.running = False
+        battle.current_user = "old user"
+        battle.current_account_id = "old account"
+        battle._daily_host_account_overrides_enabled = False
+
+        def bind_account(user, account_id):
+            battle.current_user = user
+            battle.current_account_id = account_id
+
+        battle.set_current_account.side_effect = bind_account
         old_context = object()
         battle.battle_ctx = old_context
         task.get_task_by_class.return_value = battle
@@ -24,11 +39,19 @@ class TestFarmRelatedTask(unittest.TestCase):
         def locate():
             self.assertEqual(battle.battle_ctx.stage_name, "武陵城")
             self.assertEqual(battle.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING)
+            self.assertTrue(battle.running)
+            self.assertEqual(battle.current_account_id, "current account")
+            self.assertEqual(battle.current_user, "current user")
+            self.assertTrue(battle._daily_host_account_overrides_enabled)
             return True
 
         battle.to_stage.side_effect = locate
         self.assertTrue(FarmRelatedTask._collect_wuling_farmer(task))
         self.assertIs(battle.battle_ctx, old_context)
+        self.assertFalse(battle.running)
+        self.assertEqual(battle.current_account_id, "old account")
+        self.assertEqual(battle.current_user, "old user")
+        self.assertFalse(battle._daily_host_account_overrides_enabled)
         battle._open_index.assert_called_once()
         task._click_farm_related.assert_called_once()
         task.click_relative.assert_called_once_with(0.966, 0.565)
@@ -63,6 +86,8 @@ class TestFarmRelatedTask(unittest.TestCase):
         battle.to_stage.return_value = False
         self.assertFalse(FarmRelatedTask._collect_wuling_farmer(task))
         self.assertIs(battle.battle_ctx, old_context)
+        self.assertEqual(battle.current_account_id, "old account")
+        self.assertFalse(battle._daily_host_account_overrides_enabled)
         task._collect_to_wuling_warehouse.assert_not_called()
 
     def test_stage_exception_restores_context(self):
@@ -71,6 +96,31 @@ class TestFarmRelatedTask(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "index error"):
             FarmRelatedTask._collect_wuling_farmer(task)
         self.assertIs(battle.battle_ctx, old_context)
+        self.assertFalse(battle.running)
+        self.assertEqual(battle.current_account_id, "old account")
+        self.assertFalse(battle._daily_host_account_overrides_enabled)
+
+    @patch("src.core.base_mixin.account_override_mixin.get_account_task_overrides")
+    @patch("src.core.base_mixin.runtime_mixin.get_global_config", return_value=BASE_KEYS)
+    def test_wuling_index_uses_current_account_key(self, _get_config, get_overrides):
+        task, _, _ = self.make_task()
+        battle = _PressTask(running=False, account_id="old account", account_name="old user")
+        battle.battle_ctx = None
+        def bind_account(user, account_id):
+            battle.current_user = user
+            battle.current_account_id = account_id
+
+        battle.set_current_account = bind_account
+        battle._open_index = lambda: battle.press_key("f8")
+        battle.to_stage = Mock(return_value=True)
+        task.get_task_by_class.return_value = battle
+        get_overrides.return_value = {"Handbook Key": "f6"}
+
+        self.assertTrue(FarmRelatedTask._collect_wuling_farmer(task))
+        self.assertEqual(battle.sent_keys, ["f6"])
+        get_overrides.assert_called_with("current account", KEY_CONFIG_NAME, account_name="current user")
+        self.assertEqual(battle.current_account_id, "old account")
+        self.assertFalse(battle.running)
 
     def test_missing_map_icon_stops_without_collecting(self):
         task, battle, old_context = self.make_task()

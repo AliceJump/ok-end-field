@@ -8,6 +8,7 @@ from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
 from src.icons import Icons
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
+from src.tasks.daily.daily_feature import DailyFeature
 from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 
@@ -139,10 +140,11 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         previous = battle.battle_ctx  # 避免污染刷体力任务的配置和运行状态
         battle.battle_ctx = BattleContext(stage_name="武陵城", category_name=STAGE_CATEGORY_ENERGY_POOLING)  # 定位目标
         try:  # 不论成功或失败均恢复上下文
-            battle._open_index()  # 复用 F8 打开索引
-            if not battle.to_stage():  # 复用淤积点分类和武陵城查看按钮
-                self.mark_task_failure("未找到武陵城能量淤积点")  # 避免进入错误地图
-                return False  # 不执行后续收取
+            with DailyFeature(self, BattleTask, "")._account_context(battle):  # 复用账号上下文注入和恢复
+                battle._open_index()  # 复用 F8 打开索引
+                if not battle.to_stage():  # 复用淤积点分类和武陵城查看按钮
+                    self.mark_task_failure("未找到武陵城能量淤积点")  # 避免进入错误地图
+                    return False  # 不执行后续收取
         finally:  # 防止异常影响后续刷体力任务
             battle.battle_ctx = previous  # 恢复原上下文
         if not self.wait_feature(fL.map_filter_icon, time_out=20, raise_if_not_found=False):  # 等待地图真正加载
