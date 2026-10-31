@@ -377,11 +377,18 @@ class TestWorkflowInitialLearning(unittest.TestCase):
     def test_market_analysis_keeps_valid_sales_when_friend_price_is_missing(self):
         task = self.task()
         goods = [
-            {"good": SimpleNamespace(name="missing"), "good_piece": [SimpleNamespace(name="100")],
-             "friend_name_piece": [], "stock_quantity": 1},
-            {"good": SimpleNamespace(name="sale"), "good_piece": [SimpleNamespace(name="200")],
-             "friend_name_piece": [SimpleNamespace(name="friend"), SimpleNamespace(name="5000")],
-             "stock_quantity": 2},
+            {
+                "good": SimpleNamespace(name="missing"),
+                "good_piece": [SimpleNamespace(name="100")],
+                "friend_name_piece": [],
+                "stock_quantity": 1,
+            },
+            {
+                "good": SimpleNamespace(name="sale"),
+                "good_piece": [SimpleNamespace(name="200")],
+                "friend_name_piece": [SimpleNamespace(name="friend"), SimpleNamespace(name="5000")],
+                "stock_quantity": 2,
+            },
         ]
         buy, sales, can_buy = RegionalBuildTask.analyze_goods_info(task, goods, 150, 4500)
         self.assertEqual(buy.good_name, "missing")
