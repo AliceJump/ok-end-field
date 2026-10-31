@@ -37,12 +37,26 @@ class TestFarmRelatedTask(unittest.TestCase):
 
     def test_existing_painting_collection_runs_before_wuling(self):
         task = Mock()
-        task.WULING_TAB_BOX = FarmRelatedTask.WULING_TAB_BOX
+        task.config = {"祀的画": True, "武陵城": True}
         self.assertTrue(FarmRelatedTask.run.__wrapped__(task))
-        self.assertEqual(task._collect_to_wuling_warehouse.call_count, 2)
-        task._collect_to_wuling_warehouse.assert_any_call("牧场", max_batches=1)
-        task._collect_to_wuling_warehouse.assert_any_call("自动农植机")
+        task._collect_painting.assert_called_once()
         task._collect_wuling_farmer.assert_called_once()
+
+    def test_region_switches(self):
+        for painting, wuling in ((True, False), (False, True), (False, False)):
+            with self.subTest(painting=painting, wuling=wuling):
+                task = Mock()
+                task.config = {"祀的画": painting, "武陵城": wuling}
+                self.assertTrue(FarmRelatedTask.run.__wrapped__(task))
+                self.assertEqual(task._collect_painting.call_count, int(painting))
+                self.assertEqual(task._collect_wuling_farmer.call_count, int(wuling))
+
+    def test_painting_failure_stops_wuling(self):
+        task = Mock()
+        task.config = {"祀的画": True, "武陵城": True}
+        task._collect_painting.return_value = False
+        self.assertFalse(FarmRelatedTask.run.__wrapped__(task))
+        task._collect_wuling_farmer.assert_not_called()
 
     def test_stage_failure_restores_context_and_never_collects(self):
         task, battle, old_context = self.make_task()

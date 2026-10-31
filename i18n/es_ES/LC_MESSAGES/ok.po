@@ -3999,3 +3999,9 @@ msgstr "Recoge la producción agrícola y ganadera del cuadro de Si y de la cult
 
 msgid "是否领取『祀的画』农牧和武陵城自动农植机产出，并存入武陵仓库。"
 msgstr "Recoge la producción del cuadro de Si y de la cultivadora automática de Ciudad de Wuling y guárdala en el depósito de Wuling."
+
+msgid "祀的画"
+msgstr "Cuadro de Si"
+
+msgid "收取地区"
+msgstr "Zonas de recogida"

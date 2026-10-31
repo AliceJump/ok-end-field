@@ -33,8 +33,17 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         self.group_icon = FluentIcon.CALENDAR
         self.description = "领取『祀的画』农牧和武陵城自动农植机产出。"
         self.support_multi_account = True
+        self.default_config.update({"祀的画": True, "武陵城": True})
+        self.default_config_group.update({"收取地区": ["祀的画", "武陵城"]})
 
-    def run(self):  # 执行农牧标记筛选
+    def run(self):  # 按地区配置收取
+        if self.config.get("祀的画", True) and not self._collect_painting():  # 保留原有收取顺序
+            return False  # 收取失败时停止
+        if self.config.get("武陵城", True):  # 可独立开启武陵城
+            return self._collect_wuling_farmer()  # 收取武陵城农植机
+        return True  # 未启用其他地区时结束
+
+    def _collect_painting(self):  # 执行祀的画农牧收取
         if not self.transfer_to_home_point():  # 进入帝江号
             self.mark_task_failure("进入帝江号失败，无法筛选农牧标记")
             return False
@@ -120,7 +129,7 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         self.wait_ui_stable()
         if not self._collect_to_wuling_warehouse("自动农植机"):
             return False
-        return self._collect_wuling_farmer()
+        return True
 
     def _collect_wuling_farmer(self):  # 复用能量淤积点流程定位武陵城地图
         battle = self.get_task_by_class(BattleTask)  # 使用已注册的刷体力任务方法

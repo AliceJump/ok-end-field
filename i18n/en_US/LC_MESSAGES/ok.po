@@ -3865,3 +3865,9 @@ msgstr "Collect farming and ranching output from Si's Painting and the Wuling Ci
 
 msgid "是否领取『祀的画』农牧和武陵城自动农植机产出，并存入武陵仓库。"
 msgstr "Collect output from Si's Painting and the Wuling City auto-farmer into the Wuling depot."
+
+msgid "祀的画"
+msgstr "Si's Painting"
+
+msgid "收取地区"
+msgstr "Collection regions"
