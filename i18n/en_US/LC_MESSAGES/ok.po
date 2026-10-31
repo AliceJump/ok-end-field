@@ -3859,3 +3859,9 @@ msgstr "Number of runs"
 
 msgid "每次最多包含两轮挑战，挑战中断也计为一次；中途启动会将当前局计为一次。"
 msgstr "Each run includes up to two rounds. An interrupted challenge also counts as one run; resuming a run counts as one run."
+
+msgid "领取『祀的画』农牧和武陵城自动农植机产出。"
+msgstr "Collect farming and ranching output from Si's Painting and the Wuling City auto-farmer."
+
+msgid "是否领取『祀的画』农牧和武陵城自动农植机产出，并存入武陵仓库。"
+msgstr "Collect output from Si's Painting and the Wuling City auto-farmer into the Wuling depot."
