@@ -1,12 +1,34 @@
 import os
 
 import numpy as np
+from ok.feature.Box import Box
 
 from src.core.email_config import email_config_option
 from src.interaction.EfInteraction import EfInteraction
 from src.tasks.daily.finally_file import decode
 
 version = "dev"
+
+#: OLED 屏幕保护要遮挡的固定界面元素（屏幕比例：x1, y1, x2, y2）。
+#: 与 make_bottom_left_black 用同一块区域，即左下角的玩家 UID；
+#: 需要遮挡更多固定元素时往这里加矩形即可（左上角图标行、顶部货币栏等）。
+OLED_BLUR_RECTS = ((0.054, 0.966, 0.126, 1.0),)
+
+
+def blur_area(width, height):
+    """把固定不变的界面元素（UID 等）交给 ok 的前景遮罩，减少 OLED 烧屏。
+
+    这是 ok 框架的 ``blur_area`` 回调：项目配置里提供它之后，ok 会在
+    「设置 → 基础选项」里出现「启用模糊 / 模糊算法 / 模糊间隔」，并用前景叠加窗
+    把这块区域盖住；任务识别用的原始帧不受影响。
+
+    只勾「启用模糊」即生效，不需要再开开始页 Debug 卡片里的「Enable Boxes」：
+    ok 框架原本把叠加窗的创建绑在那个调试开关上，``overlay_blur_gate_patch``
+    已把门禁放宽为「调试开关或模糊开启」，窗口内的调试框仍只跟随调试开关。
+    """
+    if width <= 0 or height <= 0:
+        return []
+    return [Box(x1 * width, y1 * height, to_x=x2 * width, to_y=y2 * height) for x1, y1, x2, y2 in OLED_BLUR_RECTS]
 
 
 # 不需要修改version, Github Action打包会自动修改
@@ -51,6 +73,8 @@ config = {
     "global_configs": [email_config_option],
     "config_folder": "configs",  # 最好不要修改
     "screenshot_processor": make_bottom_left_black,  # 在截图的时候对frame进行修改, 可选
+    # OLED 屏幕保护：在屏幕上盖住 UID 等固定元素，开关在「设置 → 基础选项 → 启用模糊」。
+    "blur_area": blur_area,
     "gui_icon": "icons/icon.png",  # 窗口图标, 最好不需要修改文件名
     "wait_until_settle_time": 0,  # 调用 wait_until时候, 在第一次满足条件的时候, 会等待再次检测, 以避免某些滑动动画没到预定位置就在动画路径中被检测到
     "ocr": {
