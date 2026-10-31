@@ -31,9 +31,8 @@ class TestFarmRelatedTask(unittest.TestCase):
         self.assertIs(battle.battle_ctx, old_context)
         battle._open_index.assert_called_once()
         task._click_farm_related.assert_called_once()
-        self.assertEqual(task.scroll_relative.call_count, 3)
-        task.scroll_relative.assert_called_with(0.5, 0.5, -5)
-        self.assertEqual(task.wait_ui_stable.call_count, 3)
+        task.click_relative.assert_called_once_with(0.966, 0.565)
+        task.wait_ui_stable.assert_called_once()
         task._collect_to_wuling_warehouse.assert_called_once_with("武陵城自动农植机")
 
     def test_existing_painting_collection_runs_before_wuling(self):
@@ -63,7 +62,7 @@ class TestFarmRelatedTask(unittest.TestCase):
         task, battle, old_context = self.make_task()
         task.wait_click_feature.return_value = None
         self.assertFalse(FarmRelatedTask._collect_wuling_farmer(task))
-        self.assertEqual(task.scroll_relative.call_count, 3)
+        task.click_relative.assert_called_once_with(0.966, 0.565)
         task._collect_to_wuling_warehouse.assert_not_called()
         self.assertIs(battle.battle_ctx, old_context)
 
