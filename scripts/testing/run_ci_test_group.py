@@ -259,6 +259,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         "Localization and release",
         (
             "TestCheckLang.py",
+            "TestOcrZhConvert.py",
             "TestOfficialI18nSync.py",
             "TestOfficialPrefixSync.py",
             "TestPoLocaleConsistency.py",
