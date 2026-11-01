@@ -13,7 +13,6 @@ from qfluentwidgets import FluentIcon
 from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.DailyTask import DailyTask
-from src.tasks.onetime.environment_monitoring_navigation import EnvironmentMonitoringNavigationMixin
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
 
@@ -38,7 +37,6 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             round(task.frame.shape[0] * (y2 - y1)),
         )
         task.ocr.return_value = []
-        task.normalize_title.side_effect = EnvironmentMonitoringPhotoTask.normalize_title
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
         task.next_frame.side_effect = lambda: task.frame
@@ -272,27 +270,19 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         for ready in (False, True):
             with self.subTest(ready=ready):
                 task = self.task()
-                observation = {"name": "“小池荷”", "terminal": "marker_stone"}
-                task.prepare_observation.return_value = observation
                 task.adjust_photo_view.return_value = ready
                 task._camera_open.return_value = True
                 task.photo_condition_met.return_value = ready
-                task.prepare_photo.side_effect = lambda selected, task=task: (
-                    EnvironmentMonitoringPhotoTask.prepare_photo(task, selected)
-                )
+                task.prepare_photo.side_effect = lambda task=task: EnvironmentMonitoringPhotoTask.prepare_photo(task)
                 stages = Mock()
-                for method in ("prepare_observation", "navigate_observation", "prepare_photo"):
+                for method in ("prepare_observation", "walk_pool_lotus_route", "prepare_photo"):
                     stages.attach_mock(getattr(task, method), method)
                 result = EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
                 task.prepare_observation.assert_called_once_with()
-                task.navigate_observation.assert_called_once_with(observation)
+                task.walk_pool_lotus_route.assert_called_once_with()
                 self.assertEqual(
                     stages.mock_calls,
-                    [
-                        call.prepare_observation(),
-                        call.navigate_observation(observation),
-                        call.prepare_photo(observation),
-                    ],
+                    [call.prepare_observation(), call.walk_pool_lotus_route(), call.prepare_photo()],
                 )
                 task.open_camera.assert_called_once_with()
                 task.adjust_photo_view.assert_called_once_with()
@@ -304,12 +294,19 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.click_relative.assert_not_called()
                 task.send_key_down.assert_not_called()
 
+    def test_navigation_failure_stops_before_camera(self):
+        task = self.task()
+        task.walk_pool_lotus_route.side_effect = RuntimeError("navigation failed")
+        with self.assertRaisesRegex(RuntimeError, "navigation failed"):
+            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        task.prepare_photo.assert_not_called()
+
     def test_camera_lost_after_final_rotation_cannot_be_reported_as_open(self):
         task = self.task()
         task.photo_condition_met.return_value = False
         task.adjust_photo_view.side_effect = lambda: EnvironmentMonitoringPhotoTask.adjust_photo_view(task)
         with self.assertRaisesRegex(RuntimeError, "取景结束时相机界面已关闭"):
-            EnvironmentMonitoringPhotoTask.prepare_photo(task, {"name": "小池荷"})
+            EnvironmentMonitoringPhotoTask.prepare_photo(task)
         self.assertEqual(task.rotate_photo_view.call_count, 8)
         self.assertEqual(task.next_frame.call_count, 10)
         task._camera_open.assert_called_once_with(frame=task.frame)
@@ -323,10 +320,11 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.adjust_photo_view.return_value = search_ready
                 task._camera_open.return_value = True
                 task.photo_condition_met.return_value = final_ready
-                result = EnvironmentMonitoringPhotoTask.prepare_photo(task, {"name": "小池荷"})
+                result = EnvironmentMonitoringPhotoTask.prepare_photo(task)
                 self.assertEqual(result["photo_ready"], final_ready)
                 task._camera_open.assert_called_once_with(frame=task.frame)
                 task.photo_condition_met.assert_called_once_with(frame=task.frame)
+                task.walk_pool_lotus_route.assert_not_called()
                 task.press_key.assert_not_called()
                 task.click.assert_not_called()
 
@@ -334,41 +332,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.open_camera.side_effect = RuntimeError("camera failed")
         with self.assertRaisesRegex(RuntimeError, "camera failed"):
-            EnvironmentMonitoringPhotoTask.prepare_photo(task, {"name": "小池荷"})
+            EnvironmentMonitoringPhotoTask.prepare_photo(task)
         task.adjust_photo_view.assert_not_called()
         task.log_info.assert_not_called()
-
-    def test_navigation_dispatches_registered_route_for_each_observation(self):
-        task = self.task()
-        first, second = Mock(), Mock()
-        with patch.dict(
-            "src.tasks.onetime.environment_monitoring_navigation.OBSERVATION_ROUTES",
-            {"小池荷": first, "古树": second},
-            clear=True,
-        ):
-            EnvironmentMonitoringNavigationMixin.navigate_observation(task, {"name": "“小池荷”"})
-            EnvironmentMonitoringNavigationMixin.navigate_observation(task, {"name": "古树"})
-        first.assert_called_once_with(task)
-        second.assert_called_once_with(task)
-
-    def test_unsupported_navigation_stops_before_camera(self):
-        task = self.task()
-        task.prepare_observation.return_value = {"name": "未知点位"}
-        task.navigate_observation.side_effect = lambda observation: (
-            EnvironmentMonitoringNavigationMixin.navigate_observation(task, observation)
-        )
-        with self.assertRaisesRegex(RuntimeError, "未支持观察点导航"):
-            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
-        task.prepare_photo.assert_not_called()
-
-    def test_camera_stage_uses_the_selected_observation_name(self):
-        task = self.task()
-        task._camera_open.return_value = True
-        task.photo_condition_met.return_value = True
-        result = EnvironmentMonitoringPhotoTask.prepare_photo(task, {"name": "“古树”"})
-        self.assertEqual(result["name"], "古树")
-        task.open_camera.assert_called_once_with()
-        task.adjust_photo_view.assert_called_once_with()
 
 
 if __name__ == "__main__":

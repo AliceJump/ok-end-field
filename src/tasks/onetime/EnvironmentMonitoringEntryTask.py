@@ -5,9 +5,9 @@ from qfluentwidgets import FluentIcon  # 复用调试任务图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位和地图模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
-from src.tasks.onetime.environment_monitoring_navigation import OBSERVATION_ROUTES  # 支持的点位由导航注册表决定
 
 TERMINAL_LEFTS = {"outskirts": 0.06, "marker_stone": 0.27}  # 按固定左右顺序标识终端及其标签空白区
+SUPPORTED_OBSERVATIONS = frozenset({"小池荷"})  # 仅列入已有后半路线的观察点
 
 
 class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流程
@@ -191,7 +191,7 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         for terminal in TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
             self.select_terminal(terminal)  # 选择终端并等待稳定
             for observation in self.available_observations():  # 只考虑可操作卡片
-                if self.normalize_title(observation["name"]) not in OBSERVATION_ROUTES:  # 只选择已注册导航的点位
+                if self.normalize_title(observation["name"]) not in SUPPORTED_OBSERVATIONS:  # 只选择已有后半路线的点位
                     continue  # 跳过尚未支持的委托
                 self.enter_observation(observation)  # 接取或继续所选观察点
                 self.transfer_observation()  # 快捷传送并验证到达

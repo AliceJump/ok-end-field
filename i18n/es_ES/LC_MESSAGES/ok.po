@@ -4012,8 +4012,8 @@ msgstr "Monitoreo ambiental: ir al punto de observación"
 msgid "接取或继续一个环境监测委托，传送到观察点后停止，暂不移动或拍照。"
 msgstr "Acepta o reanuda un encargo de monitoreo ambiental y se detiene tras teletransportarse al punto de observación. El desplazamiento y las fotografías aún no están disponibles."
 
-msgid "环境监测：取景验证"
-msgstr "Supervisión ambiental: vista previa"
+msgid "环境监测：小池荷取景"
+msgstr "Monitoreo ambiental: encuadrar Loto del estanque"
 
-msgid "自动前往已支持的观察点，打开相机并检查拍摄条件，暂不拍照。"
-msgstr "Ve a un punto de observación compatible, abre la cámara y comprueba las condiciones sin tomar una foto."
+msgid "前往小池荷，走到竹子旁并打开相机，检查拍摄条件后停止，不拍照。"
+msgstr "Ve a Loto del estanque, camina hasta el bambú y abre la cámara. Se detiene tras comprobar los requisitos de la fotografía, sin tomarla."
