@@ -33,8 +33,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.lang = SimpleNamespace(
             environment_monitoring=SimpleNamespace(
                 tool_wheel=re.compile("选择工具|松开确认"),
-                camera_tool=re.compile("^拍照$"),
-                pool_lotus_photo=re.compile("拍摄.*小池荷"),
+                camera_tool="拍照",
             ),
         )
         task.box = SimpleNamespace(right=Box(960, 0, 960, 1080))
@@ -201,40 +200,28 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.press_key.assert_called_once_with("r", down_time=0.15)
         task.send_key_up.assert_called_once_with("f6")
 
-    def test_camera_ui_and_correct_target_are_both_required_for_checked_icon(self):
-        for camera_open in (False, True):
-            with self.subTest(camera_open=camera_open):
-                task = self.task()
-                task._camera_open.return_value = camera_open
-                with patch(
-                    "src.tasks.onetime.EnvironmentMonitoringPhotoTask.xiaochihe_target_checked", return_value=True
-                ) as checked:
-                    self.assertFalse(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
-                if camera_open:
-                    checked.assert_called_once_with(task.frame)
-                    task.ocr.assert_called_once()
-                else:
-                    checked.assert_not_called()
-                    task.ocr.assert_not_called()
+    def test_camera_ui_is_required_before_checking_the_marker(self):
+        task = self.task()
+        task._camera_open.return_value = False
+        with patch("src.tasks.onetime.EnvironmentMonitoringPhotoTask.xiaochihe_target_checked") as checked:
+            self.assertFalse(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
+        checked.assert_not_called()
+        task.ocr.assert_not_called()
 
-    def test_correct_camera_target_still_requires_a_checked_marker(self):
+    def test_photo_condition_uses_checked_marker_without_ocr(self):
         for checked_result in (False, True):
             with self.subTest(checked=checked_result):
                 task = self.task()
                 task._camera_open.return_value = True
-                task.ocr.return_value = [Box(100, 720, 150, 30)]
                 with patch(
                     "src.tasks.onetime.EnvironmentMonitoringPhotoTask.xiaochihe_target_checked",
                     return_value=checked_result,
                 ) as checked:
                     self.assertEqual(EnvironmentMonitoringPhotoTask.photo_condition_met(task), checked_result)
                 checked.assert_called_once_with(task.frame)
-                if checked_result:
-                    self.assertIs(task.ocr.call_args.kwargs["frame"], task.frame)
-                else:
-                    task.ocr.assert_not_called()
+                task.ocr.assert_not_called()
 
-    def test_target_identity_and_marker_keep_the_camera_detection_frame(self):
+    def test_marker_keeps_the_camera_detection_frame(self):
         task = self.task()
         original_frame = task.frame
 
@@ -244,13 +231,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             return True
 
         task._camera_open.side_effect = camera_detected
-        task.ocr.return_value = [Box(100, 720, 150, 30)]
         with patch(
             "src.tasks.onetime.EnvironmentMonitoringPhotoTask.xiaochihe_target_checked", return_value=True
         ) as checked:
             self.assertTrue(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
         checked.assert_called_once_with(original_frame)
-        self.assertIs(task.ocr.call_args.kwargs["frame"], original_frame)
+        task.ocr.assert_not_called()
 
     def test_route_requires_world_and_does_not_move_in_a_menu(self):
         task = self.task()

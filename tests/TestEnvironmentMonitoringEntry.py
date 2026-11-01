@@ -44,6 +44,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.wait_click_feature = Mock(return_value=True)
         task.find_one = Mock(return_value=None)
         task._monitoring_page = Mock(return_value=True)
+        task._task_detail_page = Mock(return_value=True)
         task.wait_feature = Mock(return_value=True)
         task.wait_ui_stable = Mock(return_value=True)
         task.wait_until = Mock(side_effect=lambda condition, **kwargs: condition())
@@ -365,11 +366,29 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.ocr.assert_not_called()
         self.assertEqual(task.click.call_args_list, [call(area), call(area)])
         self.assertEqual(task._observation_action.call_args_list, [call(area), call(area)])
-        self.assertEqual(task.wait_until.call_args.kwargs["settle_time"], 0.3)
-        self.assertEqual(task.wait_ocr.call_args.kwargs["match"].pattern, "小池荷")
-        title_region = task.wait_ocr.call_args.kwargs["box"]
-        self.assertLessEqual(title_region.x, 650)
-        self.assertGreater(title_region.x + title_region.width, 1500)
+        self.assertEqual(task.wait_until.call_args_list[0].kwargs["settle_time"], 0.3)
+        task.wait_ocr.assert_not_called()
+        task._task_detail_page.assert_called_once_with()
+
+    def test_task_detail_page_requires_both_existing_templates(self):
+        for q_found, e_found in ((False, False), (True, False), (False, True), (True, True)):
+            with self.subTest(q=q_found, e=e_found):
+                task = self.task()
+                task.find_one.side_effect = lambda feature, q_found=q_found, e_found=e_found, **kwargs: {
+                    fL.q: Box(660, 25, 25, 25) if q_found else None,
+                    fL.e: Box(1230, 25, 25, 25) if e_found else None,
+                }[feature]
+                self.assertEqual(EnvironmentMonitoringEntryTask._task_detail_page(task), q_found and e_found)
+
+    def test_missing_task_detail_page_prevents_tracking(self):
+        task = self.prepare_task([{"name": "小池荷", "action_box": Box(678, 918, 562, 81)}], [])
+        del task.enter_observation
+        task._observation_action = Mock(return_value="go")
+        task._task_detail_page.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "未进入任务详情"):
+            task.prepare_observation("小池荷")
+        task.transfer_observation.assert_not_called()
+        task.wait_ocr.assert_not_called()
 
     def test_unstable_mission_details_stop_before_tracking_or_transfer(self):
         task = self.prepare_task([{"name": "小池荷", "action_box": Box(678, 918, 562, 81)}], [])

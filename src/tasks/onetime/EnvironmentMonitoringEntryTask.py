@@ -137,13 +137,18 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         ):  # 等待本卡片白底前往按钮稳定出现
             raise RuntimeError("未找到目标委托的前往任务按钮")  # 停止而不是点其他卡片
         self.click(area)  # 状态确认后只点击本卡片
-        title = self.normalize_title(observation["name"])  # 去掉装饰性引号
-        if not self.wait_ocr(
-            match=re.compile(re.escape(title)), box=self.box_of_screen(0.32, 0.075, 0.97, 0.16), time_out=5
-        ):  # 定位图标只能证明任务面板，动态标题文字才可确认进入的是所选观察点
-            raise RuntimeError("任务详情与所选观察点不一致")  # 防止传送至错误任务
+        if not self.wait_until(
+            self._task_detail_page, time_out=5, raise_if_not_found=False
+        ):  # 通过任务页固定图标确认页面
+            raise RuntimeError("未进入任务详情")  # 未进入时不尝试追踪或传送
         if not self.wait_ui_stable():  # 追踪按钮入场稳定后再操作
             raise RuntimeError("环境监测任务详情未稳定")  # 禁止点击过渡画面
+
+    def _task_detail_page(self):  # 根据任务页顶部的 Q、E 图标确认界面
+        return bool(  # 两个图标必须在同一帧出现
+            self.find_one(fL.q, box=self.box_of_screen(0.34, 0.02, 0.37, 0.06), use_gray_scale=True)  # 左切换键
+            and self.find_one(fL.e, box=self.box_of_screen(0.63, 0.02, 0.66, 0.06), use_gray_scale=True)  # 右切换键
+        )  # 名称沿用已选中的卡片，不重复 OCR
 
     def _tracked_map_locator(self):  # 同一帧同时出现停止追踪标记和地图定位才确认已追踪
         if not self.find_one(

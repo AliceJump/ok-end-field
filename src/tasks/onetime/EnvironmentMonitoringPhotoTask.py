@@ -92,19 +92,11 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
             if not self.wait_until(self._camera_open, time_out=5, raise_if_not_found=False):  # 短按后验证相机双模板
                 raise RuntimeError("相机工具已选择，但未进入拍照界面")  # 不将装备图标误判为相机打开
 
-    def photo_condition_met(self, frame=None):  # 目标身份与勾选必须来自同一帧
-        frame = self.frame if frame is None else frame  # 固定相机布局、目标文字和圆勾所用截图
+    def photo_condition_met(self, frame=None):  # 仅检查相机界面与条件圆勾
+        frame = self.frame if frame is None else frame  # 固定相机布局和圆勾所用截图
         if not self._camera_open(frame=frame):  # 排除大世界或轮盘
             return False  # 非相机界面不能报告条件满足
-        if not xiaochihe_target_checked(frame):  # 未亮圆勾时立即返回，避免无效角度反复 OCR
-            return False  # 圆勾仅提供条件状态，不能确认具体观察点身份
-        return bool(
-            self.ocr(
-                match=self.lang.environment_monitoring.pool_lotus_photo,
-                box=self.box_of_screen(0.04, 0.66, 0.28, 0.72),
-                frame=frame,
-            )
-        )  # 名称属于动态目标身份，不能由通用圆勾或相机模板推断
+        return xiaochihe_target_checked(frame)  # 用户确认只需检查当前目标的圆勾，不再 OCR 目标名称
 
     def rotate_photo_view(self):  # 在相机画面中央横向拖动，不触碰快门
         self._require_input_focus()  # 旋转视角需要实际光标移动

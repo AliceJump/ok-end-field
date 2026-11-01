@@ -383,11 +383,8 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     tool_wheel: re.Pattern[str]
     """选择工具|松开确认"""
 
-    camera_tool: re.Pattern[str]
-    """^拍照$"""
-
-    pool_lotus_photo: re.Pattern[str]
-    """拍摄.*小池荷"""
+    camera_tool: str
+    """拍照"""
 
 
 class GameFlowMixinModule(_LangModuleBaseT):
