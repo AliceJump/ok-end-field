@@ -285,46 +285,37 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.select_terminal.assert_not_called()
         task.wait_ocr.assert_not_called()
 
-    def test_known_overview_entry_position_avoids_ocr_when_page_is_confirmed(self):
+    def test_monitoring_entry_template_is_clicked_without_ocr(self):
         task = self.task()
-        task.find_one.return_value = Box(10, 10, 20, 20)
+        entry = Box(1383, 666, 82, 75)
+        task.find_one.side_effect = lambda feature, **kwargs: (
+            entry if feature == fL.environment_monitoring_enter else Box(10, 10, 20, 20)
+        )
         task.open_monitoring()
         task.to_model_area.assert_called_once_with("武陵")
-        task.find_one.assert_any_call(fL.material_dispatch_enter, box=task.box.right)
-        task.find_one.assert_any_call(fL.warehouse_node_enter, box=task.box.right)
-        task.click_relative.assert_called_once_with(1252 / 1920, 673 / 1080)
+        task.find_one.assert_any_call(fL.environment_monitoring_enter, box=task.box.right)
+        task.click.assert_called_once_with(entry)
+        task.click_relative.assert_not_called()
         task.wait_click_ocr.assert_not_called()
         task.wait_ocr.assert_not_called()
         self.assertEqual(task.wait_ui_stable.call_count, 2)
 
-    def test_missing_either_module_template_prevents_entry_click(self):
-        for missing in (fL.material_dispatch_enter, fL.warehouse_node_enter):
-            with self.subTest(missing=missing):
-                task = self.task()
-                task.find_one.side_effect = lambda feature, missing=missing, **kwargs: (
-                    None if feature == missing else Box(10, 10, 20, 20)
-                )
-                with self.assertRaisesRegex(RuntimeError, "模块入口"):
-                    task.open_monitoring()
-                task.click_relative.assert_not_called()
-                task.wait_click_ocr.assert_not_called()
-
-    def test_module_templates_from_different_frames_do_not_authorize_click(self):
+    def test_missing_monitoring_template_prevents_entry_click(self):
         task = self.task()
-        observations = iter((True, False))
-
-        def find_icon(feature, **kwargs):
-            if feature == fL.transaction_overview:
-                return Box(10, 10, 20, 20)
-            if feature == fL.material_dispatch_enter:
-                return Box(10, 10, 20, 20) if next(observations) else None
-            return None
-
-        task.find_one.side_effect = find_icon
-        task.wait_until.side_effect = lambda condition, **kwargs: any(condition() for _ in range(2))
-        with self.assertRaisesRegex(RuntimeError, "模块入口"):
+        task.find_one.side_effect = lambda feature, **kwargs: (
+            None if feature == fL.environment_monitoring_enter else Box(10, 10, 20, 20)
+        )
+        with self.assertRaisesRegex(RuntimeError, "未找到环境监测入口"):
             task.open_monitoring()
-        task.click_relative.assert_not_called()
+        task.click.assert_not_called()
+        task.wait_click_ocr.assert_not_called()
+
+    def test_overview_disappearing_during_entry_wait_prevents_click(self):
+        task = self.task()
+        task.find_one.side_effect = [Box(10, 10, 20, 20), None]
+        with self.assertRaisesRegex(RuntimeError, "未找到环境监测入口"):
+            task.open_monitoring()
+        task.click.assert_not_called()
 
     def test_entry_position_failure_on_unknown_page_never_uses_ocr_click(self):
         task = self.task()
@@ -333,7 +324,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "终端列表"):
             task.open_monitoring()
         task.wait_click_ocr.assert_not_called()
-        task.click_relative.assert_called_once_with(1252 / 1920, 673 / 1080)
+        task.click.assert_called_once()
 
     def test_unstable_overview_cannot_use_fixed_entry_position(self):
         task = self.task()

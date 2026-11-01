@@ -133,6 +133,7 @@ class FeatureList(StrEnum):
     double_ticket = "double_ticket"
     e = "e"
     enter_demo = "enter_demo"
+    environment_monitoring_enter = "environment_monitoring_enter"
     esc = "esc"
     esc_2k = "esc_2k"
     esc_4k = "esc_4k"
