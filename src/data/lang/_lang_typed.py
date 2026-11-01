@@ -371,9 +371,6 @@ class DeliveryTaskModule(_LangModuleBaseT):
 class EnvironmentMonitoringModule(_LangModuleBaseT):
     """environment_monitoring — OCR 语言节点（值取自 zh_CN）"""
 
-    entry: re.Pattern[str]
-    """环境监测"""
-
     outskirts: re.Pattern[str]
     """城郊监测终端"""
 

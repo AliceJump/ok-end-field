@@ -1,5 +1,4 @@
 {
-  "entry": {"zh_CN": {"pattern": "环境监测"}, "zh_TW": {"pattern": "環境監測"}},
   "outskirts": {"zh_CN": {"pattern": "城郊监测终端"}, "zh_TW": {"pattern": "城郊監測終端"}},
   "marker_stone": {"zh_CN": {"pattern": "首[墩塾]监测终端"}, "zh_TW": {"pattern": "首[墩塾]監測終端"}},
   "track": {"zh_CN": {"pattern": "开始追踪"}, "zh_TW": {"pattern": "開始追蹤"}},

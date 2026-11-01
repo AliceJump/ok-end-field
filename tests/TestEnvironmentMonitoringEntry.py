@@ -22,7 +22,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._executor = SimpleNamespace(frame=np.zeros((height, width, 3), dtype=np.uint8))
         task.lang = SimpleNamespace(
             environment_monitoring=SimpleNamespace(
-                entry=re.compile("环境监测"),
                 track=re.compile("开始追踪"),
                 outskirts=re.compile("城郊监测终端"),
                 marker_stone=re.compile("首墩监测终端"),
@@ -273,7 +272,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_monitoring_page_detection_failure_stops_before_terminal_selection(self):
         task = self.prepare_task([{"name": "小池荷"}], [])
         del task.open_monitoring
-        task.find_one.side_effect = [Box(10, 10, 20, 20), None]
+        task.find_one.return_value = Box(10, 10, 20, 20)
         task._monitoring_page.return_value = False
         with self.assertRaisesRegex(RuntimeError, "终端列表"):
             task.prepare_observation("小池荷")
@@ -285,28 +284,46 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.find_one.return_value = Box(10, 10, 20, 20)
         task.open_monitoring()
         task.to_model_area.assert_called_once_with("武陵")
+        task.find_one.assert_any_call(fL.material_dispatch_enter, box=task.box.right)
+        task.find_one.assert_any_call(fL.warehouse_node_enter, box=task.box.right)
         task.click_relative.assert_called_once_with(1252 / 1920, 673 / 1080)
         task.wait_click_ocr.assert_not_called()
         task.wait_ocr.assert_not_called()
         self.assertEqual(task.wait_ui_stable.call_count, 2)
 
-    def test_entry_position_failure_uses_ocr_only_while_overview_remains(self):
+    def test_missing_either_module_template_prevents_entry_click(self):
+        for missing in (fL.material_dispatch_enter, fL.warehouse_node_enter):
+            with self.subTest(missing=missing):
+                task = self.task()
+                task.find_one.side_effect = lambda feature, missing=missing, **kwargs: (
+                    None if feature == missing else Box(10, 10, 20, 20)
+                )
+                with self.assertRaisesRegex(RuntimeError, "模块入口"):
+                    task.open_monitoring()
+                task.click_relative.assert_not_called()
+                task.wait_click_ocr.assert_not_called()
+
+    def test_module_templates_from_different_frames_do_not_authorize_click(self):
         task = self.task()
-        task.wait_until.side_effect = [False, True]
-        task.find_one.side_effect = lambda feature, **kwargs: (
-            Box(10, 10, 20, 20) if feature == fL.transaction_overview else None
-        )
-        task.open_monitoring()
-        task.wait_click_ocr.assert_called_once_with(
-            match=task.lang.environment_monitoring.entry, box=task.box.right, time_out=5
-        )
-        self.assertEqual(task.wait_until.call_count, 2)
+        observations = iter((True, False))
+
+        def find_icon(feature, **kwargs):
+            if feature == fL.transaction_overview:
+                return Box(10, 10, 20, 20)
+            if feature == fL.material_dispatch_enter:
+                return Box(10, 10, 20, 20) if next(observations) else None
+            return None
+
+        task.find_one.side_effect = find_icon
+        task.wait_until.side_effect = lambda condition, **kwargs: any(condition() for _ in range(2))
+        with self.assertRaisesRegex(RuntimeError, "模块入口"):
+            task.open_monitoring()
+        task.click_relative.assert_not_called()
 
     def test_entry_position_failure_on_unknown_page_never_uses_ocr_click(self):
         task = self.task()
-        task.find_one.side_effect = [Box(10, 10, 20, 20), None]
-        task.wait_until.return_value = False
-        task.wait_until.side_effect = None
+        task.find_one.return_value = Box(10, 10, 20, 20)
+        task._monitoring_page.return_value = False
         with self.assertRaisesRegex(RuntimeError, "终端列表"):
             task.open_monitoring()
         task.wait_click_ocr.assert_not_called()

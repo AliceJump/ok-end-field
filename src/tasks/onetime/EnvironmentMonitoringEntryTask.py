@@ -33,16 +33,18 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
             raise RuntimeError("地区建设页面未稳定")  # 不点击过渡画面
         if not self.find_one(fL.transaction_overview):  # 稳定等待期间页面可能变化，首点前也重新核对概览
             raise RuntimeError("未处于地区建设概览")  # 不在未知页面点击固定入口
-        self.click_relative(1252 / 1920, 673 / 1080)  # 多次 1080p 成功入口日志的位置换算，其他布局尚未实测
-        if not self.wait_until(self._monitoring_page, time_out=5, raise_if_not_found=False):  # 后置验证固定入口点击
-            if not self.find_one(fL.transaction_overview):  # 未进入且已离开概览时禁止在未知子页继续点
-                raise RuntimeError("未进入环境监测终端列表")
-            if not self.wait_click_ocr(
-                match=self.lang.environment_monitoring.entry, box=self.box.right, time_out=5
-            ):  # 仅固定入口位置未生效且仍在概览时，用文字兼容尚未实测的布局
-                raise RuntimeError("未找到环境监测入口")
-            if not self.wait_until(self._monitoring_page, time_out=5, raise_if_not_found=False):
-                raise RuntimeError("未进入环境监测终端列表")  # 兜底点击也必须通过页面验证
+        if not self.wait_until(  # 等待地区建设模块入场
+            lambda: (
+                self.find_one(fL.material_dispatch_enter, box=self.box.right)  # 匹配物资调度入口图标
+                and self.find_one(fL.warehouse_node_enter, box=self.box.right)
+            ),  # 同帧匹配仓储节点入口图标
+            time_out=5,  # 限制等待时间
+            raise_if_not_found=False,  # 缺少任一图标时交由下面停止
+        ):  # 同一帧确认物资调度和仓储节点两个已有模板
+            raise RuntimeError("未找到地区建设模块入口")  # 缺少布局依据时不点击固定位置
+        self.click_relative(1252 / 1920, 673 / 1080)  # 通过两个入口模板确认布局后，点击物资调度下方的环境监测位置
+        if not self.wait_until(self._monitoring_page, time_out=5, raise_if_not_found=False):  # 验证确实进入终端页
+            raise RuntimeError("未进入环境监测终端列表")  # 未进入时停止，不再识别入口文字
         if not self.wait_ui_stable():  # 等待卡片入场完成
             raise RuntimeError("环境监测页面未稳定")  # 超时不扫描过渡画面
 
