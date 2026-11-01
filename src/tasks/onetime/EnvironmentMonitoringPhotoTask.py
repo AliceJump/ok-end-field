@@ -35,10 +35,9 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
             raise RuntimeError("小池荷路线未处于大世界")  # 不在菜单发送移动
         self._hold_route_key("w", 0.5)  # 用户更正为传送后先向前一步
         self._hold_route_key("d", 3)  # 用户确认原先右移过量，缩短至竹子旁停下
-        self.sleep(0.5)  # 松开移动键后等待碰撞和角色动作收尾
         if not self.wait_until(
             self.in_world, time_out=2, settle_time=0.5, raise_if_not_found=False
-        ):  # 排除落水或黑场过渡
+        ):  # 等待大世界状态持续稳定，排除落水或黑场过渡
             raise RuntimeError("小池荷路线结束后未恢复大世界")  # 不在不可操作状态继续开相机
         self._require_input_focus()  # 确认追踪视角按键可送达
         self.press_key("v", after_sleep=0.6)  # 复用追踪任务的朝向调整

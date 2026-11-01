@@ -217,6 +217,8 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.wait_until.return_value = True
         EnvironmentMonitoringPhotoTask.walk_pool_lotus_route(task)
         task._hold_route_key.assert_has_calls([call("w", 0.5), call("d", 3)])
+        task.sleep.assert_not_called()
+        self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
         task.press_key.assert_called_once_with("v", after_sleep=0.6)
         task.ocr.assert_not_called()
 
