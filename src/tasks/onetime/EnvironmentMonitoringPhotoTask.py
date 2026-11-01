@@ -1,5 +1,4 @@
 from ok import TaskDisabledException  # 诊断异常不能吞掉用户停止请求
-from ok.util.color import calculate_color_percentage  # 复用框架颜色占比识别模式选中状态
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用相机布局中的 ESC 与加号模板
@@ -32,44 +31,9 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
         finally:  # 配对清理输入
             self.send_key_up(actual_key)  # 松开移动键
 
-    def _world_mode(self, frame=None):  # 用模式徽章反色判定工业、探索或未知
-        frame = self.frame if frame is None else frame  # 模式图标和必要的文字兜底使用同一帧
-        if not self.find_one(
-            fL.top_left_tab, box=self.box_of_screen(0.035, 0, 0.10, 0.04), frame=frame
-        ):  # 覆盖两模式 TAB 的横向偏移
-            return "unknown"  # 没有模式 HUD 时不能根据背景颜色猜模式
-        white = {"r": (186, 255), "g": (186, 255), "b": (186, 255)}  # 两个模式徽章的选中底色均为近白色
-        left = calculate_color_percentage(
-            frame, white, self.box_of_screen(23 / 1920, 44 / 1080, 45 / 1920, 66 / 1080)
-        )  # 左侧工业徽章的实测内部区域
-        right = calculate_color_percentage(
-            frame, white, self.box_of_screen(201 / 1920, 44 / 1080, 223 / 1920, 66 / 1080)
-        )  # 右侧探索徽章的实测内部区域
-        if left >= 0.50 and right <= 0.42:  # 工业选中时左亮右暗，两侧都需落入可信区间
-            return "industrial"  # 正常工业画面无需 OCR
-        if right >= 0.55 and left <= 0.48:  # 探索选中时右亮左暗，不用工业状态的反面推断
-            return "explore"  # 正常探索画面无需 OCR
-        if self.ocr(
-            match=self.lang.DeliveryTask.k_96b876e3, box=self.box_of_screen(0, 0, 0.13, 0.08), frame=frame
-        ):  # 只有徽章颜色模糊时复用现有工业文字正向兜底，TAB 本身不代表模式
-            return "industrial"  # 文字明确命中工业才允许尝试切换
-        return "unknown"  # 未识别到工业不等于已确认探索
-
     def walk_pool_lotus_route(self):  # 用户确认的短路线，无地图导航
         if not self.in_world():  # 必须从传送后的大世界起步
             raise RuntimeError("小池荷路线未处于大世界")  # 不在菜单发送移动
-        mode = self._world_mode()  # 先区分可操作模式，未知状态不发送移动键
-        if mode == "unknown":  # 不把识别缺失当作探索状态
-            raise RuntimeError("小池荷路线无法确认探索或工业模式")  # 保留当前画面供检查
-        if mode == "industrial":  # 仅明确工业状态需要切换
-            self._require_input_focus()  # 确认模式切换可送达
-            self.press_key("tab", after_sleep=0.5)  # 切回探索模式
-            if not self.wait_until(
-                lambda: self.in_world() and self._world_mode() == "explore",
-                time_out=2,
-                raise_if_not_found=False,
-            ):  # 切换后必须明确识别探索模式且仍在大世界
-                raise RuntimeError("小池荷路线未切回探索模式")  # 模式切换失败时不发送移动键
         self._hold_route_key("w", 0.5)  # 用户更正为传送后先向前一步
         self._hold_route_key("d", 3)  # 用户确认原先右移过量，缩短至竹子旁停下
         self.sleep(0.5)  # 松开移动键后等待碰撞和角色动作收尾
