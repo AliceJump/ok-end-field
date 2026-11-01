@@ -6,6 +6,8 @@ from qfluentwidgets import FluentIcon  # 复用调试任务图标
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位和地图模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 
+TERMINAL_LEFTS = {"outskirts": 0.06, "marker_stone": 0.27}  # 按固定左右顺序标识终端及其标签空白区
+
 
 class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流程
     def __init__(self, *args, **kwargs):  # 构造阶段不操作游戏
@@ -48,17 +50,15 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         if not self.wait_ui_stable():  # 等待卡片入场完成
             raise RuntimeError("环境监测页面未稳定")  # 超时不扫描过渡画面
 
-    def _terminal_area(self, matcher):  # 两个终端顺序固定，空白区兼作点击和选中检测区域
-        left = (
-            0.27 if matcher.pattern == self.lang.environment_monitoring.marker_stone.pattern else 0.06
-        )  # 实测两标签的空白区
+    def _terminal_area(self, terminal):  # 两个终端顺序固定，空白区兼作点击和选中检测区域
+        left = TERMINAL_LEFTS[terminal]  # 内部标识定位左右标签，未知终端不回退到其他标签
         height, width = self.frame.shape[:2]  # 使用当前帧尺寸
         x, y = int(width * left), int(height * 0.145)  # 保持原裁剪的向下取整边界
         return Box(x, y, int(width * (left + 0.07)) - x, int(height * 0.16) - y)  # 避开文字与等级数字
 
-    def _terminal_selected(self, matcher):  # 验证终端标签的白色选中背景
+    def _terminal_selected(self, terminal):  # 验证终端标签的白色选中背景
         white = dict.fromkeys(("r", "g", "b"), (186, 255))  # 严格保留各通道大于 185 的边界
-        return self.calculate_color_percentage(white, self._terminal_area(matcher)) > 0.7  # 只有当前选中标签呈白底
+        return self.calculate_color_percentage(white, self._terminal_area(terminal)) > 0.7  # 只有当前选中标签呈白底
 
     def _monitoring_page(self):  # 组合控件位置和终端配色，不能只用通用按键模板认定页面
         if not self.find_one(fL.q, box=self.box_of_screen(0.025, 0.12, 0.046, 0.155), use_gray_scale=True):
@@ -69,19 +69,20 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         for left in (0.046, 0.25):  # 限定已验证的两条竖线位置
             if self.calculate_color_percentage(cyan, self.box_of_screen(left, 0.105, left + 0.003, 0.167)) <= 0.7:
                 return False  # 避免其他菜单的 Q/E 控件误判
-        terminals = (self.lang.environment_monitoring.outskirts, self.lang.environment_monitoring.marker_stone)
-        return sum(self._terminal_selected(terminal) for terminal in terminals) == 1  # 黑屏、双白底和未知状态均拒绝
+        return (
+            sum(self._terminal_selected(terminal) for terminal in TERMINAL_LEFTS) == 1
+        )  # 黑屏、双白底和未知状态均拒绝
 
-    def select_terminal(self, matcher):  # 两个终端共用切换逻辑
+    def select_terminal(self, terminal):  # 两个终端共用切换逻辑
         for _ in range(2):  # 有界重试被动画吞掉的点击
             if not self._monitoring_page():  # 每次重试都核对页面，避免等待期间已离开终端页
                 raise RuntimeError("未进入环境监测终端列表")  # 固定坐标只能在已确认的终端页使用
-            if not self._terminal_selected(matcher):  # 已选中时无需重复点击或识别终端名称
-                self.click(self._terminal_area(matcher))  # 点击对应标签内已验证的固定空白区
-                if not self.wait_until(lambda: self._terminal_selected(matcher), time_out=3, raise_if_not_found=False):
+            if not self._terminal_selected(terminal):  # 已选中时无需重复点击或识别终端名称
+                self.click(self._terminal_area(terminal))  # 点击对应标签内已验证的固定空白区
+                if not self.wait_until(lambda: self._terminal_selected(terminal), time_out=3, raise_if_not_found=False):
                     continue  # 等待点击生效后再检查稳定状态
             if (
-                self.wait_ui_stable() and self._monitoring_page() and self._terminal_selected(matcher)
+                self.wait_ui_stable() and self._monitoring_page() and self._terminal_selected(terminal)
             ):  # 验证实际选中并等待对应卡片稳定
                 return  # 选中与稳定均确认后才扫描
         raise RuntimeError("环境监测终端切换未完成")  # 不将旧终端卡片当成新终端
@@ -189,11 +190,7 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         self.selected_observation = None  # 清除上轮结果
         self.open_monitoring()  # 每次从明确入口开始
         desired = self.normalize_title(target_name)  # 配置名称按同一规则比较
-        terminals = [
-            self.lang.environment_monitoring.outskirts,
-            self.lang.environment_monitoring.marker_stone,
-        ]  # 固定终端遍历顺序
-        for terminal in terminals:  # 两个终端分别识别
+        for terminal in TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
             self.select_terminal(terminal)  # 选择终端并等待稳定
             for observation in self.available_observations():  # 只考虑可操作卡片
                 if desired and self.normalize_title(observation["name"]) != desired:  # 指定名称时不退回其他任务
@@ -202,7 +199,7 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
                 self.transfer_observation()  # 快捷传送并验证到达
                 self.selected_observation = {
                     "name": observation["name"],
-                    "terminal": terminal.pattern,
+                    "terminal": terminal,
                 }  # 交给后半流程的上下文
                 self.log_info(f"[environment-monitoring] arrived: {self.selected_observation}")  # 记录实际到达任务
                 return self.selected_observation  # 一次只处理一个观察点

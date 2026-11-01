@@ -23,8 +23,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang = SimpleNamespace(
             environment_monitoring=SimpleNamespace(
                 track=re.compile("开始追踪"),
-                outskirts=re.compile("城郊监测终端"),
-                marker_stone=re.compile("首墩监测终端"),
             )
         )
         task.box = SimpleNamespace(bottom_right=Box(width // 2, height // 2, width // 2, height // 2))
@@ -105,9 +103,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     frame[int(height * 0.1) : int(height * 0.172), int(width * x1) : int(width * x2)] = 235
                     task = self.color_task(frame)
                     for terminal in ("outskirts", "marker_stone"):
-                        matcher = getattr(task.lang.environment_monitoring, terminal)
                         self.assertEqual(
-                            EnvironmentMonitoringEntryTask._terminal_selected(task, matcher), terminal == selected
+                            EnvironmentMonitoringEntryTask._terminal_selected(task, terminal), terminal == selected
                         )
 
     def test_colored_tab_or_sparse_white_text_is_not_a_selected_background(self):
@@ -116,9 +113,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 frame = np.full((1080, 1920, 3), color, dtype=np.uint8)
                 frame[::3, ::3] = 255
                 task = self.color_task(frame)
-                self.assertFalse(
-                    EnvironmentMonitoringEntryTask._terminal_selected(task, task.lang.environment_monitoring.outskirts)
-                )
+                self.assertFalse(EnvironmentMonitoringEntryTask._terminal_selected(task, "outskirts"))
 
     def test_terminal_color_range_and_crop_keep_the_exact_pixel_boundaries(self):
         for width, height in ((1280, 720), (1920, 1080), (2560, 1440), (1366, 768)):
@@ -135,8 +130,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                         y1, y2 = int(height * 0.145), int(height * 0.16)
                         frame[y1:y2, x1:x2] = color
                         task = self.color_task(frame)
-                        matcher = getattr(task.lang.environment_monitoring, terminal)
-                        self.assertEqual(EnvironmentMonitoringEntryTask._terminal_selected(task, matcher), selected)
+                        self.assertEqual(EnvironmentMonitoringEntryTask._terminal_selected(task, terminal), selected)
                         area = task.calculate_color_percentage.call_args.args[1]
                         self.assertEqual((area.x, area.y, area.width, area.height), (x1, y1, x2 - x1, y2 - y1))
 
@@ -147,10 +141,14 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         patch.reshape(-1, 3)[:735] = 255
         frame[145:160, 60:130] = patch
         task = self.color_task(frame)
-        matcher = task.lang.environment_monitoring.outskirts
-        self.assertFalse(EnvironmentMonitoringEntryTask._terminal_selected(task, matcher))
+        self.assertFalse(EnvironmentMonitoringEntryTask._terminal_selected(task, "outskirts"))
         frame[155, 95] = 255
-        self.assertTrue(EnvironmentMonitoringEntryTask._terminal_selected(task, matcher))
+        self.assertTrue(EnvironmentMonitoringEntryTask._terminal_selected(task, "outskirts"))
+
+    def test_unknown_terminal_does_not_default_to_another_tab(self):
+        task = self.task()
+        with self.assertRaises(KeyError):
+            task._terminal_area("unknown")
 
     def monitoring_frame(self, width, height, selected=("outskirts",)):
         frame = np.full((height, width, 3), 40, dtype=np.uint8)
@@ -237,7 +235,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_already_selected_stable_terminal_skips_click_and_ocr(self):
         task = self.task()
         task._terminal_selected = Mock(return_value=True)
-        task.select_terminal(task.lang.environment_monitoring.marker_stone)
+        task.select_terminal("marker_stone")
         task.click.assert_not_called()
         task.ocr.assert_not_called()
         task.wait_click_ocr.assert_not_called()
@@ -247,7 +245,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task._monitoring_page.return_value = False
         with self.assertRaisesRegex(RuntimeError, "终端列表"):
-            task.select_terminal(task.lang.environment_monitoring.marker_stone)
+            task.select_terminal("marker_stone")
         task.click.assert_not_called()
 
     def test_terminal_retry_cannot_click_after_page_disappears_during_wait(self):
@@ -255,7 +253,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._monitoring_page.side_effect = [True, False]
         task._terminal_selected = Mock(return_value=False)
         with self.assertRaisesRegex(RuntimeError, "终端列表"):
-            task.select_terminal(task.lang.environment_monitoring.marker_stone)
+            task.select_terminal("marker_stone")
         self.assertEqual(task.click.call_count, 1)
         task.wait_ui_stable.assert_not_called()
 
@@ -592,9 +590,10 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.enter_observation.assert_called_once_with(requested)
         task.transfer_observation.assert_called_once_with()
         self.assertEqual(result["name"], "“小池荷”")
+        self.assertEqual(result["terminal"], "marker_stone")
         self.assertEqual(
             task.select_terminal.call_args_list,
-            [call(task.lang.environment_monitoring.outskirts), call(task.lang.environment_monitoring.marker_stone)],
+            [call("outskirts"), call("marker_stone")],
         )
 
     def test_no_target_stops_after_the_first_available_observation(self):
