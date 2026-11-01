@@ -37,6 +37,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             round(task.frame.shape[0] * (y2 - y1)),
         )
         task.ocr.return_value = []
+        task.normalize_title.side_effect = EnvironmentMonitoringPhotoTask.normalize_title
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
         task.next_frame.side_effect = lambda: task.frame
@@ -270,6 +271,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         for ready in (False, True):
             with self.subTest(ready=ready):
                 task = self.task()
+                task.prepare_observation.return_value = {"name": "“小池荷”"}
                 task.adjust_photo_view.return_value = ready
                 task._camera_open.return_value = True
                 task.photo_condition_met.return_value = ready
@@ -296,8 +298,28 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_navigation_failure_stops_before_camera(self):
         task = self.task()
+        task.prepare_observation.return_value = {"name": "小池荷"}
         task.walk_pool_lotus_route.side_effect = RuntimeError("navigation failed")
         with self.assertRaisesRegex(RuntimeError, "navigation failed"):
+            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        task.prepare_photo.assert_not_called()
+
+    def test_registered_route_is_selected_from_observation_name(self):
+        task = self.task()
+        task.prepare_observation.return_value = {"name": "“古树”"}
+        with patch.dict(
+            "src.tasks.onetime.EnvironmentMonitoringEntryTask.OBSERVATION_ROUTES",
+            {"古树": "walk_other_route"},
+        ):
+            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        task.walk_other_route.assert_called_once_with()
+        task.walk_pool_lotus_route.assert_not_called()
+        task.prepare_photo.assert_called_once_with()
+
+    def test_unregistered_observation_stops_before_camera(self):
+        task = self.task()
+        task.prepare_observation.return_value = {"name": "未知点位"}
+        with self.assertRaisesRegex(RuntimeError, "未支持观察点导航"):
             EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
         task.prepare_photo.assert_not_called()
 

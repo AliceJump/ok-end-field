@@ -2,7 +2,10 @@ from ok.util.color import calculate_color_percentage  # 复用颜色占比排除
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用相机布局中的 ESC 与加号模板
-from src.tasks.onetime.EnvironmentMonitoringEntryTask import EnvironmentMonitoringEntryTask  # 复用委托选择和快捷传送
+from src.tasks.onetime.EnvironmentMonitoringEntryTask import (  # 复用委托入口和路线注册表
+    OBSERVATION_ROUTES,  # 根据观察点选择导航
+    EnvironmentMonitoringEntryTask,  # 复用委托选择和快捷传送
+)
 
 
 class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境监测日常子任务的取景验证阶段
@@ -124,6 +127,11 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
         }  # 不触发快门或提交委托
 
     def run(self):  # GUI 与 MCP 共用从入口开始的可重复流程
-        self.prepare_observation()  # 自动选择当前支持的观察点并传送
-        self.walk_pool_lotus_route()  # 传送后沿当前点位路线导航
+        observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
+        name = self.normalize_title(observation["name"])  # 识别出的名称去除引号和空白
+        route_name = OBSERVATION_ROUTES.get(name)  # 获取当前点位注册的导航方法
+        route = getattr(self, route_name, None) if route_name else None  # 不为未知点位调用其他路线
+        if not callable(route):  # 路线缺失时不得继续相机阶段
+            raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
+        route()  # 执行传送后的点位导航
         return self.prepare_photo()  # 停在相机内，保留任务供下一轮验证
