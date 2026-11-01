@@ -610,6 +610,13 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.enter_observation.assert_called_once_with(supported)
         self.assertEqual(task.select_terminal.call_count, 1)
 
+    def test_registered_new_route_is_selectable_without_changing_entry_logic(self):
+        supported = {"name": "古树"}
+        task = self.prepare_task([supported], [])
+        with patch.dict("src.tasks.onetime.environment_monitoring_navigation.OBSERVATION_ROUTES", {"古树": Mock()}):
+            self.assertEqual(task.prepare_observation()["name"], "古树")
+        task.enter_observation.assert_called_once_with(supported)
+
     def test_transfer_arrival_failure_clears_previous_result_and_never_reports_success(self):
         task = self.prepare_task([{"name": "小池荷"}], [])
         del task.transfer_observation

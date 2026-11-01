@@ -2,45 +2,29 @@ from ok.util.color import calculate_color_percentage  # 复用颜色占比排除
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用相机布局中的 ESC 与加号模板
+from src.tasks.onetime.environment_monitoring_navigation import (
+    EnvironmentMonitoringNavigationMixin,  # 复用观察点导航分发
+)
 from src.tasks.onetime.EnvironmentMonitoringEntryTask import EnvironmentMonitoringEntryTask  # 复用委托选择和快捷传送
 
 
-class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境监测日常子任务的取景验证阶段
+class EnvironmentMonitoringPhotoTask(
+    EnvironmentMonitoringNavigationMixin, EnvironmentMonitoringEntryTask
+):  # 日常取景验证
     def __init__(self, *args, **kwargs):  # 构造阶段不操作游戏
         super().__init__(*args, **kwargs)  # 复用委托入口与任务生命周期
         self.group_name = "日常任务"  # 环境监测属于日常业务
         self.group_icon = FluentIcon.CALENDAR  # 与现有日常子任务一致
-        self.name = "环境监测：小池荷取景"  # 明确当前只支持小池荷
-        self.description = "前往小池荷，走到竹子旁并打开相机，检查拍摄条件后停止，不拍照。"  # 保留委托供重复实测
-        self.default_config = {}  # 路线固定，不允许将其用于其他观察点
-        self.config_description = {}  # 不继承前半流程的自由目标配置
+        self.name = "环境监测：取景验证"  # 取景阶段适用于所有已注册路线
+        self.description = "自动前往已支持的观察点，打开相机并检查拍摄条件，暂不拍照。"  # 保留委托供重复实测
+        self.default_config = {}  # 观察点由路线注册表决定
+        self.config_description = {}  # 无需用户填写观察点名称
 
     def _require_input_focus(self):  # 前台按键必须确认实际获得焦点
         if not self.wait_until(
             lambda: self.active_and_send_mouse_delta(only_activate=True), time_out=3, raise_if_not_found=False
         ):  # 复用现有前台输入接口并有界等待
             raise RuntimeError("游戏窗口未获得输入焦点")  # 不把未送达的按键当成完成
-
-    def _hold_route_key(self, key, duration):  # 固定路线按键保证停止时释放
-        self._require_input_focus()  # 每段移动前确认焦点
-        actual_key = self._resolve_config_key(key, "common")  # 遵循用户移动键绑定
-        self.send_key_down(actual_key)  # 开始移动
-        try:  # 中止或异常也不能留下按住的移动键
-            self.sleep(duration)  # 使用可响应任务停止的等待
-        finally:  # 配对清理输入
-            self.send_key_up(actual_key)  # 松开移动键
-
-    def walk_pool_lotus_route(self):  # 用户确认的短路线，无地图导航
-        if not self.in_world():  # 必须从传送后的大世界起步
-            raise RuntimeError("小池荷路线未处于大世界")  # 不在菜单发送移动
-        self._hold_route_key("w", 0.5)  # 用户更正为传送后先向前一步
-        self._hold_route_key("d", 3)  # 用户确认原先右移过量，缩短至竹子旁停下
-        if not self.wait_until(
-            self.in_world, time_out=2, settle_time=0.5, raise_if_not_found=False
-        ):  # 等待大世界状态持续稳定，排除落水或黑场过渡
-            raise RuntimeError("小池荷路线结束后未恢复大世界")  # 不在不可操作状态继续开相机
-        self._require_input_focus()  # 确认追踪视角按键可送达
-        self.press_key("v", after_sleep=0.6)  # 复用追踪任务的朝向调整
 
     def _camera_open(self, frame=None):  # 同帧双模板确认相机布局，不依赖退出提示文字
         frame = self.frame if frame is None else frame  # 固定本次识别所用截图
@@ -106,24 +90,25 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
                 self.rotate_photo_view()  # 只旋转镜头，不发出方向键
         return False  # 有限范围内未找到时如实返回
 
-    def prepare_photo(self):  # 传送后可独立复测的后半流程
-        self.walk_pool_lotus_route()  # 前进一步再向右撞竹子
+    def prepare_photo(self, observation):  # 所有已支持观察点共用相机取景
+        name = self.normalize_title(observation["name"])  # 沿用入口阶段确认的观察点身份
         self.open_camera()  # 装备并进入相机
         self.adjust_photo_view()  # 先检查条件，必要时小步转动镜头
         frame = self.next_frame()  # 检查最后一次调整后实际保留的界面
         if not self._camera_open(frame=frame):  # 不能沿用打开时的状态
-            raise RuntimeError("小池荷取景结束时相机界面已关闭")  # 不返回与现场不符的 camera_open=True
+            raise RuntimeError("取景结束时相机界面已关闭")  # 不返回与现场不符的 camera_open=True
         ready = bool(self.photo_condition_met(frame=frame))  # 用最后一帧重算条件，不沿用旋转过程中的旧结果
         self.log_info(
-            f"[environment-monitoring] camera_open=True target=小池荷 photo_ready={ready} shutter=False"
+            f"[environment-monitoring] camera_open=True target={name} photo_ready={ready} shutter=False"
         )  # 如实记录取景状态
         return {
-            "name": "小池荷",
+            "name": name,
             "camera_open": True,
             "photo_ready": ready,
             "photo_taken": False,
         }  # 不触发快门或提交委托
 
     def run(self):  # GUI 与 MCP 共用从入口开始的可重复流程
-        self.prepare_observation()  # 自动选择当前支持的观察点并传送
-        return self.prepare_photo()  # 停在相机内，保留任务供下一轮验证
+        observation = self.prepare_observation()  # 接取支持的观察点并传送
+        self.navigate_observation(observation)  # 按观察点执行传送后的导航
+        return self.prepare_photo(observation)  # 共用相机取景，保留任务供下一轮验证
