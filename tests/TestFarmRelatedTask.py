@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
 from src.core.global_config_store import KEY_CONFIG_NAME
+from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
 from src.tasks.onetime.FarmRelatedTask import FarmRelatedTask
 from tests.TestAccountKeyConfig import BASE_KEYS, _PressTask
 
@@ -106,6 +106,7 @@ class TestFarmRelatedTask(unittest.TestCase):
         task, _, _ = self.make_task()
         battle = _PressTask(running=False, account_id="old account", account_name="old user")
         battle.battle_ctx = None
+
         def bind_account(user, account_id):
             battle.current_user = user
             battle.current_account_id = account_id
