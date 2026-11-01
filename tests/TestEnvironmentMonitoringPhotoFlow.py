@@ -203,22 +203,23 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_camera_ui_is_required_before_checking_the_marker(self):
         task = self.task()
         task._camera_open.return_value = False
-        with patch("src.tasks.onetime.EnvironmentMonitoringPhotoTask.xiaochihe_target_checked") as checked:
-            self.assertFalse(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
-        checked.assert_not_called()
+        self.assertFalse(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
+        task.find_one.assert_not_called()
         task.ocr.assert_not_called()
 
     def test_photo_condition_uses_checked_marker_without_ocr(self):
-        for checked_result in (False, True):
-            with self.subTest(checked=checked_result):
+        for marker_found, yellow_ratio, expected in ((False, 1.0, False), (True, 0.0, False), (True, 0.1, True)):
+            with self.subTest(marker=marker_found, yellow=yellow_ratio):
                 task = self.task()
                 task._camera_open.return_value = True
+                task.find_one.return_value = Box(52, 726, 26, 24) if marker_found else None
                 with patch(
-                    "src.tasks.onetime.EnvironmentMonitoringPhotoTask.xiaochihe_target_checked",
-                    return_value=checked_result,
-                ) as checked:
-                    self.assertEqual(EnvironmentMonitoringPhotoTask.photo_condition_met(task), checked_result)
-                checked.assert_called_once_with(task.frame)
+                    "src.tasks.onetime.EnvironmentMonitoringPhotoTask.calculate_color_percentage",
+                    return_value=yellow_ratio,
+                ) as color:
+                    self.assertEqual(EnvironmentMonitoringPhotoTask.photo_condition_met(task), expected)
+                self.assertEqual(color.call_count, int(marker_found))
+                self.assertEqual(task.find_one.call_args.args[0], fL.photo_target_checked)
                 task.ocr.assert_not_called()
 
     def test_marker_keeps_the_camera_detection_frame(self):
@@ -231,11 +232,13 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             return True
 
         task._camera_open.side_effect = camera_detected
+        task.find_one.return_value = Box(52, 726, 26, 24)
         with patch(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.xiaochihe_target_checked", return_value=True
-        ) as checked:
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.calculate_color_percentage", return_value=0.1
+        ) as color:
             self.assertTrue(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
-        checked.assert_called_once_with(original_frame)
+        self.assertIs(task.find_one.call_args.kwargs["frame"], original_frame)
+        self.assertIs(color.call_args.args[0], original_frame)
         task.ocr.assert_not_called()
 
     def test_route_requires_world_and_does_not_move_in_a_menu(self):

@@ -1,10 +1,14 @@
 import base64  # 解码测试内嵌的实测图标裁剪。
 import unittest  # 使用仓库统一的单元测试入口。
+from pathlib import Path  # 使用仓库内的运行模板路径。
+from types import SimpleNamespace  # 构造离线执行器。
+from unittest.mock import Mock  # 固定相机界面状态。
 
 import cv2  # 复现截图缩放和构造反例。
 import numpy as np  # 在内存中构造不同分辨率截图。
+from ok.feature.FeatureSet import FeatureSet  # 使用实际模板加载与匹配。
 
-from src.tasks.onetime.environment_monitoring_photo import xiaochihe_target_checked  # 只测试纯视觉标记判断。
+from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask  # 测试生产识别流程。
 
 # 正例取自 3d96f6f988804b93bc83d1b67f82de37.png 的（47，720）至（83，756）区域。
 CHECKED_PNG = (  # 保存实测图标 PNG 小裁剪，测试不依赖本地 logs。
@@ -77,7 +81,9 @@ UNCHECKED_PNG = (  # 保存实测图标 PNG 小裁剪，测试不依赖本地 lo
 
 
 def marker_crop(encoded):  # 从实测裁剪恢复 BGR 像素。
-    return cv2.imdecode(np.frombuffer(base64.b64decode(encoded), dtype=np.uint8), cv2.IMREAD_COLOR)  # 不读取外部截图文件。
+    return cv2.imdecode(
+        np.frombuffer(base64.b64decode(encoded), dtype=np.uint8), cv2.IMREAD_COLOR
+    )  # 不读取外部截图文件。
 
 
 def photo_frame(crop, size=(1920, 1080)):  # 把真实标记放回参考截图位置后进行整体缩放。
@@ -87,37 +93,65 @@ def photo_frame(crop, size=(1920, 1080)):  # 把真实标记放回参考截图�
 
 
 class TestEnvironmentMonitoringPhoto(unittest.TestCase):  # 验证真实正负例及可能误触发的近似图形。
+    @classmethod
+    def setUpClass(cls):  # 使用和应用相同的打包及独立模板源。
+        root = Path(__file__).resolve().parents[1]
+        cls.features = FeatureSet(
+            False,
+            str(root / "assets/coco_annotations.json"),
+            0.002,
+            0.002,
+            default_threshold=0.8,
+            template_folder=str(root / "assets/templates"),
+        )
+
+    def check_marker(self, frame):  # 使用实际任务方法和模板匹配验证标记。
+        height, width = frame.shape[:2]
+        self.features.check_size(frame)
+        task = object.__new__(EnvironmentMonitoringPhotoTask)
+        task._executor = SimpleNamespace(
+            frame=frame,
+            method=SimpleNamespace(width=width, height=height),
+            device_manager=SimpleNamespace(supported_ratio=16 / 9),
+            feature_set=self.features,
+        )
+        task._camera_open = Mock(return_value=True)
+        task.draw_boxes = Mock()
+        return task.photo_condition_met(frame=frame)
+
     def test_observed_markers_at_multiple_resolutions(self):  # 避免只对原始 1080p 样本有效。
-        for size in ((1280, 720), (1366, 768), (1600, 900), (1920, 1080), (2560, 1440), (3840, 2160)):  # 覆盖缩小与放大。
+        for size in (
+            (1280, 720),
+            (1366, 768),
+            (1600, 900),
+            (1920, 1080),
+            (2560, 1440),
+            (3840, 2160),
+        ):  # 覆盖缩小与放大。
             for encoded, expected in ((CHECKED_PNG, True), (UNCHECKED_PNG, False)):  # 使用实际黄白勾和灰方块。
                 with self.subTest(size=size, checked=expected):  # 报告失败的具体分辨率与状态。
-                    self.assertEqual(xiaochihe_target_checked(photo_frame(marker_crop(encoded), size)), expected)  # 验证结果。
+                    self.assertEqual(self.check_marker(photo_frame(marker_crop(encoded), size)), expected)  # 验证结果。
 
     def test_gray_check_is_not_a_satisfied_marker(self):  # 排除普通灰白 UI 图标造成的误判。
         gray = cv2.cvtColor(marker_crop(CHECKED_PNG), cv2.COLOR_BGR2GRAY)  # 保留勾形而移除满足条件的黄色。
-        self.assertFalse(xiaochihe_target_checked(photo_frame(cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR))))  # 无黄色时拒绝。
+        self.assertFalse(self.check_marker(photo_frame(cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR))))  # 无黄色时拒绝。
 
     def test_yellow_ring_without_check_is_rejected(self):  # 单独的亮圆环不能代表拍摄条件已满足。
         crop = marker_crop(CHECKED_PNG)  # 从真实正例保留外圈结构。
         cv2.circle(crop, (18, 18), 9, (35, 35, 35), thickness=-1)  # 清除内部勾形。
-        self.assertFalse(xiaochihe_target_checked(photo_frame(crop)))  # 缺少勾线时必须拒绝。
+        self.assertFalse(self.check_marker(photo_frame(crop)))  # 缺少勾线时必须拒绝。
 
     def test_solid_yellow_patch_is_rejected(self):  # 场景中的黄色面片也不能代替勾选标记。
         crop = np.full((36, 36, 3), (40, 240, 250), dtype=np.uint8)  # 构造高亮黄色实心区域。
-        self.assertFalse(xiaochihe_target_checked(photo_frame(crop)))  # 保留对内部暗部结构的要求。
+        self.assertFalse(self.check_marker(photo_frame(crop)))  # 实心颜色不能代替图标模板。
 
     def test_checked_icon_elsewhere_is_ignored(self):  # 识别范围必须限于目标条件图标。
         frame = photo_frame(marker_crop(UNCHECKED_PNG))  # 条件位置仍保持未勾选状态。
         frame[800:836, 100:136] = marker_crop(CHECKED_PNG)  # 在区域外放置完全相同的正例图标。
-        self.assertFalse(xiaochihe_target_checked(frame))  # 区域外正例不能影响结果。
-
-    def test_invalid_frames_are_rejected(self):  # 截图不可用时不能让调用方继续拍照。
-        for frame in (None, np.zeros((0, 0, 3), dtype=np.uint8), np.zeros((1080, 1920), dtype=np.uint8)):  # 覆盖缺失、空和灰度图。
-            with self.subTest(shape=getattr(frame, "shape", None)):  # 标明不可用输入类型。
-                self.assertFalse(xiaochihe_target_checked(frame))  # 统一返回未满足。
+        self.assertFalse(self.check_marker(frame))  # 区域外正例不能影响结果。
 
     def test_detection_does_not_change_input(self):  # 纯识别函数不能影响调用方后续 OCR 或截图。
         frame = photo_frame(marker_crop(CHECKED_PNG))  # 使用有效正例。
         original = frame.copy()  # 保存调用前的像素。
-        self.assertTrue(xiaochihe_target_checked(frame))  # 触发完整识别路径。
+        self.assertTrue(self.check_marker(frame))  # 触发完整识别路径。
         np.testing.assert_array_equal(frame, original)  # 原截图保持逐像素一致。

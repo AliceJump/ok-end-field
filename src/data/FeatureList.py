@@ -210,6 +210,7 @@ class FeatureList(StrEnum):
     orobertyl = "orobertyl"
     outpost_manager_enter = "outpost_manager_enter"
     pass_task_collect = "pass_task_collect"
+    photo_target_checked = "photo_target_checked"
     pick_f = "pick_f"
     photo_target_checked = "photo_target_checked"
     pick_recycle = "pick_recycle"

@@ -1,8 +1,8 @@
 from ok import TaskDisabledException  # 诊断异常不能吞掉用户停止请求
+from ok.util.color import calculate_color_percentage  # 复用颜色占比排除灰白色圆勾
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用相机布局中的 ESC 与加号模板
-from src.tasks.onetime.environment_monitoring_photo import xiaochihe_target_checked  # 识别拍摄目标的圆勾状态
 from src.tasks.onetime.EnvironmentMonitoringEntryTask import EnvironmentMonitoringEntryTask  # 复用委托选择和快捷传送
 
 
@@ -96,7 +96,13 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
         frame = self.frame if frame is None else frame  # 固定相机布局和圆勾所用截图
         if not self._camera_open(frame=frame):  # 排除大世界或轮盘
             return False  # 非相机界面不能报告条件满足
-        return xiaochihe_target_checked(frame)  # 用户确认只需检查当前目标的圆勾，不再 OCR 目标名称
+        marker = self.find_one(  # 识别相机目标行的圆勾模板
+            fL.photo_target_checked, box=self.box_of_screen(0.02, 0.655, 0.055, 0.715), frame=frame
+        )  # 只在目标标记区域寻找，模板定位用于后续颜色检查
+        if not marker:  # 未找到圆勾模板
+            return False  # 不把未满足条件算作就绪
+        yellow = {"r": (180, 255), "g": (155, 255), "b": (0, 120)}  # 亮起圆勾的黄色范围
+        return calculate_color_percentage(frame, yellow, marker) > 0.03  # 灰白勾可能匹配模板，还需确认黄色亮起
 
     def rotate_photo_view(self):  # 在相机画面中央横向拖动，不触碰快门
         self._require_input_focus()  # 旋转视角需要实际光标移动
