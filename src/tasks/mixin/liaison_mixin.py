@@ -213,6 +213,7 @@ class LiaisonMixin(NavigationMixin):
             if self.wait_ocr(match=self.lang.liaison_mixin.k_80b758b9, box=self.box.left, log=True):
                 self.log_info("已到达中央环厅")
                 self._liaison_hall_confirmed = True
+                self.move_keys("w", duration=1)  # 到达中央环厅后再向前走一步
                 self._liaison_station_entry = liaison_entry_after_walk(self, entry, attempt)
                 return True
 

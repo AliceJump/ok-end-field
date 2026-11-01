@@ -151,7 +151,8 @@ def liaison_entry_after_walk(task, entry, attempts):
         phase="station_initial",
         location="中央环厅",
         entry="bridge_walk_confirmed",
-        entry_route_signature=(1000,) * attempts,
+        # 1001 marks the extra one-second walk and invalidates older route samples.
+        entry_route_signature=(1000,) * attempts + (1001,),
     )
     # Each confirmed walk count is a separate stable entry. Statistical sample
     # reliability still gates replay; never borrow the other walk count's motion.
