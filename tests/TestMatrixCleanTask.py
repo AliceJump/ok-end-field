@@ -1,8 +1,7 @@
 """MatrixCleanTask 单元测试。
 
 不启动 ok 框架与游戏环境：用 ``__new__`` 构造裸任务实例，
-mock 全部 UI 交互（OCR / 模板 / 点击 / 按键），只驱动状态机逻辑；
-``lang`` 用真实 LangAccessor 加载，顺带验证语言 JSON 可用。
+mock UI 交互，只驱动状态机逻辑。
 """
 
 import unittest
@@ -11,7 +10,6 @@ from unittest.mock import MagicMock
 
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.data.FeatureList import FeatureList as fL
-from src.data.lang import get_lang_accessor
 from src.tasks.onetime.MatrixCleanTask import MatrixCleanTask
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +40,6 @@ class TestColorWait(unittest.TestCase):
 def make_task():
     """构造不打扰 UI 的裸任务实例，交互方法全部替换为 MagicMock。"""
     task = MatrixCleanTask.__new__(MatrixCleanTask)
-    task.lang = get_lang_accessor("zh_CN")
     task.box = MagicMock()
     task.box_of_screen = MagicMock(return_value=None)
     task.click = MagicMock()
@@ -50,26 +47,21 @@ def make_task():
     task.press_key = MagicMock()
     task.sleep = MagicMock()
     task.wait_feature = MagicMock(return_value=None)
-    task.wait_ocr = MagicMock(return_value=None)
-    task.wait_click_ocr = MagicMock(return_value=None)
     task.wait_click_feature = MagicMock(return_value=None)
     task.click_confirm = MagicMock(return_value=True)
     task.wait_pop_up = MagicMock(return_value=True)
     task.find_one = MagicMock(return_value=None)
     task.click_until_color = MagicMock(return_value=True)
-    task.ocr = MagicMock(return_value=None)
     task.mark_task_failure = MagicMock()
     task.log_info = MagicMock()
     task.tr = MagicMock(side_effect=lambda message: message)  # 绕过框架 gettext
     return task
 
 
-class TestLangResource(unittest.TestCase):
-    """空列表识别使用图标，不依赖语言资源。"""
+class TestEmptyList(unittest.TestCase):
+    """空列表识别使用图标。"""
 
-    def test_lang_keys_compile_and_cover_code_refs(self):
-        code = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        self.assertNotIn("self.lang.matrix_clean_task", code)
+    def test_empty_list_icon(self):
         task = make_task()
         task.find_one = MagicMock(return_value=MagicMock())
         self.assertTrue(task._no_item_left())
@@ -85,7 +77,6 @@ class TestOpenVaultEssencePage(unittest.TestCase):
         task._ensure_essence_page = MagicMock(return_value=False)
         self.assertFalse(task._open_vault_essence_page())
         self.assertEqual([c.args[0] for c in task.press_key.call_args_list], ["n", "n"])
-        task.wait_click_ocr.assert_not_called()
         task.mark_task_failure.assert_called_once_with("进入武器基质页失败")
 
     def test_key_injection_failure_stops_immediately(self):
@@ -96,12 +87,12 @@ class TestOpenVaultEssencePage(unittest.TestCase):
         task.press_key.assert_called_once()
         task._ensure_essence_page.assert_not_called()
 
-    def test_already_on_essence_page_skips_tab_click(self):
+    def test_ensure_essence_page_succeeds(self):
         task = make_task()
         self.assertTrue(task._ensure_essence_page())
         task.click_until_color.assert_called_once()
 
-    def test_tab_click_retries_via_post_action(self):
+    def test_ensure_essence_page_fails(self):
         task = make_task()
         task.click_until_color = MagicMock(return_value=False)
         self.assertFalse(task._ensure_essence_page())
@@ -211,7 +202,6 @@ class TestDismantleOneBatch(unittest.TestCase):
         task = make_task()
         # 网格有物品，快捷放入后检测到筛选面板并保存。
         task._no_item_left = MagicMock(return_value=False)
-        task.wait_click_ocr = MagicMock(return_value=MagicMock())
         task.wait_feature = MagicMock(return_value=MagicMock())
         task.wait_click_feature = MagicMock(return_value=True)
         task._confirm_dismantle = MagicMock(return_value=True)
@@ -291,7 +281,7 @@ class TestApplyFilter(unittest.TestCase):
 class TestConfirmDismantle(unittest.TestCase):
     """空列表、分解按钮及确认弹窗的结束与失败路径。"""
 
-    def test_dismantle_button_disabled_is_end(self):
+    def test_empty_list_is_end(self):
         task = make_task()
         task._no_item_left = MagicMock(return_value=True)
         self.assertFalse(task._confirm_dismantle())
