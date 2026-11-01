@@ -1,5 +1,3 @@
 {
-  "track": {"zh_CN": {"pattern": "开始追踪"}, "zh_TW": {"pattern": "開始追蹤"}},
-  "tool_wheel": {"zh_CN": {"pattern": "选择工具|松开确认"}, "zh_TW": {"pattern": "選擇工具|鬆開確認"}},
-  "camera_tool": {"zh_CN": {"string": "拍照"}, "zh_TW": {"string": "拍照"}}
+  "track": {"zh_CN": {"pattern": "开始追踪"}, "zh_TW": {"pattern": "開始追蹤"}}
 }

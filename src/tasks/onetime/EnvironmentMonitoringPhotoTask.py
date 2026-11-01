@@ -1,4 +1,3 @@
-from ok import TaskDisabledException  # 诊断异常不能吞掉用户停止请求
 from ok.util.color import calculate_color_percentage  # 复用颜色占比排除灰白色圆勾
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
@@ -58,30 +57,11 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
         self._require_input_focus()  # 轮盘悬停使用真实光标
         tool_key = self._resolve_config_key("r", "common")  # 遵循快捷工具键设置
         self.send_key_down(tool_key)  # 长按打开工具轮盘
-        try:  # 无论识别成功与否均释放工具键
-            if not self.wait_ocr(
-                match=self.lang.environment_monitoring.tool_wheel,
-                box=self.box_of_screen(0.4, 0.43, 0.6, 0.56),
-                time_out=3,
-            ):  # 通用圆周颜色会误中菜单，中央选择或松开提示确认轮盘已展开
-                try:  # 错误现场采集失败不能覆盖实际流程错误
-                    self.log_info("[environment-monitoring] tool-wheel-missing")  # 固定诊断消息不再扫描整屏文字
-                    self.screenshot(
-                        "environment-monitoring-tool-wheel-missing", frame=self.frame
-                    )  # 松开按键前保存错误现场
-                except TaskDisabledException:  # 用户停止仍优先传播
-                    raise  # 外层 finally 负责释放工具键
-                except Exception:  # 诊断失败不影响轮盘未打开的判断
-                    pass  # 保留下面的业务错误
-                raise RuntimeError("快捷工具轮盘未打开")  # 不在大世界盲移光标
+        try:  # 中止或异常也要释放工具键
+            self.sleep(1)  # 长按工具键等待轮盘展开
             self._require_input_focus()  # 真实光标移动前再次检查目标窗口
             self.smooth_drag((0.5, 0.5), (0.396, 0.312), duration=0.3)  # 实测左上相机位置；此接口仅移动光标，不按鼠标
-            if not self.wait_ocr(
-                match=self.lang.environment_monitoring.camera_tool,
-                box=self.box_of_screen(0.4, 0.43, 0.6, 0.56),
-                time_out=3,
-            ):  # 高亮只说明某工具被选中，拍照文字才能确认相机身份
-                raise RuntimeError("工具轮盘未选中相机")  # 禁止激活未知工具
+            self.sleep(0.2)  # 等待轮盘处理悬停位置后再松开
         finally:  # 不留下长按状态
             self.send_key_up(tool_key)  # 松开确认工具选择
         if not self.wait_until(
@@ -90,7 +70,7 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
             self._require_input_focus()  # 确认短按可送达
             self.press_key("r", down_time=0.15)  # 装备完成后再短按进入相机
             if not self.wait_until(self._camera_open, time_out=5, raise_if_not_found=False):  # 短按后验证相机双模板
-                raise RuntimeError("相机工具已选择，但未进入拍照界面")  # 不将装备图标误判为相机打开
+                raise RuntimeError("未进入拍照界面")  # 不将固定输入当作成功打开相机
 
     def photo_condition_met(self, frame=None):  # 仅检查相机界面与条件圆勾
         frame = self.frame if frame is None else frame  # 固定相机布局和圆勾所用截图

@@ -374,12 +374,6 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     track: re.Pattern[str]
     """开始追踪"""
 
-    tool_wheel: re.Pattern[str]
-    """选择工具|松开确认"""
-
-    camera_tool: str
-    """拍照"""
-
 
 class GameFlowMixinModule(_LangModuleBaseT):
     """game_flow_mixin — OCR 语言节点（值取自 zh_CN）"""

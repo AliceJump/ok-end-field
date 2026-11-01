@@ -1,6 +1,5 @@
 """Camera preparation must release held inputs and never take or submit a photo."""
 
-import re
 import tempfile
 import unittest
 from types import SimpleNamespace
@@ -30,12 +29,6 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def task(self):
         task = Mock()
-        task.lang = SimpleNamespace(
-            environment_monitoring=SimpleNamespace(
-                tool_wheel=re.compile("选择工具|松开确认"),
-                camera_tool="拍照",
-            ),
-        )
         task.box = SimpleNamespace(right=Box(960, 0, 960, 1080))
         task.box_of_screen.side_effect = lambda x1, y1, x2, y2: Box(
             round(task.frame.shape[1] * x1),
@@ -44,7 +37,6 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             round(task.frame.shape[0] * (y2 - y1)),
         )
         task.ocr.return_value = []
-        task.wait_ocr.return_value = [Box(1500, 800, 150, 40)]
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
         task.next_frame.side_effect = lambda: task.frame
@@ -71,68 +63,28 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.send_key_down.assert_not_called()
         task.sleep.assert_not_called()
 
-    def test_missing_wheel_releases_tool_without_cursor_move_or_short_press(self):
+    def test_fixed_tool_selection_holds_key_through_hover_without_ocr(self):
         task = self.task()
-        task.wait_ocr.return_value = []
-        diagnostics = Mock()
-        diagnostics.attach_mock(task.screenshot, "capture")
-        diagnostics.attach_mock(task.send_key_up, "release")
-        with self.assertRaisesRegex(RuntimeError, "轮盘未打开"):
-            EnvironmentMonitoringPhotoTask.open_camera(task)
-        task.send_key_down.assert_called_once_with("f6")
-        task.send_key_up.assert_called_once_with("f6")
-        task.smooth_drag.assert_not_called()
-        task.press_key.assert_not_called()
-        task.log_info.assert_called_once()
-        self.assertEqual(diagnostics.mock_calls[0].args, ("environment-monitoring-tool-wheel-missing",))
-        self.assertIs(diagnostics.mock_calls[0].kwargs["frame"], task.frame)
-        self.assertEqual(diagnostics.mock_calls[1], call.release("f6"))
-
-    def test_failed_diagnostics_preserve_wheel_error_and_release_tool_key(self):
-        for diagnostic in ("log_info", "screenshot"):
-            with self.subTest(diagnostic=diagnostic):
-                task = self.task()
-                task.wait_ocr.return_value = []
-                getattr(task, diagnostic).side_effect = RuntimeError("diagnostic failed")
-                with self.assertRaisesRegex(RuntimeError, "快捷工具轮盘未打开"):
-                    EnvironmentMonitoringPhotoTask.open_camera(task)
-                task.send_key_up.assert_called_once_with("f6")
-                task.smooth_drag.assert_not_called()
-                task.press_key.assert_not_called()
-                task.ocr.assert_not_called()
-
-    def test_cancellation_during_diagnostics_is_propagated_and_releases_tool_key(self):
-        task = self.task()
-        task.wait_ocr.return_value = []
-        task.screenshot.side_effect = TaskDisabledException()
-        with self.assertRaises(TaskDisabledException):
-            EnvironmentMonitoringPhotoTask.open_camera(task)
-        task.send_key_up.assert_called_once_with("f6")
-        task.press_key.assert_not_called()
-
-    def test_hover_without_camera_label_releases_tool_without_activating_it(self):
-        task = self.task()
-        task.wait_ocr.side_effect = [[Box(700, 500, 100, 30)], []]
-        with self.assertRaisesRegex(RuntimeError, "未选中相机"):
-            EnvironmentMonitoringPhotoTask.open_camera(task)
-        task.smooth_drag.assert_called_once()
-        task.send_key_up.assert_called_once_with("f6")
-        task.press_key.assert_not_called()
-
-    def test_wheel_gate_is_scoped_to_center_and_camera_identity_is_checked_after_hover(self):
-        task = self.task()
+        events = Mock()
+        for method in ("send_key_down", "sleep", "smooth_drag", "send_key_up"):
+            events.attach_mock(getattr(task, method), method)
         EnvironmentMonitoringPhotoTask.open_camera(task)
-        wheel_gate, identity_gate = task.wait_ocr.call_args_list
-        self.assertEqual(wheel_gate.kwargs["match"], task.lang.environment_monitoring.tool_wheel)
-        self.assertRegex("松开确认", wheel_gate.kwargs["match"])
-        self.assertEqual(identity_gate.kwargs["match"], task.lang.environment_monitoring.camera_tool)
-        for detection in (wheel_gate, identity_gate):
-            area = detection.kwargs["box"]
-            self.assertEqual((area.x, area.y, area.width, area.height), (768, 464, 384, 140))
+        self.assertEqual(
+            events.mock_calls,
+            [
+                call.send_key_down("f6"),
+                call.sleep(1),
+                call.smooth_drag((0.5, 0.5), (0.396, 0.312), duration=0.3),
+                call.sleep(0.2),
+                call.send_key_up("f6"),
+            ],
+        )
+        task.wait_ocr.assert_not_called()
+        task.ocr.assert_not_called()
 
     def test_tool_selection_cancellation_and_drag_failure_release_tool(self):
         for failing_method, error in (
-            ("wait_ocr", TaskDisabledException()),
+            ("sleep", TaskDisabledException()),
             ("smooth_drag", RuntimeError("drag interrupted")),
         ):
             with self.subTest(failing_method=failing_method):
