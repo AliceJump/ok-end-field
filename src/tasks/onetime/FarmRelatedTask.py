@@ -6,9 +6,9 @@ from qfluentwidgets import FluentIcon
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
 from src.icons import Icons
+from src.tasks.daily.daily_feature import DailyFeature
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.tasks.daily.daily_feature import DailyFeature
 from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 
