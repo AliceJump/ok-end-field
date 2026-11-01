@@ -29,53 +29,90 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         self.ensure_main()  # 复用主界面恢复
         if not self.to_model_area("武陵"):  # 复用地区建设区域选择
             raise RuntimeError("无法进入武陵地区建设")  # 明确入口失败
-        if not self.wait_click_ocr(
-            match=self.lang.environment_monitoring.entry, box=self.box.right, time_out=5
-        ):  # 识别实际入口
-            raise RuntimeError("未找到环境监测入口")  # 不继续点击未知页面
-        if not self.wait_ocr(
-            match=self.lang.environment_monitoring.page, box=self.box.top_left, time_out=5
-        ):  # 验证环境监测页
-            raise RuntimeError("未进入环境监测终端列表")  # 不把点击成功视为进入成功
+        if not self.wait_ui_stable():  # 固定入口坐标只在概览入场结束后使用
+            raise RuntimeError("地区建设页面未稳定")  # 不点击过渡画面
+        if not self.find_one(fL.transaction_overview):  # 稳定等待期间页面可能变化，首点前也重新核对概览
+            raise RuntimeError("未处于地区建设概览")  # 不在未知页面点击固定入口
+        self.click_relative(1252 / 1920, 673 / 1080)  # 多次 1080p 成功入口日志的位置换算，其他布局尚未实测
+        if not self.wait_until(self._monitoring_page, time_out=5, raise_if_not_found=False):  # 后置验证固定入口点击
+            if not self.find_one(fL.transaction_overview):  # 未进入且已离开概览时禁止在未知子页继续点
+                raise RuntimeError("未进入环境监测终端列表")
+            if not self.wait_click_ocr(
+                match=self.lang.environment_monitoring.entry, box=self.box.right, time_out=5
+            ):  # 仅固定入口位置未生效且仍在概览时，用文字兼容尚未实测的布局
+                raise RuntimeError("未找到环境监测入口")
+            if not self.wait_until(self._monitoring_page, time_out=5, raise_if_not_found=False):
+                raise RuntimeError("未进入环境监测终端列表")  # 兜底点击也必须通过页面验证
         if not self.wait_ui_stable():  # 等待卡片入场完成
             raise RuntimeError("环境监测页面未稳定")  # 超时不扫描过渡画面
 
-    def _terminal_selected(self, matcher):  # 验证终端标签的白色选中背景
+    def _terminal_area(self, matcher):  # 两个终端顺序固定，空白区兼作点击和选中检测区域
         left = (
             0.27 if matcher.pattern == self.lang.environment_monitoring.marker_stone.pattern else 0.06
         )  # 实测两标签的空白区
         height, width = self.frame.shape[:2]  # 使用当前帧尺寸
         x, y = int(width * left), int(height * 0.145)  # 保持原裁剪的向下取整边界
-        area = Box(x, y, int(width * (left + 0.07)) - x, int(height * 0.16) - y)  # 避开文字与等级数字
+        return Box(x, y, int(width * (left + 0.07)) - x, int(height * 0.16) - y)  # 避开文字与等级数字
+
+    def _terminal_selected(self, matcher):  # 验证终端标签的白色选中背景
         white = dict.fromkeys(("r", "g", "b"), (186, 255))  # 严格保留各通道大于 185 的边界
-        return self.calculate_color_percentage(white, area) > 0.7  # 复用颜色统计，只有当前选中标签呈白底
+        return self.calculate_color_percentage(white, self._terminal_area(matcher)) > 0.7  # 只有当前选中标签呈白底
+
+    def _monitoring_page(self):  # 组合控件位置和终端配色，不能只用通用按键模板认定页面
+        if not self.find_one(fL.q, box=self.box_of_screen(0.025, 0.12, 0.046, 0.155), use_gray_scale=True):
+            return False  # 左侧终端切换键必须存在
+        if not self.find_one(fL.e, box=self.box_of_screen(0.45, 0.12, 0.47, 0.155), use_gray_scale=True):
+            return False  # 右侧终端切换键必须存在
+        cyan = {"r": (0, 90), "g": (130, 240), "b": (130, 240)}  # 两个终端均有青色侧条
+        for left in (0.046, 0.25):  # 限定已验证的两条竖线位置
+            if self.calculate_color_percentage(cyan, self.box_of_screen(left, 0.105, left + 0.003, 0.167)) <= 0.7:
+                return False  # 避免其他菜单的 Q/E 控件误判
+        terminals = (self.lang.environment_monitoring.outskirts, self.lang.environment_monitoring.marker_stone)
+        return sum(self._terminal_selected(terminal) for terminal in terminals) == 1  # 黑屏、双白底和未知状态均拒绝
 
     def select_terminal(self, matcher):  # 两个终端共用切换逻辑
         for _ in range(2):  # 有界重试被动画吞掉的点击
-            if not self.wait_click_ocr(match=matcher, box=self.box.top, time_out=4):  # 根据本地化名称选择终端
-                raise RuntimeError("未找到环境监测终端")  # 终端缺失不假装无任务
+            if not self._monitoring_page():  # 每次重试都核对页面，避免等待期间已离开终端页
+                raise RuntimeError("未进入环境监测终端列表")  # 固定坐标只能在已确认的终端页使用
+            if not self._terminal_selected(matcher):  # 已选中时无需重复点击或识别终端名称
+                self.click(self._terminal_area(matcher))  # 点击对应标签内已验证的固定空白区
+                if not self.wait_until(lambda: self._terminal_selected(matcher), time_out=3, raise_if_not_found=False):
+                    continue  # 等待点击生效后再检查稳定状态
             if (
-                self.wait_until(lambda: self._terminal_selected(matcher), time_out=3, raise_if_not_found=False)
-                and self.wait_ui_stable()
+                self.wait_ui_stable() and self._monitoring_page() and self._terminal_selected(matcher)
             ):  # 验证实际选中并等待对应卡片稳定
                 return  # 选中与稳定均确认后才扫描
         raise RuntimeError("环境监测终端切换未完成")  # 不将旧终端卡片当成新终端
 
+    def _observation_action(self, area):  # 仅在已确认终端页的卡片底部区分黄色接取、白色前往和无按钮
+        sample = Box(
+            area.x + int(area.width * 0.36),
+            area.y + int(area.height * 0.2),
+            int(area.width * 0.25),
+            int(area.height * 0.6),
+        )  # 中部空白避开左侧箭头装饰和右侧按钮文字
+        yellow = {"r": (210, 255), "g": (200, 255), "b": (0, 90)}  # 已保存接取截图的亮黄背景
+        if self.calculate_color_percentage(yellow, sample) > 0.9:
+            return "accept"  # 接取按钮可以点一次等待白底
+        if self.calculate_color_percentage(dict.fromkeys(("r", "g", "b"), (220, 255)), sample) > 0.9:
+            return "go"  # 已保存前往截图的近白背景，灰色或已收录卡片不通过
+        return None  # 过渡、暗色和未知按钮均不可操作
+
     def available_observations(self):  # 从当前终端的三张卡片读取可执行委托
         observations = []  # 只记录有操作按钮的卡片
+        titles_on_page = None  # 没有可操作卡片时无需 OCR，同一稳定页的标题最多读取一次
         for index in range(3):  # 当前界面实测固定三列
             left = 0.049 + index * 0.304  # 根据 1920x1080 实测截图估计卡片左边界
             right = min(left + 0.293, 0.96)  # 根据实测截图估计卡片右边界
             title_box = self.box_of_screen(left, 0.285, right, 0.335)  # 仅标题起点范围，排除下面的拍摄说明
             action_box = self.box_of_screen(left, 0.85, right, 0.925)  # 仅本卡片底部操作区
-            actions = self.ocr(
-                match=[self.lang.environment_monitoring.accept, self.lang.environment_monitoring.go], box=action_box
-            )  # 已收录卡片无此按钮
-            if not actions:  # 跳过无可执行动作的卡片
+            if not self._observation_action(action_box):  # 已收录卡片没有黄或白底按钮
                 continue  # 不接取已完成观察点
+            if titles_on_page is None:  # 观察点会轮换且可由用户指定，图标和颜色不能证明具体身份
+                titles_on_page = self.ocr()  # 为本页可操作卡片复用同一次完整标题识别
             titles = [
                 item
-                for item in self.ocr()
+                for item in titles_on_page
                 if title_box.x <= item.x < title_box.x + title_box.width
                 and title_box.y <= item.y < title_box.y + title_box.height
             ]  # 整帧识别后按卡片定位，避免紧裁剪漏掉引号后的小字
@@ -86,17 +123,22 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
 
     def enter_observation(self, observation):  # 接取或继续指定卡片
         area = observation["action_box"]  # 始终局限于目标卡片
-        accept = self.ocr(match=self.lang.environment_monitoring.accept, box=area)  # 判断是否还需接取
-        if accept:  # 仅未接取时点击一次
-            self.click(accept[0])  # 不循环重复接取
-        if not self.wait_click_ocr(
-            match=self.lang.environment_monitoring.go, box=area, time_out=5, recheck_time=0.3
-        ):  # 等待接取后变为前往任务
+        if not self._monitoring_page():  # 颜色本身不具备页面身份，点击前再确认终端页
+            raise RuntimeError("未进入环境监测终端列表")  # 禁止在其他页面按颜色点击
+        if self._observation_action(area) == "accept":  # 仅未接取时点击一次
+            self.click(area)  # 使用目标卡片内按钮区域
+        if not self.wait_until(
+            lambda: self._monitoring_page() and self._observation_action(area) == "go",
+            time_out=5,
+            settle_time=0.3,
+            raise_if_not_found=False,
+        ):  # 等待本卡片白底前往按钮稳定出现
             raise RuntimeError("未找到目标委托的前往任务按钮")  # 停止而不是点其他卡片
+        self.click(area)  # 状态确认后只点击本卡片
         title = self.normalize_title(observation["name"])  # 去掉装饰性引号
         if not self.wait_ocr(
             match=re.compile(re.escape(title)), box=self.box_of_screen(0.32, 0.075, 0.97, 0.16), time_out=5
-        ):  # 实测任务详情标题从屏幕约三分之一处开始
+        ):  # 定位图标只能证明任务面板，动态标题文字才可确认进入的是所选观察点
             raise RuntimeError("任务详情与所选观察点不一致")  # 防止传送至错误任务
         if not self.wait_ui_stable():  # 追踪按钮入场稳定后再操作
             raise RuntimeError("环境监测任务详情未稳定")  # 禁止点击过渡画面
@@ -109,14 +151,22 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         return self.find_one(fL.one_task_to_map, box=self.box.bottom_right)  # 返回定位按钮，绝不点击停止追踪
 
     def transfer_observation(self):  # 正确处理未追踪与已追踪两条入口
-        track = self.ocr(match=self.lang.environment_monitoring.track, box=self.box.bottom_right)  # 只匹配开始追踪
-        if track:  # 首次追踪会自动打开任务地图
-            self.click(track[0])  # 使用识别位置
-        else:  # 已追踪时需要点击地图定位按钮
-            locator = self.wait_until(self._tracked_map_locator, time_out=4, raise_if_not_found=False)  # 等待双模板就绪
-            if not locator:  # 不把识别失败或单个通用图标当成已追踪
-                raise RuntimeError("无法确认环境监测任务追踪状态")  # 保留错误现场
+        locator = self._tracked_map_locator()  # 已追踪的常见路径先用已验证双模板，不重复 OCR
+        if locator:
             self.click(locator)  # 点击同一帧已确认的地图定位按钮
+        else:
+            track_area = self.box_of_screen(0.81, 0.89, 0.98, 0.95)  # 仅限详情面板的追踪按钮
+            track = self.find_one(fL.start_follow, box=track_area)  # 沿用默认阈值，实际命中才点击
+            if not track:  # 缺少环境监测未追踪正例，尚不能证明现有追踪模板覆盖此按钮，文字仅作兜底
+                tracks = self.ocr(match=self.lang.environment_monitoring.track, box=track_area)
+                track = tracks[0] if tracks else None
+            if track:
+                self.click(track)  # 首次追踪会自动打开任务地图
+            else:
+                locator = self.wait_until(self._tracked_map_locator, time_out=4, raise_if_not_found=False)
+                if not locator:
+                    raise RuntimeError("无法确认环境监测任务追踪状态")  # 不把识别失败或单个通用图标当成已追踪
+                self.click(locator)  # 允许追踪状态稍迟出现，但仍只点击定位图标
         if not self.wait_feature(
             fL.in_map, box=self.box_of_screen(0.027, 0.531, 0.051, 0.896), time_out=10, raise_if_not_found=False
         ):  # 验证地图已打开

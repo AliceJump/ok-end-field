@@ -374,35 +374,20 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     entry: re.Pattern[str]
     """环境监测"""
 
-    page: re.Pattern[str]
-    """环境监测终端"""
-
     outskirts: re.Pattern[str]
     """城郊监测终端"""
 
     marker_stone: re.Pattern[str]
     """首[墩塾]监测终端"""
 
-    accept: re.Pattern[str]
-    """接取委托"""
-
-    go: re.Pattern[str]
-    """前往任务"""
-
     track: re.Pattern[str]
     """开始追踪"""
-
-    industrial: re.Pattern[str]
-    """工业"""
 
     tool_wheel: re.Pattern[str]
     """选择工具|松开确认"""
 
     camera_tool: re.Pattern[str]
     """^拍照$"""
-
-    camera_exit: re.Pattern[str]
-    """退出拍照"""
 
     pool_lotus_photo: re.Pattern[str]
     """拍摄.*小池荷"""

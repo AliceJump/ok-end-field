@@ -1,14 +1,9 @@
 {
   "entry": {"zh_CN": {"pattern": "环境监测"}, "zh_TW": {"pattern": "環境監測"}},
-  "page": {"zh_CN": {"pattern": "环境监测终端"}, "zh_TW": {"pattern": "環境監測終端"}},
   "outskirts": {"zh_CN": {"pattern": "城郊监测终端"}, "zh_TW": {"pattern": "城郊監測終端"}},
   "marker_stone": {"zh_CN": {"pattern": "首[墩塾]监测终端"}, "zh_TW": {"pattern": "首[墩塾]監測終端"}},
-  "accept": {"zh_CN": {"pattern": "接取委托"}, "zh_TW": {"pattern": "接取委託"}},
-  "go": {"zh_CN": {"pattern": "前往任务"}, "zh_TW": {"pattern": "前往任務"}},
   "track": {"zh_CN": {"pattern": "开始追踪"}, "zh_TW": {"pattern": "開始追蹤"}},
-  "industrial": {"zh_CN": {"pattern": "工业"}, "zh_TW": {"pattern": "工業"}},
   "tool_wheel": {"zh_CN": {"pattern": "选择工具|松开确认"}, "zh_TW": {"pattern": "選擇工具|鬆開確認"}},
   "camera_tool": {"zh_CN": {"pattern": "^拍照$"}, "zh_TW": {"pattern": "^拍照$"}},
-  "camera_exit": {"zh_CN": {"pattern": "退出拍照"}, "zh_TW": {"pattern": "退出拍照"}},
   "pool_lotus_photo": {"zh_CN": {"pattern": "拍摄.*小池荷"}, "zh_TW": {"pattern": "拍攝.*小池荷"}}
 }
