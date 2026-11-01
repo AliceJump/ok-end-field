@@ -368,6 +368,49 @@ class DeliveryTaskModule(_LangModuleBaseT):
     """交货"""
 
 
+class EnvironmentMonitoringModule(_LangModuleBaseT):
+    """environment_monitoring — OCR 语言节点（值取自 zh_CN）"""
+
+    entry: re.Pattern[str]
+    """环境监测"""
+
+    page: re.Pattern[str]
+    """环境监测终端"""
+
+    outskirts: re.Pattern[str]
+    """城郊监测终端"""
+
+    marker_stone: re.Pattern[str]
+    """首[墩塾]监测终端"""
+
+    accept: re.Pattern[str]
+    """接取委托"""
+
+    go: re.Pattern[str]
+    """前往任务"""
+
+    track: re.Pattern[str]
+    """开始追踪"""
+
+    tracked: re.Pattern[str]
+    """停止追踪|取消追踪|正在追踪|已追踪"""
+
+    industrial: re.Pattern[str]
+    """工业"""
+
+    tool_wheel: re.Pattern[str]
+    """选择工具|松开确认"""
+
+    camera_tool: re.Pattern[str]
+    """^拍照$"""
+
+    camera_exit: re.Pattern[str]
+    """退出拍照"""
+
+    pool_lotus_photo: re.Pattern[str]
+    """拍摄.*小池荷"""
+
+
 class GameFlowMixinModule(_LangModuleBaseT):
     """game_flow_mixin — OCR 语言节点（值取自 zh_CN）"""
 
@@ -754,6 +797,7 @@ class _LangAccessorTyped:
     daily_shop_mixin: DailyShopMixinModule
     daily_trade_mixin: DailyTradeMixinModule
     DeliveryTask: DeliveryTaskModule
+    environment_monitoring: EnvironmentMonitoringModule
     game_flow_mixin: GameFlowMixinModule
     liaison_mixin: LiaisonMixinModule
     login_mixin: LoginMixinModule

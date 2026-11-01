@@ -163,6 +163,8 @@ config = {
         ["src.tasks.test.ZipLineReplayDebugTask", "ZipLineReplayDebugTask"],
         ["src.tasks.test.GatherNavigationTestTask", "GatherNavigationTestTask"],
         ["src.tasks.test.LiaisonAlignmentTestTask", "LiaisonAlignmentTestTask"],
+        ["src.tasks.onetime.EnvironmentMonitoringEntryTask", "EnvironmentMonitoringEntryTask"],
+        ["src.tasks.onetime.EnvironmentMonitoringPhotoTask", "EnvironmentMonitoringPhotoTask"],
         ["src.tasks.test.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
         ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],
