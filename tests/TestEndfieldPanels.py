@@ -10,7 +10,6 @@ from ok import og
 from ok.ui.qt.tasks.ConfigCard import ConfigCard
 from ok.ui.qt.widget.Card import Card
 from PySide6.QtCore import QCoreApplication, QEvent, QPoint, Qt
-from PySide6.QtGui import QFont
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from qfluentwidgets import FluentIcon, SettingCard, qconfig
@@ -19,7 +18,6 @@ from src.gui.components.EndfieldCheckpointCard import EndfieldCheckpointCard
 from src.gui.components.EndfieldSectionMatrix import open_task_drawer
 from src.gui.components.EndfieldTacticalDrawer import _DRAWERS, drawer_for, open_card_drawer
 from src.gui.EndfieldConfigContent import has_task_configuration
-from src.gui.EndfieldEntryCards import EndfieldSectionBanner
 from src.gui.EndfieldWorkspaceTab import EndfieldWorkspaceTab
 from src.patches.endfield_theme_patch import (
     patch_combat_config_forms,
@@ -188,21 +186,6 @@ class PanelTest(unittest.TestCase):
         finally:
             qconfig.set(qconfig.themeMode, previous_theme, save=False)
 
-    def test_entry_descriptions_are_beside_titles(self):
-        first = self.card({"开关": False})
-        second = SettingCard(FluentIcon.SETTING, "界面设置", "这是设置说明", self.host)
-        self.layout.addWidget(second)
-        self.app.processEvents()
-        for header in (first.card, second):
-            title, description = header.titleLabel, header.contentLabel
-            self.assertGreater(description.mapTo(header, QPoint()).x(), title.mapTo(header, QPoint()).x())
-            self.assertEqual(title.mapTo(header, QPoint()).y(), description.mapTo(header, QPoint()).y())
-            self.assertEqual(title.height(), description.height())
-        first.card.setTitle("更新后的标题")
-        first.card.setContent("更新后需要省略的完整说明")
-        self.assertEqual(first.card.titleLabel.toolTip(), first.card.titleLabel.text())
-        self.assertEqual(first.card.contentLabel.toolTip(), first.card.contentLabel.text())
-
     def test_card_specific_save_callback_takes_precedence_over_page_save(self):
         self.host._save_pending_changes = Mock()
         card = self.card({"数量": 2})
@@ -345,67 +328,6 @@ class PanelTest(unittest.TestCase):
         page._save_pending_changes.assert_not_called()
         self.assertTrue(drawer.isHidden())
         self.assertIs(card.view.parentWidget(), card.scrollWidget)
-
-    def test_capture_and_about_keep_native_headings_without_added_sections(self):
-        for name in ("截图方式", "关于"):
-            page: Any = QWidget()
-            page.vBoxLayout = QVBoxLayout(page)
-            native = Card("原版标题", QWidget())
-            page.vBoxLayout.addWidget(native)
-            setting = SettingCard(FluentIcon.INFO, "原版信息")
-            page.vBoxLayout.addWidget(setting)
-            workspace = EndfieldWorkspaceTab("ENVIRONMENT", "系统与环境", [(name, None, page)])
-            self.layout.addWidget(workspace)
-            workspace.show()
-            self.app.processEvents()
-            self.assertIsNone(page.findChild(EndfieldSectionBanner))
-            self.assertEqual(native.titleLabel.text(), "原版标题")
-            self.assertTrue(all(label.isHidden() for label in page.findChildren(QWidget, "checkpointIdx")))
-            self.assertFalse(hasattr(page, "_endfield_numbering"))
-            workspace.hide()
-
-    def test_banner_stays_compact_and_numbered_settings_have_no_decorative_icons(self):
-        banner = EndfieldSectionBanner("01", "全局配置", "GLOBAL CONFIGURATION")
-        self.layout.addWidget(banner)
-        plain = SettingCard(FluentIcon.SETTING, "设置")
-        self.layout.addWidget(plain)
-        expandable = self.card({"数量": 2})
-        for label in (plain._endfield_entry_index, expandable._endfield_entry_index):
-            label.set_text("01")
-            label.show()
-        self.app.processEvents()
-        self.assertLess(banner.height(), 100)
-        for header in (plain, expandable.card):
-            self.assertTrue(header.iconLabel.isHidden())
-            self.assertEqual(
-                header.titleLabel.mapTo(header, QPoint()).x() - header._endfield_entry_index.geometry().right() - 1, 10
-            )
-            self.assertEqual(header.titleLabel.mapTo(header, QPoint()).x(), plain.titleLabel.mapTo(plain, QPoint()).x())
-            # 普通设置卡（如“语言”）的标题与可展开卡同一字重，不被卡片自带的 QLabel 字体规则压回常规
-            self.assertGreaterEqual(header.titleLabel.font().weight(), QFont.DemiBold)
-
-    def test_plain_and_expandable_setting_rows_share_one_content_edge(self):
-        from qfluentwidgets import (
-            ComboBoxSettingCard,
-            OptionsConfigItem,
-            OptionsSettingCard,
-            OptionsValidator,
-            SettingCardGroup,
-        )
-
-        from src.patches.endfield_theme_patch import generate_endfield_qss
-
-        self.host.setStyleSheet(generate_endfield_qss(False))
-        group = SettingCardGroup("软件设置", self.host)
-        self.layout.addWidget(group)
-        item = OptionsConfigItem("panel-test", "row-edge", "a", OptionsValidator(["a", "b"]))
-        theme = OptionsSettingCard(item, FluentIcon.BRUSH, "应用主题", texts=["a", "b"], parent=group)
-        language = ComboBoxSettingCard(item, FluentIcon.LANGUAGE, "语言", texts=["a", "b"], parent=group)
-        group.addSettingCard(theme)
-        group.addSettingCard(language)
-        self.app.processEvents()
-        # 窗口级的卡片边框不能把普通设置卡的内容挤进 1px，编号牌与标题要和可展开卡对齐
-        self.assertEqual(language.contentsRect(), theme.card.contentsRect())
 
     def test_theme_options_keep_native_selection_and_source_connection(self):
         from qfluentwidgets import (

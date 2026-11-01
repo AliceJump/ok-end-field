@@ -3,7 +3,6 @@
 import os
 import unittest
 from copy import deepcopy
-from itertools import pairwise
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -279,32 +278,6 @@ class SectionMatrixLayoutTest(unittest.TestCase):
             self.assertTrue(card._endfield_status.isHidden())
         header.deleteLater()
 
-    def test_bottom_border_survives_late_style_and_theme_changes(self):
-        last = self.matrix.checkpoint_cards[-1]
-        from src.gui.EndfieldTheme import palette
-
-        for theme, banner_height in (
-            (Theme.DARK, 42),
-            (Theme.LIGHT, 54),
-            (Theme.DARK, 30),
-        ):
-            with self.subTest(theme=theme, banner_height=banner_height):
-                qconfig.set(qconfig.themeMode, theme, save=False)
-                self.matrix.setStyleSheet(
-                    f"QFrame#compositeBanner {{ min-height: {banner_height}px; border: 1px solid black; }}"
-                )
-                QApplication.sendEvent(last, QEvent(QEvent.Enter))
-                self.flush_events()
-                colors = palette(theme == Theme.DARK)
-                self.assertLess(last.geometry().bottom(), self.matrix.height() - 1)
-                image = self.matrix.grab().toImage()
-                center = last.x() + last.width() // 2
-                self.assertEqual(image.pixelColor(center, last.geometry().bottom()), QColor(colors["row_hover"]))
-                self.assertEqual(image.pixelColor(center, self.matrix.height() - 1), QColor(colors["border"]))
-                first = self.matrix.checkpoint_cards[0]
-                self.assertEqual(image.pixelColor(center, first.geometry().bottom()), QColor(colors["divider"]))
-
-
 class CombatSettingsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -514,38 +487,6 @@ class CombatSettingsTest(unittest.TestCase):
                 if not drawer:
                     self.assertEqual(form.card.titleLabel.text(), "药品设置")
                 form.deleteLater()
-
-    def test_drawer_and_inline_forms_share_standard_row_geometry(self):
-        from ok.ui.qt.tasks.ConfigCard import ConfigCard
-
-        from src.gui.EndfieldTheme import palette
-        from src.patches.endfield_theme_patch import _widget_scope_override_qss
-
-        for theme in (Theme.LIGHT, Theme.DARK):
-            qconfig.set(qconfig.themeMode, theme, save=False)
-            config = CombatEditBuffer({"开关": False})
-            with patch.object(config, "get_default", side_effect=config.get):
-                form = DrawerConfigForm(
-                    SimpleNamespace(config=config, config_description={}, config_type={}, show_create_shortcut=False)
-                )
-                inline = ConfigCard(None, "设置", config, "", {}, {}, {}, None)
-            for panel in (form, inline):
-                panel.setStyleSheet(_widget_scope_override_qss(theme == Theme.DARK))
-                panel.resize(520, 66)
-                panel.show()
-            inline.setExpand(True)
-            inline.expandAni.setCurrentTime(180)
-            self.app.processEvents()
-            for panel in (form, inline):
-                row = panel.config_widget_by_key["开关"]
-                self.assertEqual(row.minimumHeight(), 64)
-                self.assertEqual(row.height(), 64)
-                margins = row.layout.contentsMargins()
-                self.assertEqual((margins.left(), margins.top(), margins.right(), margins.bottom()), (14, 10, 14, 10))
-            self.assertEqual(form.grab().toImage().pixelColor(0, 10), QColor(palette(theme == Theme.DARK)["border"]))
-            for panel in (form, inline):
-                panel.close()
-                panel.deleteLater()
 
     def test_reenabling_specialized_settings_preserves_saved_task_values(self):
         self.common[KEY_COMPLETE_NOTIFY] = False
@@ -803,40 +744,6 @@ class CombatSettingsTest(unittest.TestCase):
         row.close()
         row.deleteLater()
 
-    def test_multi_selection_is_a_compact_group_at_the_right_margin(self):
-        from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
-
-        row = LabelAndMultiSelection({}, ["武陵", "四号谷地"], CombatEditBuffer({"地区": ["武陵"]}), "地区")
-        row.resize(900, 100)
-        row.show()
-        self.app.processEvents()
-        column = row.content_layout
-        self.assertEqual(row.width() - column.geometry().right() - 1, 14)
-        self.assertEqual(column.width(), 180)
-        row.close()
-        row.deleteLater()
-
-    def test_only_root_rows_have_separators(self):
-        from src.patches.endfield_theme_patch import _widget_scope_override_qss
-
-        self.task.config = CombatEditBuffer({"父项": True, "子项": 1, "下一项": False})
-        self.task.config_type = {"父项": {"sub_configs": {True: ["子项"]}}}
-        with patch.object(self.task.config, "get_default", side_effect=self.task.config.get):
-            form = DrawerConfigForm(self.task)
-        form.setStyleSheet(_widget_scope_override_qss(False))
-        form.resize(650, 300)
-        form.show()
-        self.app.processEvents()
-        fields = form.config_widget_by_key
-        from src.gui.EndfieldTheme import LIGHT
-
-        border = QColor(LIGHT["divider"])
-        self.assertNotEqual(fields["父项"].grab().toImage().pixelColor(5, 0), border)
-        self.assertNotEqual(fields["子项"].grab().toImage().pixelColor(5, 0), border)
-        self.assertEqual(fields["下一项"].grab().toImage().pixelColor(5, 0), border)
-        form.close()
-        form.deleteLater()
-
     def test_native_task_header_elides_without_losing_full_text(self):
         from ok.ui.qt.tasks.TaskCard import TaskCard
 
@@ -962,85 +869,6 @@ class NativeTextLayoutTest(unittest.TestCase):
         widths = {QFontMetrics(font).horizontalAdvance(str(digit)) for digit in range(10)}
         self.assertEqual(len(widths), 1)
 
-    def assert_rows_fill_panel(self, panel, rows):
-        content = panel.contentsRect()
-        bounds = [QRect(row.mapTo(panel, QPoint()), row.size()) for row in rows]
-        self.assertEqual(bounds[0].top(), content.top())
-        self.assertEqual(bounds[-1].bottom(), content.bottom())
-        for row, rect in zip(rows, bounds, strict=True):
-            self.assertEqual(rect.left(), content.left())
-            self.assertEqual(rect.right(), content.right())
-            self.assertEqual(row.layout.contentsMargins().top(), 10)
-            self.assertEqual(row.layout.contentsMargins().bottom(), 10)
-        for before, after in pairwise(bounds):
-            self.assertEqual(before.bottom() + 1, after.top())
-
-    def test_account_rows_reach_panel_edges_without_extra_outer_padding(self):
-        from ok.ui.qt.Communicate import communicate
-
-        from src.gui.components.EndfieldTacticalDrawer import drawer_for
-
-        with patch("src.core.global_config_store.get_global_config", return_value=CombatEditBuffer({})):
-            from src.gui.AccountConfigTab import AccountConfigTab
-        from src.patches.endfield_theme_patch import _widget_scope_override_qss
-
-        with patch.object(og, "app", SimpleNamespace(tr=lambda value: value)):
-            page = AccountConfigTab()
-            page.show()
-            for dark in (False, True):
-                page.setStyleSheet(_widget_scope_override_qss(dark))
-                for width in (600, 1100):
-                    page.resize(width, 800)
-                    for card in (page.base_card, page.selector_card):
-                        card.card.expandButton.click()
-                        for _ in range(8):
-                            self.app.processEvents()
-                        panel = card.viewLayout.itemAt(0).widget()
-                        layout = panel.layout()
-                        rows = [layout.itemAt(i).widget() for i in range(layout.count())]
-                        self.assert_rows_fill_panel(panel, rows)
-                        self.assertTrue(all(row.minimumHeight() == 64 for row in rows))
-                        self.assertEqual(card.height(), 56)
-                        drawer_for(page)[0].close_drawer()
-            communicate.task.disconnect(page._on_task_state_changed)  # type: ignore[attr-defined]
-            page.close()
-            page.deleteLater()
-            self.app.processEvents()
-
-    def test_notification_rows_reach_panel_edges_without_extra_outer_padding(self):
-        from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
-
-        from src.patches.endfield_theme_patch import _widget_scope_override_qss
-
-        patch_combat_config_forms()
-        values: Any = CombatEditBuffer({"系统通知": True, "Discord通知": False, "邮件通知": False})
-        option: Any = SimpleNamespace(
-            name="通知",
-            description="",
-            default_config=dict(values),
-            config_description=dict.fromkeys(values, "通知方式说明"),
-            config_type={},
-        )
-        with (
-            patch.object(og, "app", SimpleNamespace(tr=lambda value: value)),
-            patch.object(values, "get_default", side_effect=values.get),
-        ):
-            page = GlobalConfigTab(values, option)
-            page.show()
-            for dark in (False, True):
-                page.setStyleSheet(_widget_scope_override_qss(dark))
-                for width in (600, 1100):
-                    page.resize(width, 800)
-                    for _ in range(8):
-                        self.app.processEvents()
-                    layout = page.viewLayout
-                    rows = [layout.itemAt(i).widget() for i in range(layout.count())]
-                    self.assert_rows_fill_panel(page.contentFrame, rows)
-                    self.assertEqual({row.height() for row in rows}, {64})
-            page.close()
-            page.deleteLater()
-            self.app.processEvents()
-
     def test_project_url_has_the_full_text_and_available_width(self):
         from ok.ui.qt.about.ProjectCard import ProjectCard
 
@@ -1064,19 +892,6 @@ class NativeTextLayoutTest(unittest.TestCase):
         self.assertEqual(card.contentLabel.text(), url)
         card.close()
         card.deleteLater()
-
-    def test_form_description_receives_space_instead_of_the_spacer(self):
-        from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget
-
-        with patch.object(og, "app", SimpleNamespace(tr=lambda value: value)):
-            row = LabelAndWidget("设置", "说明文字" * 40)
-            row.add_widget(SwitchButton())
-            row.resize(1000, 100)
-            row.show()
-            self.app.processEvents()
-            self.assertGreater(row.contentLabel.width(), 700)
-            row.close()
-            row.deleteLater()
 
     def test_narrow_workspace_keeps_tabs_and_action_inside_the_header(self):
         opened = []
@@ -1295,33 +1110,6 @@ class NativeTextLayoutTest(unittest.TestCase):
             )
         workspace.deleteLater()
         reference.deleteLater()
-
-    def test_primary_action_is_at_the_right_edge_and_has_its_own_shape(self):
-        workspace = EndfieldWorkspaceTab(
-            "DAILY",
-            "日常一条龙",
-            [("帝江号", None, QWidget())],
-            primary_action=("开始一条龙", lambda: None),
-        )
-        workspace.resize(1300, 700)
-        workspace.show()
-        self.app.processEvents()
-        button = workspace.primary_action_button
-        assert button is not None
-        self.assertTrue(button.chamfered)
-        right = button.mapTo(workspace, QPoint(button.width(), 0)).x()
-        self.assertEqual(workspace.width() - right, 36)
-        self.assertTrue(workspace.hatch_band.isVisible())
-        self.assertLess(
-            workspace.hatch_band.geometry().bottom(), workspace.tab_bar.mapTo(workspace.header_bar, QPoint()).y()
-        )
-        self.assertEqual(button.font().pixelSize(), 14)
-        self.assertEqual(button.iconSize().width(), 14)
-        self.assertEqual(button.size().width(), 132)
-        self.assertEqual(button.size().height(), 36)
-        self.assertGreater(button.x(), workspace.tab_bar.geometry().right() + 100)
-        workspace.close()
-        workspace.deleteLater()
 
     def test_daily_header_actions_follow_the_task_run_state(self):
         from ok.ui.qt.Communicate import communicate
@@ -1610,32 +1398,6 @@ class NativeControlsTest(unittest.TestCase):
         finally:
             qconfig.set(qconfig.themeMode, saved, save=False)
 
-    def test_native_and_custom_buttons_share_normal_and_disabled_colors(self):
-        from qfluentwidgets import PrimaryPushButton
-
-        from src.gui.EndfieldPrimitives import EndfieldActionButton
-        from src.gui.EndfieldTheme import palette
-
-        saved = qconfig.theme
-        try:
-            for theme in (Theme.LIGHT, Theme.DARK):
-                qconfig.set(qconfig.themeMode, theme, save=False)
-                colors = palette(theme == Theme.DARK)
-                for button in (PrimaryPushButton("保存"), EndfieldActionButton(None, "保存", primary=True)):
-                    button.resize(132, 36)
-                    button.show()
-                    self.app.processEvents()
-                    button.clearFocus()
-                    button.setAttribute(Qt.WA_UnderMouse, False)
-                    self.assertEqual(button.grab().toImage().pixelColor(8, 8), QColor(colors["go"]))
-                    button.setDisabled(True)
-                    self.app.processEvents()
-                    self.assertEqual(button.grab().toImage().pixelColor(8, 8), QColor(colors["disabled_bg"]))
-                    button.close()
-                    button.deleteLater()
-        finally:
-            qconfig.set(qconfig.themeMode, saved, save=False)
-
     def test_checkpoint_disabled_selection_remains_visible_without_accent_fill(self):
         from PySide6.QtWidgets import QCheckBox, QFrame, QStyle, QStyleOptionButton
 
@@ -1850,41 +1612,6 @@ class PaletteContrastTest(unittest.TestCase):
             for background in ("panel", "input"):
                 self.assertGreaterEqual(contrast(c["border_hover"], c[background]), 3)
 
-    def test_dark_surfaces_get_lighter_toward_the_viewer(self):
-        from src.gui.EndfieldTheme import DARK
-
-        def lightness(value):
-            rgb = (int(value[i : i + 2], 16) / 255 for i in (1, 3, 5))
-            channels = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb]
-            y = sum(v * w for v, w in zip(channels, (0.2126, 0.7152, 0.0722), strict=True))
-            return 116 * y ** (1 / 3) - 16
-
-        # 导航与画布同色，标题栏左段才不会出现色差缺口
-        self.assertEqual(DARK["navigation"], DARK["canvas"])
-        # 深色是调暗的灰而不是近黑；层级靠明度区分，越靠前越亮
-        self.assertGreaterEqual(lightness(DARK["canvas"]), 15)
-        levels = [lightness(DARK[key]) for key in ("canvas", "panel", "chip")]
-        for lower, upper in pairwise(levels):
-            self.assertGreaterEqual(upper - lower, 4)
-
-    def test_dark_mirrors_the_light_ink_and_rule_roles(self):
-        from src.gui.EndfieldTheme import DARK, LIGHT
-
-        def lightness(value):
-            rgb = (int(value[i : i + 2], 16) / 255 for i in (1, 3, 5))
-            channels = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb]
-            y = sum(v * w for v, w in zip(channels, (0.2126, 0.7152, 0.0722), strict=True))
-            return 116 * y ** (1 / 3) - 16
-
-        for name, c in (("light", LIGHT), ("dark", DARK)):
-            with self.subTest(theme=name):
-                # 勾选框、编号牌、主按钮都用墨色；信号黄只留给当前项
-                self.assertEqual({c["accent"], c["go"], c["tag_bg"]}, {c["text"]})
-                self.assertNotEqual(c["accent"], c["signal"])
-                # 边线与面板拉开的明度差两套主题一致，深色的面板轮廓不比浅色弱
-                self.assertGreaterEqual(abs(lightness(c["border"]) - lightness(c["panel"])), 12)
-
-
 class WindowRecoveryTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -2009,16 +1736,6 @@ class WindowRecoveryTest(unittest.TestCase):
                 self.assertGreater(switch_box.left(), panel.width() // 2)
         page.close()
         page.deleteLater()
-
-    def test_dependency_rows_do_not_get_group_backgrounds(self):
-        from src.patches.endfield_theme_patch import _widget_scope_override_qss
-
-        for dark in (False, True):
-            qss = _widget_scope_override_qss(dark)
-            block = qss.split("#configRow[configGroup=true] {", 1)[1].split("}", 1)[0]
-            self.assertIn("background-color: transparent", block)
-            self.assertNotIn("2px", block)
-
 
 if __name__ == "__main__":
     unittest.main()

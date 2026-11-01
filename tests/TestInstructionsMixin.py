@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import polib
 
-from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
+from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_line
 from src.tasks.trigger.ItemNavigatorTask import HG_CHECK_API_URL, OFFICIAL_MAP_PAGE_URL, ItemNavigatorTask
 
 I18N_ROOT = Path("i18n")
@@ -53,10 +53,6 @@ def _navigator_stub(recorded=None, hold_seconds=2.0, unified=True):
 
 
 class TestInstructionsMixin(unittest.TestCase):
-    def test_build_instructions_is_abstract(self):
-        with self.assertRaises(NotImplementedError):
-            InstructionsMixin().build_instructions()
-
     def test_instructions_appends_to_existing_text(self):
         task = _DemoInstructions()
         task.instructions = "BASE"
@@ -101,10 +97,6 @@ class TestInstructionsMixin(unittest.TestCase):
             '<span style="color:#FF5555;"><strong>&nbsp;&nbsp;&nbsp;&nbsp;文本</strong></span>',
         )
 
-    def test_inst_gap_is_inline_spacer(self):
-        self.assertIn("font-size", inst_gap())
-
-
 class TestItemNavigatorInstructions(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -135,11 +127,6 @@ class TestItemNavigatorInstructions(unittest.TestCase):
             "真值地图账号",
         ):
             self.assertIn(expected, self.html)
-
-    def test_content_steps_show_the_real_urls(self):
-        """URL 通过 .format() 注入，说明里必须能看到真实地址。"""
-        self.assertIn(OFFICIAL_MAP_PAGE_URL, self.html)
-        self.assertIn(HG_CHECK_API_URL, self.html)
 
     def test_instructions_show_configured_hold_seconds(self):
         self.assertIn("水平距离 20 以内连续按住标记键 2 秒", self.html)

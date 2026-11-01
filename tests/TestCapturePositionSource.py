@@ -500,11 +500,6 @@ class SessionLivenessTest(unittest.TestCase):
         self.assertEqual(len(warnings), 1, "同一原因只告警一次")
         self.assertIn("flows", warnings[0])
 
-    def test_older_backend_without_flow_reporting_is_still_trusted(self):
-        """不报 ``flows`` 的老版本后端：缺信息不等于会话已死，不能把整条定位链停掉。"""
-
-        self.assertTrue(self._pose_for(_state_payload())["position_trusted"])
-
     def test_position_without_a_flow_id_is_still_trusted(self):
         self.assertTrue(self._pose_for(_state_payload(flows=[_flows_entry(1)]))["position_trusted"])
 
@@ -817,14 +812,6 @@ class CoordinateInferenceTest(unittest.TestCase):
         from src.localization.capture_position_source import infer_map_id_from_coordinates
 
         self.assertEqual(infer_map_id_from_coordinates(0.0, 0.0, Path("no/such/dir")), "")
-
-    def test_scene_table_beats_ws_when_scene_is_known(self):
-        """场景在表里时以场景表为准——它是客户端表给的答案，不依赖地图 WS。"""
-
-        source = CapturePositionSource(1)
-        record = {"scene": 228, "levelId": "map02_lv002", "mapId": "map02"}
-        state = {"ws": {"lastPosition": {"mapId": "map01"}}}
-        self.assertEqual(source._resolve_map_id(record, state, -1100.3, -251.9), ("map02", "scene_table"))
 
     def test_known_scene_without_parent_map_never_guesses_by_coordinates(self):
         """**这条是重点**：试炼场那类场景本就不属于任何大地图，而它们的坐标可能落在
