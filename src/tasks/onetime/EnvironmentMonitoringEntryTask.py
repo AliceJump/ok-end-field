@@ -7,6 +7,7 @@ from src.data.FeatureList import FeatureList as fL  # 复用任务定位和地�
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 
 TERMINAL_LEFTS = {"outskirts": 0.06, "marker_stone": 0.27}  # 按固定左右顺序标识终端及其标签空白区
+SUPPORTED_OBSERVATIONS = frozenset({"小池荷"})  # 仅列入已有后半路线的观察点
 
 
 class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流程
@@ -17,10 +18,8 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         self.group_name = "工具与调试"  # 暂不接入一键日常
         self.group_icon = FluentIcon.DEVELOPER_TOOLS  # 复用工具分组
         self.icon = FluentIcon.SEARCH  # 使用查找图标
-        self.default_config = {"观察点名称": ""}  # 可选精确名称，避免误接其他委托
-        self.config_description = {
-            "观察点名称": "留空时选择第一个可接取或可前往的委托；填写时只选择名称完全匹配的观察点。"
-        }  # 说明选择规则
+        self.default_config = {}  # 观察点由支持的路线自动决定，无需用户填写
+        self.config_description = {}  # 不展示观察点名称配置
         self.selected_observation = None  # 每次执行重新建立交接信息
 
     @staticmethod  # 标题引号不是观察点身份的一部分
@@ -111,7 +110,7 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
             action_box = self.box_of_screen(left, 0.85, right, 0.925)  # 仅本卡片底部操作区
             if not self._observation_action(action_box):  # 已收录卡片没有黄或白底按钮
                 continue  # 不接取已完成观察点
-            if titles_on_page is None:  # 观察点会轮换且可由用户指定，图标和颜色不能证明具体身份
+            if titles_on_page is None:  # 观察点会轮换，图标和颜色不能证明具体身份
                 titles_on_page = self.ocr()  # 为本页可操作卡片复用同一次完整标题识别
             titles = [
                 item
@@ -186,15 +185,14 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         if not self._wait_for_transfer_arrival():  # 等待大世界稳定出现
             raise RuntimeError("环境监测传送后未确认到达")  # 点击成功不等于到达
 
-    def prepare_observation(self, target_name=""):  # 可供后半流程复用的入口
+    def prepare_observation(self):  # 自动前往当前支持的观察点
         self.selected_observation = None  # 清除上轮结果
         self.open_monitoring()  # 每次从明确入口开始
-        desired = self.normalize_title(target_name)  # 配置名称按同一规则比较
         for terminal in TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
             self.select_terminal(terminal)  # 选择终端并等待稳定
             for observation in self.available_observations():  # 只考虑可操作卡片
-                if desired and self.normalize_title(observation["name"]) != desired:  # 指定名称时不退回其他任务
-                    continue  # 保留其他委托
+                if self.normalize_title(observation["name"]) not in SUPPORTED_OBSERVATIONS:  # 只选择已有后半路线的点位
+                    continue  # 跳过尚未支持的委托
                 self.enter_observation(observation)  # 接取或继续所选观察点
                 self.transfer_observation()  # 快捷传送并验证到达
                 self.selected_observation = {
@@ -206,4 +204,4 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         raise RuntimeError("未找到符合条件的可接取或可前往观察点")  # 不将无匹配伪报为成功
 
     def run(self):  # GUI 与 MCP 共用生产流程
-        return self.prepare_observation(str(self.config.get("观察点名称", "")).strip())  # 到达后停止，保留拍照任务
+        return self.prepare_observation()  # 自动前往支持的观察点，到达后停止

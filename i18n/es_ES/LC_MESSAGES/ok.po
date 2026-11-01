@@ -4012,12 +4012,6 @@ msgstr "Monitoreo ambiental: ir al punto de observación"
 msgid "接取或继续一个环境监测委托，传送到观察点后停止，暂不移动或拍照。"
 msgstr "Acepta o reanuda un encargo de monitoreo ambiental y se detiene tras teletransportarse al punto de observación. El desplazamiento y las fotografías aún no están disponibles."
 
-msgid "观察点名称"
-msgstr "Nombre del punto de observación"
-
-msgid "留空时选择第一个可接取或可前往的委托；填写时只选择名称完全匹配的观察点。"
-msgstr "Déjalo en blanco para seleccionar el primer encargo disponible para aceptar o visitar. Introduce un nombre para seleccionar solo el punto de observación cuyo nombre coincida exactamente."
-
 msgid "环境监测：小池荷取景"
 msgstr "Monitoreo ambiental: encuadrar Loto del estanque"
 

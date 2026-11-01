@@ -126,5 +126,5 @@ class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境�
         }  # 不触发快门或提交委托
 
     def run(self):  # GUI 与 MCP 共用从入口开始的可重复流程
-        self.prepare_observation("小池荷")  # 复用已验证的识别、接取、追踪和传送
+        self.prepare_observation()  # 自动选择当前支持的观察点并传送
         return self.prepare_photo()  # 停在相机内，保留任务供下一轮验证

@@ -3878,12 +3878,6 @@ msgstr "Environmental Monitoring: Go to Observation Point"
 msgid "接取或继续一个环境监测委托，传送到观察点后停止，暂不移动或拍照。"
 msgstr "Accept or resume one Environmental Monitoring commission and stop after teleporting to its observation point. Movement and photography are not yet supported."
 
-msgid "观察点名称"
-msgstr "Observation point name"
-
-msgid "留空时选择第一个可接取或可前往的委托；填写时只选择名称完全匹配的观察点。"
-msgstr "Leave blank to select the first commission available to accept or visit. Enter a name to select only the observation point with an exact name match."
-
 msgid "环境监测：小池荷取景"
 msgstr "Environmental Monitoring: Frame Pool Lotus"
 

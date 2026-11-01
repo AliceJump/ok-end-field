@@ -65,13 +65,20 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):
             task = EnvironmentMonitoringEntryTask(SimpleNamespace(scene=None, pause_start=None), SimpleNamespace())
         self.assertTrue(task.visible)
-        self.assertEqual(task.default_config, {"观察点名称": ""})
+        self.assertEqual(task.default_config, {})
+        self.assertEqual(task.config_description, {})
         self.assertEqual(task.group_name, "工具与调试")
         self.assertIsNone(task.selected_observation)
         self.assertIn(
             ["src.tasks.onetime.EnvironmentMonitoringEntryTask", "EnvironmentMonitoringEntryTask"],
             app_config["onetime_tasks"],
         )
+
+    def test_entry_run_automatically_selects_a_supported_observation(self):
+        task = self.task()
+        task.prepare_observation = Mock(return_value={"name": "小池荷"})
+        self.assertEqual(EnvironmentMonitoringEntryTask.run.__wrapped__(task), {"name": "小池荷"})
+        task.prepare_observation.assert_called_once_with()
 
     def test_available_cards_bind_buttons_to_their_own_titles_at_multiple_sizes(self):
         for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
@@ -216,7 +223,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task._terminal_selected = Mock(return_value=selected)
                 task.wait_ui_stable.return_value = stable
                 with self.assertRaisesRegex(RuntimeError, "终端切换未完成"):
-                    task.prepare_observation("小池荷")
+                    task.prepare_observation()
                 task.wait_click_ocr.assert_not_called()
                 task.available_observations.assert_not_called()
                 task.enter_observation.assert_not_called()
@@ -227,7 +234,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.prepare_task([{"name": "小池荷"}], [])
         del task.select_terminal
         task._terminal_selected = Mock(side_effect=[False, False, False, True, True])
-        self.assertEqual(task.prepare_observation("小池荷")["name"], "小池荷")
+        self.assertEqual(task.prepare_observation()["name"], "小池荷")
         self.assertEqual(task.click.call_count, 2)
         task.wait_click_ocr.assert_not_called()
         task.wait_ui_stable.assert_called_once_with()
@@ -263,7 +270,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.find_one.return_value = Box(10, 10, 20, 20)
         task.wait_ui_stable.side_effect = [True, False]
         with self.assertRaisesRegex(RuntimeError, "页面未稳定"):
-            task.prepare_observation("小池荷")
+            task.prepare_observation()
         task.select_terminal.assert_not_called()
         task.available_observations.assert_not_called()
         self.assertIsNone(task.selected_observation)
@@ -274,7 +281,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.find_one.return_value = Box(10, 10, 20, 20)
         task._monitoring_page.return_value = False
         with self.assertRaisesRegex(RuntimeError, "终端列表"):
-            task.prepare_observation("小池荷")
+            task.prepare_observation()
         task.select_terminal.assert_not_called()
         task.wait_ocr.assert_not_called()
 
@@ -384,7 +391,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._observation_action = Mock(return_value="go")
         task._task_detail_page.return_value = False
         with self.assertRaisesRegex(RuntimeError, "未进入任务详情"):
-            task.prepare_observation("小池荷")
+            task.prepare_observation()
         task.transfer_observation.assert_not_called()
         task.wait_ocr.assert_not_called()
 
@@ -394,7 +401,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._observation_action = Mock(return_value="go")
         task.wait_ui_stable.return_value = False
         with self.assertRaisesRegex(RuntimeError, "任务详情未稳定"):
-            task.prepare_observation("小池荷")
+            task.prepare_observation()
         task.transfer_observation.assert_not_called()
         self.assertIsNone(task.selected_observation)
 
@@ -575,18 +582,18 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.transfer_observation = Mock()
         return task
 
-    def test_requested_title_never_falls_back_to_a_different_available_task(self):
-        task = self.prepare_task([{"name": "古树"}], [{"name": "小池荷"}])
+    def test_unsupported_tasks_are_never_selected_when_no_supported_task_is_available(self):
+        task = self.prepare_task([{"name": "古树"}], [{"name": "枯枝"}])
         with self.assertRaisesRegex(RuntimeError, "未找到符合条件"):
-            task.prepare_observation("枯枝")
+            task.prepare_observation()
         task.enter_observation.assert_not_called()
         task.transfer_observation.assert_not_called()
         self.assertIsNone(task.selected_observation)
 
-    def test_exact_requested_title_can_be_found_in_the_second_terminal(self):
+    def test_supported_title_can_be_found_in_the_second_terminal(self):
         requested = {"name": "“小池荷”"}
         task = self.prepare_task([{"name": "古树"}], [requested, {"name": "枯枝"}])
-        result = task.prepare_observation(" 小池荷 ")
+        result = task.prepare_observation()
         task.enter_observation.assert_called_once_with(requested)
         task.transfer_observation.assert_called_once_with()
         self.assertEqual(result["name"], "“小池荷”")
@@ -596,11 +603,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             [call("outskirts"), call("marker_stone")],
         )
 
-    def test_no_target_stops_after_the_first_available_observation(self):
-        first = {"name": "古树"}
-        task = self.prepare_task([first, {"name": "枯枝"}], [{"name": "小池荷"}])
-        self.assertEqual(task.prepare_observation()["name"], "古树")
-        task.enter_observation.assert_called_once_with(first)
+    def test_unsupported_cards_are_skipped_before_supported_card_in_same_terminal(self):
+        supported = {"name": "小池荷"}
+        task = self.prepare_task([{"name": "古树"}, supported, {"name": "枯枝"}], [])
+        self.assertEqual(task.prepare_observation()["name"], "小池荷")
+        task.enter_observation.assert_called_once_with(supported)
         self.assertEqual(task.select_terminal.call_count, 1)
 
     def test_transfer_arrival_failure_clears_previous_result_and_never_reports_success(self):
@@ -609,7 +616,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.ocr.return_value = [Box(1500, 950, 100, 30, name="开始追踪")]
         task._wait_for_transfer_arrival.return_value = False
         with self.assertRaisesRegex(RuntimeError, "未确认到达"):
-            task.prepare_observation("小池荷")
+            task.prepare_observation()
         task.to_near_transfer_point.assert_called_once_with(need_track=False)
         self.assertIsNone(task.selected_observation)
         task.log_info.assert_not_called()

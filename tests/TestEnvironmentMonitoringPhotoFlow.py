@@ -273,7 +273,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.photo_condition_met.return_value = ready
                 task.prepare_photo.side_effect = lambda task=task: EnvironmentMonitoringPhotoTask.prepare_photo(task)
                 result = EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
-                task.prepare_observation.assert_called_once_with("小池荷")
+                task.prepare_observation.assert_called_once_with()
                 task.walk_pool_lotus_route.assert_called_once_with()
                 task.open_camera.assert_called_once_with()
                 task.adjust_photo_view.assert_called_once_with()
