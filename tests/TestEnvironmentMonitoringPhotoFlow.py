@@ -13,6 +13,7 @@ from qfluentwidgets import FluentIcon
 from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.DailyTask import DailyTask
+from src.tasks.onetime.EnvironmentMonitoringNavigation import EnvironmentMonitoringNavigation
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
 
@@ -52,7 +53,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task = self.task()
                 task.sleep.side_effect = error
                 with self.assertRaises(type(error)):
-                    EnvironmentMonitoringPhotoTask._hold_route_key(task, "w", 0.5)
+                    EnvironmentMonitoringNavigation(task)._hold_route_key("w", 0.5)
                 task.send_key_down.assert_called_once_with("up")
                 task.send_key_up.assert_called_once_with("up")
 
@@ -60,7 +61,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task._require_input_focus.side_effect = RuntimeError("no focus")
         with self.assertRaisesRegex(RuntimeError, "no focus"):
-            EnvironmentMonitoringPhotoTask._hold_route_key(task, "d", 3)
+            EnvironmentMonitoringNavigation(task)._hold_route_key("d", 3)
         task.send_key_down.assert_not_called()
         task.sleep.assert_not_called()
 
@@ -196,28 +197,34 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_route_requires_world_and_does_not_move_in_a_menu(self):
         task = self.task()
+        navigation = EnvironmentMonitoringNavigation(task)
+        navigation._hold_route_key = Mock()
         task.in_world.return_value = False
         with self.assertRaisesRegex(RuntimeError, "未处于大世界"):
-            EnvironmentMonitoringPhotoTask.walk_pool_lotus_route(task)
-        task._hold_route_key.assert_not_called()
+            navigation.walk_pool_lotus_route()
+        navigation._hold_route_key.assert_not_called()
         task.press_key.assert_not_called()
 
     def test_unstable_world_after_route_prevents_tracking_key(self):
         task = self.task()
+        navigation = EnvironmentMonitoringNavigation(task)
+        navigation._hold_route_key = Mock()
         task.in_world.return_value = True
         task.wait_until.return_value = False
         with self.assertRaisesRegex(RuntimeError, "路线结束后未恢复大世界"):
-            EnvironmentMonitoringPhotoTask.walk_pool_lotus_route(task)
-        task._hold_route_key.assert_has_calls([call("w", 0.5), call("d", 3)])
+            navigation.walk_pool_lotus_route()
+        navigation._hold_route_key.assert_has_calls([call("w", 0.5), call("d", 3)])
         self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
         task.press_key.assert_not_called()
 
     def test_route_uses_world_state_without_mode_checks(self):
         task = self.task()
+        navigation = EnvironmentMonitoringNavigation(task)
+        navigation._hold_route_key = Mock()
         task.in_world.return_value = True
         task.wait_until.return_value = True
-        EnvironmentMonitoringPhotoTask.walk_pool_lotus_route(task)
-        task._hold_route_key.assert_has_calls([call("w", 0.5), call("d", 3)])
+        navigation.walk_pool_lotus_route()
+        navigation._hold_route_key.assert_has_calls([call("w", 0.5), call("d", 3)])
         task.sleep.assert_not_called()
         self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
         task.press_key.assert_called_once_with("v", after_sleep=0.6)
@@ -277,11 +284,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.photo_condition_met.return_value = ready
                 task.prepare_photo.side_effect = lambda task=task: EnvironmentMonitoringPhotoTask.prepare_photo(task)
                 stages = Mock()
-                for method in ("prepare_observation", "walk_pool_lotus_route", "prepare_photo"):
-                    stages.attach_mock(getattr(task, method), method)
+                stages.attach_mock(task.prepare_observation, "prepare_observation")
+                stages.attach_mock(task.navigation.walk_pool_lotus_route, "walk_pool_lotus_route")
+                stages.attach_mock(task.prepare_photo, "prepare_photo")
                 result = EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
                 task.prepare_observation.assert_called_once_with()
-                task.walk_pool_lotus_route.assert_called_once_with()
+                task.navigation.walk_pool_lotus_route.assert_called_once_with()
                 self.assertEqual(
                     stages.mock_calls,
                     [call.prepare_observation(), call.walk_pool_lotus_route(), call.prepare_photo()],
@@ -299,8 +307,31 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_navigation_failure_stops_before_camera(self):
         task = self.task()
         task.prepare_observation.return_value = {"name": "小池荷"}
-        task.walk_pool_lotus_route.side_effect = RuntimeError("navigation failed")
+        task.navigation.walk_pool_lotus_route.side_effect = RuntimeError("navigation failed")
         with self.assertRaisesRegex(RuntimeError, "navigation failed"):
+            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        task.prepare_photo.assert_not_called()
+
+    def test_run_dispatches_registered_route_through_task_navigation_component(self):
+        task = self.task()
+        task.prepare_observation.return_value = {"name": "小池荷"}
+        task.navigation = EnvironmentMonitoringNavigation(task)
+        with patch.object(task.navigation, "walk_pool_lotus_route") as route:
+            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        self.assertIs(task.navigation.task, task)
+        route.assert_called_once_with()
+        task.prepare_photo.assert_called_once_with()
+
+    def test_missing_registered_route_stops_before_camera(self):
+        task = self.task()
+        task.prepare_observation.return_value = {"name": "古树"}
+        task.navigation = EnvironmentMonitoringNavigation(task)
+        with (
+            patch.dict(
+                "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES", {"古树": "missing_route"}
+            ),
+            self.assertRaisesRegex(RuntimeError, "未支持观察点导航"),
+        ):
             EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
         task.prepare_photo.assert_not_called()
 
@@ -308,12 +339,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.prepare_observation.return_value = {"name": "“古树”"}
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringEntryTask.OBSERVATION_ROUTES",
+            "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
             {"古树": "walk_other_route"},
         ):
             EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
-        task.walk_other_route.assert_called_once_with()
-        task.walk_pool_lotus_route.assert_not_called()
+        task.navigation.walk_other_route.assert_called_once_with()
+        task.navigation.walk_pool_lotus_route.assert_not_called()
         task.prepare_photo.assert_called_once_with()
 
     def test_unregistered_observation_stops_before_camera(self):
@@ -346,7 +377,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 self.assertEqual(result["photo_ready"], final_ready)
                 task._camera_open.assert_called_once_with(frame=task.frame)
                 task.photo_condition_met.assert_called_once_with(frame=task.frame)
-                task.walk_pool_lotus_route.assert_not_called()
+                task.navigation.walk_pool_lotus_route.assert_not_called()
                 task.press_key.assert_not_called()
                 task.click.assert_not_called()
 

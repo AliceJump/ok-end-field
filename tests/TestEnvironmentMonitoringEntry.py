@@ -604,7 +604,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_registered_route_is_available_without_changing_entry_logic(self):
         supported = {"name": "古树"}
         task = self.prepare_task([supported], [])
-        with patch.dict("src.tasks.onetime.EnvironmentMonitoringEntryTask.OBSERVATION_ROUTES", {"古树": "walk_other"}):
+        with patch.dict("src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES", {"古树": "walk_other"}):
             self.assertEqual(task.prepare_observation()["name"], "古树")
         task.enter_observation.assert_called_once_with(supported)
 
