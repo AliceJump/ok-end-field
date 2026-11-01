@@ -124,7 +124,7 @@ class TestLiaisonAlignmentTask(unittest.TestCase):
                 task.find_feature.side_effect = detect
                 self.assertTrue(LiaisonAlignmentTestTask._align_once(task))
                 task.move_keys.assert_has_calls([call("w", duration=1)] * walks)
-                self.assertEqual(task.move_keys.call_count, walks)
+                self.assertEqual(task.move_keys.call_count, walks + 1)
                 self.assertEqual(events[:2], ["replay", "detect"])
                 self.assertEqual(task.active_and_send_mouse_delta.call_args.args[:2], (dx, 0))
                 record = fixtures.store.get(entry.context.fingerprint)
@@ -140,7 +140,7 @@ class TestLiaisonAlignmentTask(unittest.TestCase):
         self.assertTrue(LiaisonAlignmentTestTask._align_once(task))
         self.assertTrue(LiaisonAlignmentTestTask._align_once(task))
         self.assertEqual(task.wait_click_feature.call_count, 2)
-        self.assertEqual(task.move_keys.call_count, 2)
+        self.assertEqual(task.move_keys.call_count, 4)
         self.assertEqual(len(fixtures.store.snapshot()), 1)
 
     def test_first_outside_visit_then_inside_retransfers_accumulate_and_replay(self):

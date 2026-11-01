@@ -454,9 +454,9 @@ class TestWorkflowInitialLearning(unittest.TestCase):
         task.wait_ocr.side_effect = [[], [box()]]
         self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
         entry = task._liaison_station_entry
-        self.assertEqual(entry.context.entry_route_signature, (1000, 1000))
+        self.assertEqual(entry.context.entry_route_signature, (1000, 1000, 1001))
         self.assertEqual(entry.confidence, ContextConfidence.HIGH)
-        self.assertEqual(task.move_keys.call_count, 2)
+        self.assertEqual(task.move_keys.call_count, 3)
         other = liaison_entry_after_walk(task, liaison_entry_after_transfer(task, epoch=learning_epoch()), 1)
         self.assertNotEqual(entry.context.fingerprint, other.context.fingerprint)
 
@@ -479,7 +479,7 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                 self.assertIsNotNone(task._liaison_transfer_entry)
                 task.wait_ocr.side_effect = [[]] * (walks - 1) + [[box()]]
                 self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
-                self.assertEqual(task._liaison_station_entry.context.entry_route_signature, (1000,) * walks)
+                self.assertEqual(task._liaison_station_entry.context.entry_route_signature, (1000,) * walks + (1001,))
                 self.assertEqual(task._liaison_walk_attempts, walks)
                 self.assertTrue(task._liaison_hall_confirmed)
 
@@ -577,8 +577,8 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                 task._liaison_transfer_entry = liaison_entry_after_transfer(task, epoch=learning_epoch())
                 task.wait_ocr.side_effect = ([[]] if attempts == 2 else []) + [[box()]]
                 self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
-                self.assertEqual(task.move_keys.call_count, attempts)
-                self.assertEqual(task._liaison_station_entry.context.entry_route_signature, (1000,) * attempts)
+                self.assertEqual(task.move_keys.call_count, attempts + 1)
+                self.assertEqual(task._liaison_station_entry.context.entry_route_signature, (1000,) * attempts + (1001,))
                 self.assertEqual(task._liaison_station_entry.context, contexts[attempts])
                 other_before = self.store.get(contexts[3 - attempts].fingerprint)
                 events = []
