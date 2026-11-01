@@ -1,17 +1,32 @@
 """Camera preparation must release held inputs and never take or submit a photo."""
 
 import re
+import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
 import numpy as np
 from ok import Box, TaskDisabledException
+from ok.util.config import Config
+from qfluentwidgets import FluentIcon
 
+from src.config import config as app_config
+from src.tasks.onetime.DailyTask import DailyTask
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
+    def test_daily_group_keeps_preview_out_of_daily_completion_plan(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):
+            task = EnvironmentMonitoringPhotoTask(SimpleNamespace(scene=None, pause_start=None), SimpleNamespace())
+        self.assertEqual(task.group_name, "日常任务")
+        self.assertEqual(task.group_icon, FluentIcon.CALENDAR)
+        self.assertEqual(task.default_config, {})
+        registration = ["src.tasks.onetime.EnvironmentMonitoringPhotoTask", "EnvironmentMonitoringPhotoTask"]
+        self.assertEqual(app_config["onetime_tasks"].count(registration), 1)
+        self.assertNotIn("环境监测", DailyTask.OTHER_TASKS)
+
     def task(self):
         task = Mock()
         task.lang = SimpleNamespace(

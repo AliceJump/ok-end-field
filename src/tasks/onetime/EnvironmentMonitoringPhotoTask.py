@@ -1,12 +1,15 @@
 from ok import TaskDisabledException  # 诊断异常不能吞掉用户停止请求
+from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.tasks.onetime.environment_monitoring_photo import xiaochihe_target_checked  # 识别拍摄目标的圆勾状态
 from src.tasks.onetime.EnvironmentMonitoringEntryTask import EnvironmentMonitoringEntryTask  # 复用委托选择和快捷传送
 
 
-class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 小池荷可重复取景，不消耗委托
+class EnvironmentMonitoringPhotoTask(EnvironmentMonitoringEntryTask):  # 环境监测日常子任务的取景验证阶段
     def __init__(self, *args, **kwargs):  # 构造阶段不操作游戏
-        super().__init__(*args, **kwargs)  # 保留工具分组和入口复用
+        super().__init__(*args, **kwargs)  # 复用委托入口与任务生命周期
+        self.group_name = "日常任务"  # 环境监测属于日常业务
+        self.group_icon = FluentIcon.CALENDAR  # 与现有日常子任务一致
         self.name = "环境监测：小池荷取景"  # 明确当前只支持小池荷
         self.description = "前往小池荷，走到竹子旁并打开相机，检查拍摄条件后停止，不拍照。"  # 保留委托供重复实测
         self.default_config = {}  # 路线固定，不允许将其用于其他观察点

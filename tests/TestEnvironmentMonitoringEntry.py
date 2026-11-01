@@ -8,6 +8,7 @@ from unittest.mock import Mock, call, patch
 
 import numpy as np
 from ok import Box
+from ok.util.color import calculate_color_percentage
 from ok.util.config import Config
 
 from src.config import config as app_config
@@ -25,7 +26,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 accept=re.compile("接取委托"),
                 go=re.compile("前往任务"),
                 track=re.compile("开始追踪"),
-                tracked=re.compile("停止追踪"),
                 outskirts=re.compile("城郊监测终端"),
                 marker_stone=re.compile("首墩监测终端"),
             )
@@ -44,6 +44,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.wait_ocr = Mock(return_value=[Box(1200, 100, 200, 40)])
         task.wait_click_ocr = Mock(return_value=True)
         task.wait_click_feature = Mock(return_value=True)
+        task.find_one = Mock(return_value=None)
         task.wait_feature = Mock(return_value=True)
         task.wait_ui_stable = Mock(return_value=True)
         task.wait_until = Mock(side_effect=lambda condition, **kwargs: condition())
@@ -51,6 +52,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._wait_for_transfer_arrival = Mock(return_value=True)
         task.log_info = Mock()
         task.selected_observation = {"name": "previous run"}
+        return task
+
+    def color_task(self, frame):
+        task = Mock(frame=frame, lang=self.task().lang)
+        task.calculate_color_percentage.side_effect = lambda color, box: calculate_color_percentage(frame, color, box)
         return task
 
     def test_registered_task_constructs_with_only_entry_configuration(self):
@@ -96,7 +102,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     frame = np.full((height, width, 3), 40, dtype=np.uint8)
                     x1, x2 = (0.046, 0.246) if selected == "outskirts" else (0.25, 0.45)
                     frame[int(height * 0.1) : int(height * 0.172), int(width * x1) : int(width * x2)] = 235
-                    task = Mock(frame=frame, lang=self.task().lang)
+                    task = self.color_task(frame)
                     for terminal in ("outskirts", "marker_stone"):
                         matcher = getattr(task.lang.environment_monitoring, terminal)
                         self.assertEqual(
@@ -108,10 +114,42 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             with self.subTest(color=color):
                 frame = np.full((1080, 1920, 3), color, dtype=np.uint8)
                 frame[::3, ::3] = 255
-                task = Mock(frame=frame, lang=self.task().lang)
+                task = self.color_task(frame)
                 self.assertFalse(
                     EnvironmentMonitoringEntryTask._terminal_selected(task, task.lang.environment_monitoring.outskirts)
                 )
+
+    def test_terminal_color_range_and_crop_keep_the_exact_pixel_boundaries(self):
+        for width, height in ((1280, 720), (1920, 1080), (2560, 1440), (1366, 768)):
+            for terminal, left in (("outskirts", 0.06), ("marker_stone", 0.27)):
+                for color, selected in (
+                    ((185, 255, 255), False),
+                    ((255, 185, 255), False),
+                    ((255, 255, 185), False),
+                    ((186, 186, 186), True),
+                ):
+                    with self.subTest(size=(width, height), terminal=terminal, color=color):
+                        frame = np.zeros((height, width, 3), dtype=np.uint8)
+                        x1, x2 = int(width * left), int(width * (left + 0.07))
+                        y1, y2 = int(height * 0.145), int(height * 0.16)
+                        frame[y1:y2, x1:x2] = color
+                        task = self.color_task(frame)
+                        matcher = getattr(task.lang.environment_monitoring, terminal)
+                        self.assertEqual(EnvironmentMonitoringEntryTask._terminal_selected(task, matcher), selected)
+                        area = task.calculate_color_percentage.call_args.args[1]
+                        self.assertEqual((area.x, area.y, area.width, area.height), (x1, y1, x2 - x1, y2 - y1))
+
+    def test_terminal_white_fraction_must_strictly_exceed_seventy_percent(self):
+        frame = np.zeros((1000, 1000, 3), dtype=np.uint8)
+        # The 70 x 15 crop has 1,050 pixels, so 735 white pixels are exactly 70%.
+        patch = np.zeros((15, 70, 3), dtype=np.uint8)
+        patch.reshape(-1, 3)[:735] = 255
+        frame[145:160, 60:130] = patch
+        task = self.color_task(frame)
+        matcher = task.lang.environment_monitoring.outskirts
+        self.assertFalse(EnvironmentMonitoringEntryTask._terminal_selected(task, matcher))
+        frame[155, 95] = 255
+        self.assertTrue(EnvironmentMonitoringEntryTask._terminal_selected(task, matcher))
 
     def test_unselected_or_unstable_terminal_cannot_scan_old_cards(self):
         for selected, stable in ((False, True), (True, False)):
@@ -205,23 +243,96 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_already_tracked_task_explicitly_locates_map_before_transfer(self):
         task = self.task()
-        task.ocr.side_effect = [[], [Box(1500, 950, 100, 30, name="停止追踪")]]
+        cancel = Box(1815, 975, 38, 39)
+        locator = Box(1487, 961, 62, 61)
+        task.find_one.side_effect = [cancel, locator]
         task.transfer_observation()
-        task.click.assert_not_called()
-        self.assertEqual(task.wait_click_feature.call_args.args[0], fL.one_task_to_map)
+        task.ocr.assert_called_once_with(match=task.lang.environment_monitoring.track, box=task.box.bottom_right)
+        task.click.assert_called_once_with(locator)
+        self.assertTrue(task.find_one.call_args_list[0].kwargs["use_gray_scale"])
+        task.find_one.assert_any_call(fL.one_task_to_map, box=task.box.bottom_right)
+        task.wait_click_feature.assert_not_called()
         task.to_near_transfer_point.assert_called_once_with(need_track=False)
         task._wait_for_transfer_arrival.assert_called_once_with()
 
-    def test_missing_locator_or_map_stops_before_teleport(self):
-        for failure in ("wait_click_feature", "wait_feature"):
-            with self.subTest(failure=failure):
+    def test_generic_cancel_or_locator_alone_cannot_confirm_tracking(self):
+        for cancel, locator in ((Box(1815, 975, 38, 39), None), (None, Box(1487, 961, 62, 61))):
+            with self.subTest(cancel=cancel, locator=locator):
                 task = self.task()
-                task.ocr.side_effect = [[], [Box(1500, 950, 100, 30, name="停止追踪")]]
-                getattr(task, failure).return_value = False
-                with self.assertRaises(RuntimeError):
+                task.find_one.side_effect = lambda feature, cancel=cancel, locator=locator, **kwargs: (
+                    cancel if feature == fL.skip_dialog_cancel else locator
+                )
+                with self.assertRaisesRegex(RuntimeError, "追踪状态"):
                     task.transfer_observation()
+                task.click.assert_not_called()
+                task.wait_feature.assert_not_called()
                 task.to_near_transfer_point.assert_not_called()
                 task._wait_for_transfer_arrival.assert_not_called()
+
+    def test_close_icon_elsewhere_cannot_confirm_tracking_at_multiple_sizes(self):
+        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+            with self.subTest(size=(width, height)):
+                task = self.task(width, height)
+                close = Box(round(width * 0.95), round(height * 0.06), 20, 20)
+                locator = Box(round(width * 0.78), round(height * 0.90), 30, 30)
+
+                def find_icon(feature, *, box, close=close, locator=locator, **kwargs):
+                    icon = close if feature == fL.skip_dialog_cancel else locator
+                    return (
+                        icon if box.x <= icon.x < box.x + box.width and box.y <= icon.y < box.y + box.height else None
+                    )
+
+                task.find_one.side_effect = find_icon
+                with self.assertRaisesRegex(RuntimeError, "追踪状态"):
+                    task.transfer_observation()
+                cancel_area = task.find_one.call_args_list[0].kwargs["box"]
+                self.assertEqual((cancel_area.x, cancel_area.y), (round(width * 0.93), round(height * 0.89)))
+                self.assertAlmostEqual(cancel_area.width / width, 0.04, delta=1 / width)
+                self.assertAlmostEqual(cancel_area.height / height, 0.06, delta=1 / height)
+                task.click.assert_not_called()
+                task.to_near_transfer_point.assert_not_called()
+
+    def test_tracking_icons_seen_in_different_frames_do_not_combine_into_confirmation(self):
+        task = self.task()
+        current_icons = {}
+        frames = ({fL.skip_dialog_cancel: Box(1815, 975, 38, 39)}, {fL.one_task_to_map: Box(1487, 961, 62, 61)})
+        task.find_one.side_effect = lambda feature, **kwargs: current_icons.get(feature)
+
+        def wait_frames(condition, **kwargs):
+            for frame_icons in frames:
+                current_icons.clear()
+                current_icons.update(frame_icons)
+                result = condition()
+                if result:
+                    return result
+            return None
+
+        task.wait_until.side_effect = wait_frames
+        with self.assertRaisesRegex(RuntimeError, "追踪状态"):
+            task.transfer_observation()
+        task.click.assert_not_called()
+        task.wait_feature.assert_not_called()
+        task.to_near_transfer_point.assert_not_called()
+
+    def test_missing_map_stops_after_locator_without_teleporting(self):
+        task = self.task()
+        locator = Box(1487, 961, 62, 61)
+        task.find_one.side_effect = [Box(1815, 975, 38, 39), locator]
+        task.wait_feature.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "任务地图未打开"):
+            task.transfer_observation()
+        task.click.assert_called_once_with(locator)
+        task.to_near_transfer_point.assert_not_called()
+        task._wait_for_transfer_arrival.assert_not_called()
+
+    def test_untracked_task_still_uses_start_tracking_ocr(self):
+        task = self.task()
+        track = Box(1500, 950, 100, 30, name="开始追踪")
+        task.ocr.return_value = [track]
+        task.transfer_observation()
+        task.click.assert_called_once_with(track)
+        task.find_one.assert_not_called()
+        task.to_near_transfer_point.assert_called_once_with(need_track=False)
 
     def test_unstable_map_stops_before_clicking_teleport(self):
         task = self.task()

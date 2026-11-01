@@ -127,7 +127,7 @@ config = {
     },
     "version": version,  # 版本
     "my_app": ["src.globals", "Globals"],  # 可选. 全局单例对象, 可以存放加载的模型, 使用og.my_app调用
-    "onetime_tasks": [  # 用户点击触发的任务（一次性业务任务在前，调试/测试任务在后）
+    "onetime_tasks": [  # 执行一轮后结束的任务（日常子任务在前，调试/测试任务在后）
         ["src.tasks.onetime.DailyTask", "DailyTask"],
         # 日常子任务独立任务类：顺序与一键日常的固定执行块保持一致，也可单独运行
         ["src.tasks.onetime.LiaisonGiftTask", "LiaisonGiftTask"],
@@ -137,6 +137,10 @@ config = {
         ["src.tasks.onetime.MatrixCleanTask", "MatrixCleanTask"],
         ["src.tasks.onetime.DeliverySendTask", "DeliverySendTask"],
         ["src.tasks.onetime.RegionalBuildTask", "RegionalBuildTask"],
+        [
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask",
+            "EnvironmentMonitoringPhotoTask",
+        ],  # 环境监测日常取景验证，尚未纳入一键日常
         ["src.tasks.onetime.CraftWeaponTask", "CraftWeaponTask"],
         ["src.tasks.onetime.CreditCollectTask", "CreditCollectTask"],
         ["src.tasks.onetime.CreditShopTask", "CreditShopTask"],
@@ -164,7 +168,6 @@ config = {
         ["src.tasks.test.GatherNavigationTestTask", "GatherNavigationTestTask"],
         ["src.tasks.test.LiaisonAlignmentTestTask", "LiaisonAlignmentTestTask"],
         ["src.tasks.onetime.EnvironmentMonitoringEntryTask", "EnvironmentMonitoringEntryTask"],
-        ["src.tasks.onetime.EnvironmentMonitoringPhotoTask", "EnvironmentMonitoringPhotoTask"],
         ["src.tasks.test.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
         ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],

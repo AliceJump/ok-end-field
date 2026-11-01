@@ -392,9 +392,6 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     track: re.Pattern[str]
     """开始追踪"""
 
-    tracked: re.Pattern[str]
-    """停止追踪|取消追踪|正在追踪|已追踪"""
-
     industrial: re.Pattern[str]
     """工业"""
 

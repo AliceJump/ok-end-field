@@ -1,6 +1,8 @@
 import cv2  # 复用项目已有图像处理依赖。
 import numpy as np  # 使用数组掩码检查图标颜色与几何。
 
+from src.image.frame_processes import isolate_by_hsv_ranges  # 复用公共 HSV 颜色掩码工具。
+
 
 def xiaochihe_target_checked(frame):  # 只判断小池荷条件标记，调用方负责确认相机界面与目标文字。
     if not isinstance(frame, np.ndarray) or frame.dtype != np.uint8:  # 缺失或非截图数组不视为条件满足。
@@ -14,13 +16,12 @@ def xiaochihe_target_checked(frame):  # 只判断小池荷条件标记，调用�
     if not crop.size:  # 极小或不完整截图可能没有可用区域。
         return False  # 没有图标证据时返回未满足。
     crop = cv2.resize(crop, (36, 36), interpolation=cv2.INTER_LINEAR)  # 在统一参考尺寸下检查圆环与勾形。
-    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)  # 将黄色提示与灰色未选方块分开。
-    yellow = cv2.inRange(hsv, (18, 55, 150), (42, 255, 255)) > 0  # 容纳黄色光晕及缩放造成的颜色混合。
+    yellow_ranges = (((18, 55, 150), (42, 255, 255)),)  # 保留原黄色光晕的色相、饱和度和亮度范围。
+    yellow = isolate_by_hsv_ranges(crop, yellow_ranges, invert=False, kernel_size=0)[:, :, 0] > 0  # 不反色、不扩张笔画。
     if np.count_nonzero(yellow) < 45:  # 灰方块和纯白高光不具有足够黄色提示。
         return False  # 先排除没有条件满足颜色的标记。
-    hue, saturation, value = cv2.split(hsv)  # 分离亮度与色相以保留近白色的勾线。
-    warm = (hue >= 18) & (hue <= 42)  # 圆环和勾线的偏黄高光仍属于有效笔画。
-    bright = (value >= 210) & ((saturation <= 80) | warm)  # 同时接受近白高光与明亮黄色笔画。
+    bright_ranges = (((0, 0, 210), (180, 80, 255)), ((18, 0, 210), (42, 255, 255)))  # 合并原近白与明亮黄色条件。
+    bright = isolate_by_hsv_ranges(crop, bright_ranges, invert=False, kernel_size=0)[:, :, 0] > 0  # 保留逐像素几何语义。
     yy, xx = np.ogrid[:36, :36]  # 构造参考区域内的几何坐标。
     radius = np.hypot(xx - 17.5, yy - 17.5)  # 圆环中心来自两张实测图标的共同位置。
     ring = (radius >= 9.5) & (radius <= 13.5)  # 只检查外圈，内部勾线单独验证。

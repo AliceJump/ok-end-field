@@ -1,5 +1,6 @@
 import re  # 将观察点名称作为字面文本匹配
 
+from ok import Box  # 保留选中背景检测的像素边界
 from qfluentwidgets import FluentIcon  # 复用调试任务图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位和地图模板
@@ -44,10 +45,10 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
             0.27 if matcher.pattern == self.lang.environment_monitoring.marker_stone.pattern else 0.06
         )  # 实测两标签的空白区
         height, width = self.frame.shape[:2]  # 使用当前帧尺寸
-        patch = self.frame[
-            int(height * 0.145) : int(height * 0.16), int(width * left) : int(width * (left + 0.07))
-        ]  # 避开文字与等级数字
-        return bool(patch.size and (patch.min(axis=2) > 185).mean() > 0.7)  # 只有当前选中标签呈白底
+        x, y = int(width * left), int(height * 0.145)  # 保持原裁剪的向下取整边界
+        area = Box(x, y, int(width * (left + 0.07)) - x, int(height * 0.16) - y)  # 避开文字与等级数字
+        white = dict.fromkeys(("r", "g", "b"), (186, 255))  # 严格保留各通道大于 185 的边界
+        return self.calculate_color_percentage(white, area) > 0.7  # 复用颜色统计，只有当前选中标签呈白底
 
     def select_terminal(self, matcher):  # 两个终端共用切换逻辑
         for _ in range(2):  # 有界重试被动画吞掉的点击
@@ -100,19 +101,22 @@ class EnvironmentMonitoringEntryTask(MapMixin):  # 环境监测的传送前流�
         if not self.wait_ui_stable():  # 追踪按钮入场稳定后再操作
             raise RuntimeError("环境监测任务详情未稳定")  # 禁止点击过渡画面
 
+    def _tracked_map_locator(self):  # 同一帧同时出现停止追踪标记和地图定位才确认已追踪
+        if not self.find_one(
+            fL.skip_dialog_cancel, box=self.box_of_screen(0.93, 0.89, 0.97, 0.95), use_gray_scale=True
+        ):  # 仅在停止追踪按钮内识别叉号，避免页面其他关闭按钮
+            return None  # 通用叉号本身不能证明任务已追踪
+        return self.find_one(fL.one_task_to_map, box=self.box.bottom_right)  # 返回定位按钮，绝不点击停止追踪
+
     def transfer_observation(self):  # 正确处理未追踪与已追踪两条入口
         track = self.ocr(match=self.lang.environment_monitoring.track, box=self.box.bottom_right)  # 只匹配开始追踪
         if track:  # 首次追踪会自动打开任务地图
             self.click(track[0])  # 使用识别位置
         else:  # 已追踪时需要点击地图定位按钮
-            if not self.ocr(
-                match=self.lang.environment_monitoring.tracked, box=self.box.bottom_right
-            ):  # 不把识别失败当成已追踪
+            locator = self.wait_until(self._tracked_map_locator, time_out=4, raise_if_not_found=False)  # 等待双模板就绪
+            if not locator:  # 不把识别失败或单个通用图标当成已追踪
                 raise RuntimeError("无法确认环境监测任务追踪状态")  # 保留错误现场
-            if not self.wait_click_feature(
-                fL.one_task_to_map, box=self.box.bottom_right, time_out=4, raise_if_not_found=False
-            ):  # 复用任务地图定位图标
-                raise RuntimeError("未找到已追踪任务的地图定位按钮")  # 不绕过地图状态确认
+            self.click(locator)  # 点击同一帧已确认的地图定位按钮
         if not self.wait_feature(
             fL.in_map, box=self.box_of_screen(0.027, 0.531, 0.051, 0.896), time_out=10, raise_if_not_found=False
         ):  # 验证地图已打开

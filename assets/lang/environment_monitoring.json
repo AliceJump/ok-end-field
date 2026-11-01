@@ -6,7 +6,6 @@
   "accept": {"zh_CN": {"pattern": "接取委托"}, "zh_TW": {"pattern": "接取委託"}},
   "go": {"zh_CN": {"pattern": "前往任务"}, "zh_TW": {"pattern": "前往任務"}},
   "track": {"zh_CN": {"pattern": "开始追踪"}, "zh_TW": {"pattern": "開始追蹤"}},
-  "tracked": {"zh_CN": {"pattern": "停止追踪|取消追踪|正在追踪|已追踪"}, "zh_TW": {"pattern": "停止追蹤|取消追蹤|正在追蹤|已追蹤"}},
   "industrial": {"zh_CN": {"pattern": "工业"}, "zh_TW": {"pattern": "工業"}},
   "tool_wheel": {"zh_CN": {"pattern": "选择工具|松开确认"}, "zh_TW": {"pattern": "選擇工具|鬆開確認"}},
   "camera_tool": {"zh_CN": {"pattern": "^拍照$"}, "zh_TW": {"pattern": "^拍照$"}},
