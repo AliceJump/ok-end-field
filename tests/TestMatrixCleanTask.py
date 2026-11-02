@@ -288,23 +288,27 @@ class TestConfirmDismantle(unittest.TestCase):
         task.wait_click_feature.assert_not_called()
         task.mark_task_failure.assert_not_called()
 
-    def test_dismantle_button_missing_without_flag_is_failure(self):
+    def test_exit_button_missing_is_failure(self):
         task = make_task()
-        task.wait_click_feature = MagicMock(return_value=False)
         task._no_item_left = MagicMock(return_value=False)
         self.assertIsNone(task._confirm_dismantle())
-        task.mark_task_failure.assert_called_once_with("未找到分解按钮，无法确认清理完成")
+        task.mark_task_failure.assert_called_once_with("未找到分解模式退出按钮")
+        task.wait_feature.assert_called_once_with(fL.matrix_dismantle_exit, time_out=4, raise_if_not_found=False)
+        task.wait_click_feature.assert_not_called()
 
-    def test_empty_icon_appears_after_button_timeout(self):
+    def test_dismantle_button_missing_is_end(self):
         task = make_task()
+        task.wait_feature = MagicMock(return_value=True)
         task.wait_click_feature = MagicMock(return_value=False)
-        task._no_item_left = MagicMock(side_effect=[False, True])
+        task._no_item_left = MagicMock(return_value=False)
         self.assertFalse(task._confirm_dismantle())
+        self.assertNotIn("time_out", task.wait_click_feature.call_args.kwargs)
         task.mark_task_failure.assert_not_called()
 
     def test_confirm_button_missing_is_failure(self):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
+        task.wait_feature = MagicMock(return_value=True)
         task.wait_click_feature = MagicMock(return_value=True)  # 「分解」已点击
         task.click_confirm = MagicMock(return_value=False)
         task._close_result_popup = MagicMock()
@@ -315,6 +319,7 @@ class TestConfirmDismantle(unittest.TestCase):
     def test_full_batch_success(self):
         task = make_task()
         task._no_item_left = MagicMock(return_value=False)
+        task.wait_feature = MagicMock(return_value=True)
         task.wait_click_feature = MagicMock(return_value=True)
         task._close_result_popup = MagicMock(return_value=True)
         self.assertTrue(task._confirm_dismantle())

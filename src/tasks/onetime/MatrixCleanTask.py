@@ -19,7 +19,8 @@ class MatrixCleanTask(Common):
        「未上锁」，保存——保存即按筛选结果勾选物品并关闭面板；
     4. 点「分解」→ 确认弹窗「确认」→ 关闭「分解获得」结果弹窗，游戏
        自动退回浏览模式，循环下一批；
-    5. 结束判定：批开始或保存筛选后检测到空列表图标，结束循环。批开始
+    5. 结束判定：检测到空列表图标，或确认分解模式后未检测到分解按钮。
+       批开始
        不能按按钮文字判断——未勾选物品（已选择 0/200）时按钮恒为
        「无法分解」。
     """
@@ -182,22 +183,25 @@ class MatrixCleanTask(Common):
     def _confirm_dismantle(self):
         """点击分解并走完确认与结果弹窗（完成后游戏自动退回浏览模式）。
 
-        只有检测到空列表图标才判定清理完成；按钮识别失败时报告异常。
+        确认处于分解模式后，检测并点击可用的分解按钮。
+
+        Returns:
+            bool | None: 本批分解完成返回 True；空列表或没有可用分解按钮返回 False；
+            未进入分解模式、确认失败或结果弹窗关闭失败返回 None。
         """
         if self._no_item_left():
             return False
+        if not self.wait_feature(fL.matrix_dismantle_exit, time_out=4, raise_if_not_found=False):
+            self.mark_task_failure("未找到分解模式退出按钮")
+            return None
         # 亮起的「分解」按钮右侧图标与确认弹窗「确认」相同，复用同一模板；
         # 灰色「无法分解」不带该图标
         if not self.wait_click_feature(
             fL.skip_dialog_confirm,
             box=self.box_of_screen(*self._BOTTOM_RIGHT),
-            time_out=4,
             raise_if_not_found=False,
         ):
-            if self._no_item_left():
-                return False
-            self.mark_task_failure("未找到分解按钮，无法确认清理完成")
-            return None
+            return False
         # 弹窗出现后底栏「分解」按钮仍带同一图标；click_confirm 只在弹窗
         # 「确认」的标注位置附近查找，不会点回底栏
         if not self.click_confirm():
