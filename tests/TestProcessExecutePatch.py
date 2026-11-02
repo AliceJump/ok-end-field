@@ -1433,6 +1433,37 @@ class TestTemporaryParentRecovery(unittest.TestCase):
         self.assertTrue(self.logger.warning.called)
         self.assertNotIn("INJECTED", str(self.logger.warning.call_args_list))
 
+    def test_config_junction_alias_uses_resolved_copy_root(self):
+        """A linked config folder must not orphan an otherwise owned local image."""
+        root, image = self._local_image()
+        alias = self.path / "linked-image-root"
+        record = self._write(parent_exe=os.path.normcase(str(image)))
+        original_resolve = self.recovery.Path.resolve
+
+        def resolve_config_alias(path, *args, **kwargs):
+            if path == alias:
+                return root
+            return original_resolve(path, *args, **kwargs)
+
+        with (
+            patch.object(self.recovery, "config_path", return_value=str(alias)),
+            patch.object(self.recovery.Path, "resolve", new=resolve_config_alias),
+        ):
+            self.recovery.forget_owned_parent(self.parent_pid, self.logger)
+        self.assertFalse(record.exists())
+        self.assertFalse(image.exists())
+
+    def test_unknown_private_uuid_root_preserves_recovery_record(self):
+        """A copy-shaped journal path outside the owned root cannot be discarded."""
+        root, image = self._local_image()
+        untrusted = self.path / "foreign" / ("b" * 32) / "Games.exe"
+        record = self._write(parent_exe=os.path.normcase(str(untrusted)))
+        with patch.object(self.recovery, "config_path", return_value=str(root)):
+            self.recovery.forget_owned_parent(self.parent_pid, self.logger)
+        self.assertTrue(record.exists())
+        self.assertTrue(image.exists())
+        self.assertTrue(self.logger.warning.called)
+
     def test_unexpected_files_prevent_deleting_a_local_image_directory(self):
         root, image = self._local_image()
         (image.parent / "unrelated.txt").write_text("keep", encoding="utf-8")
