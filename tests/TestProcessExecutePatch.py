@@ -1425,7 +1425,7 @@ class TestTemporaryParentRecovery(unittest.TestCase):
 
     def test_invalid_uuid_path_is_rejected_without_logging_untrusted_text(self):
         root, image = self._local_image()
-        record = self._write(parent_exe=str(root / "bad-name\\nINJECTED" / "Games.exe"))
+        record = self._write(parent_exe=str(root / "bad-name\nINJECTED" / "Games.exe"))
         with patch.object(self.recovery, "config_path", return_value=str(root)):
             self.recovery.forget_owned_parent(self.parent_pid, self.logger)
         self.assertTrue(record.exists())
