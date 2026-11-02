@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from ok import Logger
-from ok.gui.debug.Screenshot import Screenshot
+from ok.core.screenshot import Screenshot, unique_screenshot_stem
+from ok.util.file import sanitize_filename
 
 from src.patches.screenshot_sidecar import build_sidecar, serialize_boxes
 
@@ -19,6 +21,10 @@ def _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box, frame_b
     序列化到同名 _boxes.json（体积为 KB 级），恢复时可重绘出完全相同的
     _boxed.png（见 scripts/maintenance/restore_log_screenshots.py）。
     """
+    if folder is None:
+        return None
+    if show_box:
+        ui_dict = ui_dict.copy()
     pil_image = self.to_pil_image(frame, processor=processor)
     if pil_image is None:
         return None
@@ -28,15 +34,17 @@ def _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box, frame_b
     else:
         x_offset, y_offset = -frame_box.x, -frame_box.y
 
+    name = unique_screenshot_stem(folder, sanitize_filename(name))
     original_name = self.save_pil_image(name + "_original", folder, pil_image)
 
     if show_box and ui_dict:
+        original_path = Path(original_name)
+        sidecar_name = original_path.with_name(original_path.stem.removesuffix("_original") + "_boxes.json")
         try:
-            sidecar_name = original_name[: -len("_original.png")] + "_boxes.json"
             with open(sidecar_name, "w", encoding="utf-8") as sidecar_file:
                 json.dump(
                     build_sidecar(
-                        original_name.rsplit("\\", 1)[-1].rsplit("/", 1)[-1],
+                        original_path.name,
                         serialize_boxes(ui_dict, x_offset, y_offset),
                     ),
                     sidecar_file,

@@ -371,6 +371,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "mcp" },
+    { name = "packaging" },
     { name = "playwright" },
     { name = "polib" },
     { name = "pypinyin" },
@@ -383,7 +384,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=44.0.0" },
     { name = "json5", specifier = "==0.15.0" },
     { name = "numpy", specifier = ">=2.0.0" },
-    { name = "ok-script", specifier = "==2.0.17" },
+    { name = "ok-script", specifier = "==2.0.22" },
     { name = "onnxocr-ppocrv5", specifier = "==0.0.14" },
     { name = "opencv-python", specifier = "==4.12.0.88" },
     { name = "openvino", specifier = "==2026.0.0" },
@@ -399,6 +400,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "mcp", specifier = "==2.3.0" },
+    { name = "packaging", specifier = ">=26.3" },
     { name = "playwright", specifier = ">=1.55,<2" },
     { name = "polib", specifier = ">=1.2,<2" },
     { name = "pypinyin", specifier = ">=0.55,<1" },
@@ -408,7 +410,7 @@ dev = [
 
 [[package]]
 name = "ok-script"
-version = "2.0.17"
+version = "2.0.22"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mouse" },
@@ -421,9 +423,9 @@ dependencies = [
     { name = "requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e7/4e/5c4fccfedc774b587b9b1d02e73d2d21b5216de6017d160e5914d9e1d9d8/ok_script-2.0.17.tar.gz", hash = "sha256:040a50e7ff1e08ee2f9425b8f56158f1fe2f2e3b1a3056f8c3b11afb6f93c261", size = 967102, upload-time = "2026-10-27T15:41:12.586Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7b/65/f236b7af64a846f432f74184b7b0f14a9016570ace75385ebbe09b4f09f0/ok_script-2.0.22.tar.gz", hash = "sha256:71f664c08c44bab7ab40af04ed4fc34284b11f6ab8e255c702716c4ae736a654", size = 1011541, upload-time = "2026-11-01T12:42:49.491Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/73/7e/af20af9c019fd2d01f5ab49fdfd1f852eb43a61179a165d8c3611279ba1b/ok_script-2.0.17-py3-none-any.whl", hash = "sha256:49720827f267297620208bc5fe6981203eb6472868fe2de59d12329ed7494e44", size = 966861, upload-time = "2026-10-27T15:41:10.689Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/e1/7acb4d5b1b709774ce69ef98bfd3cd0c392ca6eb958e1651f54ac701c26c/ok_script-2.0.22-py3-none-any.whl", hash = "sha256:e043009920ed7b311d4cfccc04e6e6faa16dca8c2dcbb38bd273bf16fee3b7e2", size = 1007520, upload-time = "2026-11-01T12:42:47.948Z" },
 ]
 
 [[package]]
@@ -491,6 +493,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/71/8a/89d82f1a9d913fb266c2e6dc2f6030935db24b7152963a8db6c4f039787f/openvino_telemetry-2025.2.0.tar.gz", hash = "sha256:8bf8127218e51e99547bf38b8fb85a8b31c9bf96e6f3a82eb0b3b6a34155977c", size = 18894, upload-time = "2025-07-07T10:29:51.159Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3b/ac/5ab0ca0aa269ad3c73f7bfc3801b10e5f56f75a31bf68c1ae8bd51cf70a4/openvino_telemetry-2025.2.0-py3-none-any.whl", hash = "sha256:bcb667e83a44f202ecf4cfa49281715c6d7e21499daec04ff853b7f964833599", size = 25227, upload-time = "2025-07-07T10:29:50.189Z" },
+]
+
+[[package]]
+name = "packaging"
+version = "26.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz", hash = "sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79", size = 313412, upload-time = "2026-08-04T18:15:28.737Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl", hash = "sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c", size = 129956, upload-time = "2026-08-04T18:15:27.159Z" },
 ]
 
 [[package]]
