@@ -1,7 +1,4 @@
-OBSERVATION_ROUTES = {"pool_lotus": "walk_pool_lotus_route"}  # 语言无关的观察点标识及导航方法
-
-
-class EnvironmentMonitoringNavigation:  # 使用所属任务的输入和识别能力执行导航
+class PoolLotusNavigation:  # 使用所属任务的输入和识别能力执行导航
     def __init__(self, task):  # 复用任务的生命周期和设备
         self.task = task  # 不创建独立任务或执行器
 
@@ -14,7 +11,7 @@ class EnvironmentMonitoringNavigation:  # 使用所属任务的输入和识别�
         finally:  # 配对清理输入
             self.task.send_key_up(actual_key)  # 松开移动键
 
-    def walk_pool_lotus_route(self):  # 用户确认的短路线，无地图导航
+    def run(self):  # 用户确认的短路线，无地图导航
         if not self.task.in_world():  # 必须从传送后的大世界起步
             raise RuntimeError("小池荷路线未处于大世界")  # 不在菜单发送移动
         self._hold_route_key("w", 0.5)  # 用户更正为传送后先向前一步

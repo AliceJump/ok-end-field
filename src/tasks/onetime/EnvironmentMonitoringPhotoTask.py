@@ -6,10 +6,9 @@ from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
-from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 根据观察点选择导航组件
-    OBSERVATION_ROUTES,  # 入口筛选与路线分发共用注册表
-    EnvironmentMonitoringNavigation,  # 使用当前任务执行点位路线
-)
+from src.tasks.onetime.PoolLotusNavigation import PoolLotusNavigation  # 小池荷专用导航组件
+
+OBSERVATION_ROUTES = {"pool_lotus": PoolLotusNavigation}  # 观察点语言键到导航类的注册表，筛选与执行共用
 
 TERMINAL_LEFTS = {"outskirts": 0.06, "marker_stone": 0.27}  # 按固定左右顺序标识终端及其标签空白区
 
@@ -25,7 +24,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         self.config_description = {}  # 不展示观察点名称配置
 
         self.selected_observation = None  # 每次执行重新建立交接信息
-        self.navigation = EnvironmentMonitoringNavigation(self)  # 路线复用当前任务的设备和状态
+        self.navigation = None  # 匹配观察点后创建对应导航组件
 
     @staticmethod  # 标题符号不是观察点身份的一部分
     def normalize_title(text):  # 兼容符号、空白与英文大小写差异
@@ -43,7 +42,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             if found:  # 已找到候选路线
                 if matched is not None:  # 多条路线匹配同一卡片
                     return None  # 停止而不是根据注册顺序猜测
-                matched = route  # 记录唯一匹配的导航方法
+                matched = route  # 记录唯一匹配的导航类
         return matched  # 未匹配时返回 None
 
     def open_monitoring(self):  # 从任意可恢复页面进入环境监测
@@ -310,15 +309,16 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         }  # 不触发快门或提交委托
 
     def run(self):  # GUI 与 MCP 共用从入口开始的可重复流程
+        self.navigation = None  # 每轮清除上一次观察点的导航组件
         observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
         if observation is None:  # 当前没有符合条件的观察点
             return {"skipped": True, "photo_taken": False}  # 明确区分正常跳过与未完成取景
         name = observation["name"]  # 保留实际识别名称用于错误提示
-        route_name = self.observation_route(name)  # 获取当前点位注册的导航方法
-        route = getattr(self.navigation, route_name, None) if route_name else None  # 不为未知点位调用其他路线
-        if not callable(route):  # 路线缺失时不得继续相机阶段
+        navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
+        if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
             raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
-        route()  # 执行传送后的点位导航
+        self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
+        self.navigation.run()  # 每个点位统一通过 run 执行导航
         return self.prepare_photo()  # 停在相机内，保留任务供下一轮验证
 
     def run_daily_preview(self):  # 一键日常仅运行当前可用的取景验证

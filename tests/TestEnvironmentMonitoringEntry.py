@@ -13,6 +13,7 @@ from ok.util.color import calculate_color_percentage
 
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
+from src.tasks.onetime.PoolLotusNavigation import PoolLotusNavigation
 
 
 class TestEnvironmentMonitoringEntry(unittest.TestCase):
@@ -613,7 +614,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.prepare_task([supported], [])
         task.lang.environment_monitoring.ancient_tree = "古树"
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES", {"ancient_tree": "walk_other"}
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES", {"ancient_tree": PoolLotusNavigation}
         ):
             self.assertEqual(task.prepare_observation()["name"], "古树")
         task.enter_observation.assert_called_once_with(supported)
@@ -635,7 +636,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         for locale, title in examples:
             with self.subTest(title=title):
                 task.lang.environment_monitoring.pool_lotus = data["pool_lotus"][locale]["string"]
-                self.assertEqual(task.observation_route(title), "walk_pool_lotus_route")
+                self.assertEqual(task.observation_route(title), PoolLotusNavigation)
                 self.assertIsNone(task.observation_route(title + "其他"))
 
     def test_other_localized_points_are_not_selected_without_registered_routes(self):
@@ -665,7 +666,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 with self.subTest(locale=locale, point=key):
                     node = names[locale]
                     route = task.observation_route(node.get("string", node.get("pattern")))
-                    self.assertEqual(route, "walk_pool_lotus_route" if key == "pool_lotus" else None)
+                    self.assertEqual(route, PoolLotusNavigation if key == "pool_lotus" else None)
 
     def test_short_names_match_only_their_point_in_every_locale(self):
         data = json.loads(
@@ -682,23 +683,23 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     task = self.task()
                     setattr(task.lang.environment_monitoring, key, re.compile(names[locale]["pattern"]))
                     with patch.dict(
-                        "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
-                        {key: "walk_test"},
+                        "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
+                        {key: PoolLotusNavigation},
                         clear=True,
                     ):
-                        self.assertEqual(task.observation_route(names[locale]["pattern"]), "walk_test")
+                        self.assertEqual(task.observation_route(names[locale]["pattern"]), PoolLotusNavigation)
                         for other, titles in points.items():
                             node = titles[locale]
                             actual = task.observation_route(node.get("string", node.get("pattern")))
-                            self.assertEqual(actual, "walk_test" if other == key else None, other)
+                            self.assertEqual(actual, PoolLotusNavigation if other == key else None, other)
 
     def test_ambiguous_short_name_never_selects_a_route(self):
         task = self.task()
         task.lang.environment_monitoring.first = re.compile("小池")
         task.lang.environment_monitoring.second = re.compile("池荷")
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
-            {"first": "first_route", "second": "second_route"},
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
+            {"first": PoolLotusNavigation, "second": PoolLotusNavigation},
             clear=True,
         ):
             self.assertIsNone(task.observation_route("小池荷"))
@@ -707,11 +708,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task.lang.environment_monitoring.ecology_near_the_field_logistics_depot = re.compile("储备站")
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
-            {"ecology_near_the_field_logistics_depot": "walk_test"},
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
+            {"ecology_near_the_field_logistics_depot": PoolLotusNavigation},
             clear=True,
         ):
-            self.assertEqual(task.observation_route("储备站周围的生态环境"), "walk_test")
+            self.assertEqual(task.observation_route("储备站周围的生态环境"), PoolLotusNavigation)
             self.assertIsNone(task.observation_route("古树"))
 
     def test_transfer_arrival_failure_clears_previous_result_and_never_reports_success(self):
