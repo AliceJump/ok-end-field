@@ -4007,10 +4007,10 @@ msgid "收取地区"
 msgstr "Zonas de recogida"
 
 msgid "环境监测"
-msgstr "Monitoreo ambiental"
+msgstr "Monitoreo ambiental (soporte en expansión)"
 
 msgid "环境监测执行失败：{error}"
 msgstr "Falló el monitoreo ambiental: {error}"
 
 msgid "⭐环境监测"
-msgstr "⭐Monitoreo ambiental"
+msgstr "⭐Monitoreo ambiental (soporte en expansión)"
