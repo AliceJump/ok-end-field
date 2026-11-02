@@ -29,6 +29,7 @@ from src.tasks.onetime.DailyRewardTask import DailyRewardTask
 from src.tasks.onetime.DailyYingTuoTask import DailyYingTuoTask
 from src.tasks.onetime.DeliverySendTask import DeliverySendTask
 from src.tasks.onetime.DemoBattleTask import DemoBattleTask
+from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 from src.tasks.onetime.FarmRelatedTask import FarmRelatedTask
 from src.tasks.onetime.HomePointTask import HomePointTask
 from src.tasks.onetime.LiaisonGiftTask import LiaisonGiftTask
@@ -72,6 +73,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         "清理基质",
         "转交运送委托",
         "地区建设",
+        "环境监测",
         "造装备",
         "收信用",
         "买信用商店",
@@ -107,6 +109,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         **dict.fromkeys(BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS + FARM_TASKS, True),
         # 清理基质会分解库存，默认关闭，仅用户主动勾选后执行
         "清理基质": False,
+        "环境监测": False,
         "自动送货": False,
         "传送到帝江号右侧传送点": True,
     }
@@ -256,6 +259,13 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
                 and bool(self.regional_feature.impl_config("⭐地区建设"))
             ),
         )
+        self.environment_monitoring_feature = DailyFeature(
+            self,
+            EnvironmentMonitoringPhotoTask,
+            switch_key="⭐环境监测",
+            run_method="run_daily_preview",
+            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "环境监测"),
+        )
         self.craft_feature = DailyFeature(
             self,
             CraftWeaponTask,
@@ -331,7 +341,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         self.config_description.update(
             {
                 self.CFG_BOAT_TASKS: "选择参加一键日常的帝江号任务；执行顺序固定为送礼、帝江号整理、帝江号收菜。",
-                self.CFG_OTHER_TASKS: "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。",
+                self.CFG_OTHER_TASKS: "选择参加一键日常的其他任务；顺序由程序固定。环境监测目前仅取景验证，不会拍照或完成委托。",
                 self.CFG_BATTLE_TASKS: "选择参加一键日常的战斗任务；刷体力、演算与影拓丰碑连续执行。",
                 self.CFG_REWARD_TASKS: "选择参加一键日常的奖励任务；奖励块固定安排在普通业务任务之后。",
                 self.CFG_FARM_TASKS: "农牧领取单独成块，固定安排在奖励之后、自动送货之前执行。",
@@ -376,7 +386,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             {
                 self.CFG_BOAT_TASKS: list(self.BOAT_TASKS),
                 # 清理基质默认不勾选：分解不可回滚，须用户主动开启
-                self.CFG_OTHER_TASKS: [task for task in self.OTHER_TASKS if task != "清理基质"],
+                self.CFG_OTHER_TASKS: [task for task in self.OTHER_TASKS if task != "清理基质" and task != "环境监测"],
                 self.CFG_BATTLE_TASKS: list(self.BATTLE_TASKS),
                 self.CFG_REWARD_TASKS: list(self.REWARD_TASKS),
                 self.CFG_FARM_TASKS: list(self.FARM_TASKS),
@@ -455,6 +465,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self.matrix_clean_feature.plan_item(),
             self.delivery_send_feature.plan_item(),
             self.regional_feature.plan_item(),
+            self.environment_monitoring_feature.plan_item(),
             self.craft_feature.plan_item(),
             self.credit_feature.plan_item(),
             self.shop_feature.plan_item(),

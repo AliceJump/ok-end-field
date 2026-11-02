@@ -18,7 +18,7 @@ from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitori
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
-    def test_daily_group_keeps_preview_out_of_daily_completion_plan(self):
+    def test_daily_group_registers_preview_as_an_opt_in_other_task(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):
             task = EnvironmentMonitoringPhotoTask(SimpleNamespace(scene=None, pause_start=None), SimpleNamespace())
         self.assertEqual(task.group_name, "日常任务")
@@ -27,7 +27,47 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.default_config, {})
         registration = ["src.tasks.onetime.EnvironmentMonitoringPhotoTask", "EnvironmentMonitoringPhotoTask"]
         self.assertEqual(app_config["onetime_tasks"].count(registration), 1)
-        self.assertNotIn("环境监测", DailyTask.OTHER_TASKS)
+        self.assertIn("环境监测", DailyTask.OTHER_TASKS)
+        self.assertFalse(DailyTask._LEGACY_DEFAULTS["环境监测"])
+        with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):
+            daily = DailyTask(SimpleNamespace(scene=None, pause_start=None, debug=False), SimpleNamespace())
+        self.assertNotIn("环境监测", daily.default_config[daily.CFG_OTHER_TASKS])
+        self.assertIn("环境监测", daily.config_type[daily.CFG_OTHER_TASKS]["options"])
+        item = next(item for item in daily.build_task_plan() if item[0] == "⭐环境监测")
+        self.assertEqual(item[1].__self__.run_method, "run_daily_preview")
+        daily._account_override_for = Mock(return_value={})
+        daily.config = SimpleNamespace(
+            get=lambda key, default=None: ["收邮件"] if key == daily.CFG_OTHER_TASKS else default
+        )
+        self.assertFalse(item[2]())
+        daily.config = SimpleNamespace(
+            get=lambda key, default=None: ["环境监测"] if key == daily.CFG_OTHER_TASKS else default
+        )
+        self.assertTrue(item[2]())
+
+    def test_daily_preview_marks_incomplete_and_recovers_main(self):
+        task = self.task()
+        task.run.return_value = {"camera_open": True, "photo_ready": True, "photo_taken": False}
+        task.tr.side_effect = lambda text: text
+        self.assertFalse(EnvironmentMonitoringPhotoTask.run_daily_preview(task))
+        task.mark_task_failure.assert_called_once_with("环境监测仅完成取景验证，尚未拍照或完成委托")
+        task.ensure_main.assert_called_once_with()
+
+    def test_daily_preview_recovers_main_after_exception(self):
+        task = self.task()
+        task.run.side_effect = RuntimeError("navigation failed")
+        task.tr.side_effect = lambda text: text
+        self.assertFalse(EnvironmentMonitoringPhotoTask.run_daily_preview(task))
+        task.ensure_main.assert_called_once_with()
+        task.mark_task_failure.assert_called_once_with("环境监测执行失败：navigation failed")
+
+    def test_daily_preview_propagates_cancellation(self):
+        task = self.task()
+        task.run.side_effect = TaskDisabledException()
+        with self.assertRaises(TaskDisabledException):
+            EnvironmentMonitoringPhotoTask.run_daily_preview(task)
+        task.mark_task_failure.assert_not_called()
+        task.ensure_main.assert_not_called()
 
     def task(self):
         task = Mock()

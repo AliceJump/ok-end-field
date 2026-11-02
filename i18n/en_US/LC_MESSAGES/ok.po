@@ -3886,3 +3886,15 @@ msgstr "Go to Pool Lotus, walk beside the bamboo, and open the camera. Stop afte
 
 msgid "环境监测"
 msgstr "Environmental Monitoring"
+
+msgid "选择参加一键日常的其他任务；顺序由程序固定。环境监测目前仅取景验证，不会拍照或完成委托。"
+msgstr "Select other daily tasks; their order is fixed. Environmental Monitoring currently only checks framing and does not take a photo or complete the commission."
+
+msgid "环境监测仅完成取景验证，尚未拍照或完成委托"
+msgstr "Environmental Monitoring only checked framing; no photo was taken and the commission is incomplete"
+
+msgid "环境监测执行失败：{error}"
+msgstr "Environmental Monitoring failed: {error}"
+
+msgid "⭐环境监测"
+msgstr "⭐Environmental Monitoring"

@@ -4020,3 +4020,15 @@ msgstr "Ve a Loto del estanque, camina hasta el bambú y abre la cámara. Se det
 
 msgid "环境监测"
 msgstr "Monitoreo ambiental"
+
+msgid "选择参加一键日常的其他任务；顺序由程序固定。环境监测目前仅取景验证，不会拍照或完成委托。"
+msgstr "Selecciona otras tareas diarias; el orden es fijo. El monitoreo ambiental solo comprueba el encuadre y no toma fotos ni completa el encargo."
+
+msgid "环境监测仅完成取景验证，尚未拍照或完成委托"
+msgstr "El monitoreo ambiental solo comprobó el encuadre; no se tomó ninguna foto ni se completó el encargo"
+
+msgid "环境监测执行失败：{error}"
+msgstr "Falló el monitoreo ambiental: {error}"
+
+msgid "⭐环境监测"
+msgstr "⭐Monitoreo ambiental"
