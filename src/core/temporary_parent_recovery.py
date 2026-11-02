@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -17,6 +18,8 @@ from src.core.paths import config_path
 
 _RECORD_VERSION = 1
 _TIME_TOLERANCE = 0.02
+TEMPORARY_IMAGE_DIRNAME = "endfield_parent_images"
+_TEMP_IMAGE_ID = re.compile(r"^[0-9a-f]{32}$")
 
 
 def _records_dir() -> Path:
@@ -94,12 +97,58 @@ def note_game_started(parent_pid: int, game_pid: int, logger) -> None:
         logger.warning(f"Could not update temporary launcher game record for PID {parent_pid}: {error}")
 
 
-def forget_owned_parent(pid: int, logger) -> None:
-    """Retire the record once this instance has discarded its owned parent."""
+def _remove_local_image(record: dict, logger) -> bool:
+    """Delete only our one-file, UUID-named image directory, never a launcher install."""
+    executable = record.get("parent_exe")
+    if not isinstance(executable, str):
+        return False
+    image = Path(executable)
+    directory = image.parent
+    root = Path(config_path(TEMPORARY_IMAGE_DIRNAME)).resolve()
+    if directory.parent.resolve() != root:
+        return True  # Original official Games.exe: we do not own the image.
+    if (
+        not _TEMP_IMAGE_ID.fullmatch(directory.name)
+        or image.name.casefold() != "games.exe"
+        or directory.is_symlink()
+        or directory.resolve() != directory
+    ):
+        logger.warning(f"Refusing to delete unrecognized temporary parent image: {image}")
+        return False
     try:
-        _record_path(pid).unlink(missing_ok=True)
+        image.unlink(missing_ok=True)
+        if directory.exists():
+            directory.rmdir()
+        return True
     except OSError as error:
-        logger.warning(f"Cannot retire temporary launcher record for PID {pid}: {error}")
+        # Keep the journal: Windows may still hold the executable image open.
+        logger.warning(f"Cannot remove temporary parent image {image}; will retry: {error}")
+        return False
+
+
+def _retire_record(path: Path, record: dict, logger) -> None:
+    if not _remove_local_image(record, logger):
+        return
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as error:
+        logger.warning(f"Cannot retire temporary launcher record {path}: {error}")
+
+
+def forget_owned_parent(pid: int, logger) -> None:
+    """Retire a terminated owned parent and its local copy, if any."""
+    path = _record_path(pid)
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return
+    except (OSError, ValueError) as error:
+        logger.warning(f"Cannot read temporary launcher record for PID {pid}: {error}")
+        return
+    if not isinstance(record, dict) or record.get("parent_pid") != pid:
+        logger.warning(f"Invalid owned launcher record for PID {pid}: {path}")
+        return
+    _retire_record(path, record, logger)
 
 
 def _owner_still_alive(record: dict) -> bool:
@@ -150,11 +199,14 @@ def _recover_record(path: Path, logger) -> None:
     try:
         parent = psutil.Process(pid)
     except psutil.NoSuchProcess:
-        path.unlink(missing_ok=True)
+        # An old game can outlive its parent; retain a copy until the game exits.
+        if not _recorded_game_alive(record):
+            _retire_record(path, record, logger)
         return
     if not _same_process(parent, started, executable):
-        # PID reused, or a different process now occupies this identity.
-        path.unlink(missing_ok=True)
+        # PID reused or old parent exited. Never terminate the unrelated process.
+        if not _recorded_game_alive(record):
+            _retire_record(path, record, logger)
         return
     if _owner_still_alive(record) or _recorded_game_alive(record):
         return
@@ -165,7 +217,8 @@ def _recover_record(path: Path, logger) -> None:
     if not _same_process(parent, started, executable):
         return
     parent.terminate()
-    path.unlink(missing_ok=True)
+    parent.wait(timeout=5)
+    _retire_record(path, record, logger)
     logger.info(f"Recovered abandoned temporary Games.exe PID {pid}")
 
 
