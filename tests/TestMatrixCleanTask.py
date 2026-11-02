@@ -160,12 +160,15 @@ class TestEnterDismantleMode(unittest.TestCase):
         task = make_task()
         task.find_one = MagicMock(return_value=MagicMock())  # 退出图标已出现
         self.assertTrue(task._enter_dismantle_mode())
+        task.find_one.assert_called_once_with(fL.matrix_dismantle_exit)
         task.click_relative.assert_not_called()
 
     def test_clicks_entry_and_verifies_hint(self):
         task = make_task()
         task.wait_feature = MagicMock(return_value=MagicMock())  # 点击后退出图标出现
         self.assertTrue(task._enter_dismantle_mode())
+        task.find_one.assert_called_once_with(fL.matrix_dismantle_exit)
+        self.assertEqual(task.wait_feature.call_args.args, (fL.matrix_dismantle_exit,))
         task.wait_feature.call_args.kwargs["pre_action"]()
         task.click_relative.assert_called_once_with(0.259, 0.93, after_sleep=1)
         task.mark_task_failure.assert_not_called()
