@@ -1437,9 +1437,11 @@ class TestTemporaryParentRecovery(unittest.TestCase):
         """A linked config folder must not orphan an otherwise owned local image."""
         root, image = self._local_image()
         alias = self.path / "linked-image-root"
-        record = self._write(parent_exe=os.path.normcase(str(image)))
         original_resolve = self.recovery.Path.resolve
         canonical_root = root.resolve()
+        # Creation uses the resolved root, so the journal must record that path.
+        recorded_image = canonical_root / image.parent.name / "Games.exe"
+        record = self._write(parent_exe=os.path.normcase(str(recorded_image)))
 
         def resolve_config_alias(path, *args, **kwargs):
             if path == alias:
