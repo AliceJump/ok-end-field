@@ -398,8 +398,8 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     hanging_vines: str
     """垂藤"""
 
-    mysterious_cryptid_graffiti: str
-    """谜之生物的涂鸦"""
+    mysterious_cryptid_graffiti: re.Pattern[str]
+    """涂鸦"""
 
     peach_tree_at_babbles_s_home: str
     """念念家的桃树"""
@@ -425,8 +425,8 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     ancient_tree: str
     """古树"""
 
-    beacon_damaged_in_the_blight_tide: str
-    """侵蚀潮中损坏的信标"""
+    beacon_damaged_in_the_blight_tide: re.Pattern[str]
+    """信标"""
 
     cistern_originium_slugs: str
     """蓄水源石虫"""
@@ -437,8 +437,8 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     collapsed_tianshi_pillar: str
     """倒塌的天师桩"""
 
-    ecology_near_the_field_logistics_depot: str
-    """储备站周围的生态环境"""
+    ecology_near_the_field_logistics_depot: re.Pattern[str]
+    """储备站"""
 
     eternal_sunset: str
     """栖霞驻影"""
@@ -446,14 +446,14 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     indoor_crops: str
     """室内作物"""
 
-    inflated_and_glowing_bugspitting_lankybeast: str
-    """肚子鼓气后发光的吐虫长股兽"""
+    inflated_and_glowing_bugspitting_lankybeast: re.Pattern[str]
+    """吐虫长股兽"""
 
     mini_shellbeast: str
     """小壳兽"""
 
-    observant_sable_chested_fowlbeast: str
-    """东张西望的黑腹雉羽兽"""
+    observant_sable_chested_fowlbeast: re.Pattern[str]
+    """黑腹雉羽兽"""
 
     pier_waterwheel: str
     """码头水车"""
@@ -461,32 +461,14 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     rainbow_fin: str
     """七彩鳞"""
 
-    vigorous_cistern_originium_slug: str
-    """充满活力的蓄水源石虫"""
+    vigorous_cistern_originium_slug: re.Pattern[str]
+    """充满活力"""
 
     waterlamp: str
     """水灯虫"""
 
     xiranite_nexus: str
     """枢壤仪"""
-
-    mysterious_cryptid_graffiti_match: str
-    """涂鸦"""
-
-    beacon_damaged_in_the_blight_tide_match: str
-    """信标"""
-
-    ecology_near_the_field_logistics_depot_match: str
-    """储备站"""
-
-    inflated_and_glowing_bugspitting_lankybeast_match: str
-    """吐虫长股兽"""
-
-    observant_sable_chested_fowlbeast_match: str
-    """黑腹雉羽兽"""
-
-    vigorous_cistern_originium_slug_match: str
-    """充满活力"""
 
 
 class GameFlowMixinModule(_LangModuleBaseT):

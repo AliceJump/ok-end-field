@@ -664,14 +664,15 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             )
         )
         locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
-        points = {key: value for key, value in data.items() if key != "track" and not key.endswith("_match")}
+        points = {key: value for key, value in data.items() if key != "track"}
         self.assertEqual(len(points), 32)
         task = self.task()
         for locale in locales:
             task.lang.environment_monitoring.pool_lotus = points["pool_lotus"][locale]["string"]
             for key, names in points.items():
                 with self.subTest(locale=locale, point=key):
-                    route = task.observation_route(names[locale]["string"])
+                    node = names[locale]
+                    route = task.observation_route(node.get("string", node.get("pattern")))
                     self.assertEqual(route, "walk_pool_lotus_route" if key == "pool_lotus" else None)
 
     def test_short_names_match_only_their_point_in_every_locale(self):
@@ -680,35 +681,46 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        points = {key: value for key, value in data.items() if key != "track" and not key.endswith("_match")}
-        short_names = {key.removesuffix("_match"): value for key, value in data.items() if key.endswith("_match")}
+        points = {key: value for key, value in data.items() if key != "track"}
+        short_names = {key: value for key, value in points.items() if "pattern" in value["zh_CN"]}
         self.assertEqual(len(short_names), 6)
         for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
             for key, names in short_names.items():
                 with self.subTest(locale=locale, point=key):
                     task = self.task()
-                    setattr(task.lang.environment_monitoring, key, points[key][locale]["string"])
-                    setattr(task.lang.environment_monitoring, key + "_match", names[locale]["string"])
+                    setattr(task.lang.environment_monitoring, key, re.compile(names[locale]["pattern"]))
                     with patch.dict(
                         "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
                         {key: "walk_test"},
                         clear=True,
                     ):
-                        self.assertEqual(task.observation_route(names[locale]["string"]), "walk_test")
+                        self.assertEqual(task.observation_route(names[locale]["pattern"]), "walk_test")
                         for other, titles in points.items():
-                            actual = task.observation_route(titles[locale]["string"])
+                            node = titles[locale]
+                            actual = task.observation_route(node.get("string", node.get("pattern")))
                             self.assertEqual(actual, "walk_test" if other == key else None, other)
 
     def test_ambiguous_short_name_never_selects_a_route(self):
         task = self.task()
-        task.lang.environment_monitoring.first_match = "小池"
-        task.lang.environment_monitoring.second_match = "池荷"
+        task.lang.environment_monitoring.first = re.compile("小池")
+        task.lang.environment_monitoring.second = re.compile("池荷")
         with patch.dict(
             "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
             {"first": "first_route", "second": "second_route"},
             clear=True,
         ):
             self.assertIsNone(task.observation_route("小池荷"))
+
+    def test_short_pattern_matches_a_complete_title(self):
+        task = self.task()
+        task.lang.environment_monitoring.beacon_damaged_in_the_blight_tide = re.compile("信标")
+        with patch.dict(
+            "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
+            {"beacon_damaged_in_the_blight_tide": "walk_test"},
+            clear=True,
+        ):
+            self.assertEqual(task.observation_route("侵蚀潮中损坏的信标"), "walk_test")
+            self.assertIsNone(task.observation_route("古树"))
 
     def test_transfer_arrival_failure_clears_previous_result_and_never_reports_success(self):
         task = self.prepare_task([{"name": "小池荷"}], [])

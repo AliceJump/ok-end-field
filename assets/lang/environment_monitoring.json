@@ -145,19 +145,19 @@
   },
   "mysterious_cryptid_graffiti": {
     "zh_CN": {
-      "string": "谜之生物的涂鸦"
+      "pattern": "涂鸦"
     },
     "zh_TW": {
-      "string": "謎之生物的塗鴉"
+      "pattern": "塗鴉"
     },
     "en_US": {
-      "string": "Mysterious Cryptid Graffiti"
+      "pattern": "graffiti"
     },
     "ja_JP": {
-      "string": "謎の生物に関する落書き"
+      "pattern": "落書き"
     },
     "ko_KR": {
-      "string": "미지의 생물이 남긴 낙서"
+      "pattern": "낙서"
     }
   },
   "peach_tree_at_babbles_s_home": {
@@ -298,19 +298,19 @@
   },
   "beacon_damaged_in_the_blight_tide": {
     "zh_CN": {
-      "string": "侵蚀潮中损坏的信标"
+      "pattern": "信标"
     },
     "zh_TW": {
-      "string": "侵蝕潮中損壞的信標"
+      "pattern": "信標"
     },
     "en_US": {
-      "string": "Beacon Damaged in the Blight Tide"
+      "pattern": "beacon"
     },
     "ja_JP": {
-      "string": "侵蝕潮で壊れたビーコン"
+      "pattern": "ビーコン"
     },
     "ko_KR": {
-      "string": "침식 조류로 인해 훼손된 신호기"
+      "pattern": "신호기"
     }
   },
   "cistern_originium_slugs": {
@@ -366,19 +366,19 @@
   },
   "ecology_near_the_field_logistics_depot": {
     "zh_CN": {
-      "string": "储备站周围的生态环境"
+      "pattern": "储备站"
     },
     "zh_TW": {
-      "string": "儲備站周圍的生態環境"
+      "pattern": "儲備站"
     },
     "en_US": {
-      "string": "Ecology Near the Field Logistics Depot"
+      "pattern": "fieldlogisticsdepot"
     },
     "ja_JP": {
-      "string": "備蓄施設周辺の生態環境"
+      "pattern": "備蓄施設"
     },
     "ko_KR": {
-      "string": "보급소 주변의 생태 환경"
+      "pattern": "보급소"
     }
   },
   "eternal_sunset": {
@@ -417,19 +417,19 @@
   },
   "inflated_and_glowing_bugspitting_lankybeast": {
     "zh_CN": {
-      "string": "肚子鼓气后发光的吐虫长股兽"
+      "pattern": "吐虫长股兽"
     },
     "zh_TW": {
-      "string": "肚子鼓氣後發光的吐蟲長股獸"
+      "pattern": "吐蟲長股獸"
     },
     "en_US": {
-      "string": "Inflated and Glowing Bugspitting Lankybeast"
+      "pattern": "bugspittinglankybeast"
     },
     "ja_JP": {
-      "string": "腹が膨らんで光る虫吐き長脚獣"
+      "pattern": "虫吐き長脚獣"
     },
     "ko_KR": {
-      "string": "배를 부풀려 빛을 내는 버그스피팅 랭키비스트"
+      "pattern": "버그스피팅랭키비스트"
     }
   },
   "mini_shellbeast": {
@@ -451,19 +451,19 @@
   },
   "observant_sable_chested_fowlbeast": {
     "zh_CN": {
-      "string": "东张西望的黑腹雉羽兽"
+      "pattern": "黑腹雉羽兽"
     },
     "zh_TW": {
-      "string": "東張西望的黑腹雉羽獸"
+      "pattern": "黑腹雉羽獸"
     },
     "en_US": {
-      "string": "Observant Sable-chested Fowlbeast"
+      "pattern": "sablechestedfowlbeast"
     },
     "ja_JP": {
-      "string": "キョロキョロする黒腹羽獣"
+      "pattern": "黒腹羽獣"
     },
     "ko_KR": {
-      "string": "두리번거리는 세이블체스티드 파울비스트"
+      "pattern": "세이블체스티드파울비스트"
     }
   },
   "pier_waterwheel": {
@@ -502,19 +502,19 @@
   },
   "vigorous_cistern_originium_slug": {
     "zh_CN": {
-      "string": "充满活力的蓄水源石虫"
+      "pattern": "充满活力"
     },
     "zh_TW": {
-      "string": "充滿活力的蓄水源石蟲"
+      "pattern": "充滿活力"
     },
     "en_US": {
-      "string": "Vigorous Cistern Originium Slug"
+      "pattern": "vigorous"
     },
     "ja_JP": {
-      "string": "活発になっている貯水オリジムシ"
+      "pattern": "活発"
     },
     "ko_KR": {
-      "string": "활기찬 저수 원석충"
+      "pattern": "활기찬"
     }
   },
   "waterlamp": {
@@ -549,108 +549,6 @@
     },
     "ko_KR": {
       "string": "중추 식양 장치"
-    }
-  },
-  "mysterious_cryptid_graffiti_match": {
-    "zh_CN": {
-      "string": "涂鸦"
-    },
-    "zh_TW": {
-      "string": "塗鴉"
-    },
-    "en_US": {
-      "string": "Graffiti"
-    },
-    "ja_JP": {
-      "string": "落書き"
-    },
-    "ko_KR": {
-      "string": "낙서"
-    }
-  },
-  "beacon_damaged_in_the_blight_tide_match": {
-    "zh_CN": {
-      "string": "信标"
-    },
-    "zh_TW": {
-      "string": "信標"
-    },
-    "en_US": {
-      "string": "Beacon"
-    },
-    "ja_JP": {
-      "string": "ビーコン"
-    },
-    "ko_KR": {
-      "string": "신호기"
-    }
-  },
-  "ecology_near_the_field_logistics_depot_match": {
-    "zh_CN": {
-      "string": "储备站"
-    },
-    "zh_TW": {
-      "string": "儲備站"
-    },
-    "en_US": {
-      "string": "Field Logistics Depot"
-    },
-    "ja_JP": {
-      "string": "備蓄施設"
-    },
-    "ko_KR": {
-      "string": "보급소"
-    }
-  },
-  "inflated_and_glowing_bugspitting_lankybeast_match": {
-    "zh_CN": {
-      "string": "吐虫长股兽"
-    },
-    "zh_TW": {
-      "string": "吐蟲長股獸"
-    },
-    "en_US": {
-      "string": "Bugspitting Lankybeast"
-    },
-    "ja_JP": {
-      "string": "虫吐き長脚獣"
-    },
-    "ko_KR": {
-      "string": "버그스피팅 랭키비스트"
-    }
-  },
-  "observant_sable_chested_fowlbeast_match": {
-    "zh_CN": {
-      "string": "黑腹雉羽兽"
-    },
-    "zh_TW": {
-      "string": "黑腹雉羽獸"
-    },
-    "en_US": {
-      "string": "Sable-chested Fowlbeast"
-    },
-    "ja_JP": {
-      "string": "黒腹羽獣"
-    },
-    "ko_KR": {
-      "string": "세이블체스티드 파울비스트"
-    }
-  },
-  "vigorous_cistern_originium_slug_match": {
-    "zh_CN": {
-      "string": "充满活力"
-    },
-    "zh_TW": {
-      "string": "充滿活力"
-    },
-    "en_US": {
-      "string": "Vigorous"
-    },
-    "ja_JP": {
-      "string": "活発"
-    },
-    "ko_KR": {
-      "string": "활기찬"
     }
   }
 }
