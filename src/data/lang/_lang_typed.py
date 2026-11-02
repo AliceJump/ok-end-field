@@ -470,6 +470,24 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     xiranite_nexus: str
     """枢壤仪"""
 
+    mysterious_cryptid_graffiti_match: str
+    """涂鸦"""
+
+    beacon_damaged_in_the_blight_tide_match: str
+    """信标"""
+
+    ecology_near_the_field_logistics_depot_match: str
+    """储备站"""
+
+    inflated_and_glowing_bugspitting_lankybeast_match: str
+    """吐虫长股兽"""
+
+    observant_sable_chested_fowlbeast_match: str
+    """黑腹雉羽兽"""
+
+    vigorous_cistern_originium_slug_match: str
+    """充满活力"""
+
 
 class GameFlowMixinModule(_LangModuleBaseT):
     """game_flow_mixin — OCR 语言节点（值取自 zh_CN）"""

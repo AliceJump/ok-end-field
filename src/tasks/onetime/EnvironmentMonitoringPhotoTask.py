@@ -34,11 +34,20 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     def observation_route(self, title):  # 按语言名称找到已注册的路线
         normalized = self.normalize_title(title)  # 不依赖引号和空格
+        matched = None  # 多条路线同时匹配时不能猜测
         for key, route in OBSERVATION_ROUTES.items():  # 只识别已经注册路线的观察点
+            fragment = getattr(self.lang.environment_monitoring, f"{key}_match", None)  # 部分长名称使用独特短识别词
             name = getattr(self.lang.environment_monitoring, key, None)  # 从语言资源读取当前语言名称
-            if isinstance(name, str) and name and normalized == self.normalize_title(name):  # 完整名称必须匹配
-                return route  # 返回语言无关的导航方法
-        return None  # 不把未知点位匹配到已有路线
+            if isinstance(fragment, str) and fragment:  # 只有明确配置的短识别词允许部分匹配
+                token = self.normalize_title(fragment)  # 排除不含文字的短词
+                found = bool(token) and token in normalized  # 短词必须在该卡片标题内
+            else:  # 普通名称仍要求完整一致
+                found = isinstance(name, str) and name and normalized == self.normalize_title(name)  # 避免泛化误匹配
+            if found:  # 已找到候选路线
+                if matched is not None:  # 多条路线匹配同一卡片
+                    return None  # 停止而不是根据注册顺序猜测
+                matched = route  # 记录唯一匹配的导航方法
+        return matched  # 未匹配时返回 None
 
     def open_monitoring(self):  # 从任意可恢复页面进入环境监测
         self.ensure_main()  # 复用主界面恢复

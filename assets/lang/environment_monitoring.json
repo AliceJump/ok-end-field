@@ -550,5 +550,107 @@
     "ko_KR": {
       "string": "중추 식양 장치"
     }
+  },
+  "mysterious_cryptid_graffiti_match": {
+    "zh_CN": {
+      "string": "涂鸦"
+    },
+    "zh_TW": {
+      "string": "塗鴉"
+    },
+    "en_US": {
+      "string": "Graffiti"
+    },
+    "ja_JP": {
+      "string": "落書き"
+    },
+    "ko_KR": {
+      "string": "낙서"
+    }
+  },
+  "beacon_damaged_in_the_blight_tide_match": {
+    "zh_CN": {
+      "string": "信标"
+    },
+    "zh_TW": {
+      "string": "信標"
+    },
+    "en_US": {
+      "string": "Beacon"
+    },
+    "ja_JP": {
+      "string": "ビーコン"
+    },
+    "ko_KR": {
+      "string": "신호기"
+    }
+  },
+  "ecology_near_the_field_logistics_depot_match": {
+    "zh_CN": {
+      "string": "储备站"
+    },
+    "zh_TW": {
+      "string": "儲備站"
+    },
+    "en_US": {
+      "string": "Field Logistics Depot"
+    },
+    "ja_JP": {
+      "string": "備蓄施設"
+    },
+    "ko_KR": {
+      "string": "보급소"
+    }
+  },
+  "inflated_and_glowing_bugspitting_lankybeast_match": {
+    "zh_CN": {
+      "string": "吐虫长股兽"
+    },
+    "zh_TW": {
+      "string": "吐蟲長股獸"
+    },
+    "en_US": {
+      "string": "Bugspitting Lankybeast"
+    },
+    "ja_JP": {
+      "string": "虫吐き長脚獣"
+    },
+    "ko_KR": {
+      "string": "버그스피팅 랭키비스트"
+    }
+  },
+  "observant_sable_chested_fowlbeast_match": {
+    "zh_CN": {
+      "string": "黑腹雉羽兽"
+    },
+    "zh_TW": {
+      "string": "黑腹雉羽獸"
+    },
+    "en_US": {
+      "string": "Sable-chested Fowlbeast"
+    },
+    "ja_JP": {
+      "string": "黒腹羽獣"
+    },
+    "ko_KR": {
+      "string": "세이블체스티드 파울비스트"
+    }
+  },
+  "vigorous_cistern_originium_slug_match": {
+    "zh_CN": {
+      "string": "充满活力"
+    },
+    "zh_TW": {
+      "string": "充滿活力"
+    },
+    "en_US": {
+      "string": "Vigorous"
+    },
+    "ja_JP": {
+      "string": "活発"
+    },
+    "ko_KR": {
+      "string": "활기찬"
+    }
   }
 }
