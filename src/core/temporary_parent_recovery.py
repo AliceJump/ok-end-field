@@ -107,8 +107,8 @@ def _remove_local_image(record: dict, logger) -> bool:
     # Image creation resolves the configured root first (including junctions).
     # Recovery must use that same physical root rather than its config alias.
     root = Path(config_path(TEMPORARY_IMAGE_DIRNAME)).resolve()
-    candidate_root = os.path.normcase(os.path.abspath(str(candidate.parent.parent)))
-    if candidate_root != os.path.normcase(os.path.abspath(str(root))):
+    candidate_root = candidate.parent.parent.resolve()
+    if os.path.normcase(str(candidate_root)) != os.path.normcase(str(root)):
         if candidate.name.casefold() == "games.exe" and _TEMP_IMAGE_ID.fullmatch(candidate.parent.name):
             logger.warning("Cannot verify the root of a recorded temporary parent image; retaining journal")
             return False
@@ -125,7 +125,7 @@ def _remove_local_image(record: dict, logger) -> bool:
     if (
         directory.is_symlink()
         or directory.is_junction()
-        or os.path.normcase(os.path.abspath(recorded)) != os.path.normcase(str(image))
+        or os.path.normcase(str(candidate.resolve())) != os.path.normcase(str(image.resolve()))
     ):
         logger.warning("Refusing an unrecognized temporary parent image location")
         return False
