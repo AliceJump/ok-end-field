@@ -10,6 +10,7 @@ import json
 import os
 import re
 import tempfile
+import uuid
 from pathlib import Path
 
 import psutil
@@ -98,22 +99,29 @@ def note_game_started(parent_pid: int, game_pid: int, logger) -> None:
 
 
 def _remove_local_image(record: dict, logger) -> bool:
-    """Delete only our one-file, UUID-named image directory, never a launcher install."""
-    executable = record.get("parent_exe")
-    if not isinstance(executable, str):
+    """Delete only a UUID-named image under our private root, never an arbitrary path."""
+    recorded = record.get("parent_exe")
+    if not isinstance(recorded, str):
         return False
-    image = Path(executable)
-    directory = image.parent
+    candidate = Path(recorded)
     root = Path(config_path(TEMPORARY_IMAGE_DIRNAME)).resolve()
-    if directory.parent.resolve() != root:
-        return True  # Original official Games.exe: we do not own the image.
+    if candidate.parent.parent.resolve() != root:
+        return True  # Original official Games.exe: its image is not ours.
+    if candidate.name.casefold() != "games.exe" or not _TEMP_IMAGE_ID.fullmatch(candidate.parent.name):
+        logger.warning("Refusing a malformed temporary parent image identity")
+        return False
+
+    # Never unlink a path read from a JSON record. Construct it again from a
+    # canonical UUID and the application-controlled directory instead.
+    identifier = uuid.UUID(hex=candidate.parent.name).hex
+    directory = root / identifier
+    image = directory / "Games.exe"
     if (
-        not _TEMP_IMAGE_ID.fullmatch(directory.name)
-        or image.name.casefold() != "games.exe"
-        or directory.is_symlink()
+        directory.is_symlink()
         or directory.resolve() != directory
+        or os.path.normcase(os.path.abspath(recorded)) != os.path.normcase(str(image))
     ):
-        logger.warning(f"Refusing to delete unrecognized temporary parent image: {image}")
+        logger.warning("Refusing an unrecognized temporary parent image location")
         return False
     try:
         image.unlink(missing_ok=True)
@@ -122,9 +130,8 @@ def _remove_local_image(record: dict, logger) -> bool:
         return True
     except OSError as error:
         # Keep the journal: Windows may still hold the executable image open.
-        logger.warning(f"Cannot remove temporary parent image {image}; will retry: {error}")
+        logger.warning(f"Cannot retire owned temporary parent image; retry later ({type(error).__name__})")
         return False
-
 
 def _retire_record(path: Path, record: dict, logger) -> None:
     if not _remove_local_image(record, logger):
