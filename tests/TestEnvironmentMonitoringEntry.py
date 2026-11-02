@@ -1,8 +1,10 @@
 """Environment monitoring must select one matching card and verify transfer completion."""
 
+import json
 import re
 import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
@@ -23,6 +25,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang = SimpleNamespace(
             environment_monitoring=SimpleNamespace(
                 track=re.compile("开始追踪"),
+                pool_lotus="小池荷",
             )
         )
         task.box = SimpleNamespace(bottom_right=Box(width // 2, height // 2, width // 2, height // 2))
@@ -627,9 +630,49 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_registered_route_is_available_without_changing_entry_logic(self):
         supported = {"name": "古树"}
         task = self.prepare_task([supported], [])
-        with patch.dict("src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES", {"古树": "walk_other"}):
+        task.lang.environment_monitoring.ancient_tree = "古树"
+        with patch.dict(
+            "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES", {"ancient_tree": "walk_other"}
+        ):
             self.assertEqual(task.prepare_observation()["name"], "古树")
         task.enter_observation.assert_called_once_with(supported)
+
+    def test_route_matches_localized_names_without_relying_on_punctuation(self):
+        task = self.task()
+        data = json.loads(
+            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        examples = (
+            ("zh_CN", "“小池荷”"),
+            ("zh_TW", "「小池荷」"),
+            ("en_US", '"pOoL   loTUs"'),
+            ("ja_JP", "「池の蓮」"),
+            ("ko_KR", "'작은 연못의 연꽃'"),
+        )
+        for locale, title in examples:
+            with self.subTest(title=title):
+                task.lang.environment_monitoring.pool_lotus = data["pool_lotus"][locale]["string"]
+                self.assertEqual(task.observation_route(title), "walk_pool_lotus_route")
+                self.assertIsNone(task.observation_route(title + "其他"))
+
+    def test_other_localized_points_are_not_selected_without_registered_routes(self):
+        data = json.loads(
+            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
+        points = {key: value for key, value in data.items() if key != "track"}
+        self.assertEqual(len(points), 32)
+        task = self.task()
+        for locale in locales:
+            task.lang.environment_monitoring.pool_lotus = points["pool_lotus"][locale]["string"]
+            for key, names in points.items():
+                with self.subTest(locale=locale, point=key):
+                    route = task.observation_route(names[locale]["string"])
+                    self.assertEqual(route, "walk_pool_lotus_route" if key == "pool_lotus" else None)
 
     def test_transfer_arrival_failure_clears_previous_result_and_never_reports_success(self):
         task = self.prepare_task([{"name": "小池荷"}], [])

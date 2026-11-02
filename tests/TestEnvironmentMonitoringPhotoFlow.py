@@ -40,6 +40,8 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         )
         task.ocr.return_value = []
         task.normalize_title.side_effect = EnvironmentMonitoringPhotoTask.normalize_title
+        task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", ancient_tree="古树"))
+        task.observation_route.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_route(task, title)
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
         task.next_frame.side_effect = lambda: task.frame
@@ -329,7 +331,8 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.navigation = EnvironmentMonitoringNavigation(task)
         with (
             patch.dict(
-                "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES", {"古树": "missing_route"}
+                "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
+                {"ancient_tree": "missing_route"},
             ),
             self.assertRaisesRegex(RuntimeError, "未支持观察点导航"),
         ):
@@ -341,7 +344,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.prepare_observation.return_value = {"name": "“古树”"}
         with patch.dict(
             "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
-            {"古树": "walk_other_route"},
+            {"ancient_tree": "walk_other_route"},
         ):
             EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
         task.navigation.walk_other_route.assert_called_once_with()

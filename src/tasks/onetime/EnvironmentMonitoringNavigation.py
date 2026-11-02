@@ -1,4 +1,4 @@
-OBSERVATION_ROUTES = {"小池荷": "walk_pool_lotus_route"}  # 观察点及其传送后导航方法
+OBSERVATION_ROUTES = {"pool_lotus": "walk_pool_lotus_route"}  # 语言无关的观察点标识及导航方法
 
 
 class EnvironmentMonitoringNavigation:  # 使用所属任务的输入和识别能力执行导航

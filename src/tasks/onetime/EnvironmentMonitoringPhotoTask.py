@@ -28,9 +28,17 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         self.selected_observation = None  # 每次执行重新建立交接信息
         self.navigation = EnvironmentMonitoringNavigation(self)  # 路线复用当前任务的设备和状态
 
-    @staticmethod  # 标题引号不是观察点身份的一部分
-    def normalize_title(text):  # 兼容 OCR 的引号和空白差异
-        return re.sub(r'[\s“”「」『』"«»]', "", text)  # 不模糊匹配不同观察点
+    @staticmethod  # 标题符号不是观察点身份的一部分
+    def normalize_title(text):  # 兼容符号、空白与英文大小写差异
+        return re.sub(r"[\W_]+", "", text).casefold()  # 保留各语言文字，完整名称仍须一致
+
+    def observation_route(self, title):  # 按语言名称找到已注册的路线
+        normalized = self.normalize_title(title)  # 不依赖引号和空格
+        for key, route in OBSERVATION_ROUTES.items():  # 只识别已经注册路线的观察点
+            name = getattr(self.lang.environment_monitoring, key, None)  # 从语言资源读取当前语言名称
+            if isinstance(name, str) and name and normalized == self.normalize_title(name):  # 完整名称必须匹配
+                return route  # 返回语言无关的导航方法
+        return None  # 不把未知点位匹配到已有路线
 
     def open_monitoring(self):  # 从任意可恢复页面进入环境监测
         self.ensure_main()  # 复用主界面恢复
@@ -198,7 +206,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         for terminal in TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
             self.select_terminal(terminal)  # 选择终端并等待稳定
             for observation in self.available_observations():  # 只考虑可操作卡片
-                if self.normalize_title(observation["name"]) not in OBSERVATION_ROUTES:  # 只选择已注册路线的点位
+                if not self.observation_route(observation["name"]):  # 只选择已注册路线的点位
                     continue  # 跳过尚未支持的委托
                 self.enter_observation(observation)  # 接取或继续所选观察点
                 self.transfer_observation()  # 快捷传送并验证到达
@@ -299,8 +307,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     def run(self):  # GUI 与 MCP 共用从入口开始的可重复流程
         observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
-        name = self.normalize_title(observation["name"])  # 识别出的名称去除引号和空白
-        route_name = OBSERVATION_ROUTES.get(name)  # 获取当前点位注册的导航方法
+        name = observation["name"]  # 保留实际识别名称用于错误提示
+        route_name = self.observation_route(name)  # 获取当前点位注册的导航方法
         route = getattr(self.navigation, route_name, None) if route_name else None  # 不为未知点位调用其他路线
         if not callable(route):  # 路线缺失时不得继续相机阶段
             raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止

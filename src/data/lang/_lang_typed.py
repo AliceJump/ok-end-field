@@ -374,6 +374,102 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     track: re.Pattern[str]
     """开始追踪"""
 
+    pool_lotus: str
+    """小池荷"""
+
+    annular_waterfall: str
+    """环形瀑布"""
+
+    autumn_gold: str
+    """金秋时"""
+
+    bamboo_water_chimes: str
+    """水竹铃"""
+
+    cloudrest_eco_site: str
+    """栖云生态点"""
+
+    feranmut_heart: str
+    """巨兽心脏"""
+
+    flora_observation_point: str
+    """植物观察点"""
+
+    hanging_vines: str
+    """垂藤"""
+
+    mysterious_cryptid_graffiti: str
+    """谜之生物的涂鸦"""
+
+    peach_tree_at_babbles_s_home: str
+    """念念家的桃树"""
+
+    rainbow: str
+    """彩虹"""
+
+    serenity_garden_tianshi_pillar: str
+    """安思园的天师桩"""
+
+    thillu: str
+    """表象"""
+
+    tree_of_the_old_courtyard: str
+    """旧庭树"""
+
+    water_temperature_controller: str
+    """净水温控装置"""
+
+    withered_branches: str
+    """枯枝"""
+
+    ancient_tree: str
+    """古树"""
+
+    beacon_damaged_in_the_blight_tide: str
+    """侵蚀潮中损坏的信标"""
+
+    cistern_originium_slugs: str
+    """蓄水源石虫"""
+
+    cleansing_jade: str
+    """漱玉"""
+
+    collapsed_tianshi_pillar: str
+    """倒塌的天师桩"""
+
+    ecology_near_the_field_logistics_depot: str
+    """储备站周围的生态环境"""
+
+    eternal_sunset: str
+    """栖霞驻影"""
+
+    indoor_crops: str
+    """室内作物"""
+
+    inflated_and_glowing_bugspitting_lankybeast: str
+    """肚子鼓气后发光的吐虫长股兽"""
+
+    mini_shellbeast: str
+    """小壳兽"""
+
+    observant_sable_chested_fowlbeast: str
+    """东张西望的黑腹雉羽兽"""
+
+    pier_waterwheel: str
+    """码头水车"""
+
+    rainbow_fin: str
+    """七彩鳞"""
+
+    vigorous_cistern_originium_slug: str
+    """充满活力的蓄水源石虫"""
+
+    waterlamp: str
+    """水灯虫"""
+
+    xiranite_nexus: str
+    """枢壤仪"""
+
 
 class GameFlowMixinModule(_LangModuleBaseT):
     """game_flow_mixin — OCR 语言节点（值取自 zh_CN）"""
