@@ -661,6 +661,7 @@ def reorganize_tasks_architecture(executor: Any) -> None:
         "MatrixCleanTask": "其他",
         "DeliverySendTask": "其他",
         "RegionalBuildTask": "其他",
+        "EnvironmentMonitoringPhotoTask": "其他",
         "CraftWeaponTask": "其他",
         "WarehouseTransferTask": "收尾",
         # 清理基质的独立单次运行入口：与一条龙勾选行分属两个页签
