@@ -578,7 +578,9 @@ class TestWorkflowInitialLearning(unittest.TestCase):
                 task.wait_ocr.side_effect = ([[]] if attempts == 2 else []) + [[box()]]
                 self.assertTrue(LiaisonMixin.navigate_to_main_hall(task))
                 self.assertEqual(task.move_keys.call_count, attempts + 1)
-                self.assertEqual(task._liaison_station_entry.context.entry_route_signature, (1000,) * attempts + (1001,))
+                self.assertEqual(
+                    task._liaison_station_entry.context.entry_route_signature, (1000,) * attempts + (1001,)
+                )
                 self.assertEqual(task._liaison_station_entry.context, contexts[attempts])
                 other_before = self.store.get(contexts[3 - attempts].fingerprint)
                 events = []
