@@ -198,6 +198,7 @@ class MatrixCleanTask(Common):
         # 灰色「无法分解」不带该图标
         if not self.wait_click_feature(
             fL.skip_dialog_confirm,
+            time_out=1,
             box=self.box_of_screen(*self._BOTTOM_RIGHT),
             raise_if_not_found=False,
         ):

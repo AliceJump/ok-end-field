@@ -302,7 +302,7 @@ class TestConfirmDismantle(unittest.TestCase):
         task.wait_click_feature = MagicMock(return_value=False)
         task._no_item_left = MagicMock(return_value=False)
         self.assertFalse(task._confirm_dismantle())
-        self.assertNotIn("time_out", task.wait_click_feature.call_args.kwargs)
+        self.assertEqual(task.wait_click_feature.call_args.kwargs["time_out"], 1)
         task.mark_task_failure.assert_not_called()
 
     def test_confirm_button_missing_is_failure(self):
