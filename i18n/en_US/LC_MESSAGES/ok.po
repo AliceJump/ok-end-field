@@ -2847,6 +2847,11 @@ msgstr ""
 "Select the Dijiang tasks to include in Daily Tasks; order is fixed as Gift "
 "Giving, Dijiang Organize, then Dijiang Harvest."
 
+msgid "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。"
+msgstr ""
+"Select other tasks to include in Daily Tasks; the program fixes their order "
+"so reusable scene state is not split apart."
+
 msgid "选择参加一键日常的战斗任务；刷体力与演算连续执行。"
 msgstr ""
 "Select combat tasks to include in Daily Tasks; Stamina Farming and "
@@ -3867,20 +3872,8 @@ msgstr "Si's Painting"
 msgid "收取地区"
 msgstr "Collection regions"
 
-msgid "环境监测：前往观察点"
-msgstr "Environmental Monitoring: Go to Observation Point"
-
-msgid "接取或继续一个环境监测委托，传送到观察点后停止，暂不移动或拍照。"
-msgstr "Accept or resume one Environmental Monitoring commission and stop after teleporting to its observation point. Movement and photography are not yet supported."
-
-msgid "前往小池荷，走到竹子旁并打开相机，检查拍摄条件后停止，不拍照。"
-msgstr "Go to Pool Lotus, walk beside the bamboo, and open the camera. Stop after checking the photo requirements, without taking a photo."
-
 msgid "环境监测"
 msgstr "Environmental Monitoring"
-
-msgid "选择参加一键日常的其他任务；顺序由程序固定。环境监测目前仅取景验证，不会拍照或完成委托。"
-msgstr "Select other daily tasks; their order is fixed. Environmental Monitoring currently only checks framing and does not take a photo or complete the commission."
 
 msgid "环境监测仅完成取景验证，尚未拍照或完成委托"
 msgstr "Environmental Monitoring only checked framing; no photo was taken and the commission is incomplete"

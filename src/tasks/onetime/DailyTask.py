@@ -341,7 +341,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         self.config_description.update(
             {
                 self.CFG_BOAT_TASKS: "选择参加一键日常的帝江号任务；执行顺序固定为送礼、帝江号整理、帝江号收菜。",
-                self.CFG_OTHER_TASKS: "选择参加一键日常的其他任务；顺序由程序固定。环境监测目前仅取景验证，不会拍照或完成委托。",
+                self.CFG_OTHER_TASKS: "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。",
                 self.CFG_BATTLE_TASKS: "选择参加一键日常的战斗任务；刷体力、演算与影拓丰碑连续执行。",
                 self.CFG_REWARD_TASKS: "选择参加一键日常的奖励任务；奖励块固定安排在普通业务任务之后。",
                 self.CFG_FARM_TASKS: "农牧领取单独成块，固定安排在奖励之后、自动送货之前执行。",

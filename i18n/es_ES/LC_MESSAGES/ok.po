@@ -2940,6 +2940,11 @@ msgstr ""
 "Selecciona las tareas del Dijiang que participarán en las tareas diarias; el"
 " orden fijo es Regalos, Organización del Dijiang y Recolección del Dijiang."
 
+msgid "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。"
+msgstr ""
+"Selecciona otras tareas diarias; el programa fija su orden para no separar "
+"estados de escena reutilizables."
+
 msgid "选择参加一键日常的战斗任务；刷体力与演算连续执行。"
 msgstr ""
 "Selecciona las tareas de combate; Consumo de energía y Cálculo se ejecutan "
@@ -4001,20 +4006,8 @@ msgstr "Pintura de Si"
 msgid "收取地区"
 msgstr "Zonas de recogida"
 
-msgid "环境监测：前往观察点"
-msgstr "Monitoreo ambiental: ir al punto de observación"
-
-msgid "接取或继续一个环境监测委托，传送到观察点后停止，暂不移动或拍照。"
-msgstr "Acepta o reanuda un encargo de monitoreo ambiental y se detiene tras teletransportarse al punto de observación. El desplazamiento y las fotografías aún no están disponibles."
-
-msgid "前往小池荷，走到竹子旁并打开相机，检查拍摄条件后停止，不拍照。"
-msgstr "Ve a Loto del estanque, camina hasta el bambú y abre la cámara. Se detiene tras comprobar los requisitos de la fotografía, sin tomarla."
-
 msgid "环境监测"
 msgstr "Monitoreo ambiental"
-
-msgid "选择参加一键日常的其他任务；顺序由程序固定。环境监测目前仅取景验证，不会拍照或完成委托。"
-msgstr "Selecciona otras tareas diarias; el orden es fijo. El monitoreo ambiental solo comprueba el encuadre y no toma fotos ni completa el encargo."
 
 msgid "环境监测仅完成取景验证，尚未拍照或完成委托"
 msgstr "El monitoreo ambiental solo comprobó el encuadre; no se tomó ninguna foto ni se completó el encargo"

@@ -2,7 +2,6 @@
 
 import json
 import re
-import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -11,16 +10,14 @@ from unittest.mock import Mock, call, patch
 import numpy as np
 from ok import Box
 from ok.util.color import calculate_color_percentage
-from ok.util.config import Config
 
-from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.onetime.EnvironmentMonitoringEntryTask import EnvironmentMonitoringEntryTask
+from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
 
 class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def task(self, width=1920, height=1080):
-        task = object.__new__(EnvironmentMonitoringEntryTask)
+        task = object.__new__(EnvironmentMonitoringPhotoTask)
         task._executor = SimpleNamespace(frame=np.zeros((height, width, 3), dtype=np.uint8))
         task.lang = SimpleNamespace(
             environment_monitoring=SimpleNamespace(
@@ -62,25 +59,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             side_effect=lambda color, box: calculate_color_percentage(frame, color, box)
         )
         return task
-
-    def test_registered_task_constructs_with_only_entry_configuration(self):
-        with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):
-            task = EnvironmentMonitoringEntryTask(SimpleNamespace(scene=None, pause_start=None), SimpleNamespace())
-        self.assertTrue(task.visible)
-        self.assertEqual(task.default_config, {})
-        self.assertEqual(task.config_description, {})
-        self.assertEqual(task.group_name, "工具与调试")
-        self.assertIsNone(task.selected_observation)
-        self.assertIn(
-            ["src.tasks.onetime.EnvironmentMonitoringEntryTask", "EnvironmentMonitoringEntryTask"],
-            app_config["onetime_tasks"],
-        )
-
-    def test_entry_run_automatically_selects_a_supported_observation(self):
-        task = self.task()
-        task.prepare_observation = Mock(return_value={"name": "小池荷"})
-        self.assertEqual(EnvironmentMonitoringEntryTask.run.__wrapped__(task), {"name": "小池荷"})
-        task.prepare_observation.assert_called_once_with()
 
     def test_available_cards_bind_buttons_to_their_own_titles_at_multiple_sizes(self):
         for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
@@ -136,7 +114,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     task = self.color_task(frame)
                     for terminal in ("outskirts", "marker_stone"):
                         self.assertEqual(
-                            EnvironmentMonitoringEntryTask._terminal_selected(task, terminal), terminal == selected
+                            EnvironmentMonitoringPhotoTask._terminal_selected(task, terminal), terminal == selected
                         )
 
     def test_colored_tab_or_sparse_white_text_is_not_a_selected_background(self):
@@ -145,7 +123,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 frame = np.full((1080, 1920, 3), color, dtype=np.uint8)
                 frame[::3, ::3] = 255
                 task = self.color_task(frame)
-                self.assertFalse(EnvironmentMonitoringEntryTask._terminal_selected(task, "outskirts"))
+                self.assertFalse(EnvironmentMonitoringPhotoTask._terminal_selected(task, "outskirts"))
 
     def test_terminal_color_range_and_crop_keep_the_exact_pixel_boundaries(self):
         for width, height in ((1280, 720), (1920, 1080), (2560, 1440), (1366, 768)):
@@ -162,7 +140,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                         y1, y2 = int(height * 0.145), int(height * 0.16)
                         frame[y1:y2, x1:x2] = color
                         task = self.color_task(frame)
-                        self.assertEqual(EnvironmentMonitoringEntryTask._terminal_selected(task, terminal), selected)
+                        self.assertEqual(EnvironmentMonitoringPhotoTask._terminal_selected(task, terminal), selected)
                         area = task.calculate_color_percentage.call_args.args[1]
                         self.assertEqual((area.x, area.y, area.width, area.height), (x1, y1, x2 - x1, y2 - y1))
 
@@ -173,9 +151,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         patch.reshape(-1, 3)[:735] = 255
         frame[145:160, 60:130] = patch
         task = self.color_task(frame)
-        self.assertFalse(EnvironmentMonitoringEntryTask._terminal_selected(task, "outskirts"))
+        self.assertFalse(EnvironmentMonitoringPhotoTask._terminal_selected(task, "outskirts"))
         frame[155, 95] = 255
-        self.assertTrue(EnvironmentMonitoringEntryTask._terminal_selected(task, "outskirts"))
+        self.assertTrue(EnvironmentMonitoringPhotoTask._terminal_selected(task, "outskirts"))
 
     def test_unknown_terminal_does_not_default_to_another_tab(self):
         task = self.task()
@@ -400,7 +378,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     fL.q: Box(660, 25, 25, 25) if q_found else None,
                     fL.e: Box(1230, 25, 25, 25) if e_found else None,
                 }[feature]
-                self.assertEqual(EnvironmentMonitoringEntryTask._task_detail_page(task), q_found and e_found)
+                self.assertEqual(EnvironmentMonitoringPhotoTask._task_detail_page(task), q_found and e_found)
 
     def test_missing_task_detail_page_prevents_tracking(self):
         task = self.prepare_task([{"name": "小池荷", "action_box": Box(678, 918, 562, 81)}], [])
