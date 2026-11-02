@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
@@ -17,8 +19,8 @@ class MatrixCleanTask(Common):
        「未上锁」，保存——保存即按筛选结果勾选物品并关闭面板；
     4. 点「分解」→ 确认弹窗「确认」→ 关闭「分解获得」结果弹窗，游戏
        自动退回浏览模式，循环下一批；
-    5. 结束判定：批开始分解网格出现「未拥有该类型道具」、保存筛选后
-       按钮为「无法分解」，均表示无可分解剩余，直接结束循环。批开始
+    5. 结束判定：检测到空列表图标，或确认分解模式后未检测到分解按钮。
+       批开始
        不能按按钮文字判断——未勾选物品（已选择 0/200）时按钮恒为
        「无法分解」。
     """
@@ -27,7 +29,6 @@ class MatrixCleanTask(Common):
     MAX_BATCHES = 20
 
     # 底栏控件区（快捷放入 / 分解按钮 / 退出）
-    _BOTTOM_BAR = (0.0, 0.80, 0.6, 0.98)
     _BOTTOM_RIGHT = (0.55, 0.75, 1.0, 0.98)
     # 筛选面板保存按钮图标搜索区
     _FILTER_SAVE_ICON = (0.78, 0.72, 0.86, 0.8)
@@ -36,7 +37,7 @@ class MatrixCleanTask(Common):
     _DISMANTLE_ENTRY = (0.259, 0.93)
     # 选项背景的无文字区域；选中为浅灰，未选中为深色。
     _FILTER_SWATCHES = ((0.27, 0.355), (0.48, 0.355), (0.69, 0.355), (0.27, 0.505))
-    _FILTER_LIGHT = {"r": (140, 255), "g": (140, 255), "b": (140, 255)}
+    _FILTER_LIGHT: ClassVar[dict] = {"r": (140, 255), "g": (140, 255), "b": (140, 255)}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -102,12 +103,12 @@ class MatrixCleanTask(Common):
 
     def _enter_dismantle_mode(self):
         """进入分解模式；已在分解模式（上批未正常自动退出）则直接继续。"""
-        if self.ocr(match=self.lang.matrix_clean_task.k_83c0c24d, box=self.box.bottom):
+        if self.find_one(fL.matrix_dismantle_exit):
             return True
-        self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1)
-        hint = self.wait_ocr(
-            match=self.lang.matrix_clean_task.k_83c0c24d,
-            box=self.box.bottom,
+        hint = self.wait_feature(
+            fL.matrix_dismantle_exit,
+            pre_action=lambda: self.click_relative(*self._DISMANTLE_ENTRY, after_sleep=1),
+            settle_time=0,
             time_out=6,
             raise_if_not_found=False,
         )
@@ -128,16 +129,16 @@ class MatrixCleanTask(Common):
             False: 已无可分解（正常结束信号）。
             None: 流程异常。
         """
-        # 批开始先查网格空标志：无可分解时分解网格显示「未拥有该类型
-        # 道具」（不先查则空库仍要走完快捷放入+筛选+保存，约六秒）。此处
+        # 批开始先查网格空标志：无可分解时显示空列表提示图标
+        # （不先查则空库仍要走完快捷放入、筛选和保存）。此处
         # 不能按按钮文字判断：未勾选物品（已选择 0/200）时按钮恒为
         # 「无法分解」，正常情况也一样
         if self._no_item_left():
             return False
-        if not self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_52e36ffd,
-            box=self.box_of_screen(*self._BOTTOM_BAR),
+        if not self.wait_click_feature(
+            fL.matrix_quick_add,
             time_out=6,
+            raise_if_not_found=False,
         ):
             self.mark_task_failure("未找到快捷放入按钮")
             return None
@@ -182,24 +183,26 @@ class MatrixCleanTask(Common):
     def _confirm_dismantle(self):
         """点击分解并走完确认与结果弹窗（完成后游戏自动退回浏览模式）。
 
-        保存筛选后按钮状态即定：无可分解保持「无法分解」，先行识别直接
-        结束循环，不空等「分解」按钮（否则空转一轮要等满 4 秒超时）。
+        确认处于分解模式后，检测并点击可用的分解按钮。
+
+        Returns:
+            bool | None: 本批分解完成返回 True；空列表或没有可用分解按钮返回 False；
+            未进入分解模式、确认失败或结果弹窗关闭失败返回 None。
         """
-        if self._dismantle_disabled():
+        if self._no_item_left():
             return False
+        if not self.wait_feature(fL.matrix_dismantle_exit, time_out=4, raise_if_not_found=False):
+            self.mark_task_failure("未找到分解模式退出按钮")
+            return None
         # 亮起的「分解」按钮右侧图标与确认弹窗「确认」相同，复用同一模板；
         # 灰色「无法分解」不带该图标
         if not self.wait_click_feature(
             fL.skip_dialog_confirm,
+            time_out=1,
             box=self.box_of_screen(*self._BOTTOM_RIGHT),
-            time_out=4,
             raise_if_not_found=False,
         ):
-            # 保存后按钮仍可能在刷新，复查一次再定性
-            if self._dismantle_disabled():
-                return False
-            self.mark_task_failure("未找到分解按钮")
-            return None
+            return False
         # 弹窗出现后底栏「分解」按钮仍带同一图标；click_confirm 只在弹窗
         # 「确认」的标注位置附近查找，不会点回底栏
         if not self.click_confirm():
@@ -210,27 +213,12 @@ class MatrixCleanTask(Common):
             return None
         return True
 
-    def _dismantle_disabled(self):
-        """无可分解判定：按钮为「无法分解」或网格「未拥有该类型道具」。
-
-        连查两次防保存后按钮状态刷新的竞态。
-        """
-        right_box = self.box_of_screen(*self._BOTTOM_RIGHT)
-        for _ in range(2):
-            if self._no_item_left() or self.ocr(
-                match=self.lang.matrix_clean_task.k_9c61417d,
-                box=right_box,
-            ):
-                return True
-            self.sleep(0.5)
-        return False
-
     def _no_item_left(self):
-        """结束标志：分解网格出现「未拥有该类型道具」。"""
+        """检测空列表提示左侧图标。"""
         return bool(
-            self.ocr(
-                match=self.lang.matrix_clean_task.k_75a84eb1,
-                box=self.box_of_screen(0.2, 0.2, 0.8, 0.8),
+            self.find_one(
+                fL.matrix_empty_icon,
+                box=self.box_of_screen(0.25, 0.45, 0.5, 0.56),
             )
         )
 
@@ -260,9 +248,8 @@ class MatrixCleanTask(Common):
 
     def _exit_dismantle_mode(self):
         """退出分解模式（品质清空或异常中断时）；失败交由后续步骤兜底。"""
-        self.wait_click_ocr(
-            match=self.lang.matrix_clean_task.k_feecb1e6,
-            box=self.box_of_screen(*self._BOTTOM_RIGHT),
+        self.wait_click_feature(
+            fL.matrix_dismantle_exit,
             time_out=5,
             raise_if_not_found=False,
         )
