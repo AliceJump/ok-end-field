@@ -3525,9 +3525,6 @@ msgstr "收取地区"
 msgid "环境监测"
 msgstr "环境监测"
 
-msgid "环境监测仅完成取景验证，尚未拍照或完成委托"
-msgstr "环境监测仅完成取景验证，尚未拍照或完成委托"
-
 msgid "环境监测执行失败：{error}"
 msgstr "环境监测执行失败：{error}"
 

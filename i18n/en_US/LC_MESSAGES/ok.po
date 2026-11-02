@@ -3875,9 +3875,6 @@ msgstr "Collection regions"
 msgid "环境监测"
 msgstr "Environmental Monitoring"
 
-msgid "环境监测仅完成取景验证，尚未拍照或完成委托"
-msgstr "Environmental Monitoring only checked framing; no photo was taken and the commission is incomplete"
-
 msgid "环境监测执行失败：{error}"
 msgstr "Environmental Monitoring failed: {error}"
 

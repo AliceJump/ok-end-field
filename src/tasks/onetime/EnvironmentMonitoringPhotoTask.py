@@ -328,7 +328,6 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             if result.get("skipped", False):  # 已确认没有可执行的支持点位
                 return True  # 无任务属于正常完成
             if not result.get("photo_taken", False):  # 预览不能算作委托完成
-                self.mark_task_failure(self.tr("环境监测仅完成取景验证，尚未拍照或完成委托"))  # 明确记录未完成原因
                 return False  # 日常汇总不误记成功
             return True  # 将来支持拍照后才允许报告成功
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器

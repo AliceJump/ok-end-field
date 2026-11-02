@@ -54,7 +54,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.run.return_value = {"camera_open": True, "photo_ready": True, "photo_taken": False}
         task.tr.side_effect = lambda text: text
         self.assertFalse(EnvironmentMonitoringPhotoTask.run_daily_preview(task))
-        task.mark_task_failure.assert_called_once_with("环境监测仅完成取景验证，尚未拍照或完成委托")
+        task.mark_task_failure.assert_not_called()
         task.ensure_main.assert_called_once_with()
 
     def test_daily_preview_succeeds_when_no_supported_observation(self):
