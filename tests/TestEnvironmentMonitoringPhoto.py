@@ -94,7 +94,7 @@ def photo_frame(crop, size=(1920, 1080)):  # 把真实标记放回参考截图�
 
 class TestEnvironmentMonitoringPhoto(unittest.TestCase):  # 验证真实正负例及可能误触发的近似图形。
     @classmethod
-    def setUpClass(cls):  # 使用和应用相同的打包及独立模板源。
+    def setUpClass(cls):  # 使用主仓库的 COCO 打包模板。
         root = Path(__file__).resolve().parents[1]
         cls.features = FeatureSet(
             False,
@@ -102,7 +102,6 @@ class TestEnvironmentMonitoringPhoto(unittest.TestCase):  # 验证真实正负�
             0.002,
             0.002,
             default_threshold=0.8,
-            template_folder=str(root / "assets/templates"),
         )
 
     def check_marker(self, frame):  # 使用实际任务方法和模板匹配验证标记。
