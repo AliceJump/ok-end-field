@@ -227,6 +227,124 @@ class TestLauncherChannels(unittest.TestCase):
                 self.assertEqual(queried, expected)
 
 
+class TestBundledSignedParent(unittest.TestCase):
+    """A game-bundled signed image is preferred, without changing platform routing."""
+
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.root = Path(self.folder.name)
+        self.game = self.root / "Endfield.exe"
+        self.game.touch()
+        self.logger = Mock()
+
+    def _helper(self, filename, data=b"signed helper"):
+        path = self.root / filename
+        path.write_bytes(data)
+        return path
+
+    def test_copies_preferred_helper_and_rechecks_copied_signature(self):
+        helper = self._helper("PlatformProcess.exe")
+        self._helper("UnityCrashHandler64.exe", b"alternative")
+        with (
+            patch.object(official_launcher, "config_path", return_value=str(self.root / "images")),
+            patch.object(official_launcher, "verify_launcher") as verify,
+        ):
+            image = official_launcher.prepare_local_parent_image(str(self.game), self.logger)
+        self.assertEqual(image.name, "Games.exe")
+        self.assertEqual(image.read_bytes(), helper.read_bytes())
+        self.assertEqual(image.parent.parent, (self.root / "images").resolve())
+        self.assertEqual([c.args[0] for c in verify.call_args_list], [str(helper), str(image)])
+
+    def test_invalid_first_helper_tries_second_with_same_signer_check(self):
+        first = self._helper("PlatformProcess.exe", b"untrusted")
+        second = self._helper("UnityCrashHandler64.exe", b"trusted")
+
+        def check(path):
+            if path == str(first):
+                raise RuntimeError("invalid signature")
+
+        with (
+            patch.object(official_launcher, "config_path", return_value=str(self.root / "images")),
+            patch.object(official_launcher, "verify_launcher", side_effect=check),
+        ):
+            image = official_launcher.prepare_local_parent_image(str(self.game), self.logger)
+        self.assertEqual(image.read_bytes(), second.read_bytes())
+
+    def test_invalid_copied_signature_cleans_up_before_fallback(self):
+        self._helper("PlatformProcess.exe")
+        images = self.root / "images"
+
+        def check(path):
+            if Path(path).name == "Games.exe":
+                raise RuntimeError("copied image failed verification")
+
+        with (
+            patch.object(official_launcher, "config_path", return_value=str(images)),
+            patch.object(official_launcher, "verify_launcher", side_effect=check),
+            self.assertRaisesRegex(RuntimeError, "No usable signed"),
+        ):
+            official_launcher.prepare_local_parent_image(str(self.game), self.logger)
+        self.assertEqual(list(images.iterdir()), [])
+
+    def test_local_parent_success_never_uses_installed_launcher(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "recover_owned_parents"),
+            patch.object(official_launcher, "_platform_for_game", return_value=None),
+            patch.object(official_launcher, "_game_company", return_value="Hypergryph"),
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_local_temporary_parent", return_value=321) as local,
+            patch.object(official_launcher, "create_temporary_parent") as official,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "note_game_started"),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
+        ):
+            self.assertTrue(official_launcher.launch_game(str(self.game), "-force-d3d11", self.logger))
+        local.assert_called_once_with(kernel, str(self.game), self.logger)
+        official.assert_not_called()
+        create.assert_called_once_with(kernel, str(self.game), "-force-d3d11", 321)
+
+    def test_local_setup_failure_falls_back_to_official_parent(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "recover_owned_parents"),
+            patch.object(official_launcher, "_platform_for_game", return_value=None),
+            patch.object(official_launcher, "_game_company", return_value="Gryphline"),
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_local_temporary_parent", side_effect=FileNotFoundError("no helper")),
+            patch.object(official_launcher, "create_temporary_parent", return_value=654) as official,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "note_game_started"),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
+        ):
+            self.assertTrue(official_launcher.launch_game(str(self.game), "", self.logger))
+        official.assert_called_once_with(kernel, str(self.game), self.logger, company="Gryphline")
+        create.assert_called_once_with(kernel, str(self.game), "", 654)
+
+    def test_after_game_creation_failure_never_starts_second_game(self):
+        kernel = Mock()
+        with (
+            patch.object(official_launcher, "recover_owned_parents"),
+            patch.object(official_launcher, "_platform_for_game", return_value=None),
+            patch.object(official_launcher, "_game_company", return_value="Hypergryph"),
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_local_temporary_parent", return_value=321),
+            patch.object(official_launcher, "create_temporary_parent") as official,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "create_process", return_value=456) as create,
+            patch.object(official_launcher, "note_game_started", side_effect=RuntimeError("journal unavailable")),
+            self.assertRaisesRegex(RuntimeError, "journal unavailable"),
+        ):
+            official_launcher.launch_game(str(self.game), "", self.logger)
+        official.assert_not_called()
+        create.assert_called_once()
+        kernel.TerminateProcess.assert_not_called()
+
+
 class TestOfficialLauncher(unittest.TestCase):
     def test_detects_steam_and_epic_installations(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1212,6 +1330,57 @@ class TestTemporaryParentRecovery(unittest.TestCase):
 
         with patch.object(self.recovery.psutil, "Process", side_effect=get_process):
             self.recovery.recover_owned_parents(self.logger)
+
+    def _local_image(self):
+        directory = self.path / "images" / ("a" * 32)
+        directory.mkdir(parents=True)
+        image = directory / "Games.exe"
+        image.write_bytes(b"copied signed bytes")
+        return directory.parent, image
+
+    def test_local_image_is_deleted_when_owned_parent_retires(self):
+        root, image = self._local_image()
+        record = self._write(parent_exe=os.path.normcase(str(image)))
+        with patch.object(self.recovery, "config_path", return_value=str(root)):
+            self.recovery.forget_owned_parent(self.parent_pid, self.logger)
+        self.assertFalse(record.exists())
+        self.assertFalse(image.parent.exists())
+
+    def test_recovered_local_parent_removes_copy_only_after_exit(self):
+        root, image = self._local_image()
+        record = self._write(parent_exe=os.path.normcase(str(image)))
+        parent = self._parent()
+        parent.exe.return_value = str(image)
+        with patch.object(self.recovery, "config_path", return_value=str(root)):
+            self._recover(parent)
+        parent.terminate.assert_called_once()
+        parent.wait.assert_called_once_with(timeout=5)
+        self.assertFalse(record.exists())
+        self.assertFalse(image.parent.exists())
+
+    def test_live_game_preserves_owned_copy(self):
+        root, image = self._local_image()
+        record = self._write(parent_exe=os.path.normcase(str(image)), game_pid=501, game_created=50.0)
+        parent = self._parent()
+        parent.exe.return_value = str(image)
+        game = Mock()
+        game.is_running.return_value = True
+        game.create_time.return_value = 50.0
+        with patch.object(self.recovery, "config_path", return_value=str(root)):
+            self._recover(parent, game=game)
+        parent.terminate.assert_not_called()
+        self.assertTrue(record.exists())
+        self.assertTrue(image.exists())
+
+    def test_unexpected_files_prevent_deleting_a_local_image_directory(self):
+        root, image = self._local_image()
+        (image.parent / "unrelated.txt").write_text("keep", encoding="utf-8")
+        record = self._write(parent_exe=os.path.normcase(str(image)))
+        with patch.object(self.recovery, "config_path", return_value=str(root)):
+            self.recovery.forget_owned_parent(self.parent_pid, self.logger)
+        self.assertTrue(record.exists())
+        self.assertTrue((image.parent / "unrelated.txt").exists())
+
 
     def test_register_and_forget_parent_identity(self):
         parent, owner = self._parent(), self._owner(alive=True)
