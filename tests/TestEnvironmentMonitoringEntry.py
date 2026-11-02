@@ -376,7 +376,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task.ocr.return_value = [Box(120, 325, 100, 20, name="小池"), Box(240, 325, 40, 20, name="荷")]
         task._observation_action = Mock(return_value="accept")
-        self.assertEqual(task.available_observations(), [])
+        with self.assertRaisesRegex(RuntimeError, "无法识别环境监测观察点标题"):
+            task.available_observations()
         task.click.assert_not_called()
 
     def test_accept_and_go_remain_inside_the_selected_card(self):
@@ -601,8 +602,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_unsupported_tasks_are_never_selected_when_no_supported_task_is_available(self):
         task = self.prepare_task([{"name": "古树"}], [{"name": "枯枝"}])
-        with self.assertRaisesRegex(RuntimeError, "未找到符合条件"):
-            task.prepare_observation()
+        self.assertIsNone(task.prepare_observation())
         task.enter_observation.assert_not_called()
         task.transfer_observation.assert_not_called()
         self.assertIsNone(task.selected_observation)

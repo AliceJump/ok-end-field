@@ -57,6 +57,20 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.mark_task_failure.assert_called_once_with("环境监测仅完成取景验证，尚未拍照或完成委托")
         task.ensure_main.assert_called_once_with()
 
+    def test_daily_preview_succeeds_when_no_supported_observation(self):
+        task = self.task()
+        task.run.return_value = {"skipped": True, "photo_taken": False}
+        self.assertTrue(EnvironmentMonitoringPhotoTask.run_daily_preview(task))
+        task.mark_task_failure.assert_not_called()
+        task.ensure_main.assert_called_once_with()
+
+    def test_run_skips_navigation_when_no_observation(self):
+        task = self.task()
+        task.prepare_observation.return_value = None
+        result = EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        self.assertEqual(result, {"skipped": True, "photo_taken": False})
+        task.prepare_photo.assert_not_called()
+
     def test_daily_preview_recovers_main_after_exception(self):
         task = self.task()
         task.run.side_effect = RuntimeError("navigation failed")

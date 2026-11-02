@@ -141,7 +141,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
                 and title_box.y <= item.y < title_box.y + title_box.height
             ]  # 整帧识别后按卡片定位，避免紧裁剪漏掉引号后的小字
             if len(titles) != 1:  # 不猜测截断或多行标题
-                continue  # 保守跳过无法确认身份的卡片
+                raise RuntimeError("无法识别环境监测观察点标题")  # 识别异常不能当作没有符合条件的点位
             observations.append({"name": titles[0].name, "action_box": action_box})  # 保留动态操作区域
         return observations  # 返回当前终端候选
 
@@ -220,7 +220,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
                 }  # 交给后半流程的上下文
                 self.log_info(f"[environment-monitoring] arrived: {self.selected_observation}")  # 记录实际到达任务
                 return self.selected_observation  # 一次只处理一个观察点
-        raise RuntimeError("未找到符合条件的可接取或可前往观察点")  # 不将无匹配伪报为成功
+        self.log_info("[environment-monitoring] 没有符合条件的观察点，跳过")  # 没有支持的委托属于正常结果
+        return None  # 不需要传送或执行后续路线
 
     def _require_input_focus(self):  # 前台按键必须确认实际获得焦点
         if not self.wait_until(
@@ -311,6 +312,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     def run(self):  # GUI 与 MCP 共用从入口开始的可重复流程
         observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
+        if observation is None:  # 当前没有符合条件的观察点
+            return {"skipped": True, "photo_taken": False}  # 明确区分正常跳过与未完成取景
         name = observation["name"]  # 保留实际识别名称用于错误提示
         route_name = self.observation_route(name)  # 获取当前点位注册的导航方法
         route = getattr(self.navigation, route_name, None) if route_name else None  # 不为未知点位调用其他路线
@@ -323,6 +326,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         cancelled = False  # 用户中止后不再发送恢复输入
         try:  # 保证预览结束后不阻塞下一项任务
             result = self.run()  # 执行已注册的入口、导航和取景流程
+            if result.get("skipped", False):  # 已确认没有可执行的支持点位
+                return True  # 无任务属于正常完成
             if not result.get("photo_taken", False):  # 预览不能算作委托完成
                 self.mark_task_failure(self.tr("环境监测仅完成取景验证，尚未拍照或完成委托"))  # 明确记录未完成原因
                 return False  # 日常汇总不误记成功
