@@ -104,11 +104,14 @@ def _remove_local_image(record: dict, logger) -> bool:
     if not isinstance(recorded, str):
         return False
     candidate = Path(recorded)
-    root = Path(os.path.abspath(config_path(TEMPORARY_IMAGE_DIRNAME)))
-    # Compare normalized lexical roots before considering the journal path;
-    # resolving case-aliased Windows temp directories can change path spellings.
+    # Image creation resolves the configured root first (including junctions).
+    # Recovery must use that same physical root rather than its config alias.
+    root = Path(config_path(TEMPORARY_IMAGE_DIRNAME)).resolve()
     candidate_root = os.path.normcase(os.path.abspath(str(candidate.parent.parent)))
-    if candidate_root != os.path.normcase(str(root)):
+    if candidate_root != os.path.normcase(os.path.abspath(str(root))):
+        if candidate.name.casefold() == "games.exe" and _TEMP_IMAGE_ID.fullmatch(candidate.parent.name):
+            logger.warning("Cannot verify the root of a recorded temporary parent image; retaining journal")
+            return False
         return True  # Original official Games.exe: its image is not ours.
     if candidate.name.casefold() != "games.exe" or not _TEMP_IMAGE_ID.fullmatch(candidate.parent.name):
         logger.warning("Refusing a malformed temporary parent image identity")
