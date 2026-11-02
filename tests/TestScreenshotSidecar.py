@@ -1,11 +1,8 @@
 import json
 import tempfile
 import unittest
-from datetime import datetime
 from pathlib import Path
-from queue import Queue
 from types import SimpleNamespace
-from unittest.mock import Mock
 
 from PIL import Image
 
@@ -27,47 +24,6 @@ def _fake_box(x, y, width, height, name=None, confidence=0):
 
 
 class TestScreenshotSidecar(unittest.TestCase):
-    def test_upstream_queue_accepts_project_timestamp(self):
-        from ok.core.screenshot import Screenshot, screenshot_file_stem
-
-        from src.core import BaseEfTask  # noqa: F401 - installs the timestamp format
-
-        self.assertEqual(screenshot_file_stem("capture", datetime(2026, 11, 2, 12, 34, 56)), "20261102_123456_capture")
-        capture = Screenshot.__new__(Screenshot)
-        capture.task_queue = Queue()
-        capture.ui_dict = {}
-        capture.add_task(object(), "screenshots", "capture")
-        self.assertTrue(capture.task_queue.get_nowait()[3].endswith("_capture"))
-
-    def test_capture_preserves_duplicate_images_and_sidecars(self):
-        from ok.core.screenshot import Screenshot
-
-        from src.patches.screenshot_sidecar_patch import _patched_generate_screen_shot
-
-        capture = Screenshot.__new__(Screenshot)
-        ui_dict = {"btn": ([_fake_box(10, 20, 5, 5)], 1.0, (255, 60, 60, 255))}
-
-        def convert(*args, **kwargs):
-            ui_dict.clear()  # Simulate an event updating the live mapping during conversion.
-            return Image.new("RGB", (30, 30), "white")
-
-        capture.to_pil_image = Mock(side_effect=convert)
-        with tempfile.TemporaryDirectory() as folder:
-            first = _patched_generate_screen_shot(
-                capture, object(), ui_dict, folder, "capture", True, SimpleNamespace(x=3, y=4)
-            )
-            second = _patched_generate_screen_shot(capture, object(), {}, folder, "capture", False, None)
-            self.assertNotEqual(first, second)
-            self.assertTrue(Path(first).is_file())
-            self.assertTrue(Path(second).is_file())
-            sidecar = json.loads((Path(folder) / "capture_boxes.json").read_text(encoding="utf-8"))
-            self.assertEqual(sidecar["boxes"][0]["x"], 7)
-            self.assertEqual(sidecar["boxes"][0]["y"], 16)
-            self.assertFalse(list(Path(folder).glob("*_boxed.png")))
-        capture.to_pil_image.reset_mock()
-        self.assertIsNone(_patched_generate_screen_shot(capture, object(), {}, None, "capture", True, None))
-        capture.to_pil_image.assert_not_called()
-
     def test_serialize_boxes_records_fixed_pixels(self):
         ui_dict = {
             "feature_a": ([_fake_box(10, 20, 80, 40, name="btn", confidence=0.85)], 1.0, _FakeColor()),

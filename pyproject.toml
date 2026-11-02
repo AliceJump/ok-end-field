@@ -23,7 +23,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "mcp==2.3.0",
-    "packaging>=26.3",
     "playwright>=1.55,<2",
     "polib>=1.2,<2",
     "pypinyin>=0.55,<1",
