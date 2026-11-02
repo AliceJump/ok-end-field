@@ -46,6 +46,19 @@ class TestSkillTiming(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate supplemental timing"):
             SkillTimingStore(supplements=(*SUPPLEMENTS, *SUPPLEMENTS))
 
+    def test_supplement_accepts_crlf_line_endings_from_windows_git_checkout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "index.json").write_bytes((SUPPLEMENTS[0] / "index.json").read_bytes())
+            lf_bytes = (SUPPLEMENTS[0] / "profiles.json").read_bytes().replace(b"\r\n", b"\n")
+            crlf_bytes = lf_bytes.replace(b"\n", b"\r\n")
+            self.assertIn(b"\r\n", crlf_bytes)
+            (path / "profiles.json").write_bytes(crlf_bytes)
+            store = SkillTimingStore(supplements=(path,))
+            for alias in ("祀", "si", "Si", "chr_0036_jsspsi"):
+                (battle,) = store.profiles(alias, "battle")
+                self.assertEqual(battle.skill_id, "chr_0036_jsspsi_normal_skill")
+
     def test_supplement_rejects_bad_allow_windows_even_with_matching_hash(self):
         cases = (
             ["1", 2, ["skill"]],
