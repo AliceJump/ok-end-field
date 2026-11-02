@@ -665,7 +665,17 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         )
         locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
         points = {key: value for key, value in data.items() if key != "track"}
-        self.assertEqual(len(points), 31)
+        self.assertEqual(
+            set(points),
+            {
+                "pool_lotus",
+                "cloudrest_eco_site",
+                "bamboo_water_chimes",
+                "ecology_near_the_field_logistics_depot",
+                "eternal_sunset",
+                "vigorous_cistern_originium_slug",
+            },
+        )
         self.assertNotIn("beacon_damaged_in_the_blight_tide", points)
         task = self.task()
         for locale in locales:
@@ -684,7 +694,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         )
         points = {key: value for key, value in data.items() if key != "track"}
         short_names = {key: value for key, value in points.items() if "pattern" in value["zh_CN"]}
-        self.assertEqual(len(short_names), 5)
+        self.assertEqual(len(short_names), 2)
         for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
             for key, names in short_names.items():
                 with self.subTest(locale=locale, point=key):
