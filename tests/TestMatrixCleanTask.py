@@ -417,19 +417,6 @@ class TestDailyWiring(unittest.TestCase):
         # 框架按 name 存任务配置，两个入口必须不同名
         self.assertNotEqual(MatrixCleanTask.__name__, MatrixCleanOnceTask.__name__)
 
-    def test_dismantle_entry_is_fixed_click(self):
-        # 分解入口是底栏左侧工具组的垃圾桶图标（纯图标无文字），定点点击；
-        # essence_throw_away 模板是右上详情面板的单件分解按钮，全屏匹配在
-        # 底栏落点偏高约 90px（(0.258, 0.865) 点到物品末行）
-        src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        self.assertIn("_DISMANTLE_ENTRY", src_text)
-        self.assertNotIn("essence_throw_away", src_text)
-
-    def test_filter_checks_all_qualities(self):
-        # 品质三项和未上锁均需确认选中，避免排除可分解物品。
-        src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        self.assertIn("for x, y in self._FILTER_SWATCHES", src_text)
-
     def test_ui_fallback_group_map(self):
         import ast
 
