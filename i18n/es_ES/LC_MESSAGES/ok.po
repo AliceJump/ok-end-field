@@ -2940,11 +2940,6 @@ msgstr ""
 "Selecciona las tareas del Dijiang que participarán en las tareas diarias; el"
 " orden fijo es Regalos, Organización del Dijiang y Recolección del Dijiang."
 
-msgid "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。"
-msgstr ""
-"Selecciona otras tareas diarias; el programa fija su orden para no separar "
-"estados de escena reutilizables."
-
 msgid "选择参加一键日常的战斗任务；刷体力与演算连续执行。"
 msgstr ""
 "Selecciona las tareas de combate; Consumo de energía y Cálculo se ejecutan "

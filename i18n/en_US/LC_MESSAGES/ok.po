@@ -2847,11 +2847,6 @@ msgstr ""
 "Select the Dijiang tasks to include in Daily Tasks; order is fixed as Gift "
 "Giving, Dijiang Organize, then Dijiang Harvest."
 
-msgid "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。"
-msgstr ""
-"Select other tasks to include in Daily Tasks; the program fixes their order "
-"so reusable scene state is not split apart."
-
 msgid "选择参加一键日常的战斗任务；刷体力与演算连续执行。"
 msgstr ""
 "Select combat tasks to include in Daily Tasks; Stamina Farming and "
