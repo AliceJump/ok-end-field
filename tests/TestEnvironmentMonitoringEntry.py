@@ -254,7 +254,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_terminal_selection_requires_monitoring_page_before_fixed_click(self):
         task = self.task()
         task._monitoring_page.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "终端列表"):
+        with self.assertRaisesRegex(RuntimeError, "切换终端时未处于环境监测终端列表"):
             task.select_terminal("marker_stone")
         task.click.assert_not_called()
 
@@ -262,7 +262,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task._monitoring_page.side_effect = [True, False]
         task._terminal_selected = Mock(return_value=False)
-        with self.assertRaisesRegex(RuntimeError, "终端列表"):
+        with self.assertRaisesRegex(RuntimeError, "切换终端时未处于环境监测终端列表"):
             task.select_terminal("marker_stone")
         self.assertEqual(task.click.call_count, 1)
         task.wait_ui_stable.assert_not_called()
@@ -324,7 +324,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task.find_one.return_value = Box(10, 10, 20, 20)
         task._monitoring_page.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "终端列表"):
+        with self.assertRaisesRegex(RuntimeError, "点击环境监测入口后未进入终端列表"):
             task.open_monitoring()
         task.wait_click_ocr.assert_not_called()
         task.click.assert_called_once()
@@ -411,8 +411,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_failed_accept_transition_does_not_click_another_card_or_continue(self):
         task = self.task()
         task._observation_action = Mock(return_value="accept")
+        area = Box(678, 918, 562, 81)
         with self.assertRaisesRegex(RuntimeError, "前往任务"):
-            task.enter_observation({"name": "小池荷", "action_box": Box(678, 918, 562, 81)})
+            task.enter_observation({"name": "小池荷", "action_box": area})
         self.assertEqual(task.click.call_count, 1)
         task.wait_ocr.assert_not_called()
 
@@ -420,8 +421,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task._monitoring_page.return_value = False
         task._observation_action = Mock(return_value="go")
-        with self.assertRaisesRegex(RuntimeError, "终端列表"):
-            task.enter_observation({"name": "小池荷", "action_box": Box(678, 918, 562, 81)})
+        area = Box(678, 918, 562, 81)
+        with self.assertRaisesRegex(RuntimeError, "打开观察点前未处于环境监测终端列表"):
+            task.enter_observation({"name": "小池荷", "action_box": area})
         task.click.assert_not_called()
         task._observation_action.assert_not_called()
 
@@ -438,8 +440,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_unknown_button_color_never_clicks_or_opens_details(self):
         task = self.task()
         task._observation_action = Mock(return_value=None)
+        area = Box(678, 918, 562, 81)
         with self.assertRaisesRegex(RuntimeError, "前往任务"):
-            task.enter_observation({"name": "小池荷", "action_box": Box(678, 918, 562, 81)})
+            task.enter_observation({"name": "小池荷", "action_box": area})
         task.click.assert_not_called()
         task.wait_ocr.assert_not_called()
 

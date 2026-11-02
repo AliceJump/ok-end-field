@@ -66,7 +66,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             raise RuntimeError("未找到环境监测入口")  # 不盲点其他模块
         self.click(entry)  # 点击识别到的环境监测图标
         if not self.wait_until(self._monitoring_page, time_out=5, raise_if_not_found=False):  # 验证确实进入终端页
-            raise RuntimeError("未进入环境监测终端列表")  # 未进入时停止，不再识别入口文字
+            raise RuntimeError("点击环境监测入口后未进入终端列表")  # 未进入时停止，不再识别入口文字
         if not self.wait_ui_stable():  # 等待卡片入场完成
             raise RuntimeError("环境监测页面未稳定")  # 超时不扫描过渡画面
 
@@ -96,7 +96,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
     def select_terminal(self, terminal):  # 两个终端共用切换逻辑
         for _ in range(2):  # 有界重试被动画吞掉的点击
             if not self._monitoring_page():  # 每次重试都核对页面，避免等待期间已离开终端页
-                raise RuntimeError("未进入环境监测终端列表")  # 固定坐标只能在已确认的终端页使用
+                raise RuntimeError("切换终端时未处于环境监测终端列表")  # 固定坐标只能在已确认的终端页使用
             if not self._terminal_selected(terminal):  # 已选中时无需重复点击或识别终端名称
                 self.click(self._terminal_area(terminal))  # 点击对应标签内已验证的固定空白区
                 if not self.wait_until(lambda: self._terminal_selected(terminal), time_out=3, raise_if_not_found=False):
@@ -147,7 +147,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
     def enter_observation(self, observation):  # 接取或继续指定卡片
         area = observation["action_box"]  # 始终局限于目标卡片
         if not self._monitoring_page():  # 颜色本身不具备页面身份，点击前再确认终端页
-            raise RuntimeError("未进入环境监测终端列表")  # 禁止在其他页面按颜色点击
+            raise RuntimeError("打开观察点前未处于环境监测终端列表")  # 禁止在其他页面按颜色点击
         if self._observation_action(area) == "accept":  # 仅未接取时点击一次
             self.click(area)  # 使用目标卡片内按钮区域
         if not self.wait_until(

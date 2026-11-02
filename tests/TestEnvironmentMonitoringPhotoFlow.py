@@ -113,16 +113,18 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             with self.subTest(error=type(error).__name__):
                 task = self.task()
                 task.sleep.side_effect = error
+                navigation = EnvironmentMonitoringNavigation(task)
                 with self.assertRaises(type(error)):
-                    EnvironmentMonitoringNavigation(task)._hold_route_key("w", 0.5)
+                    navigation._hold_route_key("w", 0.5)
                 task.send_key_down.assert_called_once_with("up")
                 task.send_key_up.assert_called_once_with("up")
 
     def test_failed_focus_prevents_movement_key_down(self):
         task = self.task()
         task._require_input_focus.side_effect = RuntimeError("no focus")
+        navigation = EnvironmentMonitoringNavigation(task)
         with self.assertRaisesRegex(RuntimeError, "no focus"):
-            EnvironmentMonitoringNavigation(task)._hold_route_key("d", 3)
+            navigation._hold_route_key("d", 3)
         task.send_key_down.assert_not_called()
         task.sleep.assert_not_called()
 
