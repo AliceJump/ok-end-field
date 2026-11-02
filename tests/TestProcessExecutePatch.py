@@ -1411,6 +1411,28 @@ class TestTemporaryParentRecovery(unittest.TestCase):
         self.assertTrue(record.exists())
         self.assertTrue(image.exists())
 
+    def test_tampered_record_path_cannot_delete_outside_private_root(self):
+        root, image = self._local_image()
+        unrelated = self.path / "unrelated" / "Games.exe"
+        unrelated.parent.mkdir()
+        unrelated.write_bytes(b"not ours")
+        record = self._write(parent_exe=os.path.normcase(str(unrelated)))
+        with patch.object(self.recovery, "config_path", return_value=str(root)):
+            self.recovery.forget_owned_parent(self.parent_pid, self.logger)
+        self.assertTrue(unrelated.exists())
+        self.assertTrue(image.exists())
+        self.assertFalse(record.exists())
+
+    def test_invalid_uuid_path_is_rejected_without_logging_untrusted_text(self):
+        root, image = self._local_image()
+        record = self._write(parent_exe=str(root / "bad-name\\nINJECTED" / "Games.exe"))
+        with patch.object(self.recovery, "config_path", return_value=str(root)):
+            self.recovery.forget_owned_parent(self.parent_pid, self.logger)
+        self.assertTrue(record.exists())
+        self.assertTrue(image.exists())
+        self.assertTrue(self.logger.warning.called)
+        self.assertNotIn("INJECTED", str(self.logger.warning.call_args_list))
+
     def test_unexpected_files_prevent_deleting_a_local_image_directory(self):
         root, image = self._local_image()
         (image.parent / "unrelated.txt").write_text("keep", encoding="utf-8")
