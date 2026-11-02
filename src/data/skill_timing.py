@@ -302,7 +302,7 @@ class SkillTimingStore:
         self._supplement_profiles = {}
         for supplement in supplements:
             manifest = json.loads((supplement / "index.json").read_text(encoding="utf-8"))
-            raw = (supplement / "profiles.json").read_bytes()
+            raw = (supplement / "profiles.json").read_bytes().replace(b"\r\n", b"\n")
             if (
                 manifest.get("schema_version") != 1
                 or manifest.get("frames_per_second") != 30
