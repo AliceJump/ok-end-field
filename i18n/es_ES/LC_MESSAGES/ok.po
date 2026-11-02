@@ -4017,3 +4017,6 @@ msgstr "Monitoreo ambiental: encuadrar Loto del estanque"
 
 msgid "前往小池荷，走到竹子旁并打开相机，检查拍摄条件后停止，不拍照。"
 msgstr "Ve a Loto del estanque, camina hasta el bambú y abre la cámara. Se detiene tras comprobar los requisitos de la fotografía, sin tomarla."
+
+msgid "环境监测"
+msgstr "Monitoreo ambiental"

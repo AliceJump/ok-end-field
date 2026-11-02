@@ -20,7 +20,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         self.group_name = "日常任务"  # 环境监测属于日常业务
         self.group_icon = FluentIcon.CALENDAR  # 与现有日常子任务一致
         self.icon = FluentIcon.SEARCH  # 保持原有任务图标
-        self.name = "环境监测：小池荷取景"  # 明确当前只支持小池荷
+        self.name = "环境监测"  # 任务名称不绑定某个观察点
         self.description = "前往小池荷，走到竹子旁并打开相机，检查拍摄条件后停止，不拍照。"  # 保留委托供重复实测
         self.default_config = {}  # 路线固定，不允许将其用于其他观察点
         self.config_description = {}  # 不展示观察点名称配置

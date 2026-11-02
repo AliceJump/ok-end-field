@@ -22,6 +22,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):
             task = EnvironmentMonitoringPhotoTask(SimpleNamespace(scene=None, pause_start=None), SimpleNamespace())
         self.assertEqual(task.group_name, "日常任务")
+        self.assertEqual(task.name, "环境监测")
         self.assertEqual(task.group_icon, FluentIcon.CALENDAR)
         self.assertEqual(task.default_config, {})
         registration = ["src.tasks.onetime.EnvironmentMonitoringPhotoTask", "EnvironmentMonitoringPhotoTask"]

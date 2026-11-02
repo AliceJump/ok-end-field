@@ -101,6 +101,29 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     self.assertGreater(area.x + area.width, title.x)
                     self.assertGreater(area.y, title.y)
 
+    def test_pool_lotus_title_selects_its_own_column(self):
+        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+            for target_column in range(3):
+                with self.subTest(size=(width, height), target_column=target_column):
+                    task = self.task(width, height)
+                    task.ocr.return_value = [
+                        Box(
+                            round(width * (0.06 + i * 0.304)),
+                            round(height * 0.30),
+                            100,
+                            20,
+                            name="“小池荷”" if i == target_column else "其他观察点",
+                        )
+                        for i in range(3)
+                    ]
+                    task._observation_action = Mock(return_value="go")
+                    candidates = task.available_observations()
+                    task.ocr.assert_called_once_with()
+                    matches = [item for item in candidates if task.normalize_title(item["name"]) == "小池荷"]
+                    self.assertEqual(len(matches), 1)
+                    expected_left = round(width * (0.049 + target_column * 0.304))
+                    self.assertEqual(matches[0]["action_box"].x, expected_left)
+
     def test_terminal_highlight_identifies_only_the_selected_tab_at_multiple_sizes(self):
         for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
             for selected in ("outskirts", "marker_stone"):
