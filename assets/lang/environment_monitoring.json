@@ -1,12 +1,4 @@
 {
-  "track": {
-    "zh_CN": {
-      "pattern": "开始追踪"
-    },
-    "zh_TW": {
-      "pattern": "開始追蹤"
-    }
-  },
   "pool_lotus": {
     "zh_CN": {
       "string": "小池荷"

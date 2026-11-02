@@ -185,10 +185,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             self.click(locator)  # 点击同一帧已确认的地图定位按钮
         else:
             track_area = self.box_of_screen(0.81, 0.89, 0.98, 0.95)  # 仅限详情面板的追踪按钮
-            track = self.find_one(fL.start_follow, box=track_area)  # 沿用默认阈值，实际命中才点击
-            if not track:  # 缺少环境监测未追踪正例，尚不能证明现有追踪模板覆盖此按钮，文字仅作兜底
-                tracks = self.ocr(match=self.lang.environment_monitoring.track, box=track_area)
-                track = tracks[0] if tracks else None
+            track = self.find_one(fL.transfer_go, box=track_area)  # 未追踪实测匹配追踪按钮图标
             if track:
                 self.click(track)  # 首次追踪会自动打开任务地图
             else:

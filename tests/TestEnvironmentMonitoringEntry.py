@@ -24,7 +24,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._executor = SimpleNamespace(frame=np.zeros((height, width, 3), dtype=np.uint8))
         task.lang = SimpleNamespace(
             environment_monitoring=SimpleNamespace(
-                track=re.compile("开始追踪"),
                 pool_lotus="小池荷",
             )
         )
@@ -470,6 +469,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "追踪状态"):
             task.transfer_observation()
         task.click.assert_not_called()
+        task.ocr.assert_not_called()
         task.wait_click_feature.assert_not_called()
         task.to_near_transfer_point.assert_not_called()
 
@@ -560,22 +560,21 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.to_near_transfer_point.assert_not_called()
         task._wait_for_transfer_arrival.assert_not_called()
 
-    def test_untracked_task_still_uses_start_tracking_ocr(self):
+    def test_untracked_task_clicks_transfer_go_without_ocr(self):
         task = self.task()
-        track = Box(1500, 950, 100, 30, name="开始追踪")
-        task.ocr.return_value = [track]
+        track = Box(1817, 976, 34, 34)
+        task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
         task.transfer_observation()
         task.click.assert_called_once_with(track)
-        task.find_one.assert_any_call(fL.start_follow, box=task.ocr.call_args.kwargs["box"])
-        self.assertEqual(task.ocr.call_args.kwargs["match"], task.lang.environment_monitoring.track)
-        track_area = task.ocr.call_args.kwargs["box"]
+        task.ocr.assert_not_called()
+        track_area = task.find_one.call_args.kwargs["box"]
         self.assertEqual((track_area.x, track_area.y), (round(1920 * 0.81), round(1080 * 0.89)))
         task.to_near_transfer_point.assert_called_once_with(need_track=False)
 
-    def test_start_follow_template_hit_avoids_ocr_and_clicks_only_its_box(self):
+    def test_tracking_template_uses_default_threshold(self):
         task = self.task()
-        track = Box(1827, 980, 15, 24)
-        task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.start_follow else None
+        track = Box(1817, 976, 34, 34)
+        task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
         task.transfer_observation()
         task.ocr.assert_not_called()
         task.click.assert_called_once_with(track)
@@ -583,7 +582,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_unstable_map_stops_before_clicking_teleport(self):
         task = self.task()
-        task.ocr.return_value = [Box(1500, 950, 100, 30, name="开始追踪")]
+        track = Box(1817, 976, 34, 34)
+        task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
         task.wait_ui_stable.return_value = False
         with self.assertRaisesRegex(RuntimeError, "任务地图未稳定"):
             task.transfer_observation()
@@ -664,7 +664,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             )
         )
         locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
-        points = {key: value for key, value in data.items() if key != "track"}
+        points = data
         self.assertEqual(
             set(points),
             {
@@ -692,7 +692,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        points = {key: value for key, value in data.items() if key != "track"}
+        points = data
         short_names = {key: value for key, value in points.items() if "pattern" in value["zh_CN"]}
         self.assertEqual(len(short_names), 2)
         for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
@@ -736,7 +736,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_transfer_arrival_failure_clears_previous_result_and_never_reports_success(self):
         task = self.prepare_task([{"name": "小池荷"}], [])
         del task.transfer_observation
-        task.ocr.return_value = [Box(1500, 950, 100, 30, name="开始追踪")]
+        track = Box(1817, 976, 34, 34)
+        task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
         task._wait_for_transfer_arrival.return_value = False
         with self.assertRaisesRegex(RuntimeError, "未确认到达"):
             task.prepare_observation()
