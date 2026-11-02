@@ -314,7 +314,9 @@ class TestBundledSignedParent(unittest.TestCase):
             patch.object(official_launcher, "_game_company", return_value="Gryphline"),
             patch.object(official_launcher, "running_pids", return_value=[]),
             patch.object(official_launcher, "_kernel32", return_value=kernel),
-            patch.object(official_launcher, "create_local_temporary_parent", side_effect=FileNotFoundError("no helper")),
+            patch.object(
+                official_launcher, "create_local_temporary_parent", side_effect=FileNotFoundError("no helper")
+            ),
             patch.object(official_launcher, "create_temporary_parent", return_value=654) as official,
             patch.object(official_launcher, "LauncherCleanup"),
             patch.object(official_launcher, "note_game_started"),
@@ -323,6 +325,32 @@ class TestBundledSignedParent(unittest.TestCase):
             self.assertTrue(official_launcher.launch_game(str(self.game), "", self.logger))
         official.assert_called_once_with(kernel, str(self.game), self.logger, company="Gryphline")
         create.assert_called_once_with(kernel, str(self.game), "", 654)
+
+    def test_local_game_creation_failure_cleans_parent_before_official_retry(self):
+        kernel = Mock()
+
+        def create(kernel_arg, path, arguments, parent):
+            if parent == 321:
+                raise OSError("could not start with bundled parent")
+            kernel.TerminateProcess.assert_called_once_with(321, 0)
+            kernel.CloseHandle.assert_called_once_with(321)
+            return 456
+
+        with (
+            patch.object(official_launcher, "recover_owned_parents"),
+            patch.object(official_launcher, "_platform_for_game", return_value=None),
+            patch.object(official_launcher, "_game_company", return_value="Hypergryph"),
+            patch.object(official_launcher, "running_pids", return_value=[]),
+            patch.object(official_launcher, "_kernel32", return_value=kernel),
+            patch.object(official_launcher, "create_local_temporary_parent", return_value=321),
+            patch.object(official_launcher, "create_temporary_parent", return_value=654) as official,
+            patch.object(official_launcher, "LauncherCleanup"),
+            patch.object(official_launcher, "forget_owned_parent"),
+            patch.object(official_launcher, "note_game_started"),
+            patch.object(official_launcher, "create_process", side_effect=create),
+        ):
+            self.assertTrue(official_launcher.launch_game(str(self.game), "", self.logger))
+        official.assert_called_once_with(kernel, str(self.game), self.logger, company="Hypergryph")
 
     def test_after_game_creation_failure_never_starts_second_game(self):
         kernel = Mock()
@@ -1357,6 +1385,17 @@ class TestTemporaryParentRecovery(unittest.TestCase):
         parent.wait.assert_called_once_with(timeout=5)
         self.assertFalse(record.exists())
         self.assertFalse(image.parent.exists())
+
+    def test_local_image_remains_when_recovered_parent_has_not_exited(self):
+        root, image = self._local_image()
+        record = self._write(parent_exe=os.path.normcase(str(image)))
+        parent = self._parent()
+        parent.exe.return_value = str(image)
+        parent.wait.side_effect = psutil.TimeoutExpired(5, self.parent_pid)
+        with patch.object(self.recovery, "config_path", return_value=str(root)):
+            self._recover(parent)
+        self.assertTrue(record.exists())
+        self.assertTrue(image.exists())
 
     def test_live_game_preserves_owned_copy(self):
         root, image = self._local_image()
