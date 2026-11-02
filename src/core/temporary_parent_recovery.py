@@ -99,16 +99,20 @@ def note_game_started(parent_pid: int, game_pid: int, logger) -> None:
 
 
 def _remove_local_image(record: dict, logger) -> bool:
-    """Delete only a UUID-named image under our private root, never an arbitrary path."""
+    """Delete only a UUID-named copy under the app-controlled image root."""
     recorded = record.get("parent_exe")
     if not isinstance(recorded, str):
         return False
     candidate = Path(recorded)
-    # Image creation resolves the configured root first (including junctions).
-    # Recovery must use that same physical root rather than its config alias.
-    root = Path(config_path(TEMPORARY_IMAGE_DIRNAME)).resolve()
-    candidate_root = candidate.parent.parent.resolve()
-    if os.path.normcase(str(candidate_root)) != os.path.normcase(str(root)):
+    # Resolve only trusted config paths, never the untrusted journal path.
+    config_root = Path(os.path.abspath(config_path(TEMPORARY_IMAGE_DIRNAME)))
+    root = config_root.resolve()
+    allowed_roots = {
+        os.path.normcase(os.path.abspath(str(config_root))),
+        os.path.normcase(os.path.abspath(str(root))),
+    }
+    candidate_root = os.path.normcase(os.path.abspath(str(candidate.parent.parent)))
+    if candidate_root not in allowed_roots:
         if candidate.name.casefold() == "games.exe" and _TEMP_IMAGE_ID.fullmatch(candidate.parent.name):
             logger.warning("Cannot verify the root of a recorded temporary parent image; retaining journal")
             return False
@@ -117,25 +121,27 @@ def _remove_local_image(record: dict, logger) -> bool:
         logger.warning("Refusing a malformed temporary parent image identity")
         return False
 
-    # Never unlink a path read from a JSON record. Construct it again from a
-    # canonical UUID and the application-controlled directory instead.
     identifier = uuid.UUID(hex=candidate.parent.name).hex
     directory = root / identifier
     image = directory / "Games.exe"
+    allowed_images = {
+        os.path.normcase(os.path.abspath(str(base / identifier / "Games.exe")))
+        for base in (config_root, root)
+    }
     if (
-        directory.is_symlink()
+        os.path.normcase(os.path.abspath(recorded)) not in allowed_images
+        or directory.is_symlink()
         or directory.is_junction()
-        or os.path.normcase(str(candidate.resolve())) != os.path.normcase(str(image.resolve()))
     ):
         logger.warning("Refusing an unrecognized temporary parent image location")
         return False
     try:
+        # The actual deletion target is reconstructed only from trusted root + UUID.
         image.unlink(missing_ok=True)
         if directory.exists():
             directory.rmdir()
         return True
     except OSError as error:
-        # Keep the journal: Windows may still hold the executable image open.
         logger.warning(f"Cannot retire owned temporary parent image; retry later ({type(error).__name__})")
         return False
 
