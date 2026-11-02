@@ -322,20 +322,13 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         return self.prepare_photo()  # 停在相机内，保留任务供下一轮验证
 
     def run_daily_preview(self):  # 一键日常仅运行当前可用的取景验证
-        cancelled = False  # 用户中止后不再发送恢复输入
-        try:  # 保证预览结束后不阻塞下一项任务
+        try:  # 保留日常执行器所需的结果与异常处理
             result = self.run()  # 执行已注册的入口、导航和取景流程
             if result.get("skipped", False):  # 已确认没有可执行的支持点位
                 return True  # 无任务属于正常完成
-            if not result.get("photo_taken", False):  # 预览不能算作委托完成
-                return False  # 日常汇总不误记成功
-            return True  # 将来支持拍照后才允许报告成功
+            return bool(result.get("photo_taken", False))  # 仅实际拍照后允许报告成功
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器
-            cancelled = True  # 停止后不操作游戏
             raise  # 不将用户中止当成普通失败
         except Exception as error:  # 当前点位不可用或取景失败
             self.mark_task_failure(self.tr("环境监测执行失败：{error}").format(error=error))  # 记录具体原因
             return False  # 允许继续后续日常
-        finally:  # 非中止时恢复主界面
-            if not cancelled:  # 用户停止后不继续输入
-                self.ensure_main()  # 离开相机，供后续日常继续

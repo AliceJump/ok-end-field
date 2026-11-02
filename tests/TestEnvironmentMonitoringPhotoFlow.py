@@ -49,20 +49,20 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         )
         self.assertTrue(item[2]())
 
-    def test_daily_preview_marks_incomplete_and_recovers_main(self):
+    def test_daily_preview_marks_incomplete_without_recovering_main(self):
         task = self.task()
         task.run.return_value = {"camera_open": True, "photo_ready": True, "photo_taken": False}
         task.tr.side_effect = lambda text: text
         self.assertFalse(EnvironmentMonitoringPhotoTask.run_daily_preview(task))
         task.mark_task_failure.assert_not_called()
-        task.ensure_main.assert_called_once_with()
+        task.ensure_main.assert_not_called()
 
     def test_daily_preview_succeeds_when_no_supported_observation(self):
         task = self.task()
         task.run.return_value = {"skipped": True, "photo_taken": False}
         self.assertTrue(EnvironmentMonitoringPhotoTask.run_daily_preview(task))
         task.mark_task_failure.assert_not_called()
-        task.ensure_main.assert_called_once_with()
+        task.ensure_main.assert_not_called()
 
     def test_run_skips_navigation_when_no_observation(self):
         task = self.task()
@@ -71,12 +71,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(result, {"skipped": True, "photo_taken": False})
         task.prepare_photo.assert_not_called()
 
-    def test_daily_preview_recovers_main_after_exception(self):
+    def test_daily_preview_records_exception_without_recovering_main(self):
         task = self.task()
         task.run.side_effect = RuntimeError("navigation failed")
         task.tr.side_effect = lambda text: text
         self.assertFalse(EnvironmentMonitoringPhotoTask.run_daily_preview(task))
-        task.ensure_main.assert_called_once_with()
+        task.ensure_main.assert_not_called()
         task.mark_task_failure.assert_called_once_with("环境监测执行失败：navigation failed")
 
     def test_daily_preview_propagates_cancellation(self):
