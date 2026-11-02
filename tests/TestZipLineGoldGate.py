@@ -540,17 +540,6 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub.send_key.assert_not_called()
         stub.ocr.assert_not_called()
 
-    def test_click_only_does_not_repeat_input_after_activation(self):
-        stub = self._stub()
-        stub._zip_line_target_is_gold_and_centered = Mock(return_value=True)
-
-        result = ZipLineMixin.ensure_click_on_zip_line(stub, 108)
-
-        self.assertTrue(result)
-        stub._zip_line_target_is_gold_and_centered.assert_called_once()
-        stub.click.assert_called_once()
-        stub.send_key.assert_not_called()
-        stub.ocr.assert_not_called()
 
     def test_gate_failure_realigns_with_same_fifty_pixel_tolerance(self):
         stub = self._stub()

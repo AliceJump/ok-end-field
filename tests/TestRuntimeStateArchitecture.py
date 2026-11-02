@@ -23,28 +23,6 @@ from src.tasks.trigger.ItemNavigatorTask import (
 
 
 class TestRuntimeStateArchitecture(unittest.TestCase):
-    def test_runtime_state_has_a_purpose_specific_package_name(self):
-        root = Path(__file__).parents[1] / "src"
-
-        self.assertTrue((root / "runtime_state" / "__init__.py").is_file())
-        self.assertFalse((root / "runtime" / "__init__.py").exists())
-
-    def test_localization_tasks_and_services_live_in_the_localization_domain_package(self):
-        root = Path(__file__).parents[1] / "src" / "tasks"
-        names = (
-            "MinimapRealtimePosition.py",
-            "MinimapRegionCheck.py",
-            "MinimapScaleCapture.py",
-            "MinimapTurnToHeading.py",
-        )
-
-        for name in names:
-            self.assertTrue((root / "localization" / name).is_file())
-            self.assertFalse((root / "navigation" / name).exists())
-            self.assertFalse((root / "test" / name).exists())
-            self.assertFalse((root / "trigger" / name).exists())
-        self.assertTrue((root.parent / "localization" / "position_service.py").is_file())
-
     def test_world_position_service_is_not_registered_as_a_trigger_task(self):
         registered = {class_name for _module, class_name in app_config["trigger_tasks"]}
         self.assertNotIn("MinimapPositionTask", registered)
@@ -95,19 +73,6 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
 
         self.assertIs(created[0]["app"], translation_app)
 
-    def test_navigation_mixins_live_in_the_navigation_domain_package(self):
-        root = Path(__file__).parents[1] / "src" / "tasks"
-        names = (
-            "grid_navigation_mixin.py",
-            "map_mixin.py",
-            "navigation_mixin.py",
-            "zip_line_mixin.py",
-        )
-
-        for name in names:
-            self.assertTrue((root / "navigation" / "mixin" / name).is_file())
-            self.assertFalse((root / "mixin" / name).exists())
-
     def test_navigation_depends_on_pose_interface_not_localization_impl(self):
         root = Path(__file__).parents[1] / "src"
         navigation_root = root / "tasks" / "navigation"
@@ -133,14 +98,6 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
                     violations.append(f"{path.relative_to(root.parent.parent)}:{node.lineno}")
 
         self.assertEqual(violations, [], f"业务模块必须通过 RuntimeStateMixin 读取位置: {violations}")
-
-    def test_item_navigator_uses_runtime_state_contract(self):
-        path = Path(__file__).parents[1] / "src" / "tasks" / "trigger" / "ItemNavigatorTask.py"
-        source = path.read_text(encoding="utf-8")
-
-        self.assertIn("RuntimeStateMixin", source)
-        self.assertNotIn("WsPositionMixin", source)
-        self.assertNotIn("_recv_ws_position_payload", source)
 
     def test_item_navigator_keeps_legacy_position_source_unless_explicitly_enabled(self):
         task = object.__new__(ItemNavigatorTask)

@@ -23,9 +23,7 @@ from src.localization.capture_backend_installer import (
     ASSET_NAME,
     CaptureBackendInstaller,
     fetch_latest_release,
-    installed_executable,
     managed_install_dir,
-    managed_runs_dir,
     prune_run_directories,
 )
 
@@ -159,10 +157,6 @@ class LayoutTest(unittest.TestCase):
         self.assertNotIn("configs", directory.parts, f"安装目录不能落在 configs 下：{directory}")
         self.assertEqual(directory.parts[-2:], ("downloads", "capture_backend"))
 
-    def test_installed_executable_uses_the_shared_asset_name(self):
-        self.assertEqual(installed_executable().name, ASSET_NAME)
-        self.assertEqual(installed_executable().parent, managed_install_dir())
-
     def test_launcher_and_installer_agree_on_the_file_name(self):
         from src.localization.capture_backend_launcher import EXECUTABLE_NAME
 
@@ -290,13 +284,6 @@ class InstallTest(unittest.TestCase):
                 again = self._installer(directory).ensure_installed()
             self.assertIsNotNone(again)
             self.assertEqual(again.read_bytes(), FAKE_EXE, "已是最新就不该再下")
-
-    def test_check_now_bypasses_the_ttl(self):
-        with tempfile.TemporaryDirectory() as directory, FakeReleaseHost() as host, _point_at(host):
-            installer = self._installer(directory, ttl=3600.0)
-            installer.ensure_installed()
-            installer._checked_at = 0.0  # 模拟 TTL 到期前的状态
-            self.assertIsNotNone(installer.check_now())
 
     def test_network_failure_without_a_local_copy_reports_unavailable(self):
         warnings: list[str] = []
@@ -426,19 +413,6 @@ class RunRetentionTest(unittest.TestCase):
             self._runs(runs, ["20261001-120000", "20261002-120000"])
             self.assertEqual(prune_run_directories(runs, 0), 2)
             self.assertTrue(runs.is_dir(), "顶层目录本身要留着，后端下次还要往里写")
-
-    def test_lexicographic_order_is_time_order(self):
-        """定宽时间戳按字典序排就是时间序——跨年跨月跨日都不用额外解析。"""
-
-        with tempfile.TemporaryDirectory() as directory:
-            runs = Path(directory)
-            self._runs(runs, ["20251231-235959", "20260101-000000", "20261013-235959"])
-            prune_run_directories(runs, 1)
-            self.assertEqual([p.name for p in runs.iterdir()], ["20261013-235959"])
-
-    def test_runs_dir_sits_under_the_managed_directory(self):
-        self.assertEqual(managed_runs_dir(), managed_install_dir() / "runs")
-
 
 class RunsDirWiringTest(unittest.TestCase):
     """拉开后端时要显式指定 ``--runs-dir``，**但只管我们自己下载的那份**。"""

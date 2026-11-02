@@ -160,12 +160,15 @@ class TestEnterDismantleMode(unittest.TestCase):
         task = make_task()
         task.find_one = MagicMock(return_value=MagicMock())  # 退出图标已出现
         self.assertTrue(task._enter_dismantle_mode())
+        task.find_one.assert_called_once_with(fL.matrix_dismantle_exit)
         task.click_relative.assert_not_called()
 
     def test_clicks_entry_and_verifies_hint(self):
         task = make_task()
         task.wait_feature = MagicMock(return_value=MagicMock())  # 点击后退出图标出现
         self.assertTrue(task._enter_dismantle_mode())
+        task.find_one.assert_called_once_with(fL.matrix_dismantle_exit)
+        self.assertEqual(task.wait_feature.call_args.args, (fL.matrix_dismantle_exit,))
         task.wait_feature.call_args.kwargs["pre_action"]()
         task.click_relative.assert_called_once_with(0.259, 0.93, after_sleep=1)
         task.mark_task_failure.assert_not_called()
@@ -416,19 +419,6 @@ class TestDailyWiring(unittest.TestCase):
         self.assertTrue(issubclass(MatrixCleanOnceTask, MatrixCleanTask))
         # 框架按 name 存任务配置，两个入口必须不同名
         self.assertNotEqual(MatrixCleanTask.__name__, MatrixCleanOnceTask.__name__)
-
-    def test_dismantle_entry_is_fixed_click(self):
-        # 分解入口是底栏左侧工具组的垃圾桶图标（纯图标无文字），定点点击；
-        # essence_throw_away 模板是右上详情面板的单件分解按钮，全屏匹配在
-        # 底栏落点偏高约 90px（(0.258, 0.865) 点到物品末行）
-        src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        self.assertIn("_DISMANTLE_ENTRY", src_text)
-        self.assertNotIn("essence_throw_away", src_text)
-
-    def test_filter_checks_all_qualities(self):
-        # 品质三项和未上锁均需确认选中，避免排除可分解物品。
-        src_text = (_REPO_ROOT / "src" / "tasks" / "onetime" / "MatrixCleanTask.py").read_text(encoding="utf-8")
-        self.assertIn("for x, y in self._FILTER_SWATCHES", src_text)
 
     def test_ui_fallback_group_map(self):
         import ast

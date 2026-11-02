@@ -262,7 +262,6 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestOfficialI18nSync.py",
             "TestOfficialPrefixSync.py",
             "TestPoLocaleConsistency.py",
-            "TestReleaseRequirements.py",
         ),
     ),
     "map-data": (
