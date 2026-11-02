@@ -296,23 +296,6 @@
       "string": "고목"
     }
   },
-  "beacon_damaged_in_the_blight_tide": {
-    "zh_CN": {
-      "pattern": "信标"
-    },
-    "zh_TW": {
-      "pattern": "信標"
-    },
-    "en_US": {
-      "pattern": "beacon"
-    },
-    "ja_JP": {
-      "pattern": "ビーコン"
-    },
-    "ko_KR": {
-      "pattern": "신호기"
-    }
-  },
   "cistern_originium_slugs": {
     "zh_CN": {
       "string": "蓄水源石虫"

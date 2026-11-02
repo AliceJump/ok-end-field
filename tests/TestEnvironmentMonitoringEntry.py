@@ -665,7 +665,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         )
         locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
         points = {key: value for key, value in data.items() if key != "track"}
-        self.assertEqual(len(points), 32)
+        self.assertEqual(len(points), 31)
+        self.assertNotIn("beacon_damaged_in_the_blight_tide", points)
         task = self.task()
         for locale in locales:
             task.lang.environment_monitoring.pool_lotus = points["pool_lotus"][locale]["string"]
@@ -683,7 +684,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         )
         points = {key: value for key, value in data.items() if key != "track"}
         short_names = {key: value for key, value in points.items() if "pattern" in value["zh_CN"]}
-        self.assertEqual(len(short_names), 6)
+        self.assertEqual(len(short_names), 5)
         for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
             for key, names in short_names.items():
                 with self.subTest(locale=locale, point=key):
@@ -713,13 +714,13 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_short_pattern_matches_a_complete_title(self):
         task = self.task()
-        task.lang.environment_monitoring.beacon_damaged_in_the_blight_tide = re.compile("信标")
+        task.lang.environment_monitoring.ecology_near_the_field_logistics_depot = re.compile("储备站")
         with patch.dict(
             "src.tasks.onetime.EnvironmentMonitoringNavigation.OBSERVATION_ROUTES",
-            {"beacon_damaged_in_the_blight_tide": "walk_test"},
+            {"ecology_near_the_field_logistics_depot": "walk_test"},
             clear=True,
         ):
-            self.assertEqual(task.observation_route("侵蚀潮中损坏的信标"), "walk_test")
+            self.assertEqual(task.observation_route("储备站周围的生态环境"), "walk_test")
             self.assertIsNone(task.observation_route("古树"))
 
     def test_transfer_arrival_failure_clears_previous_result_and_never_reports_success(self):

@@ -425,9 +425,6 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     ancient_tree: str
     """古树"""
 
-    beacon_damaged_in_the_blight_tide: re.Pattern[str]
-    """信标"""
-
     cistern_originium_slugs: str
     """蓄水源石虫"""
 
