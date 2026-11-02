@@ -18,6 +18,7 @@ from src.gui.components.EndfieldCheckpointCard import EndfieldCheckpointCard
 from src.gui.components.EndfieldSectionMatrix import open_task_drawer
 from src.gui.components.EndfieldTacticalDrawer import _DRAWERS, drawer_for, open_card_drawer
 from src.gui.EndfieldConfigContent import has_task_configuration
+from src.gui.EndfieldEntryCards import EndfieldSectionBanner
 from src.gui.EndfieldWorkspaceTab import EndfieldWorkspaceTab
 from src.patches.endfield_theme_patch import (
     patch_combat_config_forms,
@@ -328,6 +329,24 @@ class PanelTest(unittest.TestCase):
         page._save_pending_changes.assert_not_called()
         self.assertTrue(drawer.isHidden())
         self.assertIs(card.view.parentWidget(), card.scrollWidget)
+
+    def test_capture_and_about_keep_native_headings_without_added_sections(self):
+        for name in ("截图方式", "关于"):
+            page: Any = QWidget()
+            page.vBoxLayout = QVBoxLayout(page)
+            native = Card("原版标题", QWidget())
+            page.vBoxLayout.addWidget(native)
+            setting = SettingCard(FluentIcon.INFO, "原版信息")
+            page.vBoxLayout.addWidget(setting)
+            workspace = EndfieldWorkspaceTab("ENVIRONMENT", "系统与环境", [(name, None, page)])
+            self.layout.addWidget(workspace)
+            workspace.show()
+            self.app.processEvents()
+            self.assertIsNone(page.findChild(EndfieldSectionBanner))
+            self.assertEqual(native.titleLabel.text(), "原版标题")
+            self.assertTrue(all(label.isHidden() for label in page.findChildren(QWidget, "checkpointIdx")))
+            self.assertFalse(hasattr(page, "_endfield_numbering"))
+            workspace.hide()
 
     def test_theme_options_keep_native_selection_and_source_connection(self):
         from qfluentwidgets import (
