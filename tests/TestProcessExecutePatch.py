@@ -1439,10 +1439,11 @@ class TestTemporaryParentRecovery(unittest.TestCase):
         alias = self.path / "linked-image-root"
         record = self._write(parent_exe=os.path.normcase(str(image)))
         original_resolve = self.recovery.Path.resolve
+        canonical_root = root.resolve()
 
         def resolve_config_alias(path, *args, **kwargs):
             if path == alias:
-                return root
+                return canonical_root
             return original_resolve(path, *args, **kwargs)
 
         with (
