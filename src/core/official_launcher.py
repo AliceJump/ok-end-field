@@ -453,8 +453,10 @@ def prepare_local_parent_image(game_path: str, logger) -> Path:
 
         directory = Path(config_path(TEMPORARY_IMAGE_DIRNAME)).resolve() / uuid.uuid4().hex
         image = directory / "Games.exe"
+        created = False
         try:
             directory.mkdir(parents=True, exist_ok=False)
+            created = True
             shutil.copyfile(source, image)
             # Verify the bytes that CreateProcessW will actually execute.
             verify_launcher(str(image))
@@ -463,7 +465,8 @@ def prepare_local_parent_image(game_path: str, logger) -> Path:
         except Exception as error:
             logger.warning(f"Cannot prepare game-bundled {filename}: {error}")
             failures.append(error)
-            _discard_unregistered_local_image(image, logger)
+            if created:
+                _discard_unregistered_local_image(image, logger)
 
     message = "No usable signed Endfield helper was found beside Endfield.exe"
     if failures:
