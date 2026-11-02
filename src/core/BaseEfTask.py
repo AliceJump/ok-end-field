@@ -37,7 +37,7 @@ from src.core.global_config_store import (
 from src.data.lang import get_lang_accessor
 from src.interaction.ScreenPosition import ScreenPosition
 
-_ok_screenshot.get_current_time_formatted = lambda: datetime.now().strftime("%Y%m%d_%H%M%S")
+_ok_screenshot.get_current_time_formatted = lambda now=None: (now or datetime.now()).strftime("%Y%m%d_%H%M%S")
 
 
 def back_window(prev):
