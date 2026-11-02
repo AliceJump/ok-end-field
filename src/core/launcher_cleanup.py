@@ -150,7 +150,12 @@ class LauncherCleanup:
             return
         if not self.kernel.TerminateProcess(self.parent, 0):
             raise OSError("Could not terminate the owned temporary Games.exe")
-        forget_owned_parent(self.parent_pid, self.logger)
+        # The local parent image cannot be deleted until Windows releases its image section.
+        # A timeout leaves the journal for crash/next-launch recovery.
+        if self.kernel.WaitForSingleObject(self.parent, 5000) == 0:
+            forget_owned_parent(self.parent_pid, self.logger)
+        else:
+            self.logger.warning(f"Owned Games.exe PID {self.parent_pid} is still exiting; retaining journal")
         self.logger.info(f"Requested termination of temporary Games.exe PID {self.parent_pid}")
 
     def _seen(self, tail: _LogTail, pattern) -> bool:
@@ -172,6 +177,7 @@ class LauncherCleanup:
         deadline = time.monotonic() + _TIMEOUT
         while time.monotonic() < deadline:
             if not self._parent_running():
+                forget_owned_parent(self.parent_pid, self.logger)
                 return
             if not game.is_running():
                 self.logger.info(f"Game exited; discarding temporary Games.exe PID {self.parent_pid}")
