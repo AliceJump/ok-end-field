@@ -9,8 +9,10 @@ from __future__ import annotations
 import ctypes
 import json
 import os
+import shutil
 import subprocess
 import time
+import uuid
 from ctypes import wintypes
 from pathlib import Path
 from urllib.parse import quote
@@ -21,6 +23,7 @@ from ok.util.file import ensure_dir_for_file, read_json_file, write_json_file
 from src.core.launcher_cleanup import LauncherCleanup
 from src.core.paths import config_path
 from src.core.temporary_parent_recovery import (
+    TEMPORARY_IMAGE_DIRNAME,
     forget_owned_parent,
     note_game_started,
     recover_owned_parents,
@@ -42,6 +45,9 @@ CHANNEL_REGISTRY_KEYS = {
     "Gryphline": r"Software\GRYPHLINK\Launcher\94005b4608518100ed8df1d8107356a8",
 }
 STEAM_ENDFIELD_APP_ID = "4732690"
+# Reference: https://github.com/NagiYume/Starward/commit/79c310a0e89640d8d387c98e15861ecb6a765d37
+# These are game-bundled signed programs, not the official launcher Games.exe.
+LOCAL_PARENT_CANDIDATES = ("PlatformProcess.exe", "UnityCrashHandler64.exe")
 
 
 def _path_has_part(path: str, part: str) -> bool:
@@ -291,6 +297,7 @@ def _kernel32():
         "CloseHandle": ([wintypes.HANDLE], wintypes.BOOL),
         "GetProcessId": ([wintypes.HANDLE], wintypes.DWORD),
         "GetExitCodeProcess": ([wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)], wintypes.BOOL),
+        "WaitForSingleObject": ([wintypes.HANDLE, wintypes.DWORD], wintypes.DWORD),
         "TerminateProcess": ([wintypes.HANDLE, wintypes.UINT], wintypes.BOOL),
         "QueryFullProcessImageNameW": (
             [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD)],
@@ -419,9 +426,56 @@ def find_official_games_exe(game_path: str, logger, company: str | None = None) 
     raise RuntimeError("Cannot find a signed official Games.exe") from failures[-1]
 
 
-def create_temporary_parent(kernel, game_path: str, logger, company: str | None = None):
-    """Create our own suspended Games.exe, without touching running launcher processes."""
-    executable = find_official_games_exe(game_path, logger, company=company)
+def _discard_unregistered_local_image(image: Path, logger) -> None:
+    """Remove only our new copy when no registered parent owns it."""
+    try:
+        image.unlink(missing_ok=True)
+        image.parent.rmdir()
+    except OSError as error:
+        logger.warning(f"Cannot discard unused local parent image {image}: {error}")
+
+
+def prepare_local_parent_image(game_path: str, logger) -> Path:
+    """Copy a verified bundled helper to an individually owned Games.exe image."""
+    game_directory = Path(os.path.abspath(game_path)).parent
+    failures = []
+    for filename in LOCAL_PARENT_CANDIDATES:
+        source = game_directory / filename
+        if not source.is_file():
+            continue
+        try:
+            # Same official signer allowlist as the launcher, but not its product-name rule.
+            verify_launcher(str(source))
+        except Exception as error:
+            logger.warning(f"Cannot trust game-bundled {filename}: {error}")
+            failures.append(error)
+            continue
+
+        directory = Path(config_path(TEMPORARY_IMAGE_DIRNAME)).resolve() / uuid.uuid4().hex
+        image = directory / "Games.exe"
+        created = False
+        try:
+            directory.mkdir(parents=True, exist_ok=False)
+            created = True
+            shutil.copyfile(source, image)
+            # Verify the bytes that CreateProcessW will actually execute.
+            verify_launcher(str(image))
+            logger.info(f"Prepared signed game-bundled parent from {filename}")
+            return image
+        except Exception as error:
+            logger.warning(f"Cannot prepare game-bundled {filename}: {error}")
+            failures.append(error)
+            if created:
+                _discard_unregistered_local_image(image, logger)
+
+    message = "No usable signed Endfield helper was found beside Endfield.exe"
+    if failures:
+        raise RuntimeError(message) from failures[-1]
+    raise FileNotFoundError(message)
+
+
+def _start_suspended_parent(kernel, executable: Path, logger):
+    """Create and journal an owned suspended parent from a verified image."""
     startup = _StartupInfoEx()
     startup.StartupInfo.cb = ctypes.sizeof(_StartupInfo)
     process = _ProcessInfo()
@@ -449,8 +503,25 @@ def create_temporary_parent(kernel, game_path: str, logger, company: str | None 
         kernel.TerminateProcess(process.hProcess, 0)
         kernel.CloseHandle(process.hProcess)
         raise
-    logger.info(f"Created owned suspended official Games.exe parent PID {process.dwProcessId}")
+    logger.info(f"Created owned suspended Games.exe parent PID {process.dwProcessId}")
     return process.hProcess
+
+
+def create_temporary_parent(kernel, game_path: str, logger, company: str | None = None):
+    """Use the installed official launcher as a fallback source."""
+    executable = find_official_games_exe(game_path, logger, company=company)
+    return _start_suspended_parent(kernel, executable, logger)
+
+
+def create_local_temporary_parent(kernel, game_path: str, logger):
+    """Prefer a signed helper shipped with the game, without an installed launcher."""
+    image = prepare_local_parent_image(game_path, logger)
+    try:
+        return _start_suspended_parent(kernel, image, logger)
+    except Exception:
+        # _start_suspended_parent has already terminated an unregistered child.
+        _discard_unregistered_local_image(image, logger)
+        raise
 
 
 def create_process(kernel, game_path: str, arguments: str, parent) -> int:
@@ -565,12 +636,18 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
     # Parent compatibility is independent of the game's company/log directory.
     # Prefer its own launcher, then try the other known official product once.
     companies = [company, *(other for other in LAUNCHER_PRODUCTS if other != company)]
-    failures = []
+    attempts = [("bundled signed helper", lambda: create_local_temporary_parent(kernel, game_path, logger))]
     for parent_company in companies:
+        attempts.append(
+            (f"official launcher {parent_company}",
+             lambda selected=parent_company: create_temporary_parent(kernel, game_path, logger, company=selected))
+        )
+    failures = []
+    for source, make_parent in attempts:
         parent = None
         child_created = False
         try:
-            parent = create_temporary_parent(kernel, game_path, logger, company=parent_company)
+            parent = make_parent()
             # Always watch the game's logs, including when its parent is cross-channel.
             cleanup = LauncherCleanup(kernel, parent, logger, company=company)
             if running_pids("Endfield.exe"):
@@ -579,7 +656,7 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
             child_created = True
             note_game_started(cleanup.parent_pid, pid, logger)
             logger.info(
-                f"Created Endfield with suspended official launcher parent: pid={pid}, launcher={parent_company}"
+                f"Created Endfield with suspended signed parent: pid={pid}, source={source}"
             )
             if _start_cleanup(cleanup, pid, kernel, parent, logger):
                 parent = None  # The background watcher owns the process handle now.
@@ -587,7 +664,7 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
         except Exception as error:
             if child_created:
                 raise  # A post-creation failure must never trigger another launch.
-            logger.warning(f"Cannot launch Endfield using {parent_company}: {error}")
+            logger.warning(f"Cannot launch Endfield using {source}: {error}")
             failures.append(error)
         finally:
             if parent:
