@@ -47,6 +47,8 @@ TAB_CODES = {
     "截图方式": "CAPTURE",
     "全局配置": "GLOBAL",
     "账号配置": "ACCOUNTS",
+    "任务": "TASKS",
+    "测试": "TEST",
     "通知": "NOTICE",
     "设置": "SETTINGS",
     "关于": "ABOUT",
