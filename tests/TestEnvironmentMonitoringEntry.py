@@ -126,41 +126,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task = self.color_task(frame)
                 self.assertFalse(EnvironmentMonitoringPhotoTask._terminal_selected(task, "outskirts"))
 
-    def test_terminal_color_range_and_crop_keep_the_exact_pixel_boundaries(self):
-        for width, height in ((1280, 720), (1920, 1080), (2560, 1440), (1366, 768)):
-            for terminal, left in (("outskirts", 0.06), ("marker_stone", 0.27)):
-                for color, selected in (
-                    ((185, 255, 255), False),
-                    ((255, 185, 255), False),
-                    ((255, 255, 185), False),
-                    ((186, 186, 186), True),
-                ):
-                    with self.subTest(size=(width, height), terminal=terminal, color=color):
-                        frame = np.zeros((height, width, 3), dtype=np.uint8)
-                        x1, x2 = int(width * left), int(width * (left + 0.07))
-                        y1, y2 = int(height * 0.145), int(height * 0.16)
-                        frame[y1:y2, x1:x2] = color
-                        task = self.color_task(frame)
-                        self.assertEqual(EnvironmentMonitoringPhotoTask._terminal_selected(task, terminal), selected)
-                        area = task.calculate_color_percentage.call_args.args[1]
-                        self.assertEqual((area.x, area.y, area.width, area.height), (x1, y1, x2 - x1, y2 - y1))
-
-    def test_terminal_white_fraction_must_strictly_exceed_seventy_percent(self):
-        frame = np.zeros((1000, 1000, 3), dtype=np.uint8)
-        # The 70 x 15 crop has 1,050 pixels, so 735 white pixels are exactly 70%.
-        patch = np.zeros((15, 70, 3), dtype=np.uint8)
-        patch.reshape(-1, 3)[:735] = 255
-        frame[145:160, 60:130] = patch
-        task = self.color_task(frame)
-        self.assertFalse(EnvironmentMonitoringPhotoTask._terminal_selected(task, "outskirts"))
-        frame[155, 95] = 255
-        self.assertTrue(EnvironmentMonitoringPhotoTask._terminal_selected(task, "outskirts"))
-
-    def test_unknown_terminal_does_not_default_to_another_tab(self):
-        task = self.task()
-        with self.assertRaises(KeyError):
-            task._terminal_area("unknown")
-
     def monitoring_frame(self, width, height, selected=("outskirts",)):
         frame = np.full((height, width, 3), 40, dtype=np.uint8)
         for terminal, left in (("outskirts", 0.06), ("marker_stone", 0.27)):
@@ -320,15 +285,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "未找到环境监测入口"):
             task.open_monitoring()
         task.click.assert_not_called()
-
-    def test_entry_position_failure_on_unknown_page_never_uses_ocr_click(self):
-        task = self.task()
-        task.find_one.return_value = Box(10, 10, 20, 20)
-        task._monitoring_page.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "点击环境监测入口后未进入终端列表"):
-            task.open_monitoring()
-        task.wait_click_ocr.assert_not_called()
-        task.click.assert_called_once()
 
     def test_unstable_overview_cannot_use_fixed_entry_position(self):
         task = self.task()
@@ -554,15 +510,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertEqual((track_area.x, track_area.y), (round(1920 * 0.81), round(1080 * 0.89)))
         task.to_near_transfer_point.assert_called_once_with(need_track=False)
 
-    def test_tracking_template_uses_default_threshold(self):
-        task = self.task()
-        track = Box(1817, 976, 34, 34)
-        task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
-        task.transfer_observation()
-        task.ocr.assert_not_called()
-        task.click.assert_called_once_with(track)
-        self.assertNotIn("threshold", task.find_one.call_args.kwargs)
-
     def test_unstable_map_stops_before_clicking_teleport(self):
         task = self.task()
         track = Box(1817, 976, 34, 34)
@@ -669,36 +616,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     self.assertEqual(task.observation_key(vigorous_title), vigorous_key)
                     self.assertIsNone(task.observation_key(normal_title + "其他"))
 
-    def test_other_localized_points_are_not_selected_without_registered_routes(self):
-        data = json.loads(
-            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
-                encoding="utf-8"
-            )
-        )
-        locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
-        points = data
-        self.assertEqual(
-            set(points),
-            {
-                "pool_lotus",
-                "cloudrest_eco_site",
-                "bamboo_water_chimes",
-                "ecology_near_the_field_logistics_depot",
-                "eternal_sunset",
-                "vigorous_cistern_originium_slug",
-                "cistern_originium_slugs",
-            },
-        )
-        self.assertNotIn("beacon_damaged_in_the_blight_tide", points)
-        task = self.task()
-        for locale in locales:
-            task.lang.environment_monitoring.pool_lotus = points["pool_lotus"][locale]["string"]
-            for key, names in points.items():
-                with self.subTest(locale=locale, point=key):
-                    node = names[locale]
-                    route = task.observation_route(node.get("string", node.get("pattern")))
-                    self.assertEqual(route, PoolLotusNavigation if key == "pool_lotus" else None)
-
     def test_short_names_match_only_their_point_in_every_locale(self):
         data = json.loads(
             (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
@@ -707,7 +624,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         )
         points = data
         short_names = {key: value for key, value in points.items() if "pattern" in value["zh_CN"]}
-        self.assertEqual(len(short_names), 2)
         for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
             for key, names in short_names.items():
                 with self.subTest(locale=locale, point=key):

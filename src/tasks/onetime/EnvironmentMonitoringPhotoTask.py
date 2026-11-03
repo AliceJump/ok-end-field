@@ -370,6 +370,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             result = self.run()  # 执行已注册的入口、导航和取景流程
             if result.get("skipped", False):  # 已确认没有可执行的支持点位
                 return True  # 无任务属于正常完成
+            if not result.get("photo_taken", False):  # 取景失败须提供具体日常汇总原因
+                self.mark_task_failure("未能调整到满足条件的取景角度")  # 复用保留首条失败原因的机制
             return bool(result.get("photo_taken", False))  # 仅实际拍照后允许报告成功
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器
             raise  # 不将用户中止当成普通失败
