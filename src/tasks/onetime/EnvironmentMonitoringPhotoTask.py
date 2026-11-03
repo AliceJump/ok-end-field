@@ -1,10 +1,12 @@
 import re  # 将观察点名称作为字面文本匹配
+from typing import ClassVar  # 标明终端布局由类共享
 
 from ok import Box, TaskDisabledException  # 保留选中背景检测的像素边界及任务中止语义
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin  # 复用追踪标记的水平对中
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
     CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
     PoolLotusNavigation,  # 小池荷短路线
@@ -17,10 +19,10 @@ OBSERVATIONS = {  # 观察点语言键对应导航类和横向取景方向
     "thillu": (ThilluNavigation, "right"),  # 表象在传送落点向右取景
 }  # 仅注册已支持的点位
 
-TERMINAL_LEFTS = {"outskirts": 0.06, "marker_stone": 0.27}  # 按固定左右顺序标识终端及其标签空白区
 
+class EnvironmentMonitoringPhotoTask(MapMixin, NavigationMixin):  # 共用接取、传送与相机流程
+    TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
 
-class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相机流程
     def __init__(self, *args, **kwargs):  # 构造阶段不操作游戏
         super().__init__(*args, **kwargs)  # 初始化项目任务与生命周期
         self.group_name = "日常任务"  # 环境监测属于日常业务
@@ -80,7 +82,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             raise RuntimeError("环境监测页面未稳定")  # 超时不扫描过渡画面
 
     def _terminal_area(self, terminal):  # 两个终端顺序固定，空白区兼作点击和选中检测区域
-        left = TERMINAL_LEFTS[terminal]  # 内部标识定位左右标签，未知终端不回退到其他标签
+        left = self.TERMINAL_LEFTS[terminal]  # 内部标识定位左右标签，未知终端不回退到其他标签
         height, width = self.frame.shape[:2]  # 使用当前帧尺寸
         x, y = int(width * left), int(height * 0.145)  # 保持原裁剪的向下取整边界
         return Box(x, y, int(width * (left + 0.07)) - x, int(height * 0.16) - y)  # 避开文字与等级数字
@@ -99,7 +101,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             if not self.find_color(cyan, self.box_of_screen(left, 0.105, left + 0.003, 0.167), threshold=0.7):
                 return False  # 避免其他菜单的 Q/E 控件误判
         return (
-            sum(self._terminal_selected(terminal) for terminal in TERMINAL_LEFTS) == 1
+            sum(self._terminal_selected(terminal) for terminal in self.TERMINAL_LEFTS) == 1
         )  # 黑屏、双白底和未知状态均拒绝
 
     def select_terminal(self, terminal):  # 两个终端共用切换逻辑
@@ -212,7 +214,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
     def prepare_observation(self):  # 自动前往当前支持的观察点
         self.selected_observation = None  # 清除上轮结果
         self.open_monitoring()  # 每次从明确入口开始
-        for terminal in TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
+        for terminal in self.TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
             self.select_terminal(terminal)  # 选择终端并等待稳定
             for observation in self.available_observations():  # 只考虑可操作卡片
                 if not self.observation_route(observation["name"]):  # 只选择已注册路线的点位
