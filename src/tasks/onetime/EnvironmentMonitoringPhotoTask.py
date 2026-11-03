@@ -9,14 +9,14 @@ from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到�
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
     CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
     PoolLotusNavigation,  # 小池荷短路线
-    ThilluNavigation,  # 表象传送后原地取景
+    StationaryObservationNavigation,  # 传送后原地取景
 )
 
 OBSERVATIONS = {  # 观察点语言键对应导航类和横向取景方向
     "pool_lotus": (PoolLotusNavigation, "right"),  # 小池荷向右取景
     "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
-    "thillu": (ThilluNavigation, "right"),  # 表象在传送落点向右取景
-    "peach_tree": (ThilluNavigation, "right"),  # 桃树在传送落点即可取景
+    "thillu": (StationaryObservationNavigation, "right"),  # 表象在传送落点向右取景
+    "peach_tree": (StationaryObservationNavigation, "right"),  # 桃树在传送落点即可取景
 }  # 仅注册已支持的点位
 
 
@@ -310,12 +310,17 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
         key = self.observation_key(title)  # 根据已注册的观察点选择取景策略
         _, direction = OBSERVATIONS.get(key, (None, "right"))  # 未识别时沿用默认方向
+        if not self.wait_ui_stable(  # 等待相机目标标记区域入场稳定
+            box=self.box_of_screen(0.02, 0.655, 0.055, 0.715), stable_time=0.5, max_wait=3, refresh_interval=0.1
+        ):  # 只观察条件标记，避免背景动画影响稳定判断
+            raise RuntimeError("相机目标条件区域未稳定")  # 不在过渡画面判断或转动
         max_steps = 8  # 各点位共用最大横向调整次数
         for step in range(max_steps + 1):  # 初始状态加有界微调
             self.next_frame()  # 每轮使用调整后的新画面
             if self.photo_condition_met():  # 条件亮起立即停止调整
                 return True  # 保留已满足的角度，不按快门
             if step < max_steps:  # 最后一次检查后不再增加位移
+                self.log_info(f"[environment-monitoring] 取景条件未识别，向{direction}调整：{step + 1}/{max_steps}")  # 记录转动原因
                 self.rotate_photo_view(direction=direction)  # 只旋转镜头，不发出移动按键
         return False  # 有限范围内未找到时如实返回
 

@@ -34,6 +34,6 @@ class CisternOriginiumSlugsNavigation(EnvironmentMonitoringNavigation):  # 普�
         self.run_route("蓄水源石虫", (("s", 7),), sprint=True)  # 后退冲刺到取景位置
 
 
-class ThilluNavigation(EnvironmentMonitoringNavigation):  # 表象传送落点即可取景
+class StationaryObservationNavigation(EnvironmentMonitoringNavigation):  # 传送落点即可取景
     def run(self):  # 原地等待传送后大世界稳定
-        self.run_route("表象", ())  # 原地等待大世界稳定
+        self.run_route("原地取景", ())  # 原地等待大世界稳定

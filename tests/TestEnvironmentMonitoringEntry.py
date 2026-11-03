@@ -15,7 +15,7 @@ from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (
     CisternOriginiumSlugsNavigation,
     PoolLotusNavigation,
-    ThilluNavigation,
+    StationaryObservationNavigation,
 )
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
@@ -61,8 +61,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_peach_tree_uses_stationary_navigation(self):
         task = self.task()
-        self.assertIs(task.observation_route("念念家的桃树"), ThilluNavigation)
-        self.assertIs(task.observation_route("桃树"), ThilluNavigation)
+        self.assertIs(task.observation_route("念念家的桃树"), StationaryObservationNavigation)
+        self.assertIs(task.observation_route("桃树"), StationaryObservationNavigation)
 
     def test_peach_tree_localized_titles(self):
         path = Path("assets/lang/environment_monitoring.json")
@@ -76,7 +76,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             with self.subTest(locale=locale):
                 task = self.task()
                 task.lang.environment_monitoring.peach_tree = names[locale]["string"]
-                self.assertIs(task.observation_route(title), ThilluNavigation)
+                self.assertIs(task.observation_route(title), StationaryObservationNavigation)
 
     def color_task(self, frame):
         height, width = frame.shape[:2]
@@ -619,8 +619,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task = self.task()
                 name = node["string"]
                 task.lang.environment_monitoring.thillu = name
-                self.assertIs(task.observation_route(name), ThilluNavigation)
-                self.assertIs(task.observation_route(f"“{name}”"), ThilluNavigation)
+                self.assertIs(task.observation_route(name), StationaryObservationNavigation)
+                self.assertIs(task.observation_route(f"“{name}”"), StationaryObservationNavigation)
 
     def test_normal_slug_matches_without_accepting_vigorous_title_in_all_locales(self):
         data = json.loads(

@@ -15,7 +15,7 @@ from src.tasks.onetime.EnvironmentMonitoringNavigation import (
     CisternOriginiumSlugsNavigation,
     EnvironmentMonitoringNavigation,
     PoolLotusNavigation,
-    ThilluNavigation,
+    StationaryObservationNavigation,
 )
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
@@ -154,6 +154,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_camera_ui_appearing_after_selection_does_not_press_r_again(self):
         task = self.task()
+        task.wait_until.return_value = True
         EnvironmentMonitoringPhotoTask.open_camera(task)
         task.send_key_up.assert_called_once_with("f6")
         task.press_key.assert_not_called()
@@ -322,7 +323,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.in_world.return_value = True
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
-        ThilluNavigation(task).run()
+        StationaryObservationNavigation(task).run()
         task.send_key_down.assert_not_called()
         task.press_key.assert_not_called()
 
@@ -361,6 +362,20 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.next_frame.call_count, 9)
         task.press_key.assert_not_called()
         task.send_key_down.assert_not_called()
+
+    def test_initial_condition_wait_avoids_rotation(self):
+        task = self.task()
+        task.photo_condition_met.return_value = True
+        self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
+        task.wait_ui_stable.assert_called_once()
+        task.rotate_photo_view.assert_not_called()
+
+    def test_unstable_target_area_prevents_rotation(self):
+        task = self.task()
+        task.wait_ui_stable.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "目标条件区域未稳定"):
+            EnvironmentMonitoringPhotoTask.adjust_photo_view(task)
+        task.rotate_photo_view.assert_not_called()
 
     def test_full_run_takes_photo_only_when_ready(self):
         for ready in (False, True):
@@ -497,7 +512,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.next_frame.call_count, 10)
         task._camera_open.assert_called_once_with(frame=task.frame)
         task.ocr.assert_not_called()
-        task.log_info.assert_not_called()
+        self.assertFalse(any("camera_open=True" in c.args[0] for c in task.log_info.call_args_list))
 
     def test_final_frame_decides_ready_instead_of_the_previous_search_result(self):
         for search_ready, final_ready in ((True, False), (False, True)):
