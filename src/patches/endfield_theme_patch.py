@@ -71,6 +71,8 @@ def _widget_scope_override_qss(dark: bool) -> str:
     text_sub = colors["muted"]
     accent, accent_ink = colors["accent"], colors["on_accent"]
     signal, on_signal = colors["signal"], colors["on_signal"]
+    # 字体颜色取按钮底色相对颜色
+    status_ink = colors["on_go"] if dark else text_main
     return f"""
 Card, EmptyCard {{
     background: transparent !important;
@@ -142,6 +144,10 @@ QLabel#workspaceEyebrow, QLabel#bannerCode, QLabel#drawerEyebrow, QLabel#checkpo
 }}
 QLabel#workspaceEyebrow, QLabel#bannerCode, QLabel#drawerEyebrow {{
     color: {text_sub}; font-size: 11px; font-weight: 600;
+}}
+/* 实时任务状态条：修复白底白字按钮 */
+StatusBar QLabel#titleLabel {{
+    color: {status_ink} !important;
 }}
 PushButton, PrimaryPushButton, ToolButton, ComboBox, LineEdit, SpinBox, DoubleSpinBox {{
     border-radius: 0px;
