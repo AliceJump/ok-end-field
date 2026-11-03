@@ -2,7 +2,7 @@ class EnvironmentMonitoringNavigation:  # 共用传送后移动与状态检查
     def __init__(self, task):  # 复用所属任务的输入与生命周期
         self.task = task  # 不创建独立执行器
 
-    def hold_route_key(self, key, duration, *, sprint=False):  # 执行可中止的移动操作
+    def hold_route_key(self, key, duration, sprint=False):  # 执行可中止的移动操作
         task = self.task  # 使用所属任务输入
         task._require_input_focus()  # 每段移动前确认焦点
         actual_key = task._resolve_config_key(key, "common")  # 遵循用户移动键绑定
@@ -14,7 +14,7 @@ class EnvironmentMonitoringNavigation:  # 共用传送后移动与状态检查
         finally:  # 配对清理输入
             task.send_key_up(actual_key)  # 不留下按住的移动键
 
-    def run_route(self, name, steps, *, sprint=False):  # 共用起步、分段移动和结束检查
+    def run_route(self, name, steps, sprint=False):  # 共用起步、分段移动和结束检查
         task = self.task  # 使用所属任务的大世界状态
         if not task.in_world():  # 必须从传送后的大世界起步
             raise RuntimeError(f"{name}路线未处于大世界")  # 不在菜单内发送移动
