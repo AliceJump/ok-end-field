@@ -326,6 +326,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         StationaryObservationNavigation(task).run()
         task.send_key_down.assert_not_called()
         task.press_key.assert_not_called()
+        task.wait_until.assert_called_once()
+        self.assertIs(task.wait_until.call_args.args[0], task.in_world)
+        self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
 
     def test_slug_route_runs_backward_then_enters_shared_camera_flow(self):
         task = self.task()
@@ -366,8 +369,11 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_initial_condition_wait_avoids_rotation(self):
         task = self.task()
         task.photo_condition_met.return_value = True
+        events = Mock()
+        events.attach_mock(task.wait_ui_stable, "wait")
+        events.attach_mock(task.photo_condition_met, "condition")
         self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
-        task.wait_ui_stable.assert_called_once()
+        self.assertEqual([item[0] for item in events.mock_calls], ["wait", "condition"])
         task.rotate_photo_view.assert_not_called()
 
     def test_unstable_target_area_prevents_rotation(self):
