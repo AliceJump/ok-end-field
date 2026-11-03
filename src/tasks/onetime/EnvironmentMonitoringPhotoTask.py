@@ -293,10 +293,10 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         self.mouse_down(*self.normalize_pos(start), key="left")  # 按住旋转视角用的左键
         try:  # 中止也必须释放鼠标
             self.smooth_drag(start, end, duration=0.3)  # 复用已有客户端坐标移动接口
-            self.sleep(0.2)  # 等待旋转输入被游戏处理
         finally:  # 清理旋转手势
             self.mouse_up(key="left")  # 松开后才能检查稳定画面
-        self.sleep(0.3)  # 刷新旋转后的目标状态
+        if not self.wait_ui_stable(stable_time=0.3, max_wait=3, refresh_interval=0.1):  # 等待旋转后的画面稳定
+            raise RuntimeError("调整视角后画面未稳定")  # 不在持续变化的画面判断拍摄条件
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
         title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
@@ -346,24 +346,29 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         ):  # 等待离开照片预览
             raise RuntimeError("拍照后照片预览未关闭")  # 关闭失败须如实报告
 
-    def run(self):  # GUI 与 MCP 共用从入口开始的完整流程
+    def navigate_observation(self, observation):  # 按观察点注册表执行导航
+        name = observation["name"]  # 保留实际识别名称用于错误提示
+        navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
+        if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
+            raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
+        self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
+        self.navigation.run()  # 每个点位统一通过 run 执行导航
+
+    def photograph_observation(self):  # 共用取景与拍照流程
+        if not self.prepare_photo()["photo_ready"]:  # 未满足条件时不拍照
+            self.mark_task_failure("未能调整到满足条件的取景角度")  # 复用保留首条失败原因的机制
+            return False  # 日常执行器据此记录失败
+        self.take_photo()  # 拍照并关闭照片预览
+        return True  # 预览关闭后才报告成功
+
+    def run(self):  # GUI 与一键日常共用完整流程
         try:  # 独立运行和一键日常共用执行与失败处理
             self.navigation = None  # 每轮清除上一次观察点的导航组件
             observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
             if observation is None:  # 当前没有符合条件的观察点
                 return True  # 无任务属于正常完成
-            name = observation["name"]  # 保留实际识别名称用于错误提示
-            navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
-            if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
-                raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
-            self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
-            self.navigation.run()  # 每个点位统一通过 run 执行导航
-            result = self.prepare_photo()  # 共用打开相机与横向取景
-            if not result["photo_ready"]:  # 未满足条件时不拍照
-                self.mark_task_failure("未能调整到满足条件的取景角度")  # 复用保留首条失败原因的机制
-                return False  # 日常执行器据此记录失败
-            self.take_photo()  # 拍照并关闭照片预览
-            return True  # 预览关闭后才报告成功
+            self.navigate_observation(observation)  # 执行点位导航
+            return self.photograph_observation()  # 打开相机、取景并拍照
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器
             raise  # 不将用户中止当成普通失败
         except Exception as error:  # 当前点位不可用或取景失败

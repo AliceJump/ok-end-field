@@ -77,6 +77,10 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", ancient_tree="古树"))
         task.observation_key.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_key(task, title)
         task.observation_route.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_route(task, title)
+        task.navigate_observation.side_effect = lambda observation: EnvironmentMonitoringPhotoTask.navigate_observation(
+            task, observation
+        )
+        task.photograph_observation.side_effect = lambda: EnvironmentMonitoringPhotoTask.photograph_observation(task)
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
         task.next_frame.side_effect = lambda: task.frame
@@ -231,7 +235,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.prepare_photo.assert_not_called()
                 task.take_photo.assert_not_called()
                 self.assertEqual(task.send_key_up.call_args_list, task.send_key_down.call_args_list)
-                self.assertNotIn(call("v", after_sleep=0.6), task.press_key.call_args_list)
+                self.assertNotIn(call("v", after_sleep=0), task.press_key.call_args_list)
 
     def test_route_uses_world_state_without_mode_checks(self):
         task = self.task()
@@ -244,7 +248,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.sleep.call_args_list, [call(0.5), call(3)])
         self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
         self.assertIs(task.wait_until.call_args.args[0], task.in_world)
-        task.press_key.assert_called_once_with("v", after_sleep=0.6)
+        task.press_key.assert_called_once_with("v", after_sleep=0)
         task.ocr.assert_not_called()
 
     def test_camera_lost_prevents_any_rotation_gesture(self):
@@ -256,7 +260,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.mouse_up.assert_not_called()
 
     def test_rotation_cancellation_or_drag_failure_releases_mouse(self):
-        for method, error in (("sleep", TaskDisabledException()), ("smooth_drag", RuntimeError("drag failed"))):
+        for method, error in (("smooth_drag", TaskDisabledException()), ("smooth_drag", RuntimeError("drag failed"))):
             with self.subTest(method=method):
                 task = self.task()
                 task._camera_open.return_value = True
@@ -265,6 +269,14 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                     EnvironmentMonitoringPhotoTask.rotate_photo_view(task)
                 task.mouse_down.assert_called_once()
                 task.mouse_up.assert_called_once_with(key="left")
+
+    def test_unstable_view_after_rotation_releases_mouse_and_stops(self):
+        task = self.task()
+        task._camera_open.return_value = True
+        task.wait_ui_stable.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "调整视角后画面未稳定"):
+            EnvironmentMonitoringPhotoTask.rotate_photo_view(task)
+        task.mouse_up.assert_called_once_with(key="left")
 
     def test_slug_photo_adjustments_are_bounded_and_keep_observation_name(self):
         task = self.task()

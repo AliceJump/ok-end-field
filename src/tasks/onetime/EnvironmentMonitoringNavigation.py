@@ -19,7 +19,9 @@ def _run_route(task, name, steps, *, sprint=False, face_target=False):  # 共用
         raise RuntimeError(f"{name}路线结束后未恢复大世界")  # 不在异常状态进入相机
     if face_target:  # 仅小池荷需要追踪目标调整朝向
         task._require_input_focus()  # 确认朝向调整按键可送达
-        task.press_key("v", after_sleep=0.6)  # 复用追踪任务朝向调整
+        task.press_key("v", after_sleep=0)  # 复用追踪任务朝向调整
+        if not task.wait_ui_stable(stable_time=0.5, max_wait=5, refresh_interval=0.2):  # 等待朝向调整后的画面稳定
+            raise RuntimeError(f"{name}朝向调整后画面未稳定")  # 未稳定时不进入相机
 
 
 class PoolLotusNavigation:  # 小池荷传送后短路线
