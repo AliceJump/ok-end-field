@@ -253,7 +253,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.sleep.call_args_list, [call(0.5), call(3)])
         self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
         self.assertIs(task.wait_until.call_args.args[0], task.in_world)
-        task.press_key.assert_called_once_with("v", after_sleep=0)
+        task.press_key.assert_not_called()
         task.ocr.assert_not_called()
 
     def test_camera_lost_prevents_any_rotation_gesture(self):
@@ -324,18 +324,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
         ThilluNavigation(task).run()
         task.send_key_down.assert_not_called()
-        task.press_key.assert_called_once_with("v", after_sleep=0)
-        self.assertTrue(task.align_ocr_or_find_target_to_center.call_args.kwargs["only_x"])
-
-    def test_failed_tracking_alignment_stops_before_camera(self):
-        task = self.task()
-        task.prepare_observation.return_value = {"name": "小池荷"}
-        task.in_world.return_value = True
-        task.wait_until.side_effect = lambda condition, **kwargs: condition()
-        task.align_ocr_or_find_target_to_center.return_value = False
-        self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
-        self.assertIn("追踪标记未对中", task.mark_task_failure.call_args.args[0])
-        task.prepare_photo.assert_not_called()
+        task.press_key.assert_not_called()
 
     def test_slug_route_runs_backward_then_enters_shared_camera_flow(self):
         task = self.task()
@@ -350,11 +339,11 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertIsInstance(task.navigation, CisternOriginiumSlugsNavigation)
         self.assertEqual(
             [c[0] for c in events.mock_calls],
-            ["send_key_down", "press_key", "sleep", "send_key_up", "wait_until", "press_key", "prepare_photo"],
+            ["send_key_down", "press_key", "sleep", "send_key_up", "wait_until", "prepare_photo"],
         )
         task.send_key_down.assert_called_once_with("s")
         task.sleep.assert_called_once_with(7)
-        self.assertEqual(task.press_key.call_args_list, [call("shift", after_sleep=0.05), call("v", after_sleep=0)])
+        task.press_key.assert_called_once_with("shift", after_sleep=0.05)
 
     def test_rotation_stops_immediately_when_condition_becomes_satisfied(self):
         for failed_attempts in (0, 2):

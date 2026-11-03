@@ -6,7 +6,6 @@ from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
-from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin  # 复用追踪标记的水平对中
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
     CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
     PoolLotusNavigation,  # 小池荷短路线
@@ -20,7 +19,7 @@ OBSERVATIONS = {  # 观察点语言键对应导航类和横向取景方向
 }  # 仅注册已支持的点位
 
 
-class EnvironmentMonitoringPhotoTask(MapMixin, NavigationMixin):  # 共用接取、传送与相机流程
+class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相机流程
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
 
     def __init__(self, *args, **kwargs):  # 构造阶段不操作游戏
