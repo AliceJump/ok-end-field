@@ -30,6 +30,8 @@ ENGLISH_TITLES = {
     "截图方式": "CAPTURE METHOD",
     "全局配置": "GLOBAL CONFIGURATION",
     "账号配置": "ACCOUNT CONFIGURATION",
+    "任务": "TASKS",
+    "测试": "TEST",
     "通知": "NOTIFICATIONS",
     "设置": "SETTINGS",
     "关于": "ABOUT",

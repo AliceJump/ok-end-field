@@ -574,6 +574,7 @@ NATIVE_TAB_KEYS = {
     "EndfieldCombatTab": "自动战斗",
     "StartTab": "截图方式",
     "TriggerTaskTab": "大世界",
+    "OneTimeTaskTab": "任务",
     "DebugTab": "调试",
     "RunCodeTab": "运行代码",
     "EditTaskTab": "脚本",
@@ -625,7 +626,7 @@ def route_endfield_tabs(
             code = "DAILY"
         elif key in ENDFIELD_COMBAT_TAB_ORDER:
             code = "COMBAT"
-        # 其余归为系统与环境 (截图方式, 全局配置, 账号配置, 通知, 设置, 关于)
+        # 其余归为系统与环境 (截图方式, 全局配置, 账号配置, 任务, 测试, 通知, 设置, 关于)
         else:
             code = "ENVIRONMENT"
         routed[code].append((key, label, item["icon"], widget))
