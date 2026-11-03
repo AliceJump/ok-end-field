@@ -464,7 +464,6 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self.matrix_clean_feature.plan_item(),
             self.delivery_send_feature.plan_item(),
             self.regional_feature.plan_item(),
-            self.environment_monitoring_feature.plan_item(),
             self.craft_feature.plan_item(),
             self.credit_feature.plan_item(),
             self.shop_feature.plan_item(),
@@ -474,6 +473,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self.activity_feature.plan_item(),
             self.daily_reward_feature.plan_item(),
             self.farm_feature.plan_item(),
+            self.environment_monitoring_feature.plan_item(),
             self.delivery_feature.plan_item(),
             self.home_point_feature.plan_item(),
         ]

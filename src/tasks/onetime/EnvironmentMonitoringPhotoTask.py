@@ -53,10 +53,11 @@ class EnvironmentMonitoringPhotoTask(MapMixin, NavigationMixin):  # 共用接取
                     found = found and normalized == expected  # 普通源石虫要求完整一致
             else:  # 没有可用的语言名称
                 found = False  # 不将空值视为匹配
-            if found:  # 已找到候选观察点
-                if matched is not None:  # 多个观察点匹配同一卡片
-                    return None  # 停止而不是根据注册顺序猜测
-                matched = key  # 记录唯一匹配的观察点语言键
+            if not found:  # 当前观察点不匹配
+                continue  # 检查下一个已注册点位
+            if matched is not None:  # 多个观察点匹配同一卡片
+                return None  # 停止而不是根据注册顺序猜测
+            matched = key  # 记录唯一匹配的观察点语言键
         return matched  # 未匹配时返回 None
 
     def observation_route(self, title):  # 仅已注册导航的观察点允许自动接取
