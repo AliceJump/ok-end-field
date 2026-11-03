@@ -84,6 +84,23 @@
       "string": "노을의 그림자"
     }
   },
+  "cistern_originium_slugs": {
+    "zh_CN": {
+      "string": "蓄水源石虫"
+    },
+    "zh_TW": {
+      "string": "蓄水源石蟲"
+    },
+    "en_US": {
+      "string": "Cistern Originium Slugs"
+    },
+    "ja_JP": {
+      "string": "貯水オリジムシ"
+    },
+    "ko_KR": {
+      "string": "저수 원석충"
+    }
+  },
   "vigorous_cistern_originium_slug": {
     "zh_CN": {
       "pattern": "充满活力"

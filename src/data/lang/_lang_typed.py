@@ -386,6 +386,9 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     eternal_sunset: str
     """栖霞驻影"""
 
+    cistern_originium_slugs: str
+    """蓄水源石虫"""
+
     vigorous_cistern_originium_slug: re.Pattern[str]
     """充满活力"""
 

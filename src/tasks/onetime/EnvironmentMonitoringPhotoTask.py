@@ -6,9 +6,18 @@ from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
+from src.tasks.onetime.CisternOriginiumSlugsNavigation import CisternOriginiumSlugsNavigation  # 普通源石虫短路线
 from src.tasks.onetime.PoolLotusNavigation import PoolLotusNavigation  # 小池荷专用导航组件
 
-OBSERVATION_ROUTES = {"pool_lotus": PoolLotusNavigation}  # 观察点语言键到导航类的注册表，筛选与执行共用
+OBSERVATION_ROUTES = {  # 观察点语言键到导航类的注册表，筛选与执行共用
+    "pool_lotus": PoolLotusNavigation,  # 小池荷向前再向右
+    "cistern_originium_slugs": CisternOriginiumSlugsNavigation,  # 普通源石虫向后跑
+}  # 活力版尚未注册导航
+PHOTO_ADJUSTMENTS = {  # 取景策略独立于导航注册，未完成路线的点位仍不可自动接取
+    "pool_lotus": ("right", 8),  # 保留小池荷已验证的横向调整
+    "cistern_originium_slugs": ("left", 8),  # 普通源石虫按用户指定向左横向搜索
+    "vigorous_cistern_originium_slug": ("right", 8),  # 活力版保留默认横向搜索，路线尚未支持
+}  # 方向与最大调整次数
 
 TERMINAL_LEFTS = {"outskirts": 0.06, "marker_stone": 0.27}  # 按固定左右顺序标识终端及其标签空白区
 
@@ -30,20 +39,23 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
     def normalize_title(text):  # 兼容符号、空白与英文大小写差异
         return re.sub(r"[\W_]+", "", text).casefold()  # 保留各语言文字，完整名称仍须一致
 
-    def observation_route(self, title):  # 按语言名称找到已注册的路线
+    def observation_key(self, title):  # 按标题识别观察点身份，不代表其导航已支持
         normalized = self.normalize_title(title)  # 不依赖引号和空格
-        matched = None  # 多条路线同时匹配时不能猜测
-        for key, route in OBSERVATION_ROUTES.items():  # 只识别已经注册路线的观察点
+        matched = None  # 多个观察点同时匹配时不能猜测
+        for key in dict.fromkeys((*OBSERVATION_ROUTES, *PHOTO_ADJUSTMENTS)):  # 路线与取景共用身份识别
             name = getattr(self.lang.environment_monitoring, key, None)  # 从语言资源读取当前语言名称
             if isinstance(name, re.Pattern):  # 语言资源中的正则用于短识别词
                 found = bool(normalized) and not name.search("") and bool(name.search(normalized))  # 不接受空匹配
             else:  # 普通名称仍要求完整一致
                 found = isinstance(name, str) and name and normalized == self.normalize_title(name)  # 避免泛化误匹配
-            if found:  # 已找到候选路线
-                if matched is not None:  # 多条路线匹配同一卡片
+            if found:  # 已找到候选观察点
+                if matched is not None:  # 多个观察点匹配同一卡片
                     return None  # 停止而不是根据注册顺序猜测
-                matched = route  # 记录唯一匹配的导航类
+                matched = key  # 记录唯一匹配的观察点语言键
         return matched  # 未匹配时返回 None
+
+    def observation_route(self, title):  # 仅已注册导航的观察点允许自动接取
+        return OBSERVATION_ROUTES.get(self.observation_key(title))  # 已识别但未适配路线仍返回 None
 
     def open_monitoring(self):  # 从任意可恢复页面进入环境监测
         self.ensure_main()  # 复用主界面恢复
@@ -268,12 +280,16 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         yellow = {"r": (180, 255), "g": (155, 255), "b": (0, 120)}  # 亮起圆勾的黄色范围
         return calculate_color_percentage(frame, yellow, marker) > 0.03  # 灰白勾可能匹配模板，还需确认黄色亮起
 
-    def rotate_photo_view(self):  # 在相机画面中央横向拖动，不触碰快门
+    def rotate_photo_view(self, direction="right"):  # 在画面中央按点位方向拖动，不触碰快门
+        if direction not in ("left", "right"):  # 当前只支持横向搜索
+            raise ValueError(f"不支持的取景方向：{direction}")  # 禁止静默执行上下调整
         self._require_input_focus()  # 旋转视角需要实际光标移动
         self.next_frame()  # 手势前重新确认当前布局
         if not self._camera_open():  # 手势前确认仍在相机
             raise RuntimeError("调整视角前相机界面已关闭")  # 禁止在大世界发出鼠标手势
         start, end = (0.5, 0.45), (0.625, 0.45)  # 画面中央横向一小段，远离快门和左下目标
+        if direction == "left":  # 普通源石虫向左搜索
+            end = (0.375, 0.45)  # 与右移等幅，保持纵坐标不变
         self.mouse_down(*self.normalize_pos(start), key="left")  # 按住旋转视角用的左键
         try:  # 中止也必须释放鼠标
             self.smooth_drag(start, end, duration=0.3)  # 复用已有客户端坐标移动接口
@@ -283,26 +299,30 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         self.sleep(0.3)  # 刷新旋转后的目标状态
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
-        for step in range(9):  # 初始状态加最多八次横向调整
+        title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
+        key = self.observation_key(title)  # 两个源石虫标题独立匹配，不按公共后缀猜测
+        direction, max_steps = PHOTO_ADJUSTMENTS.get(key, ("right", 8))  # 其他注册路线沿用默认取景策略
+        for step in range(max_steps + 1):  # 初始状态加有界微调
             self.next_frame()  # 每轮使用调整后的新画面
             if self.photo_condition_met():  # 条件亮起立即停止调整
                 return True  # 保留已满足的角度，不按快门
-            if step < 8:  # 最后一次检查后不再增加位移
-                self.rotate_photo_view()  # 只旋转镜头，不发出方向键
+            if step < max_steps:  # 最后一次检查后不再增加位移
+                self.rotate_photo_view(direction=direction)  # 只旋转镜头，不发出移动按键
         return False  # 有限范围内未找到时如实返回
 
     def prepare_photo(self):  # 进入相机并检查取景条件
+        name = (self.selected_observation or {}).get("name", "")  # 返回实际观察点名称，不绑定小池荷
         self.open_camera()  # 装备并进入相机
         self.adjust_photo_view()  # 先检查条件，必要时小步转动镜头
         frame = self.next_frame()  # 检查最后一次调整后实际保留的界面
         if not self._camera_open(frame=frame):  # 不能沿用打开时的状态
-            raise RuntimeError("小池荷取景结束时相机界面已关闭")  # 不返回与现场不符的 camera_open=True
+            raise RuntimeError("取景结束时相机界面已关闭")  # 不返回与现场不符的 camera_open=True
         ready = bool(self.photo_condition_met(frame=frame))  # 用最后一帧重算条件，不沿用旋转过程中的旧结果
         self.log_info(
-            f"[environment-monitoring] camera_open=True target=小池荷 photo_ready={ready} shutter=False"
+            f"[environment-monitoring] camera_open=True target={name} photo_ready={ready} shutter=False"
         )  # 如实记录取景状态
         return {
-            "name": "小池荷",
+            "name": name,  # 保留入口实际识别结果
             "camera_open": True,
             "photo_ready": ready,
             "photo_taken": False,

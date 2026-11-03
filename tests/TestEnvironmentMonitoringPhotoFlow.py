@@ -12,6 +12,7 @@ from qfluentwidgets import FluentIcon
 
 from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
+from src.tasks.onetime.CisternOriginiumSlugsNavigation import CisternOriginiumSlugsNavigation
 from src.tasks.onetime.DailyTask import DailyTask
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 from src.tasks.onetime.PoolLotusNavigation import PoolLotusNavigation
@@ -98,7 +99,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         )
         task.ocr.return_value = []
         task.normalize_title.side_effect = EnvironmentMonitoringPhotoTask.normalize_title
+        task.selected_observation = {"name": "小池荷"}
         task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", ancient_tree="古树"))
+        task.observation_key.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_key(task, title)
         task.observation_route.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_route(task, title)
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
@@ -319,6 +322,67 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.next_frame.assert_called_once_with()
         task.photo_condition_met.assert_called_once_with()
         task.rotate_photo_view.assert_not_called()
+
+    def test_slug_photo_adjustments_are_bounded_and_keep_observation_name(self):
+        import re
+
+        for title, direction in (("蓄水源石虫", "left"), ("充满活力的蓄水源石虫", "right")):
+            with self.subTest(title=title):
+                task = self.task()
+                task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
+                task.lang.environment_monitoring.vigorous_cistern_originium_slug = re.compile("充满活力")
+                task.selected_observation = {"name": title}
+                task.photo_condition_met.return_value = False
+                self.assertFalse(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
+                self.assertEqual(task.rotate_photo_view.call_args_list, [call(direction=direction)] * 8)
+                task._camera_open.return_value = True
+                result = EnvironmentMonitoringPhotoTask.prepare_photo(task)
+                self.assertEqual(result["name"], title)
+                self.assertFalse(result["photo_taken"])
+                task.press_key.assert_not_called()
+                task.click.assert_not_called()
+
+    def test_leftward_rotation_keeps_height_and_releases_mouse(self):
+        task = self.task()
+        task._camera_open.return_value = True
+        EnvironmentMonitoringPhotoTask.rotate_photo_view(task, direction="left")
+        task.smooth_drag.assert_called_once_with((0.5, 0.45), (0.375, 0.45), duration=0.3)
+        task.mouse_up.assert_called_once_with(key="left")
+
+    def test_vertical_rotation_is_rejected_before_input(self):
+        for direction in ("up", "down"):
+            task = self.task()
+            with self.assertRaises(ValueError):
+                EnvironmentMonitoringPhotoTask.rotate_photo_view(task, direction=direction)
+            task.mouse_down.assert_not_called()
+
+    def test_slug_navigation_stops_on_cancellation_and_releases_bound_backward_key(self):
+        task = self.task()
+        task._resolve_config_key.side_effect = None
+        task._resolve_config_key.return_value = "down"
+        task.sleep.side_effect = TaskDisabledException()
+        with self.assertRaises(TaskDisabledException):
+            CisternOriginiumSlugsNavigation(task).run()
+        task.send_key_down.assert_called_once_with("down")
+        task.send_key_up.assert_called_once_with("down")
+        task.wait_until.assert_not_called()
+
+    def test_slug_route_runs_backward_then_enters_shared_camera_flow(self):
+        task = self.task()
+        task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
+        task.prepare_observation.return_value = {"name": "蓄水源石虫"}
+        events = Mock()
+        for name in ("send_key_down", "press_key", "sleep", "send_key_up", "wait_until", "prepare_photo"):
+            events.attach_mock(getattr(task, name), name)
+        EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        self.assertIsInstance(task.navigation, CisternOriginiumSlugsNavigation)
+        self.assertEqual(
+            [c[0] for c in events.mock_calls],
+            ["send_key_down", "press_key", "sleep", "send_key_up", "wait_until", "prepare_photo"],
+        )
+        task.send_key_down.assert_called_once_with("s")
+        task.sleep.assert_called_once_with(7)
+        task.press_key.assert_called_once_with("shift", after_sleep=0.05)
 
     def test_rotation_stops_immediately_when_condition_becomes_satisfied(self):
         task = self.task()

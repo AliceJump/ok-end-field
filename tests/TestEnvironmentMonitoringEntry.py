@@ -12,6 +12,7 @@ from ok import Box
 from ok.util.color import calculate_color_percentage
 
 from src.data.FeatureList import FeatureList as fL
+from src.tasks.onetime.CisternOriginiumSlugsNavigation import CisternOriginiumSlugsNavigation
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 from src.tasks.onetime.PoolLotusNavigation import PoolLotusNavigation
 
@@ -639,6 +640,36 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertEqual(task.observation_route(title), PoolLotusNavigation)
                 self.assertIsNone(task.observation_route(title + "其他"))
 
+    def test_slug_titles_are_distinct_in_both_registration_orders_and_all_locales(self):
+        data = json.loads(Path("assets/lang/environment_monitoring.json").read_text(encoding="utf-8"))
+        vigorous_titles = {
+            "zh_CN": "充满活力的蓄水源石虫",
+            "zh_TW": "充滿活力的蓄水源石蟲",
+            "en_US": "Vigorous Cistern Originium Slug",
+            "ja_JP": "活発になっている貯水オリジムシ",
+            "ko_KR": "활기찬 저수 원석충",
+        }
+        normal_key, vigorous_key = "cistern_originium_slugs", "vigorous_cistern_originium_slug"
+        for locale, vigorous_title in vigorous_titles.items():
+            task = self.task()
+            normal_title = data[normal_key][locale]["string"]
+            setattr(task.lang.environment_monitoring, normal_key, normal_title)
+            setattr(task.lang.environment_monitoring, vigorous_key, re.compile(data[vigorous_key][locale]["pattern"]))
+            self.assertIs(task.observation_route(normal_title), CisternOriginiumSlugsNavigation)
+            self.assertIsNone(task.observation_route(vigorous_title))
+            for keys in ((normal_key, vigorous_key), (vigorous_key, normal_key)):
+                with (
+                    self.subTest(locale=locale, order=keys),
+                    patch.dict(
+                        "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
+                        dict.fromkeys(keys, PoolLotusNavigation),
+                        clear=True,
+                    ),
+                ):
+                    self.assertEqual(task.observation_key(f"“ {normal_title} ”"), normal_key)
+                    self.assertEqual(task.observation_key(vigorous_title), vigorous_key)
+                    self.assertIsNone(task.observation_key(normal_title + "其他"))
+
     def test_other_localized_points_are_not_selected_without_registered_routes(self):
         data = json.loads(
             (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
@@ -656,6 +687,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 "ecology_near_the_field_logistics_depot",
                 "eternal_sunset",
                 "vigorous_cistern_originium_slug",
+                "cistern_originium_slugs",
             },
         )
         self.assertNotIn("beacon_damaged_in_the_blight_tide", points)
