@@ -3871,3 +3871,12 @@ msgstr "Si's Painting"
 
 msgid "收取地区"
 msgstr "Collection regions"
+
+msgid "环境监测"
+msgstr "Environmental Monitoring (support expanding)"
+
+msgid "环境监测执行失败：{error}"
+msgstr "Environmental Monitoring failed: {error}"
+
+msgid "⭐环境监测"
+msgstr "⭐Environmental Monitoring (support expanding)"

@@ -3578,3 +3578,12 @@ msgstr "사의 그림"
 
 msgid "收取地区"
 msgstr "수령 지역"
+
+msgid "环境监测"
+msgstr "환경 관측 (지원 확대 중)"
+
+msgid "环境监测执行失败：{error}"
+msgstr "환경 관측 실행 실패: {error}"
+
+msgid "⭐环境监测"
+msgstr "⭐환경 관측 (지원 확대 중)"

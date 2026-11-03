@@ -3518,3 +3518,12 @@ msgstr "祀的畫"
 
 msgid "收取地区"
 msgstr "收取地區"
+
+msgid "环境监测"
+msgstr "環境監測（逐步支援中）"
+
+msgid "环境监测执行失败：{error}"
+msgstr "環境監測執行失敗：{error}"
+
+msgid "⭐环境监测"
+msgstr "⭐環境監測（逐步支援中）"

@@ -3546,3 +3546,12 @@ msgstr "スーの絵"
 
 msgid "收取地区"
 msgstr "収集地域"
+
+msgid "环境监测"
+msgstr "環境観測（順次対応中）"
+
+msgid "环境监测执行失败：{error}"
+msgstr "環境観測の実行に失敗しました：{error}"
+
+msgid "⭐环境监测"
+msgstr "⭐環境観測（順次対応中）"

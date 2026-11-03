@@ -1,0 +1,112 @@
+{
+  "pool_lotus": {
+    "zh_CN": {
+      "string": "小池荷"
+    },
+    "zh_TW": {
+      "string": "小池荷"
+    },
+    "en_US": {
+      "string": "Pool Lotus"
+    },
+    "ja_JP": {
+      "string": "池の蓮"
+    },
+    "ko_KR": {
+      "string": "작은 연못의 연꽃"
+    }
+  },
+  "cloudrest_eco_site": {
+    "zh_CN": {
+      "string": "栖云生态点"
+    },
+    "zh_TW": {
+      "string": "棲雲生態點"
+    },
+    "en_US": {
+      "string": "Cloudrest Eco-Site"
+    },
+    "ja_JP": {
+      "string": "栖雲生態スポット"
+    },
+    "ko_KR": {
+      "string": "서운 생태 지점"
+    }
+  },
+  "bamboo_water_chimes": {
+    "zh_CN": {
+      "string": "水竹铃"
+    },
+    "zh_TW": {
+      "string": "水竹鈴"
+    },
+    "en_US": {
+      "string": "Bamboo Water Chimes"
+    },
+    "ja_JP": {
+      "string": "水竹鈴"
+    },
+    "ko_KR": {
+      "string": "수죽령"
+    }
+  },
+  "ecology_near_the_field_logistics_depot": {
+    "zh_CN": {
+      "pattern": "储备站"
+    },
+    "zh_TW": {
+      "pattern": "儲備站"
+    },
+    "en_US": {
+      "pattern": "fieldlogisticsdepot"
+    },
+    "ja_JP": {
+      "pattern": "備蓄施設"
+    },
+    "ko_KR": {
+      "pattern": "보급소"
+    }
+  },
+  "eternal_sunset": {
+    "zh_CN": {
+      "string": "栖霞驻影"
+    },
+    "zh_TW": {
+      "string": "棲霞駐影"
+    },
+    "en_US": {
+      "string": "Eternal Sunset"
+    },
+    "ja_JP": {
+      "string": "棲霞留影"
+    },
+    "ko_KR": {
+      "string": "노을의 그림자"
+    }
+  },
+  "thillu": {
+    "zh_CN": {"string": "表象"},
+    "zh_TW": {"string": "表象"},
+    "en_US": {"string": "Æthillu"},
+    "ja_JP": {"string": "イーサルー"},
+    "ko_KR": {"string": "잔영"},
+    "es_ES": {"string": "Éthillu"}
+  },
+  "cistern_originium_slugs": {
+    "zh_CN": {
+      "string": "蓄水源石虫"
+    },
+    "zh_TW": {
+      "string": "蓄水源石蟲"
+    },
+    "en_US": {
+      "string": "Cistern Originium Slugs"
+    },
+    "ja_JP": {
+      "string": "貯水オリジムシ"
+    },
+    "ko_KR": {
+      "string": "저수 원석충"
+    }
+  }
+}

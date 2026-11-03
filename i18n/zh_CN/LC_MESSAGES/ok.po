@@ -3521,3 +3521,12 @@ msgstr "祀的画"
 
 msgid "收取地区"
 msgstr "收取地区"
+
+msgid "环境监测"
+msgstr "环境监测（逐步支持中）"
+
+msgid "环境监测执行失败：{error}"
+msgstr "环境监测执行失败：{error}"
+
+msgid "⭐环境监测"
+msgstr "⭐环境监测（逐步支持中）"

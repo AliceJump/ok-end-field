@@ -368,6 +368,31 @@ class DeliveryTaskModule(_LangModuleBaseT):
     """交货"""
 
 
+class EnvironmentMonitoringModule(_LangModuleBaseT):
+    """environment_monitoring — OCR 语言节点（值取自 zh_CN）"""
+
+    pool_lotus: str
+    """小池荷"""
+
+    cloudrest_eco_site: str
+    """栖云生态点"""
+
+    bamboo_water_chimes: str
+    """水竹铃"""
+
+    ecology_near_the_field_logistics_depot: re.Pattern[str]
+    """储备站"""
+
+    eternal_sunset: str
+    """栖霞驻影"""
+
+    thillu: str
+    """表象"""
+
+    cistern_originium_slugs: str
+    """蓄水源石虫"""
+
+
 class GameFlowMixinModule(_LangModuleBaseT):
     """game_flow_mixin — OCR 语言节点（值取自 zh_CN）"""
 
@@ -754,6 +779,7 @@ class _LangAccessorTyped:
     daily_shop_mixin: DailyShopMixinModule
     daily_trade_mixin: DailyTradeMixinModule
     DeliveryTask: DeliveryTaskModule
+    environment_monitoring: EnvironmentMonitoringModule
     game_flow_mixin: GameFlowMixinModule
     liaison_mixin: LiaisonMixinModule
     login_mixin: LoginMixinModule
