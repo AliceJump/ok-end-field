@@ -263,7 +263,6 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self,
             EnvironmentMonitoringPhotoTask,
             switch_key="⭐环境监测",
-            run_method="run_daily",
             predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "环境监测"),
         )
         self.craft_feature = DailyFeature(

@@ -100,22 +100,5 @@
     "ko_KR": {
       "string": "저수 원석충"
     }
-  },
-  "vigorous_cistern_originium_slug": {
-    "zh_CN": {
-      "pattern": "充满活力"
-    },
-    "zh_TW": {
-      "pattern": "充滿活力"
-    },
-    "en_US": {
-      "pattern": "vigorous"
-    },
-    "ja_JP": {
-      "pattern": "活発"
-    },
-    "ko_KR": {
-      "pattern": "활기찬"
-    }
   }
 }

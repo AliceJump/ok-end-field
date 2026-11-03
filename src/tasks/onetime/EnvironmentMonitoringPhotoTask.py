@@ -1,7 +1,6 @@
 import re  # 将观察点名称作为字面文本匹配
 
 from ok import Box, TaskDisabledException  # 保留选中背景检测的像素边界及任务中止语义
-from ok.util.color import calculate_color_percentage  # 复用颜色占比排除灰白色圆勾
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
@@ -11,15 +10,10 @@ from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点�
     PoolLotusNavigation,  # 小池荷短路线
 )
 
-OBSERVATION_ROUTES = {  # 观察点语言键到导航类的注册表，筛选与执行共用
-    "pool_lotus": PoolLotusNavigation,  # 小池荷向前再向右
-    "cistern_originium_slugs": CisternOriginiumSlugsNavigation,  # 普通源石虫向后跑
-}  # 活力版尚未注册导航
-PHOTO_ADJUSTMENTS = {  # 取景策略独立于导航注册，未完成路线的点位仍不可自动接取
-    "pool_lotus": ("right", 8),  # 保留小池荷已验证的横向调整
-    "cistern_originium_slugs": ("left", 8),  # 普通源石虫按用户指定向左横向搜索
-    "vigorous_cistern_originium_slug": ("right", 8),  # 活力版保留默认横向搜索，路线尚未支持
-}  # 方向与最大调整次数
+OBSERVATIONS = {  # 观察点语言键对应导航类和横向取景方向
+    "pool_lotus": (PoolLotusNavigation, "right"),  # 小池荷向右取景
+    "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
+}  # 仅注册已支持的点位
 
 TERMINAL_LEFTS = {"outskirts": 0.06, "marker_stone": 0.27}  # 按固定左右顺序标识终端及其标签空白区
 
@@ -39,17 +33,23 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     @staticmethod  # 标题符号不是观察点身份的一部分
     def normalize_title(text):  # 兼容符号、空白与英文大小写差异
-        return re.sub(r"[\W_]+", "", text).casefold()  # 保留各语言文字，完整名称仍须一致
+        return re.sub(r"[\W_]+", "", text).casefold()  # 保留各语言文字
 
-    def observation_key(self, title):  # 按标题识别观察点身份，不代表其导航已支持
+    def observation_key(self, title):  # 按标题识别已注册路线的观察点
         normalized = self.normalize_title(title)  # 不依赖引号和空格
         matched = None  # 多个观察点同时匹配时不能猜测
-        for key in dict.fromkeys((*OBSERVATION_ROUTES, *PHOTO_ADJUSTMENTS)):  # 路线与取景共用身份识别
+        for key in OBSERVATIONS:  # 只识别支持导航的观察点
             name = getattr(self.lang.environment_monitoring, key, None)  # 从语言资源读取当前语言名称
             if isinstance(name, re.Pattern):  # 语言资源中的正则用于短识别词
                 found = bool(normalized) and not name.search("") and bool(name.search(normalized))  # 不接受空匹配
-            else:  # 普通名称仍要求完整一致
-                found = isinstance(name, str) and name and normalized == self.normalize_title(name)  # 避免泛化误匹配
+            elif isinstance(name, str) and name:  # 字面名称按点位选择匹配方式
+                expected = self.normalize_title(name)  # 与标题使用相同的归一化规则
+                if key == "cistern_originium_slugs":  # 同名活力版包含普通源石虫名称
+                    found = bool(expected) and normalized == expected  # 普通源石虫要求完整一致
+                else:  # 其他点位允许名称只是标题的一部分
+                    found = bool(expected) and expected in normalized  # 例如标题中的小池荷
+            else:  # 没有可用的语言名称
+                found = False  # 不将空值视为匹配
             if found:  # 已找到候选观察点
                 if matched is not None:  # 多个观察点匹配同一卡片
                     return None  # 停止而不是根据注册顺序猜测
@@ -57,7 +57,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         return matched  # 未匹配时返回 None
 
     def observation_route(self, title):  # 仅已注册导航的观察点允许自动接取
-        return OBSERVATION_ROUTES.get(self.observation_key(title))  # 已识别但未适配路线仍返回 None
+        observation = OBSERVATIONS.get(self.observation_key(title))  # 查找已注册点位
+        return observation[0] if observation else None  # 未匹配时返回 None
 
     def open_monitoring(self):  # 从任意可恢复页面进入环境监测
         self.ensure_main()  # 复用主界面恢复
@@ -65,13 +66,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             raise RuntimeError("无法进入武陵地区建设")  # 明确入口失败
         if not self.wait_ui_stable():  # 等待概览入场结束后寻找入口
             raise RuntimeError("地区建设页面未稳定")  # 不点击过渡画面
-        if not self.find_one(fL.transaction_overview):  # 稳定等待期间页面可能变化，首点前也重新核对概览
-            raise RuntimeError("未处于地区建设概览")  # 不在未知页面点击入口
         entry = self.wait_until(
-            lambda: (
-                self.find_one(fL.transaction_overview)  # 同帧确认仍在地区建设概览
-                and self.find_one(fL.environment_monitoring_enter, box=self.box.right)  # 识别环境监测入口图标
-            ),  # 防止页面变化后点击误匹配的图标
+            lambda: self.find_one(fL.environment_monitoring_enter, box=self.box.right),  # 识别环境监测入口图标
             time_out=5,  # 限制等待时间
             raise_if_not_found=False,  # 未找到交由下面停止
         )  # 在地区建设概览中等待入口出现
@@ -91,7 +87,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     def _terminal_selected(self, terminal):  # 验证终端标签的白色选中背景
         white = dict.fromkeys(("r", "g", "b"), (186, 255))  # 严格保留各通道大于 185 的边界
-        return self.calculate_color_percentage(white, self._terminal_area(terminal)) > 0.7  # 只有当前选中标签呈白底
+        return self.find_color(white, self._terminal_area(terminal), threshold=0.7)  # 只有当前选中标签呈白底
 
     def _monitoring_page(self):  # 组合控件位置和终端配色，不能只用通用按键模板认定页面
         if not self.find_one(fL.q, box=self.box_of_screen(0.025, 0.12, 0.046, 0.155), use_gray_scale=True):
@@ -100,7 +96,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             return False  # 右侧终端切换键必须存在
         cyan = {"r": (0, 90), "g": (130, 240), "b": (130, 240)}  # 两个终端均有青色侧条
         for left in (0.046, 0.25):  # 限定已验证的两条竖线位置
-            if self.calculate_color_percentage(cyan, self.box_of_screen(left, 0.105, left + 0.003, 0.167)) <= 0.7:
+            if not self.find_color(cyan, self.box_of_screen(left, 0.105, left + 0.003, 0.167), threshold=0.7):
                 return False  # 避免其他菜单的 Q/E 控件误判
         return (
             sum(self._terminal_selected(terminal) for terminal in TERMINAL_LEFTS) == 1
@@ -128,9 +124,9 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             int(area.height * 0.6),
         )  # 中部空白避开左侧箭头装饰和右侧按钮文字
         yellow = {"r": (210, 255), "g": (200, 255), "b": (0, 90)}  # 已保存接取截图的亮黄背景
-        if self.calculate_color_percentage(yellow, sample) > 0.9:
+        if self.find_color(yellow, sample, threshold=0.9):
             return "accept"  # 接取按钮可以点一次等待白底
-        if self.calculate_color_percentage(dict.fromkeys(("r", "g", "b"), (220, 255)), sample) > 0.9:
+        if self.find_color(dict.fromkeys(("r", "g", "b"), (220, 255)), sample, threshold=0.9):
             return "go"  # 已保存前往截图的近白背景，灰色或已收录卡片不通过
         return None  # 过渡、暗色和未知按钮均不可操作
 
@@ -256,10 +252,16 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         tool_key = self._resolve_config_key("r", "common")  # 遵循快捷工具键设置
         self.send_key_down(tool_key)  # 长按打开工具轮盘
         try:  # 中止或异常也要释放工具键
-            self.sleep(1)  # 长按工具键等待轮盘展开
+            if not self.wait_ui_stable(
+                box=self.box_of_screen(0.3, 0.2, 0.7, 0.8), stable_time=1.2, max_wait=5, refresh_interval=0.2
+            ):  # 长按期间等待轮盘区域稳定，稳定时间覆盖已验证的展开时长
+                raise RuntimeError("工具轮盘未稳定")  # 不在持续变化的界面选择工具
             self._require_input_focus()  # 真实光标移动前再次检查目标窗口
             self.smooth_drag((0.5, 0.5), (0.396, 0.312), duration=0.3)  # 实测左上相机位置；此接口仅移动光标，不按鼠标
-            self.sleep(0.2)  # 等待轮盘处理悬停位置后再松开
+            if not self.wait_ui_stable(
+                box=self.box_of_screen(0.3, 0.2, 0.7, 0.8), stable_time=0.3, max_wait=3, refresh_interval=0.1
+            ):  # 等待悬停后的轮盘区域稳定
+                raise RuntimeError("工具轮盘悬停未稳定")  # 不将过渡中的选择视为完成
         finally:  # 不留下长按状态
             self.send_key_up(tool_key)  # 松开确认工具选择
         if not self.wait_until(
@@ -280,7 +282,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         if not marker:  # 未找到圆勾模板
             return False  # 不把未满足条件算作就绪
         yellow = {"r": (180, 255), "g": (155, 255), "b": (0, 120)}  # 亮起圆勾的黄色范围
-        return calculate_color_percentage(frame, yellow, marker) > 0.03  # 灰白勾可能匹配模板，还需确认黄色亮起
+        return self.find_color(yellow, marker, threshold=0.03, frame=frame)  # 同帧确认圆勾黄色亮起
 
     def rotate_photo_view(self, direction="right"):  # 在画面中央按点位方向拖动，不触碰快门
         if direction not in ("left", "right"):  # 当前只支持横向搜索
@@ -302,8 +304,9 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
         title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
-        key = self.observation_key(title)  # 两个源石虫标题独立匹配，不按公共后缀猜测
-        direction, max_steps = PHOTO_ADJUSTMENTS.get(key, ("right", 8))  # 其他注册路线沿用默认取景策略
+        key = self.observation_key(title)  # 根据已注册的观察点选择取景策略
+        _, direction = OBSERVATIONS.get(key, (None, "right"))  # 未识别时沿用默认方向
+        max_steps = 8  # 各点位共用最大横向调整次数
         for step in range(max_steps + 1):  # 初始状态加有界微调
             self.next_frame()  # 每轮使用调整后的新画面
             if self.photo_condition_met():  # 条件亮起立即停止调整
@@ -348,31 +351,23 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             raise RuntimeError("拍照后照片预览未关闭")  # 关闭失败须如实报告
 
     def run(self):  # GUI 与 MCP 共用从入口开始的完整流程
-        self.navigation = None  # 每轮清除上一次观察点的导航组件
-        observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
-        if observation is None:  # 当前没有符合条件的观察点
-            return {"skipped": True, "photo_taken": False}  # 明确区分正常跳过与未完成取景
-        name = observation["name"]  # 保留实际识别名称用于错误提示
-        navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
-        if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
-            raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
-        self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
-        self.navigation.run()  # 每个点位统一通过 run 执行导航
-        result = self.prepare_photo()  # 共用打开相机与横向取景
-        if result["photo_ready"]:  # 只有满足条件才尝试快门
-            self.take_photo()  # 拍照并关闭照片预览
-            result["photo_taken"] = True  # 预览已出现且关闭后才报告成功
-            result["camera_open"] = bool(self._camera_open())  # 返回关闭预览后的实际相机状态
-        return result  # 未满足条件时保留未拍照结果
-
-    def run_daily(self):  # 一键日常运行已支持的导航与拍照流程
-        try:  # 保留日常执行器所需的结果与异常处理
-            result = self.run()  # 执行已注册的入口、导航和取景流程
-            if result.get("skipped", False):  # 已确认没有可执行的支持点位
+        try:  # 独立运行和一键日常共用执行与失败处理
+            self.navigation = None  # 每轮清除上一次观察点的导航组件
+            observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
+            if observation is None:  # 当前没有符合条件的观察点
                 return True  # 无任务属于正常完成
-            if not result.get("photo_taken", False):  # 取景失败须提供具体日常汇总原因
+            name = observation["name"]  # 保留实际识别名称用于错误提示
+            navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
+            if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
+                raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
+            self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
+            self.navigation.run()  # 每个点位统一通过 run 执行导航
+            result = self.prepare_photo()  # 共用打开相机与横向取景
+            if not result["photo_ready"]:  # 未满足条件时不拍照
                 self.mark_task_failure("未能调整到满足条件的取景角度")  # 复用保留首条失败原因的机制
-            return bool(result.get("photo_taken", False))  # 仅实际拍照后允许报告成功
+                return False  # 日常执行器据此记录失败
+            self.take_photo()  # 拍照并关闭照片预览
+            return True  # 预览关闭后才报告成功
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器
             raise  # 不将用户中止当成普通失败
         except Exception as error:  # 当前点位不可用或取景失败

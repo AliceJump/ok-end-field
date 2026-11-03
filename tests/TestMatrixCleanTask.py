@@ -8,6 +8,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import numpy as np
+from ok import Box
+
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.MatrixCleanTask import MatrixCleanTask
@@ -16,6 +19,19 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class TestColorWait(unittest.TestCase):
+    def test_find_color_uses_supplied_frame_and_requires_above_threshold(self):
+        task = MagicMock()
+        task.frame = np.zeros((2, 2, 3), dtype=np.uint8)
+        frame = task.frame.copy()
+        frame[0, :] = 255
+        white = dict.fromkeys(("r", "g", "b"), (220, 255))
+        box = Box(0, 0, 2, 2)
+        self.assertFalse(RuntimeMixin.find_color(task, white, box, threshold=0.5, frame=frame))
+        self.assertTrue(RuntimeMixin.find_color(task, white, box, threshold=0.49, frame=frame))
+        self.assertFalse(RuntimeMixin.find_color(task, white, box, threshold=0.49))
+        task.frame = None
+        self.assertFalse(RuntimeMixin.find_color(task, white, box, threshold=0.49))
+
     def test_click_until_color_only_clicks_when_unmatched(self):
         task = MagicMock()
         task.frame = object()

@@ -279,24 +279,10 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.click.assert_not_called()
         task.wait_click_ocr.assert_not_called()
 
-    def test_overview_disappearing_during_entry_wait_prevents_click(self):
-        task = self.task()
-        task.find_one.side_effect = [Box(10, 10, 20, 20), None]
-        with self.assertRaisesRegex(RuntimeError, "未找到环境监测入口"):
-            task.open_monitoring()
-        task.click.assert_not_called()
-
     def test_unstable_overview_cannot_use_fixed_entry_position(self):
         task = self.task()
         task.wait_ui_stable.return_value = False
         with self.assertRaisesRegex(RuntimeError, "地区建设页面未稳定"):
-            task.open_monitoring()
-        task.click_relative.assert_not_called()
-        task.wait_click_ocr.assert_not_called()
-
-    def test_overview_disappearing_while_stabilizing_prevents_first_fixed_click(self):
-        task = self.task()
-        with self.assertRaisesRegex(RuntimeError, "未处于地区建设概览"):
             task.open_monitoring()
         task.click_relative.assert_not_called()
         task.wait_click_ocr.assert_not_called()
@@ -561,7 +547,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.prepare_task([supported], [])
         task.lang.environment_monitoring.ancient_tree = "古树"
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES", {"ancient_tree": PoolLotusNavigation}
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
+            {"ancient_tree": (PoolLotusNavigation, "right")},
         ):
             self.assertEqual(task.prepare_observation()["name"], "古树")
         task.enter_observation.assert_called_once_with(supported)
@@ -584,9 +571,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             with self.subTest(title=title):
                 task.lang.environment_monitoring.pool_lotus = data["pool_lotus"][locale]["string"]
                 self.assertEqual(task.observation_route(title), PoolLotusNavigation)
-                self.assertIsNone(task.observation_route(title + "其他"))
+                self.assertIs(task.observation_route(title + "其他"), PoolLotusNavigation)
 
-    def test_slug_titles_are_distinct_in_both_registration_orders_and_all_locales(self):
+    def test_normal_slug_matches_without_accepting_vigorous_title_in_all_locales(self):
         data = json.loads(Path("assets/lang/environment_monitoring.json").read_text(encoding="utf-8"))
         vigorous_titles = {
             "zh_CN": "充满活力的蓄水源石虫",
@@ -595,26 +582,15 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             "ja_JP": "活発になっている貯水オリジムシ",
             "ko_KR": "활기찬 저수 원석충",
         }
-        normal_key, vigorous_key = "cistern_originium_slugs", "vigorous_cistern_originium_slug"
+        normal_key = "cistern_originium_slugs"
         for locale, vigorous_title in vigorous_titles.items():
-            task = self.task()
-            normal_title = data[normal_key][locale]["string"]
-            setattr(task.lang.environment_monitoring, normal_key, normal_title)
-            setattr(task.lang.environment_monitoring, vigorous_key, re.compile(data[vigorous_key][locale]["pattern"]))
-            self.assertIs(task.observation_route(normal_title), CisternOriginiumSlugsNavigation)
-            self.assertIsNone(task.observation_route(vigorous_title))
-            for keys in ((normal_key, vigorous_key), (vigorous_key, normal_key)):
-                with (
-                    self.subTest(locale=locale, order=keys),
-                    patch.dict(
-                        "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
-                        dict.fromkeys(keys, PoolLotusNavigation),
-                        clear=True,
-                    ),
-                ):
-                    self.assertEqual(task.observation_key(f"“ {normal_title} ”"), normal_key)
-                    self.assertEqual(task.observation_key(vigorous_title), vigorous_key)
-                    self.assertIsNone(task.observation_key(normal_title + "其他"))
+            with self.subTest(locale=locale):
+                task = self.task()
+                normal_title = data[normal_key][locale]["string"]
+                setattr(task.lang.environment_monitoring, normal_key, normal_title)
+                self.assertIs(task.observation_route(f"“ {normal_title} ”"), CisternOriginiumSlugsNavigation)
+                self.assertIsNone(task.observation_key(vigorous_title))
+                self.assertIsNone(task.observation_key(normal_title + "其他"))
 
     def test_short_names_match_only_their_point_in_every_locale(self):
         data = json.loads(
@@ -630,8 +606,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     task = self.task()
                     setattr(task.lang.environment_monitoring, key, re.compile(names[locale]["pattern"]))
                     with patch.dict(
-                        "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
-                        {key: PoolLotusNavigation},
+                        "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
+                        {key: (PoolLotusNavigation, "right")},
                         clear=True,
                     ):
                         self.assertEqual(task.observation_route(names[locale]["pattern"]), PoolLotusNavigation)
@@ -645,8 +621,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang.environment_monitoring.first = re.compile("小池")
         task.lang.environment_monitoring.second = re.compile("池荷")
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
-            {"first": PoolLotusNavigation, "second": PoolLotusNavigation},
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
+            {"first": (PoolLotusNavigation, "right"), "second": (PoolLotusNavigation, "right")},
             clear=True,
         ):
             self.assertIsNone(task.observation_route("小池荷"))
@@ -655,8 +631,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task.lang.environment_monitoring.ecology_near_the_field_logistics_depot = re.compile("储备站")
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
-            {"ecology_near_the_field_logistics_depot": PoolLotusNavigation},
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
+            {"ecology_near_the_field_logistics_depot": (PoolLotusNavigation, "right")},
             clear=True,
         ):
             self.assertEqual(task.observation_route("储备站周围的生态环境"), PoolLotusNavigation)

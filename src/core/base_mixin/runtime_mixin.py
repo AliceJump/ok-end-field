@@ -6,6 +6,7 @@ from enum import Enum
 import cv2
 import numpy as np
 from ok import Box
+from ok.util.color import calculate_color_percentage
 
 from src.config import config as app_config
 from src.core.global_config_store import KEY_CONFIG_NAME, get_global_config
@@ -1353,6 +1354,12 @@ class RuntimeMixin:
                 x=x, y=y, width=width, height=height, to_x=to_x, to_y=to_y, match=match_text
             )
         )
+
+    def find_color(self, color, box, threshold=0.8, frame=None):
+        """检查单帧中指定区域的颜色占比是否大于阈值。"""
+        if frame is None:
+            frame = self.frame
+        return frame is not None and calculate_color_percentage(frame, color, box) > threshold
 
     def wait_color(
         self,

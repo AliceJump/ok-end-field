@@ -25,6 +25,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             daily = DailyTask(SimpleNamespace(scene=None, pause_start=None, debug=False), SimpleNamespace())
         self.assertNotIn("环境监测", daily.default_config[daily.CFG_OTHER_TASKS])
         item = next(item for item in daily.build_task_plan() if item[0] == "⭐环境监测")
+        self.assertEqual(item[1].__self__.run_method, "run")
         daily._account_override_for = Mock(return_value={})
         daily.config = SimpleNamespace(
             get=lambda key, default=None: ["收邮件"] if key == daily.CFG_OTHER_TASKS else default
@@ -35,45 +36,33 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         )
         self.assertTrue(item[2]())
 
-    def test_daily_reports_view_failure_without_recovering_main(self):
-        task = self.task()
-        task.run.return_value = {"photo_ready": False, "photo_taken": False}
-        self.assertFalse(EnvironmentMonitoringPhotoTask.run_daily(task))
-        task.mark_task_failure.assert_called_once_with("未能调整到满足条件的取景角度")
-        task.ensure_main.assert_not_called()
-
-    def test_daily_succeeds_when_no_supported_observation(self):
-        task = self.task()
-        task.run.return_value = {"skipped": True, "photo_taken": False}
-        self.assertTrue(EnvironmentMonitoringPhotoTask.run_daily(task))
-        task.mark_task_failure.assert_not_called()
-        task.ensure_main.assert_not_called()
-
     def test_run_skips_navigation_when_no_observation(self):
         task = self.task()
         task.prepare_observation.return_value = None
         result = EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
-        self.assertEqual(result, {"skipped": True, "photo_taken": False})
+        self.assertTrue(result)
+        task.mark_task_failure.assert_not_called()
         task.prepare_photo.assert_not_called()
 
     def test_daily_records_exception_without_recovering_main(self):
         task = self.task()
-        task.run.side_effect = RuntimeError("navigation failed")
+        task.prepare_observation.side_effect = RuntimeError("navigation failed")
         task.tr.side_effect = lambda text: text
-        self.assertFalse(EnvironmentMonitoringPhotoTask.run_daily(task))
+        self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
         task.ensure_main.assert_not_called()
         task.mark_task_failure.assert_called_once_with("环境监测执行失败：navigation failed")
 
     def test_daily_propagates_cancellation(self):
         task = self.task()
-        task.run.side_effect = TaskDisabledException()
+        task.prepare_observation.side_effect = TaskDisabledException()
         with self.assertRaises(TaskDisabledException):
-            EnvironmentMonitoringPhotoTask.run_daily(task)
+            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
         task.mark_task_failure.assert_not_called()
         task.ensure_main.assert_not_called()
 
     def task(self):
         task = Mock()
+        task.tr.side_effect = lambda text: text
         task.box = SimpleNamespace(right=Box(960, 0, 960, 1080))
         task.box_of_screen.side_effect = lambda x1, y1, x2, y2: Box(
             round(task.frame.shape[1] * x1),
@@ -116,7 +105,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_tool_selection_cancellation_and_drag_failure_release_tool(self):
         for failing_method, error in (
-            ("sleep", TaskDisabledException()),
+            ("wait_ui_stable", TaskDisabledException()),
             ("smooth_drag", RuntimeError("drag interrupted")),
         ):
             with self.subTest(failing_method=failing_method):
@@ -197,12 +186,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task = self.task()
                 task._camera_open.return_value = True
                 task.find_one.return_value = Box(52, 726, 26, 24) if marker_found else None
-                with patch(
-                    "src.tasks.onetime.EnvironmentMonitoringPhotoTask.calculate_color_percentage",
-                    return_value=yellow_ratio,
-                ) as color:
-                    self.assertEqual(EnvironmentMonitoringPhotoTask.photo_condition_met(task), expected)
-                self.assertEqual(color.call_count, int(marker_found))
+                task.find_color.return_value = yellow_ratio > 0.03
+                self.assertEqual(EnvironmentMonitoringPhotoTask.photo_condition_met(task), expected)
+                self.assertEqual(task.find_color.call_count, int(marker_found))
                 self.assertEqual(task.find_one.call_args.args[0], fL.photo_target_checked)
                 task.ocr.assert_not_called()
 
@@ -217,12 +203,10 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
         task._camera_open.side_effect = camera_detected
         task.find_one.return_value = Box(52, 726, 26, 24)
-        with patch(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.calculate_color_percentage", return_value=0.1
-        ) as color:
-            self.assertTrue(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
+        task.find_color.return_value = True
+        self.assertTrue(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
         self.assertIs(task.find_one.call_args.kwargs["frame"], original_frame)
-        self.assertIs(color.call_args.args[0], original_frame)
+        self.assertIs(task.find_color.call_args.kwargs["frame"], original_frame)
         task.ocr.assert_not_called()
 
     def test_route_requires_world_and_does_not_move_in_a_menu(self):
@@ -242,8 +226,8 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.prepare_observation.return_value = {"name": title}
                 task.in_world.side_effect = [True, False]
                 task.wait_until.side_effect = lambda condition, **kwargs: condition()
-                with self.assertRaisesRegex(RuntimeError, "路线结束后未恢复大世界"):
-                    EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+                self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+                self.assertIn("路线结束后未恢复大世界", task.mark_task_failure.call_args.args[0])
                 task.prepare_photo.assert_not_called()
                 task.take_photo.assert_not_called()
                 self.assertEqual(task.send_key_up.call_args_list, task.send_key_down.call_args_list)
@@ -283,23 +267,18 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.mouse_up.assert_called_once_with(key="left")
 
     def test_slug_photo_adjustments_are_bounded_and_keep_observation_name(self):
-        import re
-
-        for title, direction in (("蓄水源石虫", "left"), ("充满活力的蓄水源石虫", "right")):
-            with self.subTest(title=title):
-                task = self.task()
-                task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
-                task.lang.environment_monitoring.vigorous_cistern_originium_slug = re.compile("充满活力")
-                task.selected_observation = {"name": title}
-                task.photo_condition_met.return_value = False
-                self.assertFalse(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
-                self.assertEqual(task.rotate_photo_view.call_args_list, [call(direction=direction)] * 8)
-                task._camera_open.return_value = True
-                result = EnvironmentMonitoringPhotoTask.prepare_photo(task)
-                self.assertEqual(result["name"], title)
-                self.assertFalse(result["photo_taken"])
-                task.press_key.assert_not_called()
-                task.click.assert_not_called()
+        task = self.task()
+        task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
+        task.selected_observation = {"name": "蓄水源石虫"}
+        task.photo_condition_met.return_value = False
+        self.assertFalse(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
+        self.assertEqual(task.rotate_photo_view.call_args_list, [call(direction="left")] * 8)
+        task._camera_open.return_value = True
+        result = EnvironmentMonitoringPhotoTask.prepare_photo(task)
+        self.assertEqual(result["name"], "蓄水源石虫")
+        self.assertFalse(result["photo_taken"])
+        task.press_key.assert_not_called()
+        task.click.assert_not_called()
 
     def test_leftward_rotation_keeps_height_and_releases_mouse(self):
         task = self.task()
@@ -380,9 +359,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 )
                 task.open_camera.assert_called_once_with()
                 task.adjust_photo_view.assert_called_once_with()
-                self.assertEqual(
-                    result, {"name": "小池荷", "camera_open": True, "photo_ready": ready, "photo_taken": ready}
-                )
+                self.assertIs(result, ready)
+                if not ready:
+                    task.mark_task_failure.assert_called_once_with("未能调整到满足条件的取景角度")
                 self.assertEqual(task.take_photo.call_count, int(ready))
                 task.press_key.assert_not_called()
                 task.click.assert_not_called()
@@ -432,31 +411,27 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_navigation_failure_stops_before_camera(self):
         task = self.task()
         task.prepare_observation.return_value = {"name": "小池荷"}
-        with (
-            patch.object(PoolLotusNavigation, "run", side_effect=RuntimeError("navigation failed")),
-            self.assertRaisesRegex(RuntimeError, "navigation failed"),
-        ):
-            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        with patch.object(PoolLotusNavigation, "run", side_effect=RuntimeError("navigation failed")):
+            self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        self.assertIn("navigation failed", task.mark_task_failure.call_args.args[0])
         task.prepare_photo.assert_not_called()
 
     def test_missing_registered_route_stops_before_camera(self):
         task = self.task()
         task.prepare_observation.return_value = {"name": "古树"}
-        with (
-            patch.dict(
-                "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATION_ROUTES",
-                {"ancient_tree": None},
-            ),
-            self.assertRaisesRegex(RuntimeError, "未支持观察点导航"),
+        with patch.dict(
+            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
+            {"ancient_tree": (None, "right")},
         ):
-            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+            self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        self.assertIn("未支持观察点导航", task.mark_task_failure.call_args.args[0])
         task.prepare_photo.assert_not_called()
 
     def test_unregistered_observation_stops_before_camera(self):
         task = self.task()
         task.prepare_observation.return_value = {"name": "未知点位"}
-        with self.assertRaisesRegex(RuntimeError, "未支持观察点导航"):
-            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
+        self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        self.assertIn("未支持观察点导航", task.mark_task_failure.call_args.args[0])
         task.prepare_photo.assert_not_called()
 
     def test_camera_lost_after_final_rotation_cannot_be_reported_as_open(self):

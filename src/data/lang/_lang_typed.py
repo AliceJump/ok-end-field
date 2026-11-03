@@ -389,9 +389,6 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     cistern_originium_slugs: str
     """蓄水源石虫"""
 
-    vigorous_cistern_originium_slug: re.Pattern[str]
-    """充满活力"""
-
 
 class GameFlowMixinModule(_LangModuleBaseT):
     """game_flow_mixin — OCR 语言节点（值取自 zh_CN）"""
