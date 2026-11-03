@@ -6,8 +6,10 @@ from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
-from src.tasks.onetime.CisternOriginiumSlugsNavigation import CisternOriginiumSlugsNavigation  # 普通源石虫短路线
-from src.tasks.onetime.PoolLotusNavigation import PoolLotusNavigation  # 小池荷专用导航组件
+from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
+    CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
+    PoolLotusNavigation,  # 小池荷短路线
+)
 
 OBSERVATION_ROUTES = {  # 观察点语言键到导航类的注册表，筛选与执行共用
     "pool_lotus": PoolLotusNavigation,  # 小池荷向前再向右

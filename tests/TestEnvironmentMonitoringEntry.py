@@ -12,9 +12,8 @@ from ok import Box
 from ok.util.color import calculate_color_percentage
 
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.onetime.CisternOriginiumSlugsNavigation import CisternOriginiumSlugsNavigation
+from src.tasks.onetime.EnvironmentMonitoringNavigation import CisternOriginiumSlugsNavigation, PoolLotusNavigation
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
-from src.tasks.onetime.PoolLotusNavigation import PoolLotusNavigation
 
 
 class TestEnvironmentMonitoringEntry(unittest.TestCase):

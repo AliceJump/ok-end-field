@@ -12,10 +12,13 @@ from qfluentwidgets import FluentIcon
 
 from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.onetime.CisternOriginiumSlugsNavigation import CisternOriginiumSlugsNavigation
 from src.tasks.onetime.DailyTask import DailyTask
+from src.tasks.onetime.EnvironmentMonitoringNavigation import (
+    CisternOriginiumSlugsNavigation,
+    PoolLotusNavigation,
+    _hold_route_key,
+)
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
-from src.tasks.onetime.PoolLotusNavigation import PoolLotusNavigation
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
@@ -117,18 +120,16 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             with self.subTest(error=type(error).__name__):
                 task = self.task()
                 task.sleep.side_effect = error
-                navigation = PoolLotusNavigation(task)
                 with self.assertRaises(type(error)):
-                    navigation._hold_route_key("w", 0.5)
+                    _hold_route_key(task, "w", 0.5)
                 task.send_key_down.assert_called_once_with("up")
                 task.send_key_up.assert_called_once_with("up")
 
     def test_failed_focus_prevents_movement_key_down(self):
         task = self.task()
         task._require_input_focus.side_effect = RuntimeError("no focus")
-        navigation = PoolLotusNavigation(task)
         with self.assertRaisesRegex(RuntimeError, "no focus"):
-            navigation._hold_route_key("d", 3)
+            _hold_route_key(task, "d", 3)
         task.send_key_down.assert_not_called()
         task.sleep.assert_not_called()
 
@@ -265,34 +266,33 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_route_requires_world_and_does_not_move_in_a_menu(self):
         task = self.task()
         navigation = PoolLotusNavigation(task)
-        navigation._hold_route_key = Mock()
         task.in_world.return_value = False
         with self.assertRaisesRegex(RuntimeError, "未处于大世界"):
             navigation.run()
-        navigation._hold_route_key.assert_not_called()
+        task.send_key_down.assert_not_called()
         task.press_key.assert_not_called()
 
     def test_unstable_world_after_route_prevents_tracking_key(self):
         task = self.task()
         navigation = PoolLotusNavigation(task)
-        navigation._hold_route_key = Mock()
         task.in_world.return_value = True
         task.wait_until.return_value = False
         with self.assertRaisesRegex(RuntimeError, "路线结束后未恢复大世界"):
             navigation.run()
-        navigation._hold_route_key.assert_has_calls([call("w", 0.5), call("d", 3)])
+        self.assertEqual(task.send_key_down.call_args_list, [call("up"), call("right")])
+        self.assertEqual(task.send_key_up.call_args_list, [call("up"), call("right")])
         self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
         task.press_key.assert_not_called()
 
     def test_route_uses_world_state_without_mode_checks(self):
         task = self.task()
         navigation = PoolLotusNavigation(task)
-        navigation._hold_route_key = Mock()
         task.in_world.return_value = True
         task.wait_until.return_value = True
         navigation.run()
-        navigation._hold_route_key.assert_has_calls([call("w", 0.5), call("d", 3)])
-        task.sleep.assert_not_called()
+        self.assertEqual(task.send_key_down.call_args_list, [call("up"), call("right")])
+        self.assertEqual(task.send_key_up.call_args_list, [call("up"), call("right")])
+        self.assertEqual(task.sleep.call_args_list, [call(0.5), call(3)])
         self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
         task.press_key.assert_called_once_with("v", after_sleep=0.6)
         task.ocr.assert_not_called()
