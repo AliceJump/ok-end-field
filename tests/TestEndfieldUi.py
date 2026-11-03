@@ -278,6 +278,7 @@ class SectionMatrixLayoutTest(unittest.TestCase):
             self.assertTrue(card._endfield_status.isHidden())
         header.deleteLater()
 
+
 class CombatSettingsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1612,6 +1613,7 @@ class PaletteContrastTest(unittest.TestCase):
             for background in ("panel", "input"):
                 self.assertGreaterEqual(contrast(c["border_hover"], c[background]), 3)
 
+
 class WindowRecoveryTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1736,6 +1738,7 @@ class WindowRecoveryTest(unittest.TestCase):
                 self.assertGreater(switch_box.left(), panel.width() // 2)
         page.close()
         page.deleteLater()
+
 
 if __name__ == "__main__":
     unittest.main()

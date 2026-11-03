@@ -97,6 +97,7 @@ class TestInstructionsMixin(unittest.TestCase):
             '<span style="color:#FF5555;"><strong>&nbsp;&nbsp;&nbsp;&nbsp;文本</strong></span>',
         )
 
+
 class TestItemNavigatorInstructions(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
