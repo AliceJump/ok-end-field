@@ -366,7 +366,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         for ready in (False, True):
             with self.subTest(ready=ready), patch.object(PoolLotusNavigation, "run") as route:
                 task = self.task()
-                task.prepare_observation.return_value = {"name": "“小池荷”"}
+                task.prepare_observation.side_effect = [{"name": "“小池荷”", "terminal": "outskirts"}, None]
                 task.adjust_photo_view.return_value = ready
                 task._camera_open.return_value = True
                 task.photo_condition_met.return_value = ready
@@ -376,11 +376,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 stages.attach_mock(route, "navigate")
                 stages.attach_mock(task.prepare_photo, "prepare_photo")
                 result = EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
-                task.prepare_observation.assert_called_once_with()
+                self.assertEqual(task.prepare_observation.call_count, 2 if ready else 1)
                 route.assert_called_once_with()
                 self.assertEqual(
                     stages.mock_calls,
-                    [call.prepare_observation(), call.navigate(), call.prepare_photo()],
+                    [call.prepare_observation(), call.navigate(), call.prepare_photo()]
+                    + ([call.prepare_observation()] if ready else []),
                 )
                 task.open_camera.assert_called_once_with()
                 task.adjust_photo_view.assert_called_once_with()
@@ -392,6 +393,33 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.click.assert_not_called()
                 task.click_relative.assert_not_called()
                 task.send_key_down.assert_not_called()
+
+    def test_run_processes_multiple_observations(self):
+        task = self.task()
+        task.prepare_observation.side_effect = [
+            {"name": "小池荷", "terminal": "outskirts"},
+            {"name": "表象", "terminal": "marker_stone"},
+            None,
+        ]
+        task.navigate_observation.side_effect = None
+        task.photograph_observation.side_effect = None
+        task.photograph_observation.return_value = True
+        self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        self.assertEqual(task.navigate_observation.call_count, 2)
+        self.assertEqual(task.photograph_observation.call_count, 2)
+        self.assertEqual(task.completed_observations, {("outskirts", "小池荷"), ("marker_stone", "表象")})
+
+    def test_run_stops_after_six_observations(self):
+        task = self.task()
+        task.prepare_observation.side_effect = [
+            {"name": str(index), "terminal": "outskirts"} for index in range(7)
+        ]
+        task.navigate_observation.side_effect = None
+        task.photograph_observation.side_effect = None
+        task.photograph_observation.return_value = True
+        self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        self.assertEqual(task.prepare_observation.call_count, 6)
+        self.assertEqual(task.photograph_observation.call_count, 6)
 
     def test_photo_rechecks_condition_and_does_not_click_when_lost(self):
         task = self.task()
