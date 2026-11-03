@@ -15,7 +15,7 @@ from src.tasks.onetime.EnvironmentMonitoringNavigation import (
     CisternOriginiumSlugsNavigation,
     EnvironmentMonitoringNavigation,
     PoolLotusNavigation,
-    ThilluNavigation,
+    StationaryObservationNavigation,
 )
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
@@ -154,6 +154,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_camera_ui_appearing_after_selection_does_not_press_r_again(self):
         task = self.task()
+        task.wait_until.return_value = True
         EnvironmentMonitoringPhotoTask.open_camera(task)
         task.send_key_up.assert_called_once_with("f6")
         task.press_key.assert_not_called()
@@ -322,9 +323,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.in_world.return_value = True
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
-        ThilluNavigation(task).run()
+        StationaryObservationNavigation(task).run()
         task.send_key_down.assert_not_called()
         task.press_key.assert_not_called()
+        task.wait_until.assert_called_once()
+        self.assertIs(task.wait_until.call_args.args[0], task.in_world)
+        self.assertGreater(task.wait_until.call_args.kwargs["settle_time"], 0)
 
     def test_slug_route_runs_backward_then_enters_shared_camera_flow(self):
         task = self.task()
@@ -362,11 +366,28 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.press_key.assert_not_called()
         task.send_key_down.assert_not_called()
 
+    def test_initial_condition_wait_avoids_rotation(self):
+        task = self.task()
+        task.photo_condition_met.return_value = True
+        events = Mock()
+        events.attach_mock(task.wait_ui_stable, "wait")
+        events.attach_mock(task.photo_condition_met, "condition")
+        self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
+        self.assertEqual([item[0] for item in events.mock_calls], ["wait", "condition"])
+        task.rotate_photo_view.assert_not_called()
+
+    def test_unstable_target_area_prevents_rotation(self):
+        task = self.task()
+        task.wait_ui_stable.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "目标条件区域未稳定"):
+            EnvironmentMonitoringPhotoTask.adjust_photo_view(task)
+        task.rotate_photo_view.assert_not_called()
+
     def test_full_run_takes_photo_only_when_ready(self):
         for ready in (False, True):
             with self.subTest(ready=ready), patch.object(PoolLotusNavigation, "run") as route:
                 task = self.task()
-                task.prepare_observation.return_value = {"name": "“小池荷”"}
+                task.prepare_observation.side_effect = [{"name": "“小池荷”", "terminal": "outskirts"}, None]
                 task.adjust_photo_view.return_value = ready
                 task._camera_open.return_value = True
                 task.photo_condition_met.return_value = ready
@@ -376,11 +397,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 stages.attach_mock(route, "navigate")
                 stages.attach_mock(task.prepare_photo, "prepare_photo")
                 result = EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
-                task.prepare_observation.assert_called_once_with()
+                self.assertEqual(task.prepare_observation.call_count, 2 if ready else 1)
                 route.assert_called_once_with()
                 self.assertEqual(
                     stages.mock_calls,
-                    [call.prepare_observation(), call.navigate(), call.prepare_photo()],
+                    [call.prepare_observation(), call.navigate(), call.prepare_photo()]
+                    + ([call.prepare_observation()] if ready else []),
                 )
                 task.open_camera.assert_called_once_with()
                 task.adjust_photo_view.assert_called_once_with()
@@ -392,6 +414,33 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.click.assert_not_called()
                 task.click_relative.assert_not_called()
                 task.send_key_down.assert_not_called()
+
+    def test_run_processes_multiple_observations(self):
+        task = self.task()
+        task.prepare_observation.side_effect = [
+            {"name": "小池荷", "terminal": "outskirts"},
+            {"name": "表象", "terminal": "marker_stone"},
+            None,
+        ]
+        task.navigate_observation.side_effect = None
+        task.photograph_observation.side_effect = None
+        task.photograph_observation.return_value = True
+        self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        self.assertEqual(task.navigate_observation.call_count, 2)
+        self.assertEqual(task.photograph_observation.call_count, 2)
+        self.assertEqual(task.completed_observations, {"小池荷", "表象"})
+
+    def test_run_stops_after_six_observations(self):
+        task = self.task()
+        task.prepare_observation.side_effect = [
+            {"name": str(index), "terminal": "outskirts"} for index in range(7)
+        ]
+        task.navigate_observation.side_effect = None
+        task.photograph_observation.side_effect = None
+        task.photograph_observation.return_value = True
+        self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        self.assertEqual(task.prepare_observation.call_count, 6)
+        self.assertEqual(task.photograph_observation.call_count, 6)
 
     def test_photo_rechecks_condition_and_does_not_click_when_lost(self):
         task = self.task()
@@ -469,7 +518,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.next_frame.call_count, 10)
         task._camera_open.assert_called_once_with(frame=task.frame)
         task.ocr.assert_not_called()
-        task.log_info.assert_not_called()
+        self.assertFalse(any("camera_open=True" in c.args[0] for c in task.log_info.call_args_list))
 
     def test_final_frame_decides_ready_instead_of_the_previous_search_result(self):
         for search_ready, final_ready in ((True, False), (False, True)):

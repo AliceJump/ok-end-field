@@ -9,13 +9,14 @@ from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到�
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
     CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
     PoolLotusNavigation,  # 小池荷短路线
-    ThilluNavigation,  # 表象传送后原地取景
+    StationaryObservationNavigation,  # 传送后原地取景
 )
 
 OBSERVATIONS = {  # 观察点语言键对应导航类和横向取景方向
     "pool_lotus": (PoolLotusNavigation, "right"),  # 小池荷向右取景
     "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
-    "thillu": (ThilluNavigation, "right"),  # 表象在传送落点向右取景
+    "thillu": (StationaryObservationNavigation, "right"),  # 表象在传送落点向右取景
+    "peach_tree": (StationaryObservationNavigation, "right"),  # 桃树在传送落点即可取景
 }  # 仅注册已支持的点位
 
 
@@ -33,6 +34,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
         self.selected_observation = None  # 每次执行重新建立交接信息
         self.navigation = None  # 匹配观察点后创建对应导航组件
+        self.completed_observations = set()  # 本次运行已拍摄的点位
 
     @staticmethod  # 标题符号不是观察点身份的一部分
     def normalize_title(text):  # 兼容符号、空白与英文大小写差异
@@ -217,6 +219,9 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         for terminal in self.TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
             self.select_terminal(terminal)  # 选择终端并等待稳定
             for observation in self.available_observations():  # 只考虑可操作卡片
+                identity = self.normalize_title(observation["name"])  # 同名点位不区分终端
+                if identity in self.completed_observations:  # 照片关闭后卡片可能仍显示可操作
+                    continue  # 本次运行不重复拍摄
                 if not self.observation_route(observation["name"]):  # 只选择已注册路线的点位
                     continue  # 跳过尚未支持的委托
                 self.enter_observation(observation)  # 接取或继续所选观察点
@@ -305,12 +310,17 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
         key = self.observation_key(title)  # 根据已注册的观察点选择取景策略
         _, direction = OBSERVATIONS.get(key, (None, "right"))  # 未识别时沿用默认方向
+        if not self.wait_ui_stable(  # 等待相机目标标记区域入场稳定
+            box=self.box_of_screen(0.02, 0.655, 0.055, 0.715), stable_time=0.5, max_wait=3, refresh_interval=0.1
+        ):  # 只观察条件标记，避免背景动画影响稳定判断
+            raise RuntimeError("相机目标条件区域未稳定")  # 不在过渡画面判断或转动
         max_steps = 8  # 各点位共用最大横向调整次数
         for step in range(max_steps + 1):  # 初始状态加有界微调
             self.next_frame()  # 每轮使用调整后的新画面
             if self.photo_condition_met():  # 条件亮起立即停止调整
                 return True  # 保留已满足的角度，不按快门
             if step < max_steps:  # 最后一次检查后不再增加位移
+                self.log_info(f"[environment-monitoring] 取景条件未识别，向{direction}调整：{step + 1}/{max_steps}")  # 记录转动原因
                 self.rotate_photo_view(direction=direction)  # 只旋转镜头，不发出移动按键
         return False  # 有限范围内未找到时如实返回
 
@@ -366,12 +376,18 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     def run(self):  # GUI 与一键日常共用完整流程
         try:  # 独立运行和一键日常共用执行与失败处理
-            self.navigation = None  # 每轮清除上一次观察点的导航组件
-            observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
-            if observation is None:  # 当前没有符合条件的观察点
-                return True  # 无任务属于正常完成
-            self.navigate_observation(observation)  # 执行点位导航
-            return self.photograph_observation()  # 打开相机、取景并拍照
+            self.completed_observations = set()  # 每次运行重新扫描所有点位
+            for _ in range(6):  # 两个终端各有三张卡片，最多处理六个点位
+                self.navigation = None  # 每轮清除上一次观察点的导航组件
+                observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
+                if observation is None:  # 当前没有符合条件的观察点
+                    return True  # 无任务属于正常完成
+                self.navigate_observation(observation)  # 执行点位导航
+                if not self.photograph_observation():  # 取景失败时不继续下一个点位
+                    return False  # 保留失败结果
+                identity = self.normalize_title(observation["name"])  # 与扫描时使用相同身份
+                self.completed_observations.add(identity)  # 成功关闭预览后才排除重复点位
+            return True  # 达到本次运行的最大点位数
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器
             raise  # 不将用户中止当成普通失败
         except Exception as error:  # 当前点位不可用或取景失败

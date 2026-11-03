@@ -15,7 +15,7 @@ from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (
     CisternOriginiumSlugsNavigation,
     PoolLotusNavigation,
-    ThilluNavigation,
+    StationaryObservationNavigation,
 )
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
@@ -27,6 +27,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang = SimpleNamespace(
             environment_monitoring=SimpleNamespace(
                 pool_lotus="小池荷",
+                peach_tree="桃树",
             )
         )
         task.box = SimpleNamespace(bottom_right=Box(width // 2, height // 2, width // 2, height // 2))
@@ -55,7 +56,27 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._wait_for_transfer_arrival = Mock(return_value=True)
         task.log_info = Mock()
         task.selected_observation = {"name": "previous run"}
+        task.completed_observations = set()
         return task
+
+    def test_peach_tree_uses_stationary_navigation(self):
+        task = self.task()
+        self.assertIs(task.observation_route("念念家的桃树"), StationaryObservationNavigation)
+        self.assertIs(task.observation_route("桃树"), StationaryObservationNavigation)
+
+    def test_peach_tree_localized_titles(self):
+        path = Path("assets/lang/environment_monitoring.json")
+        names = json.loads(path.read_text(encoding="utf-8"))["peach_tree"]
+        titles = {
+            "zh_CN": "念念家的桃树", "zh_TW": "念念家的桃樹",
+            "en_US": "Peach Tree at Babbles's Home", "ja_JP": "ネンネンの家にある桃の木",
+            "ko_KR": "염념이네 복숭아나무",
+        }
+        for locale, title in titles.items():
+            with self.subTest(locale=locale):
+                task = self.task()
+                task.lang.environment_monitoring.peach_tree = names[locale]["string"]
+                self.assertIs(task.observation_route(title), StationaryObservationNavigation)
 
     def color_task(self, frame):
         height, width = frame.shape[:2]
@@ -65,6 +86,21 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             side_effect=lambda color, box: calculate_color_percentage(frame, color, box)
         )
         return task
+
+    def test_completed_card_is_skipped_across_terminals(self):
+        task = self.task()
+        task.completed_observations = {"小池荷"}
+        task.open_monitoring = Mock()
+        task.select_terminal = Mock()
+        task.available_observations = Mock(side_effect=[
+            [{"name": "“小池荷”", "action_box": Box(0, 0, 1, 1)}],
+            [{"name": "小池荷", "action_box": Box(1, 0, 1, 1)}],
+        ])
+        task.enter_observation = Mock()
+        task.transfer_observation = Mock()
+        result = task.prepare_observation()
+        self.assertIsNone(result)
+        task.enter_observation.assert_not_called()
 
     def test_available_cards_bind_buttons_to_their_own_titles_at_multiple_sizes(self):
         for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
@@ -583,8 +619,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task = self.task()
                 name = node["string"]
                 task.lang.environment_monitoring.thillu = name
-                self.assertIs(task.observation_route(name), ThilluNavigation)
-                self.assertIs(task.observation_route(f"“{name}”"), ThilluNavigation)
+                self.assertIs(task.observation_route(name), StationaryObservationNavigation)
+                self.assertIs(task.observation_route(f"“{name}”"), StationaryObservationNavigation)
 
     def test_normal_slug_matches_without_accepting_vigorous_title_in_all_locales(self):
         data = json.loads(

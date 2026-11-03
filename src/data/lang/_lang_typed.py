@@ -386,6 +386,9 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     eternal_sunset: str
     """栖霞驻影"""
 
+    peach_tree: str
+    """桃树"""
+
     thillu: str
     """表象"""
 

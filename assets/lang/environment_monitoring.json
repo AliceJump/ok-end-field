@@ -84,6 +84,13 @@
       "string": "노을의 그림자"
     }
   },
+  "peach_tree": {
+    "zh_CN": {"string": "桃树"},
+    "zh_TW": {"string": "桃樹"},
+    "en_US": {"string": "Peach Tree"},
+    "ja_JP": {"string": "桃の木"},
+    "ko_KR": {"string": "복숭아나무"}
+  },
   "thillu": {
     "zh_CN": {"string": "表象"},
     "zh_TW": {"string": "表象"},
