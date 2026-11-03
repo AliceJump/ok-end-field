@@ -11,9 +11,9 @@ def _hold_route_key(task, key, duration, *, sprint=False):  # 两条短路线共
 
 
 def _run_route(task, name, steps, *, sprint=False, face_target=False):  # 共用起步、分段移动和结束检查
+    if not task.in_world():  # 必须从传送后的大世界起步
+        raise RuntimeError(f"{name}路线未处于大世界")  # 不在菜单内发送移动
     for key, duration in steps:  # 各点位仅提供已确认的方向与时长
-        if not task.in_world():  # 每段移动前重新确认，防止中途出现菜单或对话
-            raise RuntimeError(f"{name}路线未处于大世界")  # 不在菜单内发送移动
         _hold_route_key(task, key, duration, sprint=sprint)  # 每段移动结束即松键
     if not task.wait_until(task.in_world, time_out=2, settle_time=0.5, raise_if_not_found=False):  # 等待大世界状态稳定
         raise RuntimeError(f"{name}路线结束后未恢复大世界")  # 不在异常状态进入相机

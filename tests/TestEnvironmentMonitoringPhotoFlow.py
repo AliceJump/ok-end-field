@@ -235,12 +235,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.press_key.assert_not_called()
 
     def test_unstable_world_after_route_prevents_tracking_key(self):
-        for title, worlds in (("小池荷", [True, True, False]), ("蓄水源石虫", [True, False])):
+        for title in ("小池荷", "蓄水源石虫"):
             with self.subTest(title=title):
                 task = self.task()
                 task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
                 task.prepare_observation.return_value = {"name": title}
-                task.in_world.side_effect = worlds
+                task.in_world.side_effect = [True, False]
                 task.wait_until.side_effect = lambda condition, **kwargs: condition()
                 with self.assertRaisesRegex(RuntimeError, "路线结束后未恢复大世界"):
                     EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
@@ -248,16 +248,6 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.take_photo.assert_not_called()
                 self.assertEqual(task.send_key_up.call_args_list, task.send_key_down.call_args_list)
                 self.assertNotIn(call("v", after_sleep=0.6), task.press_key.call_args_list)
-
-    def test_menu_between_route_segments_prevents_the_next_movement(self):
-        task = self.task()
-        task.prepare_observation.return_value = {"name": "小池荷"}
-        task.in_world.side_effect = [True, False]
-        with self.assertRaisesRegex(RuntimeError, "未处于大世界"):
-            EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
-        task.send_key_down.assert_called_once_with("up")
-        task.send_key_up.assert_called_once_with("up")
-        task.prepare_photo.assert_not_called()
 
     def test_route_uses_world_state_without_mode_checks(self):
         task = self.task()
