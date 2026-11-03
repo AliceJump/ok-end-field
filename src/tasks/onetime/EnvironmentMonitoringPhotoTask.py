@@ -66,14 +66,13 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             raise RuntimeError("无法进入武陵地区建设")  # 明确入口失败
         if not self.wait_ui_stable():  # 等待概览入场结束后寻找入口
             raise RuntimeError("地区建设页面未稳定")  # 不点击过渡画面
-        entry = self.wait_until(
-            lambda: self.find_one(fL.environment_monitoring_enter, box=self.box.right),  # 识别环境监测入口图标
+        if not self.wait_click_feature(
+            fL.environment_monitoring_enter,
+            box=self.box.right,  # 识别并点击环境监测入口图标
             time_out=5,  # 限制等待时间
             raise_if_not_found=False,  # 未找到交由下面停止
-        )  # 在地区建设概览中等待入口出现
-        if not entry:  # 未找到环境监测入口
+        ):  # 在地区建设概览中等待入口出现并点击
             raise RuntimeError("未找到环境监测入口")  # 不盲点其他模块
-        self.click(entry)  # 点击识别到的环境监测图标
         if not self.wait_until(self._monitoring_page, time_out=5, raise_if_not_found=False):  # 验证确实进入终端页
             raise RuntimeError("点击环境监测入口后未进入终端列表")  # 未进入时停止，不再识别入口文字
         if not self.wait_ui_stable():  # 等待卡片入场完成
@@ -103,18 +102,15 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         )  # 黑屏、双白底和未知状态均拒绝
 
     def select_terminal(self, terminal):  # 两个终端共用切换逻辑
-        for _ in range(2):  # 有界重试被动画吞掉的点击
-            if not self._monitoring_page():  # 每次重试都核对页面，避免等待期间已离开终端页
-                raise RuntimeError("切换终端时未处于环境监测终端列表")  # 固定坐标只能在已确认的终端页使用
-            if not self._terminal_selected(terminal):  # 已选中时无需重复点击或识别终端名称
-                self.click(self._terminal_area(terminal))  # 点击对应标签内已验证的固定空白区
-                if not self.wait_until(lambda: self._terminal_selected(terminal), time_out=3, raise_if_not_found=False):
-                    continue  # 等待点击生效后再检查稳定状态
-            if (
-                self.wait_ui_stable() and self._monitoring_page() and self._terminal_selected(terminal)
-            ):  # 验证实际选中并等待对应卡片稳定
-                return  # 选中与稳定均确认后才扫描
-        raise RuntimeError("环境监测终端切换未完成")  # 不将旧终端卡片当成新终端
+        if not self._monitoring_page():  # 固定位置点击前确认终端页面
+            raise RuntimeError("切换终端时未处于环境监测终端列表")  # 避免在其他页面点击
+        white = dict.fromkeys(("r", "g", "b"), (186, 255))  # 复用选中标签的白色范围
+        if not self.click_until_color(
+            white, self._terminal_area(terminal), threshold=0.7, time_out=3, raise_if_not_found=False
+        ):  # 点击标签直到选中背景出现
+            raise RuntimeError("环境监测终端切换未完成")  # 超时不扫描旧卡片
+        if not (self.wait_ui_stable() and self._monitoring_page() and self._terminal_selected(terminal)):
+            raise RuntimeError("环境监测终端切换未完成")  # 确认页面和选中状态后才扫描
 
     def _observation_action(self, area):  # 仅在已确认终端页的卡片底部区分黄色接取、白色前往和无按钮
         sample = Box(

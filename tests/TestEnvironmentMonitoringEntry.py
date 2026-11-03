@@ -40,6 +40,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.wait_ocr = Mock(return_value=[Box(1200, 100, 200, 40)])
         task.wait_click_ocr = Mock(return_value=True)
         task.wait_click_feature = Mock(return_value=True)
+        task.click_until_color = Mock(return_value=True)
         task.find_one = Mock(return_value=None)
         task._monitoring_page = Mock(return_value=True)
         task._task_detail_page = Mock(return_value=True)
@@ -199,12 +200,12 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task.transfer_observation.assert_not_called()
                 self.assertIsNone(task.selected_observation)
 
-    def test_swallowed_terminal_click_is_retried_before_scanning(self):
+    def test_terminal_selection_waits_for_color_before_scanning(self):
         task = self.prepare_task([{"name": "小池荷"}], [])
         del task.select_terminal
-        task._terminal_selected = Mock(side_effect=[False, False, False, True, True])
+        task._terminal_selected = Mock(return_value=True)
         self.assertEqual(task.prepare_observation()["name"], "小池荷")
-        self.assertEqual(task.click.call_count, 2)
+        task.click_until_color.assert_called_once()
         task.wait_click_ocr.assert_not_called()
         task.wait_ui_stable.assert_called_once_with()
 
@@ -224,14 +225,13 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             task.select_terminal("marker_stone")
         task.click.assert_not_called()
 
-    def test_terminal_retry_cannot_click_after_page_disappears_during_wait(self):
+    def test_terminal_page_disappearing_during_wait_prevents_scanning(self):
         task = self.task()
         task._monitoring_page.side_effect = [True, False]
         task._terminal_selected = Mock(return_value=False)
-        with self.assertRaisesRegex(RuntimeError, "切换终端时未处于环境监测终端列表"):
+        with self.assertRaisesRegex(RuntimeError, "终端切换未完成"):
             task.select_terminal("marker_stone")
-        self.assertEqual(task.click.call_count, 1)
-        task.wait_ui_stable.assert_not_called()
+        task.click_until_color.assert_called_once()
 
     def test_unstable_monitoring_page_stops_before_terminal_selection(self):
         task = self.prepare_task([{"name": "小池荷"}], [])
@@ -256,14 +256,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_monitoring_entry_template_is_clicked_without_ocr(self):
         task = self.task()
-        entry = Box(1383, 666, 82, 75)
-        task.find_one.side_effect = lambda feature, **kwargs: (
-            entry if feature == fL.environment_monitoring_enter else Box(10, 10, 20, 20)
-        )
         task.open_monitoring()
         task.to_model_area.assert_called_once_with("武陵")
-        task.find_one.assert_any_call(fL.environment_monitoring_enter, box=task.box.right)
-        task.click.assert_called_once_with(entry)
+        task.wait_click_feature.assert_called_once_with(
+            fL.environment_monitoring_enter, box=task.box.right, time_out=5, raise_if_not_found=False
+        )
         task.click_relative.assert_not_called()
         task.wait_click_ocr.assert_not_called()
         task.wait_ocr.assert_not_called()
@@ -271,9 +268,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_missing_monitoring_template_prevents_entry_click(self):
         task = self.task()
-        task.find_one.side_effect = lambda feature, **kwargs: (
-            None if feature == fL.environment_monitoring_enter else Box(10, 10, 20, 20)
-        )
+        task.wait_click_feature.return_value = None
         with self.assertRaisesRegex(RuntimeError, "未找到环境监测入口"):
             task.open_monitoring()
         task.click.assert_not_called()
