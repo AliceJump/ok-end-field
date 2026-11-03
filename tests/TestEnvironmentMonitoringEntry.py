@@ -12,7 +12,11 @@ from ok import Box
 from ok.util.color import calculate_color_percentage
 
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.onetime.EnvironmentMonitoringNavigation import CisternOriginiumSlugsNavigation, PoolLotusNavigation
+from src.tasks.onetime.EnvironmentMonitoringNavigation import (
+    CisternOriginiumSlugsNavigation,
+    PoolLotusNavigation,
+    ThilluNavigation,
+)
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
 
@@ -567,6 +571,16 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task.lang.environment_monitoring.pool_lotus = data["pool_lotus"][locale]["string"]
                 self.assertEqual(task.observation_route(title), PoolLotusNavigation)
                 self.assertIs(task.observation_route(title + "其他"), PoolLotusNavigation)
+
+    def test_thillu_matches_localized_names_with_or_without_quotes(self):
+        data = json.loads(Path("assets/lang/environment_monitoring.json").read_text(encoding="utf-8"))
+        for locale, node in data["thillu"].items():
+            with self.subTest(locale=locale):
+                task = self.task()
+                name = node["string"]
+                task.lang.environment_monitoring.thillu = name
+                self.assertIs(task.observation_route(name), ThilluNavigation)
+                self.assertIs(task.observation_route(f"“{name}”"), ThilluNavigation)
 
     def test_normal_slug_matches_without_accepting_vigorous_title_in_all_locales(self):
         data = json.loads(Path("assets/lang/environment_monitoring.json").read_text(encoding="utf-8"))

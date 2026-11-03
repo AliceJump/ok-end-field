@@ -84,6 +84,14 @@
       "string": "노을의 그림자"
     }
   },
+  "thillu": {
+    "zh_CN": {"string": "表象"},
+    "zh_TW": {"string": "表象"},
+    "en_US": {"string": "Æthillu"},
+    "ja_JP": {"string": "イーサルー"},
+    "ko_KR": {"string": "잔영"},
+    "es_ES": {"string": "Éthillu"}
+  },
   "cistern_originium_slugs": {
     "zh_CN": {
       "string": "蓄水源石虫"

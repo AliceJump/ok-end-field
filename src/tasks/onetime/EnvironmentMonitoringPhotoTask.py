@@ -8,11 +8,13 @@ from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到�
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
     CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
     PoolLotusNavigation,  # 小池荷短路线
+    ThilluNavigation,  # 表象传送后原地取景
 )
 
 OBSERVATIONS = {  # 观察点语言键对应导航类和横向取景方向
     "pool_lotus": (PoolLotusNavigation, "right"),  # 小池荷向右取景
     "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
+    "thillu": (ThilluNavigation, "right"),  # 表象在传送落点向右取景
 }  # 仅注册已支持的点位
 
 TERMINAL_LEFTS = {"outskirts": 0.06, "marker_stone": 0.27}  # 按固定左右顺序标识终端及其标签空白区

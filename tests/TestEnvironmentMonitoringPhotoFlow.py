@@ -14,6 +14,7 @@ from src.tasks.onetime.DailyTask import DailyTask
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (
     CisternOriginiumSlugsNavigation,
     PoolLotusNavigation,
+    ThilluNavigation,
     _hold_route_key,
 )
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
@@ -312,6 +313,14 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.send_key_down.assert_called_once_with("down")
         task.send_key_up.assert_called_once_with("down")
         task.wait_until.assert_not_called()
+
+    def test_thillu_navigation_stays_at_transfer_point(self):
+        task = self.task()
+        task.in_world.return_value = True
+        task.wait_until.side_effect = lambda condition, **kwargs: condition()
+        ThilluNavigation(task).run()
+        task.send_key_down.assert_not_called()
+        task.press_key.assert_not_called()
 
     def test_slug_route_runs_backward_then_enters_shared_camera_flow(self):
         task = self.task()

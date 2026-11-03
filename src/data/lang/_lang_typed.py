@@ -386,6 +386,9 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     eternal_sunset: str
     """栖霞驻影"""
 
+    thillu: str
+    """表象"""
+
     cistern_originium_slugs: str
     """蓄水源石虫"""
 

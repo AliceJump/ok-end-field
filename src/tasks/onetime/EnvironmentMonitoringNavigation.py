@@ -38,3 +38,11 @@ class CisternOriginiumSlugsNavigation:  # 普通蓄水源石虫传送后短路�
 
     def run(self):  # 保持传送后的朝向，向后冲刺到取景位置
         _run_route(self.task, "蓄水源石虫", (("s", 7),), sprint=True)  # 七秒已实测能进入取景范围，无需按 V
+
+
+class ThilluNavigation:  # 表象传送落点即可取景
+    def __init__(self, task):  # 复用所属任务的大世界状态
+        self.task = task  # 不创建独立执行器
+
+    def run(self):  # 原地等待传送后大世界稳定
+        _run_route(self.task, "表象", ())  # 不发送移动或转向输入
