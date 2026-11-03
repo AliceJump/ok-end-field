@@ -328,7 +328,24 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             "photo_taken": False,
         }  # 不触发快门或提交委托
 
-    def run(self):  # GUI 与 MCP 共用从入口开始的可重复流程
+    def take_photo(self):  # 已取景后拍照并关闭照片预览，不返回终端确认收录
+        self._require_input_focus()  # 快门点击前确认焦点
+        if not self.photo_condition_met(frame=self.next_frame()):  # 使用新帧重新确认相机与目标黄勾
+            raise RuntimeError("拍照前目标条件已失效")  # 不根据旧取景结果盲拍
+        self.click_relative(0.856, 0.803)  # 相机布局已确认，点击固定快门位置
+        close_area = self.box_of_screen(0.94, 0, 0.98, 0.08)  # 限定照片预览右上角关闭按钮
+        close = self.wait_feature(
+            fL.close, box=close_area, use_gray_scale=True, time_out=8, raise_if_not_found=False
+        )  # 复用已验证关闭模板
+        if not close:  # 按快门后必须观察到照片预览
+            raise RuntimeError("拍照后未出现照片预览关闭按钮")  # 不将输入发送成功当作拍照成功
+        self.click(close)  # 用户要求拍照后点击关闭，不另外确认已收录
+        if not self.wait_until(
+            lambda: self._camera_open() or self.in_world(), time_out=5, raise_if_not_found=False
+        ):  # 等待离开照片预览
+            raise RuntimeError("拍照后照片预览未关闭")  # 关闭失败须如实报告
+
+    def run(self):  # GUI 与 MCP 共用从入口开始的完整流程
         self.navigation = None  # 每轮清除上一次观察点的导航组件
         observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
         if observation is None:  # 当前没有符合条件的观察点
@@ -339,9 +356,14 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
         self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
         self.navigation.run()  # 每个点位统一通过 run 执行导航
-        return self.prepare_photo()  # 停在相机内，保留任务供下一轮验证
+        result = self.prepare_photo()  # 共用打开相机与横向取景
+        if result["photo_ready"]:  # 只有满足条件才尝试快门
+            self.take_photo()  # 拍照并关闭照片预览
+            result["photo_taken"] = True  # 预览已出现且关闭后才报告成功
+            result["camera_open"] = bool(self._camera_open())  # 返回关闭预览后的实际相机状态
+        return result  # 未满足条件时保留未拍照结果
 
-    def run_daily_preview(self):  # 一键日常仅运行当前可用的取景验证
+    def run_daily(self):  # 一键日常运行已支持的导航与拍照流程
         try:  # 保留日常执行器所需的结果与异常处理
             result = self.run()  # 执行已注册的入口、导航和取景流程
             if result.get("skipped", False):  # 已确认没有可执行的支持点位

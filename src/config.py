@@ -140,7 +140,7 @@ config = {
         [
             "src.tasks.onetime.EnvironmentMonitoringPhotoTask",
             "EnvironmentMonitoringPhotoTask",
-        ],  # 环境监测日常取景验证，可在一键日常手动启用
+        ],  # 环境监测日常拍照，可在一键日常手动启用
         ["src.tasks.onetime.CraftWeaponTask", "CraftWeaponTask"],
         ["src.tasks.onetime.CreditCollectTask", "CreditCollectTask"],
         ["src.tasks.onetime.CreditShopTask", "CreditShopTask"],
