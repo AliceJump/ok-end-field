@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
+from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_REACTIVE_DODGE, KEY_TIMING_ROTATION
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.skill_timing import SNAPSHOT, SUPPLEMENTS, SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
@@ -224,6 +224,8 @@ class FakeTask:
             return True
         if key == "完成通知":
             return False
+        if key == KEY_REACTIVE_DODGE:
+            return default
         raise AssertionError(f"Read legacy combat strategy: {key}")
 
     def get_skill_bar_sp(self):
@@ -558,6 +560,39 @@ class TestTimedCombat(unittest.TestCase):
                 for delay in (0.1, 0.1, 0.02)
             ],
         )
+
+    def test_too_far_recovery_respects_reactive_and_direction_cooldowns(self):
+        events = []
+
+        class Harness:
+            now = 10.0
+            _reactive_dodge_next_at = 10.5
+            _enemy_direction_next_dodge_at = 10.7
+
+            def active_time(self):
+                return self.now
+
+            def log_info(self, message):
+                events.append("log")
+
+            def click(self, **kwargs):
+                events.append("click")
+
+            def sleep(self, seconds):
+                events.append("sleep")
+
+            def dodge_forward(self, **kwargs):
+                events.append("dodge")
+
+        task = Harness()
+        self.assertFalse(BattleMixin.recover_target_too_far(task))
+        self.assertEqual(events, [])
+        task.now = 10.6
+        self.assertFalse(BattleMixin.recover_target_too_far(task))
+        self.assertEqual(events, [])
+        task.now = 10.8
+        self.assertTrue(BattleMixin.recover_target_too_far(task))
+        self.assertEqual(events.count("dodge"), 3)
 
     def test_too_far_feedback_cancels_unstarted_skill_and_calls_recovery_hook(self):
         task = FakeTask()
