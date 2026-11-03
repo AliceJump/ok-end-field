@@ -540,7 +540,6 @@ class TestZipLineGoldGate(unittest.TestCase):
         stub.send_key.assert_not_called()
         stub.ocr.assert_not_called()
 
-
     def test_gate_failure_realigns_with_same_fifty_pixel_tolerance(self):
         stub = self._stub()
         stub._align_zip_line_distance = Mock(return_value=True)

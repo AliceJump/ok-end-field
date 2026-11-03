@@ -182,7 +182,6 @@ class TestEnterDismantleMode(unittest.TestCase):
         task.mark_task_failure.assert_called_once_with("未进入分解模式")
 
 
-
 class TestDismantleOneBatch(unittest.TestCase):
     """单批流程：批开始空网格短路、筛选面板弹出/不弹、快捷放入失败路径。
 
