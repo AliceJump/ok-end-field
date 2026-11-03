@@ -22,6 +22,8 @@ class TestColorWait(unittest.TestCase):
     def test_find_color_uses_supplied_frame_and_requires_above_threshold(self):
         task = MagicMock()
         task.frame = np.zeros((2, 2, 3), dtype=np.uint8)
+        task.get_box_by_name.side_effect = lambda box: box
+        task.calculate_color_percentage.return_value = 0
         frame = task.frame.copy()
         frame[0, :] = 255
         white = dict.fromkeys(("r", "g", "b"), (220, 255))
@@ -43,11 +45,14 @@ class TestColorWait(unittest.TestCase):
             return result
 
         task.wait_until.side_effect = wait
+        task.find_color.side_effect = lambda *args, **kwargs: RuntimeMixin.find_color(task, *args, **kwargs)
         task.wait_color.side_effect = lambda *args, **kwargs: RuntimeMixin.wait_color(task, *args, **kwargs)
         box = object()
         task.calculate_color_percentage.return_value = 0.9
         self.assertTrue(RuntimeMixin.click_until_color(task, {}, box, threshold=0.8))
         task.click_box.assert_not_called()
+        task.calculate_color_percentage.return_value = 0.8
+        self.assertIs(RuntimeMixin.wait_color(task, {}, box, threshold=0.8), box)
         task.calculate_color_percentage.return_value = 0.2
         self.assertFalse(RuntimeMixin.click_until_color(task, {}, box, threshold=0.8))
         task.click_box.assert_called_once()

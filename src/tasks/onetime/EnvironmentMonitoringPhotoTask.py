@@ -42,12 +42,11 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             name = getattr(self.lang.environment_monitoring, key, None)  # 从语言资源读取当前语言名称
             if isinstance(name, re.Pattern):  # 语言资源中的正则用于短识别词
                 found = bool(normalized) and not name.search("") and bool(name.search(normalized))  # 不接受空匹配
-            elif isinstance(name, str) and name:  # 字面名称按点位选择匹配方式
+            elif isinstance(name, str):  # 字面名称按点位选择匹配方式
                 expected = self.normalize_title(name)  # 与标题使用相同的归一化规则
+                found = bool(expected) and expected in normalized  # 其他点位允许名称只是标题的一部分
                 if key == "cistern_originium_slugs":  # 同名活力版包含普通源石虫名称
-                    found = bool(expected) and normalized == expected  # 普通源石虫要求完整一致
-                else:  # 其他点位允许名称只是标题的一部分
-                    found = bool(expected) and expected in normalized  # 例如标题中的小池荷
+                    found = found and normalized == expected  # 普通源石虫要求完整一致
             else:  # 没有可用的语言名称
                 found = False  # 不将空值视为匹配
             if found:  # 已找到候选观察点

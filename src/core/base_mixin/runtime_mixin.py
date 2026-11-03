@@ -1355,11 +1355,15 @@ class RuntimeMixin:
             )
         )
 
-    def find_color(self, color, box, threshold=0.8, frame=None):
-        """检查单帧中指定区域的颜色占比是否大于阈值。"""
+    def find_color(self, color, box, threshold=0.8, frame=None, *, inclusive=False):
+        """检查单帧颜色占比；inclusive 为真时允许占比等于阈值。"""
         if frame is None:
-            frame = self.frame
-        return frame is not None and calculate_color_percentage(frame, color, box) > threshold
+            if self.frame is None:
+                return False
+            percentage = self.calculate_color_percentage(color, box)
+        else:
+            percentage = calculate_color_percentage(frame, color, self.get_box_by_name(box))
+        return percentage >= threshold if inclusive else percentage > threshold
 
     def wait_color(
         self,
@@ -1389,9 +1393,7 @@ class RuntimeMixin:
         """
 
         def matches():
-            if self.frame is None:
-                return None
-            return box if self.calculate_color_percentage(color, box) >= threshold else None
+            return box if self.find_color(color, box, threshold=threshold, inclusive=True) else None
 
         return self.wait_until(
             matches,
