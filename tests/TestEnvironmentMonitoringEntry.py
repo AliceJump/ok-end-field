@@ -573,7 +573,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertIs(task.observation_route(title + "其他"), PoolLotusNavigation)
 
     def test_thillu_matches_localized_names_with_or_without_quotes(self):
-        data = json.loads(Path("assets/lang/environment_monitoring.json").read_text(encoding="utf-8"))
+        data = json.loads(
+            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
+                encoding="utf-8"
+            )
+        )
         for locale, node in data["thillu"].items():
             with self.subTest(locale=locale):
                 task = self.task()
@@ -583,7 +587,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertIs(task.observation_route(f"“{name}”"), ThilluNavigation)
 
     def test_normal_slug_matches_without_accepting_vigorous_title_in_all_locales(self):
-        data = json.loads(Path("assets/lang/environment_monitoring.json").read_text(encoding="utf-8"))
+        data = json.loads(
+            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
+                encoding="utf-8"
+            )
+        )
         vigorous_titles = {
             "zh_CN": "充满活力的蓄水源石虫",
             "zh_TW": "充滿活力的蓄水源石蟲",
