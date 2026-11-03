@@ -407,7 +407,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
         self.assertEqual(task.navigate_observation.call_count, 2)
         self.assertEqual(task.photograph_observation.call_count, 2)
-        self.assertEqual(task.completed_observations, {("outskirts", "小池荷"), ("marker_stone", "表象")})
+        self.assertEqual(task.completed_observations, {"小池荷", "表象"})
 
     def test_run_stops_after_six_observations(self):
         task = self.task()

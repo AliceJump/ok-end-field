@@ -34,7 +34,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
         self.selected_observation = None  # 每次执行重新建立交接信息
         self.navigation = None  # 匹配观察点后创建对应导航组件
-        self.completed_observations = set()  # 本次运行已拍摄的终端与点位
+        self.completed_observations = set()  # 本次运行已拍摄的点位
 
     @staticmethod  # 标题符号不是观察点身份的一部分
     def normalize_title(text):  # 兼容符号、空白与英文大小写差异
@@ -219,7 +219,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         for terminal in self.TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
             self.select_terminal(terminal)  # 选择终端并等待稳定
             for observation in self.available_observations():  # 只考虑可操作卡片
-                identity = (terminal, self.normalize_title(observation["name"]))  # 同名点位按终端区分
+                identity = self.normalize_title(observation["name"])  # 同名点位不区分终端
                 if identity in self.completed_observations:  # 照片关闭后卡片可能仍显示可操作
                     continue  # 本次运行不重复拍摄
                 if not self.observation_route(observation["name"]):  # 只选择已注册路线的点位
@@ -380,7 +380,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
                 self.navigate_observation(observation)  # 执行点位导航
                 if not self.photograph_observation():  # 取景失败时不继续下一个点位
                     return False  # 保留失败结果
-                identity = (observation["terminal"], self.normalize_title(observation["name"]))  # 与扫描时使用相同身份
+                identity = self.normalize_title(observation["name"])  # 与扫描时使用相同身份
                 self.completed_observations.add(identity)  # 成功关闭预览后才排除重复点位
             return True  # 达到本次运行的最大点位数
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器

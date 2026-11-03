@@ -87,9 +87,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         )
         return task
 
-    def test_completed_card_is_skipped_and_another_terminal_is_scanned(self):
+    def test_completed_card_is_skipped_across_terminals(self):
         task = self.task()
-        task.completed_observations = {("outskirts", "小池荷")}
+        task.completed_observations = {"小池荷"}
         task.open_monitoring = Mock()
         task.select_terminal = Mock()
         task.available_observations = Mock(side_effect=[
@@ -99,8 +99,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.enter_observation = Mock()
         task.transfer_observation = Mock()
         result = task.prepare_observation()
-        self.assertEqual(result["terminal"], "marker_stone")
-        task.enter_observation.assert_called_once_with({"name": "小池荷", "action_box": Box(1, 0, 1, 1)})
+        self.assertIsNone(result)
+        task.enter_observation.assert_not_called()
 
     def test_available_cards_bind_buttons_to_their_own_titles_at_multiple_sizes(self):
         for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
