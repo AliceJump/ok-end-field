@@ -340,23 +340,20 @@ class TestReactiveDodge(unittest.TestCase):
             hooks = [
                 n
                 for n in ast.walk(tree)
-                if isinstance(n, ast.If)
-                and isinstance(n.test, ast.Call)
-                and isinstance(n.test.func, ast.Attribute)
-                and n.test.func.attr == "step"
-                and isinstance(n.test.func.value, ast.Name)
-                and n.test.func.value.id == "reactive_dodge"
+                if isinstance(n, ast.Call)
+                and isinstance(n.func, ast.Attribute)
+                and n.func.attr == "step"
+                and isinstance(n.func.value, ast.Name)
+                and n.func.value.id == "reactive_dodge"
             ]
             self.assertEqual(len(hooks), 2 if name == "AutoCombatLogic" else 1)
-            for hook in hooks:
-                self.assertIsInstance(hook.body[0], ast.Continue)
             self.assertIn("reactive_dodge.close()", source)
             self.assertIn("if no_battle:", source)
             if name == "TimedCombatLogic":
                 self.assertIn("allowed=lambda: self._allowed()", source)
                 self.assertIn("not self.main_control.waiting_for_confirmation", source)
             else:
-                self.assertIn("if not exit_pending and", source)
+                self.assertIn("if not self._exit_pending and", source)
 
     def test_actual_timed_loop_respects_guards_and_consumes_dodge_frame(self):
         root = Path(__file__).resolve().parents[1]
@@ -529,6 +526,7 @@ class TestReactiveDodge(unittest.TestCase):
         logic = SimpleNamespace(
             task=task,
             _reactive_dodge=dodge,
+            _exit_pending=False,
             _periodic_search=Mock(),
             _sync_normal_attack_hold=Mock(),
             _last_exit_check_time=0,
@@ -545,6 +543,113 @@ class TestReactiveDodge(unittest.TestCase):
         task._check_single_exit_condition = lambda: True
         self.assertEqual(namespace["_exec_rotation_token"](logic, "normal_5", 3.0), (True, "break"))
         dodge.step.assert_not_called()
+
+    def _normal_runtime(self):
+        """Run the real normal-loop methods with controlled capture and input."""
+        root = Path(__file__).resolve().parents[1]
+        tree = ast.parse((root / "src/tasks/onetime/AutoCombatLogic.py").read_text(encoding="utf-8"))
+        cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "AutoCombatLogic")
+        methods = [
+            n
+            for n in cls.body
+            if isinstance(n, ast.FunctionDef) and n.name in ("_run_confirmed_combat", "_exec_rotation_token")
+        ]
+        for method in methods:
+            method.decorator_list = []
+        task = FakeTask()
+        task.get_battle_config = lambda key, default=None: (
+            task.config.get(key, default) if key in (KEY_REACTIVE_DODGE, "启用排轴", "排轴序列") else default
+        )
+        task._recommend_detector_in_combat = True
+        task.debug = False
+        task.mouse_up = Mock()
+        task.log_info = Mock()
+        task.active_and_send_mouse_delta = Mock()
+        task.click = Mock()
+        task.approach_enemy = Mock()
+        task.next_frame = lambda: setattr(task, "now", task.now + 0.1)
+        task._check_single_exit_condition = Mock(return_value=False)
+        task.is_combat_ended = Mock(return_value=False)
+        task._parse_skill_sequence = lambda text: text.split(",")
+        dodge = SimpleNamespace(step=Mock(return_value=False), close=Mock())
+        namespace = dict(vars(BattleConfig))
+        namespace.update(ReactiveDodge=lambda task: dodge, traceback=traceback)
+        exec(compile(ast.Module(body=methods, type_ignores=[]), "normal_runtime", "exec"), namespace)
+        logic = SimpleNamespace(
+            task=task,
+            _periodic_search=Mock(),
+            _sync_normal_attack_hold=Mock(),
+            _last_exit_check_time=0,
+            _exit_check_interval=0.1,
+            _last_team_detect_time=0,
+            _TEAM_DETECT_INTERVAL=1,
+            _team_detect_attempts=0,
+            _TEAM_DETECT_MAX_ATTEMPTS=1,
+            _do_normal_combat_frame=Mock(),
+        )
+        logic._exec_rotation_token = lambda token, deadline: namespace["_exec_rotation_token"](logic, token, deadline)
+        return namespace, logic, task, dodge
+
+    def test_normal_and_filler_capture_deadlines_block_later_actions(self):
+        for filler in (False, True):
+            for expired_capture in (1, 2):
+                with self.subTest(filler=filler, expired_capture=expired_capture):
+                    namespace, logic, task, dodge = self._normal_runtime()
+                    captures = []
+
+                    def capture(task=task, captures=captures, expired_capture=expired_capture):
+                        captures.append(task.now)
+                        task.now += 1.1 if len(captures) == expired_capture else 0.1
+
+                    task.next_frame = capture
+                    if filler:
+                        logic._reactive_dodge = dodge
+                        logic._exit_pending = False
+                        logic.auto_rotation_active = False
+                        self.assertEqual(logic._exec_rotation_token("normal_5", 2.0), (True, "return_false"))
+                    else:
+                        self.assertFalse(namespace["_run_confirmed_combat"](logic, None, False, 2.0))
+                    self.assertEqual(len(captures), expired_capture)
+                    self.assertEqual(task.approach_enemy.call_count, expired_capture - 1)
+                    self.assertEqual(dodge.step.call_count, expired_capture - 1)
+                    logic._do_normal_combat_frame.assert_not_called()
+
+    def test_pending_exit_is_shared_with_normal_filler_before_next_probe(self):
+        namespace, logic, task, dodge = self._normal_runtime()
+        task.config.update({"启用排轴": True, "排轴序列": "normal_5"})
+        task._check_single_exit_condition.return_value = True
+        logic._last_exit_check_time = -10.0
+        logic._exit_check_interval = 10.0
+        self.assertFalse(namespace["_run_confirmed_combat"](logic, None, False, 1.6))
+        self.assertTrue(logic._exit_pending)
+        task._check_single_exit_condition.assert_called_once()
+        task.is_combat_ended.assert_called_once_with(True)
+        dodge.step.assert_not_called()
+        dodge.close.assert_called_once()
+
+    def test_model_compilation_does_not_expire_manual_rotation(self):
+        namespace, logic, task, _dodge = self._normal_runtime()
+        task.config.update({"启用排轴": True, "排轴序列": "1"})
+        detector = FakeDetector()
+        detector.boxes = []
+
+        def compile_model():
+            task.now += 6.1
+            return detector
+
+        namespace["ReactiveDodge"] = lambda task: ReactiveDodge(task, compile_model)
+        rotation_states = []
+
+        def execute(token, deadline):
+            rotation_states.append(logic.rotation_active)
+            task.now = deadline
+            return True, ""
+
+        logic._exec_rotation_token = execute
+        self.assertFalse(namespace["_run_confirmed_combat"](logic, None, False, 10.0))
+        self.assertEqual(rotation_states, [True])
+        self.assertTrue(detector.closed)
+        logic._do_normal_combat_frame.assert_not_called()
 
 
 if __name__ == "__main__":

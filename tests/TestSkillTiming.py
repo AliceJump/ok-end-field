@@ -538,6 +538,9 @@ class TestTimedCombat(unittest.TestCase):
         events = []
 
         class Harness:
+            def get_battle_config(self, key, default=None):
+                return default
+
             def log_info(self, message):
                 events.append(("log", message))
 
@@ -569,6 +572,9 @@ class TestTimedCombat(unittest.TestCase):
             _reactive_dodge_next_at = 10.5
             _enemy_direction_next_dodge_at = 10.7
 
+            def get_battle_config(self, key, default=None):
+                return key == KEY_REACTIVE_DODGE
+
             def active_time(self):
                 return self.now
 
@@ -591,6 +597,14 @@ class TestTimedCombat(unittest.TestCase):
         self.assertFalse(BattleMixin.recover_target_too_far(task))
         self.assertEqual(events, [])
         task.now = 10.8
+        self.assertTrue(BattleMixin.recover_target_too_far(task))
+        self.assertEqual(events.count("dodge"), 3)
+
+        # Direction recovery also writes its cooldown when the opt-in feature
+        # is off; it must not change the legacy TOO_FAR recovery path.
+        events.clear()
+        task.now = 10.0
+        task.get_battle_config = lambda key, default=None: default
         self.assertTrue(BattleMixin.recover_target_too_far(task))
         self.assertEqual(events.count("dodge"), 3)
 
@@ -618,6 +632,7 @@ class TestTimedCombat(unittest.TestCase):
         task.sp = 100.0
         task._reactive_dodge_next_at = 0.6
         task._enemy_direction_next_dodge_at = 0.8
+        task.get_battle_config = lambda key, default=None: True if key == KEY_REACTIVE_DODGE else default
         task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
         task.recover_target_too_far = lambda: BattleMixin.recover_target_too_far(task)
         dodges = []
