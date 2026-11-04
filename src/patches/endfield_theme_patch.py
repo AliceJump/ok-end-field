@@ -1399,9 +1399,11 @@ def patch_config_row_background() -> None:
     WA_StyledBackground；否则设置页“基本设置”展开后每行都看不出分隔。
     """
     try:
+        from ok import og  # type: ignore
         from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
         from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
         from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget  # type: ignore
+        from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 
         orig_init = LabelAndWidget.__init__
         if getattr(orig_init, "_endfield_patched", False):
@@ -1436,6 +1438,15 @@ def patch_config_row_background() -> None:
         LabelAndWidget.add_layout = _add_layout
         _patched_label_init._endfield_patched = True  # type: ignore
         LabelAndWidget.__init__ = _patched_label_init
+
+        def _list_update_value(self: Any) -> None:
+            # 原生实现在总字数不超过 30 时连成一行；单行文字的最小宽度会撑破配置抽屉，右侧控件被裁掉
+            items = self.config.get(self.key)
+            if self.options_available is not None:
+                items = [og.app.tr(item) for item in items]
+            self.list_text.setText("\n".join(items))
+
+        ModifyListItem.update_value = _list_update_value
 
         original_multi_init = LabelAndMultiSelection.__init__
 
