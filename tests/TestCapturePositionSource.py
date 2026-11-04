@@ -333,7 +333,7 @@ class PoseContractTest(unittest.TestCase):
     def _pose_for(self, payload: dict):
         with FakeBackend(payload) as backend:
             owner = _FakeOwner({"使用实验技术": True, "实验技术后端端口": backend.port})
-            return owner._capture_world_pose(now=1791802263.33)
+            return owner._capture_world_pose()
 
     def test_passthrough_never_parks_navigation(self):
         pose = self._pose_for(_state_payload())

@@ -550,6 +550,32 @@ class MinimapMapLocator:
         x1, y1 = center_x + half + 1, center_y + half + 1
         if x0 < 0 or y0 < 0 or x1 > width or y1 > height:
             return None
+        cached = self._geometry_masks(geometry, half, x0, y0)
+        if cached is None:
+            return None
+        mask, mask8 = cached
+        roi = frame[y0:y1, x0:x1]
+        ring = _as_gray(roi).copy()
+        if not _has_minimap_texture(ring, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+            return None
+        visible = self._visible_masks(roi, mask, mask8, half)
+        if visible is None:
+            return None
+        mask, mask8 = visible
+        mean = float(ring[mask].mean())
+        flat = ring.copy()
+        flat[~mask] = mean
+        if not _has_minimap_texture(flat, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+            return None
+        return _PreparedTemplate(
+            flat=flat,
+            ring=ring,
+            mask=mask,
+            mask8=mask8,
+            center_offset=(geometry.center_x - center_x, geometry.center_y - center_y),
+        )
+
+    def _geometry_masks(self, geometry, half, x0, y0):
         cached = self._mask_cache.get(geometry)
         if cached is None:
             size = 2 * half + 1
@@ -573,50 +599,33 @@ class MinimapMapLocator:
             if len(self._mask_cache) > 8:
                 self._mask_cache.popitem(last=False)
         self._mask_cache.move_to_end(geometry)
-        mask, mask8 = cached
-        roi = frame[y0:y1, x0:x1]
-        ring = _as_gray(roi).copy()
-        if not _has_minimap_texture(ring, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+        return cached
+
+    @staticmethod
+    def _visible_masks(roi, mask, mask8, half):
+        # Every candidate receives the same frame-derived exclusions. Geometry
+        # masks stay immutable, with no icon-coverage activation threshold.
+        if roi.ndim != 3 or roi.shape[2] < 3:
+            return mask, mask8
+        colors = roi[:, :, :3]
+        high, low = colors.max(axis=2), colors.min(axis=2)
+        overlay = (low >= 210) | ((high >= 190) & (high.astype(np.int16) - low > 90))
+        if not np.any(overlay & mask):
+            return mask, mask8
+        overlay = cv2.dilate(overlay.astype(np.uint8), np.ones((3, 3), np.uint8))
+        visible = mask & (overlay == 0)
+        if visible.sum() < 0.55 * mask.sum():
             return None
-        # White icons and saturated HUD marks cover terrain in busy settlements.
-        # Derive exclusions from this frame, independently of every map candidate;
-        # keep the cached geometry masks immutable.
-        if roi.ndim == 3 and roi.shape[2] >= 3:
-            colors = roi[:, :, :3]
-            high, low = colors.max(axis=2), colors.min(axis=2)
-            overlay = (low >= 210) | ((high >= 190) & (high.astype(np.int16) - low > 90))
-            if np.any(overlay & mask):
-                overlay = cv2.dilate(overlay.astype(np.uint8), np.ones((3, 3), np.uint8))
-                visible = mask & (overlay == 0)
-                if visible.sum() < 0.55 * mask.sum():
-                    return None
-                # A surviving corner alone cannot confirm an otherwise hidden map.
-                for sy, sx in (
-                    (slice(None, half), slice(None, half)),
-                    (slice(None, half), slice(half, None)),
-                    (slice(half, None), slice(None, half)),
-                    (slice(half, None), slice(half, None)),
-                ):
-                    if visible[sy, sx].sum() < 0.35 * mask[sy, sx].sum():
-                        return None
-                # Apply the same frame-derived exclusions at every coverage.
-                # A 10% activation threshold made a single animated icon pixel
-                # switch the entire mask off, stalling acquisition indefinitely.
-                # Coverage/texture checks still require distributed terrain, and
-                # all map candidates compete against this identical mask.
-                mask, mask8 = visible, visible.astype(np.uint8) * 255
-        mean = float(ring[mask].mean())
-        flat = ring.copy()
-        flat[~mask] = mean
-        if not _has_minimap_texture(flat, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
-            return None
-        return _PreparedTemplate(
-            flat=flat,
-            ring=ring,
-            mask=mask,
-            mask8=mask8,
-            center_offset=(geometry.center_x - center_x, geometry.center_y - center_y),
-        )
+        # A surviving corner alone cannot prove that terrain remains visible.
+        for sy, sx in (
+            (slice(None, half), slice(None, half)),
+            (slice(None, half), slice(half, None)),
+            (slice(half, None), slice(None, half)),
+            (slice(half, None), slice(half, None)),
+        ):
+            if visible[sy, sx].sum() < 0.35 * mask[sy, sx].sum():
+                return None
+        return visible, visible.astype(np.uint8) * 255
 
     def _coarse_map(self, coarse_scale: float) -> np.ndarray:
         key = (self.coarse_factor, coarse_scale)
@@ -1034,12 +1043,34 @@ class MinimapTracker:
                 self.reset()
         previous_update = self._last_update_t
         self._last_update_t = current
-        used_prior = False
         fresh = (
             self._convinced is not None
             and self._convinced_t is not None
             and 0 <= current - self._convinced_t <= self.stale_after_s
         )
+        result, used_prior = self._locate_frame(frame, geometry, current, fresh, prior_world, prior_radius_m)
+        if result is None:
+            # Invalid/absent minimaps must invalidate even a recently trusted pose.
+            self.reset()
+            return TrackResult("lost", False, "no_valid_minimap_or_match", None, None, 0, used_prior)
+        if result.status == "rejected":
+            self._pending = None
+            self._pending_hits = 0
+            self._pending_since = None
+            return TrackResult("lost", False, result.reason, result, None, 0, used_prior)
+
+        best = result.best
+        convinced_radius = self.consistency_distance_m + self.max_speed_m_s * (
+            max(0.0, current - self._convinced_t) if fresh else 0.0
+        )
+        if fresh and self._distance(best, self._convinced) <= convinced_radius:
+            self._set_convinced(best, current)
+            return TrackResult("convinced", True, result.reason, result, best, 0, used_prior)
+
+        return self._confirm_acquisition(result, current, previous_update, used_prior)
+
+    def _locate_frame(self, frame, geometry, current, fresh, prior_world, prior_radius_m):
+        used_prior = False
         if fresh:
             elapsed = current - self._convinced_t
             radius = min(self.search_radius_m, self.min_search_radius_m + self.max_speed_m_s * elapsed)
@@ -1068,24 +1099,10 @@ class MinimapTracker:
         else:
             result = self.locator.locate_global(frame, geometry)
 
-        if result is None:
-            # Invalid/absent minimaps must invalidate even a recently trusted pose.
-            self.reset()
-            return TrackResult("lost", False, "no_valid_minimap_or_match", None, None, 0, used_prior)
-        if result.status == "rejected":
-            self._pending = None
-            self._pending_hits = 0
-            self._pending_since = None
-            return TrackResult("lost", False, result.reason, result, None, 0, used_prior)
+        return result, used_prior
 
+    def _confirm_acquisition(self, result, current, previous_update, used_prior):
         best = result.best
-        convinced_radius = self.consistency_distance_m + self.max_speed_m_s * (
-            max(0.0, current - self._convinced_t) if fresh else 0.0
-        )
-        if fresh and self._distance(best, self._convinced) <= convinced_radius:
-            self._set_convinced(best, current)
-            return TrackResult("convinced", True, result.reason, result, best, 0, used_prior)
-
         # Time alone cannot turn a repeated weak or ambiguous distant match into a fix.
         if (
             best.ncc < self.initial_min_ncc

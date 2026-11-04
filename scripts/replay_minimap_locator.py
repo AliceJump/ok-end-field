@@ -9,7 +9,6 @@ import argparse
 import hashlib
 import json
 import math
-import subprocess
 import sys
 import time
 import types
@@ -22,6 +21,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from scripts._minimap_baseline import baseline_commit, read_baseline_source  # noqa: E402
 from src.localization import minimap_map_locator as current  # noqa: E402
 
 
@@ -59,7 +59,12 @@ def summarize(rows):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--baseline-ref", required=True, help="Local Git revision containing the baseline locator")
+    parser.add_argument(
+        "--baseline-ref",
+        type=baseline_commit,
+        required=True,
+        help="Local Git commit ID containing the baseline locator",
+    )
     parser.add_argument(
         "--datasets",
         nargs="+",
@@ -79,9 +84,7 @@ def main():
     )
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    source = subprocess.check_output(
-        ["git", "show", f"{args.baseline_ref}:src/localization/minimap_map_locator.py"], cwd=ROOT
-    ).decode("utf-8")
+    source = read_baseline_source(args.baseline_ref, ROOT)
     baseline = types.ModuleType("_replay_baseline")
     sys.modules[baseline.__name__] = baseline
     exec(compile(source, "<baseline>", "exec"), baseline.__dict__)
@@ -106,70 +109,9 @@ def main():
         if not samples:
             continue
         first = samples[0]
-        image = cv2.imread(first["map_image"], cv2.IMREAD_GRAYSCALE)
-        if image is None:
-            raise ValueError(first["map_image"])
-        mapping = json.loads(Path(first["mapping"]).read_text(encoding="utf-8"))
-        if image.shape != (mapping["image_size"]["height"], mapping["image_size"]["width"]):
-            raise ValueError("Map size mismatch")
-        models = {}
-        for label, module in [("baseline", baseline), ("optimized", current)]:
-            calibration = module.MapCalibration.from_mapping_file(first["mapping"])
-            locator = module.MinimapMapLocator(image, calibration)
-            models[label] = (module, locator, module.MinimapTracker(locator))
-        rows = []
-        for index, sample in enumerate(samples):
-            frame = cv2.imread(str(dataset / sample["frame"]))
-            if frame is None:
-                raise ValueError(sample["frame"])
-            if args.exclude_loading and dataset.name == "live_20261021_210846" and sample["i"] in (1, 2):
-                continue
-            # Alternate evaluation order to reduce persistent order bias.
-            for label in ("baseline", "optimized") if index % 2 == 0 else ("optimized", "baseline"):
-                module, locator, tracker = models[label]
-                geometry = module.MinimapGeometry.from_frame(frame.shape[1], frame.shape[0])
-                start = time.perf_counter()
-                result = tracker.update(frame, geometry, now=sample["frame_t"])
-                elapsed = (time.perf_counter() - start) * 1000
-                prediction = result.position
-                row = {
-                    "dataset": dataset.name,
-                    "i": sample["i"],
-                    "model": label,
-                    "status": result.status,
-                    "accepted": result.accepted,
-                    "loading": dataset.name == "live_20261021_210846" and sample["i"] in (1, 2),
-                    "position_age_s": sample["position_age_s"],
-                    "elapsed_ms": elapsed,
-                    "error_m": math.hypot(prediction.world_x - sample["x"], prediction.world_z - sample["z"])
-                    if prediction
-                    else None,
-                    "result": result.to_dict(),
-                }
-                rows.append(row)
-            if index % 10 == 0:
-                print(f"{dataset.name}: {index + 1}/{len(samples)}", flush=True)
-        # Independent cold global check for timestamp-fresh samples (no temporal promotion).
-        cold = []
-        for sample in samples:
-            if sample["position_age_s"] > 0.5:
-                continue
-            frame = cv2.imread(str(dataset / sample["frame"]))
-            for label, (module, locator, _) in models.items():
-                start = time.perf_counter()
-                result = locator.locate_global(frame, module.MinimapGeometry.from_frame(frame.shape[1], frame.shape[0]))
-                cold.append(
-                    {
-                        "i": sample["i"],
-                        "model": label,
-                        "position_age_s": sample["position_age_s"],
-                        "elapsed_ms": (time.perf_counter() - start) * 1000,
-                        "error_m": math.hypot(result.best.world_x - sample["x"], result.best.world_z - sample["z"])
-                        if result
-                        else None,
-                        "result": result.to_dict() if result else None,
-                    }
-                )
+        models = _dataset_models(first, baseline)
+        rows = _replay_frames(dataset, samples, models, args.exclude_loading)
+        cold = _cold_global_checks(dataset, samples, models)
         report["datasets"][dataset.name] = {
             "samples": len(samples),
             "fresh_samples": sum(s["position_age_s"] <= 0.5 for s in samples),
@@ -193,6 +135,86 @@ def main():
     (args.output / "summary.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print("REPORT", args.output, flush=True)
     print(json.dumps(report, indent=2, ensure_ascii=False))
+
+
+def _dataset_models(first, baseline):
+    image = cv2.imread(first["map_image"], cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        raise ValueError(first["map_image"])
+    mapping = json.loads(Path(first["mapping"]).read_text(encoding="utf-8"))
+    if image.shape != (mapping["image_size"]["height"], mapping["image_size"]["width"]):
+        raise ValueError("Map size mismatch")
+    models = {}
+    for label, module in [("baseline", baseline), ("optimized", current)]:
+        calibration = module.MapCalibration.from_mapping_file(first["mapping"])
+        locator = module.MinimapMapLocator(image, calibration)
+        models[label] = (module, locator, module.MinimapTracker(locator))
+    return models
+
+
+def _replay_frames(dataset, samples, models, exclude_loading):
+    rows = []
+    for index, sample in enumerate(samples):
+        frame = cv2.imread(str(dataset / sample["frame"]))
+        if frame is None:
+            raise ValueError(sample["frame"])
+        if exclude_loading and dataset.name == "live_20261021_210846" and sample["i"] in (1, 2):
+            continue
+        # Alternate evaluation order to reduce persistent order bias.
+        for label in ("baseline", "optimized") if index % 2 == 0 else ("optimized", "baseline"):
+            rows.append(_replay_row(dataset, sample, frame, label, models))
+        if index % 10 == 0:
+            print(f"{dataset.name}: {index + 1}/{len(samples)}", flush=True)
+    return rows
+
+
+def _cold_global_checks(dataset, samples, models):
+    # Independent cold global check for timestamp-fresh samples (no temporal promotion).
+    cold = []
+    for sample in samples:
+        if sample["position_age_s"] > 0.5:
+            continue
+        frame = cv2.imread(str(dataset / sample["frame"]))
+        for label, (module, locator, _) in models.items():
+            start = time.perf_counter()
+            result = locator.locate_global(frame, module.MinimapGeometry.from_frame(frame.shape[1], frame.shape[0]))
+            cold.append(
+                {
+                    "i": sample["i"],
+                    "model": label,
+                    "position_age_s": sample["position_age_s"],
+                    "elapsed_ms": (time.perf_counter() - start) * 1000,
+                    "error_m": math.hypot(result.best.world_x - sample["x"], result.best.world_z - sample["z"])
+                    if result
+                    else None,
+                    "result": result.to_dict() if result else None,
+                }
+            )
+    return cold
+
+
+def _replay_row(dataset, sample, frame, label, models):
+    module, _locator, tracker = models[label]
+    geometry = module.MinimapGeometry.from_frame(frame.shape[1], frame.shape[0])
+    start = time.perf_counter()
+    result = tracker.update(frame, geometry, now=sample["frame_t"])
+    elapsed = (time.perf_counter() - start) * 1000
+    prediction = result.position
+    row = {
+        "dataset": dataset.name,
+        "i": sample["i"],
+        "model": label,
+        "status": result.status,
+        "accepted": result.accepted,
+        "loading": dataset.name == "live_20261021_210846" and sample["i"] in (1, 2),
+        "position_age_s": sample["position_age_s"],
+        "elapsed_ms": elapsed,
+        "error_m": math.hypot(prediction.world_x - sample["x"], prediction.world_z - sample["z"])
+        if prediction
+        else None,
+        "result": result.to_dict(),
+    }
+    return row
 
 
 if __name__ == "__main__":

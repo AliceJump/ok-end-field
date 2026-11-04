@@ -733,7 +733,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         """采样并发布一帧世界坐标，供状态总线消费者使用。"""
 
         if self.experimental_capture_enabled():
-            state = self._capture_world_pose(now=now)
+            state = self._capture_world_pose()
         else:
             state = self.minimap_position(frame=frame, now=now)
         publish_world_pose(

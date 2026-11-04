@@ -12,7 +12,15 @@ import numpy as np
 
 from src.core.config_migration import apply_value_migrations
 from src.core.NavConfig import NAV_MAP_ID_KEY
-from src.core.PositionConfig import CONFIG_USE_EXPERIMENTAL, CONFIG_VISUAL_MAP_ROOT, DEFAULT_POSITION_CONFIG
+from src.core.PositionConfig import (
+    CONFIG_USE_EXPERIMENTAL,
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME,
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES,
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE,
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT,
+    CONFIG_VISUAL_MAP_ROOT,
+    DEFAULT_POSITION_CONFIG,
+)
 from src.localization.calibrated_map_store import CalibratedMapStore
 from src.localization.layered_minimap_locator import LayeredMinimapLocator, layer_calibration
 from src.localization.map_set_locator import MapSetLocator
@@ -189,7 +197,7 @@ class TestVisualPositionSource(unittest.TestCase):
         after = self.locator._prepare_template(overlaid, geometry)
         self.assertIsNotNone(after)
         self.assertLess(after.mask.sum(), before.mask.sum())
-        self.assertTrue(before.mask.flags.writeable is False)
+        self.assertIs(before.mask.flags.writeable, False)
         result = self.locator.locate_global(overlaid, geometry)
         self.assertGreater(result.confidence, 0.85)
         self.assertAlmostEqual(result.best.world_x, 125, delta=0.3)
@@ -280,8 +288,9 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         map_id, locator = CalibratedMapStore(self.root).load()
         self.assertEqual(map_id, "")
         self.assertEqual(locator.map_ids, ("map01", "map02"))
+        store = CalibratedMapStore(self.root)
         with self.assertRaisesRegex(ValueError, "invalid_visual_map_id"):
-            CalibratedMapStore(self.root).load("../map02")
+            store.load("../map02")
 
     def test_service_has_no_ws_mixin_or_runtime_import(self):
         self.assertFalse(any("Ws" in cls.__name__ for cls in WorldPoseService.__mro__))
@@ -318,6 +327,28 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         state = service.sample_world_pose(now=10)
         self.assertFalse(state["position_trusted"])
         self.assertIsNone(state["x"])
+        self.assertTrue(service.minimap_position_ready)
+
+    def test_keyframe_settings_reach_source_and_changes_reinitialize_it(self):
+        service = self.service()
+        service.config.update(
+            {
+                CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME: 3,
+                CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: 2,
+                CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: 0.7,
+                CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: 17,
+            }
+        )
+        self.assertTrue(service.start_minimap_position(wait_stable=False))
+        source = service._visual_source
+        self.assertEqual(source.keyframe_interval, 3)
+        self.assertEqual(source.keyframe_options["max_edges"], 2)
+        self.assertEqual(source.keyframe_options["min_response"], 0.7)
+        self.assertEqual(source.keyframe_weight, 17)
+        service.config[CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT] = 19
+        service.start_minimap_position(wait_stable=False)
+        self.assertIsNot(source, service._visual_source)
+        self.assertEqual(service._visual_source.keyframe_weight, 19)
 
     def test_retired_settings_are_backed_up_before_verification(self):
         source = self.root / "Position Config.json"
@@ -360,8 +391,9 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
     def test_bad_mapping_and_catalog_fail_closed(self):
         mapping = self.root / "map02/4/map02_4_mapping.json"
         mapping.write_text("{}", encoding="utf-8")
+        store = CalibratedMapStore(self.root)
         with self.assertRaises(ValueError):
-            CalibratedMapStore(self.root).load("map02")
+            store.load("map02")
 
     def test_resource_failure_during_lazy_search_is_untrusted(self):
         service = self.service()

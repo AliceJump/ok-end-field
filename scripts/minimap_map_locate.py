@@ -99,7 +99,12 @@ def main() -> int:
             print("rejected: invalid frame or minimap geometry")
         return 1
 
-    if args.json:
+    _print_result(result, args.json)
+    return 0 if result.status != "rejected" else 1
+
+
+def _print_result(result, as_json):
+    if as_json:
         print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
     else:
         print(
@@ -116,7 +121,6 @@ def main() -> int:
                 f"NCC={candidate.ncc:.4f} full={candidate.full_ncc:.4f} "
                 f"inlier={candidate.inlier_ratio:.2f} coarse={candidate.coarse_score:.4f}"
             )
-    return 0 if result.status != "rejected" else 1
 
 
 if __name__ == "__main__":

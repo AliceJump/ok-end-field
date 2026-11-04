@@ -45,6 +45,7 @@ class MapAuthError(RuntimeError):
 
 class OfficialMapApiMixin:
     def _invalidate_map_auth(self):
+        # Stateless adapters have no cached credentials; caching clients override this hook.
         pass
 
     @staticmethod
@@ -218,7 +219,6 @@ class OfficialMapApiMixin:
             sign_payload = self._map_sign_payload(parsed.path, method, headers, query, body)
             digest = hmac.new(token.encode("utf-8"), sign_payload.encode("utf-8"), hashlib.sha256).hexdigest()
             # MD5 仅用于协议输出格式兼容；实际安全校验由上一行的 HMAC-SHA256 保证。
-            # NOSONAR (python:S4790)
             headers["sign"] = hashlib.md5(digest.encode("utf-8")).hexdigest()  # NOSONAR
 
         return headers
@@ -256,7 +256,18 @@ class OfficialMapApiMixin:
         if not isinstance(binding_resp, dict) or binding_resp.get("code") != 0:
             raise RuntimeError(f"角色绑定接口返回异常: {binding_resp}")
 
-        data = binding_resp.get("data") or {}
+        endfield = self._endfield_binding(binding_resp.get("data") or {})
+        if not isinstance(endfield, dict):
+            raise RuntimeError("当前账号没有终末地绑定角色")
+        role = self._binding_role(endfield)
+        role_id = role.get("roleId")
+        server_id = role.get("serverId")
+        if role_id is None or server_id is None:
+            raise RuntimeError("终末地绑定数据缺少 roleId/serverId")
+        return {"roleId": str(role_id), "serverId": str(server_id)}
+
+    @staticmethod
+    def _endfield_binding(data):
         game_map = data.get("gameMap") or {}
         endfield = game_map.get("endfield")
         if endfield is None:
@@ -265,9 +276,10 @@ class OfficialMapApiMixin:
                     endfield = entry
                     break
 
-        if not isinstance(endfield, dict):
-            raise RuntimeError("当前账号没有终末地绑定角色")
+        return endfield
 
+    @staticmethod
+    def _binding_role(endfield):
         binding_list = endfield.get("bindingList") or []
         selected = None
         for item in binding_list:
@@ -286,12 +298,7 @@ class OfficialMapApiMixin:
         if not isinstance(role, dict):
             raise RuntimeError("终末地绑定数据缺少 roleId/serverId")
 
-        role_id = role.get("roleId")
-        server_id = role.get("serverId")
-        if role_id is None or server_id is None:
-            raise RuntimeError("终末地绑定数据缺少 roleId/serverId")
-
-        return {"roleId": str(role_id), "serverId": str(server_id)}
+        return role
 
 
 def resolve_map_content(self) -> str:
@@ -316,6 +323,11 @@ def resolve_map_content(self) -> str:
         account_id = resolve_account_id(selected_account, create_if_missing=False) or selected_account
         return get_account_map_content(account_id, account_name=selected_account)
 
+    account_id, account_name = _current_map_account(self)
+    return get_account_map_content(account_id or account_name, account_name=account_name)
+
+
+def _current_map_account(self):
     account_id = str(getattr(self, "current_account_id", "") or "").strip()
     account_name = str(getattr(self, "current_user", "") or "").strip()
 
@@ -325,7 +337,7 @@ def resolve_map_content(self) -> str:
         account_id = account_id or str(getattr(current_task, "current_account_id", "") or "").strip()
         account_name = account_name or str(getattr(current_task, "current_user", "") or "").strip()
 
-    return get_account_map_content(account_id or account_name, account_name=account_name)
+    return account_id, account_name
 
 
 class OfficialMapClient(OfficialMapApiMixin):
@@ -360,7 +372,7 @@ class OfficialMapClient(OfficialMapApiMixin):
             self._map_ws_device_id = bundle.get("d_id", "")
             self._map_ws_user_id = bundle.get("user_id", "")
             self._map_ws_account = self._resolve_map_account_from_cred()
-        except (MapAuthError, RuntimeError, OSError, ValueError):
+        except (RuntimeError, OSError, ValueError):
             self._invalidate_map_auth()
             self._retry_at = time.monotonic() + 30
             return False

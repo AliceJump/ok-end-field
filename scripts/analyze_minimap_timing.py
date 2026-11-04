@@ -10,6 +10,7 @@ import bisect
 import json
 import sys
 import time
+from functools import partial
 from pathlib import Path
 
 import cv2
@@ -73,19 +74,69 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     samples = [json.loads(x) for x in (args.dataset / "samples.jsonl").read_text().splitlines()]
-    packets = {}
-    for line in (args.dataset / "packet_trajectories.jsonl").read_text().splitlines():
-        for p in json.loads(line)["trajectory"]:
-            packets[(p["flow"], p["time"])] = p
-    trajectory = Trajectory(list(packets.values()))
+    trajectory = _load_trajectory(args.dataset)
     first = samples[0]
     cv2.setNumThreads(1)
     locator = MinimapMapLocator.from_files(first["map_image"], first["mapping"])
     tracker = MinimapTracker(locator)
+    rows = _inference_rows(args, samples, first, tracker)
+
+    residual = partial(residual_for, trajectory)
+
+    report = {
+        "samples": len(samples),
+        "capture_method": "WindowsGraphicsCaptureMethod",
+        "timestamp_source": "wgc_system_relative_time",
+        "visual_analysis_eligibility": "Per-frame robust NCC>=.85, full NCC>=.65, margin>=.08. Report tracker accepted count separately; pending confirmation is not a visual match failure.",
+        "bins": {},
+        "clock_mapping_uncertainty_us": stats([s["presentation_timing"]["clock_uncertainty_s"] * 1e6 for s in samples]),
+        "callback_minus_frame_ms": stats(
+            [(s["presentation_timing"]["callback_time"] - s["frame_t"]) * 1000 for s in samples]
+        ),
+        "capture_interval_ms": stats([s["capture_interval_s"] * 1000 for s in samples]),
+        "limitations": "Packet time is local receive time, not simulation time. Residual includes map calibration, packet interpolation and game minimap update latency. It is not an isolated pure visual error. Static held references are labeled separately; no production delay correction is applied.",
+    }
+    moving = _analyze_bins(report, rows, residual)
+    _fit_lag(report, moving, trajectory, residual)
+    (args.output / "frames.jsonl").write_text(
+        "\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8"
+    )
+    (args.output / "summary.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+
+
+def qualified(row):
+    locate = row["result"]["locate"]
+    return (
+        locate is not None
+        and locate["confidence"] >= 0.85
+        and locate["candidates"][0]["full_ncc"] >= 0.65
+        and locate["margin"] >= 0.08
+    )
+
+
+def residual_for(trajectory, row, offset=0, midpoint=False):
+    s = row["sample"]
+    truth = trajectory.at((s["call_midpoint_t"] if midpoint else s["frame_t"]) + offset, s)
+    if not qualified(row) or truth is None:
+        return None
+    pred = row["result"]["locate"]
+    return np.array([pred["world_x"], pred["world_z"]]) - truth[0]
+
+
+def _load_trajectory(dataset):
+    packets = {}
+    for line in (dataset / "packet_trajectories.jsonl").read_text().splitlines():
+        for p in json.loads(line)["trajectory"]:
+            packets[(p["flow"], p["time"])] = p
+    trajectory = Trajectory(list(packets.values()))
+    return trajectory
+
+
+def _inference_rows(args, samples, first, tracker):
     if args.reuse_frames:
         rows = [json.loads(line) for line in (args.output / "frames.jsonl").read_text(encoding="utf-8").splitlines()]
-        if len(rows) != len(samples) or any(r["sample"] != sample for r, sample in zip(rows, samples, strict=True)):
-            raise ValueError("Saved inference does not match this dataset")
+        _validate_reused_rows(rows, samples)
     else:
         rows = []
         for i, s in enumerate(samples):
@@ -107,36 +158,15 @@ def main():
             if i % 20 == 0:
                 print(f"{i + 1}/{len(samples)}", flush=True)
 
-    def qualified(row):
-        locate = row["result"]["locate"]
-        return (
-            locate is not None
-            and locate["confidence"] >= 0.85
-            and locate["candidates"][0]["full_ncc"] >= 0.65
-            and locate["margin"] >= 0.08
-        )
+    return rows
 
-    def residual(row, offset=0, midpoint=False):
-        s = row["sample"]
-        truth = trajectory.at((s["call_midpoint_t"] if midpoint else s["frame_t"]) + offset, s)
-        if not qualified(row) or truth is None:
-            return None
-        pred = row["result"]["locate"]
-        return np.array([pred["world_x"], pred["world_z"]]) - truth[0]
 
-    report = {
-        "samples": len(samples),
-        "capture_method": "WindowsGraphicsCaptureMethod",
-        "timestamp_source": "wgc_system_relative_time",
-        "visual_analysis_eligibility": "Per-frame robust NCC>=.85, full NCC>=.65, margin>=.08. Report tracker accepted count separately; pending confirmation is not a visual match failure.",
-        "bins": {},
-        "clock_mapping_uncertainty_us": stats([s["presentation_timing"]["clock_uncertainty_s"] * 1e6 for s in samples]),
-        "callback_minus_frame_ms": stats(
-            [(s["presentation_timing"]["callback_time"] - s["frame_t"]) * 1000 for s in samples]
-        ),
-        "capture_interval_ms": stats([s["capture_interval_s"] * 1000 for s in samples]),
-        "limitations": "Packet time is local receive time, not simulation time. Residual includes map calibration, packet interpolation and game minimap update latency. It is not an isolated pure visual error. Static held references are labeled separately; no production delay correction is applied.",
-    }
+def _validate_reused_rows(rows, samples):
+    if len(rows) != len(samples) or any(r["sample"] != sample for r, sample in zip(rows, samples, strict=True)):
+        raise ValueError("Saved inference does not match this dataset")
+
+
+def _analyze_bins(report, rows, residual):
     moving = []
     for group in sorted({r["speed_bin"] for r in rows}):
         selected = [r for r in rows if r["speed_bin"] == group]
@@ -173,6 +203,34 @@ def main():
         report["bins"][group] = entry
         if group not in ("stationary", "transition"):
             moving.extend(aligned)
+    return moving
+
+
+def _cross_track_errors(rows, trajectory, residual, offset):
+    cross = []
+    for r in rows:
+        velocity = trajectory.at(r["sample"]["frame_t"] + offset, r["sample"])[1]
+        speed = np.linalg.norm(velocity)
+        if speed > 0.5:
+            e = residual(r, offset)
+            cross.append(float(abs(e[0] * velocity[1] - e[1] * velocity[0]) / speed))
+    return cross
+
+
+def _lag_test_bins(report, test, trajectory, residual, offset):
+    for group in report["bins"]:
+        rs = [r for r in test if r["speed_bin"] == group]
+        if not rs:
+            continue
+        cross = _cross_track_errors(rs, trajectory, residual, offset)
+        report["lag_fit"]["test_bins"][group] = {
+            "qpc_raw_error_m": stats([float(np.linalg.norm(residual(r))) for r in rs]),
+            "lag_adjusted_error_m": stats([float(np.linalg.norm(residual(r, offset))) for r in rs]),
+            "cross_track_error_m": stats(cross),
+        }
+
+
+def _fit_lag(report, moving, trajectory, residual):
     lags = np.round(np.arange(-0.15, 0.1501, 0.005), 6)
     common = [r for r in moving if all(residual(r, float(lag)) is not None for lag in lags)]
     train, test = [], []
@@ -191,27 +249,7 @@ def main():
             "method": "First temporal half within each speed bin trains one common offset; second half evaluates. No per-bin offset fitting.",
             "test_bins": {},
         }
-        for group in report["bins"]:
-            rs = [r for r in test if r["speed_bin"] == group]
-            if not rs:
-                continue
-            cross = []
-            for r in rs:
-                velocity = trajectory.at(r["sample"]["frame_t"] + offset, r["sample"])[1]
-                speed = np.linalg.norm(velocity)
-                if speed > 0.5:
-                    e = residual(r, offset)
-                    cross.append(float(abs(e[0] * velocity[1] - e[1] * velocity[0]) / speed))
-            report["lag_fit"]["test_bins"][group] = {
-                "qpc_raw_error_m": stats([float(np.linalg.norm(residual(r))) for r in rs]),
-                "lag_adjusted_error_m": stats([float(np.linalg.norm(residual(r, offset))) for r in rs]),
-                "cross_track_error_m": stats(cross),
-            }
-    (args.output / "frames.jsonl").write_text(
-        "\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8"
-    )
-    (args.output / "summary.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(json.dumps(report, indent=2, ensure_ascii=False))
+        _lag_test_bins(report, test, trajectory, residual, offset)
 
 
 if __name__ == "__main__":

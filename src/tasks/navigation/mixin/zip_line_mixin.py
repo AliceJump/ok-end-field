@@ -265,27 +265,29 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 frame=sample_frame,
                 max_age=2.0,
             )
-            if state is None:
-                return None, None
-            if state.get("position_trusted") is False:
-                return None, None
-            if "x" in state or "z" in state:
-                if not state.get("position_trusted") or state.get("x") is None or state.get("z") is None:
-                    return None, None
-                position = (state["x"], state["z"])
-                position_xyz = (state["x"], state["y"], state["z"]) if state.get("y") is not None else None
-            else:
-                position = state.get("ws")
-                position_xyz = state.get("ws_xyz")
-            position_2d = None
-            if position is not None and len(position) >= 2:
-                position_2d = float(position[0]), float(position[1])
-            position_3d = None
-            if position_xyz is not None and len(position_xyz) >= 3:
-                position_3d = float(position_xyz[0]), float(position_xyz[1]), float(position_xyz[2])
-            return position_2d, position_3d
+            return ZipLineMixin._zip_line_pose_positions(state)
         except Exception:
             return None, None
+
+    @staticmethod
+    def _zip_line_pose_positions(state):
+        if state is None or state.get("position_trusted") is False:
+            return None, None
+        if "x" in state or "z" in state:
+            if not state.get("position_trusted") or state.get("x") is None or state.get("z") is None:
+                return None, None
+            position = (state["x"], state["z"])
+            position_xyz = (state["x"], state["y"], state["z"]) if state.get("y") is not None else None
+        else:
+            position = state.get("ws")
+            position_xyz = state.get("ws_xyz")
+        position_2d = None
+        if position is not None and len(position) >= 2:
+            position_2d = float(position[0]), float(position[1])
+        position_3d = None
+        if position_xyz is not None and len(position_xyz) >= 3:
+            position_3d = float(position_xyz[0]), float(position_xyz[1]), float(position_xyz[2])
+        return position_2d, position_3d
 
     def _zip_line_ws_position(self, frame=None):
         """读取滑索场景最新 WS 坐标；融合坐标不作为滑索到达依据。"""

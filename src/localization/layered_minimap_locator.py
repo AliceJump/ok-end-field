@@ -114,15 +114,7 @@ class LayeredMinimapLocator:
 
     def _search(self, frame, geometry, prior=None, radius=80.0, *, base_result=None):
         started = time.perf_counter()
-        base = (
-            base_result
-            if base_result is not None
-            else (
-                self.base.locate_global(frame, geometry)
-                if prior is None
-                else self.base.locate_near(frame, prior, geometry, search_radius_m=radius)
-            )
-        )
+        base = self._base_result(frame, geometry, prior, radius, base_result)
         if base is None:
             self._recent = None
             return None
@@ -141,34 +133,12 @@ class LayeredMinimapLocator:
             self._scan_index += 1
             complete = False
             scan_pending = True
-        decoded = False
-        self._pinned_ids = {entry["id"] for entry in entries if self._near_bounds(entry, search_prior, radius)}
-        for entry in entries:
-            if not self._near_bounds(entry, search_prior, radius):
-                continue
-            if entry["id"] not in self._cache and decoded:
-                scan_pending = True
-                complete = False
-                continue
-            try:
-                decoded = decoded or entry["id"] not in self._cache
-                locator = self._load(entry)
-            except (OSError, ValueError):
-                complete = False
-                continue
-            result = (
-                locator.locate_global(frame, geometry)
-                if search_prior is None
-                else locator.locate_near(frame, search_prior, geometry, search_radius_m=radius)
-            )
-            if result is None:
-                continue
-            b = entry["bounds"]
-            for candidate in result.candidates:
-                if not (b["west"] <= candidate.world_x <= b["east"] and b["south"] <= candidate.world_z <= b["north"]):
-                    continue
-                x, y = self.calibration.world_to_map(candidate.world_x, candidate.world_z)
-                candidates.append(replace(candidate, map_x=x, map_y=y, tier_id=entry["id"]))
+        layer_candidates, layers_complete, layers_pending = self._layer_candidates(
+            frame, geometry, search_prior, radius, entries
+        )
+        candidates.extend(layer_candidates)
+        complete = complete and layers_complete
+        scan_pending = scan_pending or layers_pending
         candidates = deduplicate_candidates(candidates)
         spatial = deduplicate_candidates([replace(c, tier_id=None) for c in candidates])
         status, reason = self.base._status(spatial)
@@ -196,6 +166,49 @@ class LayeredMinimapLocator:
             # until all nearby floor alternatives have been checked on one frame.
             result = replace(result, status="rejected", reason="layer_scan_pending", spatial_margin=0)
         return result
+
+    def _base_result(self, frame, geometry, prior, radius, base_result):
+        if base_result is not None:
+            return base_result
+        if prior is None:
+            return self.base.locate_global(frame, geometry)
+        return self.base.locate_near(frame, prior, geometry, search_radius_m=radius)
+
+    def _world_candidates(self, result, entry):
+        bounds = entry["bounds"]
+        for candidate in result.candidates:
+            if not (
+                bounds["west"] <= candidate.world_x <= bounds["east"]
+                and bounds["south"] <= candidate.world_z <= bounds["north"]
+            ):
+                continue
+            x, y = self.calibration.world_to_map(candidate.world_x, candidate.world_z)
+            yield replace(candidate, map_x=x, map_y=y, tier_id=entry["id"])
+
+    def _layer_candidates(self, frame, geometry, prior, radius, entries):
+        candidates = []
+        complete, pending, decoded = True, False, False
+        self._pinned_ids = {entry["id"] for entry in entries if self._near_bounds(entry, prior, radius)}
+        for entry in entries:
+            if not self._near_bounds(entry, prior, radius):
+                continue
+            if entry["id"] not in self._cache and decoded:
+                pending, complete = True, False
+                continue
+            try:
+                decoded = decoded or entry["id"] not in self._cache
+                locator = self._load(entry)
+            except (OSError, ValueError):
+                complete = False
+                continue
+            result = (
+                locator.locate_global(frame, geometry)
+                if prior is None
+                else locator.locate_near(frame, prior, geometry, search_radius_m=radius)
+            )
+            if result is not None:
+                candidates.extend(self._world_candidates(result, entry))
+        return candidates, complete, pending
 
     def locate_global(self, frame, geometry, *, base_result=None):
         # This is only a search hint; publication freshness belongs to the

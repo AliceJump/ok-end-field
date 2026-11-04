@@ -34,7 +34,7 @@ from src.core.PositionConfig import (
 from src.localization.calibrated_map_store import CalibratedMapStore
 from src.localization.capture_pose_mixin import CapturePoseMixin
 from src.localization.minimap_heading_mixin import MinimapHeadingMixin
-from src.localization.visual_position_source import VisualPositionSource
+from src.localization.visual_position_source import KeyframeConfig, VisualPositionSource
 from src.localization.wgc_frame_timing import MAX_FRAME_LEAD_S, timing_for_frame
 from src.runtime_state.topics import RuntimeTopic
 from src.runtime_state.world_pose import publish_world_pose
@@ -110,10 +110,12 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         chain_options = {
             "anchor_weight": self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT, 50),
             "commit_min_shift_px": self._cfg_float(CONFIG_COMMIT_MIN_SHIFT, 2),
-            "keyframe_interval": self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME, 10),
-            "keyframe_edges": self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES, 8),
-            "keyframe_min_response": self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE, 0.3),
-            "keyframe_weight": self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT, 25),
+            "keyframes": KeyframeConfig(
+                interval=self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME, 10),
+                edges=self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES, 8),
+                min_response=self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE, 0.3),
+                weight=self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT, 25),
+            ),
             "chain_enabled": self._cfg_bool(CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION, True),
             "window_size": self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW, 60),
             "edge_gap": self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP, 12),
@@ -129,12 +131,12 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         if signature == self._source_signature and (
             capture or self._visual_source is not None or self.active_time() < self._visual_retry_at
         ):
-            return True
+            return self.minimap_position_ready
         self.stop_minimap_position()
         self._source_signature = signature
         self._minimap_started = True
         if capture:
-            return True
+            return self.minimap_position_ready
         try:
             map_id, locator = CalibratedMapStore(root).load(map_id)
             self._visual_source = VisualPositionSource(
@@ -148,7 +150,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             self._visual_retry_at = self.active_time() + 5.0
             self._visual_error = str(exc)
             self.log_warning(f"Visual localization unavailable: {exc}")
-        return True
+        return self.minimap_position_ready
 
     def stop_minimap_position(self):
         self._source_epoch += 1
@@ -170,46 +172,14 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self.start_minimap_position(wait_stable=False)
         if self.experimental_capture_enabled():
             self.ensure_capture_backend()
-            state = self._capture_world_pose(now=now)
+            state = self._capture_world_pose()
             if state.get("x") is None:
                 self.ensure_capture_session(reason="抓包没有坐标")
             self._report_capture_status(state, self._now(now))
             source = "capture"
         else:
             source = "visual_map"
-            if self._visual_source is None:
-                state = {
-                    "x": None,
-                    "y": None,
-                    "z": None,
-                    "position_trusted": False,
-                    "anchor_set": False,
-                    "trust_reason": self._visual_error,
-                    "odom_reason": self._visual_error,
-                    "sync_supported": False,
-                    "sync_needed": False,
-                }
-            else:
-                if frame is None:
-                    frame = self.next_frame()
-                timing = timing_for_frame(getattr(self.executor, "method", None), frame)
-                stamp = timing.frame_time if timing is not None else time.time()
-                if timing is not None and not -MAX_FRAME_LEAD_S <= time.time() - timing.frame_time <= 2:
-                    self._visual_source.reset()
-                    state = self._visual_source.unavailable("stale_visual_frame")
-                else:
-                    try:
-                        state = self._visual_source.sample(frame, now=stamp)
-                    except (OSError, ValueError) as exc:
-                        self._visual_source.reset()
-                        state = self._visual_source.unavailable(f"visual_resource_error:{type(exc).__name__}")
-                state["frame_t"] = stamp
-                if time.time() - stamp > 2:
-                    state = self._visual_source.unavailable("visual_result_too_old")
-                state["frame_time_source"] = timing.source if timing is not None else "sample_time_fallback"
-                state["frame_clock_uncertainty_s"] = timing.clock_uncertainty_s if timing is not None else None
-                bearing, score = self._read_arrow(frame) if frame is not None else (None, 0)
-                state["heading"], state["heading_score"] = bearing, score
+            state = self._sample_visual_pose(frame)
             self._report_position_status(state, now)
         token = (self._source_epoch, source, state.get("sync_seq", 0))
         if token != self._last_anchor_token:
@@ -220,6 +190,43 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._minimap_last_state = dict(state)
         publish_world_pose(self.runtime_state_hub, state, source=source, now=self._now(now))
         return state
+
+    def _sample_visual_pose(self, frame):
+        if self._visual_source is None:
+            return {
+                "x": None,
+                "y": None,
+                "z": None,
+                "position_trusted": False,
+                "anchor_set": False,
+                "trust_reason": self._visual_error,
+                "odom_reason": self._visual_error,
+                "sync_supported": False,
+                "sync_needed": False,
+            }
+        if frame is None:
+            frame = self.next_frame()
+        timing = timing_for_frame(getattr(self.executor, "method", None), frame)
+        stamp = timing.frame_time if timing is not None else time.time()
+        state = self._locate_visual_frame(frame, stamp, timing)
+        state["frame_t"] = stamp
+        if time.time() - stamp > 2:
+            state = self._visual_source.unavailable("visual_result_too_old")
+        state["frame_time_source"] = timing.source if timing is not None else "sample_time_fallback"
+        state["frame_clock_uncertainty_s"] = timing.clock_uncertainty_s if timing is not None else None
+        bearing, score = self._read_arrow(frame) if frame is not None else (None, 0)
+        state["heading"], state["heading_score"] = bearing, score
+        return state
+
+    def _locate_visual_frame(self, frame, stamp, timing):
+        if timing is not None and not -MAX_FRAME_LEAD_S <= time.time() - timing.frame_time <= 2:
+            self._visual_source.reset()
+            return self._visual_source.unavailable("stale_visual_frame")
+        try:
+            return self._visual_source.sample(frame, now=stamp)
+        except (OSError, ValueError) as exc:
+            self._visual_source.reset()
+            return self._visual_source.unavailable(f"visual_resource_error:{type(exc).__name__}")
 
     def _report_position_status(self, state: dict, now=None) -> None:
         x, z = state.get("x"), state.get("z")

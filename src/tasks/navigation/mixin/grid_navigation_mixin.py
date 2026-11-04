@@ -134,6 +134,7 @@ GRID_ZIP_LINE_APPROACH_MAX_ATTEMPTS = 3
 GRID_NARROW_CALIBRATION_MAX_ATTEMPTS = 3
 GRID_SPRINT_MIN_SEGMENT_METERS = 15.0
 
+
 __all__ = [
     "CONFIG_GRID_ALLOW_UNKNOWN",
     "CONFIG_GRID_CALIBRATION_WAYPOINTS",
@@ -1345,37 +1346,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             if self._grid_nav_w_held:
                 self._grid_nav_note_turn_movement(ctx, action_started)
         else:
-            self._set_grid_walking(False)
-            distance = step.distance_to_waypoint
-            speed = max(6.0, session.walk_speed_m_s)
-            # The pose predates the synchronous match. Release W and refresh
-            # before rotating if that unseen movement already used the budget.
-            remaining = None if distance is None else max(0.0, float(distance))
-            if remaining is not None and ctx.walking_during_sample:
-                remaining -= speed * session.poll_duration_s
-                if remaining <= 0:
-                    return None
-            # A turn's W pulse is movement too: spend at most half the remaining
-            # distance, with only a two-frame tap floor (at 60 FPS) near a corner.
-            probe_s = None if remaining is None else max(1 / 30, 0.5 * remaining / speed)
-            turn = self.pose_turn_to_bearing(
-                step.target_bearing,
-                tolerance=self._grid_turn_tolerance(),
-                max_rounds=1,
-                frame=ctx.frame,
-                min_score=ctx.min_score,
-                control_state=session.turn_control,
-                max_probe_s=probe_s,
-            )
-            if turn.get("rounds", 0) > 0:
-                self._grid_nav_note_turn_movement(ctx, action_started)
-            if not turn.get("ok"):
-                self.log_debug(
-                    f"单轮转向后重新取位置：目标={step.target_bearing:.1f}°，实测={turn.get('heading')}，误差={turn.get('error')}"
-                )
-            # Turning already waits for a fresh, stable heading. Another tick
-            # sleep here only lengthens the interval between position samples.
-            return False if self._grid_navigation_timed_out(session.deadline, session.limit) else None
+            return self._grid_nav_turn_in_place(ctx, action_started)
         if self._grid_navigation_timed_out(session.deadline, session.limit):
             return False
         self._grid_nav_walk_interval(ctx, action_duration_s=self.active_time() - action_started)
@@ -3487,3 +3458,37 @@ class GridNavigationMixin(RuntimeStateMixin):
             return (1, float(zoom), zoom)
         except ValueError:
             return (0, 0.0, zoom)
+
+    def _grid_nav_turn_in_place(self, ctx, action_started):
+        session, step = ctx.session, ctx.step
+        self._set_grid_walking(False)
+        distance = step.distance_to_waypoint
+        speed = max(6.0, session.walk_speed_m_s)
+        # The pose predates the synchronous match. Release W and refresh
+        # before rotating if that unseen movement already used the budget.
+        remaining = None if distance is None else max(0.0, float(distance))
+        if remaining is not None and ctx.walking_during_sample:
+            remaining -= speed * session.poll_duration_s
+            if remaining <= 0:
+                return None
+        # A turn's W pulse is movement too: spend at most half the remaining
+        # distance, with only a two-frame tap floor (at 60 FPS) near a corner.
+        probe_s = None if remaining is None else max(1 / 30, 0.5 * remaining / speed)
+        turn = self.pose_turn_to_bearing(
+            step.target_bearing,
+            tolerance=self._grid_turn_tolerance(),
+            max_rounds=1,
+            frame=ctx.frame,
+            min_score=ctx.min_score,
+            control_state=session.turn_control,
+            max_probe_s=probe_s,
+        )
+        if turn.get("rounds", 0) > 0:
+            self._grid_nav_note_turn_movement(ctx, action_started)
+        if not turn.get("ok"):
+            self.log_debug(
+                f"单轮转向后重新取位置：目标={step.target_bearing:.1f}°，实测={turn.get('heading')}，误差={turn.get('error')}"
+            )
+        # Turning already waits for a fresh, stable heading. Another tick
+        # sleep here only lengthens the interval between position samples.
+        return False if self._grid_navigation_timed_out(session.deadline, session.limit) else None

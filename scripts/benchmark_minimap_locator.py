@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 import time
 import types
@@ -18,6 +17,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from scripts._minimap_baseline import baseline_commit, read_baseline_source  # noqa: E402
 from src.localization import minimap_map_locator as current  # noqa: E402
 
 
@@ -34,14 +34,16 @@ def measure(callback, iterations):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--iterations", type=int, default=20)
-    parser.add_argument("--baseline-ref", required=True, help="Local Git revision containing the baseline locator")
+    parser.add_argument(
+        "--baseline-ref",
+        type=baseline_commit,
+        required=True,
+        help="Local Git commit ID containing the baseline locator",
+    )
     args = parser.parse_args()
     if args.iterations < 1:
         parser.error("--iterations must be positive")
-    source = subprocess.check_output(
-        ["git", "show", f"{args.baseline_ref}:src/localization/minimap_map_locator.py"],
-        cwd=ROOT,
-    ).decode("utf-8")
+    source = read_baseline_source(args.baseline_ref, ROOT)
     baseline = types.ModuleType("_minimap_benchmark_baseline")
     sys.modules[baseline.__name__] = baseline
     exec(compile(source, "<baseline>", "exec"), baseline.__dict__)

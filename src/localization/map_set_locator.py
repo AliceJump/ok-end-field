@@ -63,7 +63,7 @@ class MapSetLocator:
             best = replace(best, tier_id=None)
         margin = candidate_margin(spatial)
         margin = min(margin, chosen_result.margin)
-        status = "rejected" if best.ncc < 0.55 else "accepted" if best.ncc >= 0.70 and margin >= 0.15 else "ambiguous"
+        status = self._candidate_status(best, margin)
         pending_resources = chosen_result.reason == "layer_scan_pending"
         others = [c for c in sorted(candidates, key=lambda c: c.ncc, reverse=True) if c is not original_best]
         result = LocateResult(
@@ -81,39 +81,46 @@ class MapSetLocator:
             self._active = best.map_id
         return result
 
-    def locate_global(self, frame, geometry):
-        if self._frame_gate._prepare_template(frame, geometry) is None:
-            self.reset_tracking()
-            return None
-        started = time.perf_counter()
+    @staticmethod
+    def _candidate_status(best, margin):
+        if best.ncc < 0.55:
+            return "rejected"
+        if best.ncc >= 0.70 and margin >= 0.15:
+            return "accepted"
+        return "ambiguous"
+
+    def _warm_base_resources(self):
         for mid in self.map_ids:
             if mid not in self._cache:
-                # Decode at most one large base resource in a sample. Cached
-                # resources survive lost/pending fixes, but no partial map set
-                # can supply acquisition evidence.
+                # One resource per sample; partial map sets cannot prove uniqueness.
                 self._load(mid)
-                return None
-        # Map identity is only a search hint. Re-evaluate its visual evidence on
-        # this frame; do not discard the hint merely because resource decoding
-        # took two seconds. Position freshness is enforced by the source/tracker.
-        if self._active:
-            result = self.locate_near(frame, (0, 0), geometry, search_radius_m=80, use_global=True)
-            if result is not None and result.reason == "layer_scan_pending":
-                return result
-            if (
-                result is not None
-                and result.confidence >= 0.85
-                and result.best.full_ncc >= 0.65
-                and result.margin >= 0.08
-            ):
-                return result
-        # First compare inexpensive main-map searches. Expanding every weak map
-        # into every floor makes a cold sample take minutes on a real asset set.
+                return False
+        return True
+
+    def _compare_base_maps(self, frame, geometry):
         results = []
         for mid in self.map_ids:
             locator = self._load(mid)
             base = getattr(locator, "base", locator)
             results.append((mid, base.locate_global(frame, geometry)))
+        return results
+
+    def locate_global(self, frame, geometry):
+        if self._frame_gate._prepare_template(frame, geometry) is None:
+            self.reset_tracking()
+            return None
+        started = time.perf_counter()
+        if not self._warm_base_resources():
+            return None
+        # Map identity is only a search hint. Re-evaluate its visual evidence on
+        # this frame; do not discard the hint merely because resource decoding
+        # took two seconds. Position freshness is enforced by the source/tracker.
+        active_result = self._active_result(frame, geometry)
+        if active_result is not None:
+            return active_result
+        # First compare inexpensive main-map searches. Expanding every weak map
+        # into every floor makes a cold sample take minutes on a real asset set.
+        results = self._compare_base_maps(frame, geometry)
         combined = self._combine(results, started, None)
         if combined is None:
             return None
@@ -127,6 +134,16 @@ class MapSetLocator:
             layered = locator.locate_global(frame, geometry, base_result=base_result)
             results = [(mid, layered if mid == selected else r) for mid, r in results]
         return self._combine(results, started, None)
+
+    def _active_result(self, frame, geometry):
+        if not self._active:
+            return None
+        result = self.locate_near(frame, (0, 0), geometry, search_radius_m=80, use_global=True)
+        if result is not None and result.reason == "layer_scan_pending":
+            return result
+        if result is not None and result.confidence >= 0.85 and result.best.full_ncc >= 0.65 and result.margin >= 0.08:
+            return result
+        return None
 
     def locate_near(self, frame, previous_world, geometry, *, search_radius_m=80.0, use_global=False):
         started = time.perf_counter()

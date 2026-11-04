@@ -314,7 +314,7 @@ class CapturePoseMixin:
             launcher.stop()
         self._minimap_capture_launcher = None
 
-    def _capture_world_pose(self, *, now=None) -> dict:
+    def _capture_world_pose(self) -> dict:
         """把抓包样本组装成定位状态契约（直通：抓包给什么就用什么）。
 
         与融合链的关键差别是整个校准体系都不参与：坐标本来就是绝对值，没有"锚点"可设、
