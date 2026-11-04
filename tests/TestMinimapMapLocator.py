@@ -581,7 +581,7 @@ class TestGitBaselineSource(unittest.TestCase):
             root = Path(directory)
             source = root / "src/localization/minimap_map_locator.py"
             source.parent.mkdir(parents=True)
-            source.write_text("# baseline fixture\n", encoding="utf-8")
+            source.write_text("# baseline fixture\n", encoding="utf-8", newline="\n")
             for args in (
                 ["init", "-q"],
                 ["add", "src/localization/minimap_map_locator.py"],
