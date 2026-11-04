@@ -255,7 +255,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return False
 
     def _zip_line_ws_positions(self, frame=None):
-        """从同一份 world pose 读取二维与三维 WS 坐标。"""
+        """从同一份可信 world pose 读取坐标，兼容旧记录中的原始坐标别名。"""
         world_pose_getter = getattr(self, "world_pose", None)
         if not callable(world_pose_getter):
             return None, None
@@ -267,11 +267,19 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             )
             if state is None:
                 return None, None
-            position = state.get("ws")
+            if state.get("position_trusted") is False:
+                return None, None
+            if "x" in state or "z" in state:
+                if not state.get("position_trusted") or state.get("x") is None or state.get("z") is None:
+                    return None, None
+                position = (state["x"], state["z"])
+                position_xyz = (state["x"], state["y"], state["z"]) if state.get("y") is not None else None
+            else:
+                position = state.get("ws")
+                position_xyz = state.get("ws_xyz")
             position_2d = None
             if position is not None and len(position) >= 2:
                 position_2d = float(position[0]), float(position[1])
-            position_xyz = state.get("ws_xyz")
             position_3d = None
             if position_xyz is not None and len(position_xyz) >= 3:
                 position_3d = float(position_xyz[0]), float(position_xyz[1]), float(position_xyz[2])
@@ -1449,9 +1457,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             )
             return target_yaw, False
 
-        if total_dx:
-            if learning_allowed() and environment == yaw_environment(width, height, initial_yaw, scroll=scroll):
-                record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx, environment=environment)
+        if (
+            total_dx
+            and learning_allowed()
+            and environment == yaw_environment(width, height, initial_yaw, scroll=scroll)
+        ):
+            record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx, environment=environment)
         self.log_info(
             f"[zipline-yaw] normalized {initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
         )

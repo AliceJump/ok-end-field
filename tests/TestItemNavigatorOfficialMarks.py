@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 from src.core.NavConfig import NAV_CONTENT_KEY
+from src.data.official_map_client import MapAuthError, OfficialMapClient
 from src.localization.ws_position_mixin import WsPositionMixin
 from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
 
@@ -196,11 +197,37 @@ class _Stub:
     def get_runtime_position_service(self):
         return self.service
 
+    def _get_official_map_client(self):
+        return self.service
+
     def _use_unified_navigation(self):
         return self.unified
 
 
 class TestItemNavigatorOfficialMarks(unittest.TestCase):
+    def test_http_facility_client_needs_no_ws_position_service(self):
+        consumer = SimpleNamespace(config={"content": "content"})
+        client = OfficialMapClient(consumer)
+        client._resolve_auth_bundle = mock.Mock(return_value={"cred": "cred", "sign_token": "token"})
+        client._resolve_map_account_from_cred = mock.Mock(return_value={"roleId": "r1", "serverId": "s1"})
+        self.assertTrue(client.prepare())
+        self.assertTrue(client.prepare())
+        client._resolve_auth_bundle.assert_called_once_with("content")
+        self.assertFalse(hasattr(client, "_start_map_ws_client"))
+        self.assertFalse(hasattr(client, "_recv_ws_position_payload"))
+        consumer.config["content"] = "other-content"
+        self.assertTrue(client.prepare())
+        self.assertEqual(client._resolve_auth_bundle.call_count, 2)
+
+    def test_http_auth_failure_cools_down_and_does_not_reuse_old_account(self):
+        client = OfficialMapClient(SimpleNamespace(config={"content": "content"}))
+        client._map_ws_account = {"roleId": "old"}
+        client._resolve_auth_bundle = mock.Mock(side_effect=MapAuthError("offline"))
+        self.assertFalse(client.prepare())
+        self.assertFalse(client.prepare())
+        self.assertEqual(client._resolve_auth_bundle.call_count, 1)
+        self.assertIsNone(client._map_ws_account)
+
     def test_legacy_position_source_reads_migrated_global_content(self):
         task = SimpleNamespace(config={})
 

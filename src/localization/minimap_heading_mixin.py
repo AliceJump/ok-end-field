@@ -34,6 +34,7 @@
 from __future__ import annotations
 
 import math
+import time
 
 from src.core.camera_input_config import get_default_camera_yaw_ratio, read_saved_camera_settings
 from src.localization.minimap_odometry import angle_delta, arrow_angle_to_bearing
@@ -133,6 +134,7 @@ class MinimapHeadingMixin:
         self._camera_yaw_ratio_cache = None
         self._camera_yaw_ratio_warning_key = None
         self._camera_settings_warning_fields = None
+        self._ratio_hint_last_at = None
 
     def _camera_yaw_per_pixel(self) -> float:
         """用当前保存设置计算初值；成功缓存随环境更新，失败允许下次重试。"""
@@ -234,7 +236,17 @@ class MinimapHeadingMixin:
     # ------------------------------------------------------------------ #
     # 转到指定方位
     # ------------------------------------------------------------------ #
-    def turn_to_bearing(self, target_deg, *, tolerance=5.0, max_rounds=3, frame=None, min_score=None) -> dict:
+    def turn_to_bearing(
+        self,
+        target_deg,
+        *,
+        tolerance=5.0,
+        max_rounds=3,
+        frame=None,
+        min_score=None,
+        control_state=None,
+        max_probe_s=None,
+    ) -> dict:
         """转到指定罗盘方位（正北 0°、正东 90°），闭环逼近到 ±``tolerance``。
 
         **目标是一轮到位**（只按一次 W，角色只前移一小步）：系数准的话第一轮就该进容差。
@@ -251,6 +263,10 @@ class MinimapHeadingMixin:
             max_rounds: 最多转几轮（兜底用；默认 3）。
             frame: 可选，读初始朝向用的帧；不传则自己抓。
             min_score: 覆盖「朝向最低分数」。
+            control_state: 可选的会话字典；单轮调用之间延续稳定反馈与实测比例。
+                调用方在停止跟踪、规划或执行其他转向输入时清空。
+            max_probe_s: 本轮转身前进按键的时长上限；导航按剩余距离限制探步，
+                不修改持久化设置。缩短探步后仍须等待实际朝向反馈。
 
         Returns:
             dict: ``{ok, one_shot, target, heading, error, rounds, history}``
@@ -265,6 +281,8 @@ class MinimapHeadingMixin:
         """
         tolerance = max(0.0, float(tolerance))
         target = float(target_deg)
+        if max_probe_s is not None and (not math.isfinite(max_probe_s) or max_probe_s <= 0):
+            raise ValueError("max_probe_s must be finite and positive")
         result = {
             "ok": False,
             "target": target,
@@ -278,18 +296,34 @@ class MinimapHeadingMixin:
 
         per_px = self.yaw_per_pixel()
         if per_px == 0:
+            if control_state is not None:
+                control_state.clear()
             self.log_warning("摄像机水平比率不可用，无法转向", notify=True)
             return result
         if not self._can_turn():
+            if control_state is not None:
+                control_state.clear()
             return result
 
         before, score = self.read_heading(frame, min_score=min_score)
         if before is None:
+            if control_state is not None:
+                control_state.clear()
             self.log_warning(f"读不到朝向（score={score:.3f}），无法转向")
             return result
 
         settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
         control_per_px = per_px
+        continued = (
+            control_state is not None
+            and control_state.get("configured") == per_px
+            and control_state.get("heading") is not None
+            and abs(angle_delta(before, control_state["heading"])) <= 1.0
+        )
+        if continued:
+            control_per_px = control_state["gain"]
+        if control_state is not None:
+            control_state.clear()
         feedback_settled = True
         for i in range(1, max(1, int(max_rounds)) + 1):
             err = angle_delta(target, before)
@@ -302,7 +336,10 @@ class MinimapHeadingMixin:
 
             self._send_rotation(dx)
             self.sleep(settle)
-            after, score = self._arrow_after_w(min_score=min_score)
+            if max_probe_s is None:
+                after, score = self._arrow_after_w(min_score=min_score)
+            else:
+                after, score = self._arrow_after_w(min_score=min_score, max_hold_s=max_probe_s)
             after, score, feedback_settled = self._wait_for_turn_heading(
                 before,
                 after,
@@ -329,11 +366,12 @@ class MinimapHeadingMixin:
                 break
             entry["error_after"] = angle_delta(target, after)
             observed_delta = angle_delta(after, before)
-            # The first W establishes a camera-aligned baseline. Its delta can
-            # contain an arbitrary initial camera offset, even with exact gain.
+            # The first W (unless continuing a confirmed single-step session)
+            # establishes a camera-aligned baseline. Its delta can contain an
+            # arbitrary initial camera offset, even with exact gain.
             # A shortest-angle reading near half a turn is ambiguous as well.
             if (
-                i > 1
+                (i > 1 or continued)
                 and feedback_settled
                 and abs(dx) >= RATIO_HINT_MIN_DX
                 and abs(observed_delta) < 180.0 - tolerance
@@ -358,6 +396,8 @@ class MinimapHeadingMixin:
         result["ok"] = feedback_settled and abs(result["error"]) <= tolerance
         # 目标是一轮到位（只按一次 W，角色只前移一小步）；多轮只是兜底
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
+        if control_state is not None and result["rounds"] > 0 and feedback_settled and before is not None:
+            control_state.update(configured=per_px, gain=control_per_px, heading=before)
         return result
 
     def aim_view_to_bearing(
@@ -488,6 +528,12 @@ class MinimapHeadingMixin:
         if abs(dx) < RATIO_HINT_MIN_DX:
             return
         rel = abs(ratio) / abs(configured)
+        if 1.0 - RATIO_HINT_TOLERANCE <= rel <= 1.0 + RATIO_HINT_TOLERANCE:
+            return
+        now = time.monotonic()
+        if self._ratio_hint_last_at is not None and now - self._ratio_hint_last_at < 30.0:
+            return
+        self._ratio_hint_last_at = now
         if rel < 1.0 - RATIO_HINT_TOLERANCE:
             self.log_warning(
                 f"实测系数 {abs(ratio):.5f}°/计数 明显低于理论值 {abs(configured):.5f}°/计数："
@@ -525,13 +571,16 @@ class MinimapHeadingMixin:
             if remaining:
                 self.sleep(delay)
 
-    def _arrow_after_w(self, *, min_score=None):
+    def _arrow_after_w(self, *, min_score=None, max_hold_s=None):
         """按一次 W（长按）让角色转到视角方向，读取初始反馈。
 
         必须长按：瞬时按键不足以让角色真正转身，小地图朝向不会刷新，会读到旧角度。
         后续刷新等待由调用方的稳定观测窗口完成，避免固定等待后再叠加同样的等待。
         """
-        self.press_key("w", down_time=self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
+        hold = max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
+        if max_hold_s is not None:
+            hold = min(hold, max_hold_s)
+        self.press_key("w", down_time=hold)
         return self.read_heading(min_score=min_score)
 
     def _wait_for_turn_heading(self, before, heading, score, *, target, tolerance, min_score):

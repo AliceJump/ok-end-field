@@ -183,6 +183,7 @@ class GridRouteFollower:
         self._zip_line_index = 0
         self._move_started_at: float | None = None
         self._move_start_pos: tuple[float, float] | None = None
+        self._turn_motion_attempted = False
         self._route_start: tuple[float, float] | None = None
         self._off_route_since: float | None = None
         self._narrow_calibrated: set[int] = set()
@@ -398,9 +399,13 @@ class GridRouteFollower:
         delta = angle_delta(target_bearing, heading)
         tolerance = max(0.0, float(self.config.heading_tolerance))
         if abs(delta) > tolerance:
-            self._reset_motion()
+            # A navigation turn can include W or keep W held. Repeated heading
+            # corrections against an obstacle must not reset the stuck timer.
+            turn_stuck = self._turn_motion_attempted and self._update_stuck(pos, now)
+            if not self._turn_motion_attempted:
+                self._reset_motion()
             return self._step(
-                TURN,
+                STUCK if turn_stuck else TURN,
                 waypoint,
                 target_bearing=target_bearing,
                 heading_error=delta,
@@ -409,6 +414,7 @@ class GridRouteFollower:
                 arrived_waypoint_index=arrived_index,
                 skipped_waypoints=skipped,
                 shortcut_distance=shortcut_distance,
+                reason=f"转向行走 {self.config.stuck_window_s:.1f}s 内位移不足" if turn_stuck else "",
             )
 
         stuck = self._update_stuck(pos, now)
@@ -679,6 +685,12 @@ class GridRouteFollower:
         """清空卡住窗口；不修改航点索引或偏航状态。"""
         self._move_started_at = None
         self._move_start_pos = None
+        self._turn_motion_attempted = False
+
+    def note_turn_movement(self, position: tuple[float, float], now: float) -> None:
+        """执行层确认本次转向实际按了 W，允许后续转向拍检测碰撞卡住。"""
+        self._turn_motion_attempted = True
+        self._update_stuck(position, now)
 
     def _step(
         self,

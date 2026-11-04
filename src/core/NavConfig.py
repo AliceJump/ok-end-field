@@ -150,8 +150,7 @@ DEFAULT_NAV_CONFIG: dict[str, Any] = {
 
 NAV_CONFIG_DESCRIPTION: dict[str, str] = {
     NAV_CONFIG_GROUP_KEY: "选择要显示的全局导航配置分类。",
-    NAV_CONTENT_KEY: "官方地图 hg/check 的 data.content，提供绝对坐标（锚点/真值）。"
-    "留空则按「真值地图账号」或当前登录账号自动取。",
+    NAV_CONTENT_KEY: "地图设施查询凭证；不参与视觉或抓包定位。留空则使用所选地图账号或当前账号。",
     NAV_WS_ACCOUNT_KEY: "content 为空时，从这个账号的地图同步里取 content。留空则用当前登录账号。",
     NAV_SCALE_CONSTANT_KEY: "小地图比例尺常数 C：```比例尺 = C / 画面宽度(px)```。"
     "分辨率不落在下面三个档位时的兜底，实测 C ≈ 1706.5 米"
@@ -168,7 +167,7 @@ NAV_CONFIG_DESCRIPTION: dict[str, str] = {
         f"（地图系像素 -> 世界系米；世界_z 与地图_y 符号相反）。"
         for name, width in NAV_RESOLUTION_TIERS
     },
-    NAV_MAP_ID_KEY: "可选。留空时使用实时位置流里的 mapId 加载导航网格。送货流程读取当前地图，不受此项影响。",
+    NAV_MAP_ID_KEY: "可选。视觉模式留空时自动匹配已安装的标定地图；指定地图可缩小搜索范围。抓包模式使用实时 mapId。",
     NAV_PLAN_ONLY_KEY: "只调试用：开启后「小地图网格导航」任务只输出规划结果和路径日志，"
     "不按 W、不转鼠标。**仅对该调试任务生效**；日常任务与自动送货不受影响。",
     NAV_WAIT_POSITION_TIMEOUT_KEY: "只调试用：「小地图网格导航」任务开始前等待融合坐标锚定的最长时间。"

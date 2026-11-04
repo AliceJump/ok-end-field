@@ -109,6 +109,28 @@ class TestGridRouteFollower(unittest.TestCase):
 
         self.assertEqual(step.action, WALK)
 
+    def test_repeated_turns_with_w_detect_obstacle_instead_of_resetting_stuck(self):
+        self.follower.plan((0.5, 0.5), (4.5, 0.5))
+        pos = (0.5, 0.5)
+        self.assertEqual(self.follower.update(pos, heading=80, now=0).action, TURN)
+        self.follower.note_turn_movement(pos, now=0)
+        self.assertEqual(self.follower.update(pos, heading=82, now=1).action, TURN)
+        self.follower.note_turn_movement(pos, now=1)
+        step = self.follower.update(pos, heading=84, now=2.1)
+        self.assertEqual(step.action, STUCK)
+
+    def test_turns_without_movement_input_do_not_count_as_stuck(self):
+        self.follower.plan((0.5, 0.5), (4.5, 0.5))
+        for now in (0, 1, 3):
+            self.assertEqual(self.follower.update((0.5, 0.5), heading=80, now=now).action, TURN)
+
+    def test_turn_movement_progress_and_pause_reset_stuck_detection(self):
+        self.follower.plan((0.5, 0.5), (4.5, 0.5))
+        self.follower.note_turn_movement((0.5, 0.5), now=0)
+        self.assertEqual(self.follower.update((1, 0.5), heading=80, now=3).action, TURN)
+        self.follower.pause()
+        self.assertEqual(self.follower.update((1, 0.5), heading=80, now=6).action, TURN)
+
     def test_heading_tolerance_is_fixed_at_four_degrees(self):
         self.follower.plan((0.5, 0.5), (4.5, 0.5))
 

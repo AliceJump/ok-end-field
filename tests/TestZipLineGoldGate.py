@@ -24,6 +24,24 @@ from src.tasks.test.ZipLineScanDebugTask import ZipLineScanDebugTask
 
 
 class TestZipLineGoldGate(unittest.TestCase):
+    def test_trusted_visual_pose_supplies_xy_without_fabricating_height(self):
+        task = SimpleNamespace(
+            world_pose=Mock(
+                return_value={"position_trusted": True, "x": 1.0, "y": None, "z": 2.0, "ws": None, "ws_xyz": None}
+            ),
+            next_frame=Mock(),
+        )
+        self.assertEqual(ZipLineMixin._zip_line_ws_positions(task, frame="frame"), ((1.0, 2.0), None))
+        task.next_frame.assert_not_called()
+        task.world_pose.assert_called_once()
+
+    def test_packet_pose_preserves_real_height_and_rejects_untrusted_aliases(self):
+        state = {"position_trusted": True, "x": 1.0, "y": 3.0, "z": 2.0, "ws": (99.0, 99.0)}
+        task = SimpleNamespace(world_pose=Mock(return_value=state))
+        self.assertEqual(ZipLineMixin._zip_line_ws_positions(task, frame="frame"), ((1.0, 2.0), (1.0, 3.0, 2.0)))
+        state["position_trusted"] = False
+        self.assertEqual(ZipLineMixin._zip_line_ws_positions(task, frame="frame"), (None, None))
+
     @staticmethod
     def _stub():
         lang = SimpleNamespace(zip_line_mixin=SimpleNamespace(k_2f4f4a2f="move", k_0b1e4f35="leave"))

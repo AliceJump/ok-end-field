@@ -111,8 +111,8 @@ class MinimapVisualAnchorChainCorrector:
         self._prev_positions: np.ndarray | None = None
         self._window_anchor_pos: np.ndarray | None = None
         self._next_uid = 0
-        self._ws_anchor_uid: int | None = None
-        self._ws_anchor_pos: np.ndarray | None = None
+        self._absolute_anchor_uid: int | None = None
+        self._absolute_anchor_pos: np.ndarray | None = None
 
     def reset(self) -> None:
         """位置源/地图/分辨率变化时清空窗口。"""
@@ -122,8 +122,8 @@ class MinimapVisualAnchorChainCorrector:
         self._prev_positions = None
         self._window_anchor_pos = None
         self._next_uid = 0
-        self._ws_anchor_uid = None
-        self._ws_anchor_pos = None
+        self._absolute_anchor_uid = None
+        self._absolute_anchor_pos = None
 
     def add(
         self,
@@ -143,7 +143,7 @@ class MinimapVisualAnchorChainCorrector:
             gray: 当前小地图环带灰度（与 ``alpha`` 同尺寸）。
             alpha: 当前圆环 mask，0..1。
             initial_pos: 当前融合位置换算到小地图像素后的初值。
-            anchor: 本拍如果发生静止校准，传 WS 绝对位置（同样是小地图像素）。
+            anchor: 本拍如果发生静止校准，传地图匹配绝对位置（同样是小地图像素）。
         """
 
         raw = np.asarray(initial_pos, dtype=np.float64).reshape(2)
@@ -163,8 +163,8 @@ class MinimapVisualAnchorChainCorrector:
         )
         self._next_uid += 1
         if anchor is not None:
-            self._ws_anchor_uid = node.uid
-            self._ws_anchor_pos = node.anchor.copy()
+            self._absolute_anchor_uid = node.uid
+            self._absolute_anchor_pos = node.anchor.copy()
         new_edges = self._edges_to_previous(node)
         self._edges.extend(new_edges)
         self._nodes.append(node)
@@ -174,9 +174,9 @@ class MinimapVisualAnchorChainCorrector:
         initial_guess = self._initial_guess(nodes, raw)
         anchor_node = None
         anchor_weight = self._anchor_weight
-        if self._ws_anchor_uid is not None:
+        if self._absolute_anchor_uid is not None:
             anchor_node = next(
-                (item for item in nodes if item.uid == self._ws_anchor_uid),
+                (item for item in nodes if item.uid == self._absolute_anchor_uid),
                 None,
             )
             if anchor_node is None and nodes:
@@ -190,8 +190,8 @@ class MinimapVisualAnchorChainCorrector:
                 anchor_node.anchor_weight = anchor_weight
         saved_anchor = anchor_node.anchor if anchor_node is not None else None
         saved_weight = anchor_node.anchor_weight if anchor_node is not None else 0.0
-        if anchor_node is not None and self._ws_anchor_pos is not None:
-            anchor_node.anchor = self._ws_anchor_pos
+        if anchor_node is not None and self._absolute_anchor_pos is not None:
+            anchor_node.anchor = self._absolute_anchor_pos
             anchor_node.anchor_weight = anchor_weight
         extra_anchors = [
             (index, node.extra_anchor, node.extra_anchor_weight)
@@ -311,18 +311,20 @@ class MinimapVisualAnchorChainCorrector:
         else:
             self._window_anchor_pos = None
         dropped = self._nodes.popleft()
-        if self._ws_anchor_uid == dropped.uid:
+        if self._absolute_anchor_uid == dropped.uid:
             if (
                 self._prev_positions is not None
                 and len(self._prev_positions) >= 2
                 and self._nodes
-                and self._ws_anchor_pos is not None
+                and self._absolute_anchor_pos is not None
             ):
-                self._ws_anchor_pos = self._ws_anchor_pos + (self._prev_positions[1] - self._prev_positions[0])
-                self._ws_anchor_uid = self._nodes[0].uid
+                self._absolute_anchor_pos = self._absolute_anchor_pos + (
+                    self._prev_positions[1] - self._prev_positions[0]
+                )
+                self._absolute_anchor_uid = self._nodes[0].uid
             else:
-                self._ws_anchor_uid = None
-                self._ws_anchor_pos = None
+                self._absolute_anchor_uid = None
+                self._absolute_anchor_pos = None
         self._edges = [edge for edge in self._edges if edge.i != dropped.index and edge.j != dropped.index]
         for edge in self._edges:
             if edge.i > dropped.index:
@@ -383,7 +385,7 @@ class KeyframeResult:
 
 
 class MinimapKeyframeVisualAnchorChain:
-    """跨整个运行的关键帧视觉锚定链校正，用 WS 锚定起点，用视觉边传播绝对基准。"""
+    """跨整个运行的关键帧视觉锚定链校正，用绝对坐标锚定起点，用视觉边传播绝对基准。"""
 
     def __init__(
         self,

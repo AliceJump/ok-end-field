@@ -75,8 +75,8 @@ class _FakeTurnTask(MinimapHeadingMixin):
             return None, 0.0
         return self.facing, self.score
 
-    def _arrow_after_w(self, *, min_score=None):
-        self.press_key("w", down_time=0.3)
+    def _arrow_after_w(self, *, min_score=None, max_hold_s=None):
+        self.press_key("w", down_time=min(0.3, max_hold_s) if max_hold_s is not None else 0.3)
         self.facing = self.camera  # 角色转到视角方向
         return self.read_heading(min_score=min_score)
 
@@ -98,6 +98,43 @@ class TestReadHeading(unittest.TestCase):
         bearing, score = _FakeTurnTask(arrow_fail=True).read_heading()
         self.assertIsNone(bearing)
         self.assertAlmostEqual(score, 0.0, delta=1e-6)
+
+    def test_bounded_probe_caps_real_press_without_changing_config(self):
+        task = _FakeTurnTask()
+        presses = []
+
+        def press(key, down_time=0):
+            presses.append(down_time)
+            task.facing = task.camera
+
+        task.press_key = press
+        task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
+        config = task.config.copy()
+        result = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.06)
+        self.assertTrue(result["ok"])
+        self.assertEqual(presses, [0.06])
+        self.assertEqual(task.config, config)
+
+    def test_short_probe_without_heading_response_cannot_report_success(self):
+        task = _FakeTurnTask()
+        task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
+        result = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04)
+        self.assertFalse(result["ok"])
+        self.assertEqual(task.w_presses, 1)
+
+    def test_invalid_probe_budget_is_rejected_before_input(self):
+        for value in (0, -1, float("nan"), float("inf")):
+            task = _FakeTurnTask()
+            with self.assertRaises(ValueError):
+                task.turn_to_bearing(90, max_probe_s=value)
+            self.assertEqual(task.sent, [])
+
+    def test_repeated_gain_warnings_are_throttled_without_disabling_feedback(self):
+        task = _FakeTurnTask()
+        with patch("src.localization.minimap_heading_mixin.time.monotonic", side_effect=[10, 11, 20, 40]):
+            for ratio in (0.13, 0.14, 0.01, 0.13):
+                task._warn_if_ratio_off(ratio, 0.0675, 100)
+        self.assertEqual(sum("实测系数" in x for x in task.logs), 2)
 
 
 class TestCameraYawRatio(unittest.TestCase):
@@ -179,6 +216,35 @@ class TestCameraYawRatio(unittest.TestCase):
 
 class TestTurnToBearing(unittest.TestCase):
     """覆盖闭环转向的轮数、误差和失败行为。"""
+
+    def test_single_round_calls_retain_feedback_without_blocking_position_sampling(self):
+        task = _FakeTurnTask(facing=0, k_error=1.8)
+        state = {}
+        for _ in range(3):
+            result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+            self.assertLessEqual(result["rounds"], 1)
+        self.assertTrue(result["ok"], result)
+        self.assertLessEqual(abs(result["error"]), 5)
+        self.assertAlmostEqual(state["gain"], task.per_px * 1.8, places=5)
+
+    def test_single_round_feedback_does_not_survive_external_heading_change(self):
+        task = _FakeTurnTask(facing=0, k_error=1.8)
+        state = {}
+        task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        task.facing = task.camera = 40
+        result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertIsNone(result["history"][0]["ratio"])
+        self.assertEqual(state["gain"], task.per_px)
+
+    def test_single_round_feedback_resets_when_camera_setting_changes(self):
+        task = _FakeTurnTask(facing=0, k_error=1.8)
+        state = {}
+        task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        task.per_px *= 2
+        result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertIsNone(result["history"][0]["ratio"])
+        self.assertEqual(state["gain"], task.per_px)
 
     def test_default_ratio_closes_loop_without_game_window_or_matching_input_gain(self):
         task = _FakeTurnTask(facing=0.0, k_error=0.8)

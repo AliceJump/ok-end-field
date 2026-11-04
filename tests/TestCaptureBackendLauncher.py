@@ -17,7 +17,6 @@ from pathlib import Path
 from unittest import mock
 
 from src.localization import capture_backend_launcher as launcher_mod
-from src.localization import minimap_position_mixin
 from src.localization.capture_backend_launcher import (
     EXECUTABLE_NAME,
     BackendLauncher,
@@ -542,7 +541,7 @@ class MixinWiringTest(unittest.TestCase):
     def test_autostart_disabled_only_probes(self):
         owner = _FakeOwner({"使用实验技术": True, "实验技术自动启动后端": False, "实验技术后端端口": _free_port()})
         # 打桩要打在 mixin 的命名空间上——它是 `from ... import probe_backend` 进来的
-        with mock.patch.object(minimap_position_mixin, "probe_backend", return_value=False) as probe:
+        with mock.patch("src.localization.capture_pose_mixin.probe_backend", return_value=False) as probe:
             self.assertFalse(owner.ensure_capture_backend())
         probe.assert_called_once()
         self.assertFalse(owner._minimap_capture_launcher.running, "关掉自动启动就不该起进程")

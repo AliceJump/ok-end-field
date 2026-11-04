@@ -959,13 +959,14 @@ class RuntimeMixin:
             last_frame = current_frame
             self.sleep(refresh_interval)
 
-    def info_set(self, key, value):
+    def info_set(self, key, value, *, log=True):
         """
         写入运行时信息，并自动追加当前账号后缀。
 
         Args:
             key: 信息键名。
             value: 信息值。
+            log: 高频状态可仅更新界面，由调用方另行汇总日志。
 
         Returns:
             Any: 基类 info_set 的返回值。
@@ -977,7 +978,9 @@ class RuntimeMixin:
         if value is not None:
             value = str(value).replace("⭐", "")
 
-        return super().info_set(key, value)
+        if log:
+            return super().info_set(key, value)
+        self.info[key] = value
 
     def _account_key_config(self) -> dict:
         """全局键位配置叠加当前账号覆盖后的有效键位表（无账号上下文时为全局原值）。"""

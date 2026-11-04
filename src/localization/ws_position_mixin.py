@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # ruff: noqa: UP009
+"""Historical WS adapter retained for compatibility; production positioning does not use it."""
+
 import asyncio
 import contextlib
-import hashlib
-import hmac
 import json
 import math
 import queue
@@ -12,11 +12,10 @@ import re
 import threading
 import time
 from typing import Any
-from urllib import error, parse, request
 
 import websockets
 
-from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
+from src.data.official_map_client import MapAuthError, OfficialMapApiMixin
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     load_overrides,
@@ -24,34 +23,6 @@ from src.tasks.account.account_scope_store import (
 )
 
 ENDFIELD_MAP_WS_URL = "wss://ws.skland.com/ws/v1/game/endfield/map"
-ENDFIELD_MAP_API_HOST = "https://zonai.skland.com"
-ENDFIELD_MAP_HG_GRANT_URL = "https://as.hypergryph.com/user/oauth2/v2/grant"
-ENDFIELD_MAP_HG_APP_CODE = "4ca99fa6b56cc2ba"
-ENDFIELD_MAP_ORIGIN = "https://game.skland.com"
-ENDFIELD_MAP_REFERER = "https://game.skland.com/map/endfield"
-
-# zonai 接口要求 dId 为数美(SMSdk)真实签发的设备指纹：
-# 纯随机串会返回 10001 设备信息无效（已在真实浏览器内用原生 fetch 复现验证，
-# 可排除 TLS 指纹因素），因此不能伪造。
-# 但官方 SDK 注册流程自铸的全新设备ID可以从 Python 直接使用、与账号无关且可长期复用；
-# 自铸流程见 src/core/map_device_id.py：临时浏览器配置匿名访问官方地图页（无需登录）
-# 完成注册，并持久化到 configs/map_device_id.json。
-_shumei_did_failed_at = 0.0
-_SHUMEI_DID_RETRY_INTERVAL = 30.0
-
-
-def _get_shumei_device_id() -> str:
-    """获取可用的 dId：优先使用已自铸并持久化的设备ID，缺失时现场铸造。"""
-    global _shumei_did_failed_at
-    if time.time() - _shumei_did_failed_at < _SHUMEI_DID_RETRY_INTERVAL:
-        return ""
-    try:
-        did = ensure_map_device_id()
-    except Exception as exc:
-        _shumei_did_failed_at = time.time()
-        del exc
-        return ""
-    return did
 
 
 def _make_msg_id() -> str:
@@ -60,12 +31,11 @@ def _make_msg_id() -> str:
     return "".join(random.choice(alphabet) for _ in range(8))  # NOSONAR
 
 
-class MapAuthError(RuntimeError):
-    """地图认证链路失败（HG 授权 / cred 换取 / dId 铸造 / 认证请求网络异常）。"""
+class WsPositionMixin(OfficialMapApiMixin):
+    """提供历史位置消息接收能力：本地 WS 服务端和地图 WS 客户端。"""
 
-
-class WsPositionMixin:
-    """提供位置消息接收能力：本地 WS 服务端模式 + 终末地地图 WS 客户端模式。"""
+    def _invalidate_map_auth(self):
+        self._stop_map_ws_client()
 
     def _init_ws_position_mixin(self):
         ws_host = getattr(self, "_ws_host", None)
@@ -150,252 +120,6 @@ class WsPositionMixin:
     def _is_map_ws_client_enabled(self) -> bool:
         thread = self._map_ws_thread
         return bool(self._map_ws_enabled and thread and thread.is_alive())
-
-    @staticmethod
-    def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str] | None = None):
-        body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-        req_headers = {
-            "User-Agent": "Mozilla/5.0 ok-ef map websocket client",
-            "Accept": "application/json, text/plain, */*",
-            "Content-Type": "application/json",
-            "Origin": ENDFIELD_MAP_ORIGIN,
-            "Referer": ENDFIELD_MAP_REFERER,
-        }
-        if headers:
-            req_headers.update(headers)
-        req = request.Request(url, data=body, headers=req_headers, method="POST")
-        try:
-            with request.urlopen(req, timeout=10) as resp:
-                text = resp.read().decode("utf-8", errors="ignore")
-        except error.HTTPError as e:
-            body_text = e.read().decode("utf-8", errors="ignore")[:500]
-            raise RuntimeError(f"HTTP {e.code} {e.reason}: {body_text}") from e
-        if not text:
-            return None
-        return json.loads(text)
-
-    def _request_hg_grant_code(self, hg_token: str) -> str:
-        """调用 HG 授权接口换取 oauth code；异常时抛出 MapAuthError。"""
-        try:
-            grant_resp = self._post_json(
-                ENDFIELD_MAP_HG_GRANT_URL,
-                {
-                    "token": hg_token,
-                    "appCode": ENDFIELD_MAP_HG_APP_CODE,
-                    "type": 0,
-                },
-            )
-        except RuntimeError as e:
-            raise MapAuthError(f"HG 授权接口请求失败: {e}") from e
-        except (error.URLError, TimeoutError) as e:
-            # DNS/连接/TLS 失败与超时同样属于可预期的认证失败
-            raise MapAuthError(f"HG 授权接口网络异常: {e}") from e
-        if not isinstance(grant_resp, dict) or grant_resp.get("status") != 0:
-            raise MapAuthError(f"HG 授权接口返回异常: {grant_resp}")
-
-        oauth_code = ((grant_resp.get("data") or {}).get("code") or "").strip()
-        if not oauth_code:
-            raise MapAuthError("HG 授权接口没有返回 oauth code")
-        return oauth_code
-
-    def _request_map_cred(self, oauth_code: str, device_id: str) -> dict[str, Any]:
-        """用 oauth code 换取地图 cred；被风控拒绝(10001)时提示重新铸造 dId。
-
-        返回完整 cred_resp（data 含 cred/token/userId，顶层含服务器 timestamp）。
-        """
-        try:
-            cred_resp = self._post_json(
-                f"{ENDFIELD_MAP_API_HOST}/web/v1/user/auth/generate_cred_by_code",
-                {"kind": 1, "code": oauth_code},
-                headers={
-                    "platform": "3",
-                    "vName": "1.0.0",
-                    "timestamp": str(int(time.time())),
-                    "dId": device_id,
-                },
-            )
-        except RuntimeError as e:
-            raise MapAuthError(f"地图 cred 换取接口请求失败: {e}") from e
-        except (error.URLError, TimeoutError) as e:
-            raise MapAuthError(f"地图 cred 换取接口网络异常: {e}") from e
-        if not isinstance(cred_resp, dict) or cred_resp.get("code") != 0:
-            hint = ""
-            if isinstance(cred_resp, dict) and cred_resp.get("code") == 10001:
-                # 已存 dId 被风控拒绝：清除进程缓存与持久化文件，并停掉仍在
-                # 使用旧 dId 的地图WS客户端，下个触发周期自动重新铸造并重建
-                clear_stored_device_id()
-                self._stop_map_ws_client()
-                hint = "（设备信息无效：已存 dId 可能被风控拒绝，已自动清除本地缓存，稍后将重新铸造重试）"
-            raise MapAuthError(f"地图 cred 换取接口返回异常: {cred_resp}{hint}")
-
-        data = cred_resp.get("data") or {}
-        if not str(data.get("cred") or "").strip() or not str(data.get("token") or "").strip():
-            raise MapAuthError("地图 cred 换取接口缺少 cred 或 token")
-        return cred_resp
-
-    def _exchange_hg_token_for_map_auth(self, hg_token: str) -> dict[str, Any]:
-        oauth_code = self._request_hg_grant_code(hg_token)
-
-        device_id = _get_shumei_device_id()
-        if not device_id:
-            raise MapAuthError(
-                "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 "
-                "fp-it.portal101.cn），30 秒后将自动重试"
-            )
-
-        data = self._request_map_cred(oauth_code, device_id) or {}
-        cred_data = data.get("data") or {}
-        return {
-            "cred": str(cred_data.get("cred") or "").strip(),
-            "sign_token": str(cred_data.get("token") or "").strip(),
-            "user_id": str(cred_data.get("userId") or "").strip(),
-            "d_id": device_id,
-            "sign_time": {
-                "clientTime": str(int(time.time())),
-                "serverTime": str(data.get("timestamp") or int(time.time())),
-            },
-        }
-
-    def _resolve_auth_bundle(self, raw_value: str | None) -> dict[str, Any]:
-        hg_token = str(raw_value or "").strip().strip('"')
-        if not hg_token:
-            return {}
-        return self._exchange_hg_token_for_map_auth(parse.unquote(hg_token))
-
-    @staticmethod
-    def _map_api_headers(cred: str) -> dict[str, str]:
-        headers = {
-            "User-Agent": "Mozilla/5.0 ok-ef map websocket client",
-            "Accept": "application/json, text/plain, */*",
-            "Content-Type": "application/json",
-            "Origin": ENDFIELD_MAP_ORIGIN,
-            "Referer": ENDFIELD_MAP_REFERER,
-        }
-        if cred:
-            headers["cred"] = cred
-        return headers
-
-    def _get_adjusted_map_timestamp(self) -> str:
-        now = int(time.time())
-        sign_time = self._map_ws_sign_time if isinstance(self._map_ws_sign_time, dict) else {}
-        try:
-            client_time = int(sign_time.get("clientTime") or 0)
-            server_time = int(sign_time.get("serverTime") or 0)
-        except Exception:
-            client_time = 0
-            server_time = 0
-        if client_time and server_time:
-            return str(server_time + (now - client_time))
-        return str(now)
-
-    @staticmethod
-    def _map_sign_payload(path: str, method: str, headers: dict[str, str], query: str, body: str) -> str:
-        payload = path
-        payload += query if method.upper() == "GET" else body
-        timestamp = headers.get("timestamp")
-        if timestamp:
-            payload += str(timestamp)
-        compact_headers = {
-            "platform": headers.get("platform", ""),
-            "timestamp": headers.get("timestamp", ""),
-            "dId": headers.get("dId", ""),
-            "vName": headers.get("vName", ""),
-        }
-        payload += json.dumps(compact_headers, separators=(",", ":"), ensure_ascii=False)
-        return payload
-
-    def _map_sign_headers(self, url: str, method: str = "GET", body: str = "") -> dict[str, str]:
-        headers = {
-            "platform": "3",
-            "vName": "1.0.0",
-            "timestamp": self._get_adjusted_map_timestamp(),
-        }
-        if self._map_ws_device_id:
-            headers["dId"] = self._map_ws_device_id
-        else:
-            headers["dId"] = ""
-
-        token = self._map_ws_sign_token
-        if token:
-            parsed = parse.urlsplit(url)
-            query = parsed.query or ""
-            sign_payload = self._map_sign_payload(parsed.path, method, headers, query, body)
-            digest = hmac.new(token.encode("utf-8"), sign_payload.encode("utf-8"), hashlib.sha256).hexdigest()
-            # MD5 仅用于协议输出格式兼容；实际安全校验由上一行的 HMAC-SHA256 保证。
-            # NOSONAR (python:S4790)
-            headers["sign"] = hashlib.md5(digest.encode("utf-8")).hexdigest()  # NOSONAR
-
-        return headers
-
-    def _map_api_get(self, path: str, params: dict[str, Any] | None = None):
-        cred = self._map_ws_cred
-        if not cred:
-            return None
-
-        query = ""
-        if params:
-            query = "?" + parse.urlencode(params)
-        url = f"{ENDFIELD_MAP_API_HOST}{path}{query}"
-        headers = self._map_api_headers(cred)
-        headers.update(self._map_sign_headers(url, "GET"))
-        req = request.Request(url, headers=headers, method="GET")
-        try:
-            with request.urlopen(req, timeout=10) as resp:
-                text = resp.read().decode("utf-8", errors="ignore")
-        except error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="ignore")[:500]
-            raise RuntimeError(f"HTTP {e.code} {e.reason}: {body}") from e
-        if not text:
-            return None
-        return json.loads(text)
-
-    def _resolve_map_account_from_cred(self):
-        user_resp = self._map_api_get("/web/v1/user")
-        if not isinstance(user_resp, dict) or user_resp.get("code") != 0:
-            raise RuntimeError(f"用户信息接口返回异常: {user_resp}")
-
-        binding_resp = self._map_api_get("/api/v1/game/player/binding")
-        if (not isinstance(binding_resp, dict) or binding_resp.get("code") != 0) and self._map_ws_user_id:
-            binding_resp = self._map_api_get("/api/v1/game/player/binding", {"uid": self._map_ws_user_id})
-        if not isinstance(binding_resp, dict) or binding_resp.get("code") != 0:
-            raise RuntimeError(f"角色绑定接口返回异常: {binding_resp}")
-
-        data = binding_resp.get("data") or {}
-        game_map = data.get("gameMap") or {}
-        endfield = game_map.get("endfield")
-        if endfield is None:
-            for entry in data.get("list") or []:
-                if isinstance(entry, dict) and entry.get("appCode") == "endfield":
-                    endfield = entry
-                    break
-
-        if not isinstance(endfield, dict):
-            raise RuntimeError("当前账号没有终末地绑定角色")
-
-        binding_list = endfield.get("bindingList") or []
-        selected = None
-        for item in binding_list:
-            if isinstance(item, dict) and item.get("isDefault"):
-                selected = item
-                break
-        if selected is None and binding_list:
-            selected = binding_list[0]
-        if not isinstance(selected, dict):
-            raise RuntimeError("终末地绑定数据为空")
-
-        role = selected.get("defaultRole")
-        roles = selected.get("roles") or []
-        if not isinstance(role, dict) and roles:
-            role = roles[0]
-        if not isinstance(role, dict):
-            raise RuntimeError("终末地绑定数据缺少 roleId/serverId")
-
-        role_id = role.get("roleId")
-        server_id = role.get("serverId")
-        if role_id is None or server_id is None:
-            raise RuntimeError("终末地绑定数据缺少 roleId/serverId")
-
-        return {"roleId": str(role_id), "serverId": str(server_id)}
 
     async def _map_ws_send(self, ws, msg_type: int, data: dict[str, Any] | None = None, msg_id: str | None = None):
         payload = {"type": msg_type, "data": data or {}, "msgId": msg_id or _make_msg_id()}

@@ -163,7 +163,7 @@ class RuntimeStateMixin:
         return True
 
     def start_runtime_position_service(self, *, wait_stable: bool = True) -> bool:
-        """启动共享定位服务；``wait_stable`` 为真时等待稳定 WS 并建立新锚点。"""
+        """初始化共享定位服务；视觉源随后通过连续有效帧建立锚点。"""
 
         service = self.get_runtime_position_service()
         if service is None:
