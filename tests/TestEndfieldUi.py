@@ -773,6 +773,19 @@ class CombatSettingsTest(unittest.TestCase):
         host.close()
         host.deleteLater()
 
+    def test_list_row_translates_only_values_from_available_options(self):
+        from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
+
+        items = ["息壤", "赤铜零件"]
+        config = CombatEditBuffer({"序列": items})
+        with patch.object(og, "app", SimpleNamespace(tr=lambda value: f"译{value}")):
+            with_options = ModifyListItem({}, config, "序列", options_available=items)
+            free_text = ModifyListItem({}, config, "序列")
+        self.assertEqual(with_options.list_text.text(), "译息壤\n译赤铜零件")
+        self.assertEqual(free_text.list_text.text(), "息壤\n赤铜零件")
+        with_options.deleteLater()
+        free_text.deleteLater()
+
     def test_native_task_header_elides_without_losing_full_text(self):
         from ok.ui.qt.tasks.TaskCard import TaskCard
 
