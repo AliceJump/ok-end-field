@@ -1,6 +1,6 @@
 """Reproducible synthetic benchmark; timings are observations, not CI assertions.
 
-uv run --locked python -X utf8 scripts/benchmark_minimap_locator.py --iterations 20
+uv run --locked python -X utf8 scripts/benchmark_minimap_locator.py --baseline-ref <revision> --iterations 20
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ def measure(callback, iterations):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--iterations", type=int, default=20)
-    parser.add_argument("--baseline-ref", default="e8588b7e")
+    parser.add_argument("--baseline-ref", required=True, help="Local Git revision containing the baseline locator")
     args = parser.parse_args()
     if args.iterations < 1:
         parser.error("--iterations must be positive")

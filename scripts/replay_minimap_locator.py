@@ -1,6 +1,6 @@
 """Replay recorded game frames against baseline/current locators without truth seeding.
 
-uv run --locked python -X utf8 scripts/replay_minimap_locator.py
+uv run --locked python -X utf8 scripts/replay_minimap_locator.py --baseline-ref <revision>
 """
 
 from __future__ import annotations
@@ -59,6 +59,7 @@ def summarize(rows):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--baseline-ref", required=True, help="Local Git revision containing the baseline locator")
     parser.add_argument(
         "--datasets",
         nargs="+",
@@ -79,14 +80,14 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     source = subprocess.check_output(
-        ["git", "show", "e8588b7e:src/localization/minimap_map_locator.py"], cwd=ROOT
+        ["git", "show", f"{args.baseline_ref}:src/localization/minimap_map_locator.py"], cwd=ROOT
     ).decode("utf-8")
     baseline = types.ModuleType("_replay_baseline")
     sys.modules[baseline.__name__] = baseline
     exec(compile(source, "<baseline>", "exec"), baseline.__dict__)
     cv2.setNumThreads(1)
     report = {
-        "baseline_ref": "e8588b7e",
+        "baseline_ref": args.baseline_ref,
         "current_source_sha256": hashlib.sha256(
             (ROOT / "src/localization/minimap_map_locator.py").read_bytes()
         ).hexdigest(),
