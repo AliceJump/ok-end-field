@@ -1476,7 +1476,6 @@ class TestTemporaryParentRecovery(unittest.TestCase):
         self.assertTrue(record.exists())
         self.assertTrue((image.parent / "unrelated.txt").exists())
 
-
     def test_register_and_forget_parent_identity(self):
         parent, owner = self._parent(), self._owner(alive=True)
         with (

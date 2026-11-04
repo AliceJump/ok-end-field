@@ -432,9 +432,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_run_stops_after_six_observations(self):
         task = self.task()
-        task.prepare_observation.side_effect = [
-            {"name": str(index), "terminal": "outskirts"} for index in range(7)
-        ]
+        task.prepare_observation.side_effect = [{"name": str(index), "terminal": "outskirts"} for index in range(7)]
         task.navigate_observation.side_effect = None
         task.photograph_observation.side_effect = None
         task.photograph_observation.return_value = True
