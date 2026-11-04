@@ -42,6 +42,7 @@ STUCK = "stuck"
 REPLAN = "replan"
 DONE = "done"
 FAILED = "failed"
+SMOOTH_LOOKAHEAD_DISTANCE_M = 5.0
 
 
 def angle_delta(target: float, current: float) -> float:
@@ -505,7 +506,9 @@ class GridRouteFollower:
             start = waypoints[self.waypoint_index]
             end = waypoints[self.waypoint_index + 1]
             distance, _ratio = point_segment_distance(position, start, end)
-            if distance > radius:
+            # Look through small bends before the near-point stop zone, retaining
+            # the unconfirmed narrow entry and the common visibility checks.
+            if distance > radius and not self._can_look_through_waypoint(position, start, end, hold):
                 break
             if not self._shortcut_ok(position, start, end):
                 break
@@ -513,6 +516,14 @@ class GridRouteFollower:
             nearest = distance if nearest is None else min(nearest, distance)
             self.waypoint_index += 1
         return tuple(skipped), nearest
+
+    def _can_look_through_waypoint(self, position, start, end, narrow_hold):
+        return (
+            self.waypoint_index > 0
+            and self.waypoint_index + 1 != narrow_hold
+            and distance_xz(position, start) <= SMOOTH_LOOKAHEAD_DISTANCE_M
+            and abs(angle_delta(bearing_to_point(*start, *end), bearing_to_point(*position, *start))) <= 20.0
+        )
 
     def current_zip_line_step(self) -> ZipLineRouteStep | None:
         """返回下一项待执行的滑索步骤；没有待执行项时返回 ``None``。

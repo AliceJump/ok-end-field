@@ -38,6 +38,7 @@ import time
 
 from src.core.camera_input_config import get_default_camera_yaw_ratio, read_saved_camera_settings
 from src.localization.minimap_odometry import angle_delta, arrow_angle_to_bearing
+from src.localization.turn_feedback import filtered_turn_gain
 
 __all__ = [
     "CONFIG_ANGLE_REFRESH",
@@ -309,7 +310,12 @@ class MinimapHeadingMixin:
             self.log_warning(f"读不到朝向（score={score:.3f}），无法转向")
             return result
 
-        before, feedback_settled, control_per_px = self._execute_turn_rounds(
+        pending = None if control_state is None else control_state.get("pending_feedback")
+        if pending and control_state.get("configured") == per_px and 0 <= time.monotonic() - pending["sent_at"] <= 2.0:
+            return self._finish_pending_turn(
+                result, control_state, before, score, tolerance=tolerance, min_score=min_score, max_probe_s=max_probe_s
+            )
+        before, feedback_settled, control_per_px, samples = self._execute_turn_rounds(
             result, before, per_px, tolerance, max_rounds, min_score, max_probe_s, control_state
         )
         result["heading"] = before
@@ -318,7 +324,46 @@ class MinimapHeadingMixin:
         # 目标是一轮到位（只按一次 W，角色只前移一小步）；多轮只是兜底
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
         if control_state is not None and result["rounds"] > 0 and feedback_settled and before is not None:
-            control_state.update(configured=per_px, gain=control_per_px, heading=before)
+            control_state.update(
+                configured=per_px,
+                gain=control_per_px,
+                heading=before,
+                gain_samples=samples,
+                observed_at=time.monotonic(),
+            )
+        elif control_state is not None and result["rounds"] > 0 and not feedback_settled:
+            control_state.update(
+                configured=per_px,
+                pending_feedback={"before": result["history"][-1]["before"], "tries": 0, "sent_at": time.monotonic()},
+            )
+        return result
+
+    def _finish_pending_turn(self, result, control_state, before, score, *, tolerance, min_score, max_probe_s):
+        """Finish a short W probe before sending another camera rotation."""
+        pending = control_state["pending_feedback"]
+        per_px = control_state["configured"]
+        probe = abs(angle_delta(result["target"], before)) > tolerance
+        if probe:
+            after, score, settled = self._read_turn_feedback(
+                pending["before"], result["target"], min_score, max_probe_s, tolerance
+            )
+        else:
+            after, score, settled = self._wait_for_turn_heading(
+                pending["before"], before, score, target=result["target"], tolerance=tolerance, min_score=min_score
+            )
+        control_state.clear()
+        result.update(
+            probe_only=probe, heading=after, error=None if after is None else angle_delta(result["target"], after)
+        )
+        result["ok"] = settled and after is not None and abs(result["error"]) <= tolerance
+        if settled and after is not None:
+            control_state.update(
+                configured=per_px, gain=per_px, heading=after, gain_samples=[], observed_at=time.monotonic()
+            )
+        elif pending["tries"] < 1:
+            control_state.update(configured=per_px, pending_feedback={**pending, "tries": pending["tries"] + 1})
+        if not settled:
+            result["reason"] = "heading_unsettled"
         return result
 
     def aim_view_to_bearing(
@@ -544,7 +589,7 @@ class MinimapHeadingMixin:
     ):
         target = result["target"]
         settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
-        control_per_px, continued = self._continued_turn_gain(per_px, before, control_state)
+        control_per_px, continued, samples = self._continued_turn_gain(per_px, before, control_state)
         feedback_settled = True
         for i in range(1, max(1, int(max_rounds)) + 1):
             err = angle_delta(target, before)
@@ -576,7 +621,7 @@ class MinimapHeadingMixin:
                 break
             entry["error_after"] = angle_delta(target, after)
             control_per_px = self._adapt_turn_gain(
-                entry, per_px, tolerance, i > 1 or continued, feedback_settled, control_per_px
+                entry, per_px, tolerance, i > 1 or continued, feedback_settled, control_per_px, samples
             )
             result["history"].append(entry)
             result["rounds"] = i
@@ -587,7 +632,7 @@ class MinimapHeadingMixin:
             if abs(entry["error_after"]) <= tolerance:
                 break
 
-        return before, feedback_settled, control_per_px
+        return before, feedback_settled, control_per_px, samples
 
     def _continued_turn_gain(self, per_px, before, control_state):
         control_per_px = per_px
@@ -596,12 +641,14 @@ class MinimapHeadingMixin:
             and control_state.get("configured") == per_px
             and control_state.get("heading") is not None
             and abs(angle_delta(before, control_state["heading"])) <= 1.0
+            and 0 <= time.monotonic() - control_state.get("observed_at", -math.inf) <= 2.0
         )
+        samples = list(control_state.get("gain_samples", ())) if continued else []
         if continued:
             control_per_px = control_state["gain"]
         if control_state is not None:
             control_state.clear()
-        return control_per_px, continued
+        return control_per_px, continued, samples
 
     def _read_turn_feedback(self, before, target, min_score, max_probe_s, tolerance):
         if max_probe_s is None:
@@ -616,9 +663,17 @@ class MinimapHeadingMixin:
             tolerance=tolerance,
             min_score=min_score,
         )
+        if (
+            max_probe_s is not None
+            and max_probe_s < self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD)
+            and after is not None
+            and abs(angle_delta(after, before)) <= 1.0
+            and abs(angle_delta(target, after)) > tolerance
+        ):
+            feedback_settled = False
         return after, score, feedback_settled
 
-    def _adapt_turn_gain(self, entry, per_px, tolerance, enabled, feedback_settled, control_per_px):
+    def _adapt_turn_gain(self, entry, per_px, tolerance, enabled, feedback_settled, control_per_px, samples):
         after, before, dx = entry["after"], entry["before"], entry["dx"]
         observed_delta = angle_delta(after, before)
         # The first W (unless continuing a confirmed single-step session)
@@ -629,12 +684,14 @@ class MinimapHeadingMixin:
             enabled
             and feedback_settled
             and abs(dx) >= RATIO_HINT_MIN_DX
-            and abs(observed_delta) < 180.0 - tolerance
+            and 6.0 <= abs(observed_delta) < min(135.0, 180.0 - tolerance)
+            and abs(dx * control_per_px) < 135.0
             and observed_delta * dx * per_px > 0
         ):
             entry["ratio"] = observed_delta / dx
-            self._warn_if_ratio_off(entry["ratio"], per_px, dx)
-            measured_ratio = abs(entry["ratio"])
-            if abs(per_px) * 0.05 <= measured_ratio <= abs(per_px) * 5.0:
-                control_per_px = self._adapted_yaw_per_pixel(per_px, entry["ratio"], dx)
+            updated = filtered_turn_gain(per_px, control_per_px, entry["ratio"], samples)
+            entry["gain_after"] = updated
+            if updated != control_per_px:
+                self._warn_if_ratio_off(updated, per_px, dx)
+            control_per_px = updated
         return control_per_px

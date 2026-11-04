@@ -1340,7 +1340,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         session = ctx.session
         step = ctx.step
         action_started = self.active_time()
-        if self._grid_cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True) and not self._should_turn_grid_in_place(step):
+        if self._grid_cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True) and not self._should_turn_grid_in_place(
+            step, stop_distance=self._grid_turn_stop_distance(ctx)
+        ):
             session.turn_control.clear()
             self._turn_grid_while_moving(step)
             if self._grid_nav_w_held:
@@ -3158,7 +3160,21 @@ class GridNavigationMixin(RuntimeStateMixin):
             self._grid_nav_sprint_active = False
         self._grid_nav_w_held = held
 
-    def _should_turn_grid_in_place(self, step: FollowerStep) -> bool:
+    def _grid_turn_stop_distance(self, ctx: NavTick) -> float | None:
+        """Reserve sampling, steering and braking time for small corrections."""
+        if ctx.session.poll_duration_s <= 0 or ctx.step.heading_error is None or abs(ctx.step.heading_error) > 20:
+            return None
+        radius = max(
+            0.1,
+            min(
+                self._grid_cfg_float(CONFIG_GRID_GOAL_RADIUS, 2.0),
+                self._grid_cfg_float(CONFIG_GRID_WAYPOINT_RADIUS, 1.0),
+            ),
+        )
+        speed = max(6.0, ctx.session.walk_speed_m_s)
+        return max(2.0, radius + speed * (2 * ctx.session.poll_duration_s + ctx.tick + 0.25))
+
+    def _should_turn_grid_in_place(self, step: FollowerStep, *, stop_distance: float | None = None) -> bool:
         """大角度转向或接近航点时停车转向，避免画弧越过错过的航点。"""
         heading_error = step.heading_error
         if heading_error is not None:
@@ -3175,6 +3191,8 @@ class GridNavigationMixin(RuntimeStateMixin):
                 0.0,
                 self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MIN_DISTANCE, 5.0),
             )
+            if stop_distance is not None:
+                min_distance = min(min_distance, stop_distance)
             if float(distance) < min_distance:
                 self.log_debug(f"距目标航点 {float(distance):.2f}m < {min_distance:.2f}m，改为停车转向")
                 return True
@@ -3483,7 +3501,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             control_state=session.turn_control,
             max_probe_s=probe_s,
         )
-        if turn.get("rounds", 0) > 0:
+        if turn.get("rounds", 0) > 0 or turn.get("probe_only"):
             self._grid_nav_note_turn_movement(ctx, action_started)
         if not turn.get("ok"):
             self.log_debug(

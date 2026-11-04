@@ -3958,3 +3958,7 @@ msgid "地图设施查询凭证；不参与视觉或抓包定位。留空则使�
 msgstr ""
 "Credentials for map facility queries; not used for visual or packet "
 "positioning. Leave blank to use the selected map account or current account."
+
+#: src/core/GridNavConfig.py
+msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
+msgstr "Brake early within this distance of a waypoint. For small corrections with timely position updates, turning can continue while reserving a safe distance based on speed and sampling time."

@@ -60,6 +60,59 @@ class TestGridRouteFollower(unittest.TestCase):
             ),
         )
 
+    def _smooth_route(self, *, end=(9.5, 5.5), narrow_entries=()):
+        follower = GridRouteFollower(
+            _line_grid(), FollowerConfig(arrive_radius=0.5, goal_radius=0.5, margin=0, allow_unknown=True)
+        )
+        follower.plan_result = PlanResult(
+            ok=True, waypoints=[(0.5, 5.5), (4.5, 5.5), end], narrow_entries=narrow_entries
+        )
+        follower.waypoint_index = 1
+        return follower
+
+    def test_smooth_visible_waypoint_is_looked_through_before_near_stop_zone(self):
+        follower = self._smooth_route()
+        step = follower.update((1.5, 5.5), 85, now=0)
+        self.assertEqual(step.skipped_waypoints, (1,))
+        self.assertEqual(step.waypoint, (9.5, 5.5))
+        self.assertEqual(step.action, TURN)
+        self.assertEqual(step.distance_to_waypoint, 8)
+
+    def test_lookahead_preserves_sharp_corner(self):
+        follower = self._smooth_route(end=(4.5, 9.5))
+        step = follower.update((1.5, 5.5), 85, now=0)
+        self.assertEqual(step.waypoint_index, 1)
+        self.assertEqual(step.skipped_waypoints, ())
+
+    def test_lookahead_does_not_approach_unconfirmed_narrow_entry_early(self):
+        follower = self._smooth_route(narrow_entries=(2,))
+        step = follower.update((1.5, 5.5), 85, now=0)
+        self.assertEqual(step.waypoint_index, 1)
+
+    def test_lookahead_respects_blocked_cells_and_unknown_risk(self):
+        for state in (CELL_BLOCKED, CELL_UNKNOWN):
+            with self.subTest(state=state):
+                follower = self._smooth_route(end=(9.5, 6.5))
+                planner = follower.planner
+                start, anchor, end = (5, 1), (5, 4), (6, 9)
+                only_direct = set(planner._line_cells(start, end)) - set(planner._line_cells(anchor, end))
+                cell = next(c for c in only_direct if c != start)
+                follower.grid.cells[cell] = state
+                step = follower.update((1.5, 5.5), 85, now=0)
+                self.assertEqual(step.waypoint_index, 1)
+
+    def test_disabling_shortcuts_disables_smooth_lookahead(self):
+        follower = self._smooth_route()
+        follower.config = FollowerConfig(shortcut_radius=0)
+        step = follower.update((1.5, 5.5), 85, now=0)
+        self.assertEqual(step.waypoint_index, 1)
+
+    def test_lookahead_retains_goal_arrival_radius(self):
+        follower = self._smooth_route()
+        follower.update((1.5, 5.5), 90, now=0)
+        self.assertEqual(follower.update((8.8, 5.5), 90, now=1).action, WALK)
+        self.assertEqual(follower.update((9.2, 5.5), 90, now=2).action, DONE)
+
     def test_walks_and_reaches_goal(self):
         result = self.follower.plan((0.5, 0.5), (4.5, 0.5))
         self.assertTrue(result.ok, result)

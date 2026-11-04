@@ -1,5 +1,6 @@
 """Unit tests for grid planning and game-facing route execution."""
 
+import math
 import tempfile
 import unittest
 from pathlib import Path
@@ -1791,6 +1792,100 @@ class TestGridNavigationMixin(unittest.TestCase):
     def test_close_waypoint_uses_stationary_turn(self):
         step = SimpleNamespace(heading_error=20.0, distance_to_waypoint=2.0)
         self.assertTrue(self.task._should_turn_grid_in_place(step))
+
+    def test_small_near_correction_can_keep_w_with_fresh_position_budget(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.poll_duration_s = 0.04
+        ctx.session.walk_speed_m_s = 6
+        ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=8, distance_to_waypoint=4.5)
+        self.task._set_grid_walking(True)
+        self.task.pose_turn_to_bearing = mock.Mock()
+        self.task._grid_nav_state_turn(ctx)
+        self.assertTrue(self.task.w_down)
+        self.assertTrue(self.task.rotation_w_held[-1])
+        self.task.pose_turn_to_bearing.assert_not_called()
+
+    def test_timed_walk_is_smoother_without_relaxing_goal_accuracy(self):
+        grid = DenseGrid(np.full((12, 30), CELL_FREE, np.uint8), GridMeta(map_name="test", zoom="4", cell_size=1))
+        save_grid(self.path, grid)
+        points = [(0.5, 5.5), (4.5, 5.7), (8.5, 5.5), (12.5, 5.7), (16.5, 5.5), (20.5, 5.7), (25.5, 5.5)]
+
+        class TimedTask(_FakeGridTask):
+            def __init__(self, path, speed, poll):
+                super().__init__(path)
+                self.speed, self.poll = speed, poll
+                self.x, self.z, self.heading = 0.5, 5.5, 84
+                self.trace = []
+
+            def sleep(self, seconds):
+                self.t += seconds
+                if self.w_down:
+                    radians = math.radians(self.heading)
+                    self.x += self.speed * seconds * math.sin(radians)
+                    self.z += self.speed * seconds * math.cos(radians)
+                self.trace.append((self.x, self.z))
+
+            def next_frame(self):
+                self.sleep(self.poll)
+                return object()
+
+            def minimap_position(self, *args, **kwargs):
+                return {
+                    **super().minimap_position(*args, **kwargs),
+                    "sync_supported": False,
+                    "speed": self.speed if self.w_down else 0,
+                }
+
+            def turn_to_bearing(self, target_deg, **kwargs):
+                self.sleep(0.3)
+                return super().turn_to_bearing(target_deg, **kwargs)
+
+            def _create_grid_route(self, *args, **kwargs):
+                follower = GridRouteFollower(
+                    grid, FollowerConfig(arrive_radius=0.5, goal_radius=0.5, margin=0, allow_unknown=False)
+                )
+                follower.plan_result = PlanResult(ok=True, waypoints=points)
+                follower.waypoint_index = 1
+                follower._route_start, follower.goal = points[0], points[-1]
+                return follower, follower.plan_result
+
+        for speed, poll in ((3, 0.04), (3, 0.12), (6, 0.04), (6, 0.12)):
+            with self.subTest(speed=speed, poll=poll):
+                tasks = []
+                for enabled in (False, True):
+                    task = TimedTask(self.path, speed, poll)
+                    if not enabled:
+                        original = task._should_turn_grid_in_place
+                        task._should_turn_grid_in_place = lambda step, original=original, **kw: original(step)
+                    with mock.patch("src.nav.route_follower.SMOOTH_LOOKAHEAD_DISTANCE_M", 5.0 if enabled else 0.0):
+                        self.assertTrue(task.navigate_grid_to(points[-1], map_id="test"))
+                    self.assertLessEqual(math.dist((task.x, task.z), points[-1]), 0.5)
+                    self.assertTrue(all(grid.is_free(*grid.index_of_world(x, z)) for x, z in task.trace))
+                    tasks.append(task)
+                old, new = tasks
+                self.assertLess(len(new.key_up_events), len(old.key_up_events))
+                self.assertLess(len(new.turns), len(old.turns))
+                self.assertLess(new.t, old.t)
+
+    def test_near_correction_stops_for_slow_sampling_or_large_error(self):
+        for cost, error in ((0.5, 8), (0.04, 30)):
+            with self.subTest(cost=cost, error=error):
+                ctx = self._control_tick(sync_supported=False)
+                ctx.session.poll_duration_s = cost
+                ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=error, distance_to_waypoint=4.5)
+                self.task._set_grid_walking(True)
+                self.task.pose_turn_to_bearing = mock.Mock(return_value={"ok": True, "rounds": 1})
+                self.task._grid_nav_state_turn(ctx)
+                self.assertFalse(self.task.w_down)
+                self.task.pose_turn_to_bearing.assert_called_once()
+
+    def test_short_feedback_probe_still_counts_as_turn_movement(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=90, distance_to_waypoint=3)
+        self.task._grid_nav_note_turn_movement = mock.Mock()
+        self.task.pose_turn_to_bearing = mock.Mock(return_value={"rounds": 0, "probe_only": True, "ok": False})
+        self.task._grid_nav_state_turn(ctx)
+        self.task._grid_nav_note_turn_movement.assert_called_once()
 
     def test_navigate_can_fall_back_to_stationary_turn(self):
         self.task.config["航点移动转向"] = False

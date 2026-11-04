@@ -4094,3 +4094,7 @@ msgstr ""
 "Credenciales para consultar instalaciones del mapa; no se usan para "
 "posicionamiento visual ni por paquetes. Déjalo vacío para usar la cuenta del"
 " mapa seleccionada o la cuenta actual."
+
+#: src/core/GridNavConfig.py
+msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
+msgstr "Frena antes al estar dentro de esta distancia de un punto de ruta. Si la corrección es pequeña y la posición se actualiza a tiempo, puede seguir girando dejando una distancia segura según la velocidad y el tiempo de muestreo."
