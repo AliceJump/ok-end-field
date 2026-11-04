@@ -138,6 +138,7 @@ class VisualPositionSource:
             "tier_id": None,
             "tier_trusted": False,
             "tier_evidence_required": True,
+            "visual_confirmation_pending": False,
         }
         if locate is not None:
             # Keep rejection evidence observable without publishing a candidate
@@ -164,6 +165,10 @@ class VisualPositionSource:
             self.reset()
             return self.unavailable("no_frame")
         shape = frame.shape[:2]
+        if shape == self._shape and clock == self._last_clock and self._last_state.get("visual_confirmation_pending"):
+            # A fast confirmation poll can receive the same presented frame.
+            # It is neither a second observation nor a reason to discard the first.
+            return {**self._last_state, "visual_duplicate_frame": True}
         if shape != self._shape or (self._last_clock is not None and clock <= self._last_clock):
             self._initialize_shape(shape)
         self._last_clock = clock
@@ -243,7 +248,10 @@ class VisualPositionSource:
             self.chain.reset()
             self.keyframe_chain.reset()
             self._keyframe_tick = self._keyframe_uid = 0
-        return self.unavailable(match.reason, locate=match.locate)
+        self.unavailable(match.reason, locate=match.locate)
+        # Pending is emitted only after the tracker's strict acquisition gates.
+        self._last_state["visual_confirmation_pending"] = match.status == "pending"
+        return dict(self._last_state)
 
     def _correct_visual_chains(self, clock, raw, anchor):
         corrected = raw

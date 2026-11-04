@@ -1148,6 +1148,47 @@ class TestGridNavigationMixin(unittest.TestCase):
         ctx.pose.update(absolute_position_valid=True, position_trusted=False)
         self.assertEqual(self.task._grid_nav_classify(ctx), NavState.WAIT_TRUST)
 
+    def test_pending_visual_anchor_prioritizes_new_wgc_frame_and_still_releases_w(self):
+        ctx = self._control_tick(
+            x=None,
+            z=None,
+            source="visual_map",
+            visual_confirmation_pending=True,
+            frame_t=100.0,
+            frame_time_source="wgc_system_relative_time",
+        )
+        self.assertEqual(self.task._grid_nav_classify(ctx), NavState.WAIT_ANCHOR)
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_state_wait_anchor(ctx)
+        self.assertFalse(self.task.w_down)
+        self.assertEqual(self.task.t, 0)
+        ctx.pose["visual_duplicate_frame"] = True
+        self.task._grid_nav_state_wait_anchor(ctx)
+        self.assertAlmostEqual(self.task.t, 1 / 60)
+        self.assertEqual(self.task._grid_anchor_poll_delay(ctx.pose, 0.01), 0.01)
+
+    def test_anchor_fast_poll_requires_pending_visual_candidate_and_real_timestamp(self):
+        pending = {
+            "source": "visual_map",
+            "visual_confirmation_pending": True,
+            "frame_t": 100.0,
+            "frame_time_source": "wgc_system_relative_time",
+        }
+        for fields in (
+            {"source": "capture"},
+            {"visual_confirmation_pending": False},
+            {"frame_time_source": "sample_time_fallback"},
+            {"frame_time_source": None},
+            {"frame_t": None},
+            {"frame_t": float("nan")},
+            {"frame_t": float("inf")},
+        ):
+            with self.subTest(fields=fields):
+                ctx = self._control_tick(**{**pending, **fields})
+                self.task.t = 0
+                self.task._grid_nav_state_wait_anchor(ctx)
+                self.assertEqual(self.task.t, ctx.tick)
+
     def test_confirmed_waypoint_executes_next_turn_without_an_extra_pose_cycle(self):
         ctx = self._control_tick(sync_supported=False)
         ctx.session.waypoints_since_calibration = 4

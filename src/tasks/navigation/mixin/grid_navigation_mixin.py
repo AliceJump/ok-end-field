@@ -936,8 +936,25 @@ class GridNavigationMixin(RuntimeStateMixin):
         """
 
         self._wait_for_grid_position(self._grid_wait_reason(ctx.pose, "等待坐标"))
-        self.sleep(ctx.tick)
+        delay = self._grid_anchor_poll_delay(ctx.pose, ctx.tick)
+        if delay > 0:
+            self.sleep(delay)
         return None
+
+    @staticmethod
+    def _grid_anchor_poll_delay(pose: dict | None, tick: float) -> float:
+        """Prioritize a fresh confirmation frame without spinning on duplicates."""
+        state = pose or {}
+        if (
+            state.get("source") != "visual_map"
+            or not state.get("visual_confirmation_pending")
+            or state.get("frame_time_source") != "wgc_system_relative_time"
+        ):
+            return tick
+        stamp = state.get("frame_t")
+        if not isinstance(stamp, (int, float)) or not math.isfinite(stamp):
+            return tick
+        return min(tick, 1 / 60) if state.get("visual_duplicate_frame") else 0.0
 
     @staticmethod
     def _grid_wait_reason(pose: dict | None, prefix: str) -> str:

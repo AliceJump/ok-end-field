@@ -44,6 +44,8 @@ from src.localization.position_config_migration import (
 from src.localization.position_service import WorldPoseService
 from src.localization.visual_position_source import VisualPositionSource
 from src.runtime_state.state_hub import RuntimeStateHub
+from src.runtime_state.topics import RuntimeTopic
+from src.runtime_state.world_pose import publish_world_pose
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
 from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
 
@@ -115,6 +117,69 @@ class TestVisualPositionSource(unittest.TestCase):
         self.assertGreater(len(source.chain._nodes), 1)
         self.assertGreater(len(source.keyframe_chain._nodes), 0)
 
+    def test_pending_duplicate_keeps_evidence_without_counting_as_confirmation(self):
+        source = VisualPositionSource(self.task, self.locator, "map02")
+        frame = self.frame()
+        first = source.sample(frame, now=1)
+        self.assertTrue(first["visual_confirmation_pending"])
+        self.assertFalse(first["position_trusted"])
+        with patch.object(source.tracker, "update", wraps=source.tracker.update) as update:
+            for _ in range(3):
+                duplicate = source.sample(frame, now=1)
+                self.assertTrue(duplicate["visual_duplicate_frame"])
+                self.assertTrue(duplicate["visual_confirmation_pending"])
+                self.assertFalse(duplicate["position_trusted"])
+                self.assertIsNone(duplicate["x"])
+            update.assert_not_called()
+            confirmed = source.sample(frame, now=1.02)
+            update.assert_called_once()
+        self.assertTrue(confirmed["position_trusted"])
+        self.assertFalse(confirmed.get("visual_confirmation_pending", False))
+        self.assertFalse(confirmed.get("visual_duplicate_frame", False))
+        self.assertAlmostEqual(confirmed["x"], 125, delta=0.3)
+
+    def test_pending_clock_rollback_and_loading_still_require_new_confirmation(self):
+        for next_time, next_frame in ((0.9, self.frame()), (1.02, np.zeros((360, 640, 3), dtype=np.uint8))):
+            with self.subTest(next_time=next_time):
+                source = VisualPositionSource(self.task, self.locator, "map02")
+                source.sample(self.frame(), now=1)
+                state = source.sample(next_frame, now=next_time)
+                self.assertFalse(state["position_trusted"])
+                self.assertFalse(state.get("visual_duplicate_frame", False))
+                if next_time > 1:
+                    self.assertFalse(state["visual_confirmation_pending"])
+                    self.assertFalse(source.sample(self.frame(), now=1.04)["position_trusted"])
+
+    def test_fast_confirmation_avoids_crossing_unchanged_one_second_gap_limit(self):
+        # Deterministic 840 ms capture/matching/heading budget: another fixed
+        # 200 ms wait would discard the first observation, not relax its gates.
+        for fast in (False, True):
+            with self.subTest(fast=fast):
+                source = VisualPositionSource(self.task, self.locator, "map02")
+                first = source.sample(self.frame(), now=1)
+                first.update(frame_t=1.0, frame_time_source="wgc_system_relative_time")
+                hub = RuntimeStateHub()
+                publish_world_pose(hub, first, source="visual_map", now=1)
+                first = hub.value(RuntimeTopic.WORLD_POSE, now=1)
+                delay = GridNavigationMixin._grid_anchor_poll_delay(first, 0.2) if fast else 0.2
+                self.assertEqual(source.tracker.pending_max_gap_s, 1.0)
+                state = source.sample(self.frame(), now=1 + 0.84 + delay)
+                self.assertEqual(state["position_trusted"], fast)
+
+    def test_confirmation_metadata_survives_world_pose_publication_and_clears_on_accept(self):
+        source = VisualPositionSource(self.task, self.locator, "map02")
+        source.sample(self.frame(), now=1)
+        hub = RuntimeStateHub()
+        for stamp, pending, duplicate in ((1, True, True), (1.02, False, False)):
+            state = source.sample(self.frame(), now=stamp)
+            state.update(frame_t=stamp, frame_time_source="wgc_system_relative_time")
+            publish_world_pose(hub, state, source="visual_map", now=stamp)
+            pose = hub.value(RuntimeTopic.WORLD_POSE, now=stamp)
+            self.assertEqual(pose["visual_confirmation_pending"], pending)
+            self.assertEqual(pose["visual_duplicate_frame"], duplicate)
+            self.assertEqual(pose["position_trusted"], not pending)
+            self.assertEqual(GridNavigationMixin._grid_anchor_poll_delay(pose, 0.2), 1 / 60 if duplicate else 0.2)
+
     def test_subpixel_coordinates_and_scores_use_the_same_patch(self):
         frame = self.frame(500.45, 400.35)
         geometry = MinimapGeometry.from_frame(self.width, self.height)
@@ -147,6 +212,7 @@ class TestVisualPositionSource(unittest.TestCase):
         self.assertIsNone(state["x"])
         self.assertIsNone(source.estimate())
         self.assertEqual(state["trust_reason"], "insufficient_acquisition_evidence")
+        self.assertFalse(state["visual_confirmation_pending"])
         self.assertEqual(state["visual_full_ncc"], 0.63)
         self.assertEqual(state["visual_match_elapsed_s"], 0.4)
         state = source.sample(np.zeros((360, 640, 3), dtype=np.uint8), now=1.2)

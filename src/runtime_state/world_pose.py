@@ -60,6 +60,8 @@ def build_world_pose(
         "visual_confidence": state.get("visual_confidence"),
         "visual_full_ncc": state.get("visual_full_ncc"),
         "visual_margin": state.get("visual_margin"),
+        "visual_confirmation_pending": bool(state.get("visual_confirmation_pending", False)),
+        "visual_duplicate_frame": bool(state.get("visual_duplicate_frame", False)),
         "ws": state.get("ws"),
         "ws_xyz": state.get("ws_xyz"),
         "error": state.get("error"),
