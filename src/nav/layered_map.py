@@ -409,7 +409,7 @@ class LayeredMap:
 
 
 def load_catalog(path) -> dict[str, tuple[str, ...]]:
-    """读分层目录 ``catalog.json``，返回 ``level_id -> (tier, ...)``。
+    """读分层目录文件，返回 ``level_id -> (tier, ...)``。
 
     只用来回答"这个 ``level_id`` 下声明了哪些层"——它包含**还没有网格文件**的层，
     这是"某层没网格"与"根本没有分层"唯一能区分开的依据。文件不存在或形状不认识时
@@ -451,13 +451,17 @@ def load_layered_map(
     这是给调用方的**首选入口**——单独调 :func:`discover_layers` 会丢掉声明过但还没有
     网格的层，层判定的 ``no_grid`` 分支就退化成 ``main``。
 
-    ``links.json`` 与 ``catalog.json`` 都在同一个目录里找；都缺时返回"只有层"的地图，
+    ``links.json`` 与分层目录都在同一目录里找；优先用 ``catalog.json``，缺少时兼容
+    数据仓发布的 ``levels.json``。都缺时返回"只有层"的地图，
     此时跨层不可达（而不是报错）——数据没准备好是常态，调用方按 ``ready``/``blockers``
     决定要不要提示用户。
     """
     root = Path(layer_dir)
     layers = discover_layers(root, map_name, zoom=zoom, tiers=tiers)
-    catalog = load_catalog(root / "catalog.json")
+    catalog_path = root / "catalog.json"
+    if not catalog_path.is_file() and (root / "levels.json").is_file():
+        catalog_path = root / "levels.json"
+    catalog = load_catalog(catalog_path)
     # 只留**本图**的连接：links.json 是一份全局表，可能含别的地图的连接。不过滤的话
     # 一张没有分层、也没有本图连接的普通地图会被判定成"有分层数据"，进而走进分层路径。
     name = str(map_name or "").strip()
@@ -468,7 +472,7 @@ def load_layered_map(
         layers=layers,
         links=links,
         declared_tiers=catalog,
-        # 目录没读到不是错误（它是编辑器的本地缓存，不进版本库），但层判定会降级到
+        # 目录没读到不是错误，但层判定会降级到
         # "按文件发现"，调用方需要据此提示，而不是当成正常结果。
         catalog_loaded=bool(catalog),
     )

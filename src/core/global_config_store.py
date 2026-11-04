@@ -429,9 +429,10 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     避免「先删后迁移」导致旧值丢失。
     """
     if option.name == POSITION_CONFIG_NAME:
-        from src.localization.position_config_migration import backup_retired_position_settings
+        from src.localization.position_config_migration import backup_retired_position_settings, migrate_visual_map_root
 
         backup_retired_position_settings()
+        migrate_visual_map_root()
     state = _read_migration_state()
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)

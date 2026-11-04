@@ -20,6 +20,7 @@ from src.core.PositionConfig import (
     CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT,
     CONFIG_VISUAL_MAP_ROOT,
     DEFAULT_POSITION_CONFIG,
+    DEFAULT_VISUAL_MAP_ROOT,
 )
 from src.localization.calibrated_map_store import CalibratedMapStore
 from src.localization.layered_minimap_locator import LayeredMinimapLocator, layer_calibration
@@ -33,7 +34,11 @@ from src.localization.minimap_map_locator import (
     MinimapTracker,
     candidate_margin,
 )
-from src.localization.position_config_migration import backup_retired_position_settings, migrate_item_position_overrides
+from src.localization.position_config_migration import (
+    backup_retired_position_settings,
+    migrate_item_position_overrides,
+    migrate_visual_map_root,
+)
 from src.localization.position_service import WorldPoseService
 from src.localization.visual_position_source import VisualPositionSource
 from src.runtime_state.state_hub import RuntimeStateHub
@@ -363,6 +368,65 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
             backup_retired_position_settings()
         backup = self.root / "position_source_migration_backup/v1/Position Config.json"
         self.assertEqual(json.loads(backup.read_text()), old)
+
+    def test_missing_legacy_resource_root_migrates_once_with_backup(self):
+        source = self.root / "Position Config.json"
+        original = {CONFIG_VISUAL_MAP_ROOT: "assets/localization/maps", CONFIG_USE_EXPERIMENTAL: True, "other": 17}
+        source.write_text(json.dumps(original), encoding="utf-8")
+        with (
+            patch(
+                "src.localization.position_config_migration.config_path",
+                side_effect=lambda *parts: str(self.root.joinpath(*parts)),
+            ),
+            patch("src.localization.position_config_migration.Path.is_dir", return_value=False),
+        ):
+            self.assertTrue(migrate_visual_map_root())
+            self.assertFalse(migrate_visual_map_root())
+        expected = {**original, CONFIG_VISUAL_MAP_ROOT: DEFAULT_VISUAL_MAP_ROOT}
+        self.assertEqual(json.loads(source.read_text(encoding="utf-8")), expected)
+        backup = self.root / "position_source_migration_backup/v2/Position Config.json"
+        self.assertEqual(json.loads(backup.read_text(encoding="utf-8")), original)
+
+    def test_existing_legacy_resources_remain_selected(self):
+        source = self.root / "Position Config.json"
+        original = {CONFIG_VISUAL_MAP_ROOT: "assets\\localization\\maps\\"}
+        source.write_text(json.dumps(original), encoding="utf-8")
+        with (
+            patch(
+                "src.localization.position_config_migration.config_path",
+                side_effect=lambda *parts: str(self.root.joinpath(*parts)),
+            ),
+            patch("src.localization.position_config_migration.Path.is_dir", return_value=True),
+        ):
+            self.assertFalse(migrate_visual_map_root())
+        self.assertEqual(json.loads(source.read_text(encoding="utf-8")), original)
+        self.assertFalse((self.root / "position_source_migration_backup/v2").exists())
+
+    def test_resource_root_migration_preserves_custom_new_and_missing_values(self):
+        source = self.root / "Position Config.json"
+        for values in (
+            {},
+            {CONFIG_VISUAL_MAP_ROOT: "custom/maps"},
+            {CONFIG_VISUAL_MAP_ROOT: DEFAULT_VISUAL_MAP_ROOT},
+            {CONFIG_VISUAL_MAP_ROOT: None},
+        ):
+            with self.subTest(values=values):
+                source.write_text(json.dumps(values), encoding="utf-8")
+                with patch(
+                    "src.localization.position_config_migration.config_path",
+                    side_effect=lambda *parts: str(self.root.joinpath(*parts)),
+                ):
+                    self.assertFalse(migrate_visual_map_root())
+                self.assertEqual(json.loads(source.read_text(encoding="utf-8")), values)
+
+    def test_resource_root_migration_does_not_create_missing_config(self):
+        source = self.root / "Position Config.json"
+        with patch(
+            "src.localization.position_config_migration.config_path",
+            side_effect=lambda *parts: str(self.root.joinpath(*parts)),
+        ):
+            self.assertFalse(migrate_visual_map_root())
+        self.assertFalse(source.exists())
 
     def test_account_override_migration_is_idempotent_and_preserves_other_values(self):
         data = {

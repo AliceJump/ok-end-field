@@ -29,6 +29,7 @@ from src.core.PositionConfig import (
     CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE,
     CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW,
     CONFIG_VISUAL_MAP_ROOT,
+    DEFAULT_VISUAL_MAP_ROOT,
     POSITION_CONFIG_NAME,
 )
 from src.localization.calibrated_map_store import CalibratedMapStore
@@ -106,7 +107,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
     def start_minimap_position(self, *, wait_stable=True):
         capture = self.experimental_capture_enabled()
         map_id = str(self._nav_config().get(NAV_MAP_ID_KEY) or "").strip() if not capture else ""
-        root = self._cfg_str(CONFIG_VISUAL_MAP_ROOT, "assets/localization/maps") if not capture else ""
+        root = self._cfg_str(CONFIG_VISUAL_MAP_ROOT, DEFAULT_VISUAL_MAP_ROOT) if not capture else ""
         chain_options = {
             "anchor_weight": self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT, 50),
             "commit_min_shift_px": self._cfg_float(CONFIG_COMMIT_MIN_SHIFT, 2),

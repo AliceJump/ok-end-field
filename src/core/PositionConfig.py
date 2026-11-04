@@ -9,6 +9,7 @@ from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 POSITION_CONFIG_NAME = "Position Config"
 
 CONFIG_VISUAL_MAP_ROOT = "视觉地图资源目录"
+DEFAULT_VISUAL_MAP_ROOT = "assets/nav-grid-data/localization/maps"
 
 CONFIG_WS_WAIT = "WS等待稳定秒数"
 CONFIG_WS_MIN_HITS = "WS稳定最小位置数"
@@ -36,7 +37,7 @@ CONFIG_EXPERIMENTAL_UPDATE = "检查并更新后端"
 DEFAULT_COMMIT_MIN_SHIFT_PX = 2.0
 
 DEFAULT_POSITION_CONFIG: dict = {
-    CONFIG_VISUAL_MAP_ROOT: "assets/localization/maps",
+    CONFIG_VISUAL_MAP_ROOT: DEFAULT_VISUAL_MAP_ROOT,
     CONFIG_MIN_SCORE: 0.6,
     CONFIG_COMMIT_MIN_SHIFT: DEFAULT_COMMIT_MIN_SHIFT_PX,
     CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION: True,
