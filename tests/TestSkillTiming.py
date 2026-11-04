@@ -613,6 +613,35 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(len(recoveries), 1)
         self.assertGreater(logic.battle_retry_after["1"], task.now)
 
+    def test_too_far_during_dodge_cooldown_preserves_skill_retry(self):
+        task = FakeTask()
+        task.sp = 100.0
+        task._reactive_dodge_next_at = 0.6
+        task._enemy_direction_next_dodge_at = 0.8
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+        task.recover_target_too_far = lambda: BattleMixin.recover_target_too_far(task)
+        dodges = []
+        task.dodge_forward = lambda **kwargs: dodges.append(task.now)
+        logic = logic_for(task)
+
+        self.assertTrue(logic._try_battle_token("1", 100.0))
+        task.now = 0.05
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.TOO_FAR)
+        self.assertEqual(task.clicks, [])
+        self.assertEqual(dodges, [])
+        self.assertIsNone(logic.pending)
+        self.assertEqual(logic.active, ())
+        self.assertEqual(logic.cursor, 0)
+        self.assertGreater(logic.battle_retry_after["1"], task.now)
+
+        task.now = max(logic.battle_retry_after["1"], task._enemy_direction_next_dodge_at)
+        self.assertTrue(logic._try_battle_token("1", 100.0))
+        self.assertEqual(task.keys, ["1", "1"])
+        task.now += 0.05
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.TOO_FAR)
+        self.assertEqual(task.clicks, ["middle"])
+        self.assertEqual(len(dodges), 3)
+
     def test_during_skill_feedback_retries_without_distance_recovery(self):
         task = FakeTask()
         task.sp = 100.0
