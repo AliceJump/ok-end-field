@@ -75,6 +75,7 @@ class ReactiveDodge:
         self.failed = False
         self.next_at = 0.0
         self.slow_frames = 0
+        self.rotation_pause_seconds = 0.0
 
     @staticmethod
     def _valid_frame(frame):
@@ -115,7 +116,10 @@ class ReactiveDodge:
 
         Model initialization or stale inference also consume the frame so the
         caller rechecks deadlines and obtains a new frame before skill decisions.
+        rotation_pause_seconds counts only loading and actual dodge handling,
+        so routine inference does not extend a failed manual token's watchdog.
         """
+        self.rotation_pause_seconds = 0.0
         now = self._ready_inference_time(allowed, deadline)
         if now is None:
             return False
@@ -130,7 +134,11 @@ class ReactiveDodge:
         compatibility = task.get_battle_config(KEY_REACTIVE_DODGE_COMPAT, True)
         try:
             if self.detector is None:
-                self.detector = self.factory()
+                load_started = task.active_time()
+                try:
+                    self.detector = self.factory()
+                finally:
+                    self.rotation_pause_seconds = task.active_time() - load_started
                 # Compilation can take seconds. Never act on the pre-load frame.
                 return True
             boxes = self.detector.detect(frame, compatibility=compatibility)
@@ -167,6 +175,7 @@ class ReactiveDodge:
         )
         if remaining > 0:
             task.sleep(remaining)
+        self.rotation_pause_seconds = task.active_time() - after
         return True
 
     def close(self):
