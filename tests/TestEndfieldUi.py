@@ -1200,7 +1200,7 @@ class NativeTextLayoutTest(unittest.TestCase):
             start.click()
         self.assertEqual(publish(enabled=True), [True, False, True, False])
         self.assertEqual(status.text(), "等待执行")
-        self.assertEqual(notices, ["Start Success."])
+        self.assertEqual(notices, [QCoreApplication.translate("MainWindow", "Start Success.")])
         self.assertEqual(publish(running=True), [True, True, True, False])
         self.assertEqual(status.text(), "运行中")
         self.assertEqual(status._pulse_ani.state(), QVariantAnimation.Running)
@@ -1217,7 +1217,7 @@ class NativeTextLayoutTest(unittest.TestCase):
         with patch.object(og, "executor", SimpleNamespace(paused=True)):
             start.click()
         publish(enabled=True)
-        self.assertEqual(notices, ["Start Success."])
+        self.assertEqual(notices, [QCoreApplication.translate("MainWindow", "Start Success.")])
         workspace.close()
         workspace.deleteLater()
         QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
