@@ -68,8 +68,10 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         path = Path("assets/lang/environment_monitoring.json")
         names = json.loads(path.read_text(encoding="utf-8"))["peach_tree"]
         titles = {
-            "zh_CN": "念念家的桃树", "zh_TW": "念念家的桃樹",
-            "en_US": "Peach Tree at Babbles's Home", "ja_JP": "ネンネンの家にある桃の木",
+            "zh_CN": "念念家的桃树",
+            "zh_TW": "念念家的桃樹",
+            "en_US": "Peach Tree at Babbles's Home",
+            "ja_JP": "ネンネンの家にある桃の木",
             "ko_KR": "염념이네 복숭아나무",
         }
         for locale, title in titles.items():
@@ -92,10 +94,12 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.completed_observations = {"小池荷"}
         task.open_monitoring = Mock()
         task.select_terminal = Mock()
-        task.available_observations = Mock(side_effect=[
-            [{"name": "“小池荷”", "action_box": Box(0, 0, 1, 1)}],
-            [{"name": "小池荷", "action_box": Box(1, 0, 1, 1)}],
-        ])
+        task.available_observations = Mock(
+            side_effect=[
+                [{"name": "“小池荷”", "action_box": Box(0, 0, 1, 1)}],
+                [{"name": "小池荷", "action_box": Box(1, 0, 1, 1)}],
+            ]
+        )
         task.enter_observation = Mock()
         task.transfer_observation = Mock()
         result = task.prepare_observation()

@@ -320,7 +320,9 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             if self.photo_condition_met():  # 条件亮起立即停止调整
                 return True  # 保留已满足的角度，不按快门
             if step < max_steps:  # 最后一次检查后不再增加位移
-                self.log_info(f"[environment-monitoring] 取景条件未识别，向{direction}调整：{step + 1}/{max_steps}")  # 记录转动原因
+                self.log_info(
+                    f"[environment-monitoring] 取景条件未识别，向{direction}调整：{step + 1}/{max_steps}"
+                )  # 记录转动原因
                 self.rotate_photo_view(direction=direction)  # 只旋转镜头，不发出移动按键
         return False  # 有限范围内未找到时如实返回
 

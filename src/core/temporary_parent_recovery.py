@@ -125,8 +125,7 @@ def _remove_local_image(record: dict, logger) -> bool:
     directory = root / identifier
     image = directory / "Games.exe"
     allowed_images = {
-        os.path.normcase(os.path.abspath(str(base / identifier / "Games.exe")))
-        for base in (config_root, root)
+        os.path.normcase(os.path.abspath(str(base / identifier / "Games.exe"))) for base in (config_root, root)
     }
     if (
         os.path.normcase(os.path.abspath(recorded)) not in allowed_images
@@ -144,6 +143,7 @@ def _remove_local_image(record: dict, logger) -> bool:
     except OSError as error:
         logger.warning(f"Cannot retire owned temporary parent image; retry later ({type(error).__name__})")
         return False
+
 
 def _retire_record(path: Path, record: dict, logger) -> None:
     if not _remove_local_image(record, logger):

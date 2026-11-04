@@ -639,8 +639,10 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
     attempts = [("bundled signed helper", lambda: create_local_temporary_parent(kernel, game_path, logger))]
     for parent_company in companies:
         attempts.append(
-            (f"official launcher {parent_company}",
-             lambda selected=parent_company: create_temporary_parent(kernel, game_path, logger, company=selected))
+            (
+                f"official launcher {parent_company}",
+                lambda selected=parent_company: create_temporary_parent(kernel, game_path, logger, company=selected),
+            )
         )
     failures = []
     for source, make_parent in attempts:
@@ -655,9 +657,7 @@ def launch_game(game_path: str, arguments: str, logger) -> bool:
             pid = create_process(kernel, os.path.abspath(game_path), arguments, parent)
             child_created = True
             note_game_started(cleanup.parent_pid, pid, logger)
-            logger.info(
-                f"Created Endfield with suspended signed parent: pid={pid}, source={source}"
-            )
+            logger.info(f"Created Endfield with suspended signed parent: pid={pid}, source={source}")
             if _start_cleanup(cleanup, pid, kernel, parent, logger):
                 parent = None  # The background watcher owns the process handle now.
             return True
