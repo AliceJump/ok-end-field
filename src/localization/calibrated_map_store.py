@@ -22,8 +22,18 @@ class CalibratedMapStore:
             and (p / "4" / f"{p.name}_4.png").is_file()
         )
 
-    def load(self, map_id=""):
+    def load(self, map_id="", *, background=False):
         try:
+            if background:
+                from src.localization.localization_workers import LocalizationWorkers
+                from src.localization.map_set_locator import MapSetLocator
+
+                available = self.available_maps()
+                if map_id and (not re.fullmatch(r"[A-Za-z0-9_-]+", map_id) or map_id not in available):
+                    raise ValueError("invalid_visual_map_id")
+                if not available:
+                    raise ValueError("visual_map_assets_missing")
+                return map_id, MapSetLocator(self, [map_id] if map_id else available, workers=LocalizationWorkers())
             return self._load_resources(map_id)
         except (KeyError, TypeError, OverflowError) as exc:
             raise ValueError("invalid_visual_map_metadata") from exc

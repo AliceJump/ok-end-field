@@ -139,7 +139,8 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         if capture:
             return self.minimap_position_ready
         try:
-            map_id, locator = CalibratedMapStore(root).load(map_id)
+            map_id, locator = CalibratedMapStore(root).load(map_id, background=True)
+            locator.prewarm()
             self._visual_source = VisualPositionSource(
                 self,
                 locator,
@@ -156,7 +157,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
     def stop_minimap_position(self):
         self._source_epoch += 1
         if self._visual_source is not None:
-            self._visual_source.reset()
+            self._visual_source.close()
         self._visual_source = None
         self._source_signature = None
         self._minimap_started = False

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import threading
 import time
 from dataclasses import dataclass
 
@@ -73,8 +74,22 @@ class VisualPositionSource:
         self._last_state = {}
         self._sequence = 0
         self._scale = None
+        self._state_lock = threading.RLock()
+        self._closed = False
+
+    def close(self):
+        with self._state_lock:
+            self._closed = True
+            self.reset()
+            close = getattr(self.locator, "close", None)
+            if callable(close):
+                close()
 
     def reset(self):
+        with self._state_lock:
+            self._reset()
+
+    def _reset(self):
         self.tracker.reset()
         self.map_id = self._configured_map_id
         reset_locator = getattr(self.locator, "reset_tracking", None)
@@ -101,6 +116,10 @@ class VisualPositionSource:
         return dict(self._last_state) if self._last_state.get("position_trusted") else None
 
     def unavailable(self, reason, *, locate=None):
+        with self._state_lock:
+            return self._unavailable(reason, locate=locate)
+
+    def _unavailable(self, reason, *, locate=None):
         self._last_state = {
             "x": None,
             "y": None,
@@ -132,6 +151,12 @@ class VisualPositionSource:
         return dict(self._last_state)
 
     def sample(self, frame, *, now=None):
+        with self._state_lock:
+            if self._closed:
+                return self.unavailable("visual_source_closed")
+            return self._sample(frame, now=now)
+
+    def _sample(self, frame, *, now=None):
         clock = time.time() if now is None else float(now)
         if not math.isfinite(clock):
             raise ValueError("non-finite visual frame time")

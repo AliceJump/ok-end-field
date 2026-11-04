@@ -17,7 +17,7 @@ from src.localization.minimap_map_locator import (
 
 
 class MapSetLocator:
-    def __init__(self, store, map_ids):
+    def __init__(self, store, map_ids, *, workers=None):
         self.store, self.map_ids = store, tuple(map_ids)
         self.calibration = MapCalibration(
             np.array([[0.25, 0, 0], [0, -0.25, 0]]), np.array([[4.0, 0, 0], [0, -4.0, 0]])
@@ -26,6 +26,25 @@ class MapSetLocator:
         self._cache = OrderedDict()
         self._active = None
         self._scan_index = 0
+        self._workers = workers
+        self._pending_maps = {}
+        self._resource_retry_at = {}
+
+    def prewarm(self):
+        if self._workers is not None and not self._workers.closed:
+            for mid in self.map_ids:
+                if (
+                    mid not in self._cache
+                    and mid not in self._pending_maps
+                    and time.monotonic() >= self._resource_retry_at.get(mid, 0)
+                ):
+                    self._pending_maps[mid] = self._workers.resources.submit(self.store.load, mid)
+
+    def close(self):
+        if self._workers is not None:
+            self._workers.close()
+        self._pending_maps.clear()
+        self._cache.clear()
 
     def _scale(self, width):
         return minimap_map_scale(width)
@@ -90,6 +109,33 @@ class MapSetLocator:
         return "ambiguous"
 
     def _warm_base_resources(self):
+        if self._workers is not None:
+            if self._workers.closed:
+                return False
+            self.prewarm()
+            ready = True
+            for mid in self.map_ids:
+                if mid in self._cache:
+                    continue
+                future = self._pending_maps.get(mid)
+                if future is None or not future.done():
+                    ready = False
+                    continue
+                try:
+                    locator = future.result()[1]
+                except (OSError, ValueError):
+                    del self._pending_maps[mid]
+                    self._resource_retry_at[mid] = time.monotonic() + 5
+                    raise
+                if hasattr(locator, "_resource_workers"):
+                    locator._resource_workers = self._workers
+                self._cache[mid] = locator
+                if len(self.map_ids) == 1:
+                    # An explicitly selected map retains its affine odometry
+                    # transform; the normalized frame is only for map competition.
+                    self.calibration = getattr(locator, "calibration", self.calibration)
+                del self._pending_maps[mid]
+            return ready
         for mid in self.map_ids:
             if mid not in self._cache:
                 # One resource per sample; partial map sets cannot prove uniqueness.
@@ -98,6 +144,26 @@ class MapSetLocator:
         return True
 
     def _compare_base_maps(self, frame, geometry):
+        if self._workers is not None:
+            # One stable frame for all candidates; no worker retains capture buffers.
+            snapshot = frame.copy()
+            snapshot.setflags(write=False)
+            futures = []
+            for mid in self.map_ids:
+                locator = self._load(mid)
+                base = getattr(locator, "base", locator)
+                futures.append((mid, self._workers.matches.submit(base.locate_global, snapshot, geometry)))
+            # Drain every task even on failure, before any later frame can touch
+            # these per-map caches. Preserve map order for deterministic ties.
+            results, failure = [], None
+            for mid, future in futures:
+                try:
+                    results.append((mid, future.result()))
+                except Exception as exc:
+                    failure = failure or exc
+            if failure is not None:
+                raise failure
+            return results
         results = []
         for mid in self.map_ids:
             locator = self._load(mid)

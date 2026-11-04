@@ -11,6 +11,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from src.localization.localization_workers import ResourcePending
 from src.localization.minimap_map_locator import (
     LocateResult,
     MapCalibration,
@@ -60,6 +61,8 @@ class LayeredMinimapLocator:
         self._pinned_ids = set()
         self._recent = None
         self._scan_index = 0
+        self._resource_workers = None
+        self._pending_layers = {}
         self.tier_coverage_complete = not any(
             str(k).startswith(f"scene_{map_id}_") for k in catalog.get("missing_logic_ids", [])
         )
@@ -72,6 +75,28 @@ class LayeredMinimapLocator:
         if key in self._cache:
             self._cache.move_to_end(key)
             return self._cache[key]
+        if self._resource_workers is None:
+            locator = self._decode(entry)
+        else:
+            if self._resource_workers.closed:
+                raise ResourcePending()
+            if key not in self._pending_layers:
+                self._pending_layers[key] = self._resource_workers.resources.submit(self._decode, dict(entry))
+            future = self._pending_layers[key]
+            if not future.done():
+                raise ResourcePending()
+            try:
+                locator = future.result()
+            finally:
+                del self._pending_layers[key]
+        self._cache[key] = locator
+        self._cache_bytes += locator.map_image.nbytes
+        self._evict_layers()
+        return locator
+
+    def _decode(self, entry):
+        """Decode without changing caches, search hints or tracking state."""
+        key = entry["id"]
         path = (self.root / entry["path"]).resolve()
         if not path.is_relative_to(self.root):
             raise ValueError("layer image escapes resource root")
@@ -89,9 +114,9 @@ class LayeredMinimapLocator:
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         calibration, (fx, fy) = layer_calibration(entry["bounds"], width, height)
         image = cv2.resize(image, None, fx=fx, fy=fy, interpolation=cv2.INTER_AREA)
-        locator = MinimapMapLocator(image, calibration)
-        self._cache[key] = locator
-        self._cache_bytes += locator.map_image.nbytes
+        return MinimapMapLocator(image, calibration)
+
+    def _evict_layers(self):
         while self._cache_bytes > self._cache_limit_bytes and len(self._cache) > 1:
             removable = next((k for k in self._cache if k not in self._pinned_ids), None)
             if removable is None:
@@ -101,7 +126,6 @@ class LayeredMinimapLocator:
                 break
             removed = self._cache.pop(removable)
             self._cache_bytes -= removed.map_image.nbytes
-        return locator
 
     @staticmethod
     def _near_bounds(entry, prior, radius):
@@ -125,17 +149,21 @@ class LayeredMinimapLocator:
         complete = self.tier_coverage_complete
         scan_pending = False
         entries = self.entries
-        if search_prior is None and entries:
+        global_scan = search_prior is None and bool(entries)
+        if global_scan:
             # A weak main-map frame must not decode and globally scan dozens of
             # floors in one synchronous sample. Probe one floor per call; a strong
             # proposal seeds bounded competition with all overlapping floors next.
             entries = [entries[self._scan_index % len(entries)]]
-            self._scan_index += 1
+            if self._resource_workers is None:
+                self._scan_index += 1
             complete = False
             scan_pending = True
         layer_candidates, layers_complete, layers_pending = self._layer_candidates(
             frame, geometry, search_prior, radius, entries
         )
+        if global_scan and self._resource_workers is not None and not layers_pending:
+            self._scan_index += 1
         candidates.extend(layer_candidates)
         complete = complete and layers_complete
         scan_pending = scan_pending or layers_pending
@@ -189,15 +217,21 @@ class LayeredMinimapLocator:
         candidates = []
         complete, pending, decoded = True, False, False
         self._pinned_ids = {entry["id"] for entry in entries if self._near_bounds(entry, prior, radius)}
+        for key in list(self._pending_layers):
+            if key not in self._pinned_ids:
+                self._pending_layers.pop(key).cancel()
         for entry in entries:
             if not self._near_bounds(entry, prior, radius):
                 continue
-            if entry["id"] not in self._cache and decoded:
+            if self._resource_workers is None and entry["id"] not in self._cache and decoded:
                 pending, complete = True, False
                 continue
             try:
                 decoded = decoded or entry["id"] not in self._cache
                 locator = self._load(entry)
+            except ResourcePending:
+                pending, complete = True, False
+                continue
             except (OSError, ValueError):
                 complete = False
                 continue
