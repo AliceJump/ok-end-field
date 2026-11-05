@@ -97,23 +97,23 @@ def can_coast(planner, position, heading, prefix, horizon, width):
     grid = planner.grid
     if not _line_inside_corridor(position, end, prefix, width, min(0.5, grid.meta.cell_size)):
         return False
-    original_unknown = set()
-    original_cost_cells = set()
-    for a, b in pairwise(prefix):
-        cells = planner.line_cells(grid.index_of_world(*a), grid.index_of_world(*b))
-        original_unknown.update(cell for cell in cells if grid.state(*cell) == CELL_UNKNOWN)
-        if planner.recovery_cost:
-            original_cost_cells.update(cell for cell in cells if cell in planner.recovery_cost)
+    original_unknown, original_cost_cells = _prefix_exposure(planner, prefix)
     for offset in (0.0, -0.5 * grid.meta.cell_size, 0.5 * grid.meta.cell_size):
         a = grid.index_of_world(position[0] + offset * dz, position[1] - offset * dx)
         b = grid.index_of_world(end[0] + offset * dz, end[1] - offset * dx)
         if not planner.passable(*a) or not planner.line_clear(a, b):
             return False
-        for cell in planner.line_cells(a, b):
-            if planner.recovery_cost and cell in planner.recovery_cost and cell not in original_cost_cells:
-                return False
-            if grid.state(*cell) == CELL_UNKNOWN and cell not in original_unknown:
-                return False
+        if not _ray_exposure_allowed(planner, a, b, original_unknown, original_cost_cells):
+            return False
+    return True
+
+
+def _ray_exposure_allowed(planner, a, b, original_unknown, original_cost_cells):
+    for cell in planner.line_cells(a, b):
+        if planner.recovery_cost and cell in planner.recovery_cost and cell not in original_cost_cells:
+            return False
+        if planner.grid.state(*cell) == CELL_UNKNOWN and cell not in original_unknown:
+            return False
     return True
 
 
@@ -149,6 +149,29 @@ def steer_through(
             for cell in planner.line_cells(grid.index_of_world(*a), grid.index_of_world(*b))
             if grid.state(*cell) == CELL_UNKNOWN
         )
+    if not _sector_clear(planner, position, horizon, margin, half, dx, dz, spread, unknown):
+        return None
+    rad = math.radians(heading)
+    straight_end = (position[0] + horizon * math.sin(rad), position[1] + horizon * math.cos(rad))
+    if not _line_inside_corridor(position, straight_end, prefix, off_route_radius, min(0.5, radius)):
+        return None
+    return target
+
+
+def _prefix_exposure(planner, prefix):
+    grid = planner.grid
+    original_unknown = set()
+    original_cost_cells = set()
+    for a, b in pairwise(prefix):
+        cells = planner.line_cells(grid.index_of_world(*a), grid.index_of_world(*b))
+        original_unknown.update(cell for cell in cells if grid.state(*cell) == CELL_UNKNOWN)
+        if planner.recovery_cost:
+            original_cost_cells.update(cell for cell in cells if cell in planner.recovery_cost)
+    return original_unknown, original_cost_cells
+
+
+def _sector_clear(planner, position, horizon, margin, half, dx, dz, spread, unknown):
+    grid = planner.grid
     i0, j0 = grid.index_of_world(position[0] - horizon - margin, position[1] - horizon - margin)
     i1, j1 = grid.index_of_world(position[0] + horizon + margin, position[1] + horizon + margin)
     for i in range(min(i0, i1), max(i0, i1) + 1):
@@ -163,9 +186,5 @@ def steer_through(
             ):
                 continue
             if not planner.passable(i, j) or (grid.state(i, j) == CELL_UNKNOWN and (i, j) not in unknown):
-                return None
-    rad = math.radians(heading)
-    straight_end = (position[0] + horizon * math.sin(rad), position[1] + horizon * math.cos(rad))
-    if not _line_inside_corridor(position, straight_end, prefix, off_route_radius, min(0.5, radius)):
-        return None
-    return target
+                return False
+    return True

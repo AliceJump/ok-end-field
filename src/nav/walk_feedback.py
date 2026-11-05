@@ -64,30 +64,10 @@ def boundary_probe(planner, pos, heading, episode, distance, visited):
         for offset, keys in WALK_OCTANTS:
             rad = math.radians(heading + offset)
             direction = math.sin(rad), math.cos(rad)
-            entry, exit_at = 0.0, distance
-            for delta, component in zip((point[0] - pos[0], point[1] - pos[1]), direction, strict=True):
-                half = 0.45 * grid.meta.cell_size
-                if abs(component) < 1e-8:
-                    if abs(delta) > half:
-                        exit_at = -1.0
-                        break
-                    continue
-                near, far = sorted(((delta - half) / component, (delta + half) / component))
-                entry, exit_at = max(entry, near), min(exit_at, far)
-            if exit_at < entry:
+            hit = _boundary_ray(grid, pos, point, direction, distance, (i, j))
+            if hit is None:
                 continue
-            centre = (point[0] - pos[0]) * direction[0] + (point[1] - pos[1]) * direction[1]
-            metres = min(exit_at, max(entry, centre))
-            end = pos[0] + metres * direction[0], pos[1] + metres * direction[1]
-            steps = math.ceil(metres / (0.2 * grid.meta.cell_size))
-            crossed = (
-                grid.index_of_world(
-                    pos[0] + metres * direction[0] * k / steps, pos[1] + metres * direction[1] * k / steps
-                )
-                for k in range(1, steps + 1)
-            )
-            if any(c != (i, j) and grid.state(*c) != CELL_FREE for c in crossed):
-                continue
+            metres, end = hit
             along = sum(a * b for a, b in zip(episode.exit_direction or (0, 0), direction, strict=True))
             rank = (
                 cell in episode.tried_exits,
@@ -158,6 +138,26 @@ class WalkFeedback:
         self.short_start = None
         self.short_misses = 0
 
+    def _record_progress(self, sample, previous, frame_time, input_seconds, min_progress):
+        sample.advance = sample.along - previous.along
+        sample.lateral_change = abs(sample.side) - abs(previous.side)
+        if math.dist(sample.position, previous.position) >= min_progress:
+            self.short_misses = 0
+        if self.short_start is not None and frame_time > self.short_start[1]:
+            # The read after key-up is the first opportunity to judge this
+            # distinct start from rest. A stationary turn probe is excluded.
+            if math.dist(self.short_start[0], sample.position) < min_progress:
+                self.short_misses += 1
+            else:
+                self.short_misses = 0
+            self.short_start = None
+        if sample.along >= self.anchor + min_progress:
+            self.anchor = sample.along
+            self.exposure = 0.0
+            self.short_misses = 0
+        else:
+            self.exposure += input_seconds
+
     def observe(self, sample, frame_time, input_seconds, min_progress, window):
         if self.frame_time is not None and frame_time <= self.frame_time:
             return
@@ -174,24 +174,7 @@ class WalkFeedback:
             self.short_misses = 0
             self.short_start = None
         else:
-            sample.advance = sample.along - previous.along
-            sample.lateral_change = abs(sample.side) - abs(previous.side)
-            if math.dist(sample.position, previous.position) >= min_progress:
-                self.short_misses = 0
-            if self.short_start is not None and frame_time > self.short_start[1]:
-                # The read after key-up is the first opportunity to judge this
-                # distinct start from rest. A stationary turn probe is excluded.
-                if math.dist(self.short_start[0], sample.position) < min_progress:
-                    self.short_misses += 1
-                else:
-                    self.short_misses = 0
-                self.short_start = None
-            if sample.along >= self.anchor + min_progress:
-                self.anchor = sample.along
-                self.exposure = 0.0
-                self.short_misses = 0
-            else:
-                self.exposure += input_seconds
+            self._record_progress(sample, previous, frame_time, input_seconds, min_progress)
         self.leg, self.frame_time = sample, frame_time
 
 
@@ -260,3 +243,30 @@ class RecoveryEpisode:
         self.last_frame = frame_time
         self.confirmed_frames = self.confirmed_frames + 1 if dx * self.unit[0] + dz * self.unit[1] > 2 else 0
         return self.confirmed_frames >= 2
+
+
+def _boundary_ray(grid, pos, point, direction, distance, origin_cell):
+    entry, exit_at = 0.0, distance
+    for delta, component in zip((point[0] - pos[0], point[1] - pos[1]), direction, strict=True):
+        half = 0.45 * grid.meta.cell_size
+        if abs(component) < 1e-8:
+            if abs(delta) > half:
+                exit_at = -1.0
+                break
+            continue
+        near, far = sorted(((delta - half) / component, (delta + half) / component))
+        entry, exit_at = max(entry, near), min(exit_at, far)
+    if exit_at < entry:
+        return None
+    centre = (point[0] - pos[0]) * direction[0] + (point[1] - pos[1]) * direction[1]
+    metres = min(exit_at, max(entry, centre))
+    end = pos[0] + metres * direction[0], pos[1] + metres * direction[1]
+    steps = math.ceil(metres / (0.2 * grid.meta.cell_size))
+    crossed = (
+        grid.index_of_world(pos[0] + metres * direction[0] * k / steps, pos[1] + metres * direction[1] * k / steps)
+        for k in range(1, steps + 1)
+    )
+    if any(c != origin_cell and grid.state(*c) != CELL_FREE for c in crossed):
+        return None
+
+    return metres, end

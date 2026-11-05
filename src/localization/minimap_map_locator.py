@@ -308,6 +308,9 @@ def masked_zncc(left: np.ndarray, right: np.ndarray, mask: np.ndarray) -> float:
     return _zncc_values(left_values, right_values)
 
 
+_DOT_EXPRESSION = "i,i->"
+
+
 def _zncc_values(left_values: np.ndarray, right_values: np.ndarray) -> float:
     if left_values.size == 0 or right_values.size == 0:
         return 0.0
@@ -317,12 +320,12 @@ def _zncc_values(left_values: np.ndarray, right_values: np.ndarray) -> float:
     right_values -= right_values.mean()
     # These are short 1-D reductions repeated for every candidate. Dispatching
     # them to a process-wide BLAS thread pool adds latency on the control path.
-    left_sq = np.einsum("i,i->", left_values, left_values, optimize=False)
-    right_sq = np.einsum("i,i->", right_values, right_values, optimize=False)
+    left_sq = np.einsum(_DOT_EXPRESSION, left_values, left_values, optimize=False)
+    right_sq = np.einsum(_DOT_EXPRESSION, right_values, right_values, optimize=False)
     denominator = math.sqrt(float(left_sq)) * math.sqrt(float(right_sq))
     if denominator <= 1e-12:
         return 0.0
-    return float(np.einsum("i,i->", left_values, right_values, optimize=False) / denominator)
+    return float(np.einsum(_DOT_EXPRESSION, left_values, right_values, optimize=False) / denominator)
 
 
 def robust_masked_zncc(

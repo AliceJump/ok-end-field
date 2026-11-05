@@ -486,6 +486,28 @@ class GridRouteFollower:
         )
         return replace(step, coast_distance=coast) if coast else step
 
+    def _extend_measured_guide(self, position, heading, prefix, width, measured):
+        target, horizon = measured
+        if target == heading:
+            if can_coast(self.planner, position, heading, prefix, self.coast_horizon, width):
+                return target, self.coast_horizon
+        elif (
+            steer_through(
+                self.planner,
+                position,
+                heading,
+                prefix,
+                self.coast_horizon,
+                width,
+                self.config.off_route_radius,
+                *self.moving_steer,
+                target=target,
+            )
+            is not None
+        ):
+            return target, self.coast_horizon
+        return target, horizon
+
     def _motion_guide(self, position, heading):
         """Authorize this heading through ordinary waypoints up to the next decision."""
         if self.config.shortcut_radius <= 0 or not 0 < self.coast_horizon <= 32:
@@ -502,26 +524,7 @@ class GridRouteFollower:
             return heading, self.corner_travel
         measured = self._measured_steer(position, heading, limit, width)
         if measured is not None:
-            target, horizon = measured
-            if target == heading:
-                if can_coast(self.planner, position, heading, prefix, self.coast_horizon, width):
-                    return target, self.coast_horizon
-            elif (
-                steer_through(
-                    self.planner,
-                    position,
-                    heading,
-                    prefix,
-                    self.coast_horizon,
-                    width,
-                    self.config.off_route_radius,
-                    *self.moving_steer,
-                    target=target,
-                )
-                is not None
-            ):
-                return target, self.coast_horizon
-            return target, horizon
+            return self._extend_measured_guide(position, heading, prefix, width, measured)
         if can_coast(self.planner, position, heading, prefix, self.coast_horizon, width):
             return heading, self.coast_horizon
         if self.moving_steer is not None:
@@ -587,6 +590,45 @@ class GridRouteFollower:
             return h
         return 0.0
 
+    def _wait_for_moving_feedback(self, position, heading, limit, width, horizon, leg):
+        cmd = self.feedback.command
+        rad = math.radians(heading)
+        projected_side = leg.side + horizon * (math.sin(rad) * leg.unit[1] - math.cos(rad) * leg.unit[0])
+        closing = leg.lateral_change < 0 or abs(projected_side) < abs(leg.side)
+        if not (cmd and self.feedback.frame_time - cmd[0] < 1.0 and (closing or abs(leg.side) < width)):
+            return False
+        direct = bearing_to_point(*position, *leg.end)
+        delta = angle_delta(direct, heading)
+        # Distinguish a settled overshoot from a mouse input which has
+        # barely moved the arrow yet. Do not stack another correction.
+        pending = angle_delta(cmd[2], heading)
+        pending = math.copysign(min(abs(pending), abs(cmd[1])), cmd[1]) if pending * cmd[1] > 0 else 0.0
+        if abs(delta) > 20 or not (delta * cmd[1] < 0 or abs(pending) > abs(cmd[1]) * 0.5):
+            return False
+        short = route_prefix(position, self.plan_result.waypoints, self.waypoint_index, limit, horizon)
+        if not can_coast(self.planner, position, heading, short, horizon, width):
+            return False
+        if (
+            pending
+            and steer_through(
+                self.planner,
+                position,
+                heading,
+                short,
+                horizon,
+                width,
+                self.config.off_route_radius,
+                1.0,
+                20,
+                20,
+                target=heading + pending,
+            )
+            is None
+        ):
+            return False
+        self.feedback.command = None
+        return True
+
     def _measured_steer(self, position, heading, limit, width):
         leg = self.feedback.leg
         if (
@@ -604,38 +646,8 @@ class GridRouteFollower:
             return None
         # If the last correction is already closing the lateral error, allow one
         # more measured interval only when both predicted headings fit the path.
-        cmd = self.feedback.command
-        rad = math.radians(heading)
-        projected_side = leg.side + horizon * (math.sin(rad) * leg.unit[1] - math.cos(rad) * leg.unit[0])
-        closing = leg.lateral_change < 0 or abs(projected_side) < abs(leg.side)
-        if cmd and self.feedback.frame_time - cmd[0] < 1.0 and (closing or abs(leg.side) < width):
-            direct = bearing_to_point(*position, *leg.end)
-            delta = angle_delta(direct, heading)
-            # Distinguish a settled overshoot from a mouse input which has
-            # barely moved the arrow yet. Do not stack another correction.
-            pending = angle_delta(cmd[2], heading)
-            pending = math.copysign(min(abs(pending), abs(cmd[1])), cmd[1]) if pending * cmd[1] > 0 else 0.0
-            if abs(delta) <= 20 and (delta * cmd[1] < 0 or abs(pending) > abs(cmd[1]) * 0.5):
-                short = route_prefix(position, self.plan_result.waypoints, self.waypoint_index, limit, horizon)
-                if can_coast(self.planner, position, heading, short, horizon, width) and (
-                    not pending
-                    or steer_through(
-                        self.planner,
-                        position,
-                        heading,
-                        short,
-                        horizon,
-                        width,
-                        self.config.off_route_radius,
-                        1.0,
-                        20,
-                        20,
-                        target=heading + pending,
-                    )
-                    is not None
-                ):
-                    self.feedback.command = None
-                    return heading, horizon
+        if self._wait_for_moving_feedback(position, heading, limit, width, horizon, leg):
+            return heading, horizon
         if (
             leg.lateral_change < 0.15
             or abs(leg.side) < max(0.5, width / 2)

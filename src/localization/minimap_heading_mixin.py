@@ -612,6 +612,21 @@ class MinimapHeadingMixin:
         if control_state is not None:
             control_state.clear()
 
+    def _turn_history_entry(self, i, before, err, dx, after, feedback_settled, used_credit):
+        entry = {
+            "round": i,
+            "before": before,
+            "error_before": err,
+            "dx": dx,
+            "after": after,
+            "error_after": None,
+            "ratio": None,
+            "settled": feedback_settled,
+        }
+        if used_credit:
+            entry["moving_credit"] = used_credit
+        return entry
+
     def _execute_turn_rounds(
         self, result, before, per_px, tolerance, max_rounds, min_score, max_probe_s, control_state, credit=0.0
     ):
@@ -633,18 +648,7 @@ class MinimapHeadingMixin:
             self.sleep(settle)
             after, score, feedback_settled = self._read_turn_feedback(before, target, min_score, max_probe_s, tolerance)
 
-            entry = {
-                "round": i,
-                "before": before,
-                "error_before": err,
-                "dx": dx,
-                "after": after,
-                "error_after": None,
-                "ratio": None,
-                "settled": feedback_settled,
-            }
-            if used_credit:
-                entry["moving_credit"] = used_credit
+            entry = self._turn_history_entry(i, before, err, dx, after, feedback_settled, used_credit)
             if after is None:
                 self.log_warning(f"第 {i} 轮：按 W 后读不到朝向（score={score:.3f}）")
                 result["history"].append(entry)
