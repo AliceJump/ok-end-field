@@ -12,6 +12,7 @@ from ok.util.config import Config
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.DailyTask import DailyTask
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (
+    AnnularWaterfallNavigation,
     CisternOriginiumSlugsNavigation,
     EnvironmentMonitoringNavigation,
     PoolLotusNavigation,
@@ -306,6 +307,30 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertLess(end[0], start[0])
         self.assertEqual(end[1], start[1])
         task.mouse_up.assert_called_once_with(key="left")
+
+    def test_waterfall_route_and_upward_photo_search(self):
+        task = self.task()
+        task.in_world.return_value = True
+        task.wait_until.return_value = True
+        AnnularWaterfallNavigation(task).run()
+        self.assertEqual(task.sleep.call_args_list, [call(0.5), call(5), call(2), call(3)])
+        self.assertEqual(task.send_key_down.call_args_list, [call("a"), call("up"), call("right"), call("up")])
+        self.assertEqual(task.press_key.call_count, 3)
+        task._camera_open.return_value = True
+        EnvironmentMonitoringPhotoTask.rotate_photo_view(task, direction="up")
+        start, end = task.smooth_drag.call_args.args
+        self.assertEqual(start[0], end[0])
+        self.assertLess(end[1], start[1])
+        task.mouse_up.assert_called_once_with(key="left")
+
+    def test_waterfall_uses_upward_search(self):
+        task = self.task()
+        task.lang.environment_monitoring.annular_waterfall = "环形瀑布"
+        task.selected_observation = {"name": "环形瀑布"}
+        task.photo_condition_met.side_effect = [False, True]
+        self.assertIs(task.observation_route("环形瀑布"), AnnularWaterfallNavigation)
+        self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
+        task.rotate_photo_view.assert_called_once_with(direction="up")
 
     def test_slug_navigation_stops_on_cancellation_and_releases_bound_backward_key(self):
         task = self.task()

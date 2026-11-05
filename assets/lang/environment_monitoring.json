@@ -84,6 +84,13 @@
       "string": "노을의 그림자"
     }
   },
+  "annular_waterfall": {
+    "zh_CN": {"string": "环形瀑布"},
+    "zh_TW": {"string": "環形瀑布"},
+    "en_US": {"string": "Annular Waterfall"},
+    "ja_JP": {"string": "環状滝"},
+    "ko_KR": {"string": "원형 폭포"}
+  },
   "peach_tree": {
     "zh_CN": {"string": "桃树"},
     "zh_TW": {"string": "桃樹"},
