@@ -348,6 +348,7 @@ class OfficialMapClient(OfficialMapApiMixin):
         self._map_ws_account = None
         self._content = None
         self._retry_at = 0
+        self.last_error = ""
 
     def _invalidate_map_auth(self):
         self._content = None
@@ -358,6 +359,7 @@ class OfficialMapClient(OfficialMapApiMixin):
         content = resolve_map_content(self.consumer)
         if not content:
             self._invalidate_map_auth()
+            self.last_error = ""
             return False
         if content == self._content and self._map_ws_cred and self._map_ws_account:
             return True
@@ -372,9 +374,12 @@ class OfficialMapClient(OfficialMapApiMixin):
             self._map_ws_device_id = bundle.get("d_id", "")
             self._map_ws_user_id = bundle.get("user_id", "")
             self._map_ws_account = self._resolve_map_account_from_cred()
-        except (RuntimeError, OSError, ValueError):
+        except (RuntimeError, OSError, ValueError) as exc:
             self._invalidate_map_auth()
             self._retry_at = time.monotonic() + 30
+            # Authentication exceptions may embed response bodies or tokens.
+            self.last_error = type(exc).__name__
             return False
         self._content = content
+        self.last_error = ""
         return bool(self._map_ws_cred and self._map_ws_account)

@@ -79,7 +79,11 @@ class LayeredMinimapLocator:
         if time.monotonic() < self._resource_retry_at.get(key, 0):
             raise ValueError(f"layer_decode_backoff:{key}")
         if self._resource_workers is None:
-            locator = self._decode(entry)
+            try:
+                locator = self._decode(entry)
+            except (OSError, ValueError):
+                self._resource_retry_at[key] = time.monotonic() + 5
+                raise
         else:
             if self._resource_workers.closed:
                 raise ResourcePending()
@@ -228,6 +232,9 @@ class LayeredMinimapLocator:
                 self._pending_layers.pop(key).cancel()
         for entry in entries:
             if not self._near_bounds(entry, prior, radius):
+                continue
+            if time.monotonic() < self._resource_retry_at.get(entry["id"], 0):
+                complete = False
                 continue
             if self._resource_workers is None and entry["id"] not in self._cache and decoded:
                 pending, complete = True, False

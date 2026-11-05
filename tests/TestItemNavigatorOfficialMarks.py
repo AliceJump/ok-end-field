@@ -236,6 +236,28 @@ class TestItemNavigatorOfficialMarks(unittest.TestCase):
         self.assertEqual(client._resolve_auth_bundle.call_count, 1)
         self.assertIsNone(client._map_ws_account)
 
+    def test_auth_failure_logs_once_per_retry_without_response_credentials(self):
+        task = SimpleNamespace(config={"content": "content"}, log_info=mock.Mock(), tr=lambda message: message)
+        client = task._official_map_client = OfficialMapClient(task)
+        client._resolve_auth_bundle = mock.Mock(side_effect=MapAuthError("cred=private-token response body"))
+        with mock.patch("src.data.official_map_client.time.monotonic", return_value=10):
+            for _ in range(3):
+                self.assertIsNone(ItemNavigatorTask._get_official_map_client(task))
+        self.assertEqual(task.log_info.call_count, 1)
+        self.assertEqual(client.last_error, "MapAuthError")
+        self.assertNotIn("private-token", task.log_info.call_args.args[0])
+        self.assertNotIn("response body", task.log_info.call_args.args[0])
+        with mock.patch("src.data.official_map_client.time.monotonic", return_value=41):
+            self.assertIsNone(ItemNavigatorTask._get_official_map_client(task))
+        self.assertEqual(task.log_info.call_count, 2)
+        client._resolve_auth_bundle.side_effect = None
+        client._resolve_auth_bundle.return_value = {"cred": "cred", "sign_token": "token"}
+        client._resolve_map_account_from_cred = mock.Mock(return_value={"roleId": "r1", "serverId": "s1"})
+        with mock.patch("src.data.official_map_client.time.monotonic", return_value=72):
+            self.assertIs(ItemNavigatorTask._get_official_map_client(task), client)
+        self.assertEqual(client.last_error, "")
+        self.assertIsNone(task._official_map_auth_error)
+
     def test_legacy_position_source_reads_migrated_global_content(self):
         task = SimpleNamespace(config={})
 

@@ -168,6 +168,26 @@ class TestVisualPositionSource(unittest.TestCase):
                     self.assertFalse(state["visual_confirmation_pending"])
                     self.assertFalse(source.sample(self.frame(), now=1.04)["position_trusted"])
 
+    def test_trusted_duplicate_preserves_anchor_and_does_not_advance_tracking(self):
+        source = VisualPositionSource(self.task, self.locator, "map02")
+        frame = self.frame()
+        source.sample(frame, now=1)
+        trusted = source.sample(frame, now=1.02)
+        self.assertTrue(trusted["position_trusted"])
+        before = (source._sequence, source._last_absolute_t, len(source.chain._nodes), source._keyframe_tick)
+        with (
+            patch.object(source.tracker, "update", wraps=source.tracker.update) as update,
+            patch.object(source.odometry, "sample", wraps=source.odometry.sample) as odometry,
+        ):
+            duplicate = source.sample(frame, now=1.02)
+            update.assert_not_called()
+            odometry.assert_not_called()
+        self.assertEqual(duplicate, {**trusted, "visual_duplicate_frame": True})
+        self.assertEqual(
+            before, (source._sequence, source._last_absolute_t, len(source.chain._nodes), source._keyframe_tick)
+        )
+        self.assertFalse(source.sample(frame, now=1.01)["position_trusted"])
+
     def test_fast_confirmation_avoids_crossing_unchanged_one_second_gap_limit(self):
         # Deterministic 840 ms capture/matching/heading budget: another fixed
         # 200 ms wait would discard the first observation, not relax its gates.
@@ -844,6 +864,35 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
 
 class TestVisualLayerCandidates(unittest.TestCase):
+    def test_failed_sync_layer_backs_off_without_starving_later_layers(self):
+        locator = self.locator(0.99, 0.5)
+        locator.entries.append({**locator.entries[0], "id": "floor2"})
+        floor = locator._load.return_value
+        floor.map_image = np.zeros((30, 30), np.uint8)
+        locator._load = LayeredMinimapLocator._load.__get__(locator)
+
+        def decode(entry):
+            if entry["id"] == "floor1":
+                raise ValueError("bad floor")
+            return floor
+
+        locator._decode = Mock(side_effect=decode)
+        with patch("src.localization.layered_minimap_locator.time.monotonic", return_value=10):
+            _, complete, pending = locator._layer_candidates(None, None, (10, 10), 80, locator.entries)
+        self.assertFalse(complete)
+        self.assertTrue(pending)
+        with patch("src.localization.layered_minimap_locator.time.monotonic", return_value=11):
+            candidates, complete, pending = locator._layer_candidates(None, None, (10, 10), 80, locator.entries)
+        self.assertFalse(complete)  # A broken competitor cannot prove a unique tier.
+        self.assertFalse(pending)
+        self.assertEqual([item.tier_id for item in candidates], ["floor2"])
+        self.assertEqual([call.args[0]["id"] for call in locator._decode.call_args_list], ["floor1", "floor2"])
+        with patch("src.localization.layered_minimap_locator.time.monotonic", return_value=15):
+            locator._layer_candidates(None, None, (10, 10), 80, locator.entries)
+        self.assertEqual(
+            [call.args[0]["id"] for call in locator._decode.call_args_list], ["floor1", "floor2", "floor1"]
+        )
+
     def test_failed_background_layer_is_not_resubmitted_during_backoff(self):
         locator = self.locator()
         pool = LocalizationWorkers()

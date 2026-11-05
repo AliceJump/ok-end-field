@@ -165,11 +165,11 @@ class VisualPositionSource:
             self.reset()
             return self.unavailable("no_frame")
         shape = frame.shape[:2]
-        if shape == self._shape and clock == self._last_clock and self._last_state.get("visual_confirmation_pending"):
-            # A fast confirmation poll can receive the same presented frame.
-            # It is neither a second observation nor a reason to discard the first.
+        if shape == self._shape and clock == self._last_clock and self._last_state:
+            # A retained presented frame is not another observation, even after
+            # confirmation. Keep the anchor and its original freshness.
             return {**self._last_state, "visual_duplicate_frame": True}
-        if shape != self._shape or (self._last_clock is not None and clock <= self._last_clock):
+        if shape != self._shape or (self._last_clock is not None and clock < self._last_clock):
             self._initialize_shape(shape)
         self._last_clock = clock
         geometry = MinimapGeometry.from_frame(shape[1], shape[0])

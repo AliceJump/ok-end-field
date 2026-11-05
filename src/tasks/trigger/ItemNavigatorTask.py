@@ -591,7 +591,16 @@ class ItemNavigatorTask(
         client = getattr(self, "_official_map_client", None)
         if client is None:
             self._official_map_client = client = OfficialMapClient(self)
-        return client if client.prepare() else None
+        if client.prepare():
+            self._official_map_auth_error = None
+            return client
+        failure = (id(client), client._retry_at)
+        if client.last_error and failure != getattr(self, "_official_map_auth_error", None):
+            self._official_map_auth_error = failure
+            self.log_info(
+                self.tr("官方地图认证暂不可用，继续使用本地物品点位: {error}").format(error=client.last_error)
+            )
+        return None
 
     def _draw_nav_arrow(self, dx: float, dz: float, tooltip: str):
         try:
