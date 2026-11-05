@@ -178,6 +178,22 @@ class TestMinimapMapLocatorFiles(unittest.TestCase):
 
 
 class TestMinimapMapLocatorSynthetic(unittest.TestCase):
+    def test_dense_antialiased_icons_reacquire_without_changing_acquisition_gates(self):
+        frame = self.frame.copy()
+        for x, y in ((190, 145), (225, 145), (195, 180), (230, 180), (210, 205)):
+            cv2.rectangle(frame, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 0), -1)
+            cv2.rectangle(frame, (x - 3, y - 3), (x + 3, y + 3), (200, 200, 200), -1)
+            cv2.rectangle(frame, (x - 1, y - 1), (x + 1, y + 1), (255, 255, 255), -1)
+        locator = MinimapMapLocator(self.map_image, self.calibration, scale_override=self.scale)
+        tracker = MinimapTracker(locator)
+        self.assertFalse(tracker.update(frame, self.geometry, now=1).accepted)
+        result = tracker.update(frame, self.geometry, now=1.2)
+        self.assertTrue(result.accepted, result)
+        self.assertGreaterEqual(result.locate.best.full_ncc, 0.65)
+        self.assertGreaterEqual(result.locate.best.ncc, 0.85)
+        self.assertAlmostEqual(result.position.map_x, self.center[0], delta=2)
+        self.assertAlmostEqual(result.position.map_y, self.center[1], delta=2)
+
     def test_local_search_radius_uses_affine_world_meters(self):
         for matrix in (
             np.array([[0.125, 0, 0], [0, -0.125, 0]]),
@@ -493,6 +509,46 @@ class TestMinimapTrackerRecovery(unittest.TestCase):
 
 
 class TestMinimapAcquisitionSafety(unittest.TestCase):
+    def test_expanded_mask_falls_back_to_original_coverage_without_lowering_limits(self):
+        half = 140
+        roi = np.full((281, 281, 3), 100, dtype=np.uint8)
+        roi[:, ::8] = 255
+        mask = np.ones((281, 281), dtype=bool)
+        mask8 = mask.astype(np.uint8) * 255
+        expected = MinimapMapLocator._legacy_visible_masks(roi, mask, mask8, half)
+        result = MinimapMapLocator._visible_masks(roi, mask, mask8, half)
+        self.assertIsNotNone(expected)
+        np.testing.assert_array_equal(result[0], expected[0])
+        self.assertGreaterEqual(result[0].mean(), 0.55)
+
+    def test_icon_outline_padding_scales_without_erasing_dim_gray_terrain(self):
+        for width in (640, 1920, 3840):
+            with self.subTest(width=width):
+                half = math.ceil(MinimapGeometry.from_frame(width, width * 9 // 16).match_outer_radius)
+                size = 2 * half + 1
+                roi = np.full((size, size, 3), 100, dtype=np.uint8)
+                mask = np.ones((size, size), dtype=bool)
+                mask8 = mask.astype(np.uint8) * 255
+                center = half + half // 2
+                body = max(1, round(3 * width / 1920))
+                outline = max(1, round(2 * width / 1920))
+                cv2.rectangle(
+                    roi,
+                    (center - body - outline, half - body - outline),
+                    (center + body + outline, half + body + outline),
+                    (0, 0, 0),
+                    -1,
+                )
+                cv2.rectangle(roi, (center - body, half - body), (center + body, half + body), (200, 200, 200), -1)
+                roi[half, center] = (255, 255, 255)
+                visible, _ = MinimapMapLocator._visible_masks(roi, mask, mask8, half)
+                self.assertFalse(visible[half, center - body - outline])
+                self.assertTrue(visible[half, center - body - outline - 2])
+                roi[:] = (199, 199, 199)
+                unchanged, unchanged8 = MinimapMapLocator._visible_masks(roi, mask, mask8, half)
+                self.assertIs(unchanged, mask)
+                self.assertIs(unchanged8, mask8)
+
     def setUp(self):
         self.g = MinimapGeometry(50, 50, 30)
 

@@ -566,7 +566,14 @@ class MinimapMapLocator:
         flat = ring.copy()
         flat[~mask] = mean
         if not _has_minimap_texture(flat, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
-            return None
+            visible = self._legacy_visible_masks(roi, cached[0], cached[1], half)
+            if visible is None:
+                return None
+            mask, mask8 = visible
+            flat = ring.copy()
+            flat[~mask] = float(ring[mask].mean())
+            if not _has_minimap_texture(flat, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+                return None
         return _PreparedTemplate(
             flat=flat,
             ring=ring,
@@ -603,8 +610,36 @@ class MinimapMapLocator:
 
     @staticmethod
     def _visible_masks(roi, mask, mask8, half):
+        """Exclude glyph cores, connected antialiasing and resolution-scaled outlines."""
         # Every candidate receives the same frame-derived exclusions. Geometry
         # masks stay immutable, with no icon-coverage activation threshold.
+        if roi.ndim != 3 or roi.shape[2] < 3:
+            return mask, mask8
+        colors = roi[:, :, :3]
+        high, low = colors.max(axis=2), colors.min(axis=2)
+        # White UI glyphs include dim antialiasing and a dark outline. Mask
+        # those edges too, using padding scaled with the minimap's radius.
+        colored = (high >= 190) & (high.astype(np.int16) - low > 90)
+        seeds = (low >= 210) | colored
+        if not np.any(seeds):
+            return mask, mask8
+        # Grow only dim glyph pixels connected to a bright/color seed. Isolated
+        # gray terrain must not become an icon merely because it exceeds 190.
+        count, labels = cv2.connectedComponents(((low >= 190) | colored).astype(np.uint8), connectivity=8)
+        selected = np.zeros(count, dtype=np.uint8)
+        selected[np.unique(labels[seeds])] = 1
+        selected[0] = 0
+        overlay = selected[labels]
+        padding = max(1, round(half / 35))
+        overlay = cv2.dilate(overlay, np.ones((2 * padding + 1, 2 * padding + 1), np.uint8))
+        if not np.any(overlay & mask):
+            return mask, mask8
+        visible = MinimapMapLocator._checked_visible_masks(mask, overlay, half)
+        return visible if visible is not None else MinimapMapLocator._legacy_visible_masks(roi, mask, mask8, half)
+
+    @staticmethod
+    def _legacy_visible_masks(roi, mask, mask8, half):
+        """Retain the original frame-only mask if wider glyph padding erases terrain."""
         if roi.ndim != 3 or roi.shape[2] < 3:
             return mask, mask8
         colors = roi[:, :, :3]
@@ -613,6 +648,11 @@ class MinimapMapLocator:
         if not np.any(overlay & mask):
             return mask, mask8
         overlay = cv2.dilate(overlay.astype(np.uint8), np.ones((3, 3), np.uint8))
+        return MinimapMapLocator._checked_visible_masks(mask, overlay, half)
+
+    @staticmethod
+    def _checked_visible_masks(mask, overlay, half):
+        """Enforce the same total and quadrant coverage for every mask strategy."""
         visible = mask & (overlay == 0)
         if visible.sum() < 0.55 * mask.sum():
             return None
