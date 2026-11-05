@@ -96,6 +96,15 @@ class TestMinimapMapLocatorMath(unittest.TestCase):
         self.assertAlmostEqual(robust.full_score, full)
         self.assertAlmostEqual(robust.inlier_ratio, 0.75)
 
+    def test_ties_at_trim_boundary_preserve_original_score(self):
+        indices = np.arange(400).reshape(20, 20)
+        left = indices % 11
+        right = left + indices % 3
+        score = robust_masked_zncc(left, right, np.ones_like(left, dtype=bool), trim_ratio=0.25)
+        self.assertAlmostEqual(score.score, 0.9826366742125515, places=12)
+        self.assertAlmostEqual(score.full_score, 0.968370310205452, places=12)
+        self.assertEqual(score.inlier_ratio, 0.75)
+
     def test_subpixel_offset_recovers_fractional_peak(self):
         expected = 0.3
         negative = math.exp(-((expected + 1.0) ** 2))

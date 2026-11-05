@@ -315,10 +315,14 @@ def _zncc_values(left_values: np.ndarray, right_values: np.ndarray) -> float:
     right_values = np.asarray(right_values, dtype=np.float64)
     left_values -= left_values.mean()
     right_values -= right_values.mean()
-    denominator = float(np.linalg.norm(left_values) * np.linalg.norm(right_values))
+    # These are short 1-D reductions repeated for every candidate. Dispatching
+    # them to a process-wide BLAS thread pool adds latency on the control path.
+    left_sq = np.einsum("i,i->", left_values, left_values, optimize=False)
+    right_sq = np.einsum("i,i->", right_values, right_values, optimize=False)
+    denominator = math.sqrt(float(left_sq)) * math.sqrt(float(right_sq))
     if denominator <= 1e-12:
         return 0.0
-    return float(np.dot(left_values, right_values) / denominator)
+    return float(np.einsum("i,i->", left_values, right_values, optimize=False) / denominator)
 
 
 def robust_masked_zncc(
@@ -354,7 +358,11 @@ def robust_masked_zncc(
     right_norm = (right_values - right_values.mean()) / right_std
     residual = np.abs(left_norm - right_norm)
     keep_count = max(8, round(left_values.size * (1.0 - trim)))
-    keep = np.argsort(residual)[:keep_count]
+    boundary = np.partition(residual, keep_count - 1)[keep_count - 1]
+    keep = residual <= boundary
+    if np.count_nonzero(keep) != keep_count:
+        # Preserve the previous choice among pixels tied at the trim boundary.
+        keep = np.argsort(residual)[:keep_count]
     trimmed_score = _zncc_values(left_values[keep], right_values[keep])
     # Do not let trimming turn a weak overall match into a high-confidence one.
     robust_score = min(trimmed_score, full_score + 0.20)
