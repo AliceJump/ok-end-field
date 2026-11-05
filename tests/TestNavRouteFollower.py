@@ -4,6 +4,7 @@ import unittest
 
 import numpy as np
 
+from src.nav.coasting import retrace_step
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, CELL_UNKNOWN, DenseGrid, GridMeta
 from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
@@ -20,6 +21,14 @@ from src.nav.route_follower import (
     GridRouteFollower,
     bearing_to_point,
     point_segment_distance,
+)
+from src.nav.walk_feedback import (
+    ForwardInput,
+    LegObservation,
+    MeasuredTrail,
+    RecoveryEpisode,
+    WalkFeedback,
+    boundary_probe,
 )
 from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineNode
 
@@ -113,6 +122,92 @@ class TestGridRouteFollower(unittest.TestCase):
         self.assertEqual(follower.update((8.8, 5.5), 90, now=1).action, WALK)
         self.assertEqual(follower.update((9.2, 5.5), 90, now=2).action, DONE)
 
+    def _coasting_route(self, size=45, narrow_entries=()):
+        points = [(5.5, 10.5), (12.5, 11.5), (30.5, 10.5)]
+        follower = GridRouteFollower(_line_grid(size), FollowerConfig(goal_radius=0.5, margin=0))
+        follower.adopt(
+            PlanResult(ok=True, waypoints=points, narrow_entries=narrow_entries), start=points[0], goal=points[-1]
+        )
+        follower.coast_horizon = 12
+        follower.moving_steer = (0.8, 25, 45)
+        return follower
+
+    def test_heading_can_coast_past_a_bend_without_a_small_correction(self):
+        follower = self._coasting_route()
+        step = follower.update((5.5, 10.5), 90, 0)
+        self.assertEqual(step.action, WALK)
+        self.assertEqual(step.coast_distance, 12)
+        self.assertEqual(step.waypoint_index, 2)
+        self.assertEqual(step.skipped_waypoints, (1,))
+        self.assertEqual(follower.update((5.5, 10.5), 90, 3).action, STUCK)
+
+    def test_coasting_cannot_cross_blocked_or_extra_unknown_cells(self):
+        for cell in (CELL_BLOCKED, CELL_UNKNOWN):
+            follower = self._coasting_route()
+            # The projected straight line cuts below the planned bend.
+            follower.grid.cells[10, 12] = cell
+            step = follower.update((5.5, 10.5), 90, 0)
+            self.assertEqual(step.coast_distance, 0)
+
+    def test_coasting_stops_before_narrow_or_terminal_boundaries(self):
+        follower = self._coasting_route(narrow_entries=(1,))
+        self.assertEqual(follower.update((5.5, 10.5), 90, 0).coast_distance, 0)
+        follower = self._coasting_route()
+        follower.waypoint_index = 2
+        self.assertEqual(follower.update((27.5, 10.5), 90, 0).coast_distance, 0)
+
+    def test_moving_steer_requires_clearance_between_initial_and_target_headings(self):
+        follower = self._coasting_route()
+        step = follower.update((5.5, 10.5), 65, 0)
+        self.assertEqual(step.action, TURN)
+        self.assertEqual(step.coast_distance, 12)
+        follower.grid.cells[12, 10] = CELL_BLOCKED
+        self.assertEqual(follower.update((5.5, 10.5), 65, 1).coast_distance, 0)
+
+    def test_passed_vertex_requires_forward_projection_and_visibility(self):
+        follower = self._coasting_route()
+        follower.plan_result.waypoints = [(5.5, 10.5), (12.5, 10.5), (12.5, 30.5)]
+        step = follower.update((14.0, 13.5), 0, 0)
+        self.assertEqual(step.skipped_waypoints, (1,))
+        follower.waypoint_index = 1
+        follower.grid.cells[19, 13] = CELL_BLOCKED
+        step = follower.update((14.0, 13.5), 0, 1)
+        self.assertEqual(step.waypoint_index, 1)
+
+    def test_requested_subcell_position_controls_arrival(self):
+        follower = self._coasting_route()
+        follower.waypoint_index = 2
+        follower.goal = (30.1, 10.5)
+        step = follower.update((30.9, 10.5), 270, 0)
+        self.assertEqual(step.action, WALK)
+        self.assertEqual(step.waypoint, follower.goal)
+        self.assertEqual(follower.update((30.4, 10.5), 270, 1).action, DONE)
+
+    def test_visible_handoff_tracks_the_chord_after_skipping_vertices(self):
+        follower = self._coasting_route()
+        follower.plan_result.waypoints = [(5.5, 10.5), (12.5, 10.5), (12.5, 30.5)]
+        pos = (11.0, 10.5)
+        step = follower.update(pos, 0, 0)
+        self.assertEqual(step.skipped_waypoints, (1,))
+        self.assertEqual(follower._off_route_distance(pos), 0)
+        self.assertIsNotNone(follower._handoff_leg)
+        follower.adopt(follower.plan_result, start=pos, goal=(12.5, 30.5))
+        self.assertIsNone(follower._handoff_leg)
+
+    def test_landing_uses_verified_approach_only_before_ordinary_vertices(self):
+        follower = self._coasting_route()
+        follower.coast_horizon = 0
+        follower.plan_result.waypoints = [(5.5, 10.5), (12.5, 10.5), (12.5, 30.5)]
+        pos = (9.5, 10.5)
+        step = follower.update(pos, 90, 0)
+        self.assertEqual(step.action, WALK)
+        self.assertAlmostEqual(follower.landing_distance(pos, 90, step), 2.5)
+        follower.grid.cells[10, 11] = CELL_BLOCKED
+        self.assertIsNone(follower.landing_distance(pos, 90, step))
+        follower.grid.cells[10, 11] = CELL_FREE
+        follower.plan_result.narrow_entries = (1,)
+        self.assertIsNone(follower.landing_distance(pos, 90, step))
+
     def test_walks_and_reaches_goal(self):
         result = self.follower.plan((0.5, 0.5), (4.5, 0.5))
         self.assertTrue(result.ok, result)
@@ -140,6 +235,129 @@ class TestGridRouteFollower(unittest.TestCase):
         step = self.follower.update((0.5, 0.5), heading=None, now=0.0)
         self.assertEqual(step.action, WAIT)
         self.assertEqual(step.reason, "朝向不可用")
+
+    def test_stall_uses_forward_input_and_along_leg_progress(self):
+        w = ForwardInput()
+        w.edge(True, 10.0)
+        w.edge(False, 10.3)
+        w.intervals.append((11.2, 11.4))
+        self.assertAlmostEqual(w.seconds(10.1, 11.3), 0.3)
+        w.edge(True, 12)
+        self.assertAlmostEqual(w.seconds(11.3, 14.5), 2.6)
+        feedback = WalkFeedback()
+
+        def observe(t, x, z, seconds):
+            sample = LegObservation.measure((0, 0), (0, 20), (x, z))
+            feedback.observe(sample, t, seconds, 0.35, 2.5)
+
+        observe(10, 0, 3, 0)
+        observe(11, 1, 3, 0.3)
+        observe(11, 1, 3, 0.3)
+        self.assertEqual(feedback.exposure, 0.3)
+        observe(13, 3, 3, 2)
+        self.assertAlmostEqual(feedback.exposure, 2.3)
+        observe(13.5, 3, 4, 0.5)
+        self.assertEqual(feedback.exposure, 0)
+
+    def test_converging_turn_can_wait_for_a_certified_position_frame(self):
+        f = GridRouteFollower(_line_grid(50), FollowerConfig(margin=0))
+        f.plan((20.5, 3.5), (20.5, 45.5))
+        f.coast_horizon, f.moving_steer = 10, (0.8, 25, 45)
+        f.input_sample = (10, 0.3, 4.0)
+        f.update((19.3, 12.5), 13, 10)
+        f.feedback.command = (10, 10, 14)
+        f.input_sample = (10.4, 0.4, 4.0)
+        step = f.update((19.6, 14.5), 13, 10.4)
+        self.assertEqual(step.action, WALK)
+        self.assertGreaterEqual(step.coast_distance, 4)
+        self.assertEqual(step.target_bearing, 13)
+        f.pause()
+        self.assertIsNone(f.feedback.command)
+
+    def test_recovery_requires_two_new_frames_past_the_same_directed_site(self):
+        e = RecoveryEpisode("map", "floor", (10, 10), (0, 1), after=12)
+        self.assertTrue(e.matches("map", "floor", (12, 11), (0, 1)))
+        self.assertFalse(e.matches("map", "floor", (12, 11), (0, -1)))
+        self.assertFalse(e.matches("map", "other", (10, 10), (0, 1)))
+        self.assertFalse(e.passed((10, 13), 11))
+        self.assertFalse(e.passed((13, 10), 12.1))
+        self.assertFalse(e.passed((10, 13), 12.4))
+        self.assertFalse(e.passed((10, 13), 12.4))
+        self.assertTrue(e.passed((10, 13), 12.8))
+
+    def test_short_starts_require_separate_post_release_frames_and_reset_on_progress(self):
+        f = WalkFeedback()
+
+        def observe(stamp, x):
+            f.observe(LegObservation.measure((0, 0), (10, 0), (x, 0)), stamp, 0.12, 0.35, 2.5)
+
+        observe(10, 1)
+        for n in range(3):
+            stamp = 10.5 + n * 0.5
+            f.short_start = (1, 0), stamp
+            observe(stamp - 0.05, 1)
+            self.assertEqual(f.short_misses, n)
+            observe(stamp + 0.2, 1.03)
+        self.assertEqual(f.short_misses, 3)
+        observe(12.5, 2)
+        self.assertEqual(f.short_misses, 0)
+
+    def test_retrace_follows_measured_positions_across_multiple_rejected_cells(self):
+        grid = _line_grid(20)
+        grid.cells[5, 5:14] = CELL_BLOCKED
+        trail = MeasuredTrail()
+        for i, x in enumerate((4.7, 5.6, 6.4, 7.1, 8.2, 9.4, 10.3, 11.1, 12.2)):
+            trail.record(("map", "floor"), (x, 5.5), 10 + i * 0.4, 1)
+        path = trail.path_to_known(grid)
+        self.assertEqual(path[-1], (4.7, 5.5))
+        keys, distance = retrace_step((12.2, 5.5), 90, path, 1, 1.5)
+        self.assertEqual(keys, ("s",))
+        self.assertAlmostEqual(distance, 1.5)
+        trail.record(("map", "other"), (12.2, 5.5), 14, 1)
+        self.assertFalse(trail.path_to_known(grid))
+        self.assertFalse(trail.return_path(grid, (12.2, 5.5)))
+        trail.record(("map", "other"), (11.2, 5.5), 14.4, 1)
+        self.assertEqual(trail.return_path(grid, (11.2, 5.5)), [(11.2, 5.5), (12.2, 5.5)])
+
+    def test_cold_boundary_probe_requires_a_reachable_adjacent_known_cell(self):
+        grid = _line_grid()
+        grid.cells[4:7, 4:7] = CELL_BLOCKED
+        f = GridRouteFollower(grid, FollowerConfig(margin=0))
+        episode = RecoveryEpisode("map", "floor", (5.1, 5.5), (1, 0))
+        self.assertIsNone(boundary_probe(f.planner, (5.1, 5.5), 90, episode, 1.5, {}))
+        grid.cells[5, 4] = CELL_FREE
+        keys, distance = boundary_probe(f.planner, (5.1, 5.5), 90, episode, 1.5, {})
+        self.assertEqual(keys, ("s",))
+        self.assertAlmostEqual(distance, 0.6)
+        self.assertIn((5, 4), episode.tried_exits)
+
+    def test_corner_handoff_needs_clearance_on_both_legs(self):
+        grid = _line_grid(20)
+        grid.cells[7, 6] = CELL_BLOCKED
+        f = GridRouteFollower(grid, FollowerConfig(margin=0, waypoint_tolerance=2))
+        points = [(1.5, 5.5), (5.5, 5.5), (9.5, 9.5), (13.5, 9.5)]
+        f.adopt(PlanResult(True, "ok", waypoints=points), goal=points[-1], start=points[0])
+        f.waypoint_index = 2
+        f.input_sample = 10, 0.2, 4
+        f.coast_horizon = 10
+        h = f._corner_exit_distance((5.6, 5.8), 90, 2, 3)
+        self.assertGreater(h, 0)
+        self.assertLessEqual(h, 2)
+        self.assertEqual(f._corner_exit_distance((5.6, 5.8), 90, 2, 2), 0)
+        grid.cells[5, 7] = CELL_BLOCKED
+        self.assertEqual(f._corner_exit_distance((5.6, 5.8), 90, 2, 3), 0)
+
+    def test_recovery_penalty_changes_the_route_but_keeps_cells_passable(self):
+        f = GridRouteFollower(_line_grid(24), FollowerConfig(margin=0))
+        a, b = (2.5, 10.5), (19.5, 10.5)
+        initial = f.plan(a, b)
+        f.planner.avoid_stalled_approach((10.5, 10.5), (1, 0))
+        plan = f.plan(a, b)
+        self.assertTrue(plan.ok)
+        self.assertNotEqual(initial.cells, plan.cells)
+        self.assertTrue(f.planner.passable(10, 10))
+        self.assertFalse(any(cell in f.planner.recovery_cost for cell in plan.cells))
+        self.assertGreater(f.planner._fast_line((10, 2), (10, 19))[1], 17)
 
     def test_detects_stuck_without_progress(self):
         self.follower.plan((0.5, 0.5), (4.5, 0.5))

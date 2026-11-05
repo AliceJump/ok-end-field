@@ -304,7 +304,8 @@ class MinimapHeadingMixin:
             self._clear_turn_state(control_state)
             return result
 
-        before, score = self.read_heading(frame, min_score=min_score)
+        prediction = None if control_state is None else control_state.pop("moving_prediction", None)
+        before, score = self.read_heading(None if prediction is not None else frame, min_score=min_score)
         if before is None:
             self._clear_turn_state(control_state)
             self.log_warning(f"读不到朝向（score={score:.3f}），无法转向")
@@ -316,7 +317,15 @@ class MinimapHeadingMixin:
                 result, control_state, before, score, tolerance=tolerance, min_score=min_score, max_probe_s=max_probe_s
             )
         before, feedback_settled, control_per_px, samples = self._execute_turn_rounds(
-            result, before, per_px, tolerance, max_rounds, min_score, max_probe_s, control_state
+            result,
+            before,
+            per_px,
+            tolerance,
+            max_rounds,
+            min_score,
+            max_probe_s,
+            control_state,
+            self._unobserved_turn_credit(prediction, target, before, per_px),
         )
         result["heading"] = before
         result["error"] = angle_delta(target, before)
@@ -554,7 +563,18 @@ class MinimapHeadingMixin:
         hold = max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
         if max_hold_s is not None:
             hold = min(hold, max_hold_s)
-        self.press_key("w", down_time=hold)
+        started = time.time()
+        backend = getattr(getattr(self, "executor", None), "interaction", None)
+        before = getattr(backend, "key_down_rejections", 0)
+        sent = self.press_key("w", down_time=hold)
+        result = getattr(self, "_last_turn_result", None)
+        if (
+            max_hold_s is not None
+            and result is not None
+            and sent is not False
+            and getattr(backend, "key_down_rejections", 0) == before
+        ):
+            result.setdefault("probe_intervals", []).append((started, min(time.time(), started + hold)))
         return self.read_heading(min_score=min_score)
 
     def _wait_for_turn_heading(self, before, heading, score, *, target, tolerance, min_score):
@@ -593,7 +613,7 @@ class MinimapHeadingMixin:
             control_state.clear()
 
     def _execute_turn_rounds(
-        self, result, before, per_px, tolerance, max_rounds, min_score, max_probe_s, control_state
+        self, result, before, per_px, tolerance, max_rounds, min_score, max_probe_s, control_state, credit=0.0
     ):
         target = result["target"]
         settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
@@ -603,7 +623,8 @@ class MinimapHeadingMixin:
             err = angle_delta(target, before)
             if abs(err) <= tolerance:
                 break
-            dx = round(err / control_per_px)
+            used_credit = credit if i == 1 else 0.0
+            dx = round((err - used_credit) / control_per_px)
             if dx == 0:
                 # 残差不足一个像素：只能这样了
                 break
@@ -622,6 +643,8 @@ class MinimapHeadingMixin:
                 "ratio": None,
                 "settled": feedback_settled,
             }
+            if used_credit:
+                entry["moving_credit"] = used_credit
             if after is None:
                 self.log_warning(f"第 {i} 轮：按 W 后读不到朝向（score={score:.3f}）")
                 result["history"].append(entry)
@@ -641,6 +664,25 @@ class MinimapHeadingMixin:
                 break
 
         return before, feedback_settled, control_per_px, samples
+
+    @staticmethod
+    def _unobserved_turn_credit(prediction, target, heading, per_px):
+        """Fuse one recent commanded camera direction with a fresh character heading."""
+        if not prediction or prediction["per_px"] != per_px:
+            return 0.0
+        age = time.monotonic() - prediction["sent_at"]
+        if not 0 <= age < 2.0:
+            return 0.0
+        lead = angle_delta(prediction["heading"], heading)
+        error = angle_delta(target, heading)
+        command = prediction["command"]
+        if lead * command <= 0 or lead * error <= 0:
+            return 0.0
+        # The camera and the character are two observations of one turn,
+        # neither is independent absolute yaw. Do not credit more than the
+        # issued command, reverse a correction, or reuse it on later rounds.
+        weight = 0.5 * (1.0 - age / 2.0)
+        return math.copysign(weight * min(abs(lead), abs(command), abs(error)), error)
 
     def _continued_turn_gain(self, per_px, before, control_state):
         control_per_px = per_px

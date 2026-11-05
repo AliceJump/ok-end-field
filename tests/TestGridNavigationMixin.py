@@ -29,6 +29,7 @@ from src.nav.route_follower import (
     FollowerStep,
     GridRouteFollower,
 )
+from src.nav.walk_feedback import LegObservation, RecoveryEpisode
 from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineNode, ZipLineStep
 from src.runtime_state.topics import RuntimeTopic
 from src.tasks.navigation.mixin.grid_navigation_mixin import (
@@ -1148,6 +1149,23 @@ class TestGridNavigationMixin(unittest.TestCase):
         ctx.pose.update(absolute_position_valid=True, position_trusted=False)
         self.assertEqual(self.task._grid_nav_classify(ctx), NavState.WAIT_TRUST)
 
+    def test_arrival_requires_a_presented_frame_after_stopping(self):
+        ctx = self._control_tick(frame_t=100, frame_time_source="wgc_system_relative_time")
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=101):
+            self.assertFalse(self.task._post_stop_frame_confirmed(ctx))
+        self.assertFalse(self.task._post_stop_frame_confirmed(ctx))
+        ctx.pose["frame_t"] = 101.1
+        self.assertTrue(self.task._post_stop_frame_confirmed(ctx))
+
+    def test_cancellation_does_not_intercept_backend_key_release(self):
+        self.task._set_grid_walking(True)
+        backend = mock.Mock()
+        self.task.executor = SimpleNamespace(interaction=backend)
+        self.task.send_key_up = mock.Mock(side_effect=RuntimeError("task cancelled"))
+        self.task._set_grid_walking(False)
+        backend.send_key_up.assert_called_once_with("w")
+        self.assertFalse(self.task._grid_nav_w_held)
+
     def test_pending_visual_anchor_prioritizes_new_wgc_frame_and_still_releases_w(self):
         ctx = self._control_tick(
             x=None,
@@ -1235,6 +1253,23 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.task._set_grid_walking(True)
         self.task._grid_nav_walk_interval(ctx)
         self.assertGreater(self.task.t, 0)
+        self.assertFalse(self.task.w_down)
+
+    def test_stationary_corner_approach_can_use_more_than_one_tick_but_not_cross_vertex(self):
+        ctx = self._control_tick()
+        ctx.x, ctx.z, ctx.heading = 5.5, 5.5, 90
+        ctx.session.poll_duration_s = 0.5
+        ctx.session.walk_speed_m_s = 6
+        grid = DenseGrid(np.full((24, 24), CELL_FREE, np.uint8), GridMeta(map_name="test", cell_size=1))
+        follower = GridRouteFollower(grid, FollowerConfig(margin=0, arrive_radius=1))
+        points = [(4.5, 5.5), (8.5, 5.5), (8.5, 18.5)]
+        follower.adopt(PlanResult(ok=True, waypoints=points), start=points[0], goal=points[-1])
+        ctx.step = follower.update(ctx.position, 90, 0)
+        self.task._grid_nav_follower = follower
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_walk_interval(ctx)
+        self.assertGreater(self.task.t, ctx.tick)
+        self.assertAlmostEqual(self.task.t * 6, 2.5)
         self.assertFalse(self.task.w_down)
 
     def test_long_segment_keeps_w_held_during_sampling(self):
@@ -1510,6 +1545,75 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(synced)
         self.assertFalse(self.task.w_down)
         self.assertEqual(position_service.calls, 2)
+
+    def test_rejected_input_cannot_start_a_forward_exposure_window(self):
+        backend = SimpleNamespace(key_down_rejections=0)
+        self.task.executor = SimpleNamespace(interaction=backend)
+
+        def reject(_key):
+            backend.key_down_rejections += 1
+
+        self.task.send_key_down = reject
+        self.task._set_grid_walking(True)
+        self.assertFalse(self.task._grid_nav_w_held)
+        self.assertIsNone(self.task._grid_nav_forward.start)
+
+    def test_recovery_feedback_waits_for_post_release_frame_and_remembers_the_site(self):
+        session = NavSession(GridRouteRequest((5.5, 0.5), map_id="test"), 100, 100, 0.2)
+        pose = {"frame_time_source": "wgc_system_relative_time", "frame_t": 20, "odom_ok": True, "tier_id": "floor"}
+        ctx = NavTick(
+            session,
+            None,
+            pose,
+            2.5,
+            0.5,
+            "test",
+            1,
+            90,
+            0.99,
+            step=FollowerStep(STUCK, waypoint=(5.5, 0.5), heading_error=0, target_bearing=90),
+        )
+        episode = RecoveryEpisode("test", "floor", (2.5, 0.5), (1, 0), after=21)
+        session.recovery = episode
+        self.task._grid_nav_follow = lambda ctx: self.fail("旧帧不能在后退后重新规划")
+        self.assertIsNone(self.task._grid_nav_advance(ctx))
+        follower, result = self.task._create_grid_route(
+            (0.5, 0.5), (5.5, 0.5), map_id="test", grid_path=str(self.path), grid_dir=None, zoom=None
+        )
+        self.assertTrue(result.ok)
+        self.task._grid_nav_follower = follower
+        follower.feedback.leg = LegObservation.measure((0.5, 0.5), (5.5, 0.5), ctx.position)
+        follower.input_sample = 22, 0.2, 2
+        follower.feedback.short_misses = 3
+        session.note_progress(1)
+        attempts = []
+        self.task._grid_nav_retreat = lambda ctx: attempts.append(ctx.session.recovery.attempts)
+        self.assertIsNone(self.task._grid_nav_state_stuck(ctx))
+        self.assertEqual(attempts, [2])
+        self.assertTrue(session.recovery.avoid_approach)
+        self.assertIsNone(self.task._grid_nav_follower)
+
+    def test_recovery_retraces_through_multiple_measured_cells_on_fresh_frames(self):
+        cells = np.full((12, 12), CELL_FREE, dtype=np.uint8)
+        cells[5, 5:8] = CELL_BLOCKED
+        follower = GridRouteFollower(DenseGrid(cells, GridMeta(cell_size=1.0)), FollowerConfig(margin=0))
+        session = NavSession(GridRouteRequest((1.5, 5.5)), 100, 100, 0.2)
+        episode = RecoveryEpisode("test", "floor", (7.1, 5.5), (1, 0))
+        session.recovery = episode
+        for i, x in enumerate((4.7, 5.6, 6.4, 7.1)):
+            session.trail.record(("test", "floor"), (x, 5.5), 10 + i * 0.4, 1)
+
+        def tick(x):
+            return NavTick(session, None, {"tier_id": "floor"}, x, 5.5, "test", 1, 90, 0.99)
+
+        feedback = iter([tick(5.6), tick(4.7)])
+        self.task._grid_nav_recovery_frame = lambda *_: next(feedback)
+        moves = []
+        self.task._hold_grid_keys = lambda keys, duration: moves.append((keys, duration))
+        self.task._grid_nav_exit_rejected_cell(tick(7.1), follower, episode, 6.0, 2.0)
+        self.assertEqual([k for k, _ in moves], [("s",), ("s",)])
+        self.assertLessEqual(sum(t for _, t in moves), 0.41)
+        self.assertEqual(episode.departure, (4.7, 5.5))
 
     def test_stuck_recovery_uses_back_side_then_jump(self):
         self.task._choose_grid_strafe_side = lambda position, heading: "d"
@@ -1906,6 +2010,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             def __init__(self, path, speed, poll):
                 super().__init__(path)
                 self.speed, self.poll = speed, poll
+                self.config["导航超时(秒)"] = 120
                 self.x, self.z, self.heading = 0.5, 5.5, 84
                 self.trace = []
 
@@ -1941,7 +2046,7 @@ class TestGridNavigationMixin(unittest.TestCase):
                 follower._route_start, follower.goal = points[0], points[-1]
                 return follower, follower.plan_result
 
-        for speed, poll in ((3, 0.04), (3, 0.12), (6, 0.04), (6, 0.12)):
+        for speed, poll in ((3, 0.04), (3, 0.12), (6, 0.04), (6, 0.12), (6, 0.45), (6, 0.8)):
             with self.subTest(speed=speed, poll=poll):
                 tasks = []
                 for enabled in (False, True):
@@ -1949,8 +2054,19 @@ class TestGridNavigationMixin(unittest.TestCase):
                     if not enabled:
                         original = task._should_turn_grid_in_place
                         task._should_turn_grid_in_place = lambda step, original=original, **kw: original(step)
-                    with mock.patch("src.nav.route_follower.SMOOTH_LOOKAHEAD_DISTANCE_M", 5.0 if enabled else 0.0):
-                        self.assertTrue(task.navigate_grid_to(points[-1], map_id="test"))
+                    original_guide = GridRouteFollower._motion_guide
+                    guide = original_guide if enabled else lambda *args: (None, 0.0)
+                    handoff = GridRouteFollower._visible_handoff if enabled else lambda *args: False
+                    landing = GridRouteFollower.landing_distance if enabled else lambda *args: None
+                    with (
+                        mock.patch.object(GridRouteFollower, "_visible_handoff", handoff),
+                        mock.patch.object(GridRouteFollower, "landing_distance", landing),
+                        mock.patch.object(GridRouteFollower, "_motion_guide", guide),
+                        mock.patch("src.nav.route_follower.SMOOTH_LOOKAHEAD_DISTANCE_M", 5.0 if enabled else 0.0),
+                    ):
+                        self.assertTrue(
+                            task.navigate_grid_to(points[-1], map_id="test"), (enabled, task.x, task.z, task.logs[-5:])
+                        )
                     self.assertLessEqual(math.dist((task.x, task.z), points[-1]), 0.5)
                     self.assertTrue(all(grid.is_free(*grid.index_of_world(x, z)) for x, z in task.trace))
                     tasks.append(task)

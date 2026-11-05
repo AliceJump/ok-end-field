@@ -31,7 +31,11 @@
 from __future__ import annotations
 
 import math
+import time
+from contextlib import ExitStack
+from dataclasses import replace
 from enum import StrEnum
+from itertools import pairwise
 from pathlib import Path
 
 from src.core.global_config_store import get_global_config
@@ -78,7 +82,8 @@ from src.core.GridNavConfig import (
 from src.core.NavConfig import NAV_CONFIG_NAME
 from src.data import map_mark_query, user_map_mark_store
 from src.data.FeatureList import FeatureList as fL
-from src.nav.grid_io import GRID_SUFFIX, DenseGrid, load_grid
+from src.nav.coasting import WALK_OCTANTS, retrace_step
+from src.nav.grid_io import CELL_FREE, GRID_SUFFIX, DenseGrid, load_grid
 from src.nav.grid_planner import GridPlanner, PlanResult
 from src.nav.layered_map import (
     LayeredMap,
@@ -114,7 +119,9 @@ from src.nav.route_follower import (
     angle_delta,
     bearing_to_point,
     distance_xz,
+    point_segment_distance,
 )
+from src.nav.walk_feedback import ForwardInput, RecoveryEpisode, boundary_probe
 from src.nav.zip_line_graph import ZIP_LINE_POWER_FACILITY_NAMES, ZipLineGraph, ZipLineNode
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
@@ -360,6 +367,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_follower: GridRouteFollower | None = None
         self._grid_nav_map_id = ""
         self._grid_nav_w_held = False
+        self._grid_nav_forward = ForwardInput()
         self._grid_nav_sprint_active = False
         self._grid_nav_last_wait_log = 0.0
         self._grid_minimap_position_service = None
@@ -404,6 +412,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_last_progress_action = None
         self._grid_nav_last_info_key = None
         self._set_grid_walking(False)
+        self._grid_nav_forward = ForwardInput()
 
     def pause(self) -> None:
         """暂停时立刻松开 ``W``：框架的暂停本身不会替任务释放按键。
@@ -644,7 +653,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         map_id = str(pose.get("map_id") or session.request.map_id or "")
         self._log_grid_navigation_debug(pose, map_id=map_id, tag="导航")
         sync_seq = int(pose.get("sync_seq") or 0)
-        session.note_sync(sync_seq)
+        if session.note_sync(sync_seq) and isinstance(self._grid_nav_follower, GridRouteFollower):
+            self._grid_nav_follower.pause()
         speed = pose.get("speed")
         if (
             pose.get("position_trusted")
@@ -675,6 +685,23 @@ class GridNavigationMixin(RuntimeStateMixin):
         if gate is not None:
             ctx.session.turn_control.clear()
             return self._grid_nav_state_call(gate, ctx)
+        pose = ctx.pose or {}
+        episode = ctx.session.recovery
+        if episode and (episode.map_id != ctx.map_id or episode.tier != pose.get("tier_id")):
+            ctx.session.recovery = episode = None
+        if pose.get("frame_time_source") == "wgc_system_relative_time" and pose.get("frame_t") is not None:
+            stamp = pose["frame_t"]
+            if (episode and stamp <= episode.after) or (
+                ctx.session.last_walk_frame is not None and stamp <= ctx.session.last_walk_frame
+            ):
+                if episode or time.time() - stamp >= self._grid_position_max_age(ctx.tick):
+                    self._set_grid_walking(False)
+                self.sleep(min(ctx.tick, 0.05))
+                return None
+            if episode and episode.passed(ctx.position, stamp):
+                self.log_info("脱困后已连续两帧越过卡点")
+                ctx.session.recovery = None
+                ctx.session.recoveries = 0
         return self._grid_nav_follow(ctx)
 
     def _grid_nav_classify(self, ctx: NavTick) -> NavState | None:
@@ -824,6 +851,35 @@ class GridNavigationMixin(RuntimeStateMixin):
             ctx.position,
             session.visited_cells,
         )
+        if isinstance(self._grid_nav_follower, GridRouteFollower):
+            pose = ctx.pose or {}
+            stamp = pose.get("frame_t")
+            if pose.get("frame_time_source") == "wgc_system_relative_time" and stamp is not None:
+                previous = session.last_walk_frame if session.last_walk_frame is not None else stamp
+                seconds = self._grid_nav_forward.seconds(previous, stamp)
+                horizon = session.walk_speed_m_s * (session.poll_duration_s + session.tick + 0.15)
+                self._grid_nav_follower.input_sample = (stamp, seconds, horizon)
+                session.last_walk_frame = stamp
+                session.trail.record(
+                    (ctx.map_id, pose.get("tier_id")), ctx.position, stamp, self._grid_nav_follower.grid.meta.cell_size
+                )
+            else:
+                self._grid_nav_follower.input_sample = None
+            self._grid_nav_follower.coast_horizon = session.walk_speed_m_s * (
+                2 * session.poll_duration_s + session.tick + 0.35
+            ) + max(
+                self._grid_cfg_float(CONFIG_GRID_GOAL_RADIUS, 2.0),
+                self._grid_cfg_float(CONFIG_GRID_WAYPOINT_RADIUS, 1.0),
+            )
+            self._grid_nav_follower.moving_steer = (
+                (
+                    max(0.1, min(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_GAIN, 0.8))),
+                    max(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MAX_DEG, 25.0)),
+                    max(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MAX_START_DEG, 45.0)),
+                )
+                if self._grid_cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True)
+                else None
+            )
         ctx.step = self._grid_nav_follower.update(
             ctx.position,
             float(ctx.heading),
@@ -862,6 +918,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         """执行状态处理器；返回值直接作为主循环的终止结果。"""
         if state not in (NavState.TURN, NavState.WALK, NavState.WAYPOINT_ARRIVED):
             ctx.session.turn_control.clear()
+        if state not in (NavState.DONE, NavState.STOP_REACHED):
+            ctx.session.confirmation_after = None
         return getattr(self, _GRID_NAV_HANDLERS[state])(ctx)
 
     def _grid_nav_sync(self, ctx: NavTick, reason: SyncReason) -> SyncWait:
@@ -1035,6 +1093,8 @@ class GridNavigationMixin(RuntimeStateMixin):
             float(ctx.z) - session.goal[1],
         )
         self._set_grid_walking(False)
+        if not self._post_stop_frame_confirmed(ctx):
+            return None
         self.log_info(f"进入终点接近范围（距目标 {distance_to_goal:.2f}m），停止网格导航")
         return True
 
@@ -1079,6 +1139,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             zoom=session.request.zoom,
             time_budget_s=max(0.0, session.deadline - self.active_time()),
             required_zip_line_start_id=self._grid_nav_skip_board_node_id,
+            **({"recovery": session.recovery} if session.recovery and session.recovery.avoid_approach else {}),
         )
         session.had_plan = True
         if self._grid_navigation_timed_out(session.deadline, session.limit):
@@ -1272,6 +1333,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         session = ctx.session
         step = ctx.step
         self._set_grid_walking(False)
+        if not self._post_stop_frame_confirmed(ctx):
+            return None
         if session.layered:
             route = session.route
             index = session.segment_index
@@ -1298,30 +1361,184 @@ class GridNavigationMixin(RuntimeStateMixin):
         self.log_info(f"已到达目标（距目标 {distance_text}）", notify=True)
         return True
 
+    @staticmethod
+    def _post_stop_frame_confirmed(ctx):
+        """Confirm streamed video arrival on a presented frame after key-up."""
+        pose = ctx.pose or {}
+        if pose.get("frame_time_source") != "wgc_system_relative_time":
+            return True
+        if ctx.session.confirmation_after is None:
+            ctx.session.confirmation_after = time.time()
+            return False
+        if (pose.get("frame_t") or 0) < ctx.session.confirmation_after:
+            return False
+        ctx.session.confirmation_after = None
+        return True
+
     def _grid_nav_state_stuck(self, ctx: NavTick) -> bool | None:
         """卡住：按后退、侧移、对准后跳跃的顺序脱困，用完额度就放弃。"""
         session = ctx.session
         step = ctx.step
         self._set_grid_walking(False)
         max_recoveries = self._grid_cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3)
+        follower = self._grid_nav_follower
+        leg = follower.feedback.leg if isinstance(follower, GridRouteFollower) and follower.input_sample else None
+        if leg:
+            episode = session.recovery
+            tier = (ctx.pose or {}).get("tier_id")
+            rejected_start = not follower.planner.passable(*follower.grid.index_of_world(*ctx.position))
+            if episode and episode.matches(
+                ctx.map_id, tier, ctx.position, episode.unit if rejected_start else leg.unit
+            ):
+                session.recoveries = episode.attempts
+            else:
+                session.recovery = RecoveryEpisode(ctx.map_id, tier, ctx.position, leg.unit)
         if session.recoveries >= max_recoveries:
             self.log_warning(f"导航卡住: {step.reason}", notify=True)
             return False
         session.recoveries += 1
         self.log_warning(f"导航卡住，尝试脱困 {session.recoveries}/{max_recoveries}：{step.reason}")
-        self._recover_grid_stuck(
-            position=ctx.position,
-            heading=float(ctx.heading),
-            target_bearing=step.target_bearing,
-            frame=ctx.frame,
-            attempt=session.recoveries,
-            deadline=session.deadline,
-            max_attempts=max_recoveries,
-        )
+        if leg:
+            episode = session.recovery
+            episode.attempts = session.recoveries
+            episode.short_approach |= follower.feedback.short_misses >= 3
+            self._grid_nav_retreat(ctx)
+            if session.recovery is episode:
+                episode.after = time.time()
+                episode.confirmed_frames = 0
+        else:
+            self._recover_grid_stuck(
+                position=ctx.position,
+                heading=float(ctx.heading),
+                target_bearing=step.target_bearing,
+                frame=ctx.frame,
+                attempt=session.recoveries,
+                deadline=session.deadline,
+                max_attempts=max_recoveries,
+            )
         if self._grid_navigation_timed_out(session.deadline, session.limit):
             return False
         self._grid_nav_follower = None
         return None
+
+    def _grid_nav_retreat(self, ctx: NavTick) -> None:
+        """Select an actual S or S+A/D swept corridor; replan only on a post-release frame."""
+        session = ctx.session
+        follower = self._grid_nav_follower
+        episode = session.recovery
+        duration = self._grid_recovery_duration(session.deadline)
+        if duration is None:
+            return
+        speed = max(6.0, session.walk_speed_m_s)
+        distance = min(speed * duration, max(2 * follower.grid.meta.cell_size, follower.config.arrive_radius))
+        if distance <= 0:
+            return
+        if not follower.planner.passable(*follower.grid.index_of_world(*ctx.position)):
+            self._grid_nav_exit_rejected_cell(ctx, follower, episode, speed, distance)
+            return
+        keys = episode.choose_keys(
+            follower.planner, follower.feedback.leg, ctx.heading, distance, session.visited_cells
+        )
+        if keys:
+            self.log_info(f"脱困实测：尝试 {episode.attempts}，可通行退路 {'+'.join(keys)}，距离预算 {distance:.1f}m")
+            self._hold_grid_keys(keys, min(distance / speed, duration))
+        else:
+            self.log_info("脱困实测：没有可验证的退路，从新位置帧重规划")
+
+    def _grid_nav_exit_rejected_cell(self, ctx, follower, episode, speed, distance):
+        """Walk back along observed motion, measuring each pulse before issuing another."""
+        session = ctx.session
+        grid = follower.grid
+        path = list(episode.return_path)
+        if not path or distance_xz(ctx.position, path[0]) > grid.meta.cell_size:
+            path = session.trail.return_path(grid, ctx.position)
+        if path and distance_xz(ctx.position, path[0]) > grid.meta.cell_size:
+            path = []
+        if path:
+            episode.return_path = (ctx.position, *path)
+            # A soft cost on an already blocked cell cannot change A*. Apply
+            # it where this measured approach actually left the known road.
+            if grid.state(*grid.index_of_world(*path[-1])) == CELL_FREE:
+                episode.departure = path[-1]
+        trace_length = sum(distance_xz(a, b) for a, b in pairwise([ctx.position, *path]))
+        budget = trace_length + 2 * grid.meta.cell_size
+        self.log_info(f"脱困回走：实测退路 {trace_length:.2f}m，轨迹点 {len(path)}")
+        # S/A/D can turn the character arrow, but these pulses do not rotate
+        # the camera. Keep the camera basis from the last forward approach.
+        camera_heading = ctx.heading
+        while self.active_time() < session.deadline:
+            if follower.planner.passable(*grid.index_of_world(*ctx.position)) or budget <= 0:
+                episode.return_path = ()
+                return
+            span = min(distance, 1.5 * grid.meta.cell_size, budget)
+            move = retrace_step(ctx.position, camera_heading, path, grid.meta.cell_size, span) if path else None
+            following_trace = move is not None
+            if not following_trace:
+                move = boundary_probe(
+                    follower.planner, ctx.position, camera_heading, episode, span, session.visited_cells
+                )
+            if move is None:
+                self.log_info("当前位置不在可通行格，回走轨迹和相邻已知格都没有可用探步")
+                return
+            keys, metres = move
+            offset = next(angle for angle, combo in WALK_OCTANTS if combo == keys)
+            direction = math.radians(camera_heading + offset)
+            if episode.attempts >= 2:
+                keys = (*keys, "space")
+            remaining = session.deadline - self.active_time()
+            if remaining <= 0:
+                return
+            self.log_info(
+                f"脱困回走：{'+'.join(keys)}，距离预算 {metres:.2f}m，依据{'实测轨迹' if following_trace else '相邻已知格'}"
+            )
+            self._hold_grid_keys(keys, min(metres / speed, remaining))
+            released = time.time()
+            new = self._grid_nav_recovery_frame(
+                session, episode, released, ctx.position, direction, follower.config.stuck_min_distance
+            )
+            if new is None:
+                return
+            moved = distance_xz(ctx.position, new.position)
+            progress = (new.x - ctx.x) * math.sin(direction) + (new.z - ctx.z) * math.cos(direction)
+            minimum = max(0.05, follower.config.stuck_min_distance)
+            if moved < minimum or (following_trace and progress < minimum):
+                return
+            episode.exit_direction = ((new.x - ctx.x) / moved, (new.z - ctx.z) / moved)
+            budget -= moved
+            if following_trace:
+                journey = [ctx.position, *path]
+                lateral, nearest = min(
+                    (point_segment_distance(new.position, a, b)[0], i) for i, (a, b) in enumerate(pairwise(journey))
+                )
+                if lateral > grid.meta.cell_size:
+                    return
+                path = path[nearest:]
+                episode.return_path = (new.position, *path)
+            ctx = new
+
+    def _grid_nav_recovery_frame(self, session, episode, released, origin, direction, min_progress):
+        until = min(session.deadline, self.active_time() + 1.5)
+        last = None
+        while self.active_time() < until:
+            ctx = self._grid_nav_poll(session)
+            if session.recovery is not episode:
+                return None
+            pose = ctx.pose or {}
+            if (pose.get("frame_t") or 0) > released:
+                if (
+                    ctx.map_id == episode.map_id
+                    and pose.get("tier_id") == episode.tier
+                    and self._grid_nav_classify(ctx) is None
+                ):
+                    progress = (ctx.x - origin[0]) * math.sin(direction) + (ctx.z - origin[1]) * math.cos(direction)
+                    if progress >= max(0.05, min_progress) or pose["frame_t"] - released >= 0.4:
+                        return ctx
+                    last = ctx
+                    self.sleep(min(0.05, max(0, until - self.active_time())))
+                    continue
+                return None
+            self.sleep(min(0.05, max(0, until - self.active_time())))
+        return last if session.recovery is episode else None
 
     def _grid_nav_state_narrow_calibrate(self, ctx: NavTick) -> bool | None:
         """窄道入口：先停车做一次静止校准，再对准入口航点。
@@ -1377,10 +1594,20 @@ class GridNavigationMixin(RuntimeStateMixin):
         step = ctx.step
         action_started = self.active_time()
         if self._grid_cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True) and not self._should_turn_grid_in_place(
-            step, stop_distance=self._grid_turn_stop_distance(ctx)
+            replace(step, distance_to_waypoint=step.coast_distance) if step.coast_distance else step,
+            stop_distance=self._grid_turn_stop_distance(ctx),
         ):
             session.turn_control.clear()
-            self._turn_grid_while_moving(step)
+            prediction = self._turn_grid_while_moving(step)
+            if prediction is not None:
+                session.turn_control["moving_prediction"] = prediction
+                follower = self._grid_nav_follower
+                if isinstance(follower, GridRouteFollower) and follower.feedback.frame_time is not None:
+                    follower.feedback.command = (
+                        follower.feedback.frame_time,
+                        prediction["command"],
+                        prediction["heading"],
+                    )
             if self._grid_nav_w_held:
                 self._grid_nav_note_turn_movement(ctx, action_started)
         else:
@@ -1417,6 +1644,17 @@ class GridNavigationMixin(RuntimeStateMixin):
         # A stopped pose has zero speed, although W immediately resumes running.
         # Use the most recent moving observation (with a margin), not that zero.
         speed = ctx.session.walk_speed_m_s
+        follower = self._grid_nav_follower
+        if isinstance(follower, GridRouteFollower) and follower.corner_travel and ctx.session.stop_distance is None:
+            remaining_s = follower.corner_travel / speed - (sample_cost if ctx.walking_during_sample else 0)
+            if remaining_s > sample_cost + ctx.tick:
+                self.sleep(ctx.tick)
+                return
+            duration = min(remaining_s, ctx.deadline - self.active_time())
+            if duration > 0:
+                self.sleep(duration)
+            self._set_grid_walking(False)
+            return
         radius = max(
             0.1,
             min(
@@ -1426,9 +1664,26 @@ class GridNavigationMixin(RuntimeStateMixin):
         )
         # Include the age of this snapshot and the next synchronous sample.
         reserve = radius + speed * (2 * sample_cost + ctx.tick + 0.1 + action_duration_s)
-        if float(distance) > reserve:
+        if max(float(distance), ctx.step.coast_distance) > reserve:
             self.sleep(ctx.tick)
             return
+        from_rest = (
+            self._grid_nav_w_held
+            and not ctx.walking_during_sample
+            and action_duration_s == 0
+            and ctx.session.stop_distance is None
+            and isinstance(follower, GridRouteFollower)
+        )
+        if from_rest:
+            travel = follower.landing_distance(ctx.position, ctx.heading, ctx.step)
+            if travel is not None:
+                # Keep W down for one bounded approach. Capping every start to
+                # one tick used to spend most of that tick starting from rest.
+                duration = min(travel / speed, ctx.tick + sample_cost, ctx.deadline - self.active_time())
+                if duration > 0:
+                    self.sleep(duration)
+                self._set_grid_walking(False)
+                return
         moving_age = (sample_cost if ctx.walking_during_sample else 0.0) + action_duration_s
         # If next-leg visibility prevents waypoint advancement, approach its
         # cell with small steps instead of imposing a permanent stop at radius/2.
@@ -1440,6 +1695,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         if duration > 0:
             self.sleep(duration)
         self._set_grid_walking(False)
+        if from_rest and duration > 0 and ctx.step.action == WALK:
+            follower.note_short_start(ctx.position, time.time())
 
     def _grid_nav_state_wait(self, ctx: NavTick) -> bool | None:
         """跟随器判定等待状态稳定：松开 ``W`` 等下一拍。"""
@@ -1982,6 +2239,20 @@ class GridNavigationMixin(RuntimeStateMixin):
         waypoints = segment.plan.waypoints
         segment_goal = tuple(waypoints[-1]) if waypoints else ctx.position
         follower.adopt(segment.plan, goal=segment_goal, start=ctx.position)
+        episode = session.recovery
+        if (
+            episode
+            and episode.avoid_approach
+            and episode.map_id == ctx.map_id
+            and normalize_tier(episode.tier) == normalize_tier(grid.meta.tier)
+            and not segment.plan.zip_line_steps
+        ):
+            follower.planner.avoid_stalled_approach(episode.departure or episode.origin, episode.unit)
+            alternative = follower.planner.plan(
+                ctx.position, segment_goal, time_budget_s=max(0, session.deadline - self.active_time())
+            )
+            if alternative.ok:
+                follower.adopt(alternative, goal=segment_goal, start=ctx.position)
         self._grid_nav_follower = follower
         self._grid_nav_map_id = ctx.map_id
         # 拓扑记录：跨过连接点、切到这一段之后，当前网格就是这一段的层。
@@ -2333,6 +2604,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         zoom: str | None,
         time_budget_s: float | None = None,
         required_zip_line_start_id: str | None = None,
+        recovery: RecoveryEpisode | None = None,
     ) -> tuple[GridRouteFollower | None, PlanResult]:
         grid = self.load_grid_for_map(
             map_id,
@@ -2351,6 +2623,8 @@ class GridNavigationMixin(RuntimeStateMixin):
             self._grid_follower_config(),
             zip_lines=zip_lines,
         )
+        if recovery and recovery.map_id == map_id and normalize_tier(recovery.tier) == normalize_tier(grid.meta.tier):
+            follower.planner.avoid_stalled_approach(recovery.departure or recovery.origin, recovery.unit)
         if zip_lines:
             stats = follower.zip_line_stats()
             self.log_info(
@@ -3190,12 +3464,21 @@ class GridNavigationMixin(RuntimeStateMixin):
         held = bool(held)
         if held == self._grid_nav_w_held:
             return
+        backend = getattr(getattr(self, "executor", None), "interaction", None)
         if held:
-            self.send_key_down("w")
+            before = getattr(backend, "key_down_rejections", 0)
+            if self.send_key_down("w") is False or getattr(backend, "key_down_rejections", 0) != before:
+                return
         else:
-            self.send_key_up("w")
+            if callable(getattr(backend, "send_key_up", None)):
+                backend.send_key_up("w")
+            else:
+                self.send_key_up("w")
             self._grid_nav_sprint_active = False
         self._grid_nav_w_held = held
+        self._grid_nav_forward.edge(held, time.time())
+        if not held and isinstance(self._grid_nav_follower, GridRouteFollower):
+            self._grid_nav_follower.feedback.command = None
 
     def _grid_turn_stop_distance(self, ctx: NavTick) -> float | None:
         """Reserve sampling, steering and braking time for small corrections."""
@@ -3240,7 +3523,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                 return True
         return False
 
-    def _turn_grid_while_moving(self, step: FollowerStep) -> None:
+    def _turn_grid_while_moving(self, step: FollowerStep) -> dict | None:
         """保持 ``W`` 前进，同时用限幅鼠标位移连续修正朝向。"""
         heading_error = step.heading_error
         if heading_error is None:
@@ -3261,6 +3544,15 @@ class GridNavigationMixin(RuntimeStateMixin):
             return
         self._set_grid_walking(True)
         self.pose_send_rotation(dx)
+        if step.target_bearing is not None:
+            command = dx * per_px
+            return {
+                "heading": (step.target_bearing - heading_error + command) % 360,
+                "command": command,
+                "per_px": per_px,
+                "sent_at": time.monotonic(),
+            }
+        return None
 
     def _log_grid_navigation_debug(self, state: dict, *, map_id: str, tag: str) -> None:
         """调试模式下节流输出单帧定位状态，便于关联规划、里程计与静止判定。"""
@@ -3390,13 +3682,15 @@ class GridNavigationMixin(RuntimeStateMixin):
 
     def _hold_grid_keys(self, keys: tuple[str, ...], duration: float) -> None:
         self._set_grid_walking(False)
-        for key in keys:
-            self.send_key_down(key)
-        try:
+        backend = getattr(getattr(self, "executor", None), "interaction", None)
+        release = getattr(backend, "send_key_up", None) or self.send_key_up
+        with ExitStack() as cleanup:
+            for key in keys:
+                cleanup.callback(release, key)
+                before = getattr(backend, "key_down_rejections", 0)
+                if self.send_key_down(key) is False or getattr(backend, "key_down_rejections", 0) != before:
+                    return
             self.sleep(duration)
-        finally:
-            for key in reversed(keys):
-                self.send_key_up(key)
 
     def _choose_grid_strafe_side(
         self,
@@ -3522,6 +3816,8 @@ class GridNavigationMixin(RuntimeStateMixin):
     def _grid_nav_turn_in_place(self, ctx, action_started):
         session, step = ctx.session, ctx.step
         self._set_grid_walking(False)
+        if isinstance(self._grid_nav_follower, GridRouteFollower):
+            self._grid_nav_follower.feedback.command = None
         distance = step.distance_to_waypoint
         speed = max(6.0, session.walk_speed_m_s)
         # The pose predates the synchronous match. Release W and refresh
@@ -3544,6 +3840,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             max_probe_s=probe_s,
         )
         if turn.get("rounds", 0) > 0 or turn.get("probe_only"):
+            self._grid_nav_forward.intervals.extend(turn.get("probe_intervals", ()))
             self._grid_nav_note_turn_movement(ctx, action_started)
         if not turn.get("ok"):
             self.log_debug(

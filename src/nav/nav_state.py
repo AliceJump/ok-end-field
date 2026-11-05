@@ -36,6 +36,7 @@ from src.nav.route_follower import (
     WALK,
     ZIP_LINE,
 )
+from src.nav.walk_feedback import MeasuredTrail, RecoveryEpisode
 
 __all__ = [
     "GridRouteRequest",
@@ -183,6 +184,10 @@ class NavSession:
     walk_speed_m_s: float = 8.0
     #: 是否已经规划过至少一次，用于区分首次规划与重规划。
     had_plan: bool = False
+    confirmation_after: float | None = None
+    last_walk_frame: float | None = None
+    recovery: RecoveryEpisode | None = None
+    trail: MeasuredTrail = field(default_factory=MeasuredTrail)
     #: 偏航后先返回的"最近走过的已知格"；None 表示直接规划原目标。
     recovery_goal: tuple[float, float] | None = None
     #: 本次导航实际走过的已知格，仅用于偏航后寻找安全返回点。
@@ -243,6 +248,10 @@ class NavSession:
             return False
         self.last_sync_seq = sync_seq
         self.visited_cells.clear()
+        self.turn_control.clear()
+        self.recovery = None
+        self.trail = MeasuredTrail()
+        self.last_walk_frame = None
         return True
 
 

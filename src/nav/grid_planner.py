@@ -258,6 +258,7 @@ class GridPlanner:
         self._cap_exceeded = False
         self._timed_out = False
         self._tables = None
+        self.recovery_cost = {}
         self._zip_edges_by_padded: dict[int, tuple[_ZipLineEdge, ...]] = {}
         self._zip_edges_by_id: dict[int, _ZipLineEdge] = {}
         self._zip_access_cells: dict[str, tuple[int, int]] = {}
@@ -991,6 +992,23 @@ class GridPlanner:
         """``_line_clear`` 的公开包装：两格之间可否安全直连。"""
         return self._line_clear(a, b)
 
+    def line_cells(self, a, b):
+        """Cells traversed by a chord, with the same rasterization as line_risk."""
+        return self._line_cells(a, b)
+
+    def accepts_walk_shortcut(self, points):
+        """Apply planner replacement cost and risk to a proposed runtime handoff."""
+        cells = [self.grid.index_of_world(*point) for point in points]
+        original = [cells[0]]
+        for start, end in itertools.pairwise(cells):
+            if not self.line_clear(start, end):
+                return False
+            original.extend(self.line_cells(start, end)[1:])
+        if original[0] == original[-1]:
+            return False
+        indices = {original[0]: 0, original[-1]: len(original) - 1}
+        return self._replacement_ok(original[0], original[-1], original, indices)
+
     def cells_risk(self, cells) -> int:
         """一串格里有多少个未知格。直线风险与被替换路径段的风险共用同一口径。"""
         return sum(1 for i, j in cells if self.grid.state(i, j) == CELL_UNKNOWN)
@@ -1021,11 +1039,24 @@ class GridPlanner:
         """
         return self._passable(i + di, j) and self._passable(i, j + dj)
 
+    def avoid_stalled_approach(self, position, unit):
+        """A local, soft cost for this planner only. Leave a single viable corridor usable."""
+        cell_size = self.grid.meta.cell_size
+        side = unit[1], -unit[0]
+        for ahead in (0, 1, 2):
+            for lateral in (-1, 0, 1):
+                x = position[0] + cell_size * (ahead * unit[0] + lateral * side[0])
+                z = position[1] + cell_size * (ahead * unit[1] + lateral * side[1])
+                cell = self.grid.index_of_world(x, z)
+                if self.grid.in_bounds(*cell):
+                    self.recovery_cost[cell] = 6.0
+        self._tables = None
+
     def _step_cost(self, ai: int, aj: int, bi: int, bj: int, state: int) -> float:
         base = _SQRT2 if (ai != bi and aj != bj) else 1.0
         if state == CELL_UNKNOWN:
             base *= self.risk_cost
-        return base + self._wall_cost(bi, bj) + self._frontier_cost(bi, bj, state)
+        return base + self._wall_cost(bi, bj) + self._frontier_cost(bi, bj, state) + self.recovery_cost.get((bi, bj), 0)
 
     def _wall_cost(self, i: int, j: int) -> float:
         """离墙不足时的软代价；不会影响通行判定。"""
@@ -1158,6 +1189,8 @@ class GridPlanner:
             missing = np.where(fringe >= 0, np.maximum(0, self.frontier_margin - fringe), 0)
             frontier = np.where(cells == CELL_FREE, missing, 0).astype(np.float64) * self.frontier_penalty
 
+        for cell, cost in self.recovery_cost.items():
+            wall[cell] += cost
         cost_orth = _as_doubles(base + wall + frontier)
         cost_diag = _as_doubles(base * _SQRT2 + wall + frontier)
 

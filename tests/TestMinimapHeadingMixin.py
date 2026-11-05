@@ -9,6 +9,7 @@
 """
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE, MinimapHeadingMixin
@@ -216,6 +217,42 @@ class TestCameraYawRatio(unittest.TestCase):
 
 
 class TestTurnToBearing(unittest.TestCase):
+    def test_rejected_probe_is_not_measured_as_forward_input(self):
+        task = _FakeTurnTask()
+        backend = SimpleNamespace(key_down_rejections=0)
+        task.executor = SimpleNamespace(interaction=backend)
+        task._last_turn_result = {}
+
+        def reject(_key, **_kwargs):
+            backend.key_down_rejections += 1
+
+        task.press_key = reject
+        MinimapHeadingMixin._arrow_after_w(task, max_hold_s=0.1)
+        self.assertNotIn("probe_intervals", task._last_turn_result)
+
+    def test_one_recent_moving_command_is_not_issued_twice(self):
+        def attempt(credit):
+            task = _FakeTurnTask(facing=358, per_px=0.1)
+            task.camera = 6
+            state = {"moving_prediction": {"heading": 6, "command": 8, "per_px": 0.1, "sent_at": 10}} if credit else {}
+            with patch("src.localization.minimap_heading_mixin.time.monotonic", return_value=10):
+                result = task.turn_to_bearing(12, tolerance=2, max_rounds=1, control_state=state)
+            self.assertNotIn("moving_prediction", state)
+            return result["history"][0]
+
+        old, new = attempt(False), attempt(True)
+        self.assertEqual(new["moving_credit"], 4)
+        self.assertLess(abs(new["error_after"]), abs(old["error_after"]))
+
+    def test_expired_reversed_or_recalibrated_input_has_no_credit(self):
+        prediction = {"heading": 10, "command": 10, "per_px": 0.1, "sent_at": 8}
+        with patch("src.localization.minimap_heading_mixin.time.monotonic", return_value=10):
+            credit = MinimapHeadingMixin._unobserved_turn_credit
+            self.assertEqual(credit(prediction, 15, 0, 0.1), 0)
+            prediction["sent_at"] = 10
+            self.assertEqual(credit(prediction, 350, 0, 0.1), 0)
+            self.assertEqual(credit(prediction, 15, 0, 0.2), 0)
+
     def test_incomplete_or_short_probe_does_not_save_cross_call_gain(self):
         for short in (False, True):
             task = _FakeTurnTask(k_error=0.5 if not short else 1)
