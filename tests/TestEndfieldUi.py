@@ -745,6 +745,47 @@ class CombatSettingsTest(unittest.TestCase):
         row.close()
         row.deleteLater()
 
+    def test_list_row_stays_inside_drawer_at_the_native_one_line_limit(self):
+        # 总字数 30 是原生实现连成一行的上限，此时单行文字最宽
+        items = ["低容武陵电池", "中容武陵电池", "赤铜零件", "优质芽针针剂", "高容谷地电池", "息壤"]
+        self.assertEqual(sum(map(len, items)), 30)
+        config = CombatEditBuffer({"优先序列": items})
+        config.get_default = config.get
+        task: Any = SimpleNamespace(
+            name="地区建设",
+            config=config,
+            default_config={},
+            config_description={},
+            config_type={"优先序列": {"options_available": items, "allow_duplication": False}},
+            show_create_shortcut=False,
+        )
+        host = QWidget()
+        host.resize(1200, 700)
+        host.show()
+        drawer = EndfieldTacticalDrawer(host)
+        self.assertTrue(drawer.open_subtask(task.name, task))
+        self.app.processEvents()
+        row = drawer.form_layout.itemAt(0).widget().config_widget_by_key["优先序列"]
+        self.assertLessEqual(drawer.form_container.width(), drawer.scroll_area.viewport().width())
+        self.assertLessEqual(row.switch_button.mapTo(drawer, row.switch_button.rect().topRight()).x(), drawer.width())
+        self.assertEqual(row.list_text.text(), "\n".join(items))
+        drawer.close_drawer()
+        host.close()
+        host.deleteLater()
+
+    def test_list_row_translates_only_values_from_available_options(self):
+        from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
+
+        items = ["息壤", "赤铜零件"]
+        config = CombatEditBuffer({"序列": items})
+        with patch.object(og, "app", SimpleNamespace(tr=lambda value: f"译{value}")):
+            with_options = ModifyListItem({}, config, "序列", options_available=items)
+            free_text = ModifyListItem({}, config, "序列")
+        self.assertEqual(with_options.list_text.text(), "译息壤\n译赤铜零件")
+        self.assertEqual(free_text.list_text.text(), "息壤\n赤铜零件")
+        with_options.deleteLater()
+        free_text.deleteLater()
+
     def test_native_task_header_elides_without_losing_full_text(self):
         from ok.ui.qt.tasks.TaskCard import TaskCard
 
