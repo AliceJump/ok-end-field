@@ -572,7 +572,9 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
             patch("src.localization.calibrated_map_store.CalibratedMapStore", return_value=CalibratedMapStore(legacy)),
         ):
             self.assertTrue(migrate_visual_map_root())
-        self.assertEqual(json.loads(source.read_text())[CONFIG_VISUAL_MAP_ROOT], DEFAULT_VISUAL_MAP_ROOT)
+        self.assertEqual(
+            json.loads(source.read_text(encoding="utf-8"))[CONFIG_VISUAL_MAP_ROOT], DEFAULT_VISUAL_MAP_ROOT
+        )
 
     def test_resource_root_migration_preserves_custom_new_and_missing_values(self):
         source = self.root / "Position Config.json"
