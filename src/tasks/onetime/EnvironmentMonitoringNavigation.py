@@ -34,6 +34,12 @@ class CisternOriginiumSlugsNavigation(EnvironmentMonitoringNavigation):  # 普�
         self.run_route("蓄水源石虫", (("s", 7),), sprint=True)  # 后退冲刺到取景位置
 
 
+class AnnularWaterfallNavigation(EnvironmentMonitoringNavigation):  # 环形瀑布传送后路线
+    def run(self):  # 先左走一步，再按顺序冲刺
+        self.run_route("环形瀑布", (("a", 0.5),))  # 一步暂按半秒估计
+        self.run_route("环形瀑布", (("w", 5), ("d", 2), ("w", 3)), sprint=True)  # 按指定时间冲刺
+
+
 class StationaryObservationNavigation(EnvironmentMonitoringNavigation):  # 传送落点即可取景
     def run(self):  # 原地等待传送后大世界稳定
         self.run_route("原地取景", ())  # 原地等待大世界稳定

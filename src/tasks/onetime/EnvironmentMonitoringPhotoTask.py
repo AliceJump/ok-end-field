@@ -7,16 +7,18 @@ from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
+    AnnularWaterfallNavigation,  # 环形瀑布路线
     CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
     PoolLotusNavigation,  # 小池荷短路线
     StationaryObservationNavigation,  # 传送后原地取景
 )
 
-OBSERVATIONS = {  # 观察点语言键对应导航类和横向取景方向
+OBSERVATIONS = {  # 观察点语言键对应导航类和取景方向
     "pool_lotus": (PoolLotusNavigation, "right"),  # 小池荷向右取景
     "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
     "thillu": (StationaryObservationNavigation, "right"),  # 表象在传送落点向右取景
     "peach_tree": (StationaryObservationNavigation, "right"),  # 桃树在传送落点即可取景
+    "annular_waterfall": (AnnularWaterfallNavigation, "up"),  # 环形瀑布向上取景
 }  # 仅注册已支持的点位
 
 
@@ -137,7 +139,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         for index in range(3):  # 当前界面实测固定三列
             left = 0.049 + index * 0.304  # 根据 1920x1080 实测截图估计卡片左边界
             right = min(left + 0.293, 0.96)  # 根据实测截图估计卡片右边界
-            title_box = self.box_of_screen(left, 0.285, right, 0.335)  # 仅标题起点范围，排除下面的拍摄说明
+            title_box = self.box_of_screen(left, 0.285, right, 0.33)  # 标题下界避开拍摄说明的识别框
             action_box = self.box_of_screen(left, 0.85, right, 0.925)  # 仅本卡片底部操作区
             if not self._observation_action(action_box):  # 已收录卡片没有黄或白底按钮
                 continue  # 不接取已完成观察点
@@ -149,9 +151,10 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
                 if title_box.x <= item.x < title_box.x + title_box.width
                 and title_box.y <= item.y < title_box.y + title_box.height
             ]  # 整帧识别后按卡片定位，避免紧裁剪漏掉引号后的小字
-            if len(titles) != 1:  # 不猜测截断或多行标题
+            if not titles:  # 没有标题时不能推测点位
                 raise RuntimeError("无法识别环境监测观察点标题")  # 识别异常不能当作没有符合条件的点位
-            observations.append({"name": titles[0].name, "action_box": action_box})  # 保留动态操作区域
+            title = min(titles, key=lambda item: (item.y, item.x))  # 取卡片最上方的文字作为标题
+            observations.append({"name": title.name, "action_box": action_box})  # 保留标题与操作区域
         return observations  # 返回当前终端候选
 
     def enter_observation(self, observation):  # 接取或继续指定卡片
@@ -289,8 +292,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         return self.find_color(yellow, marker, threshold=0.03, frame=frame)  # 同帧确认圆勾黄色亮起
 
     def rotate_photo_view(self, direction="right"):  # 在画面中央按点位方向拖动，不触碰快门
-        if direction not in ("left", "right"):  # 当前只支持横向搜索
-            raise ValueError(f"不支持的取景方向：{direction}")  # 禁止静默执行上下调整
+        if direction not in ("left", "right", "up"):  # 仅支持已注册的取景方向
+            raise ValueError(f"不支持的取景方向：{direction}")  # 禁止静默执行未知方向
         self._require_input_focus()  # 旋转视角需要实际光标移动
         self.next_frame()  # 手势前重新确认当前布局
         if not self._camera_open():  # 手势前确认仍在相机
@@ -298,6 +301,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         start, end = (0.5, 0.45), (0.625, 0.45)  # 画面中央横向一小段，远离快门和左下目标
         if direction == "left":  # 普通源石虫向左搜索
             end = (0.375, 0.45)  # 与右移等幅，保持纵坐标不变
+        elif direction == "up":  # 瀑布向上搜索
+            end = (0.5, 0.325)  # 小步上移，实际方向和幅度待游戏内验证
         self.mouse_down(*self.normalize_pos(start), key="left")  # 按住旋转视角用的左键
         try:  # 中止也必须释放鼠标
             self.smooth_drag(start, end, duration=0.3)  # 复用已有客户端坐标移动接口
@@ -314,7 +319,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             box=self.box_of_screen(0.02, 0.655, 0.055, 0.715), stable_time=0.5, max_wait=3, refresh_interval=0.1
         ):  # 只观察条件标记，避免背景动画影响稳定判断
             raise RuntimeError("相机目标条件区域未稳定")  # 不在过渡画面判断或转动
-        max_steps = 8  # 各点位共用最大横向调整次数
+        max_steps = 8  # 各点位共用最大调整次数
         for step in range(max_steps + 1):  # 初始状态加有界微调
             self.next_frame()  # 每轮使用调整后的新画面
             if self.photo_condition_met():  # 条件亮起立即停止调整

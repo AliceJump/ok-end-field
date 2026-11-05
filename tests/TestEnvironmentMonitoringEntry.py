@@ -127,6 +127,21 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     self.assertGreater(area.x + area.width, title.x)
                     self.assertGreater(area.y, title.y)
 
+    def test_description_near_title_boundary_does_not_count_as_second_title(self):
+        task = self.task()
+        task._observation_action = Mock(side_effect=["go", None, None])
+        task.ocr.return_value = [
+            Box(104, 318, 160, 40, name="环形瀑布"),
+            Box(110, 361, 280, 25, name="拍摄祖泉周边的环形瀑布"),
+        ]
+        self.assertEqual([item["name"] for item in task.available_observations()], ["环形瀑布"])
+
+    def test_title_is_selected_above_other_ocr_text(self):
+        task = self.task()
+        task._observation_action = Mock(side_effect=["go", None, None])
+        task.ocr.return_value = [Box(110, 350, 200, 10, name="说明"), Box(104, 318, 160, 28, name="环形瀑布")]
+        self.assertEqual([item["name"] for item in task.available_observations()], ["环形瀑布"])
+
     def test_pool_lotus_title_selects_its_own_column(self):
         for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
             for target_column in range(3):
@@ -332,13 +347,12 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertEqual(task.available_observations(), [])
         task.ocr.assert_not_called()
 
-    def test_ambiguous_title_is_not_selected_even_with_an_accept_button(self):
+    def test_split_title_does_not_select_an_unsupported_fragment(self):
         task = self.task()
         task.ocr.return_value = [Box(120, 325, 100, 20, name="小池"), Box(240, 325, 40, 20, name="荷")]
-        task._observation_action = Mock(return_value="accept")
-        with self.assertRaisesRegex(RuntimeError, "无法识别环境监测观察点标题"):
-            task.available_observations()
-        task.click.assert_not_called()
+        task._observation_action = Mock(side_effect=["accept", None, None])
+        candidate = task.available_observations()[0]
+        self.assertIsNone(task.observation_route(candidate["name"]))
 
     def test_accept_and_go_remain_inside_the_selected_card(self):
         task = self.task()
