@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import bisect
+import hashlib
 import json
 import sys
 import time
@@ -134,9 +135,10 @@ def _load_trajectory(dataset):
 
 
 def _inference_rows(args, samples, first, tracker):
+    fingerprint = _inference_fingerprint(samples)
     if args.reuse_frames:
         rows = [json.loads(line) for line in (args.output / "frames.jsonl").read_text(encoding="utf-8").splitlines()]
-        _validate_reused_rows(rows, samples)
+        _validate_reused_rows(rows, samples, fingerprint)
     else:
         rows = []
         for i, s in enumerate(samples):
@@ -150,6 +152,7 @@ def _inference_rows(args, samples, first, tracker):
             row = {
                 "i": s["i"],
                 "sample": s,
+                "fingerprint": fingerprint,
                 "result": result.to_dict(),
                 "elapsed_ms": (time.perf_counter() - begin) * 1000,
                 "speed_bin": speed_bin(s["speed"]),
@@ -161,9 +164,28 @@ def _inference_rows(args, samples, first, tracker):
     return rows
 
 
-def _validate_reused_rows(rows, samples):
+def _inference_fingerprint(samples):
+    """Bind cached inference to source code and every map/mapping in the dataset."""
+    paths = {
+        Path(__file__),
+        *(
+            ROOT / path
+            for path in (
+                "src/localization/minimap_map_locator.py",
+                "src/localization/minimap_odometry.py",
+                "src/core/NavConfig.py",
+            )
+        ),
+    }
+    paths.update(Path(sample[key]) for sample in samples for key in ("map_image", "mapping"))
+    return {str(path.resolve()): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(paths)}
+
+
+def _validate_reused_rows(rows, samples, fingerprint):
     if len(rows) != len(samples) or any(r["sample"] != sample for r, sample in zip(rows, samples, strict=True)):
         raise ValueError("Saved inference does not match this dataset")
+    if any(row.get("fingerprint") != fingerprint for row in rows):
+        raise ValueError("Saved inference source or map fingerprint does not match")
 
 
 def _analyze_bins(report, rows, residual):

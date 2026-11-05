@@ -1,5 +1,7 @@
 import ast
 import json
+import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -51,6 +53,22 @@ from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
 
 
 class TestVisualPositionSource(unittest.TestCase):
+    def test_unsampled_odometry_keeps_new_absolute_fix_without_adding_cached_chain_frames(self):
+        source = VisualPositionSource(self.task, self.locator, "map02")
+        source.sample(self.frame(), now=1)
+        source.sample(self.frame(), now=1.2)
+        before = (len(source.chain._nodes), len(source.keyframe_chain._nodes), source._keyframe_tick)
+        with (
+            patch.object(source.odometry, "sample", return_value={"sampled": False, "reason": "interval"}),
+            patch.object(
+                source.odometry, "last_ring_patch", side_effect=AssertionError("cached frame must not enter chain")
+            ),
+        ):
+            state = source.sample(self.frame(504), now=1.3)
+        self.assertTrue(state["position_trusted"])
+        self.assertAlmostEqual(state["x"], 126, delta=0.3)
+        self.assertEqual(before, (len(source.chain._nodes), len(source.keyframe_chain._nodes), source._keyframe_tick))
+
     def test_source_serializes_sample_state_and_rejects_after_close(self):
         source = VisualPositionSource(SimpleNamespace(), SimpleNamespace(), "map02")
         entered, second_started, second_entered, release = (threading.Event() for _ in range(4))
@@ -527,11 +545,34 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
                 "src.localization.position_config_migration.config_path",
                 side_effect=lambda *parts: str(self.root.joinpath(*parts)),
             ),
-            patch("src.localization.position_config_migration.Path.is_dir", return_value=True),
+            patch(
+                "src.localization.calibrated_map_store.CalibratedMapStore", return_value=CalibratedMapStore(self.root)
+            ),
         ):
             self.assertFalse(migrate_visual_map_root())
         self.assertEqual(json.loads(source.read_text(encoding="utf-8")), original)
         self.assertFalse((self.root / "position_source_migration_backup/v2").exists())
+
+    def test_auto_discovery_ignores_invalid_directory_names_and_corrupt_mapping(self):
+        self.write_map("invalid name")
+        self.write_map("broken")
+        (self.root / "broken/4/broken_4_mapping.json").write_text("{}", encoding="utf-8")
+        self.assertEqual(CalibratedMapStore(self.root).available_maps(), ["map02"])
+
+    def test_empty_existing_legacy_map_directory_migrates_to_packaged_maps(self):
+        legacy = self.root / "empty"
+        legacy.mkdir()
+        source = self.root / "Position Config.json"
+        source.write_text(json.dumps({CONFIG_VISUAL_MAP_ROOT: "assets/localization/maps"}), encoding="utf-8")
+        with (
+            patch(
+                "src.localization.position_config_migration.config_path",
+                side_effect=lambda *p: str(self.root.joinpath(*p)),
+            ),
+            patch("src.localization.calibrated_map_store.CalibratedMapStore", return_value=CalibratedMapStore(legacy)),
+        ):
+            self.assertTrue(migrate_visual_map_root())
+        self.assertEqual(json.loads(source.read_text())[CONFIG_VISUAL_MAP_ROOT], DEFAULT_VISUAL_MAP_ROOT)
 
     def test_resource_root_migration_preserves_custom_new_and_missing_values(self):
         source = self.root / "Position Config.json"
@@ -600,6 +641,39 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
 
 
 class TestAutomaticMapCompetition(unittest.TestCase):
+    def test_unselected_map_pending_layers_prevent_acceptance(self):
+        locator = self.locator()
+        ready = self.result(0.99, margin=0.9)
+        pending = replace(self.result(0.6), reason="layer_scan_pending", status="rejected")
+        combined = locator._combine([("map01", ready), ("map02", pending)], 0, None)
+        self.assertEqual(combined.status, "rejected")
+        self.assertEqual(combined.reason, "layer_scan_pending")
+
+    def test_blocked_resource_io_does_not_hold_interpreter_exit(self):
+        code = (
+            "import threading; from src.localization.localization_workers import LocalizationWorkers; "
+            "pool=LocalizationWorkers(); entered=threading.Event(); blocked=threading.Event(); "
+            "pool.resources.submit(lambda: (entered.set(),blocked.wait())); "
+            "assert entered.wait(3); pool.close()"
+        )
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True, timeout=8)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+
+    def test_bad_background_map_does_not_starve_another_valid_map(self):
+        pool = self.workers()
+        valid = SimpleNamespace(locate_global=Mock(return_value=self.result()))
+
+        def load(mid):
+            if mid == "map01":
+                raise ValueError("corrupt image")
+            return mid, valid
+
+        locator = MapSetLocator(SimpleNamespace(load=load), ["map01", "map02"], workers=pool)
+        locator.prewarm()
+        pool.resources.submit(lambda: None).result(timeout=3)
+        self.assertTrue(locator._warm_base_resources())
+        self.assertEqual([mid for mid, _ in locator._compare_base_maps(np.zeros((3, 3, 3), np.uint8), None)], ["map02"])
+
     def workers(self):
         pool = LocalizationWorkers()
         self.addCleanup(lambda: pool.matches.shutdown(wait=True, cancel_futures=True))
@@ -713,8 +787,7 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         with patch("src.localization.map_set_locator.time.monotonic", return_value=10):
             locator.prewarm()
             pool.resources.submit(lambda: None).result(timeout=3)
-            with self.assertRaisesRegex(ValueError, "invalid image"):
-                locator._warm_base_resources()
+            self.assertFalse(locator._warm_base_resources())
             self.assertFalse(locator._warm_base_resources())
             self.assertEqual(store.load.call_count, 1)
         with patch("src.localization.map_set_locator.time.monotonic", return_value=16):
@@ -769,6 +842,25 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
 
 class TestVisualLayerCandidates(unittest.TestCase):
+    def test_failed_background_layer_is_not_resubmitted_during_backoff(self):
+        locator = self.locator()
+        pool = LocalizationWorkers()
+        self.addCleanup(lambda: pool.resources.shutdown(wait=True, cancel_futures=True))
+        self.addCleanup(pool.close)
+        locator._resource_workers = pool
+        locator._load = LayeredMinimapLocator._load.__get__(locator)
+        locator._decode = Mock(side_effect=ValueError("bad floor"))
+        future = pool.resources.submit(locator._decode, locator.entries[0])
+        with self.assertRaises(ValueError):
+            future.result(timeout=3)
+        locator._pending_layers["floor1"] = future
+        with patch("src.localization.layered_minimap_locator.time.monotonic", return_value=10):
+            for _ in range(3):
+                with self.assertRaises(ValueError):
+                    locator._load(locator.entries[0])
+        self.assertEqual(locator._decode.call_count, 1)
+        self.assertEqual(locator._pending_layers, {})
+
     def test_pending_background_layer_cannot_prove_uniqueness(self):
         locator = self.locator(0.99, 0.5)
         floor = locator._load.return_value

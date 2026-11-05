@@ -44,6 +44,7 @@ def migrate_item_position_overrides(data):
 def migrate_visual_map_root():
     """Move a missing legacy default to packaged maps; retain user resources."""
     from src.core.PositionConfig import CONFIG_VISUAL_MAP_ROOT, DEFAULT_VISUAL_MAP_ROOT
+    from src.localization.calibrated_map_store import CalibratedMapStore
 
     source = Path(config_path("Position Config.json"))
     if not source.is_file():
@@ -54,7 +55,7 @@ def migrate_visual_map_root():
     current = values.get(CONFIG_VISUAL_MAP_ROOT)
     if not isinstance(current, str) or current.strip().replace("\\", "/").rstrip("/") != "assets/localization/maps":
         return False
-    if Path(current.strip()).is_dir():
+    if CalibratedMapStore(current.strip()).available_maps():
         return False
     backup = Path(config_path("position_source_migration_backup", "v2", source.name))
     if not backup.exists():

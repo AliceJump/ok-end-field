@@ -35,6 +35,7 @@ from src.core.sequence_parser import parse_int_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
 from src.interaction.target_movement import ellipse_geometry, ellipse_move_profile, ellipse_radius, hud_direction_step
+from src.nav.layered_map import normalize_tier, resolve_tier_by_height
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_learning import align_initial_target
 from src.tasks.mixin.route_learning import route_context_for, zipline_initial_alignment
@@ -265,6 +266,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 frame=sample_frame,
                 max_age=2.0,
             )
+            self._zip_line_last_pose = state
             return ZipLineMixin._zip_line_pose_positions(state)
         except Exception:
             return None, None
@@ -327,6 +329,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         """
         if target_position is None:
             return False
+        initial_pose = getattr(self, "_zip_line_last_pose", None) or {}
+        start_tier = (
+            initial_pose.get("tier_id")
+            if initial_pose.get("position_trusted") and initial_pose.get("tier_trusted")
+            else None
+        )
         start = self.active_time()
         moving_logged = False
         last_position: tuple[float, float] | None = None
@@ -386,7 +394,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 start_distance = math.dist(current_position_xyz, start_position_xyz)
             elif ambiguous_overlap:
                 # 2D 重合但缺少三维高度时无法区分起点和终点，不能把当前状态当成到站。
-                target_distance = math.inf
+                if ZipLineMixin._zip_line_visual_arrival(
+                    self, start_position_xyz, target_position_xyz, start_tier=start_tier
+                ):
+                    start_distance = math.inf
+                else:
+                    target_distance = math.inf
 
             stable = self.active_time() - last_position_changed_at >= stable_seconds
             at_start = start_distance is not None and start_distance <= threshold
@@ -432,6 +445,33 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
             self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
         return False
+
+    def _zip_line_visual_arrival(self, start_xyz, target_xyz, *, start_tier=None) -> bool:
+        """Disambiguate overlapping racks using an independently confirmed tier."""
+        pose = getattr(self, "_zip_line_last_pose", None) or {}
+        layered = getattr(self, "_grid_nav_layered_active", None)
+        if (
+            layered is None
+            or (start_xyz is None and start_tier is None)
+            or target_xyz is None
+            or not pose.get("position_trusted")
+            or not pose.get("tier_trusted")
+            or pose.get("tier_id") is None
+        ):
+            return False
+        tiers = [] if start_tier is None else [normalize_tier(start_tier)]
+        for position in (start_xyz, target_xyz) if start_tier is None else (target_xyz,):
+            resolved = resolve_tier_by_height(
+                layered,
+                map_name=str(pose.get("map_id") or ""),
+                x=position[0],
+                y=position[1],
+                z=position[2],
+            )
+            if resolved["status"] != "unique":
+                return False
+            tiers.append(normalize_tier(resolved["tier"]))
+        return tiers[0] != tiers[1] and normalize_tier(pose["tier_id"]) == tiers[1]
 
     def _direct_zip_line_go(self, target_bearing, target_position=None, *, target_position_xyz=None):
         """按世界方位直接对准并点击目标，失败时调整俯仰角重试。"""

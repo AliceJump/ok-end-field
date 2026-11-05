@@ -205,6 +205,14 @@ class _Stub:
 
 
 class TestItemNavigatorOfficialMarks(unittest.TestCase):
+    def test_marking_requires_known_same_height(self):
+        task = object.__new__(ItemNavigatorTask)
+        task._near_xz_threshold = 2
+        point = {"x": 1, "y": 10, "z": 1}
+        self.assertFalse(task._can_mark_target(point, "矿石", None))
+        self.assertFalse(task._can_mark_target(point, "矿石", 0))
+        self.assertTrue(task._can_mark_target(point, "矿石", 10))
+
     def test_http_facility_client_needs_no_ws_position_service(self):
         consumer = SimpleNamespace(config={"content": "content"})
         client = OfficialMapClient(consumer)

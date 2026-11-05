@@ -187,7 +187,9 @@ class VisualPositionSource:
             self.tracker.reset()
             return self.unavailable("visual_odometry_lost")
         raw = self._origin + delta
-        corrected, chain_result = self._correct_visual_chains(clock, raw, anchor)
+        corrected, chain_result = self._correct_visual_chains(
+            clock, raw, anchor, sampled=measured.get("sampled", False)
+        )
         return self._publish_visual_state(clock, match, measured, delta, corrected, chain_result, strong)
 
     def _initialize_shape(self, shape):
@@ -253,9 +255,17 @@ class VisualPositionSource:
         self._last_state["visual_confirmation_pending"] = match.status == "pending"
         return dict(self._last_state)
 
-    def _correct_visual_chains(self, clock, raw, anchor):
+    def _correct_visual_chains(self, clock, raw, anchor, *, sampled):
         corrected = raw
         chain_result = None
+        if not sampled:
+            # raw already includes this observation's new absolute anchor.
+            if anchor is None and self._last_state.get("position_trusted"):
+                corrected = (
+                    np.asarray(self.locator.calibration.world_to_map(self._last_state["x"], self._last_state["z"]))
+                    * self._scale
+                )
+            return corrected, chain_result
         gray, alpha = self.odometry.last_ring_patch()
         keyframe_result = None
         if self.chain is not None and gray is not None and alpha is not None:

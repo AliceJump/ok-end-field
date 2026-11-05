@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-from src.localization.minimap_map_locator import MinimapMapLocator
+from src.localization.minimap_map_locator import MapCalibration, MinimapMapLocator
 
 
 class CalibratedMapStore:
@@ -14,13 +14,18 @@ class CalibratedMapStore:
     def available_maps(self):
         if not self.root.is_dir():
             return []
-        return sorted(
-            p.name
-            for p in self.root.iterdir()
-            if p.is_dir()
-            and (p / "4" / f"{p.name}_4_mapping.json").is_file()
-            and (p / "4" / f"{p.name}_4.png").is_file()
-        )
+        available = []
+        for path in self.root.iterdir():
+            if not path.is_dir() or not re.fullmatch(r"[A-Za-z0-9_-]+", path.name):
+                continue
+            if not (path / "4" / f"{path.name}_4.png").is_file():
+                continue
+            try:
+                MapCalibration.from_mapping_file(path / "4" / f"{path.name}_4_mapping.json")
+            except (OSError, ValueError, KeyError, TypeError, OverflowError):
+                continue
+            available.append(path.name)
+        return sorted(available)
 
     def load(self, map_id="", *, background=False):
         try:

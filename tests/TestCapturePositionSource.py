@@ -977,6 +977,7 @@ class CaptureRecoveryTest(unittest.TestCase):
         base = {"使用实验技术": True}
         base.update(config or {})
         owner = _FakeOwner(base)
+        owner.find_one = lambda feature: None
         owner.warnings = []
         owner.log_warning = lambda message, **kwargs: owner.warnings.append(message)
         if payload is not None:
@@ -992,6 +993,18 @@ class CaptureRecoveryTest(unittest.TestCase):
             with patch.object(owner, "force_new_capture_connection") as relogin:
                 self.assertTrue(owner.ensure_capture_session(reason="测试"))
             relogin.assert_not_called()
+        finally:
+            owner._backend.__exit__(None, None, None)
+
+    def test_trigger_does_not_relogin_on_login_screen_or_consume_retry(self):
+        owner = self._owner(_state_payload(flow=None, flows=[]))
+        try:
+            owner.find_one = lambda feature: object()
+            with patch.object(owner, "force_new_capture_connection") as relogin:
+                self.assertFalse(owner.ensure_capture_session(reason="trigger"))
+            relogin.assert_not_called()
+            self.assertEqual(owner._minimap_capture_relogin_attempts, 0)
+            self.assertEqual(owner._minimap_capture_relogin_next_at, 0)
         finally:
             owner._backend.__exit__(None, None, None)
 

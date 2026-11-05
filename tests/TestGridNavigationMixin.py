@@ -1262,10 +1262,51 @@ class TestGridNavigationMixin(unittest.TestCase):
         original = self.task.minimap_position
         self.task.minimap_position = lambda **kw: {**original(**kw), "speed": 2}
         self.task._grid_nav_poll(ctx.session)
-        self.assertAlmostEqual(ctx.session.walk_speed_m_s, 2.4)
+        self.assertAlmostEqual(ctx.session.walk_speed_m_s, 6)
         self.task.minimap_position = lambda **kw: {**original(**kw), "speed": 0}
         self.task._grid_nav_poll(ctx.session)
-        self.assertAlmostEqual(ctx.session.walk_speed_m_s, 2.4)
+        self.assertAlmostEqual(ctx.session.walk_speed_m_s, 6)
+
+    def test_near_stationary_samples_do_not_replace_moving_speed(self):
+        ctx = self._control_tick()
+        ctx.session.walk_speed_m_s = 9
+        original = self.task.minimap_position
+        for speed in (0.21, 0.5, 0.83):
+            self.task.minimap_position = lambda speed=speed, **kw: {**original(**kw), "speed": speed}
+            self.task._grid_nav_poll(ctx.session)
+            self.assertEqual(ctx.session.walk_speed_m_s, 9)
+
+    def test_poll_budget_keeps_recent_peak_then_expires_it(self):
+        ctx = self._control_tick()
+        original = self.task.minimap_position
+        for i, duration in enumerate((0.8, 0.1, 0.1, 0.1, 0.1, 0.1)):
+
+            def sample(duration=duration, **kw):
+                self.task.sleep(duration)
+                return original(**kw)
+
+            self.task.minimap_position = sample
+            self.task._grid_nav_poll(ctx.session)
+            self.assertAlmostEqual(ctx.session.poll_duration_s, 0.8 if i < 5 else 0.1)
+
+    def test_split_rotation_reserve_can_exceed_configured_stop_distance(self):
+        ctx = self._control_tick()
+        ctx.session.poll_duration_s = 0.04
+        ctx.step = FollowerStep(TURN, heading_error=10, distance_to_waypoint=10)
+        self.task.pose_rotation_duration_s = mock.Mock(return_value=2)
+        reserve = self.task._grid_turn_stop_distance(ctx)
+        self.assertGreater(reserve, 10)
+        self.assertTrue(self.task._should_turn_grid_in_place(ctx.step, stop_distance=reserve))
+
+    def test_confirmed_visual_tier_change_replans_without_height(self):
+        ctx = self._control_tick(y=None, tier_evidence_required=True, tier_trusted=True, tier_id="layer_b")
+        ctx.session.route = SimpleNamespace(segments=[SimpleNamespace(tier="layer_a")])
+        self.task._grid_nav_layered_active = object()
+        self.assertTrue(self.task._grid_nav_segment_tier_changed(ctx))
+        ctx.pose["tier_trusted"] = False
+        self.assertFalse(self.task._grid_nav_segment_tier_changed(ctx))
+        ctx.pose.update(tier_trusted=True, tier_id="layer_a")
+        self.assertFalse(self.task._grid_nav_segment_tier_changed(ctx))
 
     def test_corner_turn_probe_uses_distance_budget_at_recorded_overshoot_points(self):
         for distance in (0.85, 1.16, 2.58):
@@ -1302,6 +1343,16 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.task._grid_nav_walk_interval(ctx)
         self.assertGreater(self.task.t, started)
         self.assertLessEqual((self.task.t - started) * 8, 0.85 * 0.5)
+        self.assertFalse(self.task.w_down)
+
+    def test_tiny_blocked_shortcut_approach_spends_full_remaining_budget(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.poll_duration_s = 0.4
+        ctx.session.walk_speed_m_s = 8
+        ctx.step = FollowerStep(WALK, distance_to_waypoint=0.2)
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_walk_interval(ctx)
+        self.assertAlmostEqual(self.task.t * 8, 0.2)
         self.assertFalse(self.task.w_down)
 
     def test_progress_log_is_periodic_while_ui_stays_current(self):

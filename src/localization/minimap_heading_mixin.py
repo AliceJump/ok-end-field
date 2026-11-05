@@ -323,7 +323,8 @@ class MinimapHeadingMixin:
         result["ok"] = feedback_settled and abs(result["error"]) <= tolerance
         # 目标是一轮到位（只按一次 W，角色只前移一小步）；多轮只是兜底
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
-        if control_state is not None and result["rounds"] > 0 and feedback_settled and before is not None:
+        full_probe = max_probe_s is None or max_probe_s >= max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
+        if control_state is not None and result["rounds"] > 0 and result["ok"] and full_probe:
             control_state.update(
                 configured=per_px,
                 gain=control_per_px,
@@ -356,11 +357,12 @@ class MinimapHeadingMixin:
             probe_only=probe, heading=after, error=None if after is None else angle_delta(result["target"], after)
         )
         result["ok"] = settled and after is not None and abs(result["error"]) <= tolerance
-        if settled and after is not None:
+        full_probe = max_probe_s is None or max_probe_s >= max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
+        if result["ok"] and full_probe:
             control_state.update(
                 configured=per_px, gain=per_px, heading=after, gain_samples=[], observed_at=time.monotonic()
             )
-        elif pending["tries"] < 1:
+        elif not settled and pending["tries"] < 1:
             control_state.update(configured=per_px, pending_feedback={**pending, "tries": pending["tries"] + 1})
         if not settled:
             result["reason"] = "heading_unsettled"
@@ -536,6 +538,12 @@ class MinimapHeadingMixin:
             remaining -= step
             if remaining:
                 self.sleep(delay)
+
+    def rotation_duration_s(self, dx: int) -> float:
+        """Return the configured inter-chunk wait used by this rotation."""
+        chunk = max(1, int(self._cfg_float(CONFIG_MOUSE_CHUNK, DEFAULT_MOUSE_CHUNK)))
+        delay = max(0.0, self._cfg_float(CONFIG_MOUSE_CHUNK_DELAY, DEFAULT_MOUSE_CHUNK_DELAY))
+        return max(0, math.ceil(abs(int(dx)) / chunk) - 1) * delay
 
     def _arrow_after_w(self, *, min_score=None, max_hold_s=None):
         """按一次 W（长按）让角色转到视角方向，读取初始反馈。

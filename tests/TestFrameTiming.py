@@ -1,14 +1,38 @@
+import tempfile
 import threading
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
 
-from scripts.analyze_minimap_timing import Trajectory, speed_bin
+from scripts.analyze_minimap_timing import Trajectory, _inference_fingerprint, _validate_reused_rows, speed_bin
 from src.localization.wgc_frame_timing import _FRAME_TIMINGS, install_wgc_frame_timing, map_frame_time, timing_for_frame
 
 
 class TestPositionTimeInterpolation(unittest.TestCase):
+    def test_reused_inference_rejects_changed_map_mapping_source_or_missing_fingerprint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image, mapping = root / "map.png", root / "mapping.json"
+            image.write_bytes(b"original image")
+            mapping.write_text("original mapping")
+            samples = [{"map_image": str(image), "mapping": str(mapping)}]
+            original = _inference_fingerprint(samples)
+            rows = [{"sample": samples[0], "fingerprint": original}]
+            _validate_reused_rows(rows, samples, original)
+            for path in (image, mapping):
+                before = path.read_bytes()
+                path.write_bytes(b"changed")
+                with self.assertRaisesRegex(ValueError, "fingerprint"):
+                    _validate_reused_rows(rows, samples, _inference_fingerprint(samples))
+                path.write_bytes(before)
+            with self.assertRaisesRegex(ValueError, "fingerprint"):
+                _validate_reused_rows([{"sample": samples[0]}], samples, original)
+            changed_source = {**original, "source": "new-version"}
+            with self.assertRaisesRegex(ValueError, "fingerprint"):
+                _validate_reused_rows(rows, samples, changed_source)
+
     def setUp(self):
         self.sample = {"flow": 1, "scene": 228}
         self.left = {"time": 10.0, "flow": 1, "scene": 228, "x": 0.0, "z": 2.0}

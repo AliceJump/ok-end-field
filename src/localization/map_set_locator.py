@@ -83,7 +83,7 @@ class MapSetLocator:
         margin = candidate_margin(spatial)
         margin = min(margin, chosen_result.margin)
         status = self._candidate_status(best, margin)
-        pending_resources = chosen_result.reason == "layer_scan_pending"
+        pending_resources = any(result.reason == "layer_scan_pending" for _, result in results)
         others = [c for c in sorted(candidates, key=lambda c: c.ncc, reverse=True) if c is not original_best]
         result = LocateResult(
             "rejected" if pending_resources else status,
@@ -118,6 +118,8 @@ class MapSetLocator:
                 if mid in self._cache:
                     continue
                 future = self._pending_maps.get(mid)
+                if future is None and time.monotonic() < self._resource_retry_at.get(mid, 0):
+                    continue
                 if future is None or not future.done():
                     ready = False
                     continue
@@ -126,7 +128,7 @@ class MapSetLocator:
                 except (OSError, ValueError):
                     del self._pending_maps[mid]
                     self._resource_retry_at[mid] = time.monotonic() + 5
-                    raise
+                    continue
                 if hasattr(locator, "_resource_workers"):
                     locator._resource_workers = self._workers
                 self._cache[mid] = locator
@@ -135,13 +137,18 @@ class MapSetLocator:
                     # transform; the normalized frame is only for map competition.
                     self.calibration = getattr(locator, "calibration", self.calibration)
                 del self._pending_maps[mid]
-            return ready
+            return ready and bool(self._cache)
         for mid in self.map_ids:
             if mid not in self._cache:
                 # One resource per sample; partial map sets cannot prove uniqueness.
-                self._load(mid)
+                if time.monotonic() < self._resource_retry_at.get(mid, 0):
+                    continue
+                try:
+                    self._load(mid)
+                except (OSError, ValueError):
+                    self._resource_retry_at[mid] = time.monotonic() + 5
                 return False
-        return True
+        return bool(self._cache)
 
     def _compare_base_maps(self, frame, geometry):
         if self._workers is not None:
@@ -150,6 +157,8 @@ class MapSetLocator:
             snapshot.setflags(write=False)
             futures = []
             for mid in self.map_ids:
+                if mid not in self._cache:
+                    continue
                 locator = self._load(mid)
                 base = getattr(locator, "base", locator)
                 futures.append((mid, self._workers.matches.submit(base.locate_global, snapshot, geometry)))
@@ -166,6 +175,8 @@ class MapSetLocator:
             return results
         results = []
         for mid in self.map_ids:
+            if mid not in self._cache:
+                continue
             locator = self._load(mid)
             base = getattr(locator, "base", locator)
             results.append((mid, base.locate_global(frame, geometry)))
@@ -191,7 +202,8 @@ class MapSetLocator:
         if combined is None:
             return None
         strong = combined.confidence >= 0.85 and combined.best.full_ncc >= 0.65 and combined.margin >= 0.08
-        selected = combined.best.map_id if strong else self.map_ids[self._scan_index % len(self.map_ids)]
+        available = [mid for mid in self.map_ids if mid in self._cache]
+        selected = combined.best.map_id if strong else available[self._scan_index % len(available)]
         if not strong:
             self._scan_index += 1
         locator = self._load(selected)

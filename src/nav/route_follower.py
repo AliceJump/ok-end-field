@@ -703,6 +703,11 @@ class GridRouteFollower:
         self._turn_motion_attempted = True
         self._update_stuck(position, now)
 
+    def exclude_stopped_time(self, duration_s: float) -> None:
+        """Exclude synchronous sampling with W released from a turn's stuck timer."""
+        if self._turn_motion_attempted and self._move_started_at is not None:
+            self._move_started_at += max(0.0, float(duration_s))
+
     def _step(
         self,
         action: str,

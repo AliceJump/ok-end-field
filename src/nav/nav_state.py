@@ -178,6 +178,7 @@ class NavSession:
     turn_control: dict = field(default_factory=dict)
     #: 最近采样耗时的保守估计，供近点行走提前留出定位时间。
     poll_duration_s: float = 0.0
+    poll_durations_s: list[float] = field(default_factory=list)
     #: 保留最近一次可信的移动速度，停车后的零速度不能用来估计下一次起步。
     walk_speed_m_s: float = 8.0
     #: 是否已经规划过至少一次，用于区分首次规划与重规划。

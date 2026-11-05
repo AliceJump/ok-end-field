@@ -352,6 +352,11 @@ class ItemNavigatorTask(
                 break
         return target_y - py
 
+    def _can_mark_target(self, point: dict, item_name: str | None, player_y: float | None) -> bool:
+        """Require measured height agreement before persisting a collected mark."""
+        delta = self._point_height_delta(point, item_name, player_y)
+        return delta is not None and math.isfinite(delta) and abs(delta) <= self._near_xz_threshold
+
     def _nearby_marker_length_px(self, dy: float) -> float:
         """附近小箭头的长度：按高差从最短伸缩到最长（超过上限后不再变长）。"""
         t = min(abs(float(dy)) / max(1e-6, float(self._height_max_abs_dy)), 1.0)
@@ -864,7 +869,7 @@ class ItemNavigatorTask(
             cur_key = self._is_key_pressed(mark_key)
             mark_hold_seconds = self._mark_hold_seconds()
 
-            if near_xz:
+            if near_xz and self._can_mark_target(best, best_meta, py):
                 # 计算目标哈希并确保锁定目标为当前最近目标
                 h = self._point_hash(best, best_meta)
                 if self._mark_lock_target is None or self._mark_lock_target.get("hash") != h:

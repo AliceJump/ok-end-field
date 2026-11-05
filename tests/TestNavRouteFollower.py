@@ -172,6 +172,16 @@ class TestGridRouteFollower(unittest.TestCase):
         step = self.follower.update(pos, heading=84, now=2.1)
         self.assertEqual(step.action, STUCK)
 
+    def test_slow_stopped_samples_do_not_spend_turn_stuck_window(self):
+        self.follower.plan((0.5, 0.5), (4.5, 0.5))
+        pos = (0.5, 0.5)
+        self.follower.update(pos, heading=80, now=0)
+        self.follower.note_turn_movement(pos, now=0)
+        self.follower.exclude_stopped_time(4)
+        self.assertEqual(self.follower.update(pos, heading=80, now=4.1).action, TURN)
+        self.follower.note_turn_movement(pos, now=4.1)
+        self.assertEqual(self.follower.update(pos, heading=80, now=6.1).action, STUCK)
+
     def test_turns_without_movement_input_do_not_count_as_stuck(self):
         self.follower.plan((0.5, 0.5), (4.5, 0.5))
         for now in (0, 1, 3):

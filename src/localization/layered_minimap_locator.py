@@ -63,6 +63,7 @@ class LayeredMinimapLocator:
         self._scan_index = 0
         self._resource_workers = None
         self._pending_layers = {}
+        self._resource_retry_at = {}
         self.tier_coverage_complete = not any(
             str(k).startswith(f"scene_{map_id}_") for k in catalog.get("missing_logic_ids", [])
         )
@@ -75,6 +76,8 @@ class LayeredMinimapLocator:
         if key in self._cache:
             self._cache.move_to_end(key)
             return self._cache[key]
+        if time.monotonic() < self._resource_retry_at.get(key, 0):
+            raise ValueError(f"layer_decode_backoff:{key}")
         if self._resource_workers is None:
             locator = self._decode(entry)
         else:
@@ -87,6 +90,9 @@ class LayeredMinimapLocator:
                 raise ResourcePending()
             try:
                 locator = future.result()
+            except (OSError, ValueError):
+                self._resource_retry_at[key] = time.monotonic() + 5
+                raise
             finally:
                 del self._pending_layers[key]
         self._cache[key] = locator

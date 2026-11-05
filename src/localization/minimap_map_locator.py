@@ -810,13 +810,14 @@ class MinimapMapLocator:
             return None
         scale = self._scale(frame.shape[1])
         previous_x, previous_y = self.calibration.world_to_map(*previous_world)
-        search_radius_map = float(search_radius_m) * MAP_PIXELS_PER_METER
+        inverse_linear = self.calibration.inverse_matrix[:, :2]
+        radii_map = float(search_radius_m) * np.linalg.norm(inverse_linear, axis=1)
         size = template.ring.shape[0]
-        margin = math.ceil(search_radius_map + size / (2.0 * scale))
-        x0 = max(0, round(previous_x) - margin)
-        y0 = max(0, round(previous_y) - margin)
-        x1 = min(self.map_image.shape[1], round(previous_x) + margin + 1)
-        y1 = min(self.map_image.shape[0], round(previous_y) + margin + 1)
+        margin_x, margin_y = (math.ceil(radius + size / (2.0 * scale)) for radius in radii_map)
+        x0 = max(0, round(previous_x) - margin_x)
+        y0 = max(0, round(previous_y) - margin_y)
+        x1 = min(self.map_image.shape[1], round(previous_x) + margin_x + 1)
+        y1 = min(self.map_image.shape[0], round(previous_y) + margin_y + 1)
         local_map = self.map_image[y0:y1, x0:x1]
         if local_map.size == 0:
             return None
@@ -836,7 +837,7 @@ class MinimapMapLocator:
         )
         peak_distance = max(
             2,
-            math.ceil(self.candidate_merge_distance_m * MAP_PIXELS_PER_METER * scale),
+            math.ceil(self.candidate_merge_distance_m * np.linalg.svd(inverse_linear, compute_uv=False)[-1] * scale),
         )
         peaks = _top_peaks(scores, max(16, self.top_k * 3), min_distance=peak_distance)
         candidates = []
@@ -844,7 +845,7 @@ class MinimapMapLocator:
             dx, dy = _peak_subpixel_offset(scores, left, top)
             map_x = x0 + (left + dx + size / 2.0 + template.center_offset[0]) / scale - 0.5
             map_y = y0 + (top + dy + size / 2.0 + template.center_offset[1]) / scale - 0.5
-            if math.hypot(map_x - previous_x, map_y - previous_y) > search_radius_map:
+            if math.dist(self.calibration.map_to_world(map_x, map_y), previous_world) > search_radius_m:
                 continue
             patch = cv2.getRectSubPix(
                 local_map,

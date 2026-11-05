@@ -13,6 +13,7 @@ from src.core.PositionConfig import (
     CONFIG_EXPERIMENTAL_STOP_ON_EXIT,
     CONFIG_USE_EXPERIMENTAL,
 )
+from src.data.FeatureList import FeatureList as fL
 from src.localization.capture_backend_installer import CaptureBackendInstaller
 from src.localization.capture_backend_launcher import (
     BackendLauncher,
@@ -248,6 +249,11 @@ class CapturePoseMixin:
             self._minimap_capture_relogin_warned = False
             return True
         if health.state not in (CAPTURE_HEALTH_NO_CONNECTION, CAPTURE_HEALTH_MISSED_HANDSHAKE):
+            return False
+        # A trigger may run on the login screen. Leave login to its owner;
+        # recoverable menus still use relogin_same_account's ensure_main path.
+        find_one = getattr(self, "find_one", None)
+        if not callable(find_one) or find_one(fL.logout):
             return False
         if not self._cfg_bool(CONFIG_EXPERIMENTAL_RELOGIN, True):
             self._warn_capture_relogin_disabled()

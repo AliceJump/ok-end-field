@@ -622,7 +622,13 @@ class GridNavigationMixin(RuntimeStateMixin):
             frame=frame,
             max_age=self._grid_position_max_age(session.tick),
         )
-        session.poll_duration_s = max(self.active_time() - started, session.poll_duration_s * 0.8)
+        elapsed = self.active_time() - started
+        session.poll_durations_s.append(elapsed)
+        del session.poll_durations_s[:-5]
+        session.poll_duration_s = max(session.poll_durations_s)
+        exclude_stopped = getattr(self._grid_nav_follower, "exclude_stopped_time", None)
+        if not was_walking and callable(exclude_stopped):
+            exclude_stopped(elapsed)
         if pose is None:
             return NavTick(
                 session=session,
@@ -640,8 +646,13 @@ class GridNavigationMixin(RuntimeStateMixin):
         sync_seq = int(pose.get("sync_seq") or 0)
         session.note_sync(sync_seq)
         speed = pose.get("speed")
-        if pose.get("position_trusted") and isinstance(speed, (int, float)) and math.isfinite(speed) and speed > 0.2:
-            session.walk_speed_m_s = max(1.0, float(speed) * 1.2)
+        if (
+            pose.get("position_trusted")
+            and isinstance(speed, (int, float))
+            and math.isfinite(speed)
+            and speed * 1.2 > 1
+        ):
+            session.walk_speed_m_s = max(6.0, float(speed) * 1.2)
         return NavTick(
             session=session,
             frame=frame,
@@ -770,6 +781,14 @@ class GridNavigationMixin(RuntimeStateMixin):
         if layered is None:
             return False
         pose = ctx.pose or {}
+        if pose.get("tier_evidence_required"):
+            if not pose.get("tier_trusted") or pose.get("tier_id") is None:
+                return False
+            index = min(max(0, session.segment_index), len(route.segments) - 1)
+            changed = normalize_tier(pose["tier_id"]) != normalize_tier(route.segments[index].tier)
+            if changed:
+                self.log_info("分层导航：视觉确认楼层已变化，重新规划")
+            return changed
         y = pose.get("y")
         if y is None or ctx.x is None or ctx.z is None:
             return False
@@ -1415,7 +1434,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         # cell with small steps instead of imposing a permanent stop at radius/2.
         travel_budget = min(max(0.0, float(distance)) * 0.5, max(0.0, float(distance) - radius * 0.5))
         if float(distance) <= radius:
-            travel_budget = max(0.0, float(distance)) * 0.5
+            fraction = 1.0 if float(distance) <= self._grid_cfg_float(CONFIG_GRID_STUCK_DISTANCE, 0.35) else 0.5
+            travel_budget = max(0.0, float(distance)) * fraction
         duration = min(ctx.tick, max(0.0, travel_budget / speed - moving_age))
         if duration > 0:
             self.sleep(duration)
@@ -3189,7 +3209,12 @@ class GridNavigationMixin(RuntimeStateMixin):
             ),
         )
         speed = max(6.0, ctx.session.walk_speed_m_s)
-        return max(2.0, radius + speed * (2 * ctx.session.poll_duration_s + ctx.tick + 0.25))
+        per_px = self.pose_yaw_per_pixel()
+        gain = max(0.1, min(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_GAIN, 0.8)))
+        max_angle = max(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MAX_DEG, 25.0))
+        delta = max(-max_angle, min(max_angle, float(ctx.step.heading_error) * gain))
+        rotation_s = self.pose_rotation_duration_s(round(delta / per_px)) if per_px else 0.0
+        return max(2.0, radius + speed * (2 * ctx.session.poll_duration_s + ctx.tick + 0.25 + rotation_s))
 
     def _should_turn_grid_in_place(self, step: FollowerStep, *, stop_distance: float | None = None) -> bool:
         """大角度转向或接近航点时停车转向，避免画弧越过错过的航点。"""
@@ -3209,7 +3234,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                 self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MIN_DISTANCE, 5.0),
             )
             if stop_distance is not None:
-                min_distance = min(min_distance, stop_distance)
+                min_distance = stop_distance
             if float(distance) < min_distance:
                 self.log_debug(f"距目标航点 {float(distance):.2f}m < {min_distance:.2f}m，改为停车转向")
                 return True

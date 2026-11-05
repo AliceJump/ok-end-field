@@ -178,6 +178,25 @@ class TestMinimapMapLocatorFiles(unittest.TestCase):
 
 
 class TestMinimapMapLocatorSynthetic(unittest.TestCase):
+    def test_local_search_radius_uses_affine_world_meters(self):
+        for matrix in (
+            np.array([[0.125, 0, 0], [0, -0.125, 0]]),
+            np.array([[0.125, 0.04, 0], [0.06, -0.5, 0]]),
+        ):
+            calibration = MapCalibration(matrix, np.linalg.inv(np.vstack((matrix, [0, 0, 1])))[:2])
+            locator = MinimapMapLocator(self.map_image, calibration, scale_override=self.scale)
+            target = calibration.map_to_world(*self.center)
+            # At 8 px/m this 7 m shift is 56 pixels, outside the old 4 px/m ROI.
+            prior = (target[0] - 7, target[1])
+            accepted = locator.locate_near(self.frame, prior, self.geometry, search_radius_m=8)
+            self.assertIsNotNone(accepted)
+            self.assertAlmostEqual(accepted.best.map_x, self.center[0], delta=2)
+            self.assertAlmostEqual(accepted.best.map_y, self.center[1], delta=2)
+            self.assertLessEqual(math.dist((accepted.best.world_x, accepted.best.world_z), prior), 8)
+            smaller = locator.locate_near(self.frame, prior, self.geometry, search_radius_m=3)
+            if smaller is not None:
+                self.assertLessEqual(math.dist((smaller.best.world_x, smaller.best.world_z), prior), 3)
+
     def setUp(self):
         rng = np.random.default_rng(20260919)
         self.map_image = rng.integers(20, 230, size=(800, 900), dtype=np.uint8)
@@ -377,7 +396,7 @@ class TestMinimapLocatorOptimizations(unittest.TestCase):
         g = MinimapGeometry(100, 100, 50)
         for scale in (0.5, 0.75, 1.25):
             with self.subTest(scale=scale):
-                margin = math.ceil(20 + 87 / (2 * scale))
+                margin = math.ceil(5 + 87 / (2 * scale))
                 x0, y0 = 500 - margin, 400 - margin
                 resized = cv2.resize(
                     image[y0 : 400 + margin + 1, x0 : 500 + margin + 1],
