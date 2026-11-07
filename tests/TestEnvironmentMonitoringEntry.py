@@ -12,7 +12,7 @@ from ok import Box
 from ok.util.color import calculate_color_percentage
 
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
+from src.tasks.onetime.EnvironmentMonitoringPhotoTask import OBSERVATIONS, EnvironmentMonitoringPhotoTask
 from src.tasks.onetime.EnvironmentMonitoringRoute import (
     CisternOriginiumSlugsRoute,
     EnvironmentMonitoringRoute,
@@ -21,10 +21,10 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (
     StationaryObservationRoute,
 )
 
-SCREEN_SIZES = ((1280, 720), (1920, 1080), (2560, 1440))
-
 
 class TestEnvironmentMonitoringEntry(unittest.TestCase):
+    SCREEN_SIZES = ((1280, 720), (1920, 1080), (2560, 1440))
+
     @staticmethod
     def card_area():
         return Box(678, 918, 562, 81)
@@ -138,7 +138,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.enter_observation.assert_not_called()
 
     def test_available_cards_bind_buttons_to_their_own_titles_at_multiple_sizes(self):
-        for width, height in SCREEN_SIZES:
+        for width, height in self.SCREEN_SIZES:
             with self.subTest(size=(width, height)):
                 task = self.task(width, height)
                 titles = [
@@ -174,7 +174,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertEqual([item["name"] for item in task.available_observations()], ["环形瀑布"])
 
     def test_pool_lotus_title_selects_its_own_column(self):
-        for width, height in SCREEN_SIZES:
+        for width, height in self.SCREEN_SIZES:
             for target_column in range(3):
                 with self.subTest(size=(width, height), target_column=target_column):
                     task = self.task(width, height)
@@ -197,7 +197,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     self.assertEqual(matches[0]["action_box"].x, expected_left)
 
     def test_terminal_highlight_identifies_only_the_selected_tab_at_multiple_sizes(self):
-        for width, height in SCREEN_SIZES:
+        for width, height in self.SCREEN_SIZES:
             for selected in ("outskirts", "marker_stone"):
                 with self.subTest(size=(width, height), selected=selected):
                     frame = np.full((height, width, 3), 40, dtype=np.uint8)
@@ -228,7 +228,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         return frame
 
     def test_monitoring_page_requires_templates_two_stripes_and_one_selected_tab(self):
-        for width, height in SCREEN_SIZES:
+        for width, height in self.SCREEN_SIZES:
             for selected in ((), ("outskirts",), ("marker_stone",), ("outskirts", "marker_stone")):
                 with self.subTest(size=(width, height), selected=selected):
                     task = self.color_task(self.monitoring_frame(width, height, selected))
@@ -256,7 +256,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertFalse(task._monitoring_page())
 
     def test_card_button_colors_reject_dark_gray_and_sparse_white_at_multiple_sizes(self):
-        for width, height in SCREEN_SIZES:
+        for width, height in self.SCREEN_SIZES:
             for color, state in (
                 ((0, 240, 255), "accept"),
                 ((236, 236, 236), "go"),
@@ -514,7 +514,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task._wait_for_transfer_arrival.assert_not_called()
 
     def test_close_icon_elsewhere_cannot_confirm_tracking_at_multiple_sizes(self):
-        for width, height in SCREEN_SIZES:
+        for width, height in self.SCREEN_SIZES:
             with self.subTest(size=(width, height)):
                 task = self.task(width, height)
                 close = Box(round(width * 0.95), round(height * 0.06), 20, 20)
@@ -676,10 +676,22 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         titles = {locale: (title, title + "其他") for locale, title in examples}
         self.assert_localized_routes("pool_lotus", titles, PoolLotusRoute)
 
-    def test_thillu_matches_localized_names_with_or_without_quotes(self):
-        names = self.language_data()["thillu"]
-        titles = {locale: (node["string"], f"“{node['string']}”") for locale, node in names.items()}
-        self.assert_localized_routes("thillu", titles, StationaryObservationRoute)
+    def test_registered_points_match_resources_without_cross_matches(self):
+        data = self.language_data()
+        for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
+            task = self.task()
+            task.lang.environment_monitoring = SimpleNamespace()
+            for key in OBSERVATIONS:
+                node = data[key][locale]
+                value = re.compile(node["pattern"]) if "pattern" in node else node["string"]
+                setattr(task.lang.environment_monitoring, key, value)
+            for key in OBSERVATIONS:
+                node = data[key][locale]
+                title = node.get("string", node.get("pattern"))
+                for example in (title, f"“{title}”"):
+                    with self.subTest(locale=locale, point=key, title=example):
+                        self.assertEqual(task.observation_key(example), key)
+        self.assert_localized_routes("thillu", {"es_ES": ("Éthillu", "“Éthillu”")}, StationaryObservationRoute)
 
     def test_normal_slug_matches_without_accepting_vigorous_title_in_all_locales(self):
         data = self.language_data()
