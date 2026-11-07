@@ -4014,3 +4014,15 @@ msgstr "Falló el monitoreo ambiental: {error}"
 
 msgid "⭐环境监测"
 msgstr "⭐Monitoreo ambiental (soporte en expansión)"
+
+msgid "MaaEnd自动闪避（实验）"
+msgstr "Esquiva automática MaaEnd (experimental)"
+
+msgid "闪避兼容重击特效"
+msgstr "Filtrar efectos de ataques fuertes"
+
+msgid "实验性视觉闪避，默认关闭。需要高特效画质；可能误判或漏判，低性能设备可能增加战斗延迟。"
+msgstr "Esquiva visual experimental, desactivada por defecto. Requiere efectos de calidad alta; puede haber detecciones erróneas u omitidas y retrasos en equipos lentos."
+
+msgid "忽略角色附近的普通闪避提示以减少重击特效误报；地面攻击提示不受影响。"
+msgstr "Ignora señales normales de esquiva cerca del personaje para reducir falsos positivos de ataques fuertes; las señales de ataques al suelo siguen activas."
