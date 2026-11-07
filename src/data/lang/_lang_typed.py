@@ -408,7 +408,7 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     """巨兽心脏"""
 
     observant_fowlbeast: str
-    """东张西望的黑腹雉羽兽"""
+    """东张西望"""
 
     peach_tree: str
     """桃树"""

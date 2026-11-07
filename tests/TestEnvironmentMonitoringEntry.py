@@ -100,6 +100,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     setattr(task.lang.environment_monitoring, key, resources[key][locale]["string"])
                     self.assertIs(task.observation_route(title), StationaryObservationRoute)
 
+    def test_observant_fowlbeast_matches_short_chinese_title(self):
+        task = self.task()
+        task.lang.environment_monitoring.observant_fowlbeast = "东张西望"
+        self.assertIs(task.observation_route("东张西望"), StationaryObservationNavigation)
+
     def test_peach_tree_localized_titles(self):
         path = Path("assets/lang/environment_monitoring.json")
         names = json.loads(path.read_text(encoding="utf-8"))["peach_tree"]
