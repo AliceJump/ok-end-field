@@ -79,18 +79,13 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertIs(task.observation_route("念念家的桃树"), StationaryObservationRoute)
         self.assertIs(task.observation_route("桃树"), StationaryObservationRoute)
 
-    def test_pier_waterwheel_uses_stationary_navigation_in_each_locale(self):
+    def test_stationary_points_match_localized_titles(self):
         titles = {
-            "zh_CN": "码头水车",
-            "zh_TW": "碼頭水車",
-            "en_US": "Pier Waterwheel",
-            "ja_JP": "渡し場の水車",
-            "ko_KR": "부두 물레방아",
-        }
-        self.assert_localized_routes("pier_waterwheel", titles, StationaryObservationRoute)
-
-    def test_new_stationary_points_match_localized_titles(self):
-        titles = {
+            "pier_waterwheel": ("码头水车", "碼頭水車", "Pier Waterwheel", "渡し場の水車", "부두 물레방아"),
+            "peach_tree": (
+                "念念家的桃树", "念念家的桃樹", "Peach Tree at Babbles's Home",
+                "ネンネンの家にある桃の木", "염념이네 복숭아나무",
+            ),
             "withered_branches": ("枯枝", "枯枝", "Withered Branches", "枯れ枝", "마른 가지"),
             "feranmut_heart": ("巨兽心脏", "巨獸心臟", "Feranmut Heart", "巨獣の心臓", "베헤모스의 심장"),
             "observant_fowlbeast": (
@@ -98,24 +93,14 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 "キョロキョロする黒腹羽獣", "두리번거리는 세이블체스티드 파울비스트",
             ),
         }
+        locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
         for key, localized in titles.items():
-            locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
             self.assert_localized_routes(key, dict(zip(locales, localized, strict=True)), StationaryObservationRoute)
 
     def test_observant_fowlbeast_matches_short_chinese_title(self):
         task = self.task()
         task.lang.environment_monitoring.observant_fowlbeast = "东张西望"
         self.assertIs(task.observation_route("东张西望"), StationaryObservationRoute)
-
-    def test_peach_tree_localized_titles(self):
-        titles = {
-            "zh_CN": "念念家的桃树",
-            "zh_TW": "念念家的桃樹",
-            "en_US": "Peach Tree at Babbles's Home",
-            "ja_JP": "ネンネンの家にある桃の木",
-            "ko_KR": "염념이네 복숭아나무",
-        }
-        self.assert_localized_routes("peach_tree", titles, StationaryObservationRoute)
 
     def color_task(self, frame):
         height, width = frame.shape[:2]
