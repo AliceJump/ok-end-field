@@ -1404,6 +1404,7 @@ def patch_config_row_background() -> None:
         from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
         from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
         from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget  # type: ignore
+        from ok.ui.qt.tasks.ModifyListDialog import ModifyListDialog
         from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 
         from src.core.sequence_parser import parse_sequence_list
@@ -1450,22 +1451,31 @@ def patch_config_row_background() -> None:
             else:
                 # 自由文本列表按文档约定以逗号分隔规则（如购物白名单），一项一行显示
                 items = parse_sequence_list(items)
-            # 单项本身仍可能很长（长正则）；折行并限制到控件最大宽度
+            # QLabel 只在词边界换行；超过控件宽度的连续文本插入零宽断点，避免被裁掉
+            metrics = self.list_text.fontMetrics()
+            items = [
+                "\u200b".join(item) if metrics.horizontalAdvance(item) > DesignToken.CONTROL_MAX_WIDTH else item
+                for item in items
+            ]
             self.list_text.setWordWrap(True)
             self.list_text.setMaximumWidth(DesignToken.CONTROL_MAX_WIDTH)
             self.list_text.setText("\n".join(items))
 
         ModifyListItem.update_value = _list_update_value
 
-        original_list_modified = ModifyListItem.list_modified
+        original_list_confirm = ModifyListDialog.confirm
 
-        def _list_modified(self: Any, the_list: list) -> None:
-            # 保存时把逗号串拆成独立项，存储与显示、匹配语义保持一致
+        def _list_confirm(self: Any) -> None:
+            # 只在确认时把逗号串规范为独立项；取消路径原样返回，不改写配置
             if self.options_available is None:
-                the_list = parse_sequence_list(the_list)
-            original_list_modified(self, the_list)
+                items = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
+                normalized = parse_sequence_list(items)
+                if normalized != items:
+                    self.list_widget.clear()
+                    self.list_widget.addItems(normalized)
+            original_list_confirm(self)
 
-        ModifyListItem.list_modified = _list_modified
+        ModifyListDialog.confirm = _list_confirm
 
         original_multi_init = LabelAndMultiSelection.__init__
 

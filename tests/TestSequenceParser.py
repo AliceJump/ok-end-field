@@ -14,6 +14,16 @@ class TestSequenceParser(unittest.TestCase):
         self.assertEqual(parse_sequence_list("刻写, 助剂"), ["刻写", "助剂"])
         self.assertEqual(parse_sequence_list(None), [])
 
+    def test_parse_sequence_list_keeps_commas_inside_regex_syntax(self):
+        self.assertEqual(
+            parse_sequence_list(["货品[甲,乙]", ".{2,4}", r"a\,b", "(甲,乙)", "刻写,助剂"]),
+            ["货品[甲,乙]", ".{2,4}", r"a\,b", "(甲,乙)", "刻写", "助剂"],
+        )
+        self.assertEqual(
+            parse_sequence_list("货品[甲,乙], 刻写，.{2,4}"),
+            ["货品[甲,乙]", "刻写", ".{2,4}"],
+        )
+
     def test_parse_sequence_supports_chinese_comma_whitespace_and_empty_items(self):
         self.assertEqual(
             parse_sequence(" 干员经验， 干员进阶, , 钱币收集  ,"),

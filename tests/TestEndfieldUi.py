@@ -819,22 +819,59 @@ class CombatSettingsTest(unittest.TestCase):
         with_options.deleteLater()
         free_text.deleteLater()
 
-    def test_list_row_splits_comma_items_only_for_free_text_lists(self):
+    def test_list_row_keeps_original_items_when_editing_is_cancelled(self):
         from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 
-        config = CombatEditBuffer({"序列": []})
-        free_text = ModifyListItem({}, config, "序列")
-        free_text.list_modified(["刻写,助剂", "理智"])
-        self.assertEqual(config["序列"], ["刻写", "助剂", "理智"])
-        self.assertEqual(free_text.list_text.text(), "刻写\n助剂\n理智")
-        free_text.deleteLater()
+        # 取消时原生对话框会把原列表发回 list_modified；此时不得拆分或写回
+        config = CombatEditBuffer({"序列": ["刻写,助剂"]})
+        row = ModifyListItem({}, config, "序列")
+        row.list_modified(["刻写,助剂"])
+        self.assertEqual(config["序列"], ["刻写,助剂"])
+        row.deleteLater()
+
+    def test_list_dialog_splits_comma_items_only_on_confirm(self):
+        from ok.ui.qt.tasks.ModifyListDialog import ModifyListDialog
+
+        host = QWidget()
+        host.show()
+        dialog = ModifyListDialog(["刻写,助剂", "理智"], host)
+        emitted = []
+        dialog.list_modified.connect(emitted.append)
+        dialog.confirm()
+        self.assertEqual(emitted, [["刻写", "助剂", "理智"]])
+        dialog.deleteLater()
 
         options = ["息壤", "赤铜零件"]
-        config = CombatEditBuffer({"序列": []})
-        with_options = ModifyListItem({}, config, "序列", options_available=options)
-        with_options.list_modified(options)
-        self.assertEqual(config["序列"], options)
-        with_options.deleteLater()
+        with patch.object(og, "app", SimpleNamespace(tr=lambda value: value)):
+            dialog = ModifyListDialog(options, host, options_available=options)
+            emitted = []
+            dialog.list_modified.connect(emitted.append)
+            dialog.confirm()
+        self.assertEqual(emitted, [options])
+        dialog.deleteLater()
+        host.close()
+        host.deleteLater()
+
+    def test_list_row_wraps_long_unbroken_text_at_character_boundaries(self):
+        from ok.ui.qt.common.design_system import DesignToken
+        from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
+
+        long_item = "货品" + "A" * 160
+        config = CombatEditBuffer({"序列": [long_item]})
+        row = ModifyListItem({}, config, "序列")
+        row.resize(520, 200)
+        row.show()
+        self.app.processEvents()
+        zero_width = chr(0x200B)
+        text = row.list_text.text()
+        self.assertEqual(text.replace(zero_width, ""), long_item)
+        self.assertIn(zero_width, text)
+        self.assertGreater(
+            row.list_text.heightForWidth(DesignToken.CONTROL_MAX_WIDTH),
+            row.list_text.fontMetrics().height(),
+        )
+        row.close()
+        row.deleteLater()
 
     def test_native_task_header_elides_without_losing_full_text(self):
         from ok.ui.qt.tasks.TaskCard import TaskCard
