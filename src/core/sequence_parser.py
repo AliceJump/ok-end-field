@@ -31,6 +31,69 @@ def parse_sequence(raw_config: str | list | None) -> list[str]:
     return [token.strip() for token in normalized.split(",") if token.strip()]
 
 
+def _split_regex_sequence(text: str) -> list[str]:
+    """
+    按顶层逗号拆分正则序列；字符集、量词、分组和转义里的逗号保留。
+    """
+    tokens = []
+    start = 0
+    square = brace = paren = 0
+    class_first = False
+    escaped = False
+    for index, char in enumerate(text):
+        if escaped:
+            if square:
+                class_first = False
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+            continue
+        if square:
+            if char == "]" and not class_first:
+                square = 0
+            elif not (char == "^" and class_first):
+                class_first = False
+            continue
+        if char == "[":
+            square = 1
+            class_first = True
+        elif char == "{":
+            brace += 1
+        elif char == "}" and brace:
+            brace -= 1
+        elif char == "(":
+            paren += 1
+        elif char == ")" and paren:
+            paren -= 1
+        elif char in ",，" and not brace and not paren:
+            token = text[start:index].strip()
+            if token:
+                tokens.append(token)
+            start = index + 1
+    token = text[start:].strip()
+    if token:
+        tokens.append(token)
+    return tokens
+
+
+def parse_sequence_list(raw_config: str | list | None) -> list[str]:
+    """
+    解析列表配置，按顶层逗号拆分列表项内的多条规则。
+
+    字符集、量词、分组和转义里的逗号属于正则本身，不拆分。
+
+    Example:
+        ["刻写,助剂"] -> ["刻写", "助剂"]
+        ["货品[甲,乙]", ".{2,4}"] -> ["货品[甲,乙]", ".{2,4}"]
+    """
+    if isinstance(raw_config, (list, tuple)):
+        return [token for item in raw_config for token in _split_regex_sequence(str(item))]
+    if raw_config is None:
+        return []
+    return _split_regex_sequence(str(raw_config))
+
+
 def parse_int_sequence(raw_config: str | None) -> list[int]:
     """
     将逗号分隔字符串序列解析为整数列表。

@@ -773,6 +773,40 @@ class CombatSettingsTest(unittest.TestCase):
         host.close()
         host.deleteLater()
 
+    def test_list_row_splits_a_long_single_item_by_comma_inside_drawer(self):
+        """整串白名单按逗号分行，且不撑宽抽屉。"""
+        # 白名单整串粘贴成一个列表项；文档约定逗号分隔规则，显示时一项一行
+        items = ["冲浪大赛门票,耶尔什微风,浪潮海石,塞梦珂披巾,《前沿瞭望》,低容武陵电池,高容谷地电池"]
+        config = CombatEditBuffer({"购物白名单": items})
+        config.get_default = config.get
+        task: Any = SimpleNamespace(
+            name="地区建设",
+            config=config,
+            default_config={},
+            config_description={},
+            config_type={},
+            show_create_shortcut=False,
+        )
+        host = QWidget()
+        host.resize(1200, 700)
+        host.show()
+        drawer = EndfieldTacticalDrawer(host)
+        self.assertTrue(drawer.open_subtask(task.name, task))
+        self.app.processEvents()
+        row = drawer.form_layout.itemAt(0).widget().config_widget_by_key["购物白名单"]
+        self.assertLessEqual(drawer.form_container.width(), drawer.scroll_area.viewport().width())
+        self.assertLessEqual(row.switch_button.mapTo(drawer, row.switch_button.rect().topRight()).x(), drawer.width())
+        self.assertEqual(
+            row.list_text.text(),
+            "\n".join(
+                ["冲浪大赛门票", "耶尔什微风", "浪潮海石", "塞梦珂披巾", "《前沿瞭望》", "低容武陵电池", "高容谷地电池"]
+            ),
+        )
+        self.assertTrue(row.list_text.wordWrap())
+        drawer.close_drawer()
+        host.close()
+        host.deleteLater()
+
     def test_list_row_translates_only_values_from_available_options(self):
         from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 
@@ -785,6 +819,63 @@ class CombatSettingsTest(unittest.TestCase):
         self.assertEqual(free_text.list_text.text(), "息壤\n赤铜零件")
         with_options.deleteLater()
         free_text.deleteLater()
+
+    def test_list_row_keeps_original_items_when_editing_is_cancelled(self):
+        """取消编辑不拆分列表项，也不改写配置。"""
+        from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
+
+        # 取消时原生对话框会把原列表发回 list_modified；此时不得拆分或写回
+        config = CombatEditBuffer({"序列": ["刻写,助剂"]})
+        row = ModifyListItem({}, config, "序列")
+        row.list_modified(["刻写,助剂"])
+        self.assertEqual(config["序列"], ["刻写,助剂"])
+        row.deleteLater()
+
+    def test_list_dialog_splits_comma_items_only_on_confirm(self):
+        """只在确认时拆分逗号串，候选项列表不受影响。"""
+        from ok.ui.qt.tasks.ModifyListDialog import ModifyListDialog
+
+        host = QWidget()
+        host.show()
+        dialog = ModifyListDialog(["刻写,助剂", "理智"], host)
+        emitted = []
+        dialog.list_modified.connect(emitted.append)
+        dialog.confirm()
+        self.assertEqual(emitted, [["刻写", "助剂", "理智"]])
+        dialog.deleteLater()
+
+        options = ["息壤", "赤铜零件"]
+        with patch.object(og, "app", SimpleNamespace(tr=lambda value: value)):
+            dialog = ModifyListDialog(options, host, options_available=options)
+            emitted = []
+            dialog.list_modified.connect(emitted.append)
+            dialog.confirm()
+        self.assertEqual(emitted, [options])
+        dialog.deleteLater()
+        host.close()
+        host.deleteLater()
+
+    def test_list_row_wraps_long_unbroken_text_at_character_boundaries(self):
+        """超过控件宽度的连续文本按字符边界换行。"""
+        from ok.ui.qt.common.design_system import DesignToken
+        from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
+
+        long_item = "货品" + "A" * 160
+        config = CombatEditBuffer({"序列": [long_item]})
+        row = ModifyListItem({}, config, "序列")
+        row.resize(520, 200)
+        row.show()
+        self.app.processEvents()
+        zero_width = chr(0x200B)
+        text = row.list_text.text()
+        self.assertEqual(text.replace(zero_width, ""), long_item)
+        self.assertIn(zero_width, text)
+        self.assertGreater(
+            row.list_text.heightForWidth(DesignToken.CONTROL_MAX_WIDTH),
+            row.list_text.fontMetrics().height(),
+        )
+        row.close()
+        row.deleteLater()
 
     def test_native_task_header_elides_without_losing_full_text(self):
         from ok.ui.qt.tasks.TaskCard import TaskCard

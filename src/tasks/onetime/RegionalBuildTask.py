@@ -5,6 +5,7 @@ from qfluentwidgets import FluentIcon
 
 from src.core.config_migration import merge_bool_options
 from src.core.learning.policy import learning_epoch
+from src.core.sequence_parser import parse_sequence_list
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list, goods_dict, outpost_dict
 from src.data.world_map_utils import (
@@ -840,7 +841,9 @@ class RegionalBuildTask(RegionScopeMixin, Common, MapMixin, ZipLineMixin):
         self.info_set("current_task", "buy_staple_goods")
         self.log_info("开始买物资任务")
         #
-        pl = [re.compile(i) for i in self.config.get(self.CFG_SHOP_WHITELIST, [])]
+        # 文档约定白名单为逗号分隔的正则；列表项内也可能有逗号（整串粘贴），按项展开后再编译
+        whitelist = parse_sequence_list(self.config.get(self.CFG_SHOP_WHITELIST, []))
+        pl = [re.compile(i) for i in whitelist]
         #
         if target_areas is None:
             target_areas = areas_list

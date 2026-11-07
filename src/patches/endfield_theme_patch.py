@@ -1400,10 +1400,14 @@ def patch_config_row_background() -> None:
     """
     try:
         from ok import og  # type: ignore
+        from ok.ui.qt.common.design_system import DesignToken  # type: ignore
         from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
         from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
         from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget  # type: ignore
+        from ok.ui.qt.tasks.ModifyListDialog import ModifyListDialog
         from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
+
+        from src.core.sequence_parser import parse_sequence_list
 
         orig_init = LabelAndWidget.__init__
         if getattr(orig_init, "_endfield_patched", False):
@@ -1440,13 +1444,40 @@ def patch_config_row_background() -> None:
         LabelAndWidget.__init__ = _patched_label_init
 
         def _list_update_value(self: Any) -> None:
+            """列表行按项展示；逗号规则拆分，超宽文本可换行。"""
             # 原生实现在总字数不超过 30 时连成一行；单行文字的最小宽度会撑破配置抽屉，右侧控件被裁掉
             items = self.config.get(self.key)
             if self.options_available is not None:
                 items = [og.app.tr(item) for item in items]
+            else:
+                # 自由文本列表按文档约定以逗号分隔规则（如购物白名单），一项一行显示
+                items = parse_sequence_list(items)
+            # QLabel 只在词边界换行；超过控件宽度的连续文本插入零宽断点，避免被裁掉
+            metrics = self.list_text.fontMetrics()
+            items = [
+                "\u200b".join(item) if metrics.horizontalAdvance(item) > DesignToken.CONTROL_MAX_WIDTH else item
+                for item in items
+            ]
+            self.list_text.setWordWrap(True)
+            self.list_text.setMaximumWidth(DesignToken.CONTROL_MAX_WIDTH)
             self.list_text.setText("\n".join(items))
 
         ModifyListItem.update_value = _list_update_value
+
+        original_list_confirm = ModifyListDialog.confirm
+
+        def _list_confirm(self: Any) -> None:
+            """确认时把逗号串规范为独立列表项；取消路径不改写配置。"""
+            # 只在确认时把逗号串规范为独立项；取消路径原样返回，不改写配置
+            if self.options_available is None:
+                items = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
+                normalized = parse_sequence_list(items)
+                if normalized != items:
+                    self.list_widget.clear()
+                    self.list_widget.addItems(normalized)
+            original_list_confirm(self)
+
+        ModifyListDialog.confirm = _list_confirm
 
         original_multi_init = LabelAndMultiSelection.__init__
 
