@@ -67,7 +67,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_pier_waterwheel_uses_stationary_navigation_in_each_locale(self):
         path = Path("assets/lang/environment_monitoring.json")
         names = json.loads(path.read_text(encoding="utf-8"))["pier_waterwheel"]
-        # 游戏标题参考 MAAEnd 的 environment_monitoring 数据。
         titles = {
             "zh_CN": "码头水车",
             "zh_TW": "碼頭水車",
