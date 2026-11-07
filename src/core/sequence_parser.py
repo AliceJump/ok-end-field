@@ -42,6 +42,8 @@ def _split_regex_sequence(text: str) -> list[str]:
     escaped = False
     for index, char in enumerate(text):
         if escaped:
+            if square:
+                class_first = False
             escaped = False
             continue
         if char == "\\":

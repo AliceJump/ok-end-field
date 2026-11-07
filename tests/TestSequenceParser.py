@@ -23,6 +23,7 @@ class TestSequenceParser(unittest.TestCase):
             parse_sequence_list("货品[甲,乙], 刻写，.{2,4}"),
             ["货品[甲,乙]", "刻写", ".{2,4}"],
         )
+        self.assertEqual(parse_sequence_list([r"[\d],foo"]), [r"[\d]", "foo"])
 
     def test_parse_sequence_supports_chinese_comma_whitespace_and_empty_items(self):
         self.assertEqual(
