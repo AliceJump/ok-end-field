@@ -125,6 +125,27 @@
     "ja_JP": {"string": "渡し場の水車"},
     "ko_KR": {"string": "부두 물레방아"}
   },
+  "withered_branches": {
+    "zh_CN": {"string": "枯枝"},
+    "zh_TW": {"string": "枯枝"},
+    "en_US": {"string": "Withered Branches"},
+    "ja_JP": {"string": "枯れ枝"},
+    "ko_KR": {"string": "마른 가지"}
+  },
+  "feranmut_heart": {
+    "zh_CN": {"string": "巨兽心脏"},
+    "zh_TW": {"string": "巨獸心臟"},
+    "en_US": {"string": "Feranmut Heart"},
+    "ja_JP": {"string": "巨獣の心臓"},
+    "ko_KR": {"string": "베헤모스의 심장"}
+  },
+  "observant_fowlbeast": {
+    "zh_CN": {"string": "东张西望的黑腹雉羽兽"},
+    "zh_TW": {"string": "東張西望的黑腹雉羽獸"},
+    "en_US": {"string": "Observant Sable-chested Fowlbeast"},
+    "ja_JP": {"string": "キョロキョロする黒腹羽獣"},
+    "ko_KR": {"string": "두리번거리는 세이블체스티드 파울비스트"}
+  },
   "peach_tree": {
     "zh_CN": {"string": "桃树"},
     "zh_TW": {"string": "桃樹"},
