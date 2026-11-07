@@ -34,9 +34,11 @@
 from __future__ import annotations
 
 import math
+import time
 
 from src.core.camera_input_config import get_default_camera_yaw_ratio, read_saved_camera_settings
 from src.localization.minimap_odometry import angle_delta, arrow_angle_to_bearing
+from src.localization.turn_feedback import filtered_turn_gain
 
 __all__ = [
     "CONFIG_ANGLE_REFRESH",
@@ -133,6 +135,7 @@ class MinimapHeadingMixin:
         self._camera_yaw_ratio_cache = None
         self._camera_yaw_ratio_warning_key = None
         self._camera_settings_warning_fields = None
+        self._ratio_hint_last_at = None
 
     def _camera_yaw_per_pixel(self) -> float:
         """用当前保存设置计算初值；成功缓存随环境更新，失败允许下次重试。"""
@@ -234,7 +237,17 @@ class MinimapHeadingMixin:
     # ------------------------------------------------------------------ #
     # 转到指定方位
     # ------------------------------------------------------------------ #
-    def turn_to_bearing(self, target_deg, *, tolerance=5.0, max_rounds=3, frame=None, min_score=None) -> dict:
+    def turn_to_bearing(
+        self,
+        target_deg,
+        *,
+        tolerance=5.0,
+        max_rounds=3,
+        frame=None,
+        min_score=None,
+        control_state=None,
+        max_probe_s=None,
+    ) -> dict:
         """转到指定罗盘方位（正北 0°、正东 90°），闭环逼近到 ±``tolerance``。
 
         **目标是一轮到位**（只按一次 W，角色只前移一小步）：系数准的话第一轮就该进容差。
@@ -251,6 +264,10 @@ class MinimapHeadingMixin:
             max_rounds: 最多转几轮（兜底用；默认 3）。
             frame: 可选，读初始朝向用的帧；不传则自己抓。
             min_score: 覆盖「朝向最低分数」。
+            control_state: 可选的会话字典；单轮调用之间延续稳定反馈与实测比例。
+                调用方在停止跟踪、规划或执行其他转向输入时清空。
+            max_probe_s: 本轮转身前进按键的时长上限；导航按剩余距离限制探步，
+                不修改持久化设置。缩短探步后仍须等待实际朝向反馈。
 
         Returns:
             dict: ``{ok, one_shot, target, heading, error, rounds, history}``
@@ -265,6 +282,8 @@ class MinimapHeadingMixin:
         """
         tolerance = max(0.0, float(tolerance))
         target = float(target_deg)
+        if max_probe_s is not None and (not math.isfinite(max_probe_s) or max_probe_s <= 0):
+            raise ValueError("max_probe_s must be finite and positive")
         result = {
             "ok": False,
             "target": target,
@@ -278,86 +297,84 @@ class MinimapHeadingMixin:
 
         per_px = self.yaw_per_pixel()
         if per_px == 0:
+            self._clear_turn_state(control_state)
             self.log_warning("摄像机水平比率不可用，无法转向", notify=True)
             return result
         if not self._can_turn():
+            self._clear_turn_state(control_state)
             return result
 
-        before, score = self.read_heading(frame, min_score=min_score)
+        prediction = None if control_state is None else control_state.pop("moving_prediction", None)
+        before, score = self.read_heading(None if prediction is not None else frame, min_score=min_score)
         if before is None:
+            self._clear_turn_state(control_state)
             self.log_warning(f"读不到朝向（score={score:.3f}），无法转向")
             return result
 
-        settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
-        control_per_px = per_px
-        feedback_settled = True
-        for i in range(1, max(1, int(max_rounds)) + 1):
-            err = angle_delta(target, before)
-            if abs(err) <= tolerance:
-                break
-            dx = round(err / control_per_px)
-            if dx == 0:
-                # 残差不足一个像素：只能这样了
-                break
-
-            self._send_rotation(dx)
-            self.sleep(settle)
-            after, score = self._arrow_after_w(min_score=min_score)
-            after, score, feedback_settled = self._wait_for_turn_heading(
-                before,
-                after,
-                score,
-                target=target,
-                tolerance=tolerance,
-                min_score=min_score,
+        pending = None if control_state is None else control_state.get("pending_feedback")
+        if pending and control_state.get("configured") == per_px and 0 <= time.monotonic() - pending["sent_at"] <= 2.0:
+            return self._finish_pending_turn(
+                result, control_state, before, score, tolerance=tolerance, min_score=min_score, max_probe_s=max_probe_s
             )
-
-            entry = {
-                "round": i,
-                "before": before,
-                "error_before": err,
-                "dx": dx,
-                "after": after,
-                "error_after": None,
-                "ratio": None,
-                "settled": feedback_settled,
-            }
-            if after is None:
-                self.log_warning(f"第 {i} 轮：按 W 后读不到朝向（score={score:.3f}）")
-                result["history"].append(entry)
-                result["rounds"] = i
-                break
-            entry["error_after"] = angle_delta(target, after)
-            observed_delta = angle_delta(after, before)
-            # The first W establishes a camera-aligned baseline. Its delta can
-            # contain an arbitrary initial camera offset, even with exact gain.
-            # A shortest-angle reading near half a turn is ambiguous as well.
-            if (
-                i > 1
-                and feedback_settled
-                and abs(dx) >= RATIO_HINT_MIN_DX
-                and abs(observed_delta) < 180.0 - tolerance
-                and observed_delta * dx * per_px > 0
-            ):
-                entry["ratio"] = observed_delta / dx
-                self._warn_if_ratio_off(entry["ratio"], per_px, dx)
-                measured_ratio = abs(entry["ratio"])
-                if abs(per_px) * 0.05 <= measured_ratio <= abs(per_px) * 5.0:
-                    control_per_px = self._adapted_yaw_per_pixel(per_px, entry["ratio"], dx)
-            result["history"].append(entry)
-            result["rounds"] = i
-            before = after
-            if not feedback_settled:
-                result["reason"] = "heading_unsettled"
-                break
-            if abs(entry["error_after"]) <= tolerance:
-                break
-
+        before, feedback_settled, control_per_px, samples = self._execute_turn_rounds(
+            result,
+            before,
+            per_px,
+            tolerance,
+            max_rounds,
+            min_score,
+            max_probe_s,
+            control_state,
+            self._unobserved_turn_credit(prediction, target, before, per_px),
+        )
         result["heading"] = before
         result["error"] = angle_delta(target, before)
         result["ok"] = feedback_settled and abs(result["error"]) <= tolerance
         # 目标是一轮到位（只按一次 W，角色只前移一小步）；多轮只是兜底
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
+        full_probe = max_probe_s is None or max_probe_s >= max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
+        if control_state is not None and result["rounds"] > 0 and result["ok"] and full_probe:
+            control_state.update(
+                configured=per_px,
+                gain=control_per_px,
+                heading=before,
+                gain_samples=samples,
+                observed_at=time.monotonic(),
+            )
+        elif control_state is not None and result["rounds"] > 0 and not feedback_settled:
+            control_state.update(
+                configured=per_px,
+                pending_feedback={"before": result["history"][-1]["before"], "tries": 0, "sent_at": time.monotonic()},
+            )
+        return result
+
+    def _finish_pending_turn(self, result, control_state, before, score, *, tolerance, min_score, max_probe_s):
+        """Finish a short W probe before sending another camera rotation."""
+        pending = control_state["pending_feedback"]
+        per_px = control_state["configured"]
+        probe = abs(angle_delta(result["target"], before)) > tolerance
+        if probe:
+            after, score, settled = self._read_turn_feedback(
+                pending["before"], result["target"], min_score, max_probe_s, tolerance
+            )
+        else:
+            after, score, settled = self._wait_for_turn_heading(
+                pending["before"], before, score, target=result["target"], tolerance=tolerance, min_score=min_score
+            )
+        control_state.clear()
+        result.update(
+            probe_only=probe, heading=after, error=None if after is None else angle_delta(result["target"], after)
+        )
+        result["ok"] = settled and after is not None and abs(result["error"]) <= tolerance
+        full_probe = max_probe_s is None or max_probe_s >= max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
+        if result["ok"] and full_probe:
+            control_state.update(
+                configured=per_px, gain=per_px, heading=after, gain_samples=[], observed_at=time.monotonic()
+            )
+        elif not settled and pending["tries"] < 1:
+            control_state.update(configured=per_px, pending_feedback={**pending, "tries": pending["tries"] + 1})
+        if not settled:
+            result["reason"] = "heading_unsettled"
         return result
 
     def aim_view_to_bearing(
@@ -488,6 +505,12 @@ class MinimapHeadingMixin:
         if abs(dx) < RATIO_HINT_MIN_DX:
             return
         rel = abs(ratio) / abs(configured)
+        if 1.0 - RATIO_HINT_TOLERANCE <= rel <= 1.0 + RATIO_HINT_TOLERANCE:
+            return
+        now = time.monotonic()
+        if self._ratio_hint_last_at is not None and now - self._ratio_hint_last_at < 30.0:
+            return
+        self._ratio_hint_last_at = now
         if rel < 1.0 - RATIO_HINT_TOLERANCE:
             self.log_warning(
                 f"实测系数 {abs(ratio):.5f}°/计数 明显低于理论值 {abs(configured):.5f}°/计数："
@@ -525,13 +548,33 @@ class MinimapHeadingMixin:
             if remaining:
                 self.sleep(delay)
 
-    def _arrow_after_w(self, *, min_score=None):
+    def rotation_duration_s(self, dx: int) -> float:
+        """Return the configured inter-chunk wait used by this rotation."""
+        chunk = max(1, int(self._cfg_float(CONFIG_MOUSE_CHUNK, DEFAULT_MOUSE_CHUNK)))
+        delay = max(0.0, self._cfg_float(CONFIG_MOUSE_CHUNK_DELAY, DEFAULT_MOUSE_CHUNK_DELAY))
+        return max(0, math.ceil(abs(int(dx)) / chunk) - 1) * delay
+
+    def _arrow_after_w(self, *, min_score=None, max_hold_s=None):
         """按一次 W（长按）让角色转到视角方向，读取初始反馈。
 
         必须长按：瞬时按键不足以让角色真正转身，小地图朝向不会刷新，会读到旧角度。
         后续刷新等待由调用方的稳定观测窗口完成，避免固定等待后再叠加同样的等待。
         """
-        self.press_key("w", down_time=self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
+        hold = max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
+        if max_hold_s is not None:
+            hold = min(hold, max_hold_s)
+        started = time.time()
+        backend = getattr(getattr(self, "executor", None), "interaction", None)
+        before = getattr(backend, "key_down_rejections", 0)
+        sent = self.press_key("w", down_time=hold)
+        result = getattr(self, "_last_turn_result", None)
+        if (
+            max_hold_s is not None
+            and result is not None
+            and sent is not False
+            and getattr(backend, "key_down_rejections", 0) == before
+        ):
+            result.setdefault("probe_intervals", []).append((started, min(time.time(), started + hold)))
         return self.read_heading(min_score=min_score)
 
     def _wait_for_turn_heading(self, before, heading, score, *, target, tolerance, min_score):
@@ -563,3 +606,146 @@ class MinimapHeadingMixin:
         # Unchanged feedback may be a real camera/character coincidence. Keep
         # the configured gain for the next correction; never infer a small gain.
         return heading, score, heading is not None and stable >= stable_samples
+
+    @staticmethod
+    def _clear_turn_state(control_state):
+        if control_state is not None:
+            control_state.clear()
+
+    def _turn_history_entry(self, i, before, err, dx, after, feedback_settled, used_credit):
+        entry = {
+            "round": i,
+            "before": before,
+            "error_before": err,
+            "dx": dx,
+            "after": after,
+            "error_after": None,
+            "ratio": None,
+            "settled": feedback_settled,
+        }
+        if used_credit:
+            entry["moving_credit"] = used_credit
+        return entry
+
+    def _execute_turn_rounds(
+        self, result, before, per_px, tolerance, max_rounds, min_score, max_probe_s, control_state, credit=0.0
+    ):
+        target = result["target"]
+        settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
+        control_per_px, continued, samples = self._continued_turn_gain(per_px, before, control_state)
+        feedback_settled = True
+        for i in range(1, max(1, int(max_rounds)) + 1):
+            err = angle_delta(target, before)
+            if abs(err) <= tolerance:
+                break
+            used_credit = credit if i == 1 else 0.0
+            dx = round((err - used_credit) / control_per_px)
+            if dx == 0:
+                # 残差不足一个像素：只能这样了
+                break
+
+            self._send_rotation(dx)
+            self.sleep(settle)
+            after, score, feedback_settled = self._read_turn_feedback(before, target, min_score, max_probe_s, tolerance)
+
+            entry = self._turn_history_entry(i, before, err, dx, after, feedback_settled, used_credit)
+            if after is None:
+                self.log_warning(f"第 {i} 轮：按 W 后读不到朝向（score={score:.3f}）")
+                result["history"].append(entry)
+                result["rounds"] = i
+                break
+            entry["error_after"] = angle_delta(target, after)
+            control_per_px = self._adapt_turn_gain(
+                entry, per_px, tolerance, i > 1 or continued, feedback_settled, control_per_px, samples
+            )
+            result["history"].append(entry)
+            result["rounds"] = i
+            before = after
+            if not feedback_settled:
+                result["reason"] = "heading_unsettled"
+                break
+            if abs(entry["error_after"]) <= tolerance:
+                break
+
+        return before, feedback_settled, control_per_px, samples
+
+    @staticmethod
+    def _unobserved_turn_credit(prediction, target, heading, per_px):
+        """Fuse one recent commanded camera direction with a fresh character heading."""
+        if not prediction or prediction["per_px"] != per_px:
+            return 0.0
+        age = time.monotonic() - prediction["sent_at"]
+        if not 0 <= age < 2.0:
+            return 0.0
+        lead = angle_delta(prediction["heading"], heading)
+        error = angle_delta(target, heading)
+        command = prediction["command"]
+        if lead * command <= 0 or lead * error <= 0:
+            return 0.0
+        # The camera and the character are two observations of one turn,
+        # neither is independent absolute yaw. Do not credit more than the
+        # issued command, reverse a correction, or reuse it on later rounds.
+        weight = 0.5 * (1.0 - age / 2.0)
+        return math.copysign(weight * min(abs(lead), abs(command), abs(error)), error)
+
+    def _continued_turn_gain(self, per_px, before, control_state):
+        control_per_px = per_px
+        continued = (
+            control_state is not None
+            and control_state.get("configured") == per_px
+            and control_state.get("heading") is not None
+            and abs(angle_delta(before, control_state["heading"])) <= 1.0
+            and 0 <= time.monotonic() - control_state.get("observed_at", -math.inf) <= 2.0
+        )
+        samples = list(control_state.get("gain_samples", ())) if continued else []
+        if continued:
+            control_per_px = control_state["gain"]
+        if control_state is not None:
+            control_state.clear()
+        return control_per_px, continued, samples
+
+    def _read_turn_feedback(self, before, target, min_score, max_probe_s, tolerance):
+        if max_probe_s is None:
+            after, score = self._arrow_after_w(min_score=min_score)
+        else:
+            after, score = self._arrow_after_w(min_score=min_score, max_hold_s=max_probe_s)
+        after, score, feedback_settled = self._wait_for_turn_heading(
+            before,
+            after,
+            score,
+            target=target,
+            tolerance=tolerance,
+            min_score=min_score,
+        )
+        if (
+            max_probe_s is not None
+            and max_probe_s < self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD)
+            and after is not None
+            and abs(angle_delta(after, before)) <= 1.0
+            and abs(angle_delta(target, after)) > tolerance
+        ):
+            feedback_settled = False
+        return after, score, feedback_settled
+
+    def _adapt_turn_gain(self, entry, per_px, tolerance, enabled, feedback_settled, control_per_px, samples):
+        after, before, dx = entry["after"], entry["before"], entry["dx"]
+        observed_delta = angle_delta(after, before)
+        # The first W (unless continuing a confirmed single-step session)
+        # establishes a camera-aligned baseline. Its delta can contain an
+        # arbitrary initial camera offset, even with exact gain.
+        # A shortest-angle reading near half a turn is ambiguous as well.
+        if (
+            enabled
+            and feedback_settled
+            and abs(dx) >= RATIO_HINT_MIN_DX
+            and 6.0 <= abs(observed_delta) < min(135.0, 180.0 - tolerance)
+            and abs(dx * control_per_px) < 135.0
+            and observed_delta * dx * per_px > 0
+        ):
+            entry["ratio"] = observed_delta / dx
+            updated = filtered_turn_gain(per_px, control_per_px, entry["ratio"], samples)
+            entry["gain_after"] = updated
+            if updated != control_per_px:
+                self._warn_if_ratio_off(updated, per_px, dx)
+            control_per_px = updated
+        return control_per_px

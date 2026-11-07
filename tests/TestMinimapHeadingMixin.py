@@ -9,9 +9,11 @@
 """
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE, MinimapHeadingMixin
+from src.localization.turn_feedback import filtered_turn_gain
 
 
 class _FakeTurnTask(MinimapHeadingMixin):
@@ -75,8 +77,8 @@ class _FakeTurnTask(MinimapHeadingMixin):
             return None, 0.0
         return self.facing, self.score
 
-    def _arrow_after_w(self, *, min_score=None):
-        self.press_key("w", down_time=0.3)
+    def _arrow_after_w(self, *, min_score=None, max_hold_s=None):
+        self.press_key("w", down_time=min(0.3, max_hold_s) if max_hold_s is not None else 0.3)
         self.facing = self.camera  # 角色转到视角方向
         return self.read_heading(min_score=min_score)
 
@@ -98,6 +100,43 @@ class TestReadHeading(unittest.TestCase):
         bearing, score = _FakeTurnTask(arrow_fail=True).read_heading()
         self.assertIsNone(bearing)
         self.assertAlmostEqual(score, 0.0, delta=1e-6)
+
+    def test_bounded_probe_caps_real_press_without_changing_config(self):
+        task = _FakeTurnTask()
+        presses = []
+
+        def press(key, down_time=0):
+            presses.append(down_time)
+            task.facing = task.camera
+
+        task.press_key = press
+        task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
+        config = task.config.copy()
+        result = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.06)
+        self.assertTrue(result["ok"])
+        self.assertEqual(presses, [0.06])
+        self.assertEqual(task.config, config)
+
+    def test_short_probe_without_heading_response_cannot_report_success(self):
+        task = _FakeTurnTask()
+        task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
+        result = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04)
+        self.assertFalse(result["ok"])
+        self.assertEqual(task.w_presses, 1)
+
+    def test_invalid_probe_budget_is_rejected_before_input(self):
+        for value in (0, -1, float("nan"), float("inf")):
+            task = _FakeTurnTask()
+            with self.assertRaises(ValueError):
+                task.turn_to_bearing(90, max_probe_s=value)
+            self.assertEqual(task.sent, [])
+
+    def test_repeated_gain_warnings_are_throttled_without_disabling_feedback(self):
+        task = _FakeTurnTask()
+        with patch("src.localization.minimap_heading_mixin.time.monotonic", side_effect=[10, 11, 20, 40]):
+            for ratio in (0.13, 0.14, 0.01, 0.13):
+                task._warn_if_ratio_off(ratio, 0.0675, 100)
+        self.assertEqual(sum("实测系数" in x for x in task.logs), 2)
 
 
 class TestCameraYawRatio(unittest.TestCase):
@@ -178,7 +217,181 @@ class TestCameraYawRatio(unittest.TestCase):
 
 
 class TestTurnToBearing(unittest.TestCase):
+    def test_rejected_probe_is_not_measured_as_forward_input(self):
+        task = _FakeTurnTask()
+        backend = SimpleNamespace(key_down_rejections=0)
+        task.executor = SimpleNamespace(interaction=backend)
+        task._last_turn_result = {}
+
+        def reject(_key, **_kwargs):
+            backend.key_down_rejections += 1
+
+        task.press_key = reject
+        MinimapHeadingMixin._arrow_after_w(task, max_hold_s=0.1)
+        self.assertNotIn("probe_intervals", task._last_turn_result)
+
+    def test_one_recent_moving_command_is_not_issued_twice(self):
+        def attempt(credit):
+            task = _FakeTurnTask(facing=358, per_px=0.1)
+            task.camera = 6
+            state = {"moving_prediction": {"heading": 6, "command": 8, "per_px": 0.1, "sent_at": 10}} if credit else {}
+            with patch("src.localization.minimap_heading_mixin.time.monotonic", return_value=10):
+                result = task.turn_to_bearing(12, tolerance=2, max_rounds=1, control_state=state)
+            self.assertNotIn("moving_prediction", state)
+            return result["history"][0]
+
+        old, new = attempt(False), attempt(True)
+        self.assertEqual(new["moving_credit"], 4)
+        self.assertLess(abs(new["error_after"]), abs(old["error_after"]))
+
+    def test_expired_reversed_or_recalibrated_input_has_no_credit(self):
+        prediction = {"heading": 10, "command": 10, "per_px": 0.1, "sent_at": 8}
+        with patch("src.localization.minimap_heading_mixin.time.monotonic", return_value=10):
+            credit = MinimapHeadingMixin._unobserved_turn_credit
+            self.assertEqual(credit(prediction, 15, 0, 0.1), 0)
+            prediction["sent_at"] = 10
+            self.assertEqual(credit(prediction, 350, 0, 0.1), 0)
+            self.assertEqual(credit(prediction, 15, 0, 0.2), 0)
+
+    def test_incomplete_or_short_probe_does_not_save_cross_call_gain(self):
+        for short in (False, True):
+            task = _FakeTurnTask(k_error=0.5 if not short else 1)
+            state = {}
+            result = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04 if short else None, control_state=state)
+            self.assertEqual(result["ok"], short)
+            self.assertNotIn("gain", state)
+
+    def test_split_rotation_budget_matches_actual_chunk_waits(self):
+        task = _FakeTurnTask()
+        task.config.update({"单次鼠标位移上限(像素)": 10, "分段间隔(秒)": 0.2})
+        for dx in (0, 10, 11, -31):
+            with patch.object(task, "sleep") as sleep:
+                task._send_rotation(dx)
+            self.assertAlmostEqual(task.rotation_duration_s(dx), sum(call.args[0] for call in sleep.call_args_list))
+
     """覆盖闭环转向的轮数、误差和失败行为。"""
+
+    def test_short_probe_finishes_feedback_before_sending_more_mouse_input(self):
+        task = _FakeTurnTask()
+        state = {}
+        original = task.press_key
+
+        def press(key, **kw):
+            original(key, **kw)
+            if task.w_presses >= 2:
+                task.facing = task.camera
+
+        task.press_key = press
+        task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
+        first = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04, control_state=state)
+        self.assertFalse(first["ok"])
+        self.assertEqual(first["reason"], "heading_unsettled")
+        sent = task.sent.copy()
+        second = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04, control_state=state)
+        self.assertTrue(second["ok"], second)
+        self.assertTrue(second["probe_only"])
+        self.assertEqual(task.sent, sent)
+        self.assertEqual(task.w_presses, 2)
+
+    def test_delayed_target_feedback_does_not_require_another_w_press(self):
+        task = _FakeTurnTask()
+        state = {}
+        task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
+        task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04, control_state=state)
+        task.facing = task.camera
+        sent = task.sent.copy()
+        second = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04, control_state=state)
+        self.assertTrue(second["ok"])
+        self.assertFalse(second["probe_only"])
+        self.assertEqual(task.sent, sent)
+        self.assertEqual(task.w_presses, 1)
+
+    def test_missing_short_probe_feedback_is_bounded_without_gain_learning(self):
+        task = _FakeTurnTask()
+        task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
+        state = {}
+        for _ in range(3):
+            task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04, control_state=state)
+        self.assertEqual(state, {})
+        self.assertAlmostEqual(sum(task.sent) * task.per_px, 90, delta=0.1)
+        task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04, control_state=state)
+        self.assertAlmostEqual(sum(task.sent) * task.per_px, 180, delta=0.1)
+
+    def test_expired_heading_session_does_not_learn_from_new_baseline(self):
+        task = _FakeTurnTask(k_error=1.8)
+        state = {}
+        with patch("src.localization.minimap_heading_mixin.time.monotonic", return_value=10):
+            task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        with patch("src.localization.minimap_heading_mixin.time.monotonic", return_value=13):
+            result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertIsNone(result["history"][0]["ratio"])
+        self.assertNotIn("gain", state)
+
+    def test_isolated_gain_outlier_does_not_replace_confirmed_gain(self):
+        samples = []
+        gain = filtered_turn_gain(0.08, 0.08, 0.082, samples)
+        confirmed = gain
+        gain = filtered_turn_gain(0.08, gain, 0.19, samples)
+        self.assertEqual(gain, confirmed)
+        gain = filtered_turn_gain(0.08, gain, 0.081, samples)
+        self.assertAlmostEqual(gain, 0.0815)
+
+    def test_large_gain_change_needs_two_consistent_measurements(self):
+        for sign in (1, -1):
+            samples = []
+            gain = filtered_turn_gain(sign * 0.08, sign * 0.08, sign * 0.19, samples)
+            self.assertEqual(gain, sign * 0.08)
+            gain = filtered_turn_gain(sign * 0.08, gain, sign * 0.188, samples)
+            self.assertAlmostEqual(gain, sign * 0.189)
+
+    def test_tiny_heading_change_does_not_train_gain(self):
+        task = _FakeTurnTask()
+        entry = {"before": 0, "after": 2, "dx": 60, "ratio": None}
+        samples = []
+        gain = task._adapt_turn_gain(entry, task.per_px, 5, True, True, task.per_px, samples)
+        self.assertEqual(gain, task.per_px)
+        self.assertEqual(samples, [])
+        self.assertIsNone(entry["ratio"])
+
+    def test_large_command_with_wrapped_feedback_is_not_gain_evidence(self):
+        task = _FakeTurnTask()
+        entry = {"before": 0, "after": 20, "dx": round(170 / task.per_px), "ratio": None}
+        samples = []
+        gain = task._adapt_turn_gain(entry, task.per_px, 5, True, True, task.per_px, samples)
+        self.assertEqual(gain, task.per_px)
+        self.assertEqual(samples, [])
+
+    def test_single_round_calls_converge_without_reusing_incomplete_gain(self):
+        task = _FakeTurnTask(facing=0, k_error=1.8)
+        state = {}
+        for _ in range(20):
+            result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+            self.assertLessEqual(result["rounds"], 1)
+            if result["ok"]:
+                break
+            self.assertNotIn("gain", state)
+        self.assertTrue(result["ok"], result)
+        self.assertLessEqual(abs(result["error"]), 5)
+        self.assertAlmostEqual(state["gain"], task.per_px, places=5)
+
+    def test_single_round_feedback_does_not_survive_external_heading_change(self):
+        task = _FakeTurnTask(facing=0, k_error=1.8)
+        state = {}
+        task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        task.facing = task.camera = 40
+        result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertIsNone(result["history"][0]["ratio"])
+        self.assertNotIn("gain", state)
+
+    def test_single_round_feedback_resets_when_camera_setting_changes(self):
+        task = _FakeTurnTask(facing=0, k_error=1.8)
+        state = {}
+        task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        task.per_px *= 2
+        result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertIsNone(result["history"][0]["ratio"])
+        self.assertNotIn("gain", state)
 
     def test_default_ratio_closes_loop_without_game_window_or_matching_input_gain(self):
         task = _FakeTurnTask(facing=0.0, k_error=0.8)
@@ -350,13 +563,15 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertLess(task.sent[0], 0)
         self.assertAlmostEqual(res["heading"], 90.0, delta=1.0)
 
-    def test_adapts_to_ten_times_lower_coefficient(self):
-        """从第二轮的同基准观测估计系数，首轮不能拿来估计。"""
+    def test_large_coefficient_error_converges_after_corroboration(self):
+        """极端系数偏差需要两次同基准反馈确认，再用于下一次输入。"""
         task = _FakeTurnTask(facing=0.0, k_error=0.1)
-        res = task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=3)
+        res = task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=4)
         self.assertTrue(res["ok"], res)
-        self.assertEqual(res["rounds"], 3)
-        self.assertEqual(task.w_presses, 3)
+        self.assertEqual(res["rounds"], 4)
+        self.assertEqual(task.w_presses, 4)
+        self.assertEqual(res["history"][1]["gain_after"], task.per_px)
+        self.assertAlmostEqual(res["history"][2]["gain_after"], task.per_px * 0.1)
         self.assertLessEqual(abs(res["error"]), 5.0)
 
     def test_adapts_reverse_ratio_from_second_round(self):

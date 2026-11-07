@@ -163,7 +163,7 @@ class RuntimeStateMixin:
         return True
 
     def start_runtime_position_service(self, *, wait_stable: bool = True) -> bool:
-        """启动共享定位服务；``wait_stable`` 为真时等待稳定 WS 并建立新锚点。"""
+        """初始化共享定位服务；视觉源随后通过连续有效帧建立锚点。"""
 
         service = self.get_runtime_position_service()
         if service is None:
@@ -242,6 +242,12 @@ class RuntimeStateMixin:
         provider = self._pose_provider()
         if provider is not None:
             provider.send_rotation(int(dx))
+
+    def pose_rotation_duration_s(self, dx: int) -> float:
+        """Read the provider's configured delay for a split rotation."""
+        provider = self._pose_provider()
+        estimate = getattr(provider, "rotation_duration_s", None)
+        return float(estimate(int(dx))) if callable(estimate) else 0.0
 
     def pose_rest_diag(self) -> dict[str, Any] | None:
         """通过定位接口读取静止判定诊断。"""

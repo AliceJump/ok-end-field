@@ -18,6 +18,17 @@ class TestEfInteraction(unittest.TestCase):
         activate.assert_called_once_with(200, only_activate=True)
         mouse_event.assert_not_called()
 
+    @patch("src.interaction.EfInteraction.active_and_send_mouse_delta", return_value=False)
+    @patch("src.interaction.EfInteraction.win32gui")
+    def test_rejected_foreground_input_is_observable_without_a_key_press(self, win32gui, _activate):
+        interaction = EfInteraction.__new__(EfInteraction)
+        interaction._game_hwnd = MagicMock(return_value=200)
+        interaction.keyboard = MagicMock()
+        win32gui.GetForegroundWindow.return_value = 7
+        self.assertFalse(interaction.send_key_down("w"))
+        self.assertEqual(interaction.key_down_rejections, 1)
+        interaction.keyboard.press.assert_not_called()
+
     @patch("src.interaction.EfInteraction.time.sleep")
     @patch("src.interaction.EfInteraction.active_and_send_mouse_delta")
     @patch("src.interaction.EfInteraction.win32gui")

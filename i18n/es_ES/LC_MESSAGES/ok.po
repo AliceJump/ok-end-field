@@ -4014,3 +4014,87 @@ msgstr "Falló el monitoreo ambiental: {error}"
 
 msgid "⭐环境监测"
 msgstr "⭐Monitoreo ambiental (soporte en expansión)"
+
+msgid "Game path does not exist, Please open game manually!"
+msgstr "La ruta del juego no existe. Abre el juego manualmente."
+
+msgid "视觉地图资源目录"
+msgstr "Directorio de mapas visuales"
+
+msgid ""
+"标定地图目录，包含 map_id/4/map_id_4.png 和对应的 _mapping.json；分层资源使用同级 "
+"layers/catalog.json。"
+msgstr ""
+"Directorio de mapas calibrados con map_id/4/map_id_4.png y su _mapping.json;"
+" las capas usan layers/catalog.json en el directorio hermano."
+
+msgid "用标定地图绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
+msgstr ""
+"Inicia la cadena visual de fotogramas clave con anclajes del mapa calibrado "
+"y corrige la deriva mediante solapamiento visual antes de publicar "
+"posiciones."
+
+msgid "标定地图绝对锚点的权重；越大越贴近地图匹配坐标"
+msgstr ""
+"Peso de los anclajes absolutos del mapa calibrado; valores mayores siguen "
+"más de cerca las coordenadas coincidentes."
+
+msgid "每隔多少拍建立一个关键帧；每次重新定位也会建关键帧"
+msgstr ""
+"Muestras entre fotogramas clave; cada nueva localización también crea uno."
+
+msgid "改用外部抓包后端直接读取角色绝对坐标，替代标定地图匹配与视觉锚定链。该技术可能违反游戏服务条款、存在封禁风险，请自行判断是否使用"
+msgstr ""
+"Usa un servidor externo de captura de paquetes para leer coordenadas "
+"absolutas en lugar del mapa calibrado y la cadena visual. Puede infringir "
+"las condiciones del juego y provocar un bloqueo; decide si deseas usarlo."
+
+msgid "可选。视觉模式留空时自动匹配已安装的标定地图；指定地图可缩小搜索范围。抓包模式使用实时 mapId。"
+msgstr ""
+"Opcional. En modo visual, déjalo vacío para buscar automáticamente en los "
+"mapas calibrados instalados; especifica uno para reducir la búsqueda. El "
+"modo de captura usa el mapId en tiempo real."
+
+msgid "使用应用级视觉或抓包定位服务，旧版 WS 定位已停用。"
+msgstr ""
+"Usa el servicio de posicionamiento visual o por paquetes de la aplicación. "
+"El posicionamiento WS antiguo está desactivado."
+
+msgid "使用视觉或抓包定位，指向已选物品的最近点并支持按键标记"
+msgstr ""
+"Usa posicionamiento visual o por paquetes para señalar el objeto "
+"seleccionado más cercano y marcarlo con una tecla."
+
+msgid "定位服务"
+msgstr "Servicio de posicionamiento"
+
+msgid "请在全局定位配置中选择视觉或抓包数据源；视觉模式需要标定地图资源。"
+msgstr ""
+"Selecciona la fuente visual o de paquetes en la configuración global. El "
+"modo visual requiere mapas calibrados."
+
+msgid "高度未知"
+msgstr "Altura desconocida"
+
+msgid "应用级世界定位服务：标定地图与视觉锚定链，或抓包后端"
+msgstr ""
+"Posicionamiento global de la aplicación: mapas calibrados con cadena visual "
+"o servidor de paquetes"
+
+msgid "逐拍输出视觉或抓包位置、朝向、速度和可信状态"
+msgstr ""
+"Registra posición visual o de paquetes, orientación, velocidad y fiabilidad "
+"en cada muestra."
+
+msgid "地图设施查询（可选）"
+msgstr "Consulta de instalaciones del mapa (opcional)"
+
+msgid "地图设施查询凭证；不参与视觉或抓包定位。留空则使用所选地图账号或当前账号。"
+msgstr ""
+"Credenciales para consultar instalaciones del mapa; no se usan para "
+"posicionamiento visual ni por paquetes. Déjalo vacío para usar la cuenta del"
+" mapa seleccionada o la cuenta actual."
+
+#: src/core/GridNavConfig.py
+msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
+msgstr "Frena antes al estar dentro de esta distancia de un punto de ruta. Si la corrección es pequeña y la posición se actualiza a tiempo, puede seguir girando dejando una distancia segura según la velocidad y el tiempo de muestreo."

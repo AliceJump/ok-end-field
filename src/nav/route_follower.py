@@ -20,8 +20,9 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
+from src.nav.coasting import can_coast, route_prefix, steer_through
 from src.nav.grid_io import DenseGrid
 from src.nav.grid_planner import (
     DEFAULT_ZIP_LINE_ACCESS_RADIUS,
@@ -31,6 +32,7 @@ from src.nav.grid_planner import (
     PlanResult,
     ZipLineRouteStep,
 )
+from src.nav.walk_feedback import LegObservation, WalkFeedback
 from src.nav.zip_line_graph import ZipLineGraph
 
 WAIT = "wait"
@@ -42,6 +44,7 @@ STUCK = "stuck"
 REPLAN = "replan"
 DONE = "done"
 FAILED = "failed"
+SMOOTH_LOOKAHEAD_DISTANCE_M = 5.0
 
 
 def angle_delta(target: float, current: float) -> float:
@@ -146,6 +149,7 @@ class FollowerStep:
     shortcut_distance: float | None = None
     zip_line_step: ZipLineRouteStep | None = None
     reason: str = ""
+    coast_distance: float = 0.0
 
 
 class GridRouteFollower:
@@ -183,15 +187,24 @@ class GridRouteFollower:
         self._zip_line_index = 0
         self._move_started_at: float | None = None
         self._move_start_pos: tuple[float, float] | None = None
+        self._turn_motion_attempted = False
         self._route_start: tuple[float, float] | None = None
+        self._handoff_leg: tuple[int, tuple[float, float]] | None = None
         self._off_route_since: float | None = None
         self._narrow_calibrated: set[int] = set()
         self._narrow_attempts: dict[int, int] = {}
+        self.coast_horizon = 0.0
+        self.moving_steer = None
+        self.corner_travel = 0.0
+        self.feedback = WalkFeedback()
+        self.input_sample = None
 
     def pause(self) -> None:
         """暂停跟随状态；外层停止控制输入时应调用，避免把停走误判为卡住。"""
         self._reset_motion()
         self._off_route_since = None
+        self.feedback = WalkFeedback()
+        self.input_sample = None
 
     def zip_line_stats(self) -> dict[str, int]:
         """返回滑索图接入网格后的统计（节点 / 连接 / 可映射节点 / 有效有向边）。
@@ -219,6 +232,9 @@ class GridRouteFollower:
             required_zip_line_start_id=required_zip_line_start_id,
         )
         self.waypoint_index = 0
+        self._handoff_leg = None
+        self.feedback = WalkFeedback()
+        self.input_sample = None
         self._zip_line_index = 0
         self._narrow_calibrated = set()
         self._narrow_attempts = {}
@@ -248,6 +264,9 @@ class GridRouteFollower:
         self._route_start = (float(start[0]), float(start[1]))
         self.plan_result = plan_result
         self.waypoint_index = 0
+        self._handoff_leg = None
+        self.feedback = WalkFeedback()
+        self.input_sample = None
         self._zip_line_index = 0
         self._narrow_calibrated = set()
         self._narrow_attempts = {}
@@ -273,6 +292,7 @@ class GridRouteFollower:
         Returns:
             :class:`FollowerStep`。位置不可用、规划失败或尚未规划时返回 ``FAILED``。
         """
+        self.corner_travel = 0.0
         result = self.plan_result
         if result is None or not result.ok or not result.waypoints:
             return FollowerStep(FAILED, reason="尚无有效导航路径")
@@ -280,9 +300,12 @@ class GridRouteFollower:
         pos = (float(position[0]), float(position[1]))
         waypoints = result.waypoints
         final = waypoints[-1]
+        if self.goal is not None:
+            requested_cell = self.grid.index_of_world(*self.goal)
+            if requested_cell == self.grid.index_of_world(*final) and self.planner.passable(*requested_cell):
+                final = self.goal
         goal_distance = distance_xz(pos, final)
         if goal_distance <= self.config.goal_radius:
-            self._reset_motion()
             if self.goal is not None:
                 snap_offset = distance_xz(final, self.goal)
                 if snap_offset > self.config.goal_radius:
@@ -300,14 +323,17 @@ class GridRouteFollower:
                             "（请求目标不可通行，终点已被吸附）"
                         ),
                     )
-            return self._step(
-                DONE,
-                final,
-                goal_distance=goal_distance,
-                heading_error=None,
-                target_bearing=None,
-                waypoint_distance=goal_distance,
-            )
+            requested_distance = distance_xz(pos, self.goal) if self.goal is not None else goal_distance
+            if requested_distance <= self.config.goal_radius:
+                self._reset_motion()
+                return self._step(
+                    DONE,
+                    final,
+                    goal_distance=requested_distance,
+                    heading_error=None,
+                    target_bearing=None,
+                    waypoint_distance=goal_distance,
+                )
 
         narrow_hold = self._pending_narrow_hold(pos)
         if narrow_hold is not None:
@@ -361,6 +387,9 @@ class GridRouteFollower:
             waypoint = waypoints[self.waypoint_index]
             waypoint_distance = distance_xz(pos, waypoint)
             target_bearing = bearing_to_point(pos[0], pos[1], waypoint[0], waypoint[1])
+        if self.waypoint_index == len(waypoints) - 1:
+            waypoint, waypoint_distance = final, goal_distance
+            target_bearing = bearing_to_point(*pos, *waypoint)
 
         off_route_distance = self._confirmed_off_route_distance(pos, now)
         if off_route_distance is not None:
@@ -395,12 +424,28 @@ class GridRouteFollower:
                 reason="朝向不可用",
             )
 
+        if self.input_sample is not None:
+            frame_time, seconds, _ = self.input_sample
+            start = self._route_start if self.waypoint_index == 0 else waypoints[self.waypoint_index - 1]
+            if self._handoff_leg is not None and self._handoff_leg[0] == self.waypoint_index:
+                start = self._handoff_leg[1]
+            sample = LegObservation.measure(start, waypoint, pos) if start is not None else None
+            self.feedback.observe(
+                sample, frame_time, seconds, self.config.stuck_min_distance, self.config.stuck_window_s
+            )
+        guide, coast = self._motion_guide(pos, heading)
+        if guide is not None:
+            target_bearing = guide
         delta = angle_delta(target_bearing, heading)
         tolerance = max(0.0, float(self.config.heading_tolerance))
         if abs(delta) > tolerance:
-            self._reset_motion()
-            return self._step(
-                TURN,
+            # A navigation turn can include W or keep W held. Repeated heading
+            # corrections against an obstacle must not reset the stuck timer.
+            turn_stuck = self._turn_motion_attempted and self._update_stuck(pos, now)
+            if not self._turn_motion_attempted:
+                self._reset_motion()
+            step = self._step(
+                STUCK if turn_stuck else TURN,
                 waypoint,
                 target_bearing=target_bearing,
                 heading_error=delta,
@@ -409,7 +454,9 @@ class GridRouteFollower:
                 arrived_waypoint_index=arrived_index,
                 skipped_waypoints=skipped,
                 shortcut_distance=shortcut_distance,
+                reason=self._stall_reason("转向行走") if turn_stuck else "",
             )
+            return replace(step, coast_distance=coast) if coast and not turn_stuck else step
 
         stuck = self._update_stuck(pos, now)
         if stuck:
@@ -423,10 +470,10 @@ class GridRouteFollower:
                 arrived_waypoint_index=arrived_index,
                 skipped_waypoints=skipped,
                 shortcut_distance=shortcut_distance,
-                reason=f"{self.config.stuck_window_s:.1f}s 内位移不足",
+                reason=self._stall_reason("行走"),
             )
 
-        return self._step(
+        step = self._step(
             WALK,
             waypoint,
             target_bearing=target_bearing,
@@ -437,6 +484,194 @@ class GridRouteFollower:
             skipped_waypoints=skipped,
             shortcut_distance=shortcut_distance,
         )
+        return replace(step, coast_distance=coast) if coast else step
+
+    def _extend_measured_guide(self, position, heading, prefix, width, measured):
+        target, horizon = measured
+        if target == heading:
+            if can_coast(self.planner, position, heading, prefix, self.coast_horizon, width):
+                return target, self.coast_horizon
+        elif (
+            steer_through(
+                self.planner,
+                position,
+                heading,
+                prefix,
+                self.coast_horizon,
+                width,
+                self.config.off_route_radius,
+                *self.moving_steer,
+                target=target,
+            )
+            is not None
+        ):
+            return target, self.coast_horizon
+        return target, horizon
+
+    def _motion_guide(self, position, heading):
+        """Authorize this heading through ordinary waypoints up to the next decision."""
+        if self.config.shortcut_radius <= 0 or not 0 < self.coast_horizon <= 32:
+            return None, 0.0
+        result = self.plan_result
+        limit = self._waypoint_limit(len(result.waypoints))
+        for index in result.narrow_entries:
+            if index >= self.waypoint_index and index not in self._narrow_calibrated:
+                limit = min(limit, index)
+        prefix = route_prefix(position, result.waypoints, self.waypoint_index, limit, self.coast_horizon)
+        width = min(self.config.waypoint_tolerance, self.config.off_route_radius)
+        self.corner_travel = self._corner_exit_distance(position, heading, width, limit)
+        if self.corner_travel:
+            return heading, self.corner_travel
+        measured = self._measured_steer(position, heading, limit, width)
+        if measured is not None:
+            return self._extend_measured_guide(position, heading, prefix, width, measured)
+        if can_coast(self.planner, position, heading, prefix, self.coast_horizon, width):
+            return heading, self.coast_horizon
+        if self.moving_steer is not None:
+            target = steer_through(
+                self.planner,
+                position,
+                heading,
+                prefix,
+                self.coast_horizon,
+                width,
+                self.config.off_route_radius,
+                *self.moving_steer,
+            )
+            if target is not None:
+                return target, self.coast_horizon
+        return None, 0.0
+
+    def _corner_exit_distance(self, pos, heading, width, limit):
+        """Carry the incoming direction briefly if the outgoing corner lacks body clearance."""
+        points = self.plan_result.waypoints
+        i = self.waypoint_index
+        if (
+            not self.input_sample
+            or i < 2
+            or i >= limit
+            or width <= 0
+            or i - 1 in self.plan_result.narrow_entries
+            or i in self.plan_result.narrow_entries
+        ):
+            return 0.0
+        vertex, end = points[i - 1 : i + 1]
+        distance = distance_xz(pos, end)
+        if distance > self.coast_horizon or distance <= self.config.arrive_radius or distance_xz(pos, vertex) > width:
+            return 0.0
+        walk_range = self._range_for_index(self._walkable_ranges(), i)
+        if walk_range is None or i - 2 < walk_range[0]:
+            return 0.0
+        incoming = bearing_to_point(*points[i - 2], *vertex)
+        outgoing = bearing_to_point(*pos, *end)
+        bend = abs(angle_delta(outgoing, heading))
+        if bend <= self.config.heading_tolerance or bend >= 75 or abs(angle_delta(incoming, heading)) >= bend:
+            return 0.0
+        if can_coast(self.planner, pos, outgoing, [pos, end], distance, width):
+            return 0.0
+        # Both chords must fit the real footprint and stay on known cells.
+        # Only the first chord is authorized. Re-evaluate after its new frame.
+        h = min(2 * self.grid.meta.cell_size, width, distance / 2)
+        rad = math.radians(heading)
+        pivot = pos[0] + h * math.sin(rad), pos[1] + h * math.cos(rad)
+        remaining = distance_xz(pivot, end)
+        if (
+            remaining >= distance
+            or point_segment_distance(pivot, vertex, end)[0] > width
+            or any(
+                self.planner.line_risk(self.grid.index_of_world(*a), self.grid.index_of_world(*b))
+                for a, b in ((pos, pivot), (pivot, end))
+            )
+        ):
+            return 0.0
+        if can_coast(self.planner, pos, heading, [pos, pivot], h, width) and can_coast(
+            self.planner, pivot, bearing_to_point(*pivot, *end), [pivot, end], remaining, width
+        ):
+            return h
+        return 0.0
+
+    def _wait_for_moving_feedback(self, position, heading, limit, width, horizon, leg):
+        cmd = self.feedback.command
+        rad = math.radians(heading)
+        projected_side = leg.side + horizon * (math.sin(rad) * leg.unit[1] - math.cos(rad) * leg.unit[0])
+        closing = leg.lateral_change < 0 or abs(projected_side) < abs(leg.side)
+        if not (cmd and self.feedback.frame_time - cmd[0] < 1.0 and (closing or abs(leg.side) < width)):
+            return False
+        direct = bearing_to_point(*position, *leg.end)
+        delta = angle_delta(direct, heading)
+        # Distinguish a settled overshoot from a mouse input which has
+        # barely moved the arrow yet. Do not stack another correction.
+        pending = angle_delta(cmd[2], heading)
+        pending = math.copysign(min(abs(pending), abs(cmd[1])), cmd[1]) if pending * cmd[1] > 0 else 0.0
+        if abs(delta) > 20 or not (delta * cmd[1] < 0 or abs(pending) > abs(cmd[1]) * 0.5):
+            return False
+        short = route_prefix(position, self.plan_result.waypoints, self.waypoint_index, limit, horizon)
+        if not can_coast(self.planner, position, heading, short, horizon, width):
+            return False
+        if (
+            pending
+            and steer_through(
+                self.planner,
+                position,
+                heading,
+                short,
+                horizon,
+                width,
+                self.config.off_route_radius,
+                1.0,
+                20,
+                20,
+                target=heading + pending,
+            )
+            is None
+        ):
+            return False
+        self.feedback.command = None
+        return True
+
+    def _measured_steer(self, position, heading, limit, width):
+        leg = self.feedback.leg
+        if (
+            not leg
+            or self.input_sample is None
+            or self.moving_steer is None
+            or leg.advance < self.config.stuck_min_distance
+            or leg.along <= 0
+            or width <= 0
+        ):
+            return None
+        horizon = min(self.input_sample[2], self.coast_horizon)
+        remaining = distance_xz(leg.start, leg.end) - leg.along
+        if horizon <= 0:
+            return None
+        # If the last correction is already closing the lateral error, allow one
+        # more measured interval only when both predicted headings fit the path.
+        if self._wait_for_moving_feedback(position, heading, limit, width, horizon, leg):
+            return heading, horizon
+        if (
+            leg.lateral_change < 0.15
+            or abs(leg.side) < max(0.5, width / 2)
+            or remaining < horizon + self.config.arrive_radius
+            or abs(leg.side) >= horizon
+            or abs(leg.side) > self.config.off_route_radius
+        ):
+            return None
+        foot = (leg.start[0] + leg.along * leg.unit[0], leg.start[1] + leg.along * leg.unit[1])
+        advance = math.sqrt(horizon * horizon - leg.side * leg.side)
+        aim = (foot[0] + advance * leg.unit[0], foot[1] + advance * leg.unit[1])
+        if not self.planner.accepts_walk_shortcut([position, foot, aim]):
+            return None
+        target = steer_through(
+            self.planner,
+            position,
+            heading,
+            [position, aim],
+            horizon,
+            width,
+            self.config.off_route_radius,
+            *self.moving_steer,
+        )
+        return (target, horizon) if target is not None else None
 
     def _pending_narrow_hold(self, position: tuple[float, float]) -> int | None:
         """返回当前是否需要为一个窄道入口停车校准，并给出入口航点下标。
@@ -493,20 +728,114 @@ class GridRouteFollower:
         # 未校准的窄道入口必须保留为目标，不能作为捷径被跳过去。
         pending_entries = [index for index in self.plan_result.narrow_entries if index not in self._narrow_calibrated]
         hold = min((index for index in pending_entries if index >= self.waypoint_index), default=None)
+        first = self.waypoint_index
         while self.waypoint_index < limit:
             if hold is not None and self.waypoint_index >= hold:
                 break
             start = waypoints[self.waypoint_index]
             end = waypoints[self.waypoint_index + 1]
-            distance, _ratio = point_segment_distance(position, start, end)
-            if distance > radius:
-                break
-            if not self._shortcut_ok(position, start, end):
+            distance, ratio = point_segment_distance(position, start, end)
+            # Look through small bends before the near-point stop zone, retaining
+            # the unconfirmed narrow entry and the common visibility checks.
+            passed = self._passed_vertex(position, start, distance, ratio, hold, waypoints)
+            nearby = distance <= radius or passed or self._can_look_through_waypoint(position, start, end, hold)
+            # Compare a new chord with the complete prefix it replaces,
+            # including the approach to the current vertex.
+            if not (nearby and self._shortcut_ok(position, start, end)) and not self._visible_handoff(
+                position, waypoints[first : self.waypoint_index + 2], hold
+            ):
                 break
             skipped.append(self.waypoint_index)
             nearest = distance if nearest is None else min(nearest, distance)
             self.waypoint_index += 1
+        if skipped:
+            self._handoff_leg = self.waypoint_index, position
         return tuple(skipped), nearest
+
+    def _visible_handoff(self, position, vertices, hold):
+        """Skip a local bend only when the direct chord fits the original walking corridor."""
+        vertex, end = vertices[-2:]
+        zip_step = self.current_zip_line_step()
+        if (
+            not 0 < self.coast_horizon <= 32
+            or self.waypoint_index + 1 == hold
+            or (zip_step is not None and self.waypoint_index + 1 >= zip_step.entry_waypoint_index)
+            or distance_xz(position, vertex) > self.coast_horizon
+        ):
+            return False
+        width = min(self.config.waypoint_tolerance, self.config.off_route_radius)
+        last_projection = 0.0
+        for point in vertices[:-1]:
+            deviation, projection = point_segment_distance(point, position, end)
+            if not last_projection < projection < 1 or deviation > width:
+                return False
+            last_projection = projection
+        path = [position, *vertices]
+        return self.planner.accepts_walk_shortcut(path) and can_coast(
+            self.planner, position, bearing_to_point(*position, *end), path, distance_xz(position, end), width
+        )
+
+    def landing_distance(self, position, heading, step):
+        """Verified short W approach from rest, ending at or before an ordinary vertex."""
+        plan = self.plan_result
+        if (
+            plan is None
+            or step.action != WALK
+            or heading is None
+            or self.config.shortcut_radius <= 0
+            or self.waypoint_index >= self._waypoint_limit(len(plan.waypoints))
+            or self.waypoint_index in plan.narrow_entries
+        ):
+            return None
+        distance = step.distance_to_waypoint
+        if distance is None or distance <= 0 or step.waypoint is None:
+            return None
+        # Aim inside the arrival disk. A corner that still cannot hand off
+        # inside that disk gets the remaining distance to the actual vertex.
+        radius = max(0.0, self.config.arrive_radius)
+        travel = distance if distance <= radius else distance - radius * 0.5
+        width = min(self.config.waypoint_tolerance, self.config.off_route_radius)
+        fraction = travel / distance
+        stop = tuple(a + fraction * (b - a) for a, b in zip(position, step.waypoint, strict=True))
+        if can_coast(self.planner, position, heading, [position, stop], travel, width):
+            return travel
+        return None
+
+    def note_short_start(self, position, released_at):
+        plan = self.plan_result
+        if (
+            self.input_sample is not None
+            and plan
+            and self.waypoint_index < self._waypoint_limit(len(plan.waypoints))
+            and self.waypoint_index not in plan.narrow_entries
+        ):
+            self.feedback.short_start = position, released_at
+
+    def _passed_vertex(self, position, vertex, lateral, ratio, hold, waypoints):
+        """Advance a passed local corner only on the outgoing side of both segments."""
+        index = self.waypoint_index
+        if (
+            not 0 < self.coast_horizon <= 32
+            or index == 0
+            or index + 1 == hold
+            or ratio <= 0
+            or lateral > min(self.config.waypoint_tolerance, self.config.off_route_radius)
+            or distance_xz(position, vertex) > self.coast_horizon
+        ):
+            return False
+        previous = waypoints[index - 1]
+        along = (position[0] - vertex[0]) * (vertex[0] - previous[0]) + (position[1] - vertex[1]) * (
+            vertex[1] - previous[1]
+        )
+        return along >= 0 and previous != vertex
+
+    def _can_look_through_waypoint(self, position, start, end, narrow_hold):
+        return (
+            self.waypoint_index > 0
+            and self.waypoint_index + 1 != narrow_hold
+            and distance_xz(position, start) <= SMOOTH_LOOKAHEAD_DISTANCE_M
+            and abs(angle_delta(bearing_to_point(*start, *end), bearing_to_point(*position, *start))) <= 20.0
+        )
 
     def current_zip_line_step(self) -> ZipLineRouteStep | None:
         """返回下一项待执行的滑索步骤；没有待执行项时返回 ``None``。
@@ -565,6 +894,8 @@ class GridRouteFollower:
             return None
         range_start, range_end = walk_range
         distances = []
+        if self._handoff_leg is not None and index == self._handoff_leg[0]:
+            distances.append(point_segment_distance(position, self._handoff_leg[1], waypoints[index])[0])
         if index == range_start and range_start == 0 and self._route_start is not None:
             distances.append(point_segment_distance(position, self._route_start, waypoints[0])[0])
         if index > range_start:
@@ -615,6 +946,8 @@ class GridRouteFollower:
             return False
         if not self.planner.line_clear(start_cell, end_cell):
             return False
+        if self.planner.recovery_cost and not self.planner.accepts_walk_shortcut([position, anchor, end]):
+            return False
         return self.planner.line_risk(start_cell, end_cell) <= self.planner.line_risk(anchor_cell, end_cell)
 
     def complete_zip_line(self) -> bool:
@@ -627,6 +960,7 @@ class GridRouteFollower:
             max(0, len(self.plan_result.waypoints) - 1),
         )
         self._zip_line_index += 1
+        self._handoff_leg = None
         self._reset_motion()
         self._off_route_since = None
         self._advance_initial_waypoints(self.plan_result.waypoints[self.waypoint_index])
@@ -645,8 +979,15 @@ class GridRouteFollower:
         ):
             self.waypoint_index += 1
 
+    def _stall_reason(self, action):
+        if self.feedback.short_misses >= 3:
+            return "连续三次普通航点短步均未产生有效位移"
+        return f"{action} {self.config.stuck_window_s:.1f}s 内位移不足"
+
     def _update_stuck(self, position: tuple[float, float], now: float) -> bool:
         """按时间窗口更新卡住判定；窗口内移动足够远就重置窗口。"""
+        if self.input_sample is not None and self.feedback.leg is not None:
+            return self.feedback.exposure >= self.config.stuck_window_s or self.feedback.short_misses >= 3
         if self._move_started_at is None or self._move_start_pos is None:
             self._move_started_at = float(now)
             self._move_start_pos = position
@@ -679,6 +1020,17 @@ class GridRouteFollower:
         """清空卡住窗口；不修改航点索引或偏航状态。"""
         self._move_started_at = None
         self._move_start_pos = None
+        self._turn_motion_attempted = False
+
+    def note_turn_movement(self, position: tuple[float, float], now: float) -> None:
+        """执行层确认本次转向实际按了 W，允许后续转向拍检测碰撞卡住。"""
+        self._turn_motion_attempted = True
+        self._update_stuck(position, now)
+
+    def exclude_stopped_time(self, duration_s: float) -> None:
+        """Exclude synchronous sampling with W released from a turn's stuck timer."""
+        if self._turn_motion_attempted and self._move_started_at is not None:
+            self._move_started_at += max(0.0, float(duration_s))
 
     def _step(
         self,

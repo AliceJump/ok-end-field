@@ -7,19 +7,22 @@ import threading
 import time
 import webbrowser
 from pathlib import Path
+from typing import ClassVar
 
 import win32gui
 from ok import Logger, TriggerTask
-from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.core.global_config_store import migrate_task_nav_values_to_global
 from src.core.paths import config_folder
-from src.data import item_map_query, map_mark_query, user_map_mark_store
+from src.data import item_map_query, map_mark_query
+from src.data.official_facility_source import OfficialFacilitySource
+from src.data.official_map_client import resolve_map_content
 from src.icons import Icons
+from src.localization.position_config_migration import migrate_item_position_overrides, migrate_item_position_value
+from src.tasks.account.account_scope_store import update_overrides
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
-from src.tasks.trigger.item_navigator_legacy import ItemNavigatorLegacyMixin
 
 logger = Logger.get_logger(__name__)
 # 特殊物品Y坐标修正
@@ -43,7 +46,6 @@ HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
 # 因此浮层文字与箭头朝向始终一致；若日后确认坐标系不同，只需调整此表顺序。
 COMPASS_LABELS = ("北", "东北", "东", "东南", "南", "西南", "西", "西北")
 HEIGHT_SAME_THRESHOLD = 0.05
-OFFICIAL_MARKS_CACHE_TTL = 30.0
 POSITION_IMPLEMENTATION_KEY = "定位实现"
 POSITION_IMPLEMENTATION_LEGACY = "旧版兼容"
 POSITION_IMPLEMENTATION_UNIFIED = "统一定位"
@@ -51,36 +53,33 @@ POSITION_IMPLEMENTATION_UNIFIED = "统一定位"
 
 class ItemNavigatorTask(
     InstructionsMixin,
-    ItemNavigatorLegacyMixin,
     RuntimeStateMixin,
     BaseEfTask,
     TriggerTask,
 ):
-    """实时从本地 WebSocket 拿玩家位置，指向已选物品的最近点，并支持按键标记已获取。
+    """通过共享世界定位服务指向最近物品，并支持按键标记已获取。"""
 
-    设计原则：
-    - `default_config` 只放面向用户的配置（见初始化），不把内部服务端口等放在 default_config
-    - 轮询使用固定内部 WS 端点（可在部署时改代码），物品选择从任务配置读取
-    """
+    config_value_migrations: ClassVar[dict] = {POSITION_IMPLEMENTATION_KEY: migrate_item_position_value}
 
     def load_config(self):
         # Preserve the published task's map credentials before the framework removes
         # keys that are no longer declared in default_config.
         migrate_task_nav_values_to_global(self.__class__.__name__)
+        update_overrides(migrate_item_position_overrides)
         super().load_config()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.name = "物品导航"
-        self.description = "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
+        self.description = "使用视觉或抓包定位，指向已选物品的最近点并支持按键标记"
         self.icon = Icons.Navigation
 
         # 只把面向用户的选项放在 default_config
         self.default_config.update(
             {
-                # 存量配置没有这个键，默认继续走 master 的 WS/官方地图客户端路径。
-                POSITION_IMPLEMENTATION_KEY: POSITION_IMPLEMENTATION_LEGACY,
+                # 存量旧版选项在加载配置时迁移到应用级定位服务。
+                POSITION_IMPLEMENTATION_KEY: POSITION_IMPLEMENTATION_UNIFIED,
                 # 由用户在 UI 中配置要导航的物品名列表（可空）
                 "选择物品": [],
                 # 标记按键（UI 映射），例如 'f'，当玩家按下且目标在阈值内时标记为已获取
@@ -110,21 +109,11 @@ class ItemNavigatorTask(
         }
         self.config_type[POSITION_IMPLEMENTATION_KEY] = {
             "type": "drop_down",
-            "options": [POSITION_IMPLEMENTATION_LEGACY, POSITION_IMPLEMENTATION_UNIFIED],
-        }
-        self.config_type["油猴脚本帮助"] = {
-            "type": "button",
-            "text": "浏览器油猴脚本帮助",
-            "icon": FluentIcon.LINK,
-            "callback": self.open_userscript_help,
+            "options": [POSITION_IMPLEMENTATION_UNIFIED],
         }
         self.config_description.update(
             {
-                POSITION_IMPLEMENTATION_KEY: (
-                    "选择物品导航读取位置的方式。\n"
-                    "旧版兼容：沿用原有本地 WS / 官方地图客户端。\n"
-                    "统一定位：使用应用级定位服务和全局「导航配置」。"
-                ),
+                POSITION_IMPLEMENTATION_KEY: ("使用应用级视觉或抓包定位服务，旧版 WS 定位已停用。"),
                 "选择物品": ("选择要参与导航的物品列表。\n只会在当前地图里匹配这些物品。"),
                 "标记按键": ("接近目标后用于标记“已获取”的键位。\n默认按键为 f。"),
                 "标记按住时长": ("按住标记按键并持续达到这个时长后，\n才会把当前目标标记为已获取。"),
@@ -140,16 +129,15 @@ class ItemNavigatorTask(
         )
         self.default_config_group.update(
             {
-                "网页地图同步": [POSITION_IMPLEMENTATION_KEY, "油猴脚本帮助"],
+                "定位服务": [POSITION_IMPLEMENTATION_KEY],
                 "浮层显示": ["浮层信息", "浮层文字透明度", "浮层背景透明度", "浮层字号"],
             }
         )
         self.validate_unique_sub_config_parents()
 
-        self.needs_frame = False  # 纯 WS 驱动，不识别画面
+        self.needs_frame = True  # 视觉数据源需要客户端画面
 
         # internal constants (not user-facing)
-        self._init_item_navigator_legacy()
         self._init_runtime_state_mixin()
         cfg_folder = Path(config_folder())
         self._marked_store = cfg_folder / "marked_points.json"
@@ -157,10 +145,7 @@ class ItemNavigatorTask(
         self._marked: dict[str, set] = {}  # mapId -> set of point hashes
         # WS 服务启动状态追踪（仅记录首次启动日志）
         self._navigator_window_missing_logged = False
-        # 官方地图工业设施点位缓存：mapId -> {名称: [坐标]}
-        self._official_marks_cache: dict[str, dict[str, list]] = {}
-        self._official_marks_empty: set[str] = set()
-        self._official_marks_fetched_at: dict[str, float] = {}
+        self._official_facilities = OfficialFacilitySource()
 
         # 箭头渲染可调参数（便于快速微调视觉）
         self._arrow_center_rel = (162 / 1920, 166 / 1080)  # 相对于窗口的箭头中心位置（比例），默认在左上角稍微偏右下
@@ -236,19 +221,8 @@ class ItemNavigatorTask(
         """
         marked_display = str(self._marked_store).replace("\\", "/")
         # 「获取 content」的分步说明。地址经 .format() 注入，避免把 URL 写进 msgid 收集池。
-        unified = self._use_unified_navigation()
-        source_summary = (
-            self.tr("位置来源：由「小地图定位」和全局「导航配置」统一提供")
-            if unified
-            else self.tr(
-                "地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"
-            )
-        )
-        account_line = (
-            self.tr("定位服务：首次读取坐标时会按需启动应用级定位服务")
-            if unified
-            else self.tr("地图账号：仅在「地图数据来源 = 账号配置」时使用，选项来自账号配置页")
-        )
+        source_summary = self.tr("请在全局定位配置中选择视觉或抓包数据源；视觉模式需要标定地图资源。")
+        account_line = self.tr("定位服务：首次读取坐标时会按需启动应用级定位服务")
         content_steps = [
             inst_line(f"└─ {self.tr('1. 打开浏览器，按 F12 打开开发者工具')}", indent=1),
             inst_line(
@@ -263,11 +237,7 @@ class ItemNavigatorTask(
                 f"└─ {self.tr('4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值')}", indent=1
             ),
             inst_line(
-                (
-                    f"└─ {self.tr('5. 把该值填入全局「导航配置」的「真值content」；或填入账号配置页后用「真值地图账号」选择')}"
-                    if unified
-                    else f"└─ {self.tr('5. 使用「手动 content」时把该值填入本任务 content；使用「账号配置」时把它保存到账号配置页并选择对应地图账号')}"
-                ),
+                f"└─ {self.tr('5. 把该值填入全局「导航配置」的「真值content」；或填入账号配置页后用「真值地图账号」选择')}",
                 indent=1,
             ),
         ]
@@ -288,8 +258,6 @@ class ItemNavigatorTask(
                 inst_line(f"└─ {self.tr('标记按键：接近目标后用于标记已获取的键位，仅支持单个字符')}", indent=1),
                 inst_line(f"└─ {self.tr('标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）')}", indent=1),
                 inst_gap(),
-                # 浮层显示的文案分组：浮层功能本身在 feat/window-overlay-text 分支，
-                # 但使用说明只存在于本分支，因此该分组随使用说明一起落地。
                 inst_line("🎨 " + self.tr("浮层显示"), "#FE821D", bold=True),
                 inst_line(
                     f"└─ {self.tr('浮层信息：开启后在浮层上显示物品名、距离、方位与高度（默认开启）')}", indent=1
@@ -297,7 +265,7 @@ class ItemNavigatorTask(
                 inst_line(f"└─ {self.tr('浮层文字透明度 / 浮层背景透明度：取值 0-100，0 表示完全透明')}", indent=1),
                 inst_line(f"└─ {self.tr('浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放')}", indent=1),
                 inst_gap(),
-                inst_line("🔑 " + self.tr("获取 content（官方地图同步）"), "#FE821D", bold=True),
+                inst_line("🔑 " + self.tr("地图设施查询（可选）"), "#FE821D", bold=True),
                 *content_steps,
                 inst_gap(),
                 inst_line("🖱️ " + self.tr("标记已获取"), "#FE821D", bold=True),
@@ -316,16 +284,6 @@ class ItemNavigatorTask(
                     f"└─ {self.tr('标记记录保存在 {path}，删除对应条目即可重新导航').format(path=marked_display)}",
                     indent=1,
                 ),
-                inst_gap(),
-                inst_line("📡 " + self.tr("本地 WS 模式准备"), "#FE821D", bold=True),
-                inst_line(
-                    "└─ "
-                    + self.tr("安装 Tampermonkey 并导入 {path}（可用「油猴脚本帮助」按钮打开脚本目录）").format(
-                        path=RELAY_USER_SCRIPT
-                    ),
-                    indent=1,
-                ),
-                inst_line(f"└─ {self.tr('打开网页地图并保持页面存活，脚本会自动开启位置同步')}", indent=1),
                 inst_gap(),
                 inst_line("🪟 " + self.tr("显示条件"), "#FE821D", bold=True),
                 inst_line(f"└─ {self.tr('箭头仅在游戏窗口处于前台时显示')}", indent=1),
@@ -349,52 +307,55 @@ class ItemNavigatorTask(
             return False
 
     def _cleanup_navigator_runtime(self):
-        self._stop_item_navigator_legacy_sources()
         self.clear_window_arrows()
+        source = getattr(self, "_official_facilities", None)
+        if source is not None:
+            source.invalidate()
 
     def _use_unified_navigation(self) -> bool:
-        return (
-            str(self.config.get(POSITION_IMPLEMENTATION_KEY, POSITION_IMPLEMENTATION_LEGACY)).strip()
-            == POSITION_IMPLEMENTATION_UNIFIED
-        )
+        return True
 
     def _read_navigation_position(self):
-        if not self._use_unified_navigation():
-            return self._read_item_navigator_legacy_position()
-
         position = self.world_pose(max_age=1.5)
         if position is None:
             return None, "运行时定位状态待接收..."
         map_id = str(position.get("map_id") or "")
         px, py, pz = self._world_position_xyz(position)
-        if not map_id or px is None or pz is None:
+        if not position.get("position_trusted", False) or not map_id or px is None or pz is None:
             return None, "定位坐标待锚定..."
         return (map_id, px, py, pz), ""
 
     @staticmethod
-    def _world_position_xyz(position: dict) -> tuple[float | None, float, float | None]:
+    def _world_position_xyz(position: dict) -> tuple[float | None, float | None, float | None]:
         """从世界坐标快照读取水平坐标和可选高度。"""
 
         try:
             x = float(position["x"])
             z = float(position["z"])
         except (KeyError, TypeError, ValueError):
-            return None, 0.0, None
+            return None, None, None
         raw_y = position.get("y")
         try:
-            y = float(raw_y) if raw_y is not None else 0.0
+            y = float(raw_y) if raw_y is not None else None
         except (TypeError, ValueError):
-            y = 0.0
+            y = None
         return x, y, z
 
-    def _point_height_delta(self, pt: dict, item_name: str | None, py: float) -> float:
+    def _point_height_delta(self, pt: dict, item_name: str | None, py: float | None) -> float | None:
         """目标相对玩家的高度差（正值表示目标在上方），套用特殊物品的 Y 修正。"""
+        if py is None:
+            return None
         target_y = pt.get("y", 0)
         for cfg in SPECIAL_ITEM_Y_OFFSET.values():
             if cfg["pattern"].match(item_name or ""):
                 target_y += cfg["value"]
                 break
         return target_y - py
+
+    def _can_mark_target(self, point: dict, item_name: str | None, player_y: float | None) -> bool:
+        """Require measured height agreement before persisting a collected mark."""
+        delta = self._point_height_delta(point, item_name, player_y)
+        return delta is not None and math.isfinite(delta) and abs(delta) <= self._near_xz_threshold
 
     def _nearby_marker_length_px(self, dy: float) -> float:
         """附近小箭头的长度：按高差从最短伸缩到最长（超过上限后不再变长）。"""
@@ -439,7 +400,7 @@ class ItemNavigatorTask(
                     # 高差编码：箭尖固定在目标位置，尾巴长度随 |dy| 伸缩。
                     # 同高范围不画有方向箭身，避免和「同高」文字标签冲突。
                     dy = self._point_height_delta(pt, item_name, py)
-                    if abs(dy) < HEIGHT_SAME_THRESHOLD:
+                    if dy is None or abs(dy) < HEIGHT_SAME_THRESHOLD:
                         continue
                     marker_len = self._nearby_marker_length_px(dy)
                     tail_y = screen_y + marker_len if dy > 0 else screen_y - marker_len
@@ -561,70 +522,21 @@ class ItemNavigatorTask(
         return map_mark_query.merge_item_maps([static_items, official_items])
 
     def _official_marks_for_map(self, map_id: str) -> dict[str, list]:
-        """Fetch and cache current-map user facilities from the official map API."""
-
-        now = self.active_time()
-        last_fetched = self._official_marks_fetched_at.get(map_id, 0.0)
-        if (
-            map_id in self._official_marks_cache or map_id in self._official_marks_empty
-        ) and now - last_fetched < OFFICIAL_MARKS_CACHE_TTL:
-            return self._official_marks_cache.get(map_id, {})
-
-        service = self.get_runtime_position_service()
-        if service is None:
-            return {}
-        api_get = getattr(service, "_map_api_get", None)
-        if not callable(api_get):
-            return {}
-        if not getattr(service, "_map_ws_cred", ""):
-            return {}
-
-        account = getattr(service, "_map_ws_account", None)
-        if not isinstance(account, dict) or not account:
-            resolver = getattr(service, "_resolve_map_account_from_cred", None)
-            if not callable(resolver):
-                return {}
-            try:
-                account = resolver()
-            except Exception as exc:
-                self.log_info(f"读取官方地图设施失败，继续使用本地物品点位: {exc}")
-                return {}
-        if not isinstance(account, dict) or not account:
-            return {}
-
-        try:
-            response = api_get(
-                "/web/v1/game/endfield/map/mark/list",
-                {"mapId": map_id, **account},
-            )
-        except Exception as exc:
-            self.log_info(f"读取官方地图设施失败，继续使用本地物品点位: {exc}")
-            self._official_marks_fetched_at[map_id] = now
-            return {}
-
-        if not isinstance(response, dict) or response.get("code") not in (None, 0):
-            self._official_marks_fetched_at[map_id] = now
-            return {}
-
-        points = map_mark_query.extract_mark_points(response, map_id=map_id)
-        self._official_marks_fetched_at[map_id] = now
-        user_map_mark_store.persist_user_marks(
-            response,
-            map_id=map_id,
+        """Poll optional facilities without waiting for authentication or HTTP."""
+        source = getattr(self, "_official_facilities", None)
+        if source is None:
+            self._official_facilities = source = OfficialFacilitySource()
+        points = source.poll(
+            map_id,
+            resolve_map_content(self),
             account_id=str(getattr(self, "current_account_id", "") or "").strip(),
-            map_user_id=str(getattr(service, "_map_ws_user_id", "") or "").strip(),
-            role_id=str(account.get("roleId") or "").strip(),
-            server_id=str(account.get("serverId") or "").strip(),
         )
-        if points:
-            self._official_marks_cache[map_id] = points
-            self._official_marks_empty.discard(map_id)
-            return points
-
-        # 接口成功但没有设施属于稳定结果，缓存空结果避免每轮重复请求。
-        self._official_marks_empty.add(map_id)
-        self._official_marks_cache.pop(map_id, None)
-        return {}
+        if source.last_error and source.error_sequence != getattr(self, "_official_map_auth_error", None):
+            self._official_map_auth_error = source.error_sequence
+            self.log_info(
+                self.tr("官方地图设施暂不可用，继续使用本地物品点位: {error}").format(error=source.last_error)
+            )
+        return points
 
     def _draw_nav_arrow(self, dx: float, dz: float, tooltip: str):
         try:
@@ -709,7 +621,9 @@ class ItemNavigatorTask(
         angle = math.degrees(math.atan2(dx, dz)) % 360.0
         return int((angle + 22.5) // 45.0) % 8
 
-    def _height_label(self, dy_height: float) -> str:
+    def _height_label(self, dy_height: float | None) -> str:
+        if dy_height is None:
+            return self.tr("高度未知")
         if abs(dy_height) < HEIGHT_SAME_THRESHOLD:
             return self.tr("同高")
         if dy_height > 0:
@@ -731,8 +645,12 @@ class ItemNavigatorTask(
         lines = [
             str(item_name or "").strip(),
             self.tr("距离 {distance} · 方位 {direction}").format(distance=f"{float(dist_xz):.1f}", direction=direction),
-            self.tr("高度 {direction} {height}").format(
-                direction=self._height_label(dy_height), height=f"{abs(float(dy_height)):.1f}"
+            (
+                self.tr("高度未知")
+                if dy_height is None
+                else self.tr("高度 {direction} {height}").format(
+                    direction=self._height_label(dy_height), height=f"{abs(float(dy_height)):.1f}"
+                )
             ),
         ]
         return [line for line in lines if line]
@@ -865,7 +783,7 @@ class ItemNavigatorTask(
             angle = math.degrees(math.atan2(dz, dx))
 
             status = f"目标={best_meta} 距离XZ={best_dxz:.3f} 角度={angle:.3f}°"
-            if near_xz:
+            if near_xz and dy_height is not None:
                 updown = "上方" if dy_height > 0 else "下方" if dy_height < 0 else "同高"
                 status += f" 接近: 高差Y={dy_height:.3f} ({updown})"
 
@@ -880,7 +798,8 @@ class ItemNavigatorTask(
                 candidates=candidates,
                 map_id=map_id,
             )
-            self._draw_nav_arrow(dx, dz, tooltip=f"{best_meta} | XZ:{best_dxz:.3f} | Y:{dy_height:.3f}")
+            height_text = "?" if dy_height is None else f"{dy_height:.3f}"
+            self._draw_nav_arrow(dx, dz, tooltip=f"{best_meta} | XZ:{best_dxz:.3f} | Y:{height_text}")
             # 浮层文字：直接显示当前指向的物品名、距离方位与上下高度
             self._draw_target_info_text(
                 item_name=best_meta,
@@ -895,7 +814,7 @@ class ItemNavigatorTask(
             cur_key = self._is_key_pressed(mark_key)
             mark_hold_seconds = self._mark_hold_seconds()
 
-            if near_xz:
+            if near_xz and self._can_mark_target(best, best_meta, py):
                 # 计算目标哈希并确保锁定目标为当前最近目标
                 h = self._point_hash(best, best_meta)
                 if self._mark_lock_target is None or self._mark_lock_target.get("hash") != h:

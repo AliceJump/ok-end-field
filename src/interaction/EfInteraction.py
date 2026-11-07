@@ -24,6 +24,10 @@ class RECT(ctypes.Structure):
 
 
 class EfInteraction(PostMessageInteraction):
+    # The task framework discards send_key_down's return value. Callers can
+    # still distinguish a rejected synchronous input from a movement attempt.
+    key_down_rejections = 0
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_position = None
@@ -212,6 +216,7 @@ class EfInteraction(PostMessageInteraction):
             fg_before = win32gui.GetForegroundWindow()
             was_foreground = fg_before == hwnd
             if not active_and_send_mouse_delta(hwnd, only_activate=True):
+                self.key_down_rejections += 1
                 return False
             if not was_foreground:
                 # 等待窗口真正成为前台，并给游戏处理焦点切换的时间后再按键
@@ -223,6 +228,7 @@ class EfInteraction(PostMessageInteraction):
                 else:
                     if win32gui.GetForegroundWindow() != hwnd:
                         logger.warning(f"按键置顶失败: key={key} 游戏={hwnd} 当前前台={win32gui.GetForegroundWindow()}")
+                        self.key_down_rejections += 1
                         return False
                 time.sleep(0.3)
         self.keyboard.press(self._convert_key(key))

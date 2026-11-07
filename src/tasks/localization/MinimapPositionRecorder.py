@@ -3,7 +3,7 @@
 本任务不参与导航，也不修改正式配置。它按固定节拍请求共享
 ``WorldPoseService`` 采样一帧，并把每拍的必要信息落到磁盘：
 
-- 融合状态：``x/z``、WS、``error``、``position_trusted``、``sync_seq`` 等；
+- 定位状态：``x/z``、来源、分层和匹配置信度、``position_trusted``、``sync_seq`` 等；
 - 原始里程计结果：``dx_px/dy_px``、``dmap_px``、``response``、``dt``、``reason``、
   ``committed``、``reanchored``；
 - 连续里程计轨迹：把融合重锚会清零的 ``position_px()`` 接成不断线的 ``odom_px``，
@@ -94,7 +94,7 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
             CONFIG_STITCH_MARGIN: "拼接画布四周保留的空白边距",
             CONFIG_EDGE_MAX_GAP: "位姿图时间近邻的最大间隔（拍）；越大越稳但计算越慢",
             CONFIG_MIN_RESPONSE: "切片对相位相关的最低响应；低于该值的边不进入位姿图",
-            CONFIG_ANCHOR_WEIGHT: "静止校准 WS 绝对锚点的权重；越大越贴近 WS",
+            CONFIG_ANCHOR_WEIGHT: "标定地图绝对锚点的权重；越大越贴近地图匹配坐标",
         }
 
     # ------------------------------------------------------------------ #
@@ -232,6 +232,8 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                 scale_now = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
                 task_w_now = int(getattr(position_task, "width", 0) or task_w)
                 task_h_now = int(getattr(position_task, "height", 0) or task_h)
+                if map_to_world_px is None:
+                    continue
                 profile_now = (
                     int(task_w_now),
                     int(task_h_now),
@@ -318,6 +320,13 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                     "y": state.get("y"),
                     "heading": state.get("heading"),
                     "heading_score": state.get("heading_score"),
+                    "source": state.get("source"),
+                    "frame_t": state.get("frame_t"),
+                    "frame_time_source": state.get("frame_time_source"),
+                    "tier_id": state.get("tier_id"),
+                    "tier_trusted": state.get("tier_trusted"),
+                    "visual_confidence": state.get("visual_confidence"),
+                    "visual_margin": state.get("visual_margin"),
                     "ws": state.get("ws"),
                     "ws_xyz": state.get("ws_xyz"),
                     "error_m": state.get("error"),

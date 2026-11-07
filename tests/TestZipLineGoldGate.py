@@ -24,6 +24,71 @@ from src.tasks.test.ZipLineScanDebugTask import ZipLineScanDebugTask
 
 
 class TestZipLineGoldGate(unittest.TestCase):
+    def test_visual_tier_can_disambiguate_overlapping_racks_without_fake_height(self):
+        pose = {"position_trusted": True, "tier_trusted": True, "tier_id": "upper", "map_id": "map02"}
+        task = SimpleNamespace(_zip_line_last_pose=pose, _grid_nav_layered_active=object())
+        with patch(
+            "src.tasks.navigation.mixin.zip_line_mixin.resolve_tier_by_height",
+            side_effect=lambda *a, **kw: {"status": "unique", "tier": "upper" if kw["y"] > 5 else "lower"},
+        ):
+            self.assertTrue(ZipLineMixin._zip_line_visual_arrival(task, (0, 0, 0), (0, 10, 0)))
+            self.assertTrue(ZipLineMixin._zip_line_visual_arrival(task, None, (0, 10, 0), start_tier="lower"))
+            pose["tier_id"] = "lower"
+            self.assertFalse(ZipLineMixin._zip_line_visual_arrival(task, (0, 0, 0), (0, 10, 0)))
+
+    def test_motion_arrival_uses_departure_tier_when_visual_start_has_no_height(self):
+        pose = {"position_trusted": True, "tier_trusted": True, "tier_id": "lower", "map_id": "map02"}
+        clock = [0.0]
+        task = SimpleNamespace(
+            _zip_line_last_pose=pose,
+            _grid_nav_layered_active=object(),
+            active_time=lambda: clock[0],
+            sleep=lambda dt: clock.__setitem__(0, clock[0] + dt),
+            next_frame=lambda: object(),
+            _zip_line_on_rack_visible=lambda frame: True,
+            log_info=Mock(),
+            log_warning=Mock(),
+        )
+
+        def sample(**kwargs):
+            task._zip_line_last_pose = {**pose, "tier_id": "upper"}
+            return (0, 0), None
+
+        task._zip_line_ws_positions = sample
+        with patch(
+            "src.tasks.navigation.mixin.zip_line_mixin.resolve_tier_by_height",
+            return_value={"status": "unique", "tier": "upper"},
+        ):
+            self.assertTrue(
+                ZipLineMixin._wait_zip_line_motion(
+                    task,
+                    (0, 0),
+                    start_position=(0, 0),
+                    target_position_xyz=(0, 10, 0),
+                    timeout=1,
+                )
+            )
+            pose.update(tier_id="upper", tier_trusted=False)
+            self.assertFalse(ZipLineMixin._zip_line_visual_arrival(task, (0, 0, 0), (0, 10, 0)))
+
+    def test_trusted_visual_pose_supplies_xy_without_fabricating_height(self):
+        task = SimpleNamespace(
+            world_pose=Mock(
+                return_value={"position_trusted": True, "x": 1.0, "y": None, "z": 2.0, "ws": None, "ws_xyz": None}
+            ),
+            next_frame=Mock(),
+        )
+        self.assertEqual(ZipLineMixin._zip_line_ws_positions(task, frame="frame"), ((1.0, 2.0), None))
+        task.next_frame.assert_not_called()
+        task.world_pose.assert_called_once()
+
+    def test_packet_pose_preserves_real_height_and_rejects_untrusted_aliases(self):
+        state = {"position_trusted": True, "x": 1.0, "y": 3.0, "z": 2.0, "ws": (99.0, 99.0)}
+        task = SimpleNamespace(world_pose=Mock(return_value=state))
+        self.assertEqual(ZipLineMixin._zip_line_ws_positions(task, frame="frame"), ((1.0, 2.0), (1.0, 3.0, 2.0)))
+        state["position_trusted"] = False
+        self.assertEqual(ZipLineMixin._zip_line_ws_positions(task, frame="frame"), (None, None))
+
     @staticmethod
     def _stub():
         lang = SimpleNamespace(zip_line_mixin=SimpleNamespace(k_2f4f4a2f="move", k_0b1e4f35="leave"))

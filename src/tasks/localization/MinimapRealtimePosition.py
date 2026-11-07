@@ -1,31 +1,7 @@
-"""小地图实时位置领域任务。
+"""按需采样共享世界定位服务，输出视觉或抓包坐标、朝向和可信状态。
 
-每个采样拍输出一行**易读**日志（开头有一次字段说明）：
-  [实时位置] #003 | 位置=(-323.32, 461.00)m 朝向=353.5° 速度=0.96m/s 状态=静止 |
-              误差=0.99m 最新WS=(-323.03, 463.64) 位移=(0.2, -1.5)px
-
-判定“静止”要求小地图里程计低速；若已有至少两次 WS 样本，还要求 WS 也没有明显位移。
-只有静止且收到 WS 坐标时才重新校准。校准发生的那一拍额外输出一行，给出**校准前由
-小地图推算的坐标**与它跟 WS 的偏差，用来观察小地图定位在两次校准之间漂了多少：
-  [静止校准] #045 小地图推算=(569.00, -150.95)m WS=(569.58, -150.92)m
-             偏差=(-0.58, -0.03)m 距离=0.58m
-
-- 位置：融合后的实时坐标（WS 锚点 + 里程计增量 -> 世界 x/z, 米）。校准那一拍为
-  校准后的值（= WS），校准前的推算值见上面的 [静止校准] 行。
-- 朝向：罗盘方位角（°；正北 0°、正东 90°、顺时针）；低置信时标注 (低置信)。
-- 速度：当前移动速度（米/秒，世界系，与静止判定同一个量）。
-- 状态：静止 / 移动 / ?(原因)（问号 = 本拍没有有效位移样本，括号里是原因，例如 anchor_init /
-  low_response / exceed_max_shift；这些拍的位移被丢弃，是定位漂移的主要来源）。
-  静止 = 小地图低速；有 WS 样本时 WS 也不动。收到 WS 后校准并清零里程计。
-- 误差：位置与"最新 WS 坐标"的距离（米）。静止校准后≈0；移动时≈WS 延迟，非误差。
-- 最新WS / 位移：最近收到的官方地图坐标(可能滞后) / 里程计原始位移(地图系像素)。
-
-坐标系：位置/WS 是"世界系"(x, z)；位移是"地图系"(图像 x 右、y 下，北向上)，
-世界_z 与地图_y 符号相反（由矩阵处理）。用于验证"朝向 + 位移里程计 + WS 融合"
-整条实时定位链路；不写入正式配置。
-
-定位能力由应用级 ``WorldPoseService`` 统一维护，本任务只负责采样与日志呈现。
-完整链路见 ``docs/dev/小地图定位.md``。
+视觉源独立匹配标定地图并运行视觉锚定链；抓包源直接提供绝对坐标。
+本任务只负责诊断呈现，不把另一来源的坐标当成视觉锚点。
 """
 
 from qfluentwidgets import FluentIcon
@@ -46,7 +22,7 @@ class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):
         self.name = "小地图实时位置"
         self.group_name = "工具与调试"
         self.group_icon = FluentIcon.DEVELOPER_TOOLS
-        self.description = "每个采样拍输出 朝向 + 小地图计算位置 + 结合WS的融合位置"
+        self.description = "逐拍输出视觉或抓包位置、朝向、速度和可信状态"
         self.visible = self.debug
 
         self.default_config = {
@@ -94,11 +70,7 @@ class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):
             f"matrix={fusion.map_to_world_px if fusion is not None else None}"
         )
         self.log_info(
-            "字段说明: "
-            "位置=融合后的实时坐标(x,z,米) | 朝向=罗盘方位角(°; 正北0 正东90 顺时针) | "
-            "速度=移动速度(米/秒) | 状态=静止/移动/?(静止=小地图与WS都没动, 此时由WS校准; ?(原因)=本拍没有有效位移样本) | "
-            "误差=位置与最新WS的距离(米; 移动时≈WS延迟, 静止时≈0) | "
-            "最新WS=最近收到的官方地图坐标(可能滞后) | 位移=里程计原始位移(地图系像素)"
+            "字段说明: 位置=世界坐标(x,z,米) | 来源=视觉/抓包 | 分层=已确认楼层或未知 | NCC=视觉匹配置信度 | 位移=地图系像素"
         )
         while True:
             # 固定采样节拍：睡到下一个采样点（只睡剩余时间），而不是「sleep(interval) 后再干活」。
@@ -127,7 +99,7 @@ class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):
             if frame is None:
                 continue
 
-            # 采样一拍：里程计 + 可能的待定 WS 校准 + 同一帧的朝向
+            # 采样独立位置源与同一帧的朝向
             st = self.world_pose(
                 frame=frame,
                 max_age=max(0.5, interval * 2.0),
@@ -139,17 +111,6 @@ class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):
 
             if iteration % log_every != 0:
                 continue
-
-            # ---- 静止校准：输出校准前"小地图推算的坐标"与偏差 ----
-            residual = st.get("sync_residual") if st.get("just_synced") else None
-            if residual is not None:
-                self.log_info(
-                    f"[静止校准] #{iteration:03d} 小地图推算="
-                    f"({residual['map_x']:.2f}, {residual['map_z']:.2f})m "
-                    f"WS=({residual['ws_x']:.2f}, {residual['ws_z']:.2f})m "
-                    f"偏差=({residual['dx']:+.2f}, {residual['dz']:+.2f})m "
-                    f"距离={residual['dist']:.2f}m"
-                )
 
             self.log_info(
                 self._format_tick(
@@ -200,16 +161,14 @@ class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):
         else:
             rest_txt = "静止" if st.get("rest") else "移动"
 
-        # 误差（位置与最新 WS 的距离）与两个原始量
-        err = st.get("error")
-        err_txt = f"{err:.2f}m" if err is not None else "-"
-        ws = st.get("ws")
-        ws_txt = f"({ws[0]:.2f}, {ws[1]:.2f})" if ws is not None else "-"
+        confidence = st.get("visual_confidence")
+        confidence_txt = f"{confidence:.3f}" if confidence is not None else "-"
+        tier = st.get("tier_id") if st.get("tier_trusted") else "未知"
         od_px = st.get("dmap_px") or (0.0, 0.0)
         od_txt = f"({od_px[0]:.1f}, {od_px[1]:.1f})px"
 
         return (
             f"[实时位置] #{iteration:03d} | 位置={pos_txt} 朝向={heading_txt} "
             f"速度={speed_txt} 状态={rest_txt} | "
-            f"误差={err_txt} 最新WS={ws_txt} 位移={od_txt}"
+            f"来源={st.get('source')} 可信={bool(st.get('position_trusted'))} 分层={tier} NCC={confidence_txt} 位移={od_txt}"
         )

@@ -1,5 +1,6 @@
 """Unit tests for grid planning and game-facing route execution."""
 
+import math
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,7 +14,7 @@ from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 from src.localization.minimap_position_mixin import MinimapPositionMixin
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, GRID_SUFFIX, DenseGrid, GridMeta, new_grid, save_grid
 from src.nav.grid_planner import PlanResult, ZipLineRouteStep
-from src.nav.nav_state import NavState, SyncReason
+from src.nav.nav_state import GridRouteRequest, NavSession, NavState, NavTick, SyncReason
 from src.nav.route_follower import (
     DONE,
     FAILED,
@@ -28,6 +29,7 @@ from src.nav.route_follower import (
     FollowerStep,
     GridRouteFollower,
 )
+from src.nav.walk_feedback import LegObservation, RecoveryEpisode
 from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineNode, ZipLineStep
 from src.runtime_state.topics import RuntimeTopic
 from src.tasks.navigation.mixin.grid_navigation_mixin import (
@@ -195,7 +197,7 @@ class _FakeGridTask(GridNavigationMixin):
         self.rotation_w_held.append(self.w_down)
         self.heading = (self.heading + float(dx) * self.yaw_per_pixel()) % 360.0
 
-    def info_set(self, key, value):
+    def info_set(self, key, value, *, log=True):
         self.info[key] = value
 
     def log_info(self, msg, notify=False):
@@ -1119,6 +1121,336 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertEqual(self.task.pressed_keys, [])
         self.assertFalse(self.task._grid_nav_sprint_active)
 
+    def test_long_segment_does_not_restart_sprint_just_before_corner(self):
+        step = FollowerStep(WALK, distance_to_waypoint=2, leg_distance_m=50)
+        self.task._set_grid_walking(True)
+        self.task._maybe_start_grid_sprint(step)
+        self.assertEqual(self.task.pressed_keys, [])
+
+    def _control_tick(self, **pose_fields):
+        pose = {**self.task.minimap_position(), **pose_fields}
+        return NavTick(
+            session=NavSession(GridRouteRequest(goal=(8.5, 0.5)), deadline=100, limit=100, tick=0.2),
+            frame=object(),
+            pose=pose,
+            x=pose["x"],
+            z=pose["z"],
+            map_id="test",
+            sync_seq=0,
+            heading=pose["heading"],
+            heading_score=pose["heading_score"],
+        )
+
+    def test_absolute_fix_can_walk_without_waiting_for_odometry(self):
+        ctx = self._control_tick(odom_ok=False, absolute_position_valid=True, sync_supported=False)
+        self.assertIsNone(self.task._grid_nav_classify(ctx))
+        ctx.pose["absolute_position_valid"] = False
+        self.assertEqual(self.task._grid_nav_classify(ctx), NavState.WAIT_ODOM)
+        ctx.pose.update(absolute_position_valid=True, position_trusted=False)
+        self.assertEqual(self.task._grid_nav_classify(ctx), NavState.WAIT_TRUST)
+
+    def test_arrival_requires_a_presented_frame_after_stopping(self):
+        ctx = self._control_tick(frame_t=100, frame_time_source="wgc_system_relative_time")
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=101):
+            self.assertFalse(self.task._post_stop_frame_confirmed(ctx))
+        self.assertFalse(self.task._post_stop_frame_confirmed(ctx))
+        ctx.pose["frame_t"] = 101.1
+        self.assertTrue(self.task._post_stop_frame_confirmed(ctx))
+
+    def test_cancellation_does_not_intercept_backend_key_release(self):
+        self.task._set_grid_walking(True)
+        backend = mock.Mock()
+        self.task.executor = SimpleNamespace(interaction=backend)
+        self.task.send_key_up = mock.Mock(side_effect=RuntimeError("task cancelled"))
+        self.task._set_grid_walking(False)
+        backend.send_key_up.assert_called_once_with("w")
+        self.assertFalse(self.task._grid_nav_w_held)
+
+    def test_pending_visual_anchor_prioritizes_new_wgc_frame_and_still_releases_w(self):
+        ctx = self._control_tick(
+            x=None,
+            z=None,
+            source="visual_map",
+            visual_confirmation_pending=True,
+            frame_t=100.0,
+            frame_time_source="wgc_system_relative_time",
+        )
+        self.assertEqual(self.task._grid_nav_classify(ctx), NavState.WAIT_ANCHOR)
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_state_wait_anchor(ctx)
+        self.assertFalse(self.task.w_down)
+        self.assertEqual(self.task.t, 0)
+        ctx.pose["visual_duplicate_frame"] = True
+        self.task._grid_nav_state_wait_anchor(ctx)
+        self.assertAlmostEqual(self.task.t, 1 / 60)
+        self.assertEqual(self.task._grid_anchor_poll_delay(ctx.pose, 0.01), 0.01)
+
+    def test_anchor_fast_poll_requires_pending_visual_candidate_and_real_timestamp(self):
+        pending = {
+            "source": "visual_map",
+            "visual_confirmation_pending": True,
+            "frame_t": 100.0,
+            "frame_time_source": "wgc_system_relative_time",
+        }
+        for fields in (
+            {"source": "capture"},
+            {"visual_confirmation_pending": False},
+            {"frame_time_source": "sample_time_fallback"},
+            {"frame_time_source": None},
+            {"frame_t": None},
+            {"frame_t": float("nan")},
+            {"frame_t": float("inf")},
+        ):
+            with self.subTest(fields=fields):
+                ctx = self._control_tick(**{**pending, **fields})
+                self.task.t = 0
+                self.task._grid_nav_state_wait_anchor(ctx)
+                self.assertEqual(self.task.t, ctx.tick)
+
+    def test_confirmed_waypoint_executes_next_turn_without_an_extra_pose_cycle(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.waypoints_since_calibration = 4
+        ctx.step = FollowerStep(
+            TURN,
+            target_bearing=0,
+            heading_error=-90,
+            distance_to_waypoint=3,
+            arrived_waypoint_index=1,
+            waypoint_index=2,
+            waypoint_count=4,
+        )
+        self.task._set_grid_walking(True)
+        self.task._wait_for_minimap_sync = mock.Mock(side_effect=AssertionError("unnecessary sync"))
+        self.task.pose_turn_to_bearing = mock.Mock(return_value={"ok": True})
+        self.task._grid_nav_state_waypoint_arrived(ctx)
+        self.assertFalse(self.task.w_down)
+        self.task.pose_turn_to_bearing.assert_called_once()
+        self.assertEqual(self.task.pose_turn_to_bearing.call_args.kwargs["max_rounds"], 1)
+        self.assertEqual(self.task.t, 0)
+
+    def test_blocking_plan_does_not_execute_from_old_pose(self):
+        ctx = self._control_tick()
+        self.task._set_grid_walking(True)
+        self.task._try_layered_route_on_plan = mock.Mock(return_value=(False, False))
+        self.task._grid_nav_run_follow = mock.Mock()
+        self.task._grid_nav_state_plan(ctx)
+        self.assertFalse(self.task.w_down)
+        self.task._grid_nav_run_follow.assert_not_called()
+        self.assertIsNotNone(self.task._grid_nav_follower)
+
+    def test_near_waypoint_releases_w_before_expensive_next_sample(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.poll_duration_s = 0.6
+        ctx.session.walk_speed_m_s = 8
+        ctx.walking_during_sample = True
+        ctx.step = FollowerStep(WALK, distance_to_waypoint=3, leg_distance_m=30)
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_walk_interval(ctx)
+        self.assertFalse(self.task.w_down)
+        self.assertEqual(self.task.t, 0)
+        # The stationary next frame must still allow a short new step.
+        ctx.walking_during_sample = False
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_walk_interval(ctx)
+        self.assertGreater(self.task.t, 0)
+        self.assertFalse(self.task.w_down)
+
+    def test_stationary_corner_approach_can_use_more_than_one_tick_but_not_cross_vertex(self):
+        ctx = self._control_tick()
+        ctx.x, ctx.z, ctx.heading = 5.5, 5.5, 90
+        ctx.session.poll_duration_s = 0.5
+        ctx.session.walk_speed_m_s = 6
+        grid = DenseGrid(np.full((24, 24), CELL_FREE, np.uint8), GridMeta(map_name="test", cell_size=1))
+        follower = GridRouteFollower(grid, FollowerConfig(margin=0, arrive_radius=1))
+        points = [(4.5, 5.5), (8.5, 5.5), (8.5, 18.5)]
+        follower.adopt(PlanResult(ok=True, waypoints=points), start=points[0], goal=points[-1])
+        ctx.step = follower.update(ctx.position, 90, 0)
+        self.task._grid_nav_follower = follower
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_walk_interval(ctx)
+        self.assertGreater(self.task.t, ctx.tick)
+        self.assertAlmostEqual(self.task.t * 6, 2.5)
+        self.assertFalse(self.task.w_down)
+
+    def test_long_segment_keeps_w_held_during_sampling(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.poll_duration_s = 0.6
+        ctx.step = FollowerStep(WALK, distance_to_waypoint=30, leg_distance_m=30)
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_walk_interval(ctx)
+        self.assertTrue(self.task.w_down)
+        self.assertEqual(self.task.t, ctx.tick)
+
+    def test_moving_turn_reserves_the_distance_already_travelled_during_rotation(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.poll_duration_s = 0.4
+        ctx.session.walk_speed_m_s = 8
+        ctx.walking_during_sample = True
+        ctx.step = FollowerStep(TURN, distance_to_waypoint=6, leg_distance_m=30)
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_walk_interval(ctx, action_duration_s=0.4)
+        self.assertFalse(self.task.w_down)
+        self.assertEqual(self.task.t, 0)
+
+    def test_sampling_retains_moving_speed_across_stops(self):
+        ctx = self._control_tick()
+        original = self.task.minimap_position
+        self.task.minimap_position = lambda **kw: {**original(**kw), "speed": 2}
+        self.task._grid_nav_poll(ctx.session)
+        self.assertAlmostEqual(ctx.session.walk_speed_m_s, 6)
+        self.task.minimap_position = lambda **kw: {**original(**kw), "speed": 0}
+        self.task._grid_nav_poll(ctx.session)
+        self.assertAlmostEqual(ctx.session.walk_speed_m_s, 6)
+
+    def test_near_stationary_samples_do_not_replace_moving_speed(self):
+        ctx = self._control_tick()
+        ctx.session.walk_speed_m_s = 9
+        original = self.task.minimap_position
+        for speed in (0.21, 0.5, 0.83):
+            self.task.minimap_position = lambda speed=speed, **kw: {**original(**kw), "speed": speed}
+            self.task._grid_nav_poll(ctx.session)
+            self.assertEqual(ctx.session.walk_speed_m_s, 9)
+
+    def test_poll_budget_keeps_recent_peak_then_expires_it(self):
+        ctx = self._control_tick()
+        original = self.task.minimap_position
+        for i, duration in enumerate((0.8, 0.1, 0.1, 0.1, 0.1, 0.1)):
+
+            def sample(duration=duration, **kw):
+                self.task.sleep(duration)
+                return original(**kw)
+
+            self.task.minimap_position = sample
+            self.task._grid_nav_poll(ctx.session)
+            self.assertAlmostEqual(ctx.session.poll_duration_s, 0.8 if i < 5 else 0.1)
+
+    def test_split_rotation_reserve_can_exceed_configured_stop_distance(self):
+        ctx = self._control_tick()
+        ctx.session.poll_duration_s = 0.04
+        ctx.step = FollowerStep(TURN, heading_error=10, distance_to_waypoint=10)
+        self.task.pose_rotation_duration_s = mock.Mock(return_value=2)
+        reserve = self.task._grid_turn_stop_distance(ctx)
+        self.assertGreater(reserve, 10)
+        self.assertTrue(self.task._should_turn_grid_in_place(ctx.step, stop_distance=reserve))
+
+    def test_confirmed_visual_tier_change_replans_without_height(self):
+        ctx = self._control_tick(y=None, tier_evidence_required=True, tier_trusted=True, tier_id="layer_b")
+        ctx.session.route = SimpleNamespace(segments=[SimpleNamespace(tier="layer_a")])
+        self.task._grid_nav_layered_active = object()
+        self.assertTrue(self.task._grid_nav_segment_tier_changed(ctx))
+        ctx.pose["tier_trusted"] = False
+        self.assertFalse(self.task._grid_nav_segment_tier_changed(ctx))
+        ctx.pose.update(tier_trusted=True, tier_id="layer_a")
+        self.assertFalse(self.task._grid_nav_segment_tier_changed(ctx))
+
+    def test_corner_turn_probe_uses_distance_budget_at_recorded_overshoot_points(self):
+        for distance in (0.85, 1.16, 2.58):
+            with self.subTest(distance=distance):
+                ctx = self._control_tick(sync_supported=False)
+                ctx.session.walk_speed_m_s = 8
+                ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=90, distance_to_waypoint=distance)
+                self.task.pose_turn_to_bearing = mock.Mock(return_value={"ok": True, "rounds": 1})
+                self.task._grid_nav_state_turn(ctx)
+                duration = self.task.pose_turn_to_bearing.call_args.kwargs["max_probe_s"]
+                self.assertLessEqual(duration * 8, distance * 0.5)
+                self.assertFalse(self.task.w_down)
+
+    def test_stale_moving_corner_pose_releases_w_and_refreshes_before_turn(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.walking_during_sample = True
+        ctx.session.poll_duration_s = 0.4
+        ctx.session.walk_speed_m_s = 8
+        ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=90, distance_to_waypoint=1.16)
+        self.task.pose_turn_to_bearing = mock.Mock()
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_state_turn(ctx)
+        self.assertFalse(self.task.w_down)
+        self.task.pose_turn_to_bearing.assert_not_called()
+
+    def test_corner_with_blocked_shortcut_can_keep_approaching_inside_arrival_radius(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.poll_duration_s = 0.4
+        ctx.session.walk_speed_m_s = 8
+        self.task.config.update({"航点到达半径(米)": 4, "到达目标半径(米)": 2})
+        ctx.step = FollowerStep(WALK, distance_to_waypoint=0.85)
+        self.task._set_grid_walking(True)
+        started = self.task.t
+        self.task._grid_nav_walk_interval(ctx)
+        self.assertGreater(self.task.t, started)
+        self.assertLessEqual((self.task.t - started) * 8, 0.85 * 0.5)
+        self.assertFalse(self.task.w_down)
+
+    def test_tiny_blocked_shortcut_approach_spends_full_remaining_budget(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.poll_duration_s = 0.4
+        ctx.session.walk_speed_m_s = 8
+        ctx.step = FollowerStep(WALK, distance_to_waypoint=0.2)
+        self.task._set_grid_walking(True)
+        self.task._grid_nav_walk_interval(ctx)
+        self.assertAlmostEqual(self.task.t * 8, 0.2)
+        self.assertFalse(self.task.w_down)
+
+    def test_progress_log_is_periodic_while_ui_stays_current(self):
+        ctx = self._control_tick()
+        for i in range(50):
+            self.task.t = i * 0.1
+            ctx.step = FollowerStep(
+                WALK if i % 2 else TURN, distance_to_goal=100 - i, waypoint_index=i // 10, waypoint_count=85
+            )
+            self.task._grid_nav_note_step(ctx)
+        self.assertEqual(sum("网格导航进度：" in x for x in self.task.logs), 1)
+        self.assertIn("目标距离=51.00m", self.task.info["网格导航"])
+        self.task.t = 5.0
+        self.task._grid_nav_note_step(ctx)
+        ctx.step = FollowerStep(STUCK, distance_to_goal=51, waypoint_count=85)
+        self.task.t = 5.1
+        self.task._grid_nav_note_step(ctx)
+        self.assertEqual(sum("网格导航进度：" in x for x in self.task.logs), 3)
+
+    def test_debug_sampling_ignores_benign_odometry_flapping_but_logs_trust_loss(self):
+        self.task.debug = True
+        for i in range(20):
+            self.task.t = i * 0.05
+            state = {
+                "anchor_set": True,
+                "position_trusted": True,
+                "rest": bool(i % 2),
+                "odom_ok": bool(i % 2),
+                "odom_reason": "ok" if i % 2 else "shift_too_small",
+            }
+            self.task._log_grid_navigation_debug(state, map_id="test", tag="导航")
+        self.assertEqual(sum("[导航定位]" in x for x in self.task.logs), 1)
+        state.update(position_trusted=False, trust_reason="no_valid_minimap_or_match")
+        self.task._log_grid_navigation_debug(state, map_id="test", tag="导航")
+        self.assertEqual(sum("[导航定位]" in x for x in self.task.logs), 2)
+
+    def test_navigation_resamples_between_turn_rounds(self):
+        self.task.heading = 0
+        self.task.config["最大转向轮数"] = 3
+        self.task.config["航点移动转向"] = False
+        sample_positions = []
+        original = self.task.sample_world_pose
+
+        def sample(*args, **kwargs):
+            sample_positions.append(self.task.x)
+            return original(*args, **kwargs)
+
+        def turn(target, **kwargs):
+            self.assertEqual(kwargs["max_rounds"], 1)
+            self.assertEqual(len(sample_positions), len(self.task.turns) + 2)
+            self.task.turns.append(target)
+            # Each W tap moves the character. The next decision must see it.
+            self.task.x += 0.1
+            self.task.t += 1.0
+            self.task.heading = min(target, self.task.heading + 30)
+            return {"ok": self.task.heading == target, "heading": self.task.heading}
+
+        self.task.sample_world_pose = sample
+        self.task.turn_to_bearing = turn
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+        self.assertEqual(len(self.task.turns), 3)
+        self.assertEqual(sample_positions[:4], [0.5, 0.5, 0.6, 0.7])
+
     def test_pause_releases_held_w(self):
         """暂停必须立刻松开 ``W``：框架的暂停不会替任务释放长按键。"""
         self.task._set_grid_walking(True)
@@ -1167,7 +1499,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         line = next(msg for msg in self.task.logs if "等待定位重新校准" in msg and "rest_reason" in msg)
         self.assertIn("rest_reason=map_moving", line)
         self.assertIn("speed=1.25", line)
-        self.assertIn("ws_moved=0.0", line)
+        self.assertNotIn("ws_moved=", line)
 
     def test_wait_for_minimap_sync_pauses_and_waits_for_new_sequence(self):
         class _PositionService:
@@ -1213,6 +1545,75 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(synced)
         self.assertFalse(self.task.w_down)
         self.assertEqual(position_service.calls, 2)
+
+    def test_rejected_input_cannot_start_a_forward_exposure_window(self):
+        backend = SimpleNamespace(key_down_rejections=0)
+        self.task.executor = SimpleNamespace(interaction=backend)
+
+        def reject(_key):
+            backend.key_down_rejections += 1
+
+        self.task.send_key_down = reject
+        self.task._set_grid_walking(True)
+        self.assertFalse(self.task._grid_nav_w_held)
+        self.assertIsNone(self.task._grid_nav_forward.start)
+
+    def test_recovery_feedback_waits_for_post_release_frame_and_remembers_the_site(self):
+        session = NavSession(GridRouteRequest((5.5, 0.5), map_id="test"), 100, 100, 0.2)
+        pose = {"frame_time_source": "wgc_system_relative_time", "frame_t": 20, "odom_ok": True, "tier_id": "floor"}
+        ctx = NavTick(
+            session,
+            None,
+            pose,
+            2.5,
+            0.5,
+            "test",
+            1,
+            90,
+            0.99,
+            step=FollowerStep(STUCK, waypoint=(5.5, 0.5), heading_error=0, target_bearing=90),
+        )
+        episode = RecoveryEpisode("test", "floor", (2.5, 0.5), (1, 0), after=21)
+        session.recovery = episode
+        self.task._grid_nav_follow = lambda ctx: self.fail("旧帧不能在后退后重新规划")
+        self.assertIsNone(self.task._grid_nav_advance(ctx))
+        follower, result = self.task._create_grid_route(
+            (0.5, 0.5), (5.5, 0.5), map_id="test", grid_path=str(self.path), grid_dir=None, zoom=None
+        )
+        self.assertTrue(result.ok)
+        self.task._grid_nav_follower = follower
+        follower.feedback.leg = LegObservation.measure((0.5, 0.5), (5.5, 0.5), ctx.position)
+        follower.input_sample = 22, 0.2, 2
+        follower.feedback.short_misses = 3
+        session.note_progress(1)
+        attempts = []
+        self.task._grid_nav_retreat = lambda ctx: attempts.append(ctx.session.recovery.attempts)
+        self.assertIsNone(self.task._grid_nav_state_stuck(ctx))
+        self.assertEqual(attempts, [2])
+        self.assertTrue(session.recovery.avoid_approach)
+        self.assertIsNone(self.task._grid_nav_follower)
+
+    def test_recovery_retraces_through_multiple_measured_cells_on_fresh_frames(self):
+        cells = np.full((12, 12), CELL_FREE, dtype=np.uint8)
+        cells[5, 5:8] = CELL_BLOCKED
+        follower = GridRouteFollower(DenseGrid(cells, GridMeta(cell_size=1.0)), FollowerConfig(margin=0))
+        session = NavSession(GridRouteRequest((1.5, 5.5)), 100, 100, 0.2)
+        episode = RecoveryEpisode("test", "floor", (7.1, 5.5), (1, 0))
+        session.recovery = episode
+        for i, x in enumerate((4.7, 5.6, 6.4, 7.1)):
+            session.trail.record(("test", "floor"), (x, 5.5), 10 + i * 0.4, 1)
+
+        def tick(x):
+            return NavTick(session, None, {"tier_id": "floor"}, x, 5.5, "test", 1, 90, 0.99)
+
+        feedback = iter([tick(5.6), tick(4.7)])
+        self.task._grid_nav_recovery_frame = lambda *_: next(feedback)
+        moves = []
+        self.task._hold_grid_keys = lambda keys, duration: moves.append((keys, duration))
+        self.task._grid_nav_exit_rejected_cell(tick(7.1), follower, episode, 6.0, 2.0)
+        self.assertEqual([k for k, _ in moves], [("s",), ("s",)])
+        self.assertLessEqual(sum(t for _, t in moves), 0.41)
+        self.assertEqual(episode.departure, (4.7, 5.5))
 
     def test_stuck_recovery_uses_back_side_then_jump(self):
         self.task._choose_grid_strafe_side = lambda position, heading: "d"
@@ -1588,6 +1989,112 @@ class TestGridNavigationMixin(unittest.TestCase):
         step = SimpleNamespace(heading_error=20.0, distance_to_waypoint=2.0)
         self.assertTrue(self.task._should_turn_grid_in_place(step))
 
+    def test_small_near_correction_can_keep_w_with_fresh_position_budget(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.session.poll_duration_s = 0.04
+        ctx.session.walk_speed_m_s = 6
+        ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=8, distance_to_waypoint=4.5)
+        self.task._set_grid_walking(True)
+        self.task.pose_turn_to_bearing = mock.Mock()
+        self.task._grid_nav_state_turn(ctx)
+        self.assertTrue(self.task.w_down)
+        self.assertTrue(self.task.rotation_w_held[-1])
+        self.task.pose_turn_to_bearing.assert_not_called()
+
+    def test_timed_walk_is_smoother_without_relaxing_goal_accuracy(self):
+        grid = DenseGrid(np.full((12, 30), CELL_FREE, np.uint8), GridMeta(map_name="test", zoom="4", cell_size=1))
+        save_grid(self.path, grid)
+        points = [(0.5, 5.5), (4.5, 5.7), (8.5, 5.5), (12.5, 5.7), (16.5, 5.5), (20.5, 5.7), (25.5, 5.5)]
+
+        class TimedTask(_FakeGridTask):
+            def __init__(self, path, speed, poll):
+                super().__init__(path)
+                self.speed, self.poll = speed, poll
+                self.config["导航超时(秒)"] = 120
+                self.x, self.z, self.heading = 0.5, 5.5, 84
+                self.trace = []
+
+            def sleep(self, seconds):
+                self.t += seconds
+                if self.w_down:
+                    radians = math.radians(self.heading)
+                    self.x += self.speed * seconds * math.sin(radians)
+                    self.z += self.speed * seconds * math.cos(radians)
+                self.trace.append((self.x, self.z))
+
+            def next_frame(self):
+                self.sleep(self.poll)
+                return object()
+
+            def minimap_position(self, *args, **kwargs):
+                return {
+                    **super().minimap_position(*args, **kwargs),
+                    "sync_supported": False,
+                    "speed": self.speed if self.w_down else 0,
+                }
+
+            def turn_to_bearing(self, target_deg, **kwargs):
+                self.sleep(0.3)
+                return super().turn_to_bearing(target_deg, **kwargs)
+
+            def _create_grid_route(self, *args, **kwargs):
+                follower = GridRouteFollower(
+                    grid, FollowerConfig(arrive_radius=0.5, goal_radius=0.5, margin=0, allow_unknown=False)
+                )
+                follower.plan_result = PlanResult(ok=True, waypoints=points)
+                follower.waypoint_index = 1
+                follower._route_start, follower.goal = points[0], points[-1]
+                return follower, follower.plan_result
+
+        for speed, poll in ((3, 0.04), (3, 0.12), (6, 0.04), (6, 0.12), (6, 0.45), (6, 0.8)):
+            with self.subTest(speed=speed, poll=poll):
+                tasks = []
+                for enabled in (False, True):
+                    task = TimedTask(self.path, speed, poll)
+                    if not enabled:
+                        original = task._should_turn_grid_in_place
+                        task._should_turn_grid_in_place = lambda step, original=original, **kw: original(step)
+                    original_guide = GridRouteFollower._motion_guide
+                    guide = original_guide if enabled else lambda *args: (None, 0.0)
+                    handoff = GridRouteFollower._visible_handoff if enabled else lambda *args: False
+                    landing = GridRouteFollower.landing_distance if enabled else lambda *args: None
+                    with (
+                        mock.patch.object(GridRouteFollower, "_visible_handoff", handoff),
+                        mock.patch.object(GridRouteFollower, "landing_distance", landing),
+                        mock.patch.object(GridRouteFollower, "_motion_guide", guide),
+                        mock.patch("src.nav.route_follower.SMOOTH_LOOKAHEAD_DISTANCE_M", 5.0 if enabled else 0.0),
+                    ):
+                        self.assertTrue(
+                            task.navigate_grid_to(points[-1], map_id="test"), (enabled, task.x, task.z, task.logs[-5:])
+                        )
+                    self.assertLessEqual(math.dist((task.x, task.z), points[-1]), 0.5)
+                    self.assertTrue(all(grid.is_free(*grid.index_of_world(x, z)) for x, z in task.trace))
+                    tasks.append(task)
+                old, new = tasks
+                self.assertLess(len(new.key_up_events), len(old.key_up_events))
+                self.assertLess(len(new.turns), len(old.turns))
+                self.assertLess(new.t, old.t)
+
+    def test_near_correction_stops_for_slow_sampling_or_large_error(self):
+        for cost, error in ((0.5, 8), (0.04, 30)):
+            with self.subTest(cost=cost, error=error):
+                ctx = self._control_tick(sync_supported=False)
+                ctx.session.poll_duration_s = cost
+                ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=error, distance_to_waypoint=4.5)
+                self.task._set_grid_walking(True)
+                self.task.pose_turn_to_bearing = mock.Mock(return_value={"ok": True, "rounds": 1})
+                self.task._grid_nav_state_turn(ctx)
+                self.assertFalse(self.task.w_down)
+                self.task.pose_turn_to_bearing.assert_called_once()
+
+    def test_short_feedback_probe_still_counts_as_turn_movement(self):
+        ctx = self._control_tick(sync_supported=False)
+        ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=90, distance_to_waypoint=3)
+        self.task._grid_nav_note_turn_movement = mock.Mock()
+        self.task.pose_turn_to_bearing = mock.Mock(return_value={"rounds": 0, "probe_only": True, "ok": False})
+        self.task._grid_nav_state_turn(ctx)
+        self.task._grid_nav_note_turn_movement.assert_called_once()
+
     def test_navigate_can_fall_back_to_stationary_turn(self):
         self.task.config["航点移动转向"] = False
         self.task.heading = 0.0
@@ -1704,10 +2211,9 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         line = next(msg for msg in self.task.logs if "[导航定位]" in msg)
         self.assertIn("推算=(10.250, -20.500)", line)
-        self.assertIn("WS=(9.500, -21.000)", line)
-        self.assertIn("误差=0.901m", line)
+        self.assertNotIn("WS=", line)
         self.assertIn("像素位移=(12.5, -4.0)", line)
-        self.assertIn("世界位移=(8.000, 2.500)", line)
+        self.assertNotIn("世界位移=", line)
         self.assertIn("朝向=91.5", line)
         self.assertIn("校准序号=7", line)
 

@@ -8,6 +8,9 @@ from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 
 POSITION_CONFIG_NAME = "Position Config"
 
+CONFIG_VISUAL_MAP_ROOT = "视觉地图资源目录"
+DEFAULT_VISUAL_MAP_ROOT = "assets/nav-grid-data/localization/maps"
+
 CONFIG_WS_WAIT = "WS等待稳定秒数"
 CONFIG_WS_MIN_HITS = "WS稳定最小位置数"
 CONFIG_SYNC_DISTANCE = "航点校准最小距离(米)"
@@ -34,10 +37,8 @@ CONFIG_EXPERIMENTAL_UPDATE = "检查并更新后端"
 DEFAULT_COMMIT_MIN_SHIFT_PX = 2.0
 
 DEFAULT_POSITION_CONFIG: dict = {
-    CONFIG_WS_WAIT: 10.0,
-    CONFIG_WS_MIN_HITS: 3,
+    CONFIG_VISUAL_MAP_ROOT: DEFAULT_VISUAL_MAP_ROOT,
     CONFIG_MIN_SCORE: 0.6,
-    CONFIG_SYNC_DISTANCE: 100.0,
     CONFIG_COMMIT_MIN_SHIFT: DEFAULT_COMMIT_MIN_SHIFT_PX,
     CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION: True,
     CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW: 60,
@@ -58,29 +59,27 @@ DEFAULT_POSITION_CONFIG: dict = {
 }
 
 POSITION_CONFIG_DESCRIPTION: dict[str, str] = {
-    CONFIG_WS_WAIT: "等 WS 位置流稳定（连续同一 mapId 的有效位置）的最大等待秒数",
-    CONFIG_WS_MIN_HITS: "判为稳定所需连续有效位置个数",
+    CONFIG_VISUAL_MAP_ROOT: "标定地图目录，包含 map_id/4/map_id_4.png 和对应的 _mapping.json；分层资源使用同级 layers/catalog.json。",
     CONFIG_MIN_SCORE: "箭头角度检测最低置信度，低于该值朝向判为不可用",
-    CONFIG_SYNC_DISTANCE: "累计移动达到该距离后，请求导航暂停并等待静止自动校准",
     CONFIG_COMMIT_MIN_SHIFT: "里程计位移提交阈值（像素）。误差是按采样次数累积的，"
     "而每样本位移 = 速度 * 采样间隔，所以慢走 / 原地挪时每米要积更多样本、"
     "漂移更大。设成 2~3 像素可让每米提交次数与速度脱钩（原地小步走几乎不提交），"
     "同时位置仍连续（未提交部分照常计入位置）。"
     "0 = 关闭，回到按时间提交的旧行为，便于 A/B 对比",
     CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION: (
-        "用 WS 绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
+        "用标定地图绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
     ),
     CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW: "关键帧视觉锚定链校正保留的最近切片数；越大越稳但计算越多",
     CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP: "每拍新切片最多和之前多少拍建立相对平移边",
     CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE: "切片对相位相关的最低响应；低于该值不建边",
-    CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT: "静止校准 WS 绝对锚点的权重；越大越贴近 WS",
+    CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT: "标定地图绝对锚点的权重；越大越贴近地图匹配坐标",
     CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION: "单拍关键帧视觉锚定链校正量的安全上限（米）；超过则回退原始融合值",
-    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME: "每隔多少拍建立一个关键帧；每次静止校准也会建关键帧",
+    CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME: "每隔多少拍建立一个关键帧；每次重新定位也会建关键帧",
     CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: "每个关键帧最多和之前多少个关键帧建立直接视觉边",
     CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: "关键帧视觉边的最低相位相关响应",
     CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: "关键帧优化位置作为局部关键帧视觉锚定链校正软锚点的权重",
     CONFIG_USE_EXPERIMENTAL: (
-        "改用外部抓包后端直接读取角色绝对坐标，绕开小地图里程计、地图 WS 与整条校准链。"
+        "改用外部抓包后端直接读取角色绝对坐标，替代标定地图匹配与视觉锚定链。"
         "该技术可能违反游戏服务条款、存在封禁风险，请自行判断是否使用"
     ),
     CONFIG_EXPERIMENTAL_PORT: "外部抓包后端的本地 HTTP 端口（自动启动用它拉起后端，也用它探活）",

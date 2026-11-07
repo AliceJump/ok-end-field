@@ -108,9 +108,8 @@ class TestItemNavigatorInstructions(unittest.TestCase):
         for expected in (
             "物品导航配置说明",
             "关键配置",
-            "获取 content（官方地图同步）",
+            "地图设施查询（可选）",
             "标记已获取",
-            "本地 WS 模式准备",
             "浮层显示",
             "显示条件",
         ):
@@ -135,17 +134,18 @@ class TestItemNavigatorInstructions(unittest.TestCase):
         html = ItemNavigatorTask.build_instructions(_navigator_stub(hold_seconds=1.0))
         self.assertIn("水平距离 20 以内连续按住标记键 1 秒", html)
 
-    def test_legacy_position_mode_keeps_master_instructions(self):
+    def test_retired_position_mode_also_explains_independent_sources(self):
         html = ItemNavigatorTask.build_instructions(_navigator_stub(unified=False))
 
-        self.assertIn("手动 content 使用本任务 content", html)
-        self.assertIn("地图账号：仅在「地图数据来源 = 账号配置」时使用", html)
-        self.assertNotIn("定位服务：首次读取坐标时会按需启动应用级定位服务", html)
+        self.assertIn("视觉或抓包数据源", html)
+        self.assertIn("定位服务：首次读取坐标时会按需启动应用级定位服务", html)
+        self.assertNotIn("本地 WS 模式准备", html)
+        self.assertNotIn("Tampermonkey", html)
 
     def test_runtime_values_are_not_passed_to_tr(self):
         """运行时数据只能经 .format() 注入；直接喂给 tr() 会污染 gettext 收集池。"""
         self.assertIn("configs/marked_points.json", self.html)
-        self.assertIn("assets/scripts/endfield-ws-position-relay.user.js", self.html)
+        self.assertNotIn("endfield-ws-position-relay.user.js", self.html)
         self.assertIn(OFFICIAL_MAP_PAGE_URL, self.html)
         self.assertIn(HG_CHECK_API_URL, self.html)
         for text in self.recorded:
