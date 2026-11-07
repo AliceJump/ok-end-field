@@ -281,7 +281,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task._camera_open.return_value = True
         task.wait_ui_stable.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "调整视角后画面未稳定"):
+        with self.assertRaisesRegex(RuntimeError, "调整视角后拍摄目标区域未稳定"):
             EnvironmentMonitoringPhotoTask.rotate_photo_view(task)
         task.mouse_up.assert_called_once_with(key="left")
 

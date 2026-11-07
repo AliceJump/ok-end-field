@@ -309,16 +309,18 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             self.smooth_drag(start, end, duration=0.3)  # 复用已有客户端坐标移动接口
         finally:  # 清理旋转手势
             self.mouse_up(key="left")  # 松开后才能检查稳定画面
-        if not self.wait_ui_stable(stable_time=0.3, max_wait=3, refresh_interval=0.1):  # 等待旋转后的画面稳定
-            raise RuntimeError("调整视角后画面未稳定")  # 不在持续变化的画面判断拍摄条件
+        if not self.wait_ui_stable(  # 只观察拍摄目标提示，避免动态场景影响等待
+            box=self.box_of_screen(0.02, 0.625, 0.14, 0.7), stable_time=0.3, max_wait=3, refresh_interval=0.1
+        ):  # 截图中左下角的拍摄目标标题和圆勾区域
+            raise RuntimeError("调整视角后拍摄目标区域未稳定")  # 不在目标提示变化时判断条件
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
         title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
         key = self.observation_key(title)  # 根据已注册的观察点选择取景策略
         _, direction = OBSERVATIONS.get(key, (None, "right"))  # 未识别时沿用默认方向
         if not self.wait_ui_stable(  # 等待相机目标标记区域入场稳定
-            box=self.box_of_screen(0.02, 0.655, 0.055, 0.715), stable_time=0.5, max_wait=3, refresh_interval=0.1
-        ):  # 只观察条件标记，避免背景动画影响稳定判断
+            box=self.box_of_screen(0.02, 0.625, 0.14, 0.7), stable_time=0.5, max_wait=3, refresh_interval=0.1
+        ):  # 只观察拍摄目标标题和条件标记
             raise RuntimeError("相机目标条件区域未稳定")  # 不在过渡画面判断或转动
         max_steps = 8  # 各点位共用最大调整次数
         for step in range(max_steps + 1):  # 初始状态加有界微调
