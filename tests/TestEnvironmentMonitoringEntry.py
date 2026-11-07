@@ -23,6 +23,19 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (
 
 
 class TestEnvironmentMonitoringEntry(unittest.TestCase):
+    @staticmethod
+    def language_data():
+        path = Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json"
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def assert_localized_routes(self, key, titles, route):
+        names = self.language_data()[key]
+        for locale, title in titles.items():
+            with self.subTest(point=key, locale=locale):
+                task = self.task()
+                setattr(task.lang.environment_monitoring, key, names[locale]["string"])
+                self.assertIs(task.observation_route(title), route)
+
     def task(self, width=1920, height=1080):
         task = object.__new__(EnvironmentMonitoringPhotoTask)
         task._executor = SimpleNamespace(frame=np.zeros((height, width, 3), dtype=np.uint8))
@@ -67,8 +80,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertIs(task.observation_route("桃树"), StationaryObservationRoute)
 
     def test_pier_waterwheel_uses_stationary_navigation_in_each_locale(self):
-        path = Path("assets/lang/environment_monitoring.json")
-        names = json.loads(path.read_text(encoding="utf-8"))["pier_waterwheel"]
         titles = {
             "zh_CN": "码头水车",
             "zh_TW": "碼頭水車",
@@ -76,15 +87,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             "ja_JP": "渡し場の水車",
             "ko_KR": "부두 물레방아",
         }
-        for locale, title in titles.items():
-            with self.subTest(locale=locale):
-                task = self.task()
-                task.lang.environment_monitoring.pier_waterwheel = names[locale]["string"]
-                self.assertIs(task.observation_route(title), StationaryObservationRoute)
+        self.assert_localized_routes("pier_waterwheel", titles, StationaryObservationRoute)
 
     def test_new_stationary_points_match_localized_titles(self):
-        path = Path("assets/lang/environment_monitoring.json")
-        resources = json.loads(path.read_text(encoding="utf-8"))
         titles = {
             "withered_branches": ("枯枝", "枯枝", "Withered Branches", "枯れ枝", "마른 가지"),
             "feranmut_heart": ("巨兽心脏", "巨獸心臟", "Feranmut Heart", "巨獣の心臓", "베헤모스의 심장"),
@@ -94,20 +99,15 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             ),
         }
         for key, localized in titles.items():
-            for locale, title in zip(("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"), localized, strict=True):
-                with self.subTest(point=key, locale=locale):
-                    task = self.task()
-                    setattr(task.lang.environment_monitoring, key, resources[key][locale]["string"])
-                    self.assertIs(task.observation_route(title), StationaryObservationRoute)
+            locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
+            self.assert_localized_routes(key, dict(zip(locales, localized, strict=True)), StationaryObservationRoute)
 
     def test_observant_fowlbeast_matches_short_chinese_title(self):
         task = self.task()
         task.lang.environment_monitoring.observant_fowlbeast = "东张西望"
-        self.assertIs(task.observation_route("东张西望"), StationaryObservationNavigation)
+        self.assertIs(task.observation_route("东张西望"), StationaryObservationRoute)
 
     def test_peach_tree_localized_titles(self):
-        path = Path("assets/lang/environment_monitoring.json")
-        names = json.loads(path.read_text(encoding="utf-8"))["peach_tree"]
         titles = {
             "zh_CN": "念念家的桃树",
             "zh_TW": "念念家的桃樹",
@@ -115,11 +115,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             "ja_JP": "ネンネンの家にある桃の木",
             "ko_KR": "염념이네 복숭아나무",
         }
-        for locale, title in titles.items():
-            with self.subTest(locale=locale):
-                task = self.task()
-                task.lang.environment_monitoring.peach_tree = names[locale]["string"]
-                self.assertIs(task.observation_route(title), StationaryObservationRoute)
+        self.assert_localized_routes("peach_tree", titles, StationaryObservationRoute)
 
     def color_task(self, frame):
         height, width = frame.shape[:2]
@@ -677,11 +673,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_route_matches_localized_names_without_relying_on_punctuation(self):
         task = self.task()
-        data = json.loads(
-            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        data = self.language_data()
         examples = (
             ("zh_CN", "“小池荷”"),
             ("zh_TW", "「小池荷」"),
@@ -696,11 +688,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertIs(task.observation_route(title + "其他"), PoolLotusRoute)
 
     def test_thillu_matches_localized_names_with_or_without_quotes(self):
-        data = json.loads(
-            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        data = self.language_data()
         for locale, node in data["thillu"].items():
             with self.subTest(locale=locale):
                 task = self.task()
@@ -710,11 +698,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertIs(task.observation_route(f"“{name}”"), StationaryObservationRoute)
 
     def test_normal_slug_matches_without_accepting_vigorous_title_in_all_locales(self):
-        data = json.loads(
-            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        data = self.language_data()
         vigorous_titles = {
             "zh_CN": "充满活力的蓄水源石虫",
             "zh_TW": "充滿活力的蓄水源石蟲",
@@ -733,11 +717,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertIsNone(task.observation_key(normal_title + "其他"))
 
     def test_short_names_match_only_their_point_in_every_locale(self):
-        data = json.loads(
-            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        data = self.language_data()
         points = data
         short_names = {key: value for key, value in points.items() if "pattern" in value["zh_CN"]}
         for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
