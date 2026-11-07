@@ -21,6 +21,7 @@ def install_startup_patches():
     from src.patches.log_upload_patch import install_log_upload_patch
     from src.patches.no_frame_task_patch import install_no_frame_task_patch
     from src.patches.ocr_text_fix_patch import install_ocr_text_fix_patch
+    from src.patches.ocr_zh_convert_patch import install_ocr_zh_convert_patch
     from src.patches.position_service_patch import install_position_service_patch
     from src.patches.process_execute_patch import install_process_execute_patch
     from src.patches.qfluent_navigation_patch import install_qfluent_navigation_patch
@@ -45,6 +46,7 @@ def install_startup_patches():
     install_dynamic_config_patch()
     install_log_upload_patch()
     install_ocr_text_fix_patch()
+    install_ocr_zh_convert_patch()
     install_process_execute_patch()
     install_position_service_patch()
     install_screenshot_sidecar_patch()
