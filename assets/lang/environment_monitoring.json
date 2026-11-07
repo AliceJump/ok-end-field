@@ -91,6 +91,13 @@
     "ja_JP": {"string": "環状滝"},
     "ko_KR": {"string": "원형 폭포"}
   },
+  "pier_waterwheel": {
+    "zh_CN": {"string": "码头水车"},
+    "zh_TW": {"string": "碼頭水車"},
+    "en_US": {"string": "Pier Waterwheel"},
+    "ja_JP": {"string": "渡し場の水車"},
+    "ko_KR": {"string": "부두 물레방아"}
+  },
   "peach_tree": {
     "zh_CN": {"string": "桃树"},
     "zh_TW": {"string": "桃樹"},

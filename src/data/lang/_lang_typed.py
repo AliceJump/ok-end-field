@@ -389,6 +389,9 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     annular_waterfall: str
     """环形瀑布"""
 
+    pier_waterwheel: str
+    """码头水车"""
+
     peach_tree: str
     """桃树"""
 

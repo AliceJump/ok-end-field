@@ -18,6 +18,7 @@ OBSERVATIONS = {  # 观察点语言键对应导航类和取景方向
     "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
     "thillu": (StationaryObservationNavigation, "right"),  # 表象在传送落点向右取景
     "peach_tree": (StationaryObservationNavigation, "right"),  # 桃树在传送落点即可取景
+    "pier_waterwheel": (StationaryObservationNavigation, "right"),  # 码头水车在传送落点即可取景
     "annular_waterfall": (AnnularWaterfallNavigation, "up"),  # 环形瀑布向上取景
 }  # 仅注册已支持的点位
 
