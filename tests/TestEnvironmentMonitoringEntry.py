@@ -92,7 +92,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 "念念家的桃树", "念念家的桃樹", "Peach Tree at Babbles's Home",
                 "ネンネンの家にある桃の木", "염념이네 복숭아나무",
             ),
-            "withered_branches": ("枯枝", "枯枝", "Withered Branches", "枯れ枝", "마른 가지"),
             "feranmut_heart": ("巨兽心脏", "巨獸心臟", "Feranmut Heart", "巨獣の心臓", "베헤모스의 심장"),
             "observant_fowlbeast": (
                 "东张西望的黑腹雉羽兽", "東張西望的黑腹雉羽獸", "Observant Sable-chested Fowlbeast",

@@ -98,13 +98,6 @@
     "ja_JP": {"string": "渡し場の水車"},
     "ko_KR": {"string": "부두 물레방아"}
   },
-  "withered_branches": {
-    "zh_CN": {"string": "枯枝"},
-    "zh_TW": {"string": "枯枝"},
-    "en_US": {"string": "Withered Branches"},
-    "ja_JP": {"string": "枯れ枝"},
-    "ko_KR": {"string": "마른 가지"}
-  },
   "feranmut_heart": {
     "zh_CN": {"string": "巨兽心脏"},
     "zh_TW": {"string": "巨獸心臟"},
