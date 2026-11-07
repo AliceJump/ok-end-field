@@ -30,7 +30,6 @@ OBSERVATIONS = {  # 观察点语言键对应路线类
     "collapsed_tianshi_pillar": TianshiPillarRoute,  # 天师桩向右取景
     "mini_shellbeast": MiniShellbeastRoute,  # 小壳兽向左取景
     "xiranite_nexus": XiraniteNexusRoute,  # 枢壤仪向右取景
-    "withered_branches": StationaryObservationRoute,  # 枯枝原地向右搜索
     "feranmut_heart": StationaryObservationRoute,  # 巨兽心脏原地向右搜索
     "observant_fowlbeast": StationaryObservationRoute,  # 雉羽兽原地向右搜索
 }  # 仅注册已支持的点位
