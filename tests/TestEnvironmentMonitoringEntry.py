@@ -64,6 +64,22 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertIs(task.observation_route("念念家的桃树"), StationaryObservationNavigation)
         self.assertIs(task.observation_route("桃树"), StationaryObservationNavigation)
 
+    def test_pier_waterwheel_uses_stationary_navigation_in_each_locale(self):
+        path = Path("assets/lang/environment_monitoring.json")
+        names = json.loads(path.read_text(encoding="utf-8"))["pier_waterwheel"]
+        titles = {
+            "zh_CN": "码头水车",
+            "zh_TW": "碼頭水車",
+            "en_US": "Pier Waterwheel",
+            "ja_JP": "渡し場の水車",
+            "ko_KR": "부두 물레방아",
+        }
+        for locale, title in titles.items():
+            with self.subTest(locale=locale):
+                task = self.task()
+                task.lang.environment_monitoring.pier_waterwheel = names[locale]["string"]
+                self.assertIs(task.observation_route(title), StationaryObservationNavigation)
+
     def test_peach_tree_localized_titles(self):
         path = Path("assets/lang/environment_monitoring.json")
         names = json.loads(path.read_text(encoding="utf-8"))["peach_tree"]

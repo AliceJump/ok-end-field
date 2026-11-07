@@ -18,6 +18,7 @@ OBSERVATIONS = {  # 观察点语言键对应导航类和取景方向
     "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
     "thillu": (StationaryObservationNavigation, "right"),  # 表象在传送落点向右取景
     "peach_tree": (StationaryObservationNavigation, "right"),  # 桃树在传送落点即可取景
+    "pier_waterwheel": (StationaryObservationNavigation, "right"),  # 码头水车在传送落点即可取景
     "annular_waterfall": (AnnularWaterfallNavigation, "up"),  # 环形瀑布向上取景
 }  # 仅注册已支持的点位
 
@@ -285,11 +286,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             return False  # 非相机界面不能报告条件满足
         marker = self.find_one(  # 识别相机目标行的圆勾模板
             fL.photo_target_checked, box=self.box_of_screen(0.02, 0.655, 0.055, 0.715), frame=frame
-        )  # 只在目标标记区域寻找，模板定位用于后续颜色检查
-        if not marker:  # 未找到圆勾模板
-            return False  # 不把未满足条件算作就绪
-        yellow = {"r": (180, 255), "g": (155, 255), "b": (0, 120)}  # 亮起圆勾的黄色范围
-        return self.find_color(yellow, marker, threshold=0.03, frame=frame)  # 同帧确认圆勾黄色亮起
+        )  # 只在目标标记区域寻找圆勾
+        return bool(marker)  # 圆勾出现表示拍摄条件满足
 
     def rotate_photo_view(self, direction="right"):  # 在画面中央按点位方向拖动，不触碰快门
         if direction not in ("left", "right", "up"):  # 仅支持已注册的取景方向
@@ -308,27 +306,26 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             self.smooth_drag(start, end, duration=0.3)  # 复用已有客户端坐标移动接口
         finally:  # 清理旋转手势
             self.mouse_up(key="left")  # 松开后才能检查稳定画面
-        if not self.wait_ui_stable(stable_time=0.3, max_wait=3, refresh_interval=0.1):  # 等待旋转后的画面稳定
-            raise RuntimeError("调整视角后画面未稳定")  # 不在持续变化的画面判断拍摄条件
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
         title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
         key = self.observation_key(title)  # 根据已注册的观察点选择取景策略
         _, direction = OBSERVATIONS.get(key, (None, "right"))  # 未识别时沿用默认方向
         if not self.wait_ui_stable(  # 等待相机目标标记区域入场稳定
-            box=self.box_of_screen(0.02, 0.655, 0.055, 0.715), stable_time=0.5, max_wait=3, refresh_interval=0.1
-        ):  # 只观察条件标记，避免背景动画影响稳定判断
+            box=self.box_of_screen(0.02, 0.625, 0.14, 0.7), stable_time=0.5, max_wait=3, refresh_interval=0.1
+        ):  # 只观察拍摄目标标题和条件标记
             raise RuntimeError("相机目标条件区域未稳定")  # 不在过渡画面判断或转动
         max_steps = 8  # 各点位共用最大调整次数
-        for step in range(max_steps + 1):  # 初始状态加有界微调
-            self.next_frame()  # 每轮使用调整后的新画面
-            if self.photo_condition_met():  # 条件亮起立即停止调整
-                return True  # 保留已满足的角度，不按快门
-            if step < max_steps:  # 最后一次检查后不再增加位移
-                self.log_info(
-                    f"[environment-monitoring] 取景条件未识别，向{direction}调整：{step + 1}/{max_steps}"
-                )  # 记录转动原因
-                self.rotate_photo_view(direction=direction)  # 只旋转镜头，不发出移动按键
+        self.next_frame()  # 先检查初始角度的新画面
+        if self.photo_condition_met():  # 已满足条件时不转动
+            return True  # 保留当前角度
+        for step in range(max_steps):  # 有界微调并等待每次调整后的圆勾
+            self.log_info(
+                f"[environment-monitoring] 取景条件未识别，向{direction}调整：{step + 1}/{max_steps}"
+            )  # 记录转动原因
+            self.rotate_photo_view(direction=direction)  # 只旋转镜头，不发出移动按键
+            if self.wait_until(self.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False):  # 等待拍照条件
+                return True  # 圆勾出现后停止调整
         return False  # 有限范围内未找到时如实返回
 
     def prepare_photo(self):  # 进入相机并检查取景条件

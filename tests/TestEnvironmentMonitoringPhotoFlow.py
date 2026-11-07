@@ -192,14 +192,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.ocr.assert_not_called()
 
     def test_photo_condition_uses_checked_marker_without_ocr(self):
-        for marker_found, yellow_ratio, expected in ((False, 1.0, False), (True, 0.0, False), (True, 0.1, True)):
-            with self.subTest(marker=marker_found, yellow=yellow_ratio):
+        for marker_found in (False, True):
+            with self.subTest(marker=marker_found):
                 task = self.task()
                 task._camera_open.return_value = True
                 task.find_one.return_value = Box(52, 726, 26, 24) if marker_found else None
-                task.find_color.return_value = yellow_ratio > 0.03
-                self.assertEqual(EnvironmentMonitoringPhotoTask.photo_condition_met(task), expected)
-                self.assertEqual(task.find_color.call_count, int(marker_found))
+                self.assertEqual(EnvironmentMonitoringPhotoTask.photo_condition_met(task), marker_found)
                 self.assertEqual(task.find_one.call_args.args[0], fL.photo_target_checked)
                 task.ocr.assert_not_called()
 
@@ -214,10 +212,8 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
         task._camera_open.side_effect = camera_detected
         task.find_one.return_value = Box(52, 726, 26, 24)
-        task.find_color.return_value = True
         self.assertTrue(EnvironmentMonitoringPhotoTask.photo_condition_met(task))
         self.assertIs(task.find_one.call_args.kwargs["frame"], original_frame)
-        self.assertIs(task.find_color.call_args.kwargs["frame"], original_frame)
         task.ocr.assert_not_called()
 
     def test_route_requires_world_and_does_not_move_in_a_menu(self):
@@ -277,19 +273,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.mouse_down.assert_called_once()
                 task.mouse_up.assert_called_once_with(key="left")
 
-    def test_unstable_view_after_rotation_releases_mouse_and_stops(self):
-        task = self.task()
-        task._camera_open.return_value = True
-        task.wait_ui_stable.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "调整视角后画面未稳定"):
-            EnvironmentMonitoringPhotoTask.rotate_photo_view(task)
-        task.mouse_up.assert_called_once_with(key="left")
-
     def test_slug_photo_adjustments_are_bounded_and_keep_observation_name(self):
         task = self.task()
         task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
         task.selected_observation = {"name": "蓄水源石虫"}
         task.photo_condition_met.return_value = False
+        task.wait_until.side_effect = lambda condition, **kwargs: condition()
         self.assertFalse(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         self.assertEqual(task.rotate_photo_view.call_args_list, [call(direction="left")] * 8)
         task._camera_open.return_value = True
@@ -328,6 +317,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.lang.environment_monitoring.annular_waterfall = "环形瀑布"
         task.selected_observation = {"name": "环形瀑布"}
         task.photo_condition_met.side_effect = [False, True]
+        task.wait_until.side_effect = lambda condition, **kwargs: condition()
         self.assertIs(task.observation_route("环形瀑布"), AnnularWaterfallNavigation)
         self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         task.rotate_photo_view.assert_called_once_with(direction="up")
@@ -379,15 +369,17 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             with self.subTest(failed_attempts=failed_attempts):
                 task = self.task()
                 task.photo_condition_met.side_effect = [False] * failed_attempts + [True]
+                task.wait_until.side_effect = lambda condition, **kwargs: condition()
                 self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
                 self.assertEqual(task.rotate_photo_view.call_count, failed_attempts)
 
     def test_unsatisfied_condition_has_at_most_eight_rotations(self):
         task = self.task()
         task.photo_condition_met.return_value = False
+        task.wait_until.side_effect = lambda condition, **kwargs: condition()
         self.assertFalse(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         self.assertEqual(task.rotate_photo_view.call_count, 8)
-        self.assertEqual(task.next_frame.call_count, 9)
+        self.assertEqual(task.wait_until.call_count, 8)
         task.press_key.assert_not_called()
         task.send_key_down.assert_not_called()
 
@@ -534,14 +526,23 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_camera_lost_after_final_rotation_cannot_be_reported_as_open(self):
         task = self.task()
         task.photo_condition_met.return_value = False
+        task.wait_until.side_effect = lambda condition, **kwargs: condition()
         task.adjust_photo_view.side_effect = lambda: EnvironmentMonitoringPhotoTask.adjust_photo_view(task)
         with self.assertRaisesRegex(RuntimeError, "取景结束时相机界面已关闭"):
             EnvironmentMonitoringPhotoTask.prepare_photo(task)
         self.assertEqual(task.rotate_photo_view.call_count, 8)
-        self.assertEqual(task.next_frame.call_count, 10)
+        self.assertEqual(task.next_frame.call_count, 2)
         task._camera_open.assert_called_once_with(frame=task.frame)
         task.ocr.assert_not_called()
         self.assertFalse(any("camera_open=True" in c.args[0] for c in task.log_info.call_args_list))
+
+    def test_delayed_checked_marker_stops_before_another_rotation(self):
+        task = self.task()
+        task.photo_condition_met.side_effect = [False, False, True]
+        task.wait_until.side_effect = lambda condition, **kwargs: condition() or condition()
+        self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
+        task.rotate_photo_view.assert_called_once()
+        task.wait_until.assert_called_once_with(task.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False)
 
     def test_final_frame_decides_ready_instead_of_the_previous_search_result(self):
         for search_ready, final_ready in ((True, False), (False, True)):
