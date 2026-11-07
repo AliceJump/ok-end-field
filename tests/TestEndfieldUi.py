@@ -773,6 +773,34 @@ class CombatSettingsTest(unittest.TestCase):
         host.close()
         host.deleteLater()
 
+    def test_list_row_wraps_a_long_single_item_inside_drawer(self):
+        # 白名单整串粘贴成一个列表项时，“每项一行”不起作用；这一行仍会撑宽抽屉
+        items = ["冲浪大赛门票,耶尔什微风,浪潮海石,塞梦珂披巾,《前沿瞭望》,低容武陵电池,高容谷地电池"]
+        config = CombatEditBuffer({"购物白名单": items})
+        config.get_default = config.get
+        task: Any = SimpleNamespace(
+            name="地区建设",
+            config=config,
+            default_config={},
+            config_description={},
+            config_type={},
+            show_create_shortcut=False,
+        )
+        host = QWidget()
+        host.resize(1200, 700)
+        host.show()
+        drawer = EndfieldTacticalDrawer(host)
+        self.assertTrue(drawer.open_subtask(task.name, task))
+        self.app.processEvents()
+        row = drawer.form_layout.itemAt(0).widget().config_widget_by_key["购物白名单"]
+        self.assertLessEqual(drawer.form_container.width(), drawer.scroll_area.viewport().width())
+        self.assertLessEqual(row.switch_button.mapTo(drawer, row.switch_button.rect().topRight()).x(), drawer.width())
+        self.assertEqual(row.list_text.text(), "\n".join(items))
+        self.assertTrue(row.list_text.wordWrap())
+        drawer.close_drawer()
+        host.close()
+        host.deleteLater()
+
     def test_list_row_translates_only_values_from_available_options(self):
         from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 

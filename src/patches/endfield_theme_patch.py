@@ -1400,6 +1400,7 @@ def patch_config_row_background() -> None:
     """
     try:
         from ok import og  # type: ignore
+        from ok.ui.qt.common.design_system import DesignToken  # type: ignore
         from ok.ui.qt.settings.GlobalConfigTab import GlobalConfigTab
         from ok.ui.qt.tasks.LabelAndMultiSelection import LabelAndMultiSelection
         from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget  # type: ignore
@@ -1444,6 +1445,9 @@ def patch_config_row_background() -> None:
             items = self.config.get(self.key)
             if self.options_available is not None:
                 items = [og.app.tr(item) for item in items]
+            # 单项本身也可能很长（整串粘贴的白名单、长正则）；折行并限制到控件最大宽度，不改动列表项内容
+            self.list_text.setWordWrap(True)
+            self.list_text.setMaximumWidth(DesignToken.CONTROL_MAX_WIDTH)
             self.list_text.setText("\n".join(items))
 
         ModifyListItem.update_value = _list_update_value
