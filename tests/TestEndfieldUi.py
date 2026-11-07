@@ -773,8 +773,8 @@ class CombatSettingsTest(unittest.TestCase):
         host.close()
         host.deleteLater()
 
-    def test_list_row_wraps_a_long_single_item_inside_drawer(self):
-        # 白名单整串粘贴成一个列表项时，“每项一行”不起作用；这一行仍会撑宽抽屉
+    def test_list_row_splits_a_long_single_item_by_comma_inside_drawer(self):
+        # 白名单整串粘贴成一个列表项；文档约定逗号分隔规则，显示时一项一行
         items = ["冲浪大赛门票,耶尔什微风,浪潮海石,塞梦珂披巾,《前沿瞭望》,低容武陵电池,高容谷地电池"]
         config = CombatEditBuffer({"购物白名单": items})
         config.get_default = config.get
@@ -795,7 +795,12 @@ class CombatSettingsTest(unittest.TestCase):
         row = drawer.form_layout.itemAt(0).widget().config_widget_by_key["购物白名单"]
         self.assertLessEqual(drawer.form_container.width(), drawer.scroll_area.viewport().width())
         self.assertLessEqual(row.switch_button.mapTo(drawer, row.switch_button.rect().topRight()).x(), drawer.width())
-        self.assertEqual(row.list_text.text(), "\n".join(items))
+        self.assertEqual(
+            row.list_text.text(),
+            "\n".join(
+                ["冲浪大赛门票", "耶尔什微风", "浪潮海石", "塞梦珂披巾", "《前沿瞭望》", "低容武陵电池", "高容谷地电池"]
+            ),
+        )
         self.assertTrue(row.list_text.wordWrap())
         drawer.close_drawer()
         host.close()
@@ -813,6 +818,23 @@ class CombatSettingsTest(unittest.TestCase):
         self.assertEqual(free_text.list_text.text(), "息壤\n赤铜零件")
         with_options.deleteLater()
         free_text.deleteLater()
+
+    def test_list_row_splits_comma_items_only_for_free_text_lists(self):
+        from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
+
+        config = CombatEditBuffer({"序列": []})
+        free_text = ModifyListItem({}, config, "序列")
+        free_text.list_modified(["刻写,助剂", "理智"])
+        self.assertEqual(config["序列"], ["刻写", "助剂", "理智"])
+        self.assertEqual(free_text.list_text.text(), "刻写\n助剂\n理智")
+        free_text.deleteLater()
+
+        options = ["息壤", "赤铜零件"]
+        config = CombatEditBuffer({"序列": []})
+        with_options = ModifyListItem({}, config, "序列", options_available=options)
+        with_options.list_modified(options)
+        self.assertEqual(config["序列"], options)
+        with_options.deleteLater()
 
     def test_native_task_header_elides_without_losing_full_text(self):
         from ok.ui.qt.tasks.TaskCard import TaskCard

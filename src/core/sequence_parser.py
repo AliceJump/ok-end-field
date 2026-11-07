@@ -31,6 +31,20 @@ def parse_sequence(raw_config: str | list | None) -> list[str]:
     return [token.strip() for token in normalized.split(",") if token.strip()]
 
 
+def parse_sequence_list(raw_config: str | list | None) -> list[str]:
+    """
+    解析列表配置，列表项内的逗号也作为分隔符。
+
+    列表型配置可能由整串粘贴产生，一项内包含多条逗号分隔的规则。
+
+    Example:
+        ["刻写,助剂", "理智"] -> ["刻写", "助剂", "理智"]
+    """
+    if isinstance(raw_config, (list, tuple)):
+        return [token for item in raw_config for token in parse_sequence(item)]
+    return parse_sequence(raw_config)
+
+
 def parse_int_sequence(raw_config: str | None) -> list[int]:
     """
     将逗号分隔字符串序列解析为整数列表。

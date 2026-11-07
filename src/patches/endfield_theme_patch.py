@@ -1406,6 +1406,8 @@ def patch_config_row_background() -> None:
         from ok.ui.qt.tasks.LabelAndWidget import LabelAndWidget  # type: ignore
         from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 
+        from src.core.sequence_parser import parse_sequence_list
+
         orig_init = LabelAndWidget.__init__
         if getattr(orig_init, "_endfield_patched", False):
             return
@@ -1445,12 +1447,25 @@ def patch_config_row_background() -> None:
             items = self.config.get(self.key)
             if self.options_available is not None:
                 items = [og.app.tr(item) for item in items]
-            # 单项本身也可能很长（整串粘贴的白名单、长正则）；折行并限制到控件最大宽度，不改动列表项内容
+            else:
+                # 自由文本列表按文档约定以逗号分隔规则（如购物白名单），一项一行显示
+                items = parse_sequence_list(items)
+            # 单项本身仍可能很长（长正则）；折行并限制到控件最大宽度
             self.list_text.setWordWrap(True)
             self.list_text.setMaximumWidth(DesignToken.CONTROL_MAX_WIDTH)
             self.list_text.setText("\n".join(items))
 
         ModifyListItem.update_value = _list_update_value
+
+        original_list_modified = ModifyListItem.list_modified
+
+        def _list_modified(self: Any, the_list: list) -> None:
+            # 保存时把逗号串拆成独立项，存储与显示、匹配语义保持一致
+            if self.options_available is None:
+                the_list = parse_sequence_list(the_list)
+            original_list_modified(self, the_list)
+
+        ModifyListItem.list_modified = _list_modified
 
         original_multi_init = LabelAndMultiSelection.__init__
 
