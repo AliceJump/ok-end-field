@@ -80,6 +80,24 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task.lang.environment_monitoring.pier_waterwheel = names[locale]["string"]
                 self.assertIs(task.observation_route(title), StationaryObservationNavigation)
 
+    def test_new_stationary_points_match_localized_titles(self):
+        path = Path("assets/lang/environment_monitoring.json")
+        resources = json.loads(path.read_text(encoding="utf-8"))
+        titles = {
+            "withered_branches": ("枯枝", "枯枝", "Withered Branches", "枯れ枝", "마른 가지"),
+            "feranmut_heart": ("巨兽心脏", "巨獸心臟", "Feranmut Heart", "巨獣の心臓", "베헤모스의 심장"),
+            "observant_fowlbeast": (
+                "东张西望的黑腹雉羽兽", "東張西望的黑腹雉羽獸", "Observant Sable-chested Fowlbeast",
+                "キョロキョロする黒腹羽獣", "두리번거리는 세이블체스티드 파울비스트",
+            ),
+        }
+        for key, localized in titles.items():
+            for locale, title in zip(("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"), localized, strict=True):
+                with self.subTest(point=key, locale=locale):
+                    task = self.task()
+                    setattr(task.lang.environment_monitoring, key, resources[key][locale]["string"])
+                    self.assertIs(task.observation_route(title), StationaryObservationNavigation)
+
     def test_peach_tree_localized_titles(self):
         path = Path("assets/lang/environment_monitoring.json")
         names = json.loads(path.read_text(encoding="utf-8"))["peach_tree"]
