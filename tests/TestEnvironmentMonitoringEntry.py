@@ -19,8 +19,14 @@ from src.tasks.onetime.EnvironmentMonitoringNavigation import (
 )
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
+SCREEN_SIZES = ((1280, 720), (1920, 1080), (2560, 1440))
+
 
 class TestEnvironmentMonitoringEntry(unittest.TestCase):
+    @staticmethod
+    def card_area():
+        return Box(678, 918, 562, 81)
+
     @staticmethod
     def language_data():
         path = Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json"
@@ -28,11 +34,14 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def assert_localized_routes(self, key, titles, route):
         names = self.language_data()[key]
-        for locale, title in titles.items():
-            with self.subTest(point=key, locale=locale):
-                task = self.task()
-                setattr(task.lang.environment_monitoring, key, names[locale]["string"])
-                self.assertIs(task.observation_route(title), route)
+        for locale, examples in titles.items():
+            if isinstance(examples, str):
+                examples = (examples,)
+            for title in examples:
+                with self.subTest(point=key, locale=locale, title=title):
+                    task = self.task()
+                    setattr(task.lang.environment_monitoring, key, names[locale]["string"])
+                    self.assertIs(task.observation_route(title), route)
 
     def task(self, width=1920, height=1080):
         task = object.__new__(EnvironmentMonitoringPhotoTask)
@@ -127,7 +136,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.enter_observation.assert_not_called()
 
     def test_available_cards_bind_buttons_to_their_own_titles_at_multiple_sizes(self):
-        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+        for width, height in SCREEN_SIZES:
             with self.subTest(size=(width, height)):
                 task = self.task(width, height)
                 titles = [
@@ -163,7 +172,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertEqual([item["name"] for item in task.available_observations()], ["环形瀑布"])
 
     def test_pool_lotus_title_selects_its_own_column(self):
-        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+        for width, height in SCREEN_SIZES:
             for target_column in range(3):
                 with self.subTest(size=(width, height), target_column=target_column):
                     task = self.task(width, height)
@@ -186,7 +195,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     self.assertEqual(matches[0]["action_box"].x, expected_left)
 
     def test_terminal_highlight_identifies_only_the_selected_tab_at_multiple_sizes(self):
-        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+        for width, height in SCREEN_SIZES:
             for selected in ("outskirts", "marker_stone"):
                 with self.subTest(size=(width, height), selected=selected):
                     frame = np.full((height, width, 3), 40, dtype=np.uint8)
@@ -217,7 +226,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         return frame
 
     def test_monitoring_page_requires_templates_two_stripes_and_one_selected_tab(self):
-        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+        for width, height in SCREEN_SIZES:
             for selected in ((), ("outskirts",), ("marker_stone",), ("outskirts", "marker_stone")):
                 with self.subTest(size=(width, height), selected=selected):
                     task = self.color_task(self.monitoring_frame(width, height, selected))
@@ -245,7 +254,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertFalse(task._monitoring_page())
 
     def test_card_button_colors_reject_dark_gray_and_sparse_white_at_multiple_sizes(self):
-        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+        for width, height in SCREEN_SIZES:
             for color, state in (
                 ((0, 240, 255), "accept"),
                 ((236, 236, 236), "go"),
@@ -376,7 +385,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_accept_and_go_remain_inside_the_selected_card(self):
         task = self.task()
-        area = Box(678, 918, 562, 81)
+        area = self.card_area()
         task._observation_action = Mock(side_effect=["accept", "go"])
         task.enter_observation({"name": "“小池荷”", "action_box": area})
         task.ocr.assert_not_called()
@@ -397,7 +406,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 self.assertEqual(EnvironmentMonitoringPhotoTask._task_detail_page(task), q_found and e_found)
 
     def test_missing_task_detail_page_prevents_tracking(self):
-        task = self.prepare_task([{"name": "小池荷", "action_box": Box(678, 918, 562, 81)}], [])
+        task = self.prepare_task([{"name": "小池荷", "action_box": self.card_area()}], [])
         del task.enter_observation
         task._observation_action = Mock(return_value="go")
         task._task_detail_page.return_value = False
@@ -407,7 +416,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.wait_ocr.assert_not_called()
 
     def test_unstable_mission_details_stop_before_tracking_or_transfer(self):
-        task = self.prepare_task([{"name": "小池荷", "action_box": Box(678, 918, 562, 81)}], [])
+        task = self.prepare_task([{"name": "小池荷", "action_box": self.card_area()}], [])
         del task.enter_observation
         task._observation_action = Mock(return_value="go")
         task.wait_ui_stable.return_value = False
@@ -418,7 +427,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_already_accepted_card_goes_to_mission_without_accepting_again(self):
         task = self.task()
-        area = Box(678, 918, 562, 81)
+        area = self.card_area()
         task._observation_action = Mock(return_value="go")
         task.enter_observation({"name": "小池荷", "action_box": area})
         task.click.assert_called_once_with(area)
@@ -427,7 +436,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_failed_accept_transition_does_not_click_another_card_or_continue(self):
         task = self.task()
         task._observation_action = Mock(return_value="accept")
-        area = Box(678, 918, 562, 81)
+        area = self.card_area()
         with self.assertRaisesRegex(RuntimeError, "前往任务"):
             task.enter_observation({"name": "小池荷", "action_box": area})
         self.assertEqual(task.click.call_count, 1)
@@ -437,7 +446,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task._monitoring_page.return_value = False
         task._observation_action = Mock(return_value="go")
-        area = Box(678, 918, 562, 81)
+        area = self.card_area()
         with self.assertRaisesRegex(RuntimeError, "打开观察点前未处于环境监测终端列表"):
             task.enter_observation({"name": "小池荷", "action_box": area})
         task.click.assert_not_called()
@@ -447,7 +456,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task._monitoring_page.side_effect = [True, False]
         task._observation_action = Mock(return_value="accept")
-        area = Box(678, 918, 562, 81)
+        area = self.card_area()
         with self.assertRaisesRegex(RuntimeError, "前往任务"):
             task.enter_observation({"name": "小池荷", "action_box": area})
         task.click.assert_called_once_with(area)
@@ -456,7 +465,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_unknown_button_color_never_clicks_or_opens_details(self):
         task = self.task()
         task._observation_action = Mock(return_value=None)
-        area = Box(678, 918, 562, 81)
+        area = self.card_area()
         with self.assertRaisesRegex(RuntimeError, "前往任务"):
             task.enter_observation({"name": "小池荷", "action_box": area})
         task.click.assert_not_called()
@@ -501,7 +510,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task._wait_for_transfer_arrival.assert_not_called()
 
     def test_close_icon_elsewhere_cannot_confirm_tracking_at_multiple_sizes(self):
-        for width, height in ((1280, 720), (1920, 1080), (2560, 1440)):
+        for width, height in SCREEN_SIZES:
             with self.subTest(size=(width, height)):
                 task = self.task(width, height)
                 close = Box(round(width * 0.95), round(height * 0.06), 20, 20)
@@ -627,8 +636,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.enter_observation.assert_called_once_with(supported)
 
     def test_route_matches_localized_names_without_relying_on_punctuation(self):
-        task = self.task()
-        data = self.language_data()
         examples = (
             ("zh_CN", "“小池荷”"),
             ("zh_TW", "「小池荷」"),
@@ -636,21 +643,13 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             ("ja_JP", "「池の蓮」"),
             ("ko_KR", "'작은 연못의 연꽃'"),
         )
-        for locale, title in examples:
-            with self.subTest(title=title):
-                task.lang.environment_monitoring.pool_lotus = data["pool_lotus"][locale]["string"]
-                self.assertEqual(task.observation_route(title), PoolLotusNavigation)
-                self.assertIs(task.observation_route(title + "其他"), PoolLotusNavigation)
+        titles = {locale: (title, title + "其他") for locale, title in examples}
+        self.assert_localized_routes("pool_lotus", titles, PoolLotusNavigation)
 
     def test_thillu_matches_localized_names_with_or_without_quotes(self):
-        data = self.language_data()
-        for locale, node in data["thillu"].items():
-            with self.subTest(locale=locale):
-                task = self.task()
-                name = node["string"]
-                task.lang.environment_monitoring.thillu = name
-                self.assertIs(task.observation_route(name), StationaryObservationNavigation)
-                self.assertIs(task.observation_route(f"“{name}”"), StationaryObservationNavigation)
+        names = self.language_data()["thillu"]
+        titles = {locale: (node["string"], f"“{node['string']}”") for locale, node in names.items()}
+        self.assert_localized_routes("thillu", titles, StationaryObservationNavigation)
 
     def test_normal_slug_matches_without_accepting_vigorous_title_in_all_locales(self):
         data = self.language_data()
