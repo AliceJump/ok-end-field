@@ -774,6 +774,7 @@ class CombatSettingsTest(unittest.TestCase):
         host.deleteLater()
 
     def test_list_row_splits_a_long_single_item_by_comma_inside_drawer(self):
+        """整串白名单按逗号分行，且不撑宽抽屉。"""
         # 白名单整串粘贴成一个列表项；文档约定逗号分隔规则，显示时一项一行
         items = ["冲浪大赛门票,耶尔什微风,浪潮海石,塞梦珂披巾,《前沿瞭望》,低容武陵电池,高容谷地电池"]
         config = CombatEditBuffer({"购物白名单": items})
@@ -820,6 +821,7 @@ class CombatSettingsTest(unittest.TestCase):
         free_text.deleteLater()
 
     def test_list_row_keeps_original_items_when_editing_is_cancelled(self):
+        """取消编辑不拆分列表项，也不改写配置。"""
         from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 
         # 取消时原生对话框会把原列表发回 list_modified；此时不得拆分或写回
@@ -830,6 +832,7 @@ class CombatSettingsTest(unittest.TestCase):
         row.deleteLater()
 
     def test_list_dialog_splits_comma_items_only_on_confirm(self):
+        """只在确认时拆分逗号串，候选项列表不受影响。"""
         from ok.ui.qt.tasks.ModifyListDialog import ModifyListDialog
 
         host = QWidget()
@@ -853,6 +856,7 @@ class CombatSettingsTest(unittest.TestCase):
         host.deleteLater()
 
     def test_list_row_wraps_long_unbroken_text_at_character_boundaries(self):
+        """超过控件宽度的连续文本按字符边界换行。"""
         from ok.ui.qt.common.design_system import DesignToken
         from ok.ui.qt.tasks.ModifyListItem import ModifyListItem
 

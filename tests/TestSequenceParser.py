@@ -5,16 +5,19 @@ from src.core.sequence_parser import parse_int_sequence, parse_sequence, parse_s
 
 class TestSequenceParser(unittest.TestCase):
     def test_parse_sequence_list_splits_each_item_by_comma(self):
+        """列表项内的顶层逗号拆成多条规则。"""
         self.assertEqual(
             parse_sequence_list(["刻写,助剂", " 理智，高阶 ", "", "折金票"]),
             ["刻写", "助剂", "理智", "高阶", "折金票"],
         )
 
     def test_parse_sequence_list_accepts_string_and_none(self):
+        """字符串和 None 输入按同一规则处理。"""
         self.assertEqual(parse_sequence_list("刻写, 助剂"), ["刻写", "助剂"])
         self.assertEqual(parse_sequence_list(None), [])
 
     def test_parse_sequence_list_keeps_commas_inside_regex_syntax(self):
+        """字符集、量词、分组和转义里的逗号不被拆分。"""
         self.assertEqual(
             parse_sequence_list(["货品[甲,乙]", ".{2,4}", r"a\,b", "(甲,乙)", "刻写,助剂"]),
             ["货品[甲,乙]", ".{2,4}", r"a\,b", "(甲,乙)", "刻写", "助剂"],

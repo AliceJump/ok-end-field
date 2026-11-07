@@ -1444,6 +1444,7 @@ def patch_config_row_background() -> None:
         LabelAndWidget.__init__ = _patched_label_init
 
         def _list_update_value(self: Any) -> None:
+            """列表行按项展示；逗号规则拆分，超宽文本可换行。"""
             # 原生实现在总字数不超过 30 时连成一行；单行文字的最小宽度会撑破配置抽屉，右侧控件被裁掉
             items = self.config.get(self.key)
             if self.options_available is not None:
@@ -1466,6 +1467,7 @@ def patch_config_row_background() -> None:
         original_list_confirm = ModifyListDialog.confirm
 
         def _list_confirm(self: Any) -> None:
+            """确认时把逗号串规范为独立列表项；取消路径不改写配置。"""
             # 只在确认时把逗号串规范为独立项；取消路径原样返回，不改写配置
             if self.options_available is None:
                 items = [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
