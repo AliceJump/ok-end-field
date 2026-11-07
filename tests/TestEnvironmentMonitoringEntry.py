@@ -155,20 +155,17 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     self.assertGreater(area.x + area.width, title.x)
                     self.assertGreater(area.y, title.y)
 
-    def test_description_near_title_boundary_does_not_count_as_second_title(self):
-        task = self.task()
-        task._observation_action = Mock(side_effect=["go", None, None])
-        task.ocr.return_value = [
-            Box(104, 318, 160, 40, name="环形瀑布"),
-            Box(110, 361, 280, 25, name="拍摄祖泉周边的环形瀑布"),
-        ]
-        self.assertEqual([item["name"] for item in task.available_observations()], ["环形瀑布"])
-
-    def test_title_is_selected_above_other_ocr_text(self):
-        task = self.task()
-        task._observation_action = Mock(side_effect=["go", None, None])
-        task.ocr.return_value = [Box(110, 350, 200, 10, name="说明"), Box(104, 318, 160, 28, name="环形瀑布")]
-        self.assertEqual([item["name"] for item in task.available_observations()], ["环形瀑布"])
+    def test_title_is_selected_above_description(self):
+        cases = (
+            [Box(104, 318, 160, 40, name="环形瀑布"), Box(110, 361, 280, 25, name="拍摄祖泉周边的环形瀑布")],
+            [Box(110, 350, 200, 10, name="说明"), Box(104, 318, 160, 28, name="环形瀑布")],
+        )
+        for texts in cases:
+            with self.subTest(texts=texts):
+                task = self.task()
+                task._observation_action = Mock(side_effect=["go", None, None])
+                task.ocr.return_value = texts
+                self.assertEqual([item["name"] for item in task.available_observations()], ["环形瀑布"])
 
     def test_pool_lotus_title_selects_its_own_column(self):
         for width, height in self.SCREEN_SIZES:
@@ -320,26 +317,22 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             task.select_terminal("marker_stone")
         task.click_until_color.assert_called_once()
 
-    def test_unstable_monitoring_page_stops_before_terminal_selection(self):
-        task = self.prepare_task([{"name": "小池荷"}], [])
-        del task.open_monitoring
-        task.find_one.return_value = Box(10, 10, 20, 20)
-        task.wait_ui_stable.side_effect = [True, False]
-        with self.assertRaisesRegex(RuntimeError, "页面未稳定"):
-            task.prepare_observation()
-        task.select_terminal.assert_not_called()
-        task.available_observations.assert_not_called()
-        self.assertIsNone(task.selected_observation)
-
-    def test_monitoring_page_detection_failure_stops_before_terminal_selection(self):
-        task = self.prepare_task([{"name": "小池荷"}], [])
-        del task.open_monitoring
-        task.find_one.return_value = Box(10, 10, 20, 20)
-        task._monitoring_page.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "终端列表"):
-            task.prepare_observation()
-        task.select_terminal.assert_not_called()
-        task.wait_ocr.assert_not_called()
+    def test_invalid_monitoring_page_stops_before_terminal_selection(self):
+        for failure, error in (("unstable", "页面未稳定"), ("missing", "终端列表")):
+            with self.subTest(failure=failure):
+                task = self.prepare_task([{"name": "小池荷"}], [])
+                del task.open_monitoring
+                task.find_one.return_value = Box(10, 10, 20, 20)
+                if failure == "unstable":
+                    task.wait_ui_stable.side_effect = [True, False]
+                else:
+                    task._monitoring_page.return_value = False
+                with self.assertRaisesRegex(RuntimeError, error):
+                    task.prepare_observation()
+                task.select_terminal.assert_not_called()
+                task.available_observations.assert_not_called()
+                task.wait_ocr.assert_not_called()
+                self.assertIsNone(task.selected_observation)
 
     def test_monitoring_entry_template_is_clicked_without_ocr(self):
         task = self.task()
@@ -353,21 +346,16 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.wait_ocr.assert_not_called()
         self.assertEqual(task.wait_ui_stable.call_count, 2)
 
-    def test_missing_monitoring_template_prevents_entry_click(self):
-        task = self.task()
-        task.wait_click_feature.return_value = None
-        with self.assertRaisesRegex(RuntimeError, "未找到环境监测入口"):
-            task.open_monitoring()
-        task.click.assert_not_called()
-        task.wait_click_ocr.assert_not_called()
-
-    def test_unstable_overview_cannot_use_fixed_entry_position(self):
-        task = self.task()
-        task.wait_ui_stable.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "地区建设页面未稳定"):
-            task.open_monitoring()
-        task.click_relative.assert_not_called()
-        task.wait_click_ocr.assert_not_called()
+    def test_monitoring_entry_failure_does_not_click_blindly(self):
+        for condition, error in (("wait_click_feature", "未找到环境监测入口"), ("wait_ui_stable", "地区建设页面未稳定")):
+            with self.subTest(condition=condition):
+                task = self.task()
+                getattr(task, condition).return_value = False
+                with self.assertRaisesRegex(RuntimeError, error):
+                    task.open_monitoring()
+                task.click.assert_not_called()
+                task.click_relative.assert_not_called()
+                task.wait_click_ocr.assert_not_called()
 
     def test_completed_terminal_without_action_buttons_does_not_read_titles(self):
         task = self.task()
@@ -404,25 +392,18 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 }[feature]
                 self.assertEqual(EnvironmentMonitoringPhotoTask._task_detail_page(task), q_found and e_found)
 
-    def test_missing_task_detail_page_prevents_tracking(self):
-        task = self.prepare_task([{"name": "小池荷", "action_box": self.card_area()}], [])
-        del task.enter_observation
-        task._observation_action = Mock(return_value="go")
-        task._task_detail_page.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "未进入任务详情"):
-            task.prepare_observation()
-        task.transfer_observation.assert_not_called()
-        task.wait_ocr.assert_not_called()
-
-    def test_unstable_mission_details_stop_before_tracking_or_transfer(self):
-        task = self.prepare_task([{"name": "小池荷", "action_box": self.card_area()}], [])
-        del task.enter_observation
-        task._observation_action = Mock(return_value="go")
-        task.wait_ui_stable.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "任务详情未稳定"):
-            task.prepare_observation()
-        task.transfer_observation.assert_not_called()
-        self.assertIsNone(task.selected_observation)
+    def test_invalid_mission_details_stop_before_tracking_or_transfer(self):
+        for condition, error in (("_task_detail_page", "未进入任务详情"), ("wait_ui_stable", "任务详情未稳定")):
+            with self.subTest(condition=condition):
+                task = self.prepare_task([{"name": "小池荷", "action_box": self.card_area()}], [])
+                del task.enter_observation
+                task._observation_action = Mock(return_value="go")
+                getattr(task, condition).return_value = False
+                with self.assertRaisesRegex(RuntimeError, error):
+                    task.prepare_observation()
+                task.transfer_observation.assert_not_called()
+                task.wait_ocr.assert_not_called()
+                self.assertIsNone(task.selected_observation)
 
     def test_already_accepted_card_goes_to_mission_without_accepting_again(self):
         task = self.task()
@@ -432,14 +413,18 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.click.assert_called_once_with(area)
         task.wait_click_ocr.assert_not_called()
 
-    def test_failed_accept_transition_does_not_click_another_card_or_continue(self):
-        task = self.task()
-        task._observation_action = Mock(return_value="accept")
-        area = self.card_area()
-        with self.assertRaisesRegex(RuntimeError, "前往任务"):
-            task.enter_observation({"name": "小池荷", "action_box": area})
-        self.assertEqual(task.click.call_count, 1)
-        task.wait_ocr.assert_not_called()
+    def test_incomplete_card_transition_never_clicks_go(self):
+        for action, page_lost, expected_clicks in (("accept", False, 1), ("accept", True, 1), (None, False, 0)):
+            with self.subTest(action=action, page_lost=page_lost):
+                task = self.task()
+                task._observation_action = Mock(return_value=action)
+                if page_lost:
+                    task._monitoring_page.side_effect = [True, False]
+                area = self.card_area()
+                with self.assertRaisesRegex(RuntimeError, "前往任务"):
+                    task.enter_observation({"name": "小池荷", "action_box": area})
+                self.assertEqual(task.click.call_args_list, [call(area)] * expected_clicks)
+                task.wait_ocr.assert_not_called()
 
     def test_button_color_on_another_page_cannot_be_clicked(self):
         task = self.task()
@@ -450,34 +435,6 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             task.enter_observation({"name": "小池荷", "action_box": area})
         task.click.assert_not_called()
         task._observation_action.assert_not_called()
-
-    def test_page_lost_after_accept_cannot_click_go_on_other_page(self):
-        task = self.task()
-        task._monitoring_page.side_effect = [True, False]
-        task._observation_action = Mock(return_value="accept")
-        area = self.card_area()
-        with self.assertRaisesRegex(RuntimeError, "前往任务"):
-            task.enter_observation({"name": "小池荷", "action_box": area})
-        task.click.assert_called_once_with(area)
-        task.wait_ocr.assert_not_called()
-
-    def test_unknown_button_color_never_clicks_or_opens_details(self):
-        task = self.task()
-        task._observation_action = Mock(return_value=None)
-        area = self.card_area()
-        with self.assertRaisesRegex(RuntimeError, "前往任务"):
-            task.enter_observation({"name": "小池荷", "action_box": area})
-        task.click.assert_not_called()
-        task.wait_ocr.assert_not_called()
-
-    def test_unknown_tracking_state_cannot_open_map_or_teleport(self):
-        task = self.task()
-        with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-            task.transfer_observation()
-        task.click.assert_not_called()
-        task.ocr.assert_not_called()
-        task.wait_click_feature.assert_not_called()
-        task.to_near_transfer_point.assert_not_called()
 
     def test_already_tracked_task_explicitly_locates_map_before_transfer(self):
         task = self.task()
@@ -494,7 +451,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._wait_for_transfer_arrival.assert_called_once_with()
 
     def test_generic_cancel_or_locator_alone_cannot_confirm_tracking(self):
-        for cancel, locator in ((Box(1815, 975, 38, 39), None), (None, Box(1487, 961, 62, 61))):
+        for cancel, locator in ((None, None), (Box(1815, 975, 38, 39), None), (None, Box(1487, 961, 62, 61))):
             with self.subTest(cancel=cancel, locator=locator):
                 task = self.task()
                 task.find_one.side_effect = lambda feature, cancel=cancel, locator=locator, **kwargs: {
@@ -504,6 +461,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "追踪状态"):
                     task.transfer_observation()
                 task.click.assert_not_called()
+                task.ocr.assert_not_called()
+                task.wait_click_feature.assert_not_called()
                 task.wait_feature.assert_not_called()
                 task.to_near_transfer_point.assert_not_called()
                 task._wait_for_transfer_arrival.assert_not_called()
