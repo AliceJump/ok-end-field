@@ -8,6 +8,10 @@ TRANSFER_ARRIVAL_SETTLE_S = 2.0
 
 
 class MapMixin(BaseEfTask):
+    def zoom_map_out(self):  # 缩小当前地图以显示更大范围
+        self.click_relative(0.966, 0.565)  # 地图缩放条底端，坐标来自农牧地图截图
+        return self.wait_ui_stable()  # 等待地图与标记稳定
+
     def task_to_transfer_point(self, need_location_list=None):
         """
         传送到运输委托对应的出发传送点。

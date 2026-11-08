@@ -22,6 +22,27 @@ from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitori
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
+    def test_alternate_transfer_clears_map_before_selecting_point(self):
+        task = self.task()
+        task.clear_icon_in_map.return_value = True
+        task.zoom_map_out.return_value = True
+        task.wait_click_feature.return_value = True
+        task._wait_click_transfer_go.return_value = True
+        task._wait_for_transfer_arrival.return_value = True
+        EnvironmentMonitoringPhotoTask.transfer_to_upper_left_point(task)
+        task.clear_icon_in_map.assert_called_once()
+        task.zoom_map_out.assert_called_once()
+        task._wait_click_transfer_go.assert_called_once_with()
+
+    def test_eternal_sunset_stops_without_taking_photo(self):
+        task = self.task()
+        task.observation_key.side_effect = lambda name: "eternal_sunset"
+        task.prepare_observation.return_value = {"name": "栖霞驻影"}
+        task.prepare_photo.return_value = {"photo_ready": True}
+        self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        task.prepare_photo.assert_called_once()
+        task.photograph_observation.assert_not_called()
+
     def test_daily_monitoring_runs_only_when_selected(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):
             daily = DailyTask(SimpleNamespace(scene=None, pause_start=None, debug=False), SimpleNamespace())

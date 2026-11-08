@@ -6,6 +6,8 @@ from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
+from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin  # 复用世界坐标导航
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
     AnnularWaterfallNavigation,  # 环形瀑布路线
     CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
@@ -20,14 +22,16 @@ OBSERVATIONS = {  # 观察点语言键对应导航类和取景方向
     "peach_tree": (StationaryObservationNavigation, "right"),  # 桃树在传送落点即可取景
     "pier_waterwheel": (StationaryObservationNavigation, "right"),  # 码头水车在传送落点即可取景
     "annular_waterfall": (AnnularWaterfallNavigation, "up"),  # 环形瀑布向上取景
+    "eternal_sunset": (StationaryObservationNavigation, "vertical"),  # 栖霞驻影使用网格导航和纵向取景
 }  # 仅注册已支持的点位
 
 
-class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相机流程
+class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin):  # 共用接取、传送与相机流程
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
 
     def __init__(self, *args, **kwargs):  # 构造阶段不操作游戏
         super().__init__(*args, **kwargs)  # 初始化项目任务与生命周期
+        self._init_grid_navigation_mixin()  # 初始化网格导航状态
         self.group_name = "日常任务"  # 环境监测属于日常业务
         self.group_icon = FluentIcon.CALENDAR  # 与现有日常子任务一致
         self.icon = FluentIcon.SEARCH  # 保持原有任务图标
@@ -192,7 +196,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             return None  # 通用叉号本身不能证明任务已追踪
         return self.find_one(fL.one_task_to_map, box=self.box.bottom_right)  # 返回定位按钮，绝不点击停止追踪
 
-    def transfer_observation(self):  # 正确处理未追踪与已追踪两条入口
+    def transfer_observation(self, alternate=False):  # 正确处理未追踪与已追踪两条入口
         locator = self._tracked_map_locator()  # 已追踪的常见路径先用已验证双模板，不重复 OCR
         if locator:
             self.click(locator)  # 点击同一帧已确认的地图定位按钮
@@ -212,10 +216,28 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             raise RuntimeError("环境监测任务地图未打开")  # 禁止在任务面板直接点传送
         if not self.wait_ui_stable():  # 等待地图上的按钮稳定
             raise RuntimeError("环境监测任务地图未稳定")  # 禁止点击过渡画面
+        if alternate:  # 指定观察点改选地图中的传送点
+            self.transfer_to_upper_left_point()  # 清理标记后选择左上角传送点
+            return  # 传送与到达均由该方法确认
         if not self.to_near_transfer_point(need_track=False):  # 复用前往传送和传送两步
             raise RuntimeError("环境监测快捷传送失败")  # 失败不进入后半流程
         if not self._wait_for_transfer_arrival():  # 等待大世界稳定出现
             raise RuntimeError("环境监测传送后未确认到达")  # 点击成功不等于到达
+
+    def transfer_to_upper_left_point(self):  # 改选地图左上方的传送点
+        if not self.clear_icon_in_map():  # 清空地图标记筛选
+            raise RuntimeError("清空地图标记失败")  # 避免标记遮挡传送点
+        if not self.zoom_map_out():  # 缩小地图并等待稳定
+            raise RuntimeError("地图缩放后未稳定")  # 不在过渡画面识别
+        if not self.wait_click_feature(
+            fL.transfer_point, box=self.box_of_screen(0.05, 0.02, 0.5, 0.5),
+            threshold=0.7, time_out=5, raise_if_not_found=False,
+        ):  # 在地图左上方查找传送点
+            raise RuntimeError("未找到左上方传送点")  # 不盲目传送
+        if not self._wait_click_transfer_go():  # 点击所选传送点的传送按钮
+            raise RuntimeError("未找到传送按钮")  # 不把选中当成传送
+        if not self._wait_for_transfer_arrival():  # 验证传送完成
+            raise RuntimeError("环境监测传送后未确认到达")  # 不在异常界面继续
 
     def prepare_observation(self):  # 自动前往当前支持的观察点
         self.selected_observation = None  # 清除上轮结果
@@ -229,7 +251,10 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
                 if not self.observation_route(observation["name"]):  # 只选择已注册路线的点位
                     continue  # 跳过尚未支持的委托
                 self.enter_observation(observation)  # 接取或继续所选观察点
-                self.transfer_observation()  # 快捷传送并验证到达
+                if self.observation_key(observation["name"]) == "eternal_sunset":  # 指定观察点使用备用传送点
+                    self.transfer_observation(alternate=True)  # 清除标记后直接选择传送点
+                else:  # 其他观察点使用原有快捷传送
+                    self.transfer_observation()  # 验证到达
                 self.selected_observation = {
                     "name": observation["name"],
                     "terminal": terminal,
@@ -290,7 +315,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         return bool(marker)  # 圆勾出现表示拍摄条件满足
 
     def rotate_photo_view(self, direction="right"):  # 在画面中央按点位方向拖动，不触碰快门
-        if direction not in ("left", "right", "up"):  # 仅支持已注册的取景方向
+        if direction not in ("left", "right", "up", "down"):  # 仅支持已注册的取景方向
             raise ValueError(f"不支持的取景方向：{direction}")  # 禁止静默执行未知方向
         self._require_input_focus()  # 旋转视角需要实际光标移动
         self.next_frame()  # 手势前重新确认当前布局
@@ -301,6 +326,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             end = (0.375, 0.45)  # 与右移等幅，保持纵坐标不变
         elif direction == "up":  # 瀑布向上搜索
             end = (0.5, 0.325)  # 小步上移，实际方向和幅度待游戏内验证
+        elif direction == "down":  # 向下调整取景
+            end = (0.5, 0.575)  # 与向上搜索等幅
         self.mouse_down(*self.normalize_pos(start), key="left")  # 按住旋转视角用的左键
         try:  # 中止也必须释放鼠标
             self.smooth_drag(start, end, duration=0.3)  # 复用已有客户端坐标移动接口
@@ -315,7 +342,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             box=self.box_of_screen(0.02, 0.625, 0.14, 0.7), stable_time=0.5, max_wait=3, refresh_interval=0.1
         ):  # 只观察拍摄目标标题和条件标记
             raise RuntimeError("相机目标条件区域未稳定")  # 不在过渡画面判断或转动
-        max_steps = 8  # 各点位共用最大调整次数
+        max_steps = 12 if direction == "vertical" else 8  # 纵向搜索先向上再越过初始角度向下
         self.next_frame()  # 先检查初始角度的新画面
         if self.photo_condition_met():  # 已满足条件时不转动
             return True  # 保留当前角度
@@ -323,7 +350,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             self.log_info(
                 f"[environment-monitoring] 取景条件未识别，向{direction}调整：{step + 1}/{max_steps}"
             )  # 记录转动原因
-            self.rotate_photo_view(direction=direction)  # 只旋转镜头，不发出移动按键
+            actual_direction = ("up" if step < 4 else "down") if direction == "vertical" else direction  # 纵向搜索两个方向
+            self.rotate_photo_view(direction=actual_direction)  # 只旋转镜头，不发出移动按键
             if self.wait_until(
                 self.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False
             ):  # 等待拍照条件
@@ -367,6 +395,10 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     def navigate_observation(self, observation):  # 按观察点注册表执行导航
         name = observation["name"]  # 保留实际识别名称用于错误提示
+        if self.observation_key(name) == "eternal_sunset":  # 栖霞驻影使用已实测的世界坐标
+            if not self.navigate_grid_to((-908.95, -1179.31), map_id="map02"):  # 使用补充后的武陵网格
+                raise RuntimeError("栖霞驻影导航失败")  # 不在错误位置打开相机
+            return  # 已完成该点位导航
         navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
         if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
             raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
@@ -389,6 +421,8 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
                 if observation is None:  # 当前没有符合条件的观察点
                     return True  # 无任务属于正常完成
                 self.navigate_observation(observation)  # 执行点位导航
+                if self.observation_key(observation["name"]) == "eternal_sunset":  # 留在相机界面供用户检查
+                    return bool(self.prepare_photo()["photo_ready"])  # 不触发快门或重复处理
                 if not self.photograph_observation():  # 取景失败时不继续下一个点位
                     return False  # 保留失败结果
                 identity = self.normalize_title(observation["name"])  # 与扫描时使用相同身份
