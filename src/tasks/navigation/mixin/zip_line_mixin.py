@@ -35,6 +35,7 @@ from src.core.sequence_parser import parse_int_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
 from src.interaction.target_movement import ellipse_geometry, ellipse_move_profile, ellipse_radius, hud_direction_step
+from src.nav.layered_map import normalize_tier, resolve_tier_by_height
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_learning import align_initial_target
 from src.tasks.mixin.route_learning import route_context_for, zipline_initial_alignment
@@ -255,7 +256,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         return False
 
     def _zip_line_ws_positions(self, frame=None):
-        """从同一份 world pose 读取二维与三维 WS 坐标。"""
+        """从同一份可信 world pose 读取坐标，兼容旧记录中的原始坐标别名。"""
         world_pose_getter = getattr(self, "world_pose", None)
         if not callable(world_pose_getter):
             return None, None
@@ -265,19 +266,30 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 frame=sample_frame,
                 max_age=2.0,
             )
-            if state is None:
-                return None, None
-            position = state.get("ws")
-            position_2d = None
-            if position is not None and len(position) >= 2:
-                position_2d = float(position[0]), float(position[1])
-            position_xyz = state.get("ws_xyz")
-            position_3d = None
-            if position_xyz is not None and len(position_xyz) >= 3:
-                position_3d = float(position_xyz[0]), float(position_xyz[1]), float(position_xyz[2])
-            return position_2d, position_3d
+            self._zip_line_last_pose = state
+            return ZipLineMixin._zip_line_pose_positions(state)
         except Exception:
             return None, None
+
+    @staticmethod
+    def _zip_line_pose_positions(state):
+        if state is None or state.get("position_trusted") is False:
+            return None, None
+        if "x" in state or "z" in state:
+            if not state.get("position_trusted") or state.get("x") is None or state.get("z") is None:
+                return None, None
+            position = (state["x"], state["z"])
+            position_xyz = (state["x"], state["y"], state["z"]) if state.get("y") is not None else None
+        else:
+            position = state.get("ws")
+            position_xyz = state.get("ws_xyz")
+        position_2d = None
+        if position is not None and len(position) >= 2:
+            position_2d = float(position[0]), float(position[1])
+        position_3d = None
+        if position_xyz is not None and len(position_xyz) >= 3:
+            position_3d = float(position_xyz[0]), float(position_xyz[1]), float(position_xyz[2])
+        return position_2d, position_3d
 
     def _zip_line_ws_position(self, frame=None):
         """读取滑索场景最新 WS 坐标；融合坐标不作为滑索到达依据。"""
@@ -317,6 +329,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         """
         if target_position is None:
             return False
+        initial_pose = getattr(self, "_zip_line_last_pose", None) or {}
+        start_tier = (
+            initial_pose.get("tier_id")
+            if initial_pose.get("position_trusted") and initial_pose.get("tier_trusted")
+            else None
+        )
         start = self.active_time()
         moving_logged = False
         last_position: tuple[float, float] | None = None
@@ -376,7 +394,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 start_distance = math.dist(current_position_xyz, start_position_xyz)
             elif ambiguous_overlap:
                 # 2D 重合但缺少三维高度时无法区分起点和终点，不能把当前状态当成到站。
-                target_distance = math.inf
+                if ZipLineMixin._zip_line_visual_arrival(
+                    self, start_position_xyz, target_position_xyz, start_tier=start_tier
+                ):
+                    start_distance = math.inf
+                else:
+                    target_distance = math.inf
 
             stable = self.active_time() - last_position_changed_at >= stable_seconds
             at_start = start_distance is not None and start_distance <= threshold
@@ -422,6 +445,33 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
             self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
         return False
+
+    def _zip_line_visual_arrival(self, start_xyz, target_xyz, *, start_tier=None) -> bool:
+        """Disambiguate overlapping racks using an independently confirmed tier."""
+        pose = getattr(self, "_zip_line_last_pose", None) or {}
+        layered = getattr(self, "_grid_nav_layered_active", None)
+        if (
+            layered is None
+            or (start_xyz is None and start_tier is None)
+            or target_xyz is None
+            or not pose.get("position_trusted")
+            or not pose.get("tier_trusted")
+            or pose.get("tier_id") is None
+        ):
+            return False
+        tiers = [] if start_tier is None else [normalize_tier(start_tier)]
+        for position in (start_xyz, target_xyz) if start_tier is None else (target_xyz,):
+            resolved = resolve_tier_by_height(
+                layered,
+                map_name=str(pose.get("map_id") or ""),
+                x=position[0],
+                y=position[1],
+                z=position[2],
+            )
+            if resolved["status"] != "unique":
+                return False
+            tiers.append(normalize_tier(resolved["tier"]))
+        return tiers[0] != tiers[1] and normalize_tier(pose["tier_id"]) == tiers[1]
 
     def _direct_zip_line_go(self, target_bearing, target_position=None, *, target_position_xyz=None):
         """按世界方位直接对准并点击目标，失败时调整俯仰角重试。"""
@@ -1449,9 +1499,12 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             )
             return target_yaw, False
 
-        if total_dx:
-            if learning_allowed() and environment == yaw_environment(width, height, initial_yaw, scroll=scroll):
-                record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx, environment=environment)
+        if (
+            total_dx
+            and learning_allowed()
+            and environment == yaw_environment(width, height, initial_yaw, scroll=scroll)
+        ):
+            record_arrow_turn_motion(width, height, initial_yaw, target_yaw, total_dx, environment=environment)
         self.log_info(
             f"[zipline-yaw] normalized {initial_yaw:.1f}->{current_yaw:.1f} target={target_yaw:.1f} dx={total_dx}"
         )

@@ -8,6 +8,7 @@ def install_startup_patches():
     if _PATCH_INSTALLED:
         return
 
+    from src.localization.wgc_frame_timing import install_wgc_frame_timing
     from src.patches.capture_backend_autostart_patch import install_capture_backend_autostart_patch
     from src.patches.cascade_dropdown_patch import install_cascade_dropdown_patch
     from src.patches.combat_decision_trace_patch import install_combat_decision_trace_patch
@@ -32,6 +33,7 @@ def install_startup_patches():
     from src.patches.timed_team_detection_patch import install_timed_team_detection_patch
     from src.patches.win32_gdi_point_patch import install_win32_gdi_point_patch
 
+    install_wgc_frame_timing()
     install_no_frame_task_patch()
     install_cascade_dropdown_patch()
     install_capture_backend_autostart_patch()

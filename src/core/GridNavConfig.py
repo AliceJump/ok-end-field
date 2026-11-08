@@ -147,7 +147,7 @@ GRID_NAV_CONFIG_DESCRIPTION: dict[str, str] = {
     CONFIG_GRID_MOVING_TURN_GAIN: "移动转向每拍使用的角度残差比例，过大可能画弧过弯",
     CONFIG_GRID_MOVING_TURN_MAX_DEG: "移动转向每拍最多修正的角度",
     CONFIG_GRID_MOVING_TURN_MAX_START_DEG: "朝向误差超过该角度时禁止按住 W 画弧，改为停车转向",
-    CONFIG_GRID_MOVING_TURN_MIN_DISTANCE: "距目标航点小于该距离时禁止移动转向，避免弧线越过近航点",
+    CONFIG_GRID_MOVING_TURN_MIN_DISTANCE: "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向",
     CONFIG_GRID_MARGIN: "期望离墙距离（格）。不足时只增加规划代价，不会封死窄路；0=关闭偏好",
     CONFIG_GRID_WALL_PENALTY: "离墙距离每缺一格增加的代价；越大越偏向安全路线",
     CONFIG_GRID_NARROW_CALIBRATION: "规划航点进入宽度只有一格的通路前，先停车等一次静止校准，"

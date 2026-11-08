@@ -36,6 +36,7 @@ from src.nav.route_follower import (
     WALK,
     ZIP_LINE,
 )
+from src.nav.walk_feedback import MeasuredTrail, RecoveryEpisode
 
 __all__ = [
     "GridRouteRequest",
@@ -174,8 +175,19 @@ class NavSession:
     next_sync_retry_at: float = 0.0
     #: 最近一次见过的校准序号；变化说明发生过真重锚。
     last_sync_seq: int = 0
+    #: 单轮转向之间保留有效反馈；只在当前会话中使用，不写入配置。
+    turn_control: dict = field(default_factory=dict)
+    #: 最近采样耗时的保守估计，供近点行走提前留出定位时间。
+    poll_duration_s: float = 0.0
+    poll_durations_s: list[float] = field(default_factory=list)
+    #: 保留最近一次可信的移动速度，停车后的零速度不能用来估计下一次起步。
+    walk_speed_m_s: float = 8.0
     #: 是否已经规划过至少一次，用于区分首次规划与重规划。
     had_plan: bool = False
+    confirmation_after: float | None = None
+    last_walk_frame: float | None = None
+    recovery: RecoveryEpisode | None = None
+    trail: MeasuredTrail = field(default_factory=MeasuredTrail)
     #: 偏航后先返回的"最近走过的已知格"；None 表示直接规划原目标。
     recovery_goal: tuple[float, float] | None = None
     #: 本次导航实际走过的已知格，仅用于偏航后寻找安全返回点。
@@ -236,6 +248,10 @@ class NavSession:
             return False
         self.last_sync_seq = sync_seq
         self.visited_cells.clear()
+        self.turn_control.clear()
+        self.recovery = None
+        self.trail = MeasuredTrail()
+        self.last_walk_frame = None
         return True
 
 
@@ -257,6 +273,7 @@ class NavTick:
     min_score: float = 0.0
     step: Any = None
     pending_zip_step: Any = None
+    walking_during_sample: bool = False
 
     @property
     def tick(self) -> float:

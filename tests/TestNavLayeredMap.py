@@ -423,6 +423,40 @@ class TestCatalogDegradation(unittest.TestCase):
                 self.assertEqual(load_catalog(path), {}, payload)
         self.assertEqual(load_catalog(Path("__nope__.json")), {})
 
+    def test_published_levels_file_limits_candidates_to_requested_level(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._two_levels(Path(tmp))
+            (root / "levels.json").write_text(
+                json.dumps(
+                    {"layers": [{"id": "lv005_a", "level_id": "lv005"}, {"id": "lv002_b", "level_id": "lv002"}]}
+                ),
+                encoding="utf-8",
+            )
+            layered = load_layered_map(root, "map02", zoom="4")
+            self.assertTrue(layered.catalog_loaded)
+            result = resolve_tier_for_point(layered, map_name="map02", level_id="lv005", x=0.5, y=5.0, z=0.5)
+            self.assertEqual(result["tier_source"], "catalog")
+            self.assertEqual(result["status"], "unique")
+            self.assertEqual(result["tier"], "lv005_a")
+
+    def test_published_levels_preserve_gridless_declaration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "levels.json").write_text(
+                json.dumps({"layers": [{"id": "lv009_a", "level_id": "lv009"}]}), encoding="utf-8"
+            )
+            layered = load_layered_map(root, "map02", zoom="4")
+            result = resolve_tier_for_point(layered, map_name="map02", level_id="lv009", x=0.5, y=5.0, z=0.5)
+            self.assertEqual(result["status"], "no_grid")
+
+    def test_explicit_catalog_takes_precedence_over_published_levels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name, tier in (("catalog.json", "explicit"), ("levels.json", "published")):
+                (root / name).write_text(json.dumps({"layers": [{"id": tier, "level_id": "lv009"}]}), encoding="utf-8")
+            layered = load_layered_map(root, "map02", zoom="4")
+            self.assertEqual(layered.declared_tiers["lv009"], ("explicit",))
+
 
 if __name__ == "__main__":
     unittest.main()

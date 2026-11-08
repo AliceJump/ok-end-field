@@ -3880,3 +3880,85 @@ msgstr "Environmental Monitoring failed: {error}"
 
 msgid "⭐环境监测"
 msgstr "⭐Environmental Monitoring (support expanding)"
+
+msgid "Game path does not exist, Please open game manually!"
+msgstr "Game path does not exist, Please open game manually!"
+
+msgid "视觉地图资源目录"
+msgstr "Visual map resource directory"
+
+msgid ""
+"标定地图目录，包含 map_id/4/map_id_4.png 和对应的 _mapping.json；分层资源使用同级 "
+"layers/catalog.json。"
+msgstr ""
+"Calibrated map directory containing map_id/4/map_id_4.png and its "
+"_mapping.json; layer resources use the sibling layers/catalog.json."
+
+msgid "用标定地图绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
+msgstr ""
+"Initialize the keyframe visual anchor chain with calibrated map anchors, "
+"then correct accumulated drift using visual overlap before publishing "
+"positions."
+
+msgid "标定地图绝对锚点的权重；越大越贴近地图匹配坐标"
+msgstr ""
+"Weight of absolute calibrated map anchors; higher values follow map matches "
+"more closely."
+
+msgid "每隔多少拍建立一个关键帧；每次重新定位也会建关键帧"
+msgstr "Samples between keyframes; reacquisition also creates a keyframe."
+
+msgid "改用外部抓包后端直接读取角色绝对坐标，替代标定地图匹配与视觉锚定链。该技术可能违反游戏服务条款、存在封禁风险，请自行判断是否使用"
+msgstr ""
+"Use an external packet capture backend to read absolute character "
+"coordinates instead of calibrated map matching and the visual anchor chain. "
+"This may violate the game terms and risk an account ban; decide whether to "
+"use it."
+
+msgid "可选。视觉模式留空时自动匹配已安装的标定地图；指定地图可缩小搜索范围。抓包模式使用实时 mapId。"
+msgstr ""
+"Optional. Leave blank to match installed calibrated maps automatically in "
+"visual mode; select a map to narrow the search. Packet mode uses the live "
+"mapId."
+
+msgid "使用应用级视觉或抓包定位服务，旧版 WS 定位已停用。"
+msgstr ""
+"Use the application visual or packet positioning service. Legacy WS "
+"positioning is disabled."
+
+msgid "使用视觉或抓包定位，指向已选物品的最近点并支持按键标记"
+msgstr ""
+"Use visual or packet positioning to point to the nearest selected item and "
+"mark it with a hotkey."
+
+msgid "定位服务"
+msgstr "Position service"
+
+msgid "请在全局定位配置中选择视觉或抓包数据源；视觉模式需要标定地图资源。"
+msgstr ""
+"Select the visual or packet source in global positioning settings. Visual "
+"mode requires calibrated map resources."
+
+msgid "高度未知"
+msgstr "Height unknown"
+
+msgid "应用级世界定位服务：标定地图与视觉锚定链，或抓包后端"
+msgstr ""
+"Application world positioning: calibrated maps with a visual anchor chain, "
+"or a packet backend"
+
+msgid "逐拍输出视觉或抓包位置、朝向、速度和可信状态"
+msgstr ""
+"Log visual or packet position, heading, speed and trust state per sample."
+
+msgid "地图设施查询（可选）"
+msgstr "Map facility queries (optional)"
+
+msgid "地图设施查询凭证；不参与视觉或抓包定位。留空则使用所选地图账号或当前账号。"
+msgstr ""
+"Credentials for map facility queries; not used for visual or packet "
+"positioning. Leave blank to use the selected map account or current account."
+
+#: src/core/GridNavConfig.py
+msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
+msgstr "Brake early within this distance of a waypoint. For small corrections with timely position updates, turning can continue while reserving a safe distance based on speed and sampling time."

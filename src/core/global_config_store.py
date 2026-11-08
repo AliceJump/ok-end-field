@@ -169,7 +169,7 @@ nav_config_option = ConfigOption(
 position_config_option = ConfigOption(
     POSITION_CONFIG_NAME,
     DEFAULT_POSITION_CONFIG,
-    description="应用级世界定位服务：WS、里程计、融合、视觉校正与抓包后端",
+    description="应用级世界定位服务：标定地图与视觉锚定链，或抓包后端",
     config_description=POSITION_CONFIG_DESCRIPTION,
     config_type=POSITION_CONFIG_TYPE,
     icon=Icons.Navigation,
@@ -428,6 +428,11 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     会删除文件中不在 default 的键并写回）读到的是已迁移好的文件，
     避免「先删后迁移」导致旧值丢失。
     """
+    if option.name == POSITION_CONFIG_NAME:
+        from src.localization.position_config_migration import backup_retired_position_settings, migrate_visual_map_root
+
+        backup_retired_position_settings()
+        migrate_visual_map_root()
     state = _read_migration_state()
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)
