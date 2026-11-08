@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 
 from src.core.global_config_store import KEY_CONFIG_NAME
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.onetime.FarmRelatedTask import FarmRelatedTask
 from tests.TestAccountKeyConfig import BASE_KEYS, _PressTask
 
@@ -28,6 +29,8 @@ class TestFarmRelatedTask(unittest.TestCase):
         battle.battle_ctx = old_context
         task.get_task_by_class.return_value = battle
         task._click_farm_related.return_value = True
+        task.wait_ui_stable.return_value = True
+        task.zoom_map_out.side_effect = lambda: MapMixin.zoom_map_out(task)
         task.wait_click_feature.return_value = object()
         task.wait_feature.return_value = object()
         task._collect_to_wuling_warehouse.return_value = True
@@ -130,6 +133,13 @@ class TestFarmRelatedTask(unittest.TestCase):
         task.click_relative.assert_called_once_with(0.966, 0.565)
         task._collect_to_wuling_warehouse.assert_not_called()
         self.assertIs(battle.battle_ctx, old_context)
+
+    def test_map_zoom_not_stable_stops_without_collecting(self):
+        task, _, _ = self.make_task()
+        task.wait_ui_stable.return_value = False
+        self.assertFalse(FarmRelatedTask._collect_wuling_farmer(task))
+        task.wait_click_feature.assert_not_called()
+        task._collect_to_wuling_warehouse.assert_not_called()
 
     def test_missing_farm_detail_stops_without_collecting(self):
         task, _, _ = self.make_task()
