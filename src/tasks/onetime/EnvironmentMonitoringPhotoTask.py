@@ -8,22 +8,22 @@ from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地�
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin  # 复用世界坐标导航
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
-from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
-    AnnularWaterfallNavigation,  # 环形瀑布路线
-    CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
-    EternalSunsetNavigation,  # 栖霞驻影网格路线
-    PoolLotusNavigation,  # 小池荷短路线
-    StationaryObservationNavigation,  # 传送后原地取景
+from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
+    AnnularWaterfallRoute,  # 环形瀑布路线
+    CisternOriginiumSlugsRoute,  # 普通源石虫短路线
+    EternalSunsetRoute,  # 栖霞驻影网格路线
+    PoolLotusRoute,  # 小池荷短路线
+    StationaryObservationRoute,  # 传送后原地取景
 )
 
 OBSERVATIONS = {  # 观察点语言键对应导航类和取景方向
-    "pool_lotus": (PoolLotusNavigation, "right"),  # 小池荷向右取景
-    "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
-    "thillu": (StationaryObservationNavigation, "right"),  # 表象在传送落点向右取景
-    "peach_tree": (StationaryObservationNavigation, "right"),  # 桃树在传送落点即可取景
-    "pier_waterwheel": (StationaryObservationNavigation, "right"),  # 码头水车在传送落点即可取景
-    "annular_waterfall": (AnnularWaterfallNavigation, "up"),  # 环形瀑布向上取景
-    "eternal_sunset": (EternalSunsetNavigation, "up"),  # 栖霞驻影向上取景
+    "pool_lotus": (PoolLotusRoute, "right"),  # 小池荷向右取景
+    "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "left"),  # 普通源石虫向左取景
+    "thillu": (StationaryObservationRoute, "right"),  # 表象在传送落点向右取景
+    "peach_tree": (StationaryObservationRoute, "right"),  # 桃树在传送落点即可取景
+    "pier_waterwheel": (StationaryObservationRoute, "right"),  # 码头水车在传送落点即可取景
+    "annular_waterfall": (AnnularWaterfallRoute, "up"),  # 环形瀑布向上取景
+    "eternal_sunset": (EternalSunsetRoute, "up"),  # 栖霞驻影向上取景
 }  # 仅注册已支持的点位
 
 
@@ -197,7 +197,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             return None  # 通用叉号本身不能证明任务已追踪
         return self.find_one(fL.one_task_to_map, box=self.box.bottom_right)  # 返回定位按钮，绝不点击停止追踪
 
-    def transfer_observation(self, alternate=False):  # 正确处理未追踪与已追踪两条入口
+    def transfer_observation(self, select_transfer_point=None):  # 正确处理未追踪与已追踪两条入口
         locator = self._tracked_map_locator()  # 已追踪的常见路径先用已验证双模板，不重复 OCR
         if locator:
             self.click(locator)  # 点击同一帧已确认的地图定位按钮
@@ -217,28 +217,12 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             raise RuntimeError("环境监测任务地图未打开")  # 禁止在任务面板直接点传送
         if not self.wait_ui_stable():  # 等待地图上的按钮稳定
             raise RuntimeError("环境监测任务地图未稳定")  # 禁止点击过渡画面
-        if alternate:  # 指定观察点改选地图中的传送点
-            self.transfer_to_upper_left_point()  # 清理标记后选择左上角传送点
-            return  # 传送与到达均由该方法确认
-        if not self.to_near_transfer_point(need_track=False):  # 复用前往传送和传送两步
+        if select_transfer_point:  # 点位提供了自定义传送策略
+            select_transfer_point()  # 在已确认的地图中选择传送点
+        elif not self.to_near_transfer_point(need_track=False):  # 复用前往传送和传送两步
             raise RuntimeError("环境监测快捷传送失败")  # 失败不进入后半流程
         if not self._wait_for_transfer_arrival():  # 等待大世界稳定出现
             raise RuntimeError("环境监测传送后未确认到达")  # 点击成功不等于到达
-
-    def transfer_to_upper_left_point(self):  # 改选地图左上方的传送点
-        if not self.clear_icon_in_map():  # 清空地图标记筛选
-            raise RuntimeError("清空地图标记失败")  # 避免标记遮挡传送点
-        if not self.zoom_map_out():  # 缩小地图并等待稳定
-            raise RuntimeError("地图缩放后未稳定")  # 不在过渡画面识别
-        if not self.wait_click_feature(
-            fL.transfer_point, box=self.box_of_screen(0.05, 0.02, 0.5, 0.5),
-            threshold=0.7, time_out=5, raise_if_not_found=False,
-        ):  # 在地图左上方查找传送点
-            raise RuntimeError("未找到左上方传送点")  # 不盲目传送
-        if not self._wait_click_transfer_go():  # 点击所选传送点的传送按钮
-            raise RuntimeError("未找到传送按钮")  # 不把选中当成传送
-        if not self._wait_for_transfer_arrival():  # 验证传送完成
-            raise RuntimeError("环境监测传送后未确认到达")  # 不在异常界面继续
 
     def prepare_observation(self):  # 自动前往当前支持的观察点
         self.selected_observation = None  # 清除上轮结果
@@ -249,13 +233,12 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
                 identity = self.normalize_title(observation["name"])  # 同名点位不区分终端
                 if identity in self.completed_observations:  # 照片关闭后卡片可能仍显示可操作
                     continue  # 本次运行不重复拍摄
-                if not self.observation_route(observation["name"]):  # 只选择已注册路线的点位
+                navigation_class = self.observation_route(observation["name"])  # 只选择已注册路线的点位
+                if not navigation_class:  # 尚未支持的观察点
                     continue  # 跳过尚未支持的委托
                 self.enter_observation(observation)  # 接取或继续所选观察点
-                if self.observation_key(observation["name"]) == "eternal_sunset":  # 指定观察点使用备用传送点
-                    self.transfer_observation(alternate=True)  # 清除标记后直接选择传送点
-                else:  # 其他观察点使用原有快捷传送
-                    self.transfer_observation()  # 验证到达
+                self.navigation = navigation_class(self)  # 同一组件负责传送与后续移动
+                self.navigation.transfer()  # 根据点位选择传送方式
                 self.selected_observation = {
                     "name": observation["name"],
                     "terminal": terminal,
@@ -396,7 +379,8 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
         if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
             raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
-        self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
+        if not isinstance(self.navigation, navigation_class):  # 兼容独立调用导航阶段
+            self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
         self.navigation.run()  # 每个点位统一通过 run 执行导航
 
     def photograph_observation(self):  # 共用取景与拍照流程
