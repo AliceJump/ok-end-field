@@ -622,6 +622,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             ("en_US", "Eternal Sunset"),
             ("ja_JP", "棲霞留影"),
             ("ko_KR", "노을의 그림자"),
+            ("es_ES", "Puesta de sol eterna"),
         ):
             with self.subTest(locale=locale):
                 task = self.prepare_task([{"name": title}], [])
