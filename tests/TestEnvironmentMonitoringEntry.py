@@ -14,6 +14,7 @@ from ok.util.color import calculate_color_percentage
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.EnvironmentMonitoringRoute import (
     CisternOriginiumSlugsRoute,
+    EternalSunsetRoute,
     EnvironmentMonitoringRoute,
     PoolLotusRoute,
     StationaryObservationRoute,
@@ -610,6 +611,25 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             task.select_terminal.call_args_list,
             [call("outskirts"), call("marker_stone")],
         )
+
+    def test_eternal_sunset_card_selects_its_registered_route(self):
+        names = json.loads(
+            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(encoding="utf-8")
+        )["eternal_sunset"]
+        for locale, title in (
+            ("zh_CN", "拍摄生长在亭子中间的“栖霞驻影”"),
+            ("zh_TW", "棲霞駐影"),
+            ("en_US", "Eternal Sunset"),
+            ("ja_JP", "棲霞留影"),
+            ("ko_KR", "노을의 그림자"),
+        ):
+            with self.subTest(locale=locale):
+                task = self.prepare_task([{"name": title}], [])
+                task.lang.environment_monitoring.eternal_sunset = names[locale]["string"]
+                with patch.object(EternalSunsetRoute, "transfer"):
+                    result = task.prepare_observation()
+                self.assertEqual(result["name"], title)
+                self.assertIsInstance(task.navigation, EternalSunsetRoute)
 
     def test_unsupported_cards_are_skipped_before_supported_card_in_same_terminal(self):
         supported = {"name": "小池荷"}

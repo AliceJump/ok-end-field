@@ -42,6 +42,14 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.to_near_transfer_point.assert_called_once_with(need_track=False)
         task._wait_for_transfer_arrival.assert_called_once_with()
 
+    def test_quick_transfer_failure_does_not_check_arrival(self):
+        task = self.task()
+        task.to_near_transfer_point.return_value = False
+        route = EnvironmentMonitoringRoute(task)
+        with self.assertRaisesRegex(RuntimeError, "环境监测快捷传送失败"):
+            route.transfer()
+        task._wait_for_transfer_arrival.assert_not_called()
+
     def test_eternal_sunset_navigation_uses_recorded_goal_and_stops_on_failure(self):
         task = self.task()
         task.navigate_grid_to.return_value = True
@@ -59,12 +67,24 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.wait_click_feature.return_value = True
         task._wait_click_transfer_go.return_value = True
         task._wait_for_transfer_arrival.return_value = True
+        stages = Mock()
+        for name in ("open_observation_map", "clear_icon_in_map", "zoom_map_out", "wait_click_feature",
+                     "_wait_click_transfer_go", "_wait_for_transfer_arrival"):
+            stages.attach_mock(getattr(task, name), name)
         EternalSunsetRoute(task).transfer()
         task.open_observation_map.assert_called_once_with()
         task.clear_icon_in_map.assert_called_once()
         task.zoom_map_out.assert_called_once()
         task._wait_click_transfer_go.assert_called_once_with()
         task._wait_for_transfer_arrival.assert_called_once_with()
+        task.wait_click_feature.assert_called_once_with(
+            fL.transfer_point, box=task.box_of_screen(0.05, 0.02, 0.5, 0.5),
+            threshold=0.7, time_out=5, raise_if_not_found=False,
+        )
+        self.assertEqual([item[0] for item in stages.mock_calls], [
+            "open_observation_map", "clear_icon_in_map", "zoom_map_out", "wait_click_feature",
+            "_wait_click_transfer_go", "_wait_for_transfer_arrival",
+        ])
 
     def test_unstable_map_after_clearing_stops_before_zoom(self):
         task = self.task()
