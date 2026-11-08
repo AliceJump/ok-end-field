@@ -45,14 +45,15 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.zoom_map_out.assert_called_once()
         task._wait_click_transfer_go.assert_called_once_with()
 
-    def test_eternal_sunset_stops_without_taking_photo(self):
+    def test_eternal_sunset_uses_photo_flow_and_continues(self):
         task = self.task()
         task.observation_key.side_effect = lambda name: "eternal_sunset"
-        task.prepare_observation.return_value = {"name": "栖霞驻影"}
-        task.prepare_photo.return_value = {"photo_ready": True}
+        task.prepare_observation.side_effect = [{"name": "栖霞驻影"}, None]
+        task.photograph_observation.side_effect = None
+        task.photograph_observation.return_value = True
         self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
-        task.prepare_photo.assert_called_once()
-        task.photograph_observation.assert_not_called()
+        task.photograph_observation.assert_called_once()
+        self.assertEqual(task.prepare_observation.call_count, 2)
 
     def test_daily_monitoring_runs_only_when_selected(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):

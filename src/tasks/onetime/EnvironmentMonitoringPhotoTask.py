@@ -415,8 +415,6 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
                 if observation is None:  # 当前没有符合条件的观察点
                     return True  # 无任务属于正常完成
                 self.navigate_observation(observation)  # 执行点位导航
-                if self.observation_key(observation["name"]) == "eternal_sunset":  # 留在相机界面供用户检查
-                    return bool(self.prepare_photo()["photo_ready"])  # 不触发快门或重复处理
                 if not self.photograph_observation():  # 取景失败时不继续下一个点位
                     return False  # 保留失败结果
                 identity = self.normalize_title(observation["name"])  # 与扫描时使用相同身份
