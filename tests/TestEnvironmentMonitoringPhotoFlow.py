@@ -10,6 +10,7 @@ from ok import Box, TaskDisabledException
 from ok.util.config import Config
 
 from src.data.FeatureList import FeatureList as fL
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.onetime.DailyTask import DailyTask
 from src.tasks.onetime.EnvironmentMonitoringRoute import (
     AnnularWaterfallRoute,
@@ -64,6 +65,16 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.zoom_map_out.assert_called_once()
         task._wait_click_transfer_go.assert_called_once_with()
         task._wait_for_transfer_arrival.assert_called_once_with()
+
+    def test_unstable_map_after_clearing_stops_before_zoom(self):
+        task = self.task()
+        task.wait_click_feature.return_value = True
+        task.wait_ui_stable.return_value = False
+        task.clear_icon_in_map.side_effect = lambda: MapMixin.clear_icon_in_map(task)
+        route = EternalSunsetRoute(task)
+        with self.assertRaisesRegex(RuntimeError, "清空地图标记失败"):
+            route.transfer()
+        task.zoom_map_out.assert_not_called()
 
     def test_eternal_sunset_uses_photo_flow_and_continues(self):
         task = self.task()

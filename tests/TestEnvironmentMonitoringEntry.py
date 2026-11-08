@@ -461,8 +461,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_unknown_tracking_state_cannot_open_map_or_teleport(self):
         task = self.task()
+        route = EnvironmentMonitoringRoute(task)
         with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-            EnvironmentMonitoringRoute(task).transfer()
+            route.transfer()
         task.click.assert_not_called()
         task.ocr.assert_not_called()
         task.wait_click_feature.assert_not_called()
@@ -490,8 +491,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     fL.skip_dialog_cancel: cancel,
                     fL.one_task_to_map: locator,
                 }.get(feature)
+                route = EnvironmentMonitoringRoute(task)
                 with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-                    EnvironmentMonitoringRoute(task).transfer()
+                    route.transfer()
                 task.click.assert_not_called()
                 task.wait_feature.assert_not_called()
                 task.to_near_transfer_point.assert_not_called()
@@ -513,8 +515,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     )
 
                 task.find_one.side_effect = find_icon
+                route = EnvironmentMonitoringRoute(task)
                 with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-                    EnvironmentMonitoringRoute(task).transfer()
+                    route.transfer()
                 cancel_area = task.find_one.call_args_list[0].kwargs["box"]
                 self.assertEqual((cancel_area.x, cancel_area.y), (round(width * 0.93), round(height * 0.89)))
                 self.assertAlmostEqual(cancel_area.width / width, 0.04, delta=1 / width)
@@ -538,8 +541,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             return None
 
         task.wait_until.side_effect = wait_frames
+        route = EnvironmentMonitoringRoute(task)
         with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-            EnvironmentMonitoringRoute(task).transfer()
+            route.transfer()
         task.click.assert_not_called()
         task.wait_feature.assert_not_called()
         task.to_near_transfer_point.assert_not_called()
@@ -549,8 +553,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         locator = Box(1487, 961, 62, 61)
         task.find_one.side_effect = [Box(1815, 975, 38, 39), locator]
         task.wait_feature.return_value = False
+        route = EnvironmentMonitoringRoute(task)
         with self.assertRaisesRegex(RuntimeError, "任务地图未打开"):
-            EnvironmentMonitoringRoute(task).transfer()
+            route.transfer()
         task.click.assert_called_once_with(locator)
         task.to_near_transfer_point.assert_not_called()
         task._wait_for_transfer_arrival.assert_not_called()
@@ -571,8 +576,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         track = Box(1817, 976, 34, 34)
         task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
         task.wait_ui_stable.return_value = False
+        route = EnvironmentMonitoringRoute(task)
         with self.assertRaisesRegex(RuntimeError, "任务地图未稳定"):
-            EnvironmentMonitoringRoute(task).transfer()
+            route.transfer()
         task.to_near_transfer_point.assert_not_called()
         task._wait_for_transfer_arrival.assert_not_called()
 

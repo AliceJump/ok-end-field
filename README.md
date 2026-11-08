@@ -168,8 +168,9 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 本项目仅支持 Python 3.12 版本, 必须以管理员权限启动CMD, PyCharm, VSCode。依赖管理使用 [uv](https://docs.astral.sh/uv/)（需先安装 uv）。
 
 ```bash
-# 若首次 clone 未带子模块参数，请先执行
+# 首次克隆及更新源码后，同步子模块和导航网格资源
 git submodule update --init --recursive
+git -C assets/nav-grid-data lfs pull
 
 # 创建虚拟环境并安装/更新依赖
 uv sync

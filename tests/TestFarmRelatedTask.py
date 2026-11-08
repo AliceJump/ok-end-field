@@ -30,6 +30,7 @@ class TestFarmRelatedTask(unittest.TestCase):
         task.get_task_by_class.return_value = battle
         task._click_farm_related.return_value = True
         task.wait_ui_stable.return_value = True
+        task.find_color.return_value = True
         task.zoom_map_out.side_effect = lambda: MapMixin.zoom_map_out(task)
         task.wait_click_feature.return_value = object()
         task.wait_feature.return_value = object()
@@ -138,6 +139,16 @@ class TestFarmRelatedTask(unittest.TestCase):
         task, _, _ = self.make_task()
         task.wait_ui_stable.return_value = False
         self.assertFalse(FarmRelatedTask._collect_wuling_farmer(task))
+        task.find_color.assert_not_called()
+        task.wait_click_feature.assert_not_called()
+        task._collect_to_wuling_warehouse.assert_not_called()
+
+    def test_map_zoom_without_slider_color_stops_without_collecting(self):
+        task, _, _ = self.make_task()
+        task.find_color.return_value = False
+        self.assertFalse(FarmRelatedTask._collect_wuling_farmer(task))
+        task.wait_ui_stable.assert_called_once()
+        task.find_color.assert_called_once()
         task.wait_click_feature.assert_not_called()
         task._collect_to_wuling_warehouse.assert_not_called()
 
