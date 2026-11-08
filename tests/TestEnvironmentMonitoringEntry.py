@@ -14,6 +14,7 @@ from ok.util.color import calculate_color_percentage
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.EnvironmentMonitoringRoute import (
     CisternOriginiumSlugsRoute,
+    EnvironmentMonitoringRoute,
     PoolLotusRoute,
     StationaryObservationRoute,
 )
@@ -117,7 +118,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             ]
         )
         task.enter_observation = Mock()
-        task.transfer_observation = Mock()
+        task.open_observation_map = Mock()
         result = task.prepare_observation()
         self.assertIsNone(result)
         task.enter_observation.assert_not_called()
@@ -272,7 +273,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task.wait_click_ocr.assert_not_called()
                 task.available_observations.assert_not_called()
                 task.enter_observation.assert_not_called()
-                task.transfer_observation.assert_not_called()
+                task.open_observation_map.assert_not_called()
                 self.assertIsNone(task.selected_observation)
 
     def test_terminal_selection_waits_for_color_before_scanning(self):
@@ -399,7 +400,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task._task_detail_page.return_value = False
         with self.assertRaisesRegex(RuntimeError, "未进入任务详情"):
             task.prepare_observation()
-        task.transfer_observation.assert_not_called()
+        task.open_observation_map.assert_not_called()
         task.wait_ocr.assert_not_called()
 
     def test_unstable_mission_details_stop_before_tracking_or_transfer(self):
@@ -409,7 +410,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.wait_ui_stable.return_value = False
         with self.assertRaisesRegex(RuntimeError, "任务详情未稳定"):
             task.prepare_observation()
-        task.transfer_observation.assert_not_called()
+        task.open_observation_map.assert_not_called()
         self.assertIsNone(task.selected_observation)
 
     def test_already_accepted_card_goes_to_mission_without_accepting_again(self):
@@ -461,7 +462,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_unknown_tracking_state_cannot_open_map_or_teleport(self):
         task = self.task()
         with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-            task.transfer_observation()
+            EnvironmentMonitoringRoute(task).transfer()
         task.click.assert_not_called()
         task.ocr.assert_not_called()
         task.wait_click_feature.assert_not_called()
@@ -472,7 +473,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         cancel = Box(1815, 975, 38, 39)
         locator = Box(1487, 961, 62, 61)
         task.find_one.side_effect = [cancel, locator]
-        task.transfer_observation()
+        EnvironmentMonitoringRoute(task).transfer()
         task.ocr.assert_not_called()
         task.click.assert_called_once_with(locator)
         self.assertTrue(task.find_one.call_args_list[0].kwargs["use_gray_scale"])
@@ -490,7 +491,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     fL.one_task_to_map: locator,
                 }.get(feature)
                 with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-                    task.transfer_observation()
+                    EnvironmentMonitoringRoute(task).transfer()
                 task.click.assert_not_called()
                 task.wait_feature.assert_not_called()
                 task.to_near_transfer_point.assert_not_called()
@@ -513,7 +514,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
                 task.find_one.side_effect = find_icon
                 with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-                    task.transfer_observation()
+                    EnvironmentMonitoringRoute(task).transfer()
                 cancel_area = task.find_one.call_args_list[0].kwargs["box"]
                 self.assertEqual((cancel_area.x, cancel_area.y), (round(width * 0.93), round(height * 0.89)))
                 self.assertAlmostEqual(cancel_area.width / width, 0.04, delta=1 / width)
@@ -538,7 +539,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
         task.wait_until.side_effect = wait_frames
         with self.assertRaisesRegex(RuntimeError, "追踪状态"):
-            task.transfer_observation()
+            EnvironmentMonitoringRoute(task).transfer()
         task.click.assert_not_called()
         task.wait_feature.assert_not_called()
         task.to_near_transfer_point.assert_not_called()
@@ -549,7 +550,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.find_one.side_effect = [Box(1815, 975, 38, 39), locator]
         task.wait_feature.return_value = False
         with self.assertRaisesRegex(RuntimeError, "任务地图未打开"):
-            task.transfer_observation()
+            EnvironmentMonitoringRoute(task).transfer()
         task.click.assert_called_once_with(locator)
         task.to_near_transfer_point.assert_not_called()
         task._wait_for_transfer_arrival.assert_not_called()
@@ -558,7 +559,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         track = Box(1817, 976, 34, 34)
         task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
-        task.transfer_observation()
+        EnvironmentMonitoringRoute(task).transfer()
         task.click.assert_called_once_with(track)
         task.ocr.assert_not_called()
         track_area = task.find_one.call_args.kwargs["box"]
@@ -571,7 +572,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
         task.wait_ui_stable.return_value = False
         with self.assertRaisesRegex(RuntimeError, "任务地图未稳定"):
-            task.transfer_observation()
+            EnvironmentMonitoringRoute(task).transfer()
         task.to_near_transfer_point.assert_not_called()
         task._wait_for_transfer_arrival.assert_not_called()
 
@@ -581,14 +582,14 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.select_terminal = Mock()
         task.available_observations = Mock(side_effect=[first, second])
         task.enter_observation = Mock()
-        task.transfer_observation = Mock()
+        task.open_observation_map = Mock()
         return task
 
     def test_unsupported_tasks_are_never_selected_when_no_supported_task_is_available(self):
         task = self.prepare_task([{"name": "古树"}], [{"name": "枯枝"}])
         self.assertIsNone(task.prepare_observation())
         task.enter_observation.assert_not_called()
-        task.transfer_observation.assert_not_called()
+        task.open_observation_map.assert_not_called()
         self.assertIsNone(task.selected_observation)
 
     def test_supported_title_can_be_found_in_the_second_terminal(self):
@@ -596,7 +597,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.prepare_task([{"name": "古树"}], [requested, {"name": "枯枝"}])
         result = task.prepare_observation()
         task.enter_observation.assert_called_once_with(requested)
-        task.transfer_observation.assert_called_once_with()
+        task.open_observation_map.assert_called_once_with()
         self.assertEqual(result["name"], "“小池荷”")
         self.assertEqual(result["terminal"], "marker_stone")
         self.assertEqual(
@@ -727,7 +728,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_transfer_arrival_failure_clears_previous_result_and_never_reports_success(self):
         task = self.prepare_task([{"name": "小池荷"}], [])
-        del task.transfer_observation
+        del task.open_observation_map
         track = Box(1817, 976, 34, 34)
         task.find_one.side_effect = lambda feature, **kwargs: track if feature == fL.transfer_go else None
         task._wait_for_transfer_arrival.return_value = False

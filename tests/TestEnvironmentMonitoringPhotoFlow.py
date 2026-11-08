@@ -37,11 +37,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_routes_choose_their_own_teleport_strategy(self):
         task = self.task()
         EnvironmentMonitoringRoute(task).transfer()
-        task.transfer_observation.assert_called_once_with()
-        task.transfer_observation.reset_mock()
-        route = EternalSunsetRoute(task)
-        route.transfer()
-        task.transfer_observation.assert_called_once_with(route.select_transfer_point)
+        task.open_observation_map.assert_called_once_with()
+        task.to_near_transfer_point.assert_called_once_with(need_track=False)
+        task._wait_for_transfer_arrival.assert_called_once_with()
 
     def test_eternal_sunset_navigation_uses_recorded_goal_and_stops_on_failure(self):
         task = self.task()
@@ -60,10 +58,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.wait_click_feature.return_value = True
         task._wait_click_transfer_go.return_value = True
         task._wait_for_transfer_arrival.return_value = True
-        EternalSunsetRoute(task).select_transfer_point()
+        EternalSunsetRoute(task).transfer()
+        task.open_observation_map.assert_called_once_with()
         task.clear_icon_in_map.assert_called_once()
         task.zoom_map_out.assert_called_once()
         task._wait_click_transfer_go.assert_called_once_with()
+        task._wait_for_transfer_arrival.assert_called_once_with()
 
     def test_eternal_sunset_uses_photo_flow_and_continues(self):
         task = self.task()

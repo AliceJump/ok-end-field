@@ -7,7 +7,14 @@ class EnvironmentMonitoringRoute:  # 共用传送后移动与状态检查
         self.task = task  # 不创建独立执行器
 
     def transfer(self):  # 默认使用委托的快捷传送
-        self.task.transfer_observation()  # 共用追踪、传送和到达检查
+        self.task.open_observation_map()  # 共用任务追踪与地图检查
+        if not self.task.to_near_transfer_point(need_track=False):  # 使用快捷传送
+            raise RuntimeError("环境监测快捷传送失败")  # 不在传送失败后继续
+        self.confirm_arrival()  # 验证传送完成
+
+    def confirm_arrival(self):  # 共用传送到达检查
+        if not self.task._wait_for_transfer_arrival():  # 等待大世界稳定出现
+            raise RuntimeError("环境监测传送后未确认到达")  # 不在异常界面继续
 
     def hold_route_key(self, key, duration, sprint=False):  # 执行可中止的移动操作
         task = self.task  # 使用所属任务输入
@@ -52,10 +59,8 @@ class AnnularWaterfallRoute(EnvironmentMonitoringRoute):  # 环形瀑布传送�
 class EternalSunsetRoute(EnvironmentMonitoringRoute):  # 栖霞驻影世界坐标路线
     photo_direction = "up"  # 向上取景
     def transfer(self):  # 该点位选择地图左上角传送点
-        self.task.transfer_observation(self.select_transfer_point)  # 共用地图入口和到达检查
-
-    def select_transfer_point(self):  # 清除标记并选择左上角传送点
         task = self.task  # 复用所属任务的地图操作
+        task.open_observation_map()  # 共用任务追踪与地图检查
         if not task.clear_icon_in_map():  # 清空地图标记筛选
             raise RuntimeError("清空地图标记失败")  # 避免标记遮挡传送点
         if not task.zoom_map_out():  # 缩小地图并等待稳定
@@ -67,6 +72,7 @@ class EternalSunsetRoute(EnvironmentMonitoringRoute):  # 栖霞驻影世界坐�
             raise RuntimeError("未找到左上方传送点")  # 不盲目传送
         if not task._wait_click_transfer_go():  # 点击所选传送点的传送按钮
             raise RuntimeError("未找到传送按钮")  # 不把选中当成传送
+        self.confirm_arrival()  # 验证传送完成
 
     def run(self):  # 导航至已实测的取景位置
         if not self.task.navigate_grid_to((-908.95, -1179.31), map_id="map02"):  # 使用武陵导航网格

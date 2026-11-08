@@ -197,7 +197,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             return None  # 通用叉号本身不能证明任务已追踪
         return self.find_one(fL.one_task_to_map, box=self.box.bottom_right)  # 返回定位按钮，绝不点击停止追踪
 
-    def transfer_observation(self, select_transfer_point=None):  # 正确处理未追踪与已追踪两条入口
+    def open_observation_map(self):  # 正确处理未追踪与已追踪两条入口
         locator = self._tracked_map_locator()  # 已追踪的常见路径先用已验证双模板，不重复 OCR
         if locator:
             self.click(locator)  # 点击同一帧已确认的地图定位按钮
@@ -217,13 +217,6 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             raise RuntimeError("环境监测任务地图未打开")  # 禁止在任务面板直接点传送
         if not self.wait_ui_stable():  # 等待地图上的按钮稳定
             raise RuntimeError("环境监测任务地图未稳定")  # 禁止点击过渡画面
-        if select_transfer_point:  # 点位提供了自定义传送策略
-            select_transfer_point()  # 在已确认的地图中选择传送点
-        elif not self.to_near_transfer_point(need_track=False):  # 复用前往传送和传送两步
-            raise RuntimeError("环境监测快捷传送失败")  # 失败不进入后半流程
-        if not self._wait_for_transfer_arrival():  # 等待大世界稳定出现
-            raise RuntimeError("环境监测传送后未确认到达")  # 点击成功不等于到达
-
     def prepare_observation(self):  # 自动前往当前支持的观察点
         self.selected_observation = None  # 清除上轮结果
         self.open_monitoring()  # 每次从明确入口开始
