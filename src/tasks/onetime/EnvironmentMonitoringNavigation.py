@@ -40,6 +40,12 @@ class AnnularWaterfallNavigation(EnvironmentMonitoringNavigation):  # 环形瀑�
         self.run_route("环形瀑布", (("w", 5), ("d", 2), ("w", 3)), sprint=True)  # 按指定时间冲刺
 
 
+class EternalSunsetNavigation(EnvironmentMonitoringNavigation):  # 栖霞驻影世界坐标路线
+    def run(self):  # 导航至已实测的取景位置
+        if not self.task.navigate_grid_to((-908.95, -1179.31), map_id="map02"):  # 使用武陵导航网格
+            raise RuntimeError("栖霞驻影导航失败")  # 不在错误位置打开相机
+
+
 class StationaryObservationNavigation(EnvironmentMonitoringNavigation):  # 传送落点即可取景
     def run(self):  # 原地等待传送后大世界稳定
         self.run_route("原地取景", ())  # 原地等待大世界稳定

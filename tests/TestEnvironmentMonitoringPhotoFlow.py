@@ -14,6 +14,7 @@ from src.tasks.onetime.DailyTask import DailyTask
 from src.tasks.onetime.EnvironmentMonitoringNavigation import (
     AnnularWaterfallNavigation,
     CisternOriginiumSlugsNavigation,
+    EternalSunsetNavigation,
     EnvironmentMonitoringNavigation,
     PoolLotusNavigation,
     StationaryObservationNavigation,
@@ -22,6 +23,15 @@ from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitori
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
+    def test_eternal_sunset_navigation_uses_recorded_goal_and_stops_on_failure(self):
+        task = self.task()
+        task.navigate_grid_to.return_value = True
+        EternalSunsetNavigation(task).run()
+        task.navigate_grid_to.assert_called_once_with((-908.95, -1179.31), map_id="map02")
+        task.navigate_grid_to.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "栖霞驻影导航失败"):
+            EternalSunsetNavigation(task).run()
+
     def test_alternate_transfer_clears_map_before_selecting_point(self):
         task = self.task()
         task.clear_icon_in_map.return_value = True
