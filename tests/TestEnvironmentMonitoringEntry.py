@@ -617,7 +617,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang.environment_monitoring.ancient_tree = "古树"
         with patch.dict(
             "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
-            {"ancient_tree": (PoolLotusRoute, "right")},
+            {"ancient_tree": PoolLotusRoute},
         ):
             self.assertEqual(task.prepare_observation()["name"], "古树")
         task.enter_observation.assert_called_once_with(supported)
@@ -694,7 +694,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     setattr(task.lang.environment_monitoring, key, re.compile(names[locale]["pattern"]))
                     with patch.dict(
                         "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
-                        {key: (PoolLotusRoute, "right")},
+                        {key: PoolLotusRoute},
                         clear=True,
                     ):
                         self.assertEqual(task.observation_route(names[locale]["pattern"]), PoolLotusRoute)
@@ -709,7 +709,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang.environment_monitoring.second = re.compile("池荷")
         with patch.dict(
             "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
-            {"first": (PoolLotusRoute, "right"), "second": (PoolLotusRoute, "right")},
+            {"first": PoolLotusRoute, "second": PoolLotusRoute},
             clear=True,
         ):
             self.assertIsNone(task.observation_route("小池荷"))
@@ -719,7 +719,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang.environment_monitoring.ecology_near_the_field_logistics_depot = re.compile("储备站")
         with patch.dict(
             "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
-            {"ecology_near_the_field_logistics_depot": (PoolLotusRoute, "right")},
+            {"ecology_near_the_field_logistics_depot": PoolLotusRoute},
             clear=True,
         ):
             self.assertEqual(task.observation_route("储备站周围的生态环境"), PoolLotusRoute)

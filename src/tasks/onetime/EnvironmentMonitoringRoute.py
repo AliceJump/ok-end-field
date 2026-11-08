@@ -2,6 +2,7 @@ from src.data.FeatureList import FeatureList as fL  # 复用地图传送点模�
 
 
 class EnvironmentMonitoringRoute:  # 共用传送后移动与状态检查
+    photo_direction = "right"  # 默认向右取景
     def __init__(self, task):  # 复用所属任务的输入与生命周期
         self.task = task  # 不创建独立执行器
 
@@ -36,17 +37,20 @@ class PoolLotusRoute(EnvironmentMonitoringRoute):  # 小池荷传送后短路线
 
 
 class CisternOriginiumSlugsRoute(EnvironmentMonitoringRoute):  # 普通蓄水源石虫传送后短路线
+    photo_direction = "left"  # 向左取景
     def run(self):  # 保持传送后的朝向，向后冲刺到取景位置
         self.run_route("蓄水源石虫", (("s", 7),), sprint=True)  # 后退冲刺到取景位置
 
 
 class AnnularWaterfallRoute(EnvironmentMonitoringRoute):  # 环形瀑布传送后路线
+    photo_direction = "up"  # 向上取景
     def run(self):  # 先左走一步，再按顺序冲刺
         self.run_route("环形瀑布", (("a", 0.5),))  # 一步暂按半秒估计
         self.run_route("环形瀑布", (("w", 5), ("d", 2), ("w", 3)), sprint=True)  # 按指定时间冲刺
 
 
 class EternalSunsetRoute(EnvironmentMonitoringRoute):  # 栖霞驻影世界坐标路线
+    photo_direction = "up"  # 向上取景
     def transfer(self):  # 该点位选择地图左上角传送点
         self.task.transfer_observation(self.select_transfer_point)  # 共用地图入口和到达检查
 

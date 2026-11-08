@@ -23,6 +23,17 @@ from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitori
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
+    def test_route_photo_directions(self):
+        for route, direction in (
+            (PoolLotusRoute, "right"),
+            (StationaryObservationRoute, "right"),
+            (CisternOriginiumSlugsRoute, "left"),
+            (AnnularWaterfallRoute, "up"),
+            (EternalSunsetRoute, "up"),
+        ):
+            with self.subTest(route=route.__name__):
+                self.assertEqual(route.photo_direction, direction)
+
     def test_routes_choose_their_own_teleport_strategy(self):
         task = self.task()
         EnvironmentMonitoringRoute(task).transfer()
@@ -319,6 +330,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
         task.selected_observation = {"name": "蓄水源石虫"}
+        task.navigation = CisternOriginiumSlugsRoute(task)
         task.photo_condition_met.return_value = False
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
         self.assertFalse(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
@@ -358,6 +370,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.lang.environment_monitoring.annular_waterfall = "环形瀑布"
         task.selected_observation = {"name": "环形瀑布"}
+        task.navigation = AnnularWaterfallRoute(task)
         task.photo_condition_met.side_effect = [False, True]
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
         self.assertIs(task.observation_route("环形瀑布"), AnnularWaterfallRoute)

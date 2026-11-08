@@ -16,14 +16,14 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
     StationaryObservationRoute,  # 传送后原地取景
 )
 
-OBSERVATIONS = {  # 观察点语言键对应导航类和取景方向
-    "pool_lotus": (PoolLotusRoute, "right"),  # 小池荷向右取景
-    "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "left"),  # 普通源石虫向左取景
-    "thillu": (StationaryObservationRoute, "right"),  # 表象在传送落点向右取景
-    "peach_tree": (StationaryObservationRoute, "right"),  # 桃树在传送落点即可取景
-    "pier_waterwheel": (StationaryObservationRoute, "right"),  # 码头水车在传送落点即可取景
-    "annular_waterfall": (AnnularWaterfallRoute, "up"),  # 环形瀑布向上取景
-    "eternal_sunset": (EternalSunsetRoute, "up"),  # 栖霞驻影向上取景
+OBSERVATIONS = {  # 观察点语言键对应路线类
+    "pool_lotus": PoolLotusRoute,  # 小池荷向右取景
+    "cistern_originium_slugs": CisternOriginiumSlugsRoute,  # 普通源石虫向左取景
+    "thillu": StationaryObservationRoute,  # 表象在传送落点向右取景
+    "peach_tree": StationaryObservationRoute,  # 桃树在传送落点即可取景
+    "pier_waterwheel": StationaryObservationRoute,  # 码头水车在传送落点即可取景
+    "annular_waterfall": AnnularWaterfallRoute,  # 环形瀑布向上取景
+    "eternal_sunset": EternalSunsetRoute,  # 栖霞驻影向上取景
 }  # 仅注册已支持的点位
 
 
@@ -71,7 +71,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def observation_route(self, title):  # 仅已注册导航的观察点允许自动接取
         observation = OBSERVATIONS.get(self.observation_key(title))  # 查找已注册点位
-        return observation[0] if observation else None  # 未匹配时返回 None
+        return observation if observation else None  # 未匹配时返回 None
 
     def open_monitoring(self):  # 从任意可恢复页面进入环境监测
         self.ensure_main()  # 复用主界面恢复
@@ -317,9 +317,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             self.mouse_up(key="left")  # 松开后才能检查稳定画面
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
-        title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
-        key = self.observation_key(title)  # 根据已注册的观察点选择取景策略
-        _, direction = OBSERVATIONS.get(key, (None, "right"))  # 未识别时沿用默认方向
+        direction = self.navigation.photo_direction  # 使用当前观察点路线的取景方向
         if not self.wait_ui_stable(  # 等待相机目标标记区域入场稳定
             box=self.box_of_screen(0.02, 0.625, 0.14, 0.7), stable_time=0.5, max_wait=3, refresh_interval=0.1
         ):  # 只观察拍摄目标标题和条件标记
