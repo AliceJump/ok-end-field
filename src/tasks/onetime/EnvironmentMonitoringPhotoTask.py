@@ -324,7 +324,9 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
                 f"[environment-monitoring] 取景条件未识别，向{direction}调整：{step + 1}/{max_steps}"
             )  # 记录转动原因
             self.rotate_photo_view(direction=direction)  # 只旋转镜头，不发出移动按键
-            if self.wait_until(self.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False):  # 等待拍照条件
+            if self.wait_until(
+                self.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False
+            ):  # 等待拍照条件
                 return True  # 圆勾出现后停止调整
         return False  # 有限范围内未找到时如实返回
 

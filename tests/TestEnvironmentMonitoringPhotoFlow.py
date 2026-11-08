@@ -542,7 +542,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.wait_until.side_effect = lambda condition, **kwargs: condition() or condition()
         self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         task.rotate_photo_view.assert_called_once()
-        task.wait_until.assert_called_once_with(task.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False)
+        task.wait_until.assert_called_once_with(
+            task.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False
+        )
 
     def test_final_frame_decides_ready_instead_of_the_previous_search_result(self):
         for search_ready, final_ready in ((True, False), (False, True)):
