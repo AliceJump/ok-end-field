@@ -145,9 +145,13 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", ancient_tree="古树"))
         task.observation_key.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_key(task, title)
         task.observation_route.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_route(task, title)
-        task.navigate_observation.side_effect = lambda observation: EnvironmentMonitoringPhotoTask.navigate_observation(
-            task, observation
-        )
+        def navigate_observation(observation):
+            route_class = task.observation_route(observation["name"])
+            if callable(route_class) and task.navigation is None:
+                task.navigation = route_class(task)
+            return EnvironmentMonitoringPhotoTask.navigate_observation(task, observation)
+
+        task.navigate_observation.side_effect = navigate_observation
         task.photograph_observation.side_effect = lambda: EnvironmentMonitoringPhotoTask.photograph_observation(task)
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)

@@ -370,8 +370,6 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
         if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
             raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
-        if not isinstance(self.navigation, navigation_class):  # 兼容独立调用导航阶段
-            self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
         self.navigation.run()  # 每个点位统一通过 run 执行导航
 
     def photograph_observation(self):  # 共用取景与拍照流程
