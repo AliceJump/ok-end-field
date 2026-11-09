@@ -373,6 +373,63 @@ class TestVisualPositionSource(unittest.TestCase):
         self.assertFalse(state["position_trusted"], state)
         self.assertIsNone(state["x"])
 
+    def test_long_continuous_visual_chain_and_strong_anchor_recovery(self):
+        source, _ = self._layered_source()
+        self.addCleanup(source.close)
+        source.sample(self.frame(504), now=1.4)
+        geometry = MinimapGeometry.from_frame(self.width, self.height)
+        locate = source.locator.locate_near(self.frame(504), (126, -100), geometry, search_radius_m=12)
+        rejected = TrackResult("lost", False, "insufficient_acquisition_evidence", locate, None, 0, True)
+        errors = []
+        with patch.object(source.tracker, "update", return_value=rejected):
+            for i in range(300):
+                phase = i % 80
+                x = 504 + min(phase, 80 - phase)
+                state = source.sample(self.frame(x), now=1.6 + i * 0.2)
+                self.assertTrue(state["position_trusted"], (i, state))
+                self.assertFalse(state["absolute_position_valid"])
+                errors.append(float(np.hypot(state["x"] - x / 4, state["z"] + 100)))
+        self.assertGreater(state["visual_absolute_anchor_age_s"], 59)
+        self.assertGreater(state["visual_chain_keyframe_checks"], 0)
+        from src.runtime_state.world_pose import build_world_pose
+
+        published = build_world_pose(state, source="visual_map")
+        self.assertEqual(published["visual_chain_error_budget_m"], state["visual_chain_error_budget_m"])
+        self.assertLess(max(errors), 0.5)
+        first = source.sample(self.frame(x), now=61.6)
+        self.assertTrue(first["position_trusted"], first)
+        recovered = source.sample(self.frame(x), now=61.8)
+        self.assertTrue(recovered["absolute_position_valid"], recovered)
+        self.assertLess(float(np.hypot(recovered["x"] - x / 4, recovered["z"] + 100)), 0.3)
+        self.sequence_metrics = {
+            "frames_without_absolute_observation": 300,
+            "max_error_m": max(errors),
+            "last_absolute_age_s": state["visual_absolute_anchor_age_s"],
+            "final_error_allowance_m": state["visual_chain_error_budget_m"],
+            "recovery_s": 61.8 - 61.6,
+            "recovery_frames": 2,
+        }
+
+    def test_budget_exhaustion_revokes_position_then_new_absolute_anchor_recovers(self):
+        source, _ = self._layered_source()
+        source.sample(self.frame(504), now=1.4)
+        source.evidence.max_error_m = 0.001
+        geometry = MinimapGeometry.from_frame(self.width, self.height)
+        locate = source.locator.locate_near(self.frame(506), (126.5, -100), geometry, search_radius_m=12)
+        rejected = TrackResult("lost", False, "insufficient_acquisition_evidence", locate, None, 0, True)
+        with patch.object(source.tracker, "update", return_value=rejected):
+            state = source.sample(self.frame(506), now=1.6)
+        self.assertFalse(state["position_trusted"])
+        self.assertEqual(state["trust_reason"], "visual_chain_error_budget_exhausted")
+        self.assertIsNone(source.estimate())
+        self.assertIsNone(source.evidence.previous)
+        source.evidence.max_error_m = 1.0
+        source.sample(self.frame(508), now=1.8)
+        recovered = source.sample(self.frame(508), now=2.0)
+        self.assertTrue(recovered["position_trusted"], recovered)
+        self.assertTrue(recovered["absolute_position_valid"])
+        self.assertEqual(source.evidence.anchor_time, 2.0)
+
     def test_short_chain_cannot_continue_across_unknown_or_changed_floor(self):
         source, _ = self._layered_source()
         geometry = MinimapGeometry.from_frame(self.width, self.height)

@@ -14,6 +14,7 @@ from src.localization.minimap_odometry import MinimapOdometry
 from src.localization.minimap_visual_anchor_chain import (
     MinimapKeyframeVisualAnchorChain,
     MinimapVisualAnchorChainCorrector,
+    MinimapVisualChainEvidence,
 )
 
 
@@ -67,6 +68,8 @@ class VisualPositionSource:
         self._keyframe_tick = self._keyframe_uid = 0
         self.odometry = None
         self.chain = None
+        self.evidence = None
+        self._evidence_result = None
         self._shape = None
         self._origin = None
         self._last_absolute_t = None
@@ -96,6 +99,8 @@ class VisualPositionSource:
         if callable(reset_locator):
             reset_locator()
         self.odometry = self.chain = None
+        self.evidence = None
+        self._evidence_result = None
         self.keyframe_chain = None
         self._keyframe_tick = self._keyframe_uid = 0
         self._shape = self._origin = self._last_absolute_t = self._last_clock = None
@@ -175,6 +180,7 @@ class VisualPositionSource:
             return {**self._last_state, "visual_duplicate_frame": True}
         if shape != self._shape or (self._last_clock is not None and clock < self._last_clock):
             self._initialize_shape(shape)
+        previous_clock = self._last_clock
         self._last_clock = clock
         geometry = MinimapGeometry.from_frame(shape[1], shape[0])
         measured = self.odometry.sample(frame, now=clock) if self.odometry is not None else None
@@ -195,7 +201,7 @@ class VisualPositionSource:
                 )
                 predicted = previous_corrected + current_delta - np.asarray(self._last_state["dmap_px"])
             predicted_world = self.locator.calibration.map_to_world(*(predicted / self._scale))
-            if self.tracker._convinced_t is None or clock - self.tracker._convinced_t > self.tracker.stale_after_s:
+            if previous_clock is None or clock - previous_clock > self.tracker.stale_after_s:
                 predicted_world = None
         match = self.tracker.update(
             frame,
@@ -220,11 +226,16 @@ class VisualPositionSource:
         corrected, chain_result = self._correct_visual_chains(
             clock, raw, anchor, sampled=bool(measured and measured.get("sampled", False))
         )
-        if clock - self._last_absolute_t > 4.0:
-            self.tracker.reset()
-            return self.unavailable("visual_absolute_anchor_stale")
         if not strong and not self._chain_within_error_budget(chain_result):
-            return self._lose_tracking(match)
+            evidence = self._evidence_result
+            self._lose_tracking(match)
+            self._last_state.update(
+                trust_reason=f"visual_chain_{evidence.reason}" if evidence else "visual_chain_evidence_lost",
+                visual_chain_error_budget_m=(
+                    evidence.error_m if evidence and math.isfinite(evidence.error_m) else None
+                ),
+            )
+            return dict(self._last_state)
         return self._publish_visual_state(clock, match, measured, delta, corrected, chain_result, strong)
 
     def _can_continue_visual_chain(self, match, clock):
@@ -232,8 +243,10 @@ class VisualPositionSource:
             match.locate is None
             or self._origin is None
             or self._last_absolute_t is None
-            or not 0 <= clock - self._last_absolute_t <= 4.0
             or self.chain is None
+            or self.evidence is None
+            or self.evidence.previous is None
+            or not 0 < clock - self.evidence.previous.time <= self.evidence.max_gap_s
         ):
             return False
         previous = self.tracker._convinced
@@ -248,7 +261,13 @@ class VisualPositionSource:
         )
 
     def _chain_within_error_budget(self, result):
-        if result is None or not result.valid or not result.connected_to_anchor:
+        if (
+            result is None
+            or not result.valid
+            or not result.connected_to_anchor
+            or self._evidence_result is None
+            or not self._evidence_result.trusted
+        ):
             return False
         residual_limit = self.chain._max_residual_px
         return result.residual_median <= residual_limit and result.residual_max <= residual_limit * 2
@@ -270,6 +289,18 @@ class VisualPositionSource:
         )
         self.keyframe_chain = (
             MinimapKeyframeVisualAnchorChain(scale_m_per_px=1 / (4 * self._scale), **self.keyframe_options)
+            if self.chain_enabled
+            else None
+        )
+        self.evidence = (
+            MinimapVisualChainEvidence(
+                scale_m_per_px=1 / (4 * self._scale),
+                max_error_m=self.chain_options["max_correction_m"],
+                min_response=max(self.chain_options["min_response"], self.keyframe_options["min_response"]),
+                keyframe_interval=self.keyframe_interval,
+                max_keyframes=self.keyframe_options["max_edges"] * 2,
+                max_gap_s=self.tracker.stale_after_s,
+            )
             if self.chain_enabled
             else None
         )
@@ -310,6 +341,7 @@ class VisualPositionSource:
         if self.chain is not None:
             self.chain.reset()
             self.keyframe_chain.reset()
+            self.evidence.reset()
             self._keyframe_tick = self._keyframe_uid = 0
         self.unavailable(match.reason, locate=match.locate)
         # Pending is emitted only after the tracker's strict acquisition gates.
@@ -321,7 +353,10 @@ class VisualPositionSource:
     def _correct_visual_chains(self, clock, raw, anchor, *, sampled):
         corrected = raw
         chain_result = None
+        self._evidence_result = None
         if not sampled:
+            if anchor is not None and self.evidence is not None:
+                self.evidence.reset()
             # raw already includes this observation's new absolute anchor.
             if anchor is None and self._last_state.get("position_trusted"):
                 corrected = (
@@ -353,6 +388,17 @@ class VisualPositionSource:
             )
             if chain_result.valid:
                 corrected = chain_result.position
+            self._evidence_result = self.evidence.observe(
+                time=clock, gray=gray, alpha=alpha, position=corrected, anchor=anchor
+            )
+            if self._evidence_result.trusted:
+                direct_position = self._evidence_result.position
+                correction_m = float(np.linalg.norm(direct_position - raw)) / (4 * self._scale)
+                if correction_m <= self.chain_options["max_correction_m"]:
+                    corrected = direct_position
+                else:
+                    self._evidence_result.trusted = False
+                    self._evidence_result.reason = "correction_too_large"
         return corrected, chain_result
 
     def _publish_visual_state(self, clock, match, measured, delta, corrected, chain_result, strong):
@@ -397,6 +443,9 @@ class VisualPositionSource:
             "visual_anchor_chain_reason": chain_result.reason if chain_result else "disabled",
             "visual_anchor_chain_connected": bool(chain_result and chain_result.connected_to_anchor),
             "visual_absolute_anchor_age_s": clock - self._last_absolute_t,
+            "visual_chain_error_budget_m": self._evidence_result.error_m if self._evidence_result else None,
+            "visual_chain_evidence_reason": self._evidence_result.reason if self._evidence_result else "unsampled",
+            "visual_chain_keyframe_checks": self._evidence_result.keyframe_checks if self._evidence_result else 0,
             "visual_anchor_chain_keyframe_nodes": len(self.keyframe_chain._nodes) if self.keyframe_chain else 0,
             "source": "visual_map",
         }
