@@ -22,8 +22,14 @@ Set-Location ok-end-field
 
 ```powershell
 git submodule update --init --recursive --checkout
+git lfs pull
 git -C assets/nav-grid-data lfs pull
 uv sync
+```
+
+确认主仓库和子模块的 LFS 数据同步成功后，再运行程序；若任一步失败，请解决错误后重试。
+
+```powershell
 uv run python main_debug.py
 ```
 
@@ -32,6 +38,7 @@ uv run python main_debug.py
 ```powershell
 git pull --ff-only
 git submodule update --init --recursive --checkout
+git lfs pull
 git -C assets/nav-grid-data lfs pull
 uv sync
 ```

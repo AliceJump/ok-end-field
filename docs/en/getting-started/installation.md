@@ -23,8 +23,14 @@ Running from source is intended for contributors, modifications, and debugging. 
 git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
 Set-Location ok-end-field
 git submodule update --init --recursive --checkout
+git lfs pull
 git -C assets/nav-grid-data lfs pull
 uv sync
+```
+
+Confirm that LFS data synced successfully in both the main repository and the submodule before running the application. Resolve and retry any failed step.
+
+```powershell
 uv run python main.py
 ```
 
