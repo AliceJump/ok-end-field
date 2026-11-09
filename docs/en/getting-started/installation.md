@@ -20,18 +20,12 @@ After installation, start `ok-ef` from the desktop shortcut or Start menu.
 Running from source is intended for contributors, modifications, and debugging. Install Git LFS and run `git lfs install` once before cloning.
 
 ```powershell
-& {
-    git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
-    if (-not $?) { throw "Clone failed" }
-    Set-Location -LiteralPath ok-end-field -ErrorAction Stop
-    git submodule update --init --recursive --checkout
-    if (-not $?) { throw "Submodule update failed" }
-    git lfs pull
-    if (-not $?) { throw "Main repository LFS pull failed" }
-    git -C assets/nav-grid-data lfs pull
-    if (-not $?) { throw "Submodule LFS pull failed" }
-    uv sync
-}
+git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
+Set-Location ok-end-field
+git submodule update --init --recursive --checkout
+git lfs pull
+git -C assets/nav-grid-data lfs pull
+uv sync
 ```
 
 Confirm that LFS data synced successfully in both the main repository and the submodule before running the application. Resolve and retry any failed step.
