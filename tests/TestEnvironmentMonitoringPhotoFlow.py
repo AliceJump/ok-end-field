@@ -557,6 +557,25 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.click_relative.assert_not_called()
         task.click.assert_not_called()
 
+    def test_photo_waits_for_condition_to_recover_before_shutter(self):
+        task = self.task()
+        task.photo_condition_met.side_effect = [False, True]
+        task.wait_feature.return_value = Box(1835, 26, 28, 28)
+        task._camera_open.return_value = True
+
+        def wait_for_condition(condition, **kwargs):
+            if condition == task.photo_condition_met:
+                self.assertEqual(kwargs, {"time_out": 2, "settle_time": 0, "raise_if_not_found": False})
+                self.assertFalse(condition())
+                task.click_relative.assert_not_called()
+                return condition()
+            return condition()
+
+        task.wait_until.side_effect = wait_for_condition
+        EnvironmentMonitoringPhotoTask.take_photo(task)
+        self.assertEqual(task.photo_condition_met.call_count, 2)
+        task.click_relative.assert_called_once_with(0.856, 0.803)
+
     def test_photo_closes_preview_without_checking_collection(self):
         for camera, world in ((True, False), (False, True)):
             with self.subTest(camera=camera, world=world):
