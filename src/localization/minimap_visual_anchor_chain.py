@@ -67,6 +67,7 @@ class VisualAnchorChainResult:
     median_response: float
     residual_median: float
     residual_max: float
+    connected_to_anchor: bool
 
 
 class MinimapVisualAnchorChainCorrector:
@@ -258,7 +259,29 @@ class MinimapVisualAnchorChainCorrector:
             median_response=median_response,
             residual_median=residual_median,
             residual_max=residual_max,
+            connected_to_anchor=self._connected_to_absolute_anchor(),
         )
+
+    def _connected_to_absolute_anchor(self) -> bool:
+        if self._absolute_anchor_uid is None:
+            return False
+        nodes = list(self._nodes)
+        index_by_uid = {node.uid: node.index for node in nodes}
+        anchor = index_by_uid.get(self._absolute_anchor_uid)
+        if anchor is None or not nodes:
+            return False
+        reachable = {anchor}
+        changed = True
+        while changed:
+            changed = False
+            for edge in self._edges:
+                if edge.i in reachable and edge.j not in reachable:
+                    reachable.add(edge.j)
+                    changed = True
+                elif edge.j in reachable and edge.i not in reachable:
+                    reachable.add(edge.i)
+                    changed = True
+        return nodes[-1].index in reachable
 
     # ------------------------------------------------------------------ #
     # 内部

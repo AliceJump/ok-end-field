@@ -36,6 +36,7 @@ from src.localization.minimap_map_locator import (
     MinimapGeometry,
     MinimapMapLocator,
     MinimapTracker,
+    TrackResult,
     _has_minimap_texture,
     candidate_margin,
 )
@@ -332,6 +333,59 @@ class TestVisualPositionSource(unittest.TestCase):
         state = source.sample(self.frame(508), now=4.2)
         self.assertFalse(state["position_trusted"])
 
+    def test_short_ncc_rejection_continues_only_a_connected_same_layer_chain(self):
+        layered = LayeredMinimapLocator(self.locator, "map02", ".", {"layers": []})
+        source = VisualPositionSource(self.task, layered, "map02")
+        self.addCleanup(source.close)
+        source.sample(self.frame(), now=1.0)
+        anchored = source.sample(self.frame(504), now=1.2)
+        self.assertTrue(anchored["position_trusted"], anchored)
+        anchored = source.sample(self.frame(508), now=1.4)
+        self.assertTrue(anchored["position_trusted"], anchored)
+        self.assertGreater(len(source.chain._nodes), 0)
+        self.assertTrue(source.chain._connected_to_absolute_anchor())
+
+        geometry = MinimapGeometry.from_frame(self.width, self.height)
+        trace = []
+        for index, x in enumerate(range(512, 560, 4), start=1):
+            timestamp = 1.4 + index * 0.2
+            locate = layered.locate_near(self.frame(x), (x / 4, -100), geometry, search_radius_m=12)
+            self.assertIsNotNone(locate)
+            self.assertEqual(locate.best.tier_id, "__main__")
+            rejected = TrackResult("lost", False, "insufficient_acquisition_evidence", locate, None, 0, True)
+            with patch.object(source.tracker, "update", return_value=rejected):
+                state = source.sample(self.frame(x), now=timestamp)
+            self.assertTrue(state["position_trusted"], state)
+            self.assertEqual(state["trust_reason"], "visual_anchor_chain")
+            self.assertTrue(state["tier_trusted"])
+            trace.append(abs(state["x"] - x / 4))
+        self.assertLessEqual(max(trace), 0.5, trace)
+        self.assertTrue(source.chain._connected_to_absolute_anchor())
+        recovered = source.sample(self.frame(560), now=4.0)
+        self.assertTrue(recovered["position_trusted"], recovered)
+        self.assertTrue(recovered["absolute_position_valid"])
+        self.assertLessEqual(abs(recovered["x"] - 140), 0.5)
+
+    def test_teleport_to_unrelated_terrain_does_not_continue_old_chain(self):
+        source, _ = self._layered_source()
+        source.sample(self.frame(504), now=1.4)
+        state = source.sample(self.frame(700, 600), now=1.6)
+        self.assertFalse(state["position_trusted"], state)
+        self.assertIsNone(state["x"])
+
+    def test_short_chain_cannot_continue_across_unknown_or_changed_floor(self):
+        source, _ = self._layered_source()
+        geometry = MinimapGeometry.from_frame(self.width, self.height)
+        locate = source.locator.locate_near(self.frame(508), (127, -100), geometry, search_radius_m=12)
+        self.assertIsNotNone(locate)
+        for tier in (None, "floor_1"):
+            candidate = replace(locate.best, tier_id=tier)
+            result = replace(locate, best=candidate)
+            rejected = TrackResult("lost", False, "map competition", result, None, 0, True)
+            with self.subTest(tier=tier), patch.object(source.tracker, "update", return_value=rejected):
+                state = source.sample(self.frame(508), now=1.4)
+            self.assertFalse(state["position_trusted"], state)
+
     def test_clock_rollback_resets_absolute_state(self):
         source = VisualPositionSource(self.task, self.locator, "map02")
         source.sample(self.frame(), now=1)
@@ -483,6 +537,76 @@ class TestSparseMinimapPosition(unittest.TestCase):
             self.assertFalse(state["position_trusted"], state)
             self.assertIsNone(state["x"])
             self.assertFalse(state["anchor_set"])
+
+    def test_recorded_loading_huds_clear_tracking(self):
+        root = Path(__file__).parent / "fixtures/minimap"
+        for index in (1, 2):
+            with self.subTest(recording=index):
+                self.source.reset()
+                self.source.sample(self.frame, now=1)
+                self.assertTrue(self.source.sample(self.frame, now=1.2)["position_trusted"])
+                loading = np.zeros((1440, 2560, 3), np.uint8)
+                loading[:370, :450] = cv2.imread(str(root / f"loading_hud_{index}.png"))
+                for now in (1.4, 1.6, 1.8):
+                    state = self.source.sample(loading, now=now)
+                    self.assertFalse(state["position_trusted"], state)
+                    self.assertIsNone(state["x"])
+                    self.assertFalse(state["anchor_set"])
+                self.assertFalse(self.source.sample(self.frame, now=2)["position_trusted"])
+                self.assertTrue(self.source.sample(self.frame, now=2.2)["position_trusted"])
+
+
+class TestFactoryOcclusionRejection(unittest.TestCase):
+    def test_factory_frame_below_original_ncc_gates(self):
+        root = Path(__file__).parent / "fixtures/minimap"
+        frame = np.zeros((1080, 1920, 3), np.uint8)
+        frame[:280, :340] = cv2.imread(str(root / "factory_occlusion_hud.png"))
+        base = MinimapMapLocator.from_files(root / "factory_occlusion_map.png", root / "factory_occlusion_mapping.json")
+        locator = MapSetLocator(SimpleNamespace(), ["map02"])
+        locator._cache["map02"] = LayeredMinimapLocator(base, "map02", root, {"layers": []})
+        source = VisualPositionSource(SimpleNamespace(width=1920, height=1080, active_time=lambda: 0), locator, "")
+        self.addCleanup(source.close)
+        for now in (1, 1.2, 1.4, 1.6):
+            state = source.sample(frame, now=now)
+            self.assertFalse(state["position_trusted"], state)
+            self.assertIsNone(state["x"])
+            self.assertFalse(state["visual_confirmation_pending"])
+            self.assertLess(state["visual_confidence"], source.tracker.initial_min_ncc)
+            self.assertLess(state["visual_full_ncc"], source.tracker.initial_min_full_ncc)
+            self.assertEqual(state["visual_tracking_status"], "lost")
+
+
+class TestDenseIconMinimapPosition(unittest.TestCase):
+    def test_bright_terrain_with_outlined_icons_acquires_without_lowering_thresholds(self):
+        root = Path(__file__).parent / "fixtures/minimap"
+        metadata = json.loads((root / "dense_icons_mapping.json").read_text(encoding="utf-8"))
+        frame = np.zeros((1080, 1920, 3), np.uint8)
+        frame[:280, :340] = cv2.imread(str(root / "dense_icons_hud.png"))
+        base = MinimapMapLocator.from_files(root / "dense_icons_map.png", root / "dense_icons_mapping.json")
+        locator = MapSetLocator(SimpleNamespace(), ["map02"])
+        locator._cache["map02"] = LayeredMinimapLocator(base, "map02", root, {"layers": []})
+        source = VisualPositionSource(SimpleNamespace(width=1920, height=1080, active_time=lambda: 0), locator, "")
+        self.addCleanup(source.close)
+        first = source.sample(frame, now=1)
+        self.assertFalse(first["position_trusted"])
+        state = source.sample(frame, now=1.2)
+        self.assertTrue(state["position_trusted"], state)
+        self.assertEqual((state["map_id"], state["tier_id"]), ("map02", "__main__"))
+        self.assertGreaterEqual(state["visual_confidence"], 0.85)
+        self.assertGreaterEqual(state["visual_full_ncc"], 0.65)
+        self.assertGreaterEqual(state["visual_margin"], 0.08)
+        self.assertAlmostEqual(state["x"], metadata["expected_world"][0], delta=0.3)
+        self.assertAlmostEqual(state["z"], metadata["expected_world"][1], delta=0.3)
+        # Coverage guards also apply when connected antialiasing consumes too
+        # much bright terrain and the mask falls back to bright seeds alone.
+        geometry = MinimapGeometry.from_frame(1920, 1080)
+        template = base._prepare_template(frame, geometry)
+        original = next(iter(base._mask_cache.values()))[0]
+        half = template.ring.shape[0] // 2
+        self.assertGreaterEqual(template.mask.sum(), 0.55 * original.sum())
+        for rows in (slice(None, half), slice(half, None)):
+            for columns in (slice(None, half), slice(half, None)):
+                self.assertGreaterEqual(template.mask[rows, columns].sum(), 0.35 * original[rows, columns].sum())
 
 
 class TestMapAssetsAndSourceService(unittest.TestCase):

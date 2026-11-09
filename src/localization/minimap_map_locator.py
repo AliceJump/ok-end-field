@@ -710,11 +710,20 @@ class MinimapMapLocator:
         if not np.any(overlay & mask):
             return mask, mask8
         visible = MinimapMapLocator._checked_visible_masks(mask, overlay, half)
-        return visible if visible is not None else MinimapMapLocator._legacy_visible_masks(roi, mask, mask8, half)
+        if visible is not None:
+            return visible
+        # Bright roads/buildings can join the dim-glyph components and exhaust
+        # coverage. Drop that growth before dropping resolution-scaled outline
+        # padding: jumping straight to one pixel leaves dark icon borders in NCC.
+        if padding > 1:
+            visible = MinimapMapLocator._legacy_visible_masks(roi, mask, mask8, half, padding=padding)
+            if visible is not None:
+                return visible
+        return MinimapMapLocator._legacy_visible_masks(roi, mask, mask8, half)
 
     @staticmethod
-    def _legacy_visible_masks(roi, mask, mask8, half):
-        """Retain the original frame-only mask if wider glyph padding erases terrain."""
+    def _legacy_visible_masks(roi, mask, mask8, half, *, padding=1):
+        """Mask bright glyph seeds with bounded padding, without dim-pixel growth."""
         if roi.ndim != 3 or roi.shape[2] < 3:
             return mask, mask8
         colors = roi[:, :, :3]
@@ -722,7 +731,7 @@ class MinimapMapLocator:
         overlay = (low >= 210) | ((high >= 190) & (high.astype(np.int16) - low > 90))
         if not np.any(overlay & mask):
             return mask, mask8
-        overlay = cv2.dilate(overlay.astype(np.uint8), np.ones((3, 3), np.uint8))
+        overlay = cv2.dilate(overlay.astype(np.uint8), np.ones((2 * padding + 1, 2 * padding + 1), np.uint8))
         return MinimapMapLocator._checked_visible_masks(mask, overlay, half)
 
     @staticmethod
@@ -892,10 +901,9 @@ class MinimapMapLocator:
             )
             if refined is not None:
                 candidates.append(refined)
-        candidates = deduplicate_candidates(
-            candidates,
-            min_world_distance_m=self.candidate_merge_distance_m,
-        )[: self.top_k]
+        candidates = deduplicate_candidates(candidates, min_world_distance_m=self.candidate_merge_distance_m)[
+            : self.top_k
+        ]
         status, reason = self._status(candidates)
         if not candidates:
             return self._reject(f"minimap_no_candidates: search=global peaks={len(peaks)}")
@@ -978,10 +986,9 @@ class MinimapMapLocator:
                     coarse_score=coarse_score,
                 )
             )
-        candidates = deduplicate_candidates(
-            candidates,
-            min_world_distance_m=self.candidate_merge_distance_m,
-        )[: self.top_k]
+        candidates = deduplicate_candidates(candidates, min_world_distance_m=self.candidate_merge_distance_m)[
+            : self.top_k
+        ]
         status, reason = self._status(candidates)
         if not candidates:
             return self._reject(f"minimap_no_candidates: search=local peaks={len(peaks)}")
@@ -1145,6 +1152,8 @@ class MinimapTracker:
         now: float | None = None,
         prior_world: tuple[float, float] | None = None,
         prior_radius_m: float = 50.0,
+        prediction_world: tuple[float, float] | None = None,
+        prediction_radius_m: float = 35.0,
     ) -> TrackResult:
         """Run one visual frame and update the convinced/pending state."""
 
@@ -1166,7 +1175,9 @@ class MinimapTracker:
             and self._convinced_t is not None
             and 0 <= current - self._convinced_t <= self.stale_after_s
         )
-        result, used_prior = self._locate_frame(frame, geometry, current, fresh, prior_world, prior_radius_m)
+        result, used_prior = self._locate_frame(
+            frame, geometry, current, fresh, prior_world, prior_radius_m, prediction_world, prediction_radius_m
+        )
         if result is None:
             # Invalid/absent minimaps must invalidate even a recently trusted pose.
             self.reset()
@@ -1188,9 +1199,25 @@ class MinimapTracker:
 
         return self._confirm_acquisition(result, current, previous_update, used_prior)
 
-    def _locate_frame(self, frame, geometry, current, fresh, prior_world, prior_radius_m):
+    def _locate_frame(
+        self, frame, geometry, current, fresh, prior_world, prior_radius_m, prediction_world, prediction_radius_m
+    ):
         used_prior = False
-        if fresh:
+        if prediction_world is not None:
+            result = self.locator.locate_near(
+                frame,
+                prediction_world,
+                geometry,
+                search_radius_m=max(1.0, float(prediction_radius_m)),
+            )
+            used_prior = True
+            # An accepted NCC result may use the predicted center; weak evidence
+            # still runs through the established wider search path.
+            if result is None or result.status != "accepted":
+                result = None
+        else:
+            result = None
+        if result is None and fresh:
             elapsed = current - self._convinced_t
             radius = min(self.search_radius_m, self.min_search_radius_m + self.max_speed_m_s * elapsed)
             center = (self._convinced.world_x, self._convinced.world_z)
@@ -1207,7 +1234,7 @@ class MinimapTracker:
             if result is None or result.status == "rejected":
                 result = self.locator.locate_global(frame, geometry)
                 used_prior = False
-        elif prior_world is not None:
+        elif result is None and prior_world is not None:
             result = self.locator.locate_near(
                 frame,
                 prior_world,
@@ -1215,7 +1242,7 @@ class MinimapTracker:
                 search_radius_m=max(1.0, float(prior_radius_m)),
             )
             used_prior = True
-        else:
+        elif result is None:
             result = self.locator.locate_global(frame, geometry)
 
         return result, used_prior
