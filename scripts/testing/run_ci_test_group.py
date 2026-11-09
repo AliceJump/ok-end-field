@@ -207,6 +207,8 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestMinimapMapLocator.py",
             "TestFrameTiming.py",
             "TestVisualPositionSource.py",
+            "TestVisualGridValidation.py",
+            "TestAnchorDropoutValidation.py",
             "TestMinimapOdometry.py",
             "TestMinimapPositionFusion.py",
             "TestMinimapPositionMixin.py",
