@@ -168,18 +168,13 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 本项目仅支持 Python 3.12 版本, 必须以管理员权限启动CMD, PyCharm, VSCode。依赖管理使用 [uv](https://docs.astral.sh/uv/)（需先安装 uv）。源码运行还需安装 Git LFS 并执行一次 `git lfs install`。
 
 ```bash
-# 首次克隆或更新主仓库后，在仓库根目录同步子模块及 LFS 数据
+# 首次克隆或更新主仓库后，在仓库根目录同步子模块及导航网格
 git submodule update --init --recursive --checkout
-git lfs pull
 git -C assets/nav-grid-data lfs pull
 
 # 创建虚拟环境并安装/更新依赖
 uv sync
-```
 
-确认主仓库和子模块的 LFS 数据同步成功后，再运行程序；若任一步失败，请解决错误后重试。
-
-```bash
 # 运行 Release 版本
 uv run python main.py
 
@@ -187,7 +182,7 @@ uv run python main.py
 uv run python main_debug.py
 ```
 
-更新源码时先执行 `git pull --ff-only`，再执行上面的子模块、LFS 和依赖同步步骤。子模块会检出主仓库记录的版本。
+更新源码时先执行 `git pull --ff-only`，再执行上面的子模块、LFS 和依赖同步步骤。子模块会检出主仓库记录的版本；若任一步失败，请解决错误后重试，再启动程序。
 
 ### 命令行参数
 
