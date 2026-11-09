@@ -498,6 +498,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.adjust_photo_view.return_value = ready
                 task._camera_open.return_value = True
                 task.photo_condition_met.return_value = ready
+                task.wait_until.side_effect = lambda condition, **kwargs: condition()
                 task.prepare_photo.side_effect = lambda task=task: EnvironmentMonitoringPhotoTask.prepare_photo(task)
                 stages = Mock()
                 stages.attach_mock(task.prepare_observation, "prepare_observation")
@@ -550,6 +551,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_photo_rechecks_condition_and_does_not_click_when_lost(self):
         task = self.task()
         task.photo_condition_met.return_value = False
+        task.wait_until.side_effect = lambda condition, **kwargs: condition()
         with self.assertRaisesRegex(RuntimeError, "条件已失效"):
             EnvironmentMonitoringPhotoTask.take_photo(task)
         task.click_relative.assert_not_called()
@@ -643,13 +645,27 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.adjust_photo_view.return_value = search_ready
                 task._camera_open.return_value = True
                 task.photo_condition_met.return_value = final_ready
+                task.wait_until.side_effect = lambda condition, **kwargs: condition()
                 result = EnvironmentMonitoringPhotoTask.prepare_photo(task)
                 self.assertEqual(result["photo_ready"], final_ready)
                 task._camera_open.assert_called_once_with(frame=task.frame)
-                task.photo_condition_met.assert_called_once_with(frame=task.frame)
+                task.wait_until.assert_called_once_with(
+                    task.photo_condition_met, time_out=2, settle_time=0, raise_if_not_found=False
+                )
                 task.navigation.run.assert_not_called()
                 task.press_key.assert_not_called()
                 task.click.assert_not_called()
+
+    def test_final_condition_can_recover_after_a_temporary_disappearance(self):
+        task = self.task()
+        task._camera_open.return_value = True
+        task.photo_condition_met.side_effect = [False, True]
+        task.wait_until.side_effect = lambda condition, **kwargs: condition() or condition()
+        result = EnvironmentMonitoringPhotoTask.prepare_photo(task)
+        self.assertTrue(result["photo_ready"])
+        task.wait_until.assert_called_once_with(
+            task.photo_condition_met, time_out=2, settle_time=0, raise_if_not_found=False
+        )
 
 
 if __name__ == "__main__":

@@ -56,6 +56,28 @@ class AnnularWaterfallRoute(EnvironmentMonitoringRoute):  # 环形瀑布传送�
         self.run_route("环形瀑布", (("w", 5), ("d", 2), ("w", 3)), sprint=True)  # 按指定时间冲刺
 
 
+class XiraniteNexusRoute(EnvironmentMonitoringRoute):  # 枢壤仪世界坐标路线
+    def run(self):  # 导航至记录的拍摄位置
+        if not self.task.navigate_grid_to((-1433.03, -503.42), map_id="map02"):  # 使用武陵导航网格
+            raise RuntimeError("枢壤仪导航失败")  # 不在错误位置打开相机
+
+
+class MiniShellbeastRoute(EnvironmentMonitoringRoute):  # 小壳兽世界坐标路线
+    photo_direction = "left"  # 向左取景
+
+    def run(self):  # 导航至记录的拍摄位置
+        if not self.task.navigate_grid_to((-1454.48, -545.85), map_id="map02"):  # 使用武陵导航网格
+            raise RuntimeError("小壳兽导航失败")  # 不在错误位置打开相机
+
+
+class TianshiPillarRoute(EnvironmentMonitoringRoute):  # 天师桩世界坐标路线
+    photo_direction = "right"  # 向右取景
+
+    def run(self):  # 导航至记录的拍摄位置
+        if not self.task.navigate_grid_to((-1166.03, -1711.93), map_id="map02"):  # 使用武陵导航网格
+            raise RuntimeError("天师桩导航失败")  # 不在错误位置打开相机
+
+
 class EternalSunsetRoute(EnvironmentMonitoringRoute):  # 栖霞驻影世界坐标路线
     photo_direction = "up"  # 向上取景
     def transfer(self):  # 该点位选择地图左上角传送点
