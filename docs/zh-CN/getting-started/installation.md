@@ -17,11 +17,13 @@
 
 ## 从源码运行
 
-源码运行适合二次开发和调试。完整过程见[从源码运行](../../dev/QUICKSTART.md)。
+源码运行适合二次开发和调试。先安装 Git LFS 并执行一次 `git lfs install`。完整过程及源码更新步骤见[从源码运行](../../dev/QUICKSTART.md)。
 
 ```powershell
 git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
 Set-Location ok-end-field
+git submodule update --init --recursive --checkout
+git -C assets/nav-grid-data lfs pull
 uv sync
 uv run python main.py
 ```

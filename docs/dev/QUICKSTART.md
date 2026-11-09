@@ -11,6 +11,8 @@
 | 权限     | 建议管理员权限运行终端/IDE，以与游戏权限一致        |
 | 游戏窗口 | 16:9，最低 `1600x900`（900P）；见 `src/config.py` |
 
+安装 Git LFS 并执行一次 `git lfs install`，然后克隆仓库：
+
 ```powershell
 git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
 Set-Location ok-end-field
@@ -19,15 +21,22 @@ Set-Location ok-end-field
 经上述命令克隆后，确保安装了 [uv](https://docs.astral.sh/uv/) 这一依赖管理程序，随后：
 
 ```powershell
+git submodule update --init --recursive --checkout
+git -C assets/nav-grid-data lfs pull
 uv sync
 uv run python main_debug.py
 ```
 
-若 clone 时漏了子模块：
+以后更新源码时，在仓库根目录执行：
 
 ```powershell
-git submodule update --init --recursive
+git pull --ff-only
+git submodule update --init --recursive --checkout
+git -C assets/nav-grid-data lfs pull
+uv sync
 ```
+
+子模块会检出主仓库记录的版本，导航网格的默认目录为 `assets/nav-grid-data`。若任一步失败，请解决错误后重试，再启动程序。
 
 `main.py` 和 `main_debug.py` 都会先调用 `install_startup_patches()`，再构造 `ok.OK(config)`；Debug 入口只额外设置 `config["debug"] = True`。
 

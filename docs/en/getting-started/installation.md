@@ -17,16 +17,18 @@ After installation, start `ok-ef` from the desktop shortcut or Start menu.
 
 ## Run from source
 
-Running from source is intended for contributors, modifications, and debugging.
+Running from source is intended for contributors, modifications, and debugging. Install Git LFS and run `git lfs install` once before cloning.
 
 ```powershell
 git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
 Set-Location ok-end-field
+git submodule update --init --recursive --checkout
+git -C assets/nav-grid-data lfs pull
 uv sync
 uv run python main.py
 ```
 
-See [Running from source](../../dev/QUICKSTART.md) for development and verification details.
+After updating the main repository, repeat the submodule and LFS commands above to check out the recorded grid version, then run `uv sync`. Resolve and retry any failed step before starting the application. See [Running from source](../../dev/QUICKSTART.md) for development and verification details.
 
 !!! warning "Permissions and security software"
     Run the application at the same privilege level as the game. If files are blocked or deleted, add the installation directory to your security software's trusted list.
