@@ -237,18 +237,12 @@ ok-end-field/
 
 ## 5. 开发环境
 
-先安装 Git LFS 并执行一次 `git lfs install`。
-
 ```powershell
 git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
 Set-Location ok-end-field
-git submodule update --init --recursive --checkout
-git -C assets/nav-grid-data lfs pull
 uv sync
 uv run python main_debug.py
 ```
-
-更新主仓库后也需执行子模块、LFS 和依赖同步步骤；详见[快速开始](QUICKSTART.md)。
 
 约束：
 

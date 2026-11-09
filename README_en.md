@@ -177,12 +177,11 @@ If you encounter issues, check the following in order:
 
 ### Run from source (Python)
 
-This project supports **Python 3.12 only**. Run CMD, PyCharm, or VSCode as **Administrator**. Dependencies are managed with [uv](https://docs.astral.sh/uv/) (install uv first). Install Git LFS and run `git lfs install` once before using the source checkout.
+This project supports **Python 3.12 only**. Run CMD, PyCharm, or VSCode as **Administrator**. Dependencies are managed with [uv](https://docs.astral.sh/uv/) (install uv first).
 
 ```bash
-# After cloning or updating the main repository, sync submodules and grid data from its root
-git submodule update --init --recursive --checkout
-git -C assets/nav-grid-data lfs pull
+# If your first clone did not include submodules, initialize them first
+git submodule update --init --recursive
 
 # Create the virtual environment and install/update dependencies
 uv sync
@@ -193,8 +192,6 @@ uv run python main.py
 # Run Debug version
 uv run python main_debug.py
 ```
-
-To update the source, run `git pull --ff-only` first, then repeat the submodule, LFS, and dependency sync steps above. Submodules are checked out at the revisions recorded by the main repository. Resolve and retry any failed step before starting the application.
 
 ### Command-line arguments
 
