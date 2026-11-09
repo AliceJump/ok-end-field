@@ -219,6 +219,24 @@ class VisualPositionSource:
         delta, anchor, strong = self._update_absolute_anchor(match, clock)
         if self._origin is None or self._last_absolute_t is None:
             return self._lose_tracking(match)
+        if (
+            not strong
+            and measured
+            and measured.get("reason") == "too_soon"
+            and self._last_state.get("position_trusted")
+            and self._evidence_result is not None
+            and self._evidence_result.trusted
+        ):
+            # Throttling is not a failed visual edge. Return the last measured
+            # position with its ORIGINAL frame time; neither evidence nor its
+            # inherited budget/absolute anchor is advanced by this request.
+            return {
+                **self._last_state,
+                "visual_duplicate_frame": True,
+                "absolute_position_valid": False,
+                "odom_ok": False,
+                "odom_reason": "too_soon",
+            }
         if not strong and measured and measured.get("reanchored") and not measured.get("benign_reanchor"):
             self.tracker.reset()
             return self.unavailable("visual_odometry_lost")

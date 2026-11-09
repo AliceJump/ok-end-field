@@ -3,6 +3,7 @@
 import math
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -424,6 +425,31 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
 
         self.assertEqual(refreshes, [""])
+
+    def test_navigation_sampling_scope_stops_inputs_before_closing_on_failure(self):
+        events = []
+
+        @contextmanager
+        def sampling(owner):
+            self.assertIs(owner, self.task)
+            events.append("start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("close")
+
+        def failed_tick(session):
+            self.task._set_grid_walking(True)
+            self.assertEqual(events, ["start"])
+            raise RuntimeError("control failure")
+
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = failed_tick
+        with self.assertRaisesRegex(RuntimeError, "control failure"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.assertEqual(events, ["start", "close"])
+        self.assertFalse(self.task.w_down)
 
     def test_navigation_can_stop_before_goal_for_final_approach(self):
         self.task.x = 1.0

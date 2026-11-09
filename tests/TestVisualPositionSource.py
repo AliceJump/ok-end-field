@@ -46,6 +46,7 @@ from src.localization.position_config_migration import (
     migrate_visual_map_root,
 )
 from src.localization.position_service import WorldPoseService
+from src.localization.visual_pose_sampling import VisualPoseSampler
 from src.localization.visual_position_source import VisualPositionSource
 from src.runtime_state.state_hub import RuntimeStateHub
 from src.runtime_state.topics import RuntimeTopic
@@ -70,6 +71,50 @@ class TestVisualPositionSource(unittest.TestCase):
         self.assertTrue(state["position_trusted"])
         self.assertAlmostEqual(state["x"], 126, delta=0.3)
         self.assertEqual(before, (len(source.chain._nodes), len(source.keyframe_chain._nodes), source._keyframe_tick))
+
+    def test_weak_too_soon_preserves_evidence_and_original_timestamp(self):
+        source, _ = self._layered_source()
+        self.addCleanup(source.close)
+        anchored = source.sample(self.frame(504), now=1.4)
+        geometry = MinimapGeometry.from_frame(self.width, self.height)
+        locate = source.locator.locate_near(self.frame(504), (126, -100), geometry, search_radius_m=12)
+        rejected = TrackResult("lost", False, "insufficient_acquisition_evidence", locate, None, 0, True)
+        before = (source.evidence.previous, source.evidence.tick, source._last_absolute_t, len(source.chain._nodes))
+        with patch.object(source.tracker, "update", return_value=rejected):
+            for timestamp in (1.42, 1.47, 1.53):
+                retained = source.sample(self.frame(505), now=timestamp)
+                self.assertTrue(retained["position_trusted"], retained)
+                self.assertTrue(retained["visual_duplicate_frame"])
+                self.assertFalse(retained["absolute_position_valid"])
+                self.assertFalse(retained["odom_ok"])
+                self.assertEqual(retained["frame_t"], anchored["frame_t"])
+                self.assertEqual(retained["x"], anchored["x"])
+                self.assertEqual(
+                    before,
+                    (source.evidence.previous, source.evidence.tick, source._last_absolute_t, len(source.chain._nodes)),
+                )
+            moving = source.sample(self.frame(508), now=1.6)
+            self.assertTrue(moving["position_trusted"], moving)
+            self.assertAlmostEqual(moving["x"], 127, delta=0.3)
+            self.assertGreater(moving["visual_chain_error_budget_m"], anchored["visual_chain_error_budget_m"])
+            # Skips cannot indefinitely refresh a chain or hide a genuine gap.
+            lost = source.sample(self.frame(508), now=3.7)
+            self.assertFalse(lost["position_trusted"])
+            self.assertIsNone(source.estimate())
+
+    def test_too_soon_does_not_hide_loading_or_floor_change(self):
+        for failure in ("loading", "floor"):
+            with self.subTest(failure=failure):
+                source, _ = self._layered_source()
+                self.addCleanup(source.close)
+                source.sample(self.frame(504), now=1.4)
+                geometry = MinimapGeometry.from_frame(self.width, self.height)
+                locate = source.locator.locate_near(self.frame(504), (126, -100), geometry, search_radius_m=12)
+                locate = None if failure == "loading" else replace(locate, best=replace(locate.best, tier_id="floor_1"))
+                rejected = TrackResult("lost", False, failure, locate, None, 0, True)
+                with patch.object(source.tracker, "update", return_value=rejected):
+                    state = source.sample(self.frame(505), now=1.42)
+                self.assertFalse(state["position_trusted"])
 
     def test_source_serializes_sample_state_and_rejects_after_close(self):
         source = VisualPositionSource(SimpleNamespace(), SimpleNamespace(), "map02")
@@ -758,6 +803,88 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         store = CalibratedMapStore(self.root)
         with self.assertRaisesRegex(ValueError, "invalid_visual_map_id"):
             store.load("../map02")
+
+    def test_sampler_scope_reuses_owner_and_closes_after_exceptions(self):
+        service = self.service()
+        service._executor.method = SimpleNamespace(get_frame_for_probe=Mock())
+        service._executor.exit_event = threading.Event()
+        service._executor.paused = False
+        owner = SimpleNamespace(paused=False, enabled=True)
+        with patch("src.localization.position_service.VisualPoseSampler") as factory:
+            with self.assertRaisesRegex(RuntimeError, "navigation failed"), service.visual_sampling(owner):
+                enabled = factory.call_args.args[2]
+                self.assertTrue(enabled())
+                owner.paused = True
+                self.assertFalse(enabled())
+                owner.paused = False
+                service._executor.paused = True
+                self.assertFalse(enabled())
+                service._executor.paused = False
+                with service.visual_sampling(owner):
+                    factory.assert_called_once()
+                raise RuntimeError("navigation failed")
+            factory.return_value.close.assert_called_once()
+            self.assertIsNone(service._visual_sampler)
+            service.config[CONFIG_USE_EXPERIMENTAL] = True
+            with service.visual_sampling(owner):
+                factory.assert_called_once()
+
+    def test_continuous_sampler_coalesces_retained_frames_without_restamping(self):
+        service = self.service()
+        service._visual_source = SimpleNamespace(odometry=SimpleNamespace(_sample_min_dt=0.15))
+        service._visual_sampler = object()
+        service._sampled_visual_state = {
+            "frame_t": 99.8,
+            "frame_time_source": "wgc_system_relative_time",
+            "position_trusted": True,
+            "x": 12,
+            "z": 34,
+            "absolute_position_valid": False,
+        }
+        service._locate_visual_frame = Mock(side_effect=AssertionError("must reuse newer measured frame"))
+        for stamp in (99.7, 99.8, 99.9):
+            timing = SimpleNamespace(frame_time=stamp, source="wgc_system_relative_time")
+            with (
+                patch("src.localization.position_service.timing_for_frame", return_value=timing),
+                patch("src.localization.position_service.time.time", return_value=100),
+            ):
+                state = service._sample_visual_pose(np.zeros((360, 640, 3), np.uint8))
+            self.assertEqual(state["frame_t"], 99.8)
+            self.assertEqual(state["x"], 12)
+            self.assertTrue(state["visual_duplicate_frame"])
+        service._locate_visual_frame.assert_not_called()
+        # A newer observed failure takes precedence over a retained good frame.
+        service._sampled_visual_state.update(position_trusted=False, x=None, z=None)
+        timing = SimpleNamespace(frame_time=99.7, source="wgc_system_relative_time")
+        with (
+            patch("src.localization.position_service.timing_for_frame", return_value=timing),
+            patch("src.localization.position_service.time.time", return_value=100),
+        ):
+            state = service._sample_visual_pose(np.zeros((360, 640, 3), np.uint8))
+        self.assertFalse(state["position_trusted"])
+        self.assertIsNone(state["x"])
+
+    def test_continuous_sampler_cannot_keep_stale_coordinates_fresh(self):
+        service = self.service()
+        service._visual_source = Mock()
+        service._visual_source.unavailable.return_value = {"position_trusted": False, "x": None}
+        service._visual_sampler = object()
+        service._sampled_visual_state = {
+            "frame_t": 97,
+            "frame_time_source": "wgc_system_relative_time",
+            "position_trusted": True,
+            "x": 12,
+        }
+        service._locate_visual_frame = Mock(return_value={"position_trusted": False, "x": None})
+        timing = SimpleNamespace(frame_time=97.1, source="wgc_system_relative_time", clock_uncertainty_s=0)
+        with (
+            patch("src.localization.position_service.timing_for_frame", return_value=timing),
+            patch("src.localization.position_service.time.time", return_value=100),
+        ):
+            state = service._sample_visual_pose(np.zeros((360, 640, 3), np.uint8))
+        self.assertFalse(state["position_trusted"])
+        service._locate_visual_frame.assert_called_once()
+        service._visual_source.unavailable.assert_called_once_with("visual_result_too_old")
 
     def test_service_has_no_ws_mixin_or_runtime_import(self):
         self.assertFalse(any("Ws" in cls.__name__ for cls in WorldPoseService.__mro__))
@@ -1454,3 +1581,79 @@ class TestVisualLayerCandidates(unittest.TestCase):
             pose={"tier_evidence_required": True, "tier_trusted": True, "tier_id": "floor1"},
         )
         self.assertEqual(tier, "floor1")
+
+
+class TestVisualPoseSampler(unittest.TestCase):
+    def test_sampling_progresses_during_blocked_control_and_stops_on_close(self):
+        capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 4), np.uint8)))
+        observed = threading.Event()
+        calls = []
+
+        def observe(frame, stopped):
+            self.assertEqual(frame.shape, (20, 20, 3))
+            calls.append(frame)
+            if len(calls) >= 3:
+                observed.set()
+
+        sampler = VisualPoseSampler(capture, observe, lambda: True, interval=0.01)
+        with patch("src.localization.visual_pose_sampling.timing_for_frame", return_value=object()):
+            sampler.start()
+            try:
+                # Control performs no world_pose calls during this wait.
+                self.assertTrue(observed.wait(2))
+            finally:
+                sampler.close()
+        self.assertFalse(sampler.thread.is_alive())
+        self.assertGreaterEqual(len(calls), 3)
+        self.assertTrue(all(call.args == (0.01,) for call in capture.get_frame_for_probe.call_args_list))
+
+    def test_paused_or_untimed_frames_do_not_create_observations(self):
+        capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 3), np.uint8)))
+        observe = Mock()
+        checked = threading.Event()
+
+        def disabled():
+            checked.set()
+            return False
+
+        sampler = VisualPoseSampler(capture, observe, disabled, interval=0.01)
+        sampler.start()
+        try:
+            self.assertTrue(checked.wait(2))
+        finally:
+            sampler.close()
+        capture.get_frame_for_probe.assert_not_called()
+        # A frame without a WGC presentation clock cannot be fed as a new sample.
+        done = threading.Event()
+
+        def no_timing(*args):
+            done.set()
+            return None
+
+        sampler = VisualPoseSampler(capture, observe, lambda: True, interval=0.01)
+        with patch("src.localization.visual_pose_sampling.timing_for_frame", side_effect=no_timing):
+            sampler.start()
+            try:
+                self.assertTrue(done.wait(2))
+            finally:
+                sampler.close()
+        observe.assert_not_called()
+
+    def test_cancelled_inflight_capture_cannot_publish_after_scope_exit(self):
+        entered, release = threading.Event(), threading.Event()
+
+        def frame(timeout):
+            entered.set()
+            self.assertTrue(release.wait(2))
+            return np.zeros((20, 20, 3), np.uint8)
+
+        observe = Mock()
+        sampler = VisualPoseSampler(SimpleNamespace(get_frame_for_probe=frame), observe, lambda: True, interval=0.01)
+        with patch("src.localization.visual_pose_sampling.timing_for_frame", return_value=object()):
+            sampler.start()
+            self.assertTrue(entered.wait(2))
+            sampler.stopped.set()
+            release.set()
+            sampler.close()
+        observe.assert_not_called()
+        self.assertFalse(sampler.thread.is_alive())
