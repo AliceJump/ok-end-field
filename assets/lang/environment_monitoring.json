@@ -67,6 +67,30 @@
       "pattern": "보급소"
     }
   },
+  "xiranite_nexus": {
+    "zh_CN": {"string": "枢壤仪"},
+    "zh_TW": {"string": "樞壤儀"},
+    "en_US": {"string": "Xiranite Nexus"},
+    "ja_JP": {"string": "枢壌儀"},
+    "ko_KR": {"string": "중추 식양 장치"},
+    "es_ES": {"string": "Nexus de Xiranita"}
+  },
+  "mini_shellbeast": {
+    "zh_CN": {"string": "小壳兽"},
+    "zh_TW": {"string": "小殼獸"},
+    "en_US": {"string": "Mini Shellbeast"},
+    "ja_JP": {"string": "小さな甲獣"},
+    "ko_KR": {"string": "작은 셸비스트"},
+    "es_ES": {"string": "Minibestia acorazada"}
+  },
+  "collapsed_tianshi_pillar": {
+    "zh_CN": {"string": "倒塌的天师桩"},
+    "zh_TW": {"string": "倒塌的天師樁"},
+    "en_US": {"string": "Collapsed Tianshi Pillar"},
+    "ja_JP": {"string": "倒れた天師杭"},
+    "ko_KR": {"string": "무너진 천사장"},
+    "es_ES": {"string": "Pilar de Tianshi colapsado"}
+  },
   "eternal_sunset": {
     "zh_CN": {
       "string": "栖霞驻影"

@@ -383,6 +383,15 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     ecology_near_the_field_logistics_depot: re.Pattern[str]
     """储备站"""
 
+    xiranite_nexus: str
+    """枢壤仪"""
+
+    mini_shellbeast: str
+    """小壳兽"""
+
+    collapsed_tianshi_pillar: str
+    """倒塌的天师桩"""
+
     eternal_sunset: str
     """栖霞驻影"""
 

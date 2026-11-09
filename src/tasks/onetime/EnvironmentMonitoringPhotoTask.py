@@ -12,8 +12,11 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
     EternalSunsetRoute,  # 栖霞驻影网格路线
+    MiniShellbeastRoute,  # 小壳兽网格路线
     PoolLotusRoute,  # 小池荷短路线
     StationaryObservationRoute,  # 传送后原地取景
+    TianshiPillarRoute,  # 天师桩网格路线
+    XiraniteNexusRoute,  # 枢壤仪网格路线
 )
 
 OBSERVATIONS = {  # 观察点语言键对应路线类
@@ -24,6 +27,9 @@ OBSERVATIONS = {  # 观察点语言键对应路线类
     "pier_waterwheel": StationaryObservationRoute,  # 码头水车在传送落点即可取景
     "annular_waterfall": AnnularWaterfallRoute,  # 环形瀑布向上取景
     "eternal_sunset": EternalSunsetRoute,  # 栖霞驻影向上取景
+    "collapsed_tianshi_pillar": TianshiPillarRoute,  # 天师桩向右取景
+    "mini_shellbeast": MiniShellbeastRoute,  # 小壳兽向左取景
+    "xiranite_nexus": XiraniteNexusRoute,  # 枢壤仪向右取景
 }  # 仅注册已支持的点位
 
 
@@ -337,7 +343,9 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         frame = self.next_frame()  # 检查最后一次调整后实际保留的界面
         if not self._camera_open(frame=frame):  # 不能沿用打开时的状态
             raise RuntimeError("取景结束时相机界面已关闭")  # 不返回与现场不符的 camera_open=True
-        ready = bool(self.photo_condition_met(frame=frame))  # 用最后一帧重算条件，不沿用旋转过程中的旧结果
+        ready = bool(self.wait_until(  # 等待圆勾恢复，避免用过渡帧直接判失败
+            self.photo_condition_met, time_out=2, settle_time=0, raise_if_not_found=False
+        ))
         self.log_info(
             f"[environment-monitoring] camera_open=True target={name} photo_ready={ready} shutter=False"
         )  # 如实记录取景状态
@@ -350,7 +358,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def take_photo(self):  # 已取景后拍照并关闭照片预览，不返回终端确认收录
         self._require_input_focus()  # 快门点击前确认焦点
-        if not self.photo_condition_met(frame=self.next_frame()):  # 使用新帧重新确认相机与目标黄勾
+        if not self.wait_until(self.photo_condition_met, time_out=2, settle_time=0, raise_if_not_found=False):  # 等待相机与目标黄勾
             raise RuntimeError("拍照前目标条件已失效")  # 不根据旧取景结果盲拍
         self.click_relative(0.856, 0.803)  # 相机布局已确认，点击固定快门位置
         close_area = self.box_of_screen(0.94, 0, 0.98, 0.08)  # 限定照片预览右上角关闭按钮
