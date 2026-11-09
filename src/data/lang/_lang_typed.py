@@ -390,7 +390,7 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     """小壳兽"""
 
     collapsed_tianshi_pillar: str
-    """天师桩"""
+    """倒塌的天师桩"""
 
     eternal_sunset: str
     """栖霞驻影"""
