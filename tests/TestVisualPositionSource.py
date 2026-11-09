@@ -36,6 +36,7 @@ from src.localization.minimap_map_locator import (
     MinimapGeometry,
     MinimapMapLocator,
     MinimapTracker,
+    _has_minimap_texture,
     candidate_margin,
 )
 from src.localization.position_config_migration import (
@@ -382,6 +383,108 @@ class TestVisualPositionSource(unittest.TestCase):
         self.assertTrue(state["position_trusted"], state)
 
 
+class TestSparseMinimapPosition(unittest.TestCase):
+    """Real low-texture HUD + independently calibrated map crop; no game required."""
+
+    def setUp(self):
+        root = Path(__file__).parent / "fixtures/minimap"
+        self.metadata = json.loads((root / "low_texture_mapping.json").read_text(encoding="utf-8"))
+        self.frame = np.zeros((1080, 1920, 3), np.uint8)
+        self.frame[:280, :340] = cv2.imread(str(root / "low_texture_hud.png"))
+        self.geometry = MinimapGeometry.from_frame(1920, 1080)
+        self.base = MinimapMapLocator.from_files(root / "low_texture_map.png", root / "low_texture_mapping.json")
+        self.locator = MapSetLocator(SimpleNamespace(), ["map02"])
+        self.locator._cache["map02"] = LayeredMinimapLocator(self.base, "map02", root, {"layers": []})
+        self.source = VisualPositionSource(
+            SimpleNamespace(width=1920, height=1080, active_time=lambda: 0), self.locator, ""
+        )
+        self.addCleanup(self.source.close)
+
+    def test_sparse_real_hud_acquires_through_map_selection_and_visual_source(self):
+        template = self.base._prepare_template(self.frame, self.geometry)
+        self.assertIsNotNone(template)
+        # Record the actual regression: the former six-sector gate rejects it.
+        half = template.ring.shape[0] // 2
+        center = (
+            half + self.geometry.center_x - round(self.geometry.center_x),
+            half + self.geometry.center_y - round(self.geometry.center_y),
+        )
+        self.assertFalse(_has_minimap_texture(template.ring, center, self.geometry.outer_radius))
+        first = self.source.sample(self.frame, now=1)
+        self.assertFalse(first["position_trusted"])
+        self.assertIsNone(first["x"])
+        fixed = self.source.sample(self.frame, now=1.2)
+        self.assertTrue(fixed["position_trusted"], fixed)
+        self.assertEqual((fixed["map_id"], fixed["tier_id"]), ("map02", "__main__"))
+        self.assertAlmostEqual(fixed["x"], self.metadata["expected_world"][0], delta=0.3)
+        self.assertAlmostEqual(fixed["z"], self.metadata["expected_world"][1], delta=0.3)
+        self.assertGreater(fixed["visual_full_ncc"], 0.85)
+        self.assertGreaterEqual(fixed["visual_margin"], 0.08)
+
+    def test_sparse_hud_scales_with_resolution(self):
+        for width in (1280, 1920, 2560, 3840):
+            with self.subTest(width=width):
+                frame = cv2.resize(self.frame, (width, width * 9 // 16), interpolation=cv2.INTER_AREA)
+                self.assertIsNotNone(
+                    self.base._prepare_template(frame, MinimapGeometry.from_frame(*frame.shape[1::-1]))
+                )
+
+    def test_sparse_terrain_without_hud_rim_is_rejected_before_map_search(self):
+        frame = self.frame.copy()
+        yy, xx = np.mgrid[:280, :340]
+        distance = np.hypot(xx - self.geometry.center_x, yy - self.geometry.center_y)
+        frame[:280, :340][distance > self.geometry.outer_radius * 0.9] = 0
+        with patch.object(self.base, "locate_global", side_effect=AssertionError("invalid HUD must not search")):
+            state = self.source.sample(frame, now=1)
+        self.assertFalse(state["position_trusted"])
+        self.assertIn("minimap_insufficient_texture: stage=raw", state["trust_reason"])
+        self.assertIn("sectors=2/8", state["trust_reason"])
+        self.assertIn("rim_sectors=0/8", state["trust_reason"])
+
+    def test_loading_clears_anchor_and_requires_new_confirmation(self):
+        g = self.geometry
+        cx, cy = round(g.center_x), round(g.center_y)
+        variants = [np.full_like(self.frame, level) for level in (0, 127, 255)]
+        logo = variants[0].copy()
+        cv2.putText(logo, "EF", (cx - 65, cy - 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 3)
+        variants.append(logo)
+        # Even the real rim/player marker cannot substitute for terrain.
+        rim_only = self.frame.copy()
+        yy, xx = np.mgrid[:280, :340]
+        distance = np.hypot(xx - g.center_x, yy - g.center_y)
+        rim_only[:280, :340][(distance > g.outer_radius * 0.2) & (distance < g.outer_radius * 0.9)] = 90
+        variants.append(rim_only)
+        for index, loading in enumerate(variants):
+            with self.subTest(variant=index):
+                self.source.reset()
+                self.source.sample(self.frame, now=1)
+                self.assertTrue(self.source.sample(self.frame, now=1.2)["position_trusted"])
+                with patch.object(self.base, "_coarse_map", side_effect=AssertionError("loading must not search")):
+                    for now in (1.4, 1.6, 1.8):
+                        state = self.source.sample(loading, now=now)
+                        self.assertFalse(state["position_trusted"])
+                        self.assertFalse(state["anchor_set"])
+                        self.assertIsNone(state["x"])
+                        self.assertIn("minimap_insufficient_texture:", state["trust_reason"])
+                self.assertFalse(self.source.sample(self.frame, now=2)["position_trusted"])
+                self.assertTrue(self.source.sample(self.frame, now=2.2)["position_trusted"])
+
+    def test_distributed_loading_spinner_cannot_acquire_from_texture_alone(self):
+        loading = np.zeros_like(self.frame)
+        center = (round(self.geometry.center_x), round(self.geometry.center_y))
+        cv2.ellipse(loading, center, (50, 50), 0, 20, 320, (180, 180, 180), 5)
+        # This decoration passes the original distributed-texture gate. The
+        # unchanged map-evidence gates must still reject it, even after a fix.
+        self.assertIsNotNone(self.base._prepare_template(loading, self.geometry))
+        self.source.sample(self.frame, now=1)
+        self.assertTrue(self.source.sample(self.frame, now=1.2)["position_trusted"])
+        for i in range(5):
+            state = self.source.sample(loading, now=1.4 + i * 0.2)
+            self.assertFalse(state["position_trusted"], state)
+            self.assertIsNone(state["x"])
+            self.assertFalse(state["anchor_set"])
+
+
 class TestMapAssetsAndSourceService(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -443,6 +546,27 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         service._report_position_status(lost, now=9.6)
         service._report_position_status(state, now=9.7)
         self.assertEqual(service.log_info.call_count, 3)
+
+    def test_failure_stage_and_measurements_reach_throttled_status_log(self):
+        service = self.service()
+        frame = np.zeros((1080, 1920, 3), np.uint8)
+        source = VisualPositionSource(SimpleNamespace(), MapSetLocator(SimpleNamespace(), ["map02"]), "")
+        self.addCleanup(source.close)
+        state = source.sample(frame, now=1)
+        service._report_position_status(state, now=1)
+        message = service.log_info.call_args.args[0]
+        self.assertIn("minimap_insufficient_texture: stage=raw sectors=0/8", message)
+        self.assertIn("rim_sectors=0/8", message)
+        state.update(trust_reason="minimap_insufficient_texture: sectors=1/8")
+        service._report_position_status(state, now=1.2)
+        self.assertEqual(service.log_info.call_count, 1)
+        state.update(
+            trust_reason="visual_map_resources_pending: maps=map02",
+            odom_reason="visual_map_resources_pending: maps=map02",
+        )
+        service._report_position_status(state, now=1.4)
+        self.assertEqual(service.log_info.call_count, 2)
+        self.assertIn("maps=map02", service.log_info.call_args.args[0])
 
     def test_only_one_map_can_be_selected_automatically(self):
         self.assertEqual(CalibratedMapStore(self.root).load()[0], "map02")
@@ -812,10 +936,12 @@ class TestAutomaticMapCompetition(unittest.TestCase):
             self.assertFalse(locator._warm_base_resources())
             self.assertFalse(locator._warm_base_resources())
             self.assertEqual(store.load.call_count, 1)
+            self.assertEqual(locator._resource_errors, {"map01": "invalid image"})
         with patch("src.localization.map_set_locator.time.monotonic", return_value=16):
             locator.prewarm()
             pool.resources.submit(lambda: None).result(timeout=3)
             self.assertTrue(locator._warm_base_resources())
+            self.assertEqual(locator._resource_errors, {})
         self.assertEqual(store.load.call_count, 2)
 
     def test_full_terrain_separates_a_trimmed_side_lobe(self):

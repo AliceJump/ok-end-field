@@ -238,6 +238,9 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             bool(state.get("anchor_set")),
             bool(state.get("position_trusted", True)),
             state.get("tier_id"),
+            # Report a new failure stage immediately, without logging every
+            # fluctuation in texture measurements at the control-loop rate.
+            str(state.get("trust_reason") or "").split(":", 1)[0] if not state.get("position_trusted") else "",
         )
         current = self._now(now)
         changed = status_key != self._last_status_key

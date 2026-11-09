@@ -29,6 +29,8 @@ class MapSetLocator:
         self._workers = workers
         self._pending_maps = {}
         self._resource_retry_at = {}
+        self._resource_errors = {}
+        self.last_failure_reason = ""
 
     def prewarm(self):
         if self._workers is not None and not self._workers.closed:
@@ -125,13 +127,15 @@ class MapSetLocator:
                     continue
                 try:
                     locator = future.result()[1]
-                except (OSError, ValueError):
+                except (OSError, ValueError) as exc:
                     del self._pending_maps[mid]
                     self._resource_retry_at[mid] = time.monotonic() + 5
+                    self._resource_errors[mid] = str(exc)
                     continue
                 if hasattr(locator, "_resource_workers"):
                     locator._resource_workers = self._workers
                 self._cache[mid] = locator
+                self._resource_errors.pop(mid, None)
                 if len(self.map_ids) == 1:
                     # An explicitly selected map retains its affine odometry
                     # transform; the normalized frame is only for map competition.
@@ -145,8 +149,10 @@ class MapSetLocator:
                     continue
                 try:
                     self._load(mid)
-                except (OSError, ValueError):
+                    self._resource_errors.pop(mid, None)
+                except (OSError, ValueError) as exc:
                     self._resource_retry_at[mid] = time.monotonic() + 5
+                    self._resource_errors[mid] = str(exc)
                 return False
         return bool(self._cache)
 
@@ -183,11 +189,19 @@ class MapSetLocator:
         return results
 
     def locate_global(self, frame, geometry):
+        self.last_failure_reason = ""
         if self._frame_gate._prepare_template(frame, geometry) is None:
+            self.last_failure_reason = self._frame_gate.last_failure_reason
             self.reset_tracking()
             return None
         started = time.perf_counter()
         if not self._warm_base_resources():
+            pending = ",".join(mid for mid in self.map_ids if mid not in self._cache)
+            self.last_failure_reason = (
+                f"visual_map_resource_error: {self._resource_errors}"
+                if self._resource_errors
+                else f"visual_map_resources_pending: maps={pending}"
+            )
             return None
         # Map identity is only a search hint. Re-evaluate its visual evidence on
         # this frame; do not discard the hint merely because resource decoding
@@ -200,6 +214,11 @@ class MapSetLocator:
         results = self._compare_base_maps(frame, geometry)
         combined = self._combine(results, started, None)
         if combined is None:
+            failures = "; ".join(
+                f"{mid}={getattr(self._cache[mid], 'last_failure_reason', '') or 'minimap_no_candidates'}"
+                for mid, _ in results
+            )
+            self.last_failure_reason = f"minimap_no_map_candidates: {failures}"
             return None
         strong = combined.confidence >= 0.85 and combined.best.full_ncc >= 0.65 and combined.margin >= 0.08
         available = [mid for mid in self.map_ids if mid in self._cache]
@@ -224,6 +243,7 @@ class MapSetLocator:
         return None
 
     def locate_near(self, frame, previous_world, geometry, *, search_radius_m=80.0, use_global=False):
+        self.last_failure_reason = ""
         started = time.perf_counter()
         if not self._active:
             return self.locate_global(frame, geometry)
@@ -234,5 +254,6 @@ class MapSetLocator:
             else locator.locate_near(frame, previous_world, geometry, search_radius_m=search_radius_m)
         )
         if result is None:
+            self.last_failure_reason = getattr(locator, "last_failure_reason", "") or "minimap_no_candidates"
             self.reset_tracking()
         return self._combine([(self._active, result)], started, previous_world)

@@ -71,6 +71,10 @@ class LayeredMinimapLocator:
     def _scale(self, width):
         return self.base._scale(width)
 
+    @property
+    def last_failure_reason(self):
+        return self.base.last_failure_reason
+
     def _load(self, entry):
         key = entry["id"]
         if key in self._cache:

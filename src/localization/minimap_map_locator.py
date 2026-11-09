@@ -446,17 +446,53 @@ def _texture_sectors(size: int, center: tuple[float, float], radius: float) -> t
     return tuple(annulus & (angles >= i) & (angles < i + 1) for i in range(8))
 
 
+def _texture_details(ring: np.ndarray, center: tuple[float, float], radius: float) -> tuple[float, ...]:
+    sectors = _texture_sectors(ring.shape[0], center, radius)
+    detail = cv2.absdiff(ring, cv2.GaussianBlur(ring, (5, 5), 0))
+    return tuple(float(detail[sector].mean()) if sector.any() else 0.0 for sector in sectors)
+
+
 def _has_minimap_texture(ring: np.ndarray, center: tuple[float, float], radius: float) -> bool:
     """Conservative plausibility gate, not a semantic guarantee that HUD is visible.
 
     Loading-logo edges may have high contrast but only occupy a few sectors.
     Require terrain detail in at least six sectors; color is intentionally irrelevant.
     """
-    sectors = _texture_sectors(ring.shape[0], center, radius)
-    if any(not sector.any() for sector in sectors):
-        return False
-    detail = cv2.absdiff(ring, cv2.GaussianBlur(ring, (5, 5), 0))
-    return sum(float(detail[sector].mean()) >= 1.0 for sector in sectors) >= 6
+    return sum(value >= 1.0 for value in _texture_details(ring, center, radius)) >= 6
+
+
+def _minimap_rim_sectors(frame: np.ndarray, geometry: MinimapGeometry) -> int:
+    """Independent HUD evidence for sparse terrain, outside the matching annulus.
+
+    Require a thin bright circular ridge in six of eight sectors at one common
+    radius. A three-sample radial tolerance accommodates subpixel HUD centering;
+    unrelated edges at different radii cannot collectively manufacture a rim.
+    This only permits a search: NCC, uniqueness and temporal gates still apply.
+    """
+    radius = geometry.outer_radius
+    delta = max(1.0, radius * 0.036)
+    extent = radius * 1.10 + delta + 1
+    height, width = frame.shape[:2]
+    cx, cy = geometry.center_x, geometry.center_y
+    if cx - extent < 0 or cy - extent < 0 or cx + extent >= width or cy + extent >= height:
+        return 0
+    # Convert only the HUD crop, not every full frame for every map/layer.
+    x0, y0 = math.floor(cx - extent), math.floor(cy - extent)
+    roi = frame[y0 : math.ceil(cy + extent) + 1, x0 : math.ceil(cx + extent) + 1]
+    gray = _as_gray(roi).astype(np.float32)
+    angles = (np.arange(128) + 0.5) * (2 * np.pi / 128)
+    radii = np.linspace(0.94, 1.10, 17)[:, None] * radius
+    cos, sin = np.cos(angles), np.sin(angles)
+
+    def sample(offset):
+        x = (cx - x0 + cos * (radii + offset)).astype(np.float32)
+        y = (cy - y0 + sin * (radii + offset)).astype(np.float32)
+        return cv2.remap(gray, x, y, cv2.INTER_LINEAR)
+
+    ridge = sample(0) - (sample(-delta) + sample(delta)) / 2
+    ridge = np.maximum.reduce((ridge[:-2], ridge[1:-1], ridge[2:]))
+    coverage = (ridge > 4.0).reshape(-1, 8, 16).mean(axis=2)
+    return int((coverage >= 0.5).sum(axis=1).max())
 
 
 def _sanitize_scores(scores: np.ndarray) -> np.ndarray:
@@ -521,6 +557,11 @@ class MinimapMapLocator:
         self.min_accept_margin = float(min_accept_margin)
         self._mask_cache: OrderedDict[MinimapGeometry, tuple[np.ndarray, np.ndarray]] = OrderedDict()
         self._coarse_cache: dict[tuple[float, float], np.ndarray] = {}
+        self.last_failure_reason = ""
+
+    def _reject(self, reason):
+        self.last_failure_reason = reason
+        return None
 
     @classmethod
     def from_files(
@@ -551,8 +592,9 @@ class MinimapMapLocator:
         frame: np.ndarray | None,
         geometry: MinimapGeometry,
     ) -> _PreparedTemplate | None:
+        self.last_failure_reason = ""
         if frame is None or not isinstance(frame, np.ndarray) or frame.ndim < 2:
-            return None
+            return self._reject("minimap_frame_missing_or_invalid")
         height, width = frame.shape[:2]
         half = math.ceil(geometry.match_outer_radius)
         center_x = round(geometry.center_x)
@@ -560,31 +602,53 @@ class MinimapMapLocator:
         x0, y0 = center_x - half, center_y - half
         x1, y1 = center_x + half + 1, center_y + half + 1
         if x0 < 0 or y0 < 0 or x1 > width or y1 > height:
-            return None
+            return self._reject(f"minimap_roi_out_of_bounds: roi=({x0},{y0},{x1},{y1}) frame={width}x{height}")
         cached = self._geometry_masks(geometry, half, x0, y0)
         if cached is None:
-            return None
+            return self._reject("minimap_mask_too_small: required_pixels=64")
         mask, mask8 = cached
         roi = frame[y0:y1, x0:x1]
         ring = _as_gray(roi).copy()
-        if not _has_minimap_texture(ring, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+        center = (geometry.center_x - x0, geometry.center_y - y0)
+        rim_sectors = None
+
+        def texture_valid(pixels, stage):
+            nonlocal rim_sectors
+            details = _texture_details(pixels, center, geometry.outer_radius)
+            textured = sum(value >= 1.0 for value in details)
+            if textured >= 6:
+                return True
+            if rim_sectors is None:
+                rim_sectors = _minimap_rim_sectors(frame, geometry)
+            # A rim alone is not terrain. Masked glyphs must not be the only
+            # surviving detail, and a loading logo without a HUD cannot pass.
+            if textured >= 1 and rim_sectors >= 6:
+                return True
+            self._reject(
+                f"minimap_insufficient_texture: stage={stage} sectors={textured}/8 required=6 "
+                f"rim_sectors={rim_sectors}/8 details=" + ",".join(f"{v:.2f}" for v in details)
+            )
+            return False
+
+        if not texture_valid(ring, "raw"):
             return None
         visible = self._visible_masks(roi, mask, mask8, half)
         if visible is None:
-            return None
+            return self._reject("minimap_icon_occlusion: required_total=0.55 required_quadrant=0.35")
         mask, mask8 = visible
         mean = float(ring[mask].mean())
         flat = ring.copy()
         flat[~mask] = mean
-        if not _has_minimap_texture(flat, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+        if not texture_valid(flat, "masked"):
             visible = self._legacy_visible_masks(roi, cached[0], cached[1], half)
             if visible is None:
                 return None
             mask, mask8 = visible
             flat = ring.copy()
             flat[~mask] = float(ring[mask].mean())
-            if not _has_minimap_texture(flat, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+            if not texture_valid(flat, "legacy_masked"):
                 return None
+        self.last_failure_reason = ""
         return _PreparedTemplate(
             flat=flat,
             ring=ring,
@@ -812,7 +876,7 @@ class MinimapMapLocator:
             interpolation=cv2.INTER_AREA,
         )
         if coarse_map.shape[0] < target or coarse_map.shape[1] < target:
-            return None
+            return self._reject(f"minimap_map_too_small: map={coarse_map.shape} template={target}")
         scores = _sanitize_scores(cv2.matchTemplate(coarse_map, coarse_template, cv2.TM_CCOEFF_NORMED))
         peaks = _top_peaks(scores, self.top_k, min_distance=max(4, target // 2))
         candidates = []
@@ -834,7 +898,7 @@ class MinimapMapLocator:
         )[: self.top_k]
         status, reason = self._status(candidates)
         if not candidates:
-            return None
+            return self._reject(f"minimap_no_candidates: search=global peaks={len(peaks)}")
         return LocateResult(
             status=status,
             reason=reason,
@@ -857,8 +921,10 @@ class MinimapMapLocator:
 
         start = time.perf_counter()
         template = self._prepare_template(frame, geometry)
-        if template is None or search_radius_m <= 0:
+        if template is None:
             return None
+        if search_radius_m <= 0:
+            return self._reject("minimap_invalid_search_radius")
         scale = self._scale(frame.shape[1])
         previous_x, previous_y = self.calibration.world_to_map(*previous_world)
         inverse_linear = self.calibration.inverse_matrix[:, :2]
@@ -871,13 +937,13 @@ class MinimapMapLocator:
         y1 = min(self.map_image.shape[0], round(previous_y) + margin_y + 1)
         local_map = self.map_image[y0:y1, x0:x1]
         if local_map.size == 0:
-            return None
+            return self._reject("minimap_search_outside_map")
         minimum, maximum, _min_location, _max_location = cv2.minMaxLoc(local_map)
         if minimum == maximum:
-            return None
+            return self._reject("minimap_search_region_blank")
         local_map = cv2.resize(local_map, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
         if local_map.shape[0] < size or local_map.shape[1] < size:
-            return None
+            return self._reject(f"minimap_map_too_small: map={local_map.shape} template={size}")
         scores = _sanitize_scores(
             cv2.matchTemplate(
                 local_map,
@@ -918,7 +984,7 @@ class MinimapMapLocator:
         )[: self.top_k]
         status, reason = self._status(candidates)
         if not candidates:
-            return None
+            return self._reject(f"minimap_no_candidates: search=local peaks={len(peaks)}")
         return LocateResult(
             status=status,
             reason=reason,
@@ -1104,7 +1170,8 @@ class MinimapTracker:
         if result is None:
             # Invalid/absent minimaps must invalidate even a recently trusted pose.
             self.reset()
-            return TrackResult("lost", False, "no_valid_minimap_or_match", None, None, 0, used_prior)
+            reason = getattr(self.locator, "last_failure_reason", "") or "no_valid_minimap_or_match"
+            return TrackResult("lost", False, reason, None, None, 0, used_prior)
         if result.status == "rejected":
             self._pending = None
             self._pending_hits = 0
