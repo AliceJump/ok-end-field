@@ -75,6 +75,14 @@
     "ko_KR": {"string": "중추 식양 장치"},
     "es_ES": {"string": "Nexus de Xiranita"}
   },
+  "mini_shellbeast": {
+    "zh_CN": {"string": "小壳兽"},
+    "zh_TW": {"string": "小殼獸"},
+    "en_US": {"string": "Mini Shellbeast"},
+    "ja_JP": {"string": "小さな甲獣"},
+    "ko_KR": {"string": "작은 셸비스트"},
+    "es_ES": {"string": "Minibestia acorazada"}
+  },
   "collapsed_tianshi_pillar": {
     "zh_CN": {"string": "天师桩"},
     "zh_TW": {"string": "天師樁"},

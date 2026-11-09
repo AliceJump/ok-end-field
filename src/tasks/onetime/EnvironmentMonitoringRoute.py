@@ -62,6 +62,14 @@ class XiraniteNexusRoute(EnvironmentMonitoringRoute):  # 枢壤仪世界坐标�
             raise RuntimeError("枢壤仪导航失败")  # 不在错误位置打开相机
 
 
+class MiniShellbeastRoute(EnvironmentMonitoringRoute):  # 小壳兽世界坐标路线
+    photo_direction = "left"  # 向左取景
+
+    def run(self):  # 导航至记录的拍摄位置
+        if not self.task.navigate_grid_to((-1454.48, -545.85), map_id="map02"):  # 使用武陵导航网格
+            raise RuntimeError("小壳兽导航失败")  # 不在错误位置打开相机
+
+
 class TianshiPillarRoute(EnvironmentMonitoringRoute):  # 天师桩世界坐标路线
     photo_direction = "right"  # 向右取景
 

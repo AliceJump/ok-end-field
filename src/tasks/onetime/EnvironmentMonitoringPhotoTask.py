@@ -12,6 +12,7 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
     EternalSunsetRoute,  # 栖霞驻影网格路线
+    MiniShellbeastRoute,  # 小壳兽网格路线
     PoolLotusRoute,  # 小池荷短路线
     StationaryObservationRoute,  # 传送后原地取景
     TianshiPillarRoute,  # 天师桩网格路线
@@ -27,6 +28,7 @@ OBSERVATIONS = {  # 观察点语言键对应路线类
     "annular_waterfall": AnnularWaterfallRoute,  # 环形瀑布向上取景
     "eternal_sunset": EternalSunsetRoute,  # 栖霞驻影向上取景
     "collapsed_tianshi_pillar": TianshiPillarRoute,  # 天师桩向右取景
+    "mini_shellbeast": MiniShellbeastRoute,  # 小壳兽向左取景
     "xiranite_nexus": XiraniteNexusRoute,  # 枢壤仪向右取景
 }  # 仅注册已支持的点位
 

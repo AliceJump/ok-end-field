@@ -386,6 +386,9 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     xiranite_nexus: str
     """枢壤仪"""
 
+    mini_shellbeast: str
+    """小壳兽"""
+
     collapsed_tianshi_pillar: str
     """天师桩"""
 
