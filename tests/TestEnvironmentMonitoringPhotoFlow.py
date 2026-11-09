@@ -10,18 +10,102 @@ from ok import Box, TaskDisabledException
 from ok.util.config import Config
 
 from src.data.FeatureList import FeatureList as fL
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.onetime.DailyTask import DailyTask
-from src.tasks.onetime.EnvironmentMonitoringNavigation import (
-    AnnularWaterfallNavigation,
-    CisternOriginiumSlugsNavigation,
-    EnvironmentMonitoringNavigation,
-    PoolLotusNavigation,
-    StationaryObservationNavigation,
+from src.tasks.onetime.EnvironmentMonitoringRoute import (
+    AnnularWaterfallRoute,
+    CisternOriginiumSlugsRoute,
+    EternalSunsetRoute,
+    EnvironmentMonitoringRoute,
+    PoolLotusRoute,
+    StationaryObservationRoute,
 )
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
+    def test_route_photo_directions(self):
+        for route, direction in (
+            (PoolLotusRoute, "right"),
+            (StationaryObservationRoute, "right"),
+            (CisternOriginiumSlugsRoute, "left"),
+            (AnnularWaterfallRoute, "up"),
+            (EternalSunsetRoute, "up"),
+        ):
+            with self.subTest(route=route.__name__):
+                self.assertEqual(route.photo_direction, direction)
+
+    def test_routes_choose_their_own_teleport_strategy(self):
+        task = self.task()
+        EnvironmentMonitoringRoute(task).transfer()
+        task.open_observation_map.assert_called_once_with()
+        task.to_near_transfer_point.assert_called_once_with(need_track=False)
+        task._wait_for_transfer_arrival.assert_called_once_with()
+
+    def test_quick_transfer_failure_does_not_check_arrival(self):
+        task = self.task()
+        task.to_near_transfer_point.return_value = False
+        route = EnvironmentMonitoringRoute(task)
+        with self.assertRaisesRegex(RuntimeError, "环境监测快捷传送失败"):
+            route.transfer()
+        task._wait_for_transfer_arrival.assert_not_called()
+
+    def test_eternal_sunset_navigation_uses_recorded_goal_and_stops_on_failure(self):
+        task = self.task()
+        task.navigate_grid_to.return_value = True
+        EternalSunsetRoute(task).run()
+        task.navigate_grid_to.assert_called_once_with((-908.95, -1179.31), map_id="map02")
+        task.navigate_grid_to.return_value = False
+        navigation = EternalSunsetRoute(task)
+        with self.assertRaisesRegex(RuntimeError, "栖霞驻影导航失败"):
+            navigation.run()
+
+    def test_alternate_transfer_clears_map_before_selecting_point(self):
+        task = self.task()
+        task.clear_icon_in_map.return_value = True
+        task.zoom_map_out.return_value = True
+        task.wait_click_feature.return_value = True
+        task._wait_click_transfer_go.return_value = True
+        task._wait_for_transfer_arrival.return_value = True
+        stages = Mock()
+        for name in ("open_observation_map", "clear_icon_in_map", "zoom_map_out", "wait_click_feature",
+                     "_wait_click_transfer_go", "_wait_for_transfer_arrival"):
+            stages.attach_mock(getattr(task, name), name)
+        EternalSunsetRoute(task).transfer()
+        task.open_observation_map.assert_called_once_with()
+        task.clear_icon_in_map.assert_called_once()
+        task.zoom_map_out.assert_called_once()
+        task._wait_click_transfer_go.assert_called_once_with()
+        task._wait_for_transfer_arrival.assert_called_once_with()
+        task.wait_click_feature.assert_called_once_with(
+            fL.transfer_point, box=task.box_of_screen(0.05, 0.02, 0.5, 0.5),
+            threshold=0.7, time_out=5, raise_if_not_found=False,
+        )
+        self.assertEqual([item[0] for item in stages.mock_calls], [
+            "open_observation_map", "clear_icon_in_map", "zoom_map_out", "wait_click_feature",
+            "_wait_click_transfer_go", "_wait_for_transfer_arrival",
+        ])
+
+    def test_unstable_map_after_clearing_stops_before_zoom(self):
+        task = self.task()
+        task.wait_click_feature.return_value = True
+        task.wait_ui_stable.return_value = False
+        task.clear_icon_in_map.side_effect = lambda: MapMixin.clear_icon_in_map(task)
+        route = EternalSunsetRoute(task)
+        with self.assertRaisesRegex(RuntimeError, "清空地图标记失败"):
+            route.transfer()
+        task.zoom_map_out.assert_not_called()
+
+    def test_eternal_sunset_uses_photo_flow_and_continues(self):
+        task = self.task()
+        task.observation_key.side_effect = lambda name: "eternal_sunset"
+        task.prepare_observation.side_effect = [{"name": "栖霞驻影"}, None]
+        task.photograph_observation.side_effect = None
+        task.photograph_observation.return_value = True
+        self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        task.photograph_observation.assert_called_once()
+        self.assertEqual(task.prepare_observation.call_count, 2)
+
     def test_daily_monitoring_runs_only_when_selected(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(Config, "config_folder", directory):
             daily = DailyTask(SimpleNamespace(scene=None, pause_start=None, debug=False), SimpleNamespace())
@@ -81,9 +165,13 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", ancient_tree="古树"))
         task.observation_key.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_key(task, title)
         task.observation_route.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_route(task, title)
-        task.navigate_observation.side_effect = lambda observation: EnvironmentMonitoringPhotoTask.navigate_observation(
-            task, observation
-        )
+        def navigate_observation(observation):
+            route_class = task.observation_route(observation["name"])
+            if callable(route_class) and task.navigation is None:
+                task.navigation = route_class(task)
+            return EnvironmentMonitoringPhotoTask.navigate_observation(task, observation)
+
+        task.navigate_observation.side_effect = navigate_observation
         task.photograph_observation.side_effect = lambda: EnvironmentMonitoringPhotoTask.photograph_observation(task)
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
@@ -98,7 +186,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             with self.subTest(error=type(error).__name__):
                 task = self.task()
                 task.sleep.side_effect = error
-                navigation = EnvironmentMonitoringNavigation(task)
+                navigation = EnvironmentMonitoringRoute(task)
                 with self.assertRaises(type(error)):
                     navigation.hold_route_key("w", 0.5)
                 task.send_key_down.assert_called_once_with("up")
@@ -107,7 +195,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_failed_focus_prevents_movement_key_down(self):
         task = self.task()
         task._require_input_focus.side_effect = RuntimeError("no focus")
-        navigation = EnvironmentMonitoringNavigation(task)
+        navigation = EnvironmentMonitoringRoute(task)
         with self.assertRaisesRegex(RuntimeError, "no focus"):
             navigation.hold_route_key("d", 3)
         task.send_key_down.assert_not_called()
@@ -218,7 +306,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_route_requires_world_and_does_not_move_in_a_menu(self):
         task = self.task()
-        navigation = PoolLotusNavigation(task)
+        navigation = PoolLotusRoute(task)
         task.in_world.return_value = False
         with self.assertRaisesRegex(RuntimeError, "未处于大世界"):
             navigation.run()
@@ -242,7 +330,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_route_uses_world_state_without_mode_checks(self):
         task = self.task()
-        navigation = PoolLotusNavigation(task)
+        navigation = PoolLotusRoute(task)
         task.in_world.return_value = True
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
         navigation.run()
@@ -277,6 +365,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
         task.selected_observation = {"name": "蓄水源石虫"}
+        task.navigation = CisternOriginiumSlugsRoute(task)
         task.photo_condition_met.return_value = False
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
         self.assertFalse(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
@@ -301,7 +390,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.in_world.return_value = True
         task.wait_until.return_value = True
-        AnnularWaterfallNavigation(task).run()
+        AnnularWaterfallRoute(task).run()
         self.assertEqual(task.sleep.call_args_list, [call(0.5), call(5), call(2), call(3)])
         self.assertEqual(task.send_key_down.call_args_list, [call("a"), call("up"), call("right"), call("up")])
         self.assertEqual(task.press_key.call_count, 3)
@@ -316,9 +405,10 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.lang.environment_monitoring.annular_waterfall = "环形瀑布"
         task.selected_observation = {"name": "环形瀑布"}
+        task.navigation = AnnularWaterfallRoute(task)
         task.photo_condition_met.side_effect = [False, True]
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
-        self.assertIs(task.observation_route("环形瀑布"), AnnularWaterfallNavigation)
+        self.assertIs(task.observation_route("环形瀑布"), AnnularWaterfallRoute)
         self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         task.rotate_photo_view.assert_called_once_with(direction="up")
 
@@ -327,7 +417,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task._resolve_config_key.side_effect = None
         task._resolve_config_key.return_value = "down"
         task.sleep.side_effect = TaskDisabledException()
-        navigation = CisternOriginiumSlugsNavigation(task)
+        navigation = CisternOriginiumSlugsRoute(task)
         with self.assertRaises(TaskDisabledException):
             navigation.run()
         task.send_key_down.assert_called_once_with("down")
@@ -338,7 +428,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.in_world.return_value = True
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
-        StationaryObservationNavigation(task).run()
+        StationaryObservationRoute(task).run()
         task.send_key_down.assert_not_called()
         task.press_key.assert_not_called()
         task.wait_until.assert_called_once()
@@ -355,7 +445,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         for name in ("send_key_down", "press_key", "sleep", "send_key_up", "wait_until", "prepare_photo"):
             events.attach_mock(getattr(task, name), name)
         EnvironmentMonitoringPhotoTask.run.__wrapped__(task)
-        self.assertIsInstance(task.navigation, CisternOriginiumSlugsNavigation)
+        self.assertIsInstance(task.navigation, CisternOriginiumSlugsRoute)
         self.assertEqual(
             [c[0] for c in events.mock_calls],
             ["send_key_down", "press_key", "sleep", "send_key_up", "wait_until", "prepare_photo"],
@@ -402,7 +492,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_full_run_takes_photo_only_when_ready(self):
         for ready in (False, True):
-            with self.subTest(ready=ready), patch.object(PoolLotusNavigation, "run") as route:
+            with self.subTest(ready=ready), patch.object(PoolLotusRoute, "run") as route:
                 task = self.task()
                 task.prepare_observation.side_effect = [{"name": "“小池荷”", "terminal": "outskirts"}, None]
                 task.adjust_photo_view.return_value = ready
@@ -500,7 +590,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def test_navigation_failure_stops_before_camera(self):
         task = self.task()
         task.prepare_observation.return_value = {"name": "小池荷"}
-        with patch.object(PoolLotusNavigation, "run", side_effect=RuntimeError("navigation failed")):
+        with patch.object(PoolLotusRoute, "run", side_effect=RuntimeError("navigation failed")):
             self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
         self.assertIn("navigation failed", task.mark_task_failure.call_args.args[0])
         task.prepare_photo.assert_not_called()

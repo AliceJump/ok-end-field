@@ -153,8 +153,9 @@ class FarmRelatedTask(Common, LiaisonMixin, MapMixin):
         if not self._click_farm_related():  # 复用已有农牧标记筛选
             self.mark_task_failure("筛选武陵城农牧标记失败")  # 避免点击错误图标
             return False  # 中止后续收取
-        self.click_relative(0.966, 0.565)  # 地图截图估算的缩放条底端
-        self.wait_ui_stable()  # 等待地图和标记稳定
+        if not self.zoom_map_out():  # 复用地图缩放并等待地图稳定
+            self.mark_task_failure("武陵城地图缩放后未稳定")  # 避免在过渡画面识别图标
+            return False  # 停止后续操作
         if not self.wait_click_feature(
             feature=fL.auto_farmer_on_map,
             box=self.box_of_screen(0.30, 0.20, 0.65, 0.65),

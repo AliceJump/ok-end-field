@@ -8,6 +8,13 @@ TRANSFER_ARRIVAL_SETTLE_S = 2.0
 
 
 class MapMixin(BaseEfTask):
+    def zoom_map_out(self):  # 缩小当前地图以显示更大范围
+        self.click_relative(0.966, 0.565)  # 地图缩放条底端，坐标来自农牧地图截图
+        if not self.wait_ui_stable():  # 等待地图与标记稳定
+            return False  # 稳定超时不能判断缩放状态
+        slider = dict.fromkeys(("r", "g", "b"), (175, 235))  # 缩到最小时滑块的浅灰色
+        return bool(self.find_color(slider, self.box_of_screen(0.964, 0.559, 0.969, 0.57), threshold=0.7))  # 检查底端滑块
+
     def task_to_transfer_point(self, need_location_list=None):
         """
         传送到运输委托对应的出发传送点。
@@ -136,9 +143,7 @@ class MapMixin(BaseEfTask):
 
         # 退出标记管理界面
         self.back()
-        self.wait_ui_stable(refresh_interval=0.2)
-
-        return True
+        return self.wait_ui_stable(refresh_interval=0.2)
 
     def to_near_transfer_point(self, need_track, need_location_list=None, need_reserve_icon_name=None):
         """

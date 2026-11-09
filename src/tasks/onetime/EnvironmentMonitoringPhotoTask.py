@@ -6,28 +6,33 @@ from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
-from src.tasks.onetime.EnvironmentMonitoringNavigation import (  # 各观察点导航组件共用短路线执行逻辑
-    AnnularWaterfallNavigation,  # 环形瀑布路线
-    CisternOriginiumSlugsNavigation,  # 普通源石虫短路线
-    PoolLotusNavigation,  # 小池荷短路线
-    StationaryObservationNavigation,  # 传送后原地取景
+from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin  # 复用世界坐标导航
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
+from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
+    AnnularWaterfallRoute,  # 环形瀑布路线
+    CisternOriginiumSlugsRoute,  # 普通源石虫短路线
+    EternalSunsetRoute,  # 栖霞驻影网格路线
+    PoolLotusRoute,  # 小池荷短路线
+    StationaryObservationRoute,  # 传送后原地取景
 )
 
-OBSERVATIONS = {  # 观察点语言键对应导航类和取景方向
-    "pool_lotus": (PoolLotusNavigation, "right"),  # 小池荷向右取景
-    "cistern_originium_slugs": (CisternOriginiumSlugsNavigation, "left"),  # 普通源石虫向左取景
-    "thillu": (StationaryObservationNavigation, "right"),  # 表象在传送落点向右取景
-    "peach_tree": (StationaryObservationNavigation, "right"),  # 桃树在传送落点即可取景
-    "pier_waterwheel": (StationaryObservationNavigation, "right"),  # 码头水车在传送落点即可取景
-    "annular_waterfall": (AnnularWaterfallNavigation, "up"),  # 环形瀑布向上取景
+OBSERVATIONS = {  # 观察点语言键对应路线类
+    "pool_lotus": PoolLotusRoute,  # 小池荷向右取景
+    "cistern_originium_slugs": CisternOriginiumSlugsRoute,  # 普通源石虫向左取景
+    "thillu": StationaryObservationRoute,  # 表象在传送落点向右取景
+    "peach_tree": StationaryObservationRoute,  # 桃树在传送落点即可取景
+    "pier_waterwheel": StationaryObservationRoute,  # 码头水车在传送落点即可取景
+    "annular_waterfall": AnnularWaterfallRoute,  # 环形瀑布向上取景
+    "eternal_sunset": EternalSunsetRoute,  # 栖霞驻影向上取景
 }  # 仅注册已支持的点位
 
 
-class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相机流程
+class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin):  # 共用接取、传送与相机流程
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
 
     def __init__(self, *args, **kwargs):  # 构造阶段不操作游戏
         super().__init__(*args, **kwargs)  # 初始化项目任务与生命周期
+        self._init_grid_navigation_mixin()  # 初始化网格导航状态
         self.group_name = "日常任务"  # 环境监测属于日常业务
         self.group_icon = FluentIcon.CALENDAR  # 与现有日常子任务一致
         self.icon = FluentIcon.SEARCH  # 保持原有任务图标
@@ -66,7 +71,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
 
     def observation_route(self, title):  # 仅已注册导航的观察点允许自动接取
         observation = OBSERVATIONS.get(self.observation_key(title))  # 查找已注册点位
-        return observation[0] if observation else None  # 未匹配时返回 None
+        return observation if observation else None  # 未匹配时返回 None
 
     def open_monitoring(self):  # 从任意可恢复页面进入环境监测
         self.ensure_main()  # 复用主界面恢复
@@ -192,7 +197,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             return None  # 通用叉号本身不能证明任务已追踪
         return self.find_one(fL.one_task_to_map, box=self.box.bottom_right)  # 返回定位按钮，绝不点击停止追踪
 
-    def transfer_observation(self):  # 正确处理未追踪与已追踪两条入口
+    def open_observation_map(self):  # 正确处理未追踪与已追踪两条入口
         locator = self._tracked_map_locator()  # 已追踪的常见路径先用已验证双模板，不重复 OCR
         if locator:
             self.click(locator)  # 点击同一帧已确认的地图定位按钮
@@ -212,11 +217,6 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             raise RuntimeError("环境监测任务地图未打开")  # 禁止在任务面板直接点传送
         if not self.wait_ui_stable():  # 等待地图上的按钮稳定
             raise RuntimeError("环境监测任务地图未稳定")  # 禁止点击过渡画面
-        if not self.to_near_transfer_point(need_track=False):  # 复用前往传送和传送两步
-            raise RuntimeError("环境监测快捷传送失败")  # 失败不进入后半流程
-        if not self._wait_for_transfer_arrival():  # 等待大世界稳定出现
-            raise RuntimeError("环境监测传送后未确认到达")  # 点击成功不等于到达
-
     def prepare_observation(self):  # 自动前往当前支持的观察点
         self.selected_observation = None  # 清除上轮结果
         self.open_monitoring()  # 每次从明确入口开始
@@ -226,10 +226,12 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
                 identity = self.normalize_title(observation["name"])  # 同名点位不区分终端
                 if identity in self.completed_observations:  # 照片关闭后卡片可能仍显示可操作
                     continue  # 本次运行不重复拍摄
-                if not self.observation_route(observation["name"]):  # 只选择已注册路线的点位
+                navigation_class = self.observation_route(observation["name"])  # 只选择已注册路线的点位
+                if not navigation_class:  # 尚未支持的观察点
                     continue  # 跳过尚未支持的委托
                 self.enter_observation(observation)  # 接取或继续所选观察点
-                self.transfer_observation()  # 快捷传送并验证到达
+                self.navigation = navigation_class(self)  # 同一组件负责传送与后续移动
+                self.navigation.transfer()  # 根据点位选择传送方式
                 self.selected_observation = {
                     "name": observation["name"],
                     "terminal": terminal,
@@ -308,9 +310,7 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
             self.mouse_up(key="left")  # 松开后才能检查稳定画面
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
-        title = (self.selected_observation or {}).get("name", "")  # 使用入口保存的标题，不增加 OCR
-        key = self.observation_key(title)  # 根据已注册的观察点选择取景策略
-        _, direction = OBSERVATIONS.get(key, (None, "right"))  # 未识别时沿用默认方向
+        direction = self.navigation.photo_direction  # 使用当前观察点路线的取景方向
         if not self.wait_ui_stable(  # 等待相机目标标记区域入场稳定
             box=self.box_of_screen(0.02, 0.625, 0.14, 0.7), stable_time=0.5, max_wait=3, refresh_interval=0.1
         ):  # 只观察拍摄目标标题和条件标记
@@ -370,7 +370,6 @@ class EnvironmentMonitoringPhotoTask(MapMixin):  # 共用接取、传送与相�
         navigation_class = self.observation_route(name)  # 获取当前点位注册的导航类
         if not callable(navigation_class):  # 路线缺失时不得继续相机阶段
             raise RuntimeError(f"未支持观察点导航：{name}")  # 未注册或无效的路线直接停止
-        self.navigation = navigation_class(self)  # 导航组件复用当前任务的设备和生命周期
         self.navigation.run()  # 每个点位统一通过 run 执行导航
 
     def photograph_observation(self):  # 共用取景与拍照流程
