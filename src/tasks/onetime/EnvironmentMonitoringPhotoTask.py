@@ -390,6 +390,13 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         self.take_photo()  # 拍照并关闭照片预览
         return True  # 预览关闭后才报告成功
 
+    def process_observation(self, observation):
+        self.selected_observation = observation
+        self.navigate_observation(observation)
+        if not self.photograph_observation():
+            raise RuntimeError("未能调整到满足条件的取景角度")
+        self.completed_observations.add(self.normalize_title(observation["name"]))
+
     def run(self):  # GUI 与一键日常共用完整流程
         try:  # 独立运行和一键日常共用执行与失败处理
             self.completed_observations = set()  # 每次运行重新扫描所有点位
@@ -402,12 +409,8 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
                     observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
                     if observation is None:  # 当前没有符合条件的观察点
                         break  # 汇总本次执行结果
-                    self.selected_observation = observation  # 保留点位身份
-                    self.navigate_observation(observation)  # 执行点位导航
-                    if not self.photograph_observation():  # 未满足拍摄条件
-                        raise RuntimeError("未能调整到满足条件的取景角度")  # 记录点位失败
+                    self.process_observation(observation)  # 导航并拍照
                     succeeded += 1  # 拍照成功后计数
-                    self.completed_observations.add(self.normalize_title(observation["name"]))  # 本轮不重复处理
                 except TaskDisabledException:  # 用户中止必须立即传递
                     raise  # 不继续下一个点位
                 except Exception as error:  # 已选择的点位失败时记录并跳过
