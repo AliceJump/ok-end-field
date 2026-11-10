@@ -26,18 +26,26 @@ from src.localization.minimap_sample_stitch import _load_patch_node  # noqa: E40
 from src.localization.minimap_visual_anchor_chain import MinimapVisualChainEvidence  # noqa: E402
 
 
-def replay(path: Path, *, root: Path = ROOT) -> dict:
-    path = resolve_under(root, path, label="recording", must_exist=True)
-    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+def _replay_trace(path, rows, *, max_error_m):
+    """Replay visual edges without using packet coordinates as inputs."""
+
     scale = float(rows[0]["scale_m_per_px"])
-    evidence = MinimapVisualChainEvidence(scale_m_per_px=scale)
+    evidence = MinimapVisualChainEvidence(scale_m_per_px=scale, max_error_m=max_error_m)
     previous = None
     position = np.zeros(2)
     trace = []
     patch_hash = hashlib.sha256()
     for index, record in enumerate(rows):
         record = dict(record)
-        record["patch"] = str(resolve_under(path.parent, record.get("patch") or "", label="patch", must_exist=True))
+        record["patch"] = str(
+            resolve_under(
+                path.parent,
+                record.get("patch") or "",
+                label="patch",
+                must_exist=True,
+                relative_to_root=True,
+            )
+        )
         node = _load_patch_node(index, record, path.parent)
         if node is None:
             raise ValueError(f"Missing ring image: {path.parent / record['patch']}")
@@ -69,6 +77,11 @@ def replay(path: Path, *, root: Path = ROOT) -> dict:
         if not result.trusted:
             break
         previous, position = node, result.position
+    return trace, patch_hash
+
+
+def _score_trace(rows, trace):
+    """Score only after replay ends so packet coordinates never affect it."""
 
     # Scoring boundary: packet snapshots never enter the replay loop above.
     reference = next((i for i, row in enumerate(trace) if row["trusted"] and rows[i].get("ws")), None)
@@ -89,9 +102,6 @@ def replay(path: Path, *, root: Path = ROOT) -> dict:
                     updated_scores.append(error)
     trusted = [row for row in trace if row["trusted"]]
     return {
-        "recording": str(path),
-        "manifest_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "replayed_patch_sha256": patch_hash.hexdigest(),
         "available_frames": len(rows),
         "trusted_prefix_frames": len(trusted),
         "trusted_prefix_s": trusted[-1]["t"] - trusted[0]["t"] if trusted else 0,
@@ -100,6 +110,22 @@ def replay(path: Path, *, root: Path = ROOT) -> dict:
         "max_changed_snapshot_error_m": max(updated_scores) if updated_scores else None,
         "changed_snapshot_score_count": len(updated_scores),
         "scored_frames": len(scores),
+    }
+
+
+def replay(path: Path, *, root: Path = ROOT, max_error_m=40.0) -> dict:
+    path = resolve_under(root, path, label="recording", must_exist=True)
+    max_error_m = float(max_error_m)
+    if not math.isfinite(max_error_m) or max_error_m <= 0:
+        raise ValueError("max_error_m must be finite and positive")
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    trace, patch_hash = _replay_trace(path, rows, max_error_m=max_error_m)
+    return {
+        "recording": str(path),
+        "manifest_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "replayed_patch_sha256": patch_hash.hexdigest(),
+        **_score_trace(rows, trace),
+        "max_error_m": max_error_m,
         "trace": trace,
     }
 
@@ -111,6 +137,8 @@ def main():
     args = parser.parse_args()
     recordings = [resolve_under(ROOT, path, label="recording", must_exist=True) for path in args.recordings]
     output = resolve_under(ROOT, args.output, label="output")
+    if any(output == recording for recording in recordings):
+        raise ValueError("output_must_not_overwrite_recording")
     results = [replay(path) for path in recordings]
     report = {
         "kind": "recorded relative-ring replay, not full HUD navigation",

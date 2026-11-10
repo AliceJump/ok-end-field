@@ -48,6 +48,10 @@ class TestVisualGridValidation(unittest.TestCase):
             inside = root / "logs" / "report.json"
             inside.parent.mkdir()
             self.assertEqual(resolve_under(root, inside, label="output"), inside.resolve())
+            self.assertEqual(
+                resolve_under(root, "logs/report.json", label="patch", relative_to_root=True),
+                inside.resolve(),
+            )
             with self.assertRaisesRegex(ValueError, "output_escapes_allowed_root"):
                 resolve_under(root, root.parent / "outside.json", label="output")
 

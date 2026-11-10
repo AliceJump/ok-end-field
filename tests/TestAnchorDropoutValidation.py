@@ -1,11 +1,13 @@
 """NCC 实际停用和独立参考路程评分回归，不发送游戏输入。"""  # 实机入口另行显式启用
 
+import hashlib
 import tempfile
 import unittest  # 使用仓库测试入口
 from pathlib import Path
 from types import SimpleNamespace  # 构造最小元信息
-from unittest.mock import Mock  # 验证 NCC 原方法没有执行
+from unittest.mock import Mock, patch  # 验证 NCC 原方法没有执行
 
+from scripts.nav import replay_visual_chain
 from scripts.nav.anchor_dropout_analysis import reference_path, summarize  # 独立评分函数
 from scripts.nav.anchor_dropout_gate import NccDropoutGate  # 实验边界
 from scripts.nav.replay_visual_chain import replay
@@ -24,6 +26,29 @@ class TestAnchorDropoutValidation(unittest.TestCase):  # 验证实验本身而�
             )
             with self.assertRaisesRegex(ValueError, "patch_escapes_allowed_root"):
                 replay(recording, root=root)
+
+    def test_replay_refuses_to_overwrite_a_recording(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            recording = root / "recording.jsonl"
+            recording.write_text('{"scale_m_per_px": 1}\n', encoding="utf-8")
+            argv = ["replay_visual_chain.py", "--output", str(recording), str(recording)]
+            with (
+                patch.object(replay_visual_chain.sys, "argv", argv),
+                patch.object(replay_visual_chain, "ROOT", root),
+                self.assertRaisesRegex(ValueError, "output_must_not_overwrite_recording"),
+            ):
+                replay_visual_chain.main()
+
+    def test_replay_uses_the_application_error_budget_by_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            recording = root / "recording.jsonl"
+            recording.write_text('{"scale_m_per_px": 1}\n', encoding="utf-8")
+            trace = [{"trusted": False, "reason": "test", "t": 0}]
+            with patch.object(replay_visual_chain, "_replay_trace", return_value=(trace, hashlib.sha256())):
+                report = replay(recording, root=root)
+            self.assertEqual(report["max_error_m"], 40.0)
 
     def reference(self, t, x, z=0, **extra):  # 生成同会话独立轨迹
         return {"time": t, "x": x, "z": z, "mapId": "map02", "flow": 1, "scene": 102, **extra}  # 字段与抓包一致
