@@ -13,7 +13,9 @@ class MapMixin(BaseEfTask):
         if not self.wait_ui_stable():  # 等待地图与标记稳定
             return False  # 稳定超时不能判断缩放状态
         slider = dict.fromkeys(("r", "g", "b"), (175, 235))  # 缩到最小时滑块的浅灰色
-        return bool(self.find_color(slider, self.box_of_screen(0.964, 0.559, 0.969, 0.57), threshold=0.7))  # 检查底端滑块
+        return bool(
+            self.find_color(slider, self.box_of_screen(0.964, 0.559, 0.969, 0.57), threshold=0.7)
+        )  # 检查底端滑块
 
     def task_to_transfer_point(self, need_location_list=None):
         """

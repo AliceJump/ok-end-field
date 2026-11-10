@@ -12,14 +12,14 @@ from ok import Box
 from ok.util.color import calculate_color_percentage
 
 from src.data.FeatureList import FeatureList as fL
+from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 from src.tasks.onetime.EnvironmentMonitoringRoute import (
     CisternOriginiumSlugsRoute,
-    EternalSunsetRoute,
     EnvironmentMonitoringRoute,
+    EternalSunsetRoute,
     PoolLotusRoute,
     StationaryObservationRoute,
 )
-from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
 
 class TestEnvironmentMonitoringEntry(unittest.TestCase):
@@ -614,7 +614,9 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_eternal_sunset_card_selects_its_registered_route(self):
         names = json.loads(
-            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(encoding="utf-8")
+            (Path(__file__).resolve().parents[1] / "assets/lang/environment_monitoring.json").read_text(
+                encoding="utf-8"
+            )
         )["eternal_sunset"]
         for locale, title in (
             ("zh_CN", "拍摄生长在亭子中间的“栖霞驻影”"),

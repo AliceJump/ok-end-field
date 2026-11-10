@@ -5,8 +5,8 @@ from ok import Box, TaskDisabledException  # 保留选中背景检测的像素�
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
-from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin  # 复用世界坐标导航
+from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
     AnnularWaterfallRoute,  # 环形瀑布路线
@@ -223,6 +223,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             raise RuntimeError("环境监测任务地图未打开")  # 禁止在任务面板直接点传送
         if not self.wait_ui_stable():  # 等待地图上的按钮稳定
             raise RuntimeError("环境监测任务地图未稳定")  # 禁止点击过渡画面
+
     def prepare_observation(self):  # 自动前往当前支持的观察点
         self.selected_observation = None  # 清除上轮结果
         self.open_monitoring()  # 每次从明确入口开始
@@ -343,9 +344,11 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         frame = self.next_frame()  # 检查最后一次调整后实际保留的界面
         if not self._camera_open(frame=frame):  # 不能沿用打开时的状态
             raise RuntimeError("取景结束时相机界面已关闭")  # 不返回与现场不符的 camera_open=True
-        ready = bool(self.wait_until(  # 等待圆勾恢复，避免用过渡帧直接判失败
-            self.photo_condition_met, time_out=2, settle_time=0, raise_if_not_found=False
-        ))
+        ready = bool(
+            self.wait_until(  # 等待圆勾恢复，避免用过渡帧直接判失败
+                self.photo_condition_met, time_out=2, settle_time=0, raise_if_not_found=False
+            )
+        )
         self.log_info(
             f"[environment-monitoring] camera_open=True target={name} photo_ready={ready} shutter=False"
         )  # 如实记录取景状态
@@ -358,7 +361,9 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def take_photo(self):  # 已取景后拍照并关闭照片预览，不返回终端确认收录
         self._require_input_focus()  # 快门点击前确认焦点
-        if not self.wait_until(self.photo_condition_met, time_out=2, settle_time=0, raise_if_not_found=False):  # 等待相机与目标黄勾
+        if not self.wait_until(
+            self.photo_condition_met, time_out=2, settle_time=0, raise_if_not_found=False
+        ):  # 等待相机与目标黄勾
             raise RuntimeError("拍照前目标条件已失效")  # 不根据旧取景结果盲拍
         self.click_relative(0.856, 0.803)  # 相机布局已确认，点击固定快门位置
         close_area = self.box_of_screen(0.94, 0, 0.98, 0.08)  # 限定照片预览右上角关闭按钮
