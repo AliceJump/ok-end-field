@@ -405,7 +405,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     task.prepare_observation()
                 task.open_observation_map.assert_not_called()
                 task.wait_ocr.assert_not_called()
-                self.assertIsNone(task.selected_observation)
+                self.assertEqual(task.selected_observation["name"], "小池荷")
 
     def test_already_accepted_card_goes_to_mission_without_accepting_again(self):
         task = self.task()
@@ -720,7 +720,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "未确认到达"):
             task.prepare_observation()
         task.to_near_transfer_point.assert_called_once_with(need_track=False)
-        self.assertIsNone(task.selected_observation)
+        self.assertEqual(task.selected_observation["name"], "小池荷")
         task.log_info.assert_not_called()
 
 
