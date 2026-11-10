@@ -42,7 +42,7 @@ def replay(dataset, store, output):
     samples = read_rows(dataset / "samples.jsonl")
     map_id, locator = store.load()
     task = SimpleNamespace(width=0, height=0, active_time=lambda: 0)
-    source = VisualPositionSource(task, locator, map_id, max_correction_m=10)
+    source = VisualPositionSource(task, locator, map_id, max_correction_m=40)
     rows = []
     for index, sample in enumerate(samples):
         frame = cv2.imread(str(dataset / sample["frame"]))
