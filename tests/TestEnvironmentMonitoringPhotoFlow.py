@@ -12,15 +12,15 @@ from ok.util.config import Config
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.onetime.DailyTask import DailyTask
+from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 from src.tasks.onetime.EnvironmentMonitoringRoute import (
     AnnularWaterfallRoute,
     CisternOriginiumSlugsRoute,
-    EternalSunsetRoute,
     EnvironmentMonitoringRoute,
+    EternalSunsetRoute,
     PoolLotusRoute,
     StationaryObservationRoute,
 )
-from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
@@ -68,8 +68,14 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task._wait_click_transfer_go.return_value = True
         task._wait_for_transfer_arrival.return_value = True
         stages = Mock()
-        for name in ("open_observation_map", "clear_icon_in_map", "zoom_map_out", "wait_click_feature",
-                     "_wait_click_transfer_go", "_wait_for_transfer_arrival"):
+        for name in (
+            "open_observation_map",
+            "clear_icon_in_map",
+            "zoom_map_out",
+            "wait_click_feature",
+            "_wait_click_transfer_go",
+            "_wait_for_transfer_arrival",
+        ):
             stages.attach_mock(getattr(task, name), name)
         EternalSunsetRoute(task).transfer()
         task.open_observation_map.assert_called_once_with()
@@ -78,13 +84,23 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task._wait_click_transfer_go.assert_called_once_with()
         task._wait_for_transfer_arrival.assert_called_once_with()
         task.wait_click_feature.assert_called_once_with(
-            fL.transfer_point, box=task.box_of_screen(0.05, 0.02, 0.5, 0.5),
-            threshold=0.7, time_out=5, raise_if_not_found=False,
+            fL.transfer_point,
+            box=task.box_of_screen(0.05, 0.02, 0.5, 0.5),
+            threshold=0.7,
+            time_out=5,
+            raise_if_not_found=False,
         )
-        self.assertEqual([item[0] for item in stages.mock_calls], [
-            "open_observation_map", "clear_icon_in_map", "zoom_map_out", "wait_click_feature",
-            "_wait_click_transfer_go", "_wait_for_transfer_arrival",
-        ])
+        self.assertEqual(
+            [item[0] for item in stages.mock_calls],
+            [
+                "open_observation_map",
+                "clear_icon_in_map",
+                "zoom_map_out",
+                "wait_click_feature",
+                "_wait_click_transfer_go",
+                "_wait_for_transfer_arrival",
+            ],
+        )
 
     def test_unstable_map_after_clearing_stops_before_zoom(self):
         task = self.task()
@@ -165,6 +181,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", ancient_tree="古树"))
         task.observation_key.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_key(task, title)
         task.observation_route.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_route(task, title)
+
         def navigate_observation(observation):
             route_class = task.observation_route(observation["name"])
             if callable(route_class) and task.navigation is None:
