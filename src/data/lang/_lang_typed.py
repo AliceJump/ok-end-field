@@ -401,6 +401,12 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     pier_waterwheel: str
     """码头水车"""
 
+    feranmut_heart: str
+    """巨兽心脏"""
+
+    observant_fowlbeast: str
+    """东张西望"""
+
     peach_tree: str
     """桃树"""
 

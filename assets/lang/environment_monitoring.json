@@ -125,6 +125,20 @@
     "ja_JP": {"string": "渡し場の水車"},
     "ko_KR": {"string": "부두 물레방아"}
   },
+  "feranmut_heart": {
+    "zh_CN": {"string": "巨兽心脏"},
+    "zh_TW": {"string": "巨獸心臟"},
+    "en_US": {"string": "Feranmut Heart"},
+    "ja_JP": {"string": "巨獣の心臓"},
+    "ko_KR": {"string": "베헤모스의 심장"}
+  },
+  "observant_fowlbeast": {
+    "zh_CN": {"string": "东张西望"},
+    "zh_TW": {"string": "東張西望"},
+    "en_US": {"string": "Observant"},
+    "ja_JP": {"string": "キョロキョロ"},
+    "ko_KR": {"string": "두리번거리는"}
+  },
   "peach_tree": {
     "zh_CN": {"string": "桃树"},
     "zh_TW": {"string": "桃樹"},
