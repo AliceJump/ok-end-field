@@ -21,6 +21,8 @@ from src.localization.minimap_map_locator import MinimapGeometry  # 使用实际
 from src.localization.wgc_frame_timing import timing_for_frame  # 补充采样按实际呈现时刻限频
 from src.nav.grid_io import load_grid  # 使用已有网格格式
 
+ROOT = Path(__file__).resolve().parents[2]
+
 
 class TrialFinished(RuntimeError):  # 有限试验终止，不是整个任务故障
     pass  # 导航栈退出后统一松键并恢复 NCC
@@ -379,10 +381,10 @@ class AnchorDropoutTask(GridValidationTask):  # 正式导航与输入保护全�
                 for p in [  # 固定被测实现
                     self.options.grid,  # 完成当前观测或统计步骤
                     Path(__file__),  # 网格与执行脚本
-                    Path("src/localization/visual_position_source.py"),  # 正式定位源
-                    Path("src/localization/minimap_visual_anchor_chain.py"),  # 完成当前观测或统计步骤
-                    Path("src/localization/position_service.py"),  # 记录实际观测所有者
-                    Path("src/localization/visual_pose_sampling.py"),  # 记录独立采样实现
+                    ROOT / "src/localization/visual_position_source.py",  # 正式定位源
+                    ROOT / "src/localization/minimap_visual_anchor_chain.py",  # 完成当前观测或统计步骤
+                    ROOT / "src/localization/position_service.py",  # 记录实际观测所有者
+                    ROOT / "src/localization/visual_pose_sampling.py",  # 记录独立采样实现
                 ]  # 结束当前参数或记录构造
             },  # 结束当前参数或记录构造
         )  # 正式视觉证据

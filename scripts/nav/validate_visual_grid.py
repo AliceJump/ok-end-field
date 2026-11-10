@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]  # 根据脚本位置固定仓库根
 sys.path.insert(0, str(ROOT))  # 支持从命令行直接运行
 
 
+from scripts.nav.path_safety import resolve_under  # 禁止离线工具逃出仓库根目录
 from scripts.nav.visual_validation import (  # 复用可离线验证算法
     ReferenceTimeline,
     align_reference,
@@ -169,6 +170,11 @@ def main():  # 提供可复用的命令行入口
     parser.add_argument("--capture-fallback", action="store_true")  # 显式授权视觉失败时用项目抓包定位导航
     parser.add_argument("--activate-game", action="store_true")  # 用户授权后在启动时调用项目窗口激活接口
     args = parser.parse_args()  # 读取本次运行参数
+    args.grid = resolve_under(ROOT, args.grid, label="grid", must_exist=True)
+    if args.output is not None:
+        args.output = resolve_under(ROOT, args.output, label="output")
+    if args.resume is not None:
+        args.resume = resolve_under(ROOT, args.resume, label="resume", must_exist=True)
     if args.mode == "run" and not ctypes.windll.shell32.IsUserAnAdmin():  # 用户要求以管理员权限发送游戏输入
         parser.error("run mode requires an Administrator terminal")  # 不静默启动低权限移动
     if (
@@ -176,7 +182,6 @@ def main():  # 提供可复用的命令行入口
     ):  # 拒绝无界时限与无效误差配置
         parser.error("seconds and max-error must be finite and positive")  # 输入错误不启动游戏控制
     directory = args.output or ROOT / "logs" / time.strftime("visual_grid_validation_%Y%m%d_%H%M%S")  # 每次运行独立保存
-    directory.mkdir(parents=True, exist_ok=False)  # 不覆盖既有实验数据
     sample = CapturePositionSource(args.port).poll()  # 只用当前真值确认起始区域
     if sample is None or not sample.flow_alive:  # 前置条件不满足则不移动
         raise RuntimeError("reference_backend_has_no_live_position")  # 明确指出后端状态
@@ -193,6 +198,7 @@ def main():  # 提供可复用的命令行入口
         raise RuntimeError(f"start_snap_too_far: {start_snap_m:.2f}m")  # 保持有界接入
     region, excluded = connected_region(grid, start_center)  # 正式路线仍只走该已知分量
     targets = coverage_targets(grid, region, args.spacing)  # 生成覆盖所有通路的验证计划
+    directory.mkdir(parents=True, exist_ok=False)  # 校验通过后再创建，不覆盖既有实验数据
     plan = {
         "grid": str(args.grid.resolve()),
         "grid_sha256": hashlib.sha256(args.grid.read_bytes()).hexdigest(),

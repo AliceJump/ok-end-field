@@ -30,6 +30,21 @@ from src.runtime_state.world_pose import publish_world_pose  # 用项目状态�
 from src.tasks.navigation.MinimapNavigateToPoint import MinimapNavigateToPoint  # 复用正式导航任务
 
 
+def pose_scope_status(state, map_id):
+    """Classify whether a visual pose is usable for this main-map validation."""
+
+    if state.get("map_id") != map_id:
+        return "map_changed"
+    tier_id = state.get("tier_id")
+    tier_trusted = bool(state.get("tier_trusted"))
+    tier_required = bool(state.get("tier_evidence_required", True))
+    if tier_required and (not tier_trusted or tier_id is None):
+        return "tier_pending"
+    if tier_trusted and tier_id not in (None, "__main__"):
+        return "tier_changed"
+    return "record"
+
+
 class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 与 EfInteraction
     validation = None  # 由命令行入口在启动前注入本次参数
     stop_reason = ""  # 不在任务未运行时启用测试限制
@@ -167,11 +182,10 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         if state.get("frame_time_source") != "wgc_system_relative_time":  # 本测试需要准确时间轴
             self.stop_reason = "missing_wgc_presentation_timestamp"  # 不用采样结束时间伪装图像时间
             self._check_stop()  # 停止不可靠的精度验证
-        if (
-            state.get("map_id") != self.grid.meta.map_name
-            or latest.get("mapId") != self.grid.meta.map_name
-            or state.get("tier_id") != "__main__"
-        ):  # 不把其他层接入当前覆盖
+        scope = pose_scope_status(state, self.grid.meta.map_name)
+        if scope == "tier_pending":  # 未知楼层不是换层，等待可靠楼层证据
+            return
+        if scope != "record" or latest.get("mapId") != self.grid.meta.map_name:
             self.stop_reason = "map_or_tier_changed"  # 保留地图身份
             self._check_stop()  # 不跨场景继续
         point = (float(state["x"]), float(state["z"]))  # 视觉验证覆盖只读取视觉输出

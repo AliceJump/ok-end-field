@@ -20,12 +20,14 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from scripts.nav.path_safety import resolve_under  # noqa: E402
 from src.localization.minimap_odometry import phase_shift  # noqa: E402
 from src.localization.minimap_sample_stitch import _load_patch_node  # noqa: E402
 from src.localization.minimap_visual_anchor_chain import MinimapVisualChainEvidence  # noqa: E402
 
 
-def replay(path: Path) -> dict:
+def replay(path: Path, *, root: Path = ROOT) -> dict:
+    path = resolve_under(root, path, label="recording", must_exist=True)
     rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     scale = float(rows[0]["scale_m_per_px"])
     evidence = MinimapVisualChainEvidence(scale_m_per_px=scale)
@@ -34,6 +36,8 @@ def replay(path: Path) -> dict:
     trace = []
     patch_hash = hashlib.sha256()
     for index, record in enumerate(rows):
+        record = dict(record)
+        record["patch"] = str(resolve_under(path.parent, record.get("patch") or "", label="patch", must_exist=True))
         node = _load_patch_node(index, record, path.parent)
         if node is None:
             raise ValueError(f"Missing ring image: {path.parent / record['patch']}")
@@ -105,7 +109,9 @@ def main():
     parser.add_argument("recordings", type=Path, nargs="+")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    results = [replay(path) for path in args.recordings]
+    recordings = [resolve_under(ROOT, path, label="recording", must_exist=True) for path in args.recordings]
+    output = resolve_under(ROOT, args.output, label="output")
+    results = [replay(path) for path in recordings]
     report = {
         "kind": "recorded relative-ring replay, not full HUD navigation",
         "limitations": [
@@ -120,8 +126,8 @@ def main():
         },
         "recordings": results,
     }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
     print(
         json.dumps(
             [{key: value for key, value in row.items() if key != "trace"} for row in results],

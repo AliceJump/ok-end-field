@@ -1,10 +1,16 @@
 """离线验证覆盖与时间对齐，禁止测试向游戏发送输入。"""
 
+import sys
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
+from scripts.nav.path_safety import resolve_under
 from scripts.nav.validate_visual_grid import report_accuracy
+from scripts.nav.validation_task import pose_scope_status
 from scripts.nav.visual_validation import (
     NavigationSourcePolicy,
     align_reference,
@@ -19,6 +25,51 @@ from src.nav.grid_io import DenseGrid, GridMeta
 
 
 class TestVisualGridValidation(unittest.TestCase):
+    def test_unknown_tier_waits_but_confirmed_other_tier_stops(self):
+        base = {"map_id": "map02", "tier_evidence_required": True, "position_trusted": True}
+        self.assertEqual(pose_scope_status({**base, "tier_id": None, "tier_trusted": False}, "map02"), "tier_pending")
+        self.assertEqual(
+            pose_scope_status({**base, "tier_id": "__main__", "tier_trusted": True}, "map02"),
+            "record",
+        )
+        self.assertEqual(
+            pose_scope_status({**base, "tier_id": "floor1", "tier_trusted": True}, "map02"),
+            "tier_changed",
+        )
+        self.assertEqual(
+            pose_scope_status({**base, "map_id": "map01", "tier_id": "__main__", "tier_trusted": True}, "map02"),
+            "map_changed",
+        )
+
+    def test_cli_paths_cannot_escape_repository_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "root"
+            root.mkdir()
+            inside = root / "logs" / "report.json"
+            inside.parent.mkdir()
+            self.assertEqual(resolve_under(root, inside, label="output"), inside.resolve())
+            with self.assertRaisesRegex(ValueError, "output_escapes_allowed_root"):
+                resolve_under(root, root.parent / "outside.json", label="output")
+
+    def test_backend_failure_does_not_create_output_directory(self):
+        from scripts.nav import validate_visual_grid
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            grid = root / "assets/nav-grid-data/map02_4.grid.npz"
+            grid.parent.mkdir(parents=True)
+            grid.write_bytes(b"placeholder")
+            output = root / "logs" / "validation"
+            argv = ["validate_visual_grid.py", "--output", str(output)]
+            with (
+                patch.object(validate_visual_grid, "ROOT", root),
+                patch.object(validate_visual_grid.CapturePositionSource, "poll", return_value=None),
+                patch.object(sys, "argv", argv),
+                self.assertRaisesRegex(RuntimeError, "reference_backend_has_no_live_position"),
+            ):
+                validate_visual_grid.main()
+            self.assertFalse(output.exists())
+
     def test_capture_fallback_requires_explicit_enable_and_stable_recovery(self):
         good = {"position_trusted": True, "tier_evidence_required": True, "tier_trusted": True}
         bad = {**good, "position_trusted": False}

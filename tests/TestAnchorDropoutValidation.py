@@ -1,16 +1,30 @@
 """NCC 实际停用和独立参考路程评分回归，不发送游戏输入。"""  # 实机入口另行显式启用
 
+import tempfile
 import unittest  # 使用仓库测试入口
+from pathlib import Path
 from types import SimpleNamespace  # 构造最小元信息
 from unittest.mock import Mock  # 验证 NCC 原方法没有执行
 
 from scripts.nav.anchor_dropout_analysis import reference_path, summarize  # 独立评分函数
 from scripts.nav.anchor_dropout_gate import NccDropoutGate  # 实验边界
+from scripts.nav.replay_visual_chain import replay
 from scripts.nav.visual_validation import ReferenceTimeline  # 复用时间索引
 from tests import TestVisualPositionSource as source_tests  # 复用合成移动图像而不重复发现测试类
 
 
 class TestAnchorDropoutValidation(unittest.TestCase):  # 验证实验本身而非伪造成功结果
+    def test_replay_rejects_patch_path_escape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            recording = root / "recording.jsonl"
+            recording.write_text(
+                '{"scale_m_per_px": 1, "t": 0, "patch": "../outside.png"}\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "patch_escapes_allowed_root"):
+                replay(recording, root=root)
+
     def reference(self, t, x, z=0, **extra):  # 生成同会话独立轨迹
         return {"time": t, "x": x, "z": z, "mapId": "map02", "flow": 1, "scene": 102, **extra}  # 字段与抓包一致
 
