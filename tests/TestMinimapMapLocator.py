@@ -510,11 +510,24 @@ class TestMinimapTrackerRecovery(unittest.TestCase):
         tracker = MinimapTracker(locator, promote_hits=2)
         tracker._set_convinced(_candidate(0, 0), now=1.0)
         with patch.object(locator, "locate_near", side_effect=[local, wide, local, wide]) as near:
-            first = tracker.update(None, self.g, now=3.0, prediction_world=(10, 0), prediction_radius_m=8)
-            second = tracker.update(None, self.g, now=3.2, prediction_world=(10, 0), prediction_radius_m=8)
+            first = tracker.update(None, self.g, now=3.5, prediction_world=(10, 0), prediction_radius_m=8)
+            second = tracker.update(None, self.g, now=3.7, prediction_world=(10, 0), prediction_radius_m=8)
         self.assertFalse(first.accepted)
         self.assertFalse(second.accepted)
         self.assertEqual([call.kwargs["search_radius_m"] for call in near.call_args_list], [8, 80, 8, 80])
+
+    def test_prediction_competition_acceptance_is_cached_between_frames(self):
+        local = _result(10, 0, ncc=0.95)
+        wide = _result(10, 0, ncc=0.95)
+        locator = _FakeLocator(local)
+        tracker = MinimapTracker(locator, promote_hits=2)
+        tracker._set_convinced(_candidate(0, 0), now=1.0)
+        with patch.object(locator, "locate_near", side_effect=[local, wide, local]) as near:
+            first = tracker.update(None, self.g, now=3.5, prediction_world=(10, 0), prediction_radius_m=8)
+            second = tracker.update(None, self.g, now=3.7, prediction_world=(10, 0), prediction_radius_m=8)
+        self.assertFalse(first.accepted)
+        self.assertTrue(second.accepted)
+        self.assertEqual([call.kwargs["search_radius_m"] for call in near.call_args_list], [8, 80, 8])
 
     def test_ambiguous_small_window_is_verified_in_wide_window(self):
         locator = _FakeLocator(_result(100, 0))

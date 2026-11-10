@@ -5,6 +5,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import weakref
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -48,6 +49,7 @@ from src.localization.position_config_migration import (
 from src.localization.position_service import WorldPoseService
 from src.localization.visual_pose_sampling import VisualPoseSampler
 from src.localization.visual_position_source import VisualPositionSource
+from src.localization.wgc_frame_timing import FrameTiming, timing_for_frame
 from src.runtime_state.state_hub import RuntimeStateHub
 from src.runtime_state.topics import RuntimeTopic
 from src.runtime_state.world_pose import publish_world_pose
@@ -1627,6 +1629,55 @@ class TestVisualPoseSampler(unittest.TestCase):
                 sampler.close()
         self.assertGreaterEqual(len(calls), 2)
         log.assert_called_once()
+
+    def test_capture_error_is_logged_and_sampling_continues(self):
+        frame = np.zeros((20, 20, 3), np.uint8)
+        calls = 0
+        continued = threading.Event()
+
+        def get_frame(_timeout):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise RuntimeError("capture backend failed")
+            continued.set()
+            return frame
+
+        capture = SimpleNamespace(get_frame_for_probe=get_frame)
+        sampler = VisualPoseSampler(capture, Mock(), lambda: True, interval=0.01)
+        with (
+            patch("src.localization.visual_pose_sampling.timing_for_frame", return_value=object()),
+            patch("src.localization.visual_pose_sampling.logger.exception") as log,
+        ):
+            sampler.start()
+            try:
+                self.assertTrue(continued.wait(2))
+            finally:
+                sampler.close()
+        log.assert_called_once()
+
+    def test_probe_timing_survives_rgb_slice_into_observation(self):
+        frame = np.zeros((20, 20, 4), np.uint8)
+        observed = threading.Event()
+        timing = FrameTiming(100.0, 1, 100.0, 0.0001)
+        capture = SimpleNamespace(
+            lock=threading.RLock(),
+            get_frame_for_probe=Mock(return_value=frame),
+            _localization_timed_image=weakref.ref(frame),
+            _localization_frame_timing=timing,
+        )
+
+        def observe(sliced, stopped):
+            self.assertEqual(sliced.shape, (20, 20, 3))
+            self.assertIs(timing_for_frame(capture, sliced), timing)
+            observed.set()
+
+        sampler = VisualPoseSampler(capture, observe, lambda: True, interval=0.01)
+        sampler.start()
+        try:
+            self.assertTrue(observed.wait(2))
+        finally:
+            sampler.close()
 
     def test_sampling_progresses_during_blocked_control_and_stops_on_close(self):
         capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 4), np.uint8)))

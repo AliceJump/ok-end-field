@@ -40,6 +40,25 @@ class TestAnchorDropoutValidation(unittest.TestCase):  # 验证实验本身而�
             ):
                 replay_visual_chain.main()
 
+    def test_replay_refuses_to_overwrite_a_patch_image(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            patch_path = root / "patches" / "map.png"
+            patch_path.parent.mkdir()
+            patch_path.write_bytes(b"png")
+            recording = root / "recording.jsonl"
+            recording.write_text(
+                '{"scale_m_per_px": 1, "patch": "patches/map.png"}\n',
+                encoding="utf-8",
+            )
+            argv = ["replay_visual_chain.py", "--output", str(patch_path), str(recording)]
+            with (
+                patch.object(replay_visual_chain.sys, "argv", argv),
+                patch.object(replay_visual_chain, "ROOT", root),
+                self.assertRaisesRegex(ValueError, "output_must_not_overwrite_patch"),
+            ):
+                replay_visual_chain.main()
+
     def test_replay_uses_the_application_error_budget_by_default(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

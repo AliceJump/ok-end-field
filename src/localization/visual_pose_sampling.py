@@ -48,6 +48,9 @@ class VisualPoseSampler:
                 timing = timing_for_frame(self.capture, frame)
             except (CaptureBusyException, CaptureException, OSError, ValueError):
                 continue
+            except Exception:
+                logger.exception("visual pose capture failed")
+                continue
             if frame is not None and timing is not None and not self.stopped.is_set() and self.enabled():
                 try:
                     self.observe(frame[:, :, :3], self.stopped)

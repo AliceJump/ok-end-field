@@ -80,6 +80,18 @@ def _replay_trace(path, rows, *, max_error_m):
     return trace, patch_hash
 
 
+def _score_trusted_row(index, rows, trace, reference, origin_truth, origin_visual):
+    row = trace[index]
+    truth = rows[index].get("ws")
+    if not row["trusted"] or not truth:
+        return None
+    matrix = np.asarray(rows[index]["map_to_world_px"], dtype=float)
+    visual_delta = matrix @ (np.asarray(row["visual_px"]) - origin_visual)
+    error = float(np.linalg.norm(visual_delta - (np.asarray(truth) - origin_truth)))
+    row["logged_snapshot_error_m"] = error
+    return error, index == reference or truth != rows[index - 1].get("ws")
+
+
 def _score_trace(rows, trace):
     """Score only after replay ends so packet coordinates never affect it."""
 
@@ -90,15 +102,12 @@ def _score_trace(rows, trace):
     if reference is not None:
         origin_truth = np.asarray(rows[reference]["ws"], dtype=float)
         origin_visual = np.asarray(trace[reference]["visual_px"])
-        for i, row in enumerate(trace):
-            truth = rows[i].get("ws")
-            if row["trusted"] and truth:
-                matrix = np.asarray(rows[i]["map_to_world_px"], dtype=float)
-                visual_delta = matrix @ (np.asarray(row["visual_px"]) - origin_visual)
-                error = float(np.linalg.norm(visual_delta - (np.asarray(truth) - origin_truth)))
-                row["logged_snapshot_error_m"] = error
+        for i in range(len(trace)):
+            scored = _score_trusted_row(i, rows, trace, reference, origin_truth, origin_visual)
+            if scored is not None:
+                error, changed = scored
                 scores.append(error)
-                if i == reference or truth != rows[i - 1].get("ws"):
+                if changed:
                     updated_scores.append(error)
     trusted = [row for row in trace if row["trusted"]]
     return {
@@ -130,6 +139,25 @@ def replay(path: Path, *, root: Path = ROOT, max_error_m=40.0) -> dict:
     }
 
 
+def _validate_output_not_input(recordings, output):
+    for recording in recordings:
+        if output == recording:
+            raise ValueError("output_must_not_overwrite_recording")
+        for line in recording.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            patch = resolve_under(
+                recording.parent,
+                row.get("patch") or "",
+                label="patch",
+                must_exist=True,
+                relative_to_root=True,
+            )
+            if output == patch:
+                raise ValueError("output_must_not_overwrite_patch")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("recordings", type=Path, nargs="+")
@@ -137,8 +165,7 @@ def main():
     args = parser.parse_args()
     recordings = [resolve_under(ROOT, path, label="recording", must_exist=True) for path in args.recordings]
     output = resolve_under(ROOT, args.output, label="output")
-    if any(output == recording for recording in recordings):
-        raise ValueError("output_must_not_overwrite_recording")
+    _validate_output_not_input(recordings, output)
     results = [replay(path) for path in recordings]
     report = {
         "kind": "recorded relative-ring replay, not full HUD navigation",
