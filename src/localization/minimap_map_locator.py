@@ -16,7 +16,7 @@ import json
 import math
 import time
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -1078,6 +1078,9 @@ class MinimapTracker:
         self._pending_hits = 0
         self._pending_since: float | None = None
         self._last_update_t: float | None = None
+        self._prediction_verified_t: float | None = None
+        self._prediction_verified: MapCandidate | None = None
+        self._prediction_margin = 0.0
 
     @property
     def convinced(self) -> MapCandidate | None:
@@ -1094,6 +1097,9 @@ class MinimapTracker:
         self._pending = None
         self._pending_hits = 0
         self._pending_since = None
+        self._prediction_verified_t = None
+        self._prediction_verified = None
+        self._prediction_margin = 0.0
 
     @staticmethod
     def _distance(left: MapCandidate, right: MapCandidate) -> float:
@@ -1175,7 +1181,7 @@ class MinimapTracker:
             and self._convinced_t is not None
             and 0 <= current - self._convinced_t <= self.stale_after_s
         )
-        result, used_prior = self._locate_frame(
+        result, used_prior, used_prediction = self._locate_frame(
             frame, geometry, current, fresh, prior_world, prior_radius_m, prediction_world, prediction_radius_m
         )
         if result is None:
@@ -1189,20 +1195,71 @@ class MinimapTracker:
             self._pending_since = None
             return TrackResult("lost", False, result.reason, result, None, 0, used_prior)
 
+        if used_prediction:
+            result = self._verify_prediction_competition(frame, geometry, result, current)
         best = result.best
         convinced_radius = self.consistency_distance_m + self.max_speed_m_s * (
             max(0.0, current - self._convinced_t) if fresh else 0.0
         )
-        if fresh and self._distance(best, self._convinced) <= convinced_radius:
+        if (
+            fresh
+            and result.margin >= self.initial_min_margin
+            and self._distance(best, self._convinced) <= convinced_radius
+        ):
             self._set_convinced(best, current)
             return TrackResult("convinced", True, result.reason, result, best, 0, used_prior)
 
         return self._confirm_acquisition(result, current, previous_update, used_prior)
 
+    def _verify_prediction_competition(self, frame, geometry, result, now):
+        """Require an accepted predicted peak to survive the normal wider search."""
+
+        best = result.best
+        if (
+            self._prediction_verified is not None
+            and self._prediction_verified_t is not None
+            and now - self._prediction_verified_t <= self.pending_max_gap_s
+            and self._distance(best, self._prediction_verified) <= self.consistency_distance_m
+            and self._prediction_margin >= self.initial_min_margin
+        ):
+            return replace(
+                result,
+                reason=f"prediction_cached_{result.reason}",
+                spatial_margin=min(result.margin, self._prediction_margin),
+            )
+        wide = self.locator.locate_near(
+            frame,
+            (best.world_x, best.world_z),
+            geometry,
+            search_radius_m=self.search_radius_m,
+        )
+        if wide is None:
+            return replace(result, reason="prediction_competition_unavailable", spatial_margin=0.0)
+        competitors = [
+            candidate
+            for candidate in wide.candidates
+            if candidate.map_id != best.map_id
+            or candidate.tier_id != best.tier_id
+            or math.hypot(candidate.world_x - best.world_x, candidate.world_z - best.world_z)
+            > self.consistency_distance_m
+        ]
+        wide_margin = candidate_margin([best, *competitors])
+        if wide.status == "accepted" and wide_margin >= self.initial_min_margin:
+            self._prediction_verified_t = now
+            self._prediction_verified = best
+            self._prediction_margin = wide_margin
+        return replace(
+            result,
+            reason=f"prediction_{wide.reason}",
+            candidates=tuple(deduplicate_candidates([*result.candidates, *competitors])),
+            spatial_margin=min(result.margin, wide_margin),
+        )
+
     def _locate_frame(
         self, frame, geometry, current, fresh, prior_world, prior_radius_m, prediction_world, prediction_radius_m
     ):
         used_prior = False
+        used_prediction = False
         if prediction_world is not None:
             result = self.locator.locate_near(
                 frame,
@@ -1215,6 +1272,8 @@ class MinimapTracker:
             # still runs through the established wider search path.
             if result is None or result.status != "accepted":
                 result = None
+            else:
+                used_prediction = True
         else:
             result = None
         if result is None and fresh:
@@ -1245,7 +1304,7 @@ class MinimapTracker:
         elif result is None:
             result = self.locator.locate_global(frame, geometry)
 
-        return result, used_prior
+        return result, used_prior, used_prediction
 
     def _confirm_acquisition(self, result, current, previous_update, used_prior):
         best = result.best

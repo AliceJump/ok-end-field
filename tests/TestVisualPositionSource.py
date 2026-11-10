@@ -1584,6 +1584,11 @@ class TestVisualLayerCandidates(unittest.TestCase):
 
 
 class TestVisualPoseSampler(unittest.TestCase):
+    def test_capture_budget_yields_before_navigation_busy_retry(self):
+        sampler = VisualPoseSampler(SimpleNamespace(), Mock(), lambda: True)
+        self.assertGreater(sampler.capture_timeout, 0)
+        self.assertLess(sampler.capture_timeout, 0.1)
+
     def test_sampling_progresses_during_blocked_control_and_stops_on_close(self):
         capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 4), np.uint8)))
         observed = threading.Event()
