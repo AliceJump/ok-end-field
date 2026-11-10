@@ -287,7 +287,12 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
                 return
             if timing_for_frame(getattr(self.executor, "method", None), frame) is None:
                 return
-            self._sample_visual_pose(frame)
+            try:
+                self._sample_visual_pose(frame)
+            except Exception:
+                self._visual_source.reset()
+                self._sampled_visual_state = None
+                raise
 
     def _locate_visual_frame(self, frame, stamp, timing):
         if timing is not None and not -MAX_FRAME_LEAD_S <= time.time() - timing.frame_time <= 2:

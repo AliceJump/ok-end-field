@@ -1,11 +1,14 @@
 """Navigation-scoped visual sampling, independent of blocking control actions."""
 
+import logging
 import math
 import threading
 
 from ok.task.exceptions import CaptureBusyException, CaptureException
 
 from src.localization.wgc_frame_timing import timing_for_frame
+
+logger = logging.getLogger(__name__)
 
 
 class VisualPoseSampler:
@@ -43,9 +46,12 @@ class VisualPoseSampler:
                 # skips this round; it never cancels another consumer's request.
                 frame = self.capture.get_frame_for_probe(self.capture_timeout)
                 timing = timing_for_frame(self.capture, frame)
-                if frame is not None and timing is not None and not self.stopped.is_set() and self.enabled():
-                    self.observe(frame[:, :, :3], self.stopped)
             except (CaptureBusyException, CaptureException, OSError, ValueError):
-                # No manufactured observation on failure. The normal frame-age
-                # and evidence-gap gates expire the last actual observation.
                 continue
+            if frame is not None and timing is not None and not self.stopped.is_set() and self.enabled():
+                try:
+                    self.observe(frame[:, :, :3], self.stopped)
+                except Exception:
+                    # The observer owns state rollback. Continue only after it
+                    # returns so a partially applied observation is never retried.
+                    logger.exception("visual pose observation failed")

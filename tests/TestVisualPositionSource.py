@@ -829,6 +829,21 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
             with service.visual_sampling(owner):
                 factory.assert_called_once()
 
+    def test_continuous_observation_failure_resets_partial_source_state(self):
+        service = self.service()
+        service._visual_sample_lock = threading.RLock()
+        service._visual_source = Mock()
+        service._sampled_visual_state = {"position_trusted": True}
+        service._sample_visual_pose = Mock(side_effect=RuntimeError("observer failed"))
+        service.experimental_capture_enabled = lambda: False
+        with (
+            patch("src.localization.position_service.timing_for_frame", return_value=object()),
+            self.assertRaisesRegex(RuntimeError, "observer failed"),
+        ):
+            service._sample_continuous_visual(np.zeros((20, 20, 3), np.uint8), threading.Event())
+        service._visual_source.reset.assert_called_once()
+        self.assertIsNone(service._sampled_visual_state)
+
     def test_continuous_sampler_coalesces_retained_frames_without_restamping(self):
         service = self.service()
         service._visual_source = SimpleNamespace(odometry=SimpleNamespace(_sample_min_dt=0.15))
@@ -1588,6 +1603,30 @@ class TestVisualPoseSampler(unittest.TestCase):
         sampler = VisualPoseSampler(SimpleNamespace(), Mock(), lambda: True)
         self.assertGreater(sampler.capture_timeout, 0)
         self.assertLess(sampler.capture_timeout, 0.1)
+
+    def test_observation_error_is_logged_and_sampling_continues(self):
+        capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 3), np.uint8)))
+        continued = threading.Event()
+        calls = []
+
+        def observe(frame, stopped):
+            calls.append(frame)
+            if len(calls) == 1:
+                raise ValueError("observer state failed")
+            continued.set()
+
+        sampler = VisualPoseSampler(capture, observe, lambda: True, interval=0.01)
+        with (
+            patch("src.localization.visual_pose_sampling.timing_for_frame", return_value=object()),
+            patch("src.localization.visual_pose_sampling.logger.exception") as log,
+        ):
+            sampler.start()
+            try:
+                self.assertTrue(continued.wait(2))
+            finally:
+                sampler.close()
+        self.assertGreaterEqual(len(calls), 2)
+        log.assert_called_once()
 
     def test_sampling_progresses_during_blocked_control_and_stops_on_close(self):
         capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 4), np.uint8)))

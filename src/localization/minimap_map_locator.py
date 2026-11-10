@@ -1260,22 +1260,13 @@ class MinimapTracker:
     ):
         used_prior = False
         used_prediction = False
-        if prediction_world is not None:
-            result = self.locator.locate_near(
-                frame,
-                prediction_world,
-                geometry,
-                search_radius_m=max(1.0, float(prediction_radius_m)),
-            )
-            used_prior = True
-            # An accepted NCC result may use the predicted center; weak evidence
-            # still runs through the established wider search path.
-            if result is None or result.status != "accepted":
-                result = None
-            else:
-                used_prediction = True
-        else:
-            result = None
+        result, used_prediction = self._locate_prediction(
+            frame,
+            geometry,
+            prediction_world,
+            prediction_radius_m,
+        )
+        used_prior = used_prediction
         if result is None and fresh:
             elapsed = current - self._convinced_t
             radius = min(self.search_radius_m, self.min_search_radius_m + self.max_speed_m_s * elapsed)
@@ -1305,6 +1296,19 @@ class MinimapTracker:
             result = self.locator.locate_global(frame, geometry)
 
         return result, used_prior, used_prediction
+
+    def _locate_prediction(self, frame, geometry, prediction_world, prediction_radius_m):
+        if prediction_world is None:
+            return None, False
+        result = self.locator.locate_near(
+            frame,
+            prediction_world,
+            geometry,
+            search_radius_m=max(1.0, float(prediction_radius_m)),
+        )
+        if result is None or result.status != "accepted":
+            return None, False
+        return result, True
 
     def _confirm_acquisition(self, result, current, previous_update, used_prior):
         best = result.best
