@@ -21,6 +21,7 @@ from src.localization.minimap_map_locator import (
     deduplicate_candidates,
     strong_candidate,
 )
+from src.localization.tiled_map_image import TiledMapImage, floor_options
 
 
 def layer_calibration(bounds, width, height):
@@ -78,6 +79,10 @@ class LayeredMinimapLocator:
         return self.base._scale(width)
 
     def close(self):
+        for locator in (self.base, *self._cache.values()):
+            close = getattr(locator, "close", None)
+            if callable(close):
+                close()
         for future in self._pending_layers.values():
             future.cancel()
         self._pending_layers.clear()
@@ -127,7 +132,6 @@ class LayeredMinimapLocator:
             finally:
                 del self._pending_layers[key]
         self._cache[key] = locator
-        self._cache_bytes += locator.map_image.nbytes
         self._evict_layers()
         return locator
 
@@ -137,6 +141,10 @@ class LayeredMinimapLocator:
         path = (self.root / entry["path"]).resolve()
         if not path.is_relative_to(self.root):
             raise ValueError("layer image escapes resource root")
+        calibration, (fx, fy) = layer_calibration(entry["bounds"], entry["width"], entry["height"])
+        tiled = TiledMapImage.open_prepared(path, (entry["width"], entry["height"]), **floor_options(entry))
+        if tiled is not None:
+            return MinimapMapLocator(tiled, calibration)
         image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
         if image is None:
             raise ValueError(f"missing_layer_image:{key}")
@@ -149,11 +157,14 @@ class LayeredMinimapLocator:
             image = color
         elif image.ndim == 2:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-        calibration, (fx, fy) = layer_calibration(entry["bounds"], width, height)
         image = cv2.resize(image, None, fx=fx, fy=fy, interpolation=cv2.INTER_AREA)
         return MinimapMapLocator(image, calibration)
 
     def _evict_layers(self):
+        def resident(locator):
+            return getattr(locator, "resident_bytes", locator.map_image.nbytes)
+
+        self._cache_bytes = sum(resident(locator) for locator in self._cache.values())
         while self._cache_bytes > self._cache_limit_bytes and len(self._cache) > 1:
             removable = next((k for k in self._cache if k not in self._pinned_ids), None)
             if removable is None:
@@ -162,7 +173,7 @@ class LayeredMinimapLocator:
                 # checking every floor on one frame. Evict it when the ROI moves.
                 break
             removed = self._cache.pop(removable)
-            self._cache_bytes -= removed.map_image.nbytes
+            self._cache_bytes -= resident(removed)
 
     @staticmethod
     def _near_bounds(entry, prior, radius):
@@ -284,6 +295,9 @@ class LayeredMinimapLocator:
             )
             if result is not None:
                 candidates.extend(self._world_candidates(result, entry))
+        # Region reads grow tiled locators after loading their metadata. Recount
+        # on cache hits too, once the current overlapping set has been checked.
+        self._evict_layers()
         return candidates, complete, pending
 
     def locate_global(self, frame, geometry, *, base_result=None, use_index=True):

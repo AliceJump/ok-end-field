@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from src.localization.localization_workers import decode_memory_bytes
 from src.localization.minimap_map_locator import MapCalibration, MinimapMapLocator
+from src.localization.tiled_map_image import TiledMapImage
 
 
 def resolve_bundle_path(root: Path, name: str) -> Path:
@@ -112,6 +113,8 @@ class CalibratedMapStore:
             if size is None:
                 calibration = MapCalibration.from_mapping_file(paths.mapping)
                 size = (calibration.image_width, calibration.image_height)
+            if TiledMapImage.open_prepared(paths.image, size) is not None:
+                return 64 * 1024**2
             return decode_memory_bytes(*size)
         except (OSError, ValueError, KeyError, TypeError, OverflowError):
             # The actual load reports invalid resources and applies backoff.

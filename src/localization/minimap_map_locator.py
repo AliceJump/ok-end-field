@@ -31,6 +31,7 @@ from src.localization.minimap_odometry import (
     annulus_mask,
     region_geometry,
 )
+from src.localization.tiled_map_image import TiledMapImage
 
 MAP_PIXELS_PER_METER = 4.0
 COARSE_FACTOR = 0.5
@@ -536,7 +537,7 @@ class MinimapMapLocator:
 
     def __init__(
         self,
-        map_image: np.ndarray,
+        map_image: np.ndarray | TiledMapImage,
         calibration: MapCalibration,
         *,
         scale_override: float | None = None,
@@ -549,20 +550,22 @@ class MinimapMapLocator:
         min_accept_ncc: float | None = None,
         min_accept_margin: float | None = None,
     ) -> None:
+        tiled = isinstance(map_image, TiledMapImage)
         image = map_image
         if isinstance(image, np.ndarray) and image.ndim == 3 and image.shape[2] == 4:
             image = image[:, :, :3].copy()
             image[map_image[:, :, 3] == 0] = 0
-        if not isinstance(image, np.ndarray) or image.ndim not in (2, 3):
-            raise ValueError("Map image must be grayscale, BGR or BGRA")
-        if image.ndim == 3 and image.shape[2] != 3:
-            raise ValueError("Map image must be grayscale, BGR or BGRA")
+        if not tiled:
+            if not isinstance(image, np.ndarray) or image.ndim not in (2, 3):
+                raise ValueError("Map image must be grayscale, BGR or BGRA")
+            if image.ndim == 3 and image.shape[2] != 3:
+                raise ValueError("Map image must be grayscale, BGR or BGRA")
         if not 0 < coarse_factor <= 1:
             raise ValueError("coarse_factor must be in (0, 1]")
         if scale_override is not None and scale_override <= 0:
             raise ValueError("scale_override must be positive")
         self.map_image = image
-        self.color = image.ndim == 3
+        self.color = tiled or image.ndim == 3
         self.calibration = calibration
         self.scale_override = scale_override
         self.coarse_factor = float(coarse_factor)
@@ -591,6 +594,15 @@ class MinimapMapLocator:
         self.last_failure_reason = reason
         return None
 
+    @property
+    def resident_bytes(self):
+        return self.map_image.nbytes + sum(image.nbytes for image in self._coarse_cache.values())
+
+    def close(self):
+        self._coarse_cache.clear()
+        if isinstance(self.map_image, TiledMapImage):
+            self.map_image.close()
+
     @classmethod
     def from_files(
         cls,
@@ -598,10 +610,13 @@ class MinimapMapLocator:
         mapping_path: str | Path,
         **kwargs: Any,
     ) -> MinimapMapLocator:
-        map_image = cv2.imread(str(map_path), cv2.IMREAD_COLOR)
+        calibration = MapCalibration.from_mapping_file(mapping_path)
+        size = (calibration.image_width, calibration.image_height)
+        map_image = TiledMapImage.open_prepared(map_path, size)
+        if map_image is None:
+            map_image = cv2.imread(str(map_path), cv2.IMREAD_COLOR)
         if map_image is None:
             raise ValueError(f"Could not read map image: {map_path}")
-        calibration = MapCalibration.from_mapping_file(mapping_path)
         actual_height, actual_width = map_image.shape[:2]
         if calibration.image_width <= 0 or calibration.image_height <= 0:
             raise ValueError(f"Mapping does not declare image_size: {mapping_path}")
@@ -793,14 +808,15 @@ class MinimapMapLocator:
         key = (self.coarse_factor, coarse_scale)
         cached = self._coarse_cache.get(key)
         if cached is None:
-            cached = cv2.resize(
-                self.map_image,
-                None,
-                fx=coarse_scale,
-                fy=coarse_scale,
-                interpolation=cv2.INTER_AREA,
-            )
+            if isinstance(self.map_image, TiledMapImage):
+                cached = self.map_image.overview(coarse_scale)
+            else:
+                cached = cv2.resize(
+                    self.map_image, None, fx=coarse_scale, fy=coarse_scale, interpolation=cv2.INTER_AREA
+                )
             self._coarse_cache[key] = cached
+            while len(self._coarse_cache) > 2:
+                self._coarse_cache.pop(next(iter(self._coarse_cache)))
         return cached
 
     def _candidate_from_patch(
@@ -846,6 +862,8 @@ class MinimapMapLocator:
         y0 = max(0, round(map_y) - radius)
         x1 = min(self.map_image.shape[1], round(map_x) + radius + 1)
         y1 = min(self.map_image.shape[0], round(map_y) + radius + 1)
+        if x1 <= x0 or y1 <= y0:
+            return None
         local_map = self.map_image[y0:y1, x0:x1]
         if local_map.size == 0:
             return None
@@ -982,6 +1000,8 @@ class MinimapMapLocator:
         y0 = max(0, round(previous_y) - margin_y)
         x1 = min(self.map_image.shape[1], round(previous_x) + margin_x + 1)
         y1 = min(self.map_image.shape[0], round(previous_y) + margin_y + 1)
+        if x1 <= x0 or y1 <= y0:
+            return self._reject("minimap_search_outside_map")
         local_map = self.map_image[y0:y1, x0:x1]
         if local_map.size == 0:
             return self._reject("minimap_search_outside_map")

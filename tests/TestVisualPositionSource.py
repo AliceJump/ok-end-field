@@ -2607,6 +2607,7 @@ class TestVisualLayerCandidates(unittest.TestCase):
         locator = LayeredMinimapLocator(base, "map02", ".", {"layers": [entry]})
         locator._load = Mock(
             return_value=SimpleNamespace(
+                map_image=np.empty((0, 0), dtype=np.uint8),
                 locate_global=Mock(return_value=self.result(layer_score)),
                 locate_near=Mock(return_value=self.result(layer_score)),
             )

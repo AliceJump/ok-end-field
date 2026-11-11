@@ -14,6 +14,7 @@ import cv2
 import numpy as np
 
 from src.localization.localization_workers import decode_memory_bytes, ordered_results
+from src.localization.tiled_map_image import TiledMapImage, floor_options
 
 
 @dataclass(frozen=True)
@@ -131,6 +132,13 @@ class LayerSearchIndex:
         path = (root / entry["path"]).resolve()
         if not path.is_relative_to(root):
             raise ValueError("layer image escapes resource root")
+        tiled = TiledMapImage.open_prepared(path, (entry["width"], entry["height"]), **floor_options(entry))
+        if tiled is not None:
+            image = tiled.proposal()
+            if not color:
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                image.setflags(write=False)
+            return entry["id"], image
         image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
         if image is None or image.shape[:2] != (entry["height"], entry["width"]):
             # The full scan retains retry and fail-closed overlap checks.
