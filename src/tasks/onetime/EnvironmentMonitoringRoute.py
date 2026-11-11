@@ -51,6 +51,14 @@ class CisternOriginiumSlugsRoute(EnvironmentMonitoringRoute):  # 普通蓄水源
         self.run_route("蓄水源石虫", (("s", 7),), sprint=True)  # 后退冲刺到取景位置
 
 
+class VigorousCisternSlugRoute(EnvironmentMonitoringRoute):  # 活力蓄水源石虫路线
+    photo_direction = "left"  # 向左取景
+
+    def run(self):  # 导航到记录的拍摄位置
+        if not self.task.navigate_grid_to((-1068.79, -559.33), map_id="map02"):  # 使用武陵网格
+            raise RuntimeError("充满活力的蓄水源石虫导航失败")  # 导航失败时停止拍照
+
+
 class AnnularWaterfallRoute(EnvironmentMonitoringRoute):  # 环形瀑布传送后路线
     photo_direction = "up"  # 向上取景
 
