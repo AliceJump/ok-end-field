@@ -1,4 +1,5 @@
 import ast
+import hashlib
 import json
 import subprocess
 import sys
@@ -339,6 +340,43 @@ class TestVisualPositionSource(unittest.TestCase):
         self.assertTrue(initial["position_trusted"])
         return source, initial
 
+    def test_color_acquisition_and_unknown_floor_share_the_visual_chain_safely(self):
+        pixels = cv2.merge((self.image, np.roll(self.image, 13, axis=0), np.roll(self.image, 19, axis=1)))
+        base = MinimapMapLocator(pixels, self.cal, scale_override=1)
+        layered = LayeredMinimapLocator(base, "map02", ".", {"layers": []})
+        source = VisualPositionSource(self.task, layered, "map02")
+        self.addCleanup(source.close)
+        geometry = MinimapGeometry.from_frame(self.width, self.height)
+
+        def frame(x):
+            transform = np.float32([[1, 0, geometry.center_x - x], [0, 1, geometry.center_y - 400]])
+            return cv2.warpAffine(pixels, transform, (self.width, self.height))
+
+        for now in (1.0, 1.2, 1.4):
+            initial = source.sample(frame(500), now=now)
+        self.assertTrue(initial["absolute_position_valid"], initial)
+        locate = layered.locate_near(frame(502), (125.5, -100), geometry)
+        candidate = replace(locate.best, ncc=0.50, full_ncc=0.50)
+        self.assertTrue(candidate.color)
+        accepted = replace(locate, best=candidate, candidates=(candidate,), spatial_margin=0.12)
+        with patch.object(layered, "locate_near", return_value=accepted):
+            anchored = source.sample(frame(502), now=1.6)
+        self.assertTrue(anchored["absolute_position_valid"], anchored)
+        pending = replace(
+            accepted,
+            best=replace(candidate, tier_id=None),
+            status="rejected",
+            reason="layer_scan_pending",
+            spatial_margin=0,
+        )
+        with patch.object(layered, "locate_near", return_value=pending):
+            continued = source.sample(frame(504), now=1.8)
+        self.assertTrue(continued["position_trusted"], continued)
+        self.assertFalse(continued["absolute_position_valid"])
+        self.assertFalse(continued["tier_trusted"])
+        self.assertEqual(source._last_absolute_t, 1.6)
+        self.assertAlmostEqual(continued["x"], 126, delta=0.3)
+
     def test_rejected_prediction_competition_cannot_reset_visual_budget_or_anchor_age(self):
         for status, margin in (("rejected", 0.0), ("ambiguous", 0.10)):
             with self.subTest(status=status):
@@ -512,18 +550,127 @@ class TestVisualPositionSource(unittest.TestCase):
         self.assertTrue(recovered["absolute_position_valid"])
         self.assertEqual(source.evidence.anchor_time, 2.0)
 
-    def test_short_chain_cannot_continue_across_unknown_or_changed_floor(self):
+    def test_unknown_floor_keeps_chain_but_does_not_refresh_anchor_or_claim_tier(self):
+        source, _ = self._layered_source()
+        self.addCleanup(source.close)
+        initial = source.sample(self.frame(), now=1.4)
+        locate = source.locator.locate_near
+
+        def unknown(*args, **kwargs):
+            result = locate(*args, **kwargs)
+            return replace(
+                result,
+                best=replace(result.best, tier_id=None),
+                status="rejected",
+                reason="layer_scan_pending",
+                spatial_margin=0,
+            )
+
+        with (
+            patch.object(source.locator, "locate_near", side_effect=unknown) as near,
+            patch.object(source.locator, "locate_global", side_effect=AssertionError("must stay local")),
+        ):
+            for i in range(15):
+                now, x = 1.6 + i * 0.2, 502 + i * 2
+                state = source.sample(self.frame(x), now=now)
+                self.assertTrue(state["position_trusted"], state)
+                self.assertFalse(state["absolute_position_valid"])
+                self.assertFalse(state["tier_trusted"])
+                self.assertIsNone(state["tier_id"])
+                self.assertAlmostEqual(state["x"], x / 4, delta=0.3)
+                self.assertEqual(source._last_absolute_t, 1.4)
+                self.assertGreater(state["visual_chain_error_budget_m"], initial["visual_chain_error_budget_m"])
+            self.assertEqual(near.call_count, 15)
+            self.assertTrue(all(call.kwargs["search_radius_m"] == 80 for call in near.call_args_list))
+        # Even high spatial confidence with unresolved floor is not a new anchor.
+        result = locate(self.frame(x), (x / 4, -100), MinimapGeometry.from_frame(self.width, self.height))
+        result = replace(result, best=replace(result.best, tier_id=None))
+        with patch.object(source.locator, "locate_near", return_value=result):
+            for now in (4.6, 4.8):
+                state = source.sample(self.frame(x), now=now)
+                self.assertTrue(state["position_trusted"], state)
+                self.assertFalse(state["absolute_position_valid"])
+                self.assertEqual(source._last_absolute_t, 1.4)
+        for now in (5.0, 5.2):
+            recovered = source.sample(self.frame(x), now=now)
+        self.assertTrue(recovered["absolute_position_valid"], recovered)
+        self.assertTrue(recovered["tier_trusted"])
+
+    def test_unknown_floor_does_not_hide_invalid_chain_or_real_transition(self):
+        for failure in ("teleport", "gap", "budget", "loading", "floor", "map"):
+            with self.subTest(failure=failure):
+                source, _ = self._layered_source()
+                self.addCleanup(source.close)
+                source.sample(self.frame(), now=1.4)
+                geometry = MinimapGeometry.from_frame(self.width, self.height)
+                locate = source.locator.locate_near(self.frame(504), (126, -100), geometry)
+                locate = replace(
+                    locate,
+                    best=replace(locate.best, tier_id=None),
+                    status="rejected",
+                    reason="layer_scan_pending",
+                    spatial_margin=0,
+                )
+                if failure == "loading":
+                    locate = None
+                elif failure == "floor":
+                    locate = replace(locate, best=replace(locate.best, tier_id="floor_1"))
+                elif failure == "map":
+                    locate = replace(locate, best=replace(locate.best, map_id="map03"))
+                elif failure == "budget":
+                    source.evidence.max_error_m = 0.001
+                rejected = TrackResult("lost", False, "layer_scan_pending", locate, None, 0, True)
+                frame = self.frame(700, 600) if failure == "teleport" else self.frame(504)
+                with patch.object(source.tracker, "update", return_value=rejected):
+                    state = source.sample(frame, now=4.0 if failure == "gap" else 1.6)
+                self.assertFalse(state["position_trusted"], state)
+                self.assertIsNone(source._origin)
+                self.assertIsNone(source.evidence.previous)
+
+    def test_unknown_floor_cannot_create_initial_absolute_anchor(self):
+        locator = LayeredMinimapLocator(self.locator, "map02", ".", {"layers": []})
+        source = VisualPositionSource(self.task, locator, "map02")
+        self.addCleanup(source.close)
+        locate = locator.locate_global(self.frame(), MinimapGeometry.from_frame(self.width, self.height))
+        unknown = replace(locate, best=replace(locate.best, tier_id=None))
+        with (
+            patch.object(locator, "locate_global", return_value=unknown),
+            patch.object(locator, "locate_near", return_value=unknown),
+        ):
+            for now in (1.0, 1.2, 1.4):
+                state = source.sample(self.frame(), now=now)
+                self.assertFalse(state["position_trusted"])
+                self.assertIsNone(source._last_absolute_t)
+
+    def test_short_chain_cannot_continue_across_changed_floor(self):
         source, _ = self._layered_source()
         geometry = MinimapGeometry.from_frame(self.width, self.height)
         locate = source.locator.locate_near(self.frame(508), (127, -100), geometry, search_radius_m=12)
         self.assertIsNotNone(locate)
-        for tier in (None, "floor_1"):
-            candidate = replace(locate.best, tier_id=tier)
-            result = replace(locate, best=candidate)
-            rejected = TrackResult("lost", False, "map competition", result, None, 0, True)
-            with self.subTest(tier=tier), patch.object(source.tracker, "update", return_value=rejected):
-                state = source.sample(self.frame(508), now=1.4)
-            self.assertFalse(state["position_trusted"], state)
+        candidate = replace(locate.best, tier_id="floor_1")
+        result = replace(locate, best=candidate)
+        rejected = TrackResult("lost", False, "map competition", result, None, 0, True)
+        with patch.object(source.tracker, "update", return_value=rejected):
+            state = source.sample(self.frame(508), now=1.4)
+        self.assertFalse(state["position_trusted"], state)
+
+    def test_confirmed_floor_transition_starts_a_new_chain(self):
+        source, _ = self._layered_source()
+        self.addCleanup(source.close)
+        source.sample(self.frame(), now=1.4)
+        geometry = MinimapGeometry.from_frame(self.width, self.height)
+        result = source.locator.locate_near(self.frame(504), (126, -100), geometry)
+        candidate = replace(result.best, tier_id="floor_1")
+        result = replace(result, best=candidate)
+        confirmed = TrackResult("convinced", True, "temporal_promotion", result, candidate, 2, True)
+        with patch.object(source.tracker, "update", return_value=confirmed):
+            state = source.sample(self.frame(504), now=1.6)
+            self.assertFalse(state["position_trusted"])
+            self.assertIsNone(source.evidence.previous)
+            recovered = source.sample(self.frame(504), now=1.8)
+        self.assertTrue(recovered["absolute_position_valid"], recovered)
+        self.assertEqual(recovered["tier_id"], "floor_1")
+        self.assertEqual(source._last_absolute_t, 1.8)
 
     def test_clock_rollback_resets_absolute_state(self):
         source = VisualPositionSource(self.task, self.locator, "map02")
@@ -611,7 +758,7 @@ class TestSparseMinimapPosition(unittest.TestCase):
         self.assertEqual((fixed["map_id"], fixed["tier_id"]), ("map02", "__main__"))
         self.assertAlmostEqual(fixed["x"], self.metadata["expected_world"][0], delta=0.3)
         self.assertAlmostEqual(fixed["z"], self.metadata["expected_world"][1], delta=0.3)
-        self.assertGreater(fixed["visual_full_ncc"], 0.85)
+        self.assertGreater(fixed["visual_full_ncc"], self.source.tracker.initial_min_full_ncc)
         self.assertGreaterEqual(fixed["visual_margin"], 0.08)
 
     def test_sparse_hud_scales_with_resolution(self):
@@ -716,7 +863,7 @@ class TestFactoryOcclusionRejection(unittest.TestCase):
 
 
 class TestDenseIconMinimapPosition(unittest.TestCase):
-    def test_bright_terrain_with_outlined_icons_acquires_without_lowering_thresholds(self):
+    def test_bright_terrain_with_outlined_icons_acquires_with_color_thresholds(self):
         root = Path(__file__).parent / "fixtures/minimap"
         metadata = json.loads((root / "dense_icons_mapping.json").read_text(encoding="utf-8"))
         frame = np.zeros((1080, 1920, 3), np.uint8)
@@ -731,8 +878,8 @@ class TestDenseIconMinimapPosition(unittest.TestCase):
         state = source.sample(frame, now=1.2)
         self.assertTrue(state["position_trusted"], state)
         self.assertEqual((state["map_id"], state["tier_id"]), ("map02", "__main__"))
-        self.assertGreaterEqual(state["visual_confidence"], 0.85)
-        self.assertGreaterEqual(state["visual_full_ncc"], 0.65)
+        self.assertGreaterEqual(state["visual_confidence"], source.tracker.initial_min_ncc)
+        self.assertGreaterEqual(state["visual_full_ncc"], source.tracker.initial_min_full_ncc)
         self.assertGreaterEqual(state["visual_margin"], 0.08)
         self.assertAlmostEqual(state["x"], metadata["expected_world"][0], delta=0.3)
         self.assertAlmostEqual(state["z"], metadata["expected_world"][1], delta=0.3)
@@ -749,6 +896,29 @@ class TestDenseIconMinimapPosition(unittest.TestCase):
 
 
 class TestMapAssetsAndSourceService(unittest.TestCase):
+    def test_bundle_paths_reject_paths_outside_resource_root(self):
+        from src.localization.calibrated_map_store import resolve_bundle_path
+
+        for name in ("../outside.webp", "/outside.webp", "C:/outside.webp", "maps\\outside.webp", ""):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                resolve_bundle_path(self.root, name)
+
+    def test_bundle_verifier_can_run_as_a_script_without_pythonpath(self):
+        import os
+
+        environment = dict(os.environ)
+        environment.pop("PYTHONPATH", None)
+        script = Path(__file__).resolve().parents[1] / "scripts/nav/verify_localization.py"
+        result = subprocess.run(
+            [sys.executable, "-X", "utf8", str(script), "--help"],
+            cwd=self.root,
+            env=environment,
+            capture_output=True,
+            timeout=15,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8"))
+        self.assertIn(b"--root", result.stdout)
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -840,6 +1010,113 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         store = CalibratedMapStore(self.root)
         with self.assertRaisesRegex(ValueError, "invalid_visual_map_id"):
             store.load("../map02")
+
+    def test_manifest_selects_webp_and_mixed_bundle_passes_verification(self):
+        from scripts.nav.verify_localization import verify
+
+        bundle = self.root / "localization"
+        maps = bundle / "maps"
+        layers = bundle / "layers"
+        maps.mkdir(parents=True)
+        layers.mkdir()
+        pixels = np.arange(24, dtype=np.uint8).reshape(4, 6) * 11
+        color = cv2.merge((pixels, np.flipud(pixels), np.fliplr(pixels)))
+        alpha = np.tile(np.array([0, 32, 64, 128, 192, 255], dtype=np.uint8), (4, 1))
+        webp_params = [cv2.IMWRITE_WEBP_QUALITY, 90]
+        mapping = {
+            "matrix": [[0.25, 0, 0], [0, -0.25, 0]],
+            "inverse_matrix": [[4, 0, 0], [0, -4, 0]],
+            "image_size": {"width": 6, "height": 4},
+        }
+        base_maps = []
+        for map_id, suffix in (("map01", ".png"), ("map02", ".webp")):
+            directory = maps / map_id / "4"
+            directory.mkdir(parents=True)
+            image = directory / f"{map_id}_4{suffix}"
+            if suffix == ".webp":
+                self.assertTrue(cv2.imwrite(str(image), color, webp_params))
+                decoded = cv2.imread(str(image), cv2.IMREAD_UNCHANGED)
+                self.assertTrue(np.any(decoded[:, :, 0] != decoded[:, :, 1]))
+            else:
+                self.assertTrue(cv2.imwrite(str(image), pixels))
+            mapping_path = directory / f"{map_id}_4_mapping.json"
+            mapping_path.write_text(json.dumps(mapping), encoding="utf-8")
+            base_maps.append(
+                {
+                    "map_id": map_id,
+                    "zoom": "4",
+                    "image": image.relative_to(bundle).as_posix(),
+                    "mapping": mapping_path.relative_to(bundle).as_posix(),
+                    "width": 6,
+                    "height": 4,
+                }
+            )
+        layer = layers / "tier.webp"
+        self.assertTrue(cv2.imwrite(str(layer), np.dstack((color, alpha)), webp_params))
+        np.testing.assert_array_equal(cv2.imread(str(layer), cv2.IMREAD_UNCHANGED)[:, :, 3], alpha)
+        catalog = {
+            "schema_version": 1,
+            "layers": [
+                {
+                    "id": "tier",
+                    "map_name": "map02",
+                    "map_category": "layered",
+                    "path": layer.name,
+                    "filename": layer.name,
+                    "width": 6,
+                    "height": 4,
+                    "bounds": {"west": 0, "east": 1.5, "south": -1, "north": 0},
+                }
+            ],
+        }
+        (layers / "catalog.json").write_text(json.dumps(catalog), encoding="utf-8")
+        files = [
+            {
+                "path": path.relative_to(bundle).as_posix(),
+                "size": path.stat().st_size,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+            for path in bundle.rglob("*")
+            if path.is_file()
+        ]
+        manifest = {
+            "schema_version": 1,
+            "kind": "okef-visual-localization",
+            "maps_root": "maps",
+            "layers_root": "layers",
+            "layer_catalog": "layers/catalog.json",
+            "base_maps": base_maps,
+            "files": files,
+            "coverage": {"layer_count": 1, "independent_layer_count": 0, "missing_logic_ids": []},
+        }
+        manifest_path = bundle / "manifest.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        # A leftover PNG at the old path must not take precedence over the manifest.
+        self.assertTrue(cv2.imwrite(str(maps / "map02/4/map02_4.png"), np.zeros((6, 8), dtype=np.uint8)))
+
+        store = CalibratedMapStore(maps)
+        self.assertEqual(store.available_maps(), ["map01", "map02"])
+        _, locator = store.load("map02")
+        self.assertEqual(locator.base.map_image.shape[:2], pixels.shape)
+        self.assertEqual(locator._load(locator.entries[0]).map_image.shape[:2], pixels.shape)
+        _, legacy_png = store.load("map01")
+        self.assertEqual(legacy_png.base.map_image.shape[:2], pixels.shape)
+        self.assertEqual(verify(bundle)["files"], 6)
+        encoded = layer.read_bytes()
+        layer.write_bytes(encoded[:-1] + bytes([encoded[-1] ^ 1]))
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            verify(bundle)
+        layer.write_bytes(encoded)
+
+        webp = maps / "map02/4/map02_4.webp"
+        encoded = webp.read_bytes()
+        webp.unlink()
+        self.assertEqual(store.available_maps(), ["map01"])
+        webp.write_bytes(encoded)
+        manifest_path.unlink()
+        (maps / "map02/4/map02_4.png").unlink()
+        self.assertEqual(store.available_maps(), ["map01", "map02"])
+        self.assertEqual(store.load("map02")[1].base.map_image.shape[:2], pixels.shape)
 
     def test_sampler_scope_reuses_owner_and_closes_after_exceptions(self):
         service = self.service()
@@ -1274,6 +1551,29 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
 
 
 class TestAutomaticMapCompetition(unittest.TestCase):
+    def test_chain_recovery_uses_anchored_map_even_when_active_hint_changes(self):
+        locator = self.locator()
+        locator._cache.update(
+            {
+                mid: SimpleNamespace(locate_near=Mock(return_value=self.result()), locate_global=Mock())
+                for mid in ("map01", "map02")
+            }
+        )
+        anchored = locator._load("map01")
+        other = locator._load("map02")
+        locator._active = "map02"
+        tracker = MinimapTracker(locator)
+        with patch.object(locator, "locate_global", side_effect=AssertionError("cross-map scan")):
+            result = tracker.update(None, None, now=10, recovery_world=(10, 10), recovery_map_id="map01")
+        self.assertEqual(result.locate.best.map_id, "map01")
+        anchored.locate_near.assert_called_once_with(None, (10, 10), None, search_radius_m=80)
+        other.locate_near.assert_not_called()
+        other.locate_global.assert_not_called()
+        # Missing recovery resources cannot silently search another map.
+        missing = tracker.update(None, None, now=10.2, recovery_world=(10, 10), recovery_map_id="missing")
+        self.assertIsNone(missing.locate)
+        self.assertFalse(missing.accepted)
+
     def test_unselected_map_pending_layers_prevent_acceptance(self):
         locator = self.locator()
         ready = self.result(0.99, margin=0.9)
@@ -1477,6 +1777,34 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
 
 class TestVisualLayerCandidates(unittest.TestCase):
+    def test_recovery_checks_only_layers_intersecting_80_meter_circle(self):
+        locator = self.locator(0.6, 0.5)
+        template = locator.entries[0]
+        locator.entries = [
+            {**template, "id": "edge", "bounds": {"west": 80, "east": 100, "south": -10, "north": 10}},
+            {**template, "id": "outside", "bounds": {"west": 81, "east": 100, "south": -10, "north": 10}},
+            {**template, "id": "diagonal", "bounds": {"west": 60, "east": 100, "south": 60, "north": 100}},
+        ]
+        result = locator.locate_near(None, (0, 0), None, search_radius_m=80)
+        self.assertNotEqual(result.reason, "layer_scan_pending")
+        self.assertEqual([call.args[0]["id"] for call in locator._load.call_args_list], ["edge"])
+        locator.base.locate_global.assert_not_called()
+        floor = locator._load.return_value
+        floor.locate_global.assert_not_called()
+        floor.locate_near.assert_called_once_with(None, (0, 0), None, search_radius_m=80)
+
+    def test_no_nearby_layers_needs_no_layer_resources_even_with_weak_base_match(self):
+        locator = self.locator(0.6, 0.99)
+        result = locator.locate_near(None, (101, 10), None, search_radius_m=80)
+        self.assertEqual(result.best.tier_id, "__main__")
+        self.assertNotEqual(result.reason, "layer_scan_pending")
+        locator._load.assert_not_called()
+        locator.base.locate_global.assert_not_called()
+        # Unknown catalog coverage is not proof that the area has no floors.
+        locator.tier_coverage_complete = False
+        result = locator.locate_near(None, (101, 10), None, search_radius_m=80)
+        self.assertIsNone(result.best.tier_id)
+
     def test_failed_sync_layer_backs_off_without_starving_later_layers(self):
         locator = self.locator(0.99, 0.5)
         locator.entries.append({**locator.entries[0], "id": "floor2"})

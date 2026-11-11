@@ -13,16 +13,18 @@ from src.localization.minimap_map_locator import (
     candidate_margin,
     deduplicate_candidates,
     minimap_map_scale,
+    strong_candidate,
 )
 
 
 class MapSetLocator:
     def __init__(self, store, map_ids, *, workers=None):
+        self.color = True
         self.store, self.map_ids = store, tuple(map_ids)
         self.calibration = MapCalibration(
             np.array([[0.25, 0, 0], [0, -0.25, 0]]), np.array([[4.0, 0, 0], [0, -4.0, 0]])
         )
-        self._frame_gate = MinimapMapLocator(np.zeros((1, 1), dtype=np.uint8), self.calibration)
+        self._frame_gate = MinimapMapLocator(np.zeros((1, 1, 3), dtype=np.uint8), self.calibration)
         self._cache = OrderedDict()
         self._active = None
         self._scan_index = 0
@@ -98,12 +100,16 @@ class MapSetLocator:
             spatial_margin=margin,
             layer_margin=chosen_result.layer_margin,
         )
-        if best.ncc >= 0.85 and best.full_ncc >= 0.65 and margin >= 0.08:
+        if strong_candidate(best, margin):
             self._active = best.map_id
         return result
 
     @staticmethod
     def _candidate_status(best, margin):
+        if best.color:
+            if best.ncc < 0.45:
+                return "rejected"
+            return "accepted" if strong_candidate(best, margin) else "ambiguous"
         if best.ncc < 0.55:
             return "rejected"
         if best.ncc >= 0.70 and margin >= 0.15:
@@ -220,7 +226,7 @@ class MapSetLocator:
             )
             self.last_failure_reason = f"minimap_no_map_candidates: {failures}"
             return None
-        strong = combined.confidence >= 0.85 and combined.best.full_ncc >= 0.65 and combined.margin >= 0.08
+        strong = strong_candidate(combined.best, combined.margin)
         available = [mid for mid in self.map_ids if mid in self._cache]
         selected = combined.best.map_id if strong else available[self._scan_index % len(available)]
         if not strong:
@@ -238,7 +244,7 @@ class MapSetLocator:
         result = self.locate_near(frame, (0, 0), geometry, search_radius_m=80, use_global=True)
         if result is not None and result.reason == "layer_scan_pending":
             return result
-        if result is not None and result.confidence >= 0.85 and result.best.full_ncc >= 0.65 and result.margin >= 0.08:
+        if result is not None and strong_candidate(result.best, result.margin):
             return result
         return None
 
@@ -257,3 +263,16 @@ class MapSetLocator:
             self.last_failure_reason = getattr(locator, "last_failure_reason", "") or "minimap_no_candidates"
             self.reset_tracking()
         return self._combine([(self._active, result)], started, previous_world)
+
+    def locate_on_map(self, frame, map_id, previous_world, geometry, *, search_radius_m=80.0):
+        """Bound live-chain recovery to its anchored map, independently of hints."""
+        self.last_failure_reason = ""
+        if map_id not in self._cache:
+            self.last_failure_reason = "visual_recovery_map_unavailable"
+            return None
+        started = time.perf_counter()
+        locator = self._cache[map_id]
+        result = locator.locate_near(frame, previous_world, geometry, search_radius_m=search_radius_m)
+        if result is None:
+            self.last_failure_reason = getattr(locator, "last_failure_reason", "") or "minimap_no_candidates"
+        return self._combine([(map_id, result)], started, previous_world)

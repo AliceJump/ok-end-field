@@ -173,6 +173,7 @@ class MapCandidate:
     inlier_ratio: float = 1.0
     tier_id: str | None = None
     map_id: str | None = None
+    color: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -186,7 +187,18 @@ class MapCandidate:
             "inlier_ratio": self.inlier_ratio,
             "tier_id": self.tier_id,
             "map_id": self.map_id,
+            "color": self.color,
         }
+
+
+def strong_candidate(best, margin, min_ncc=None, min_full=None, min_margin=None):
+    """Apply score thresholds in the candidate's matching space."""
+    defaults = (0.45, 0.45, 0.10) if best.color else (0.85, 0.65, 0.08)
+    thresholds = tuple(
+        default if override is None else override
+        for default, override in zip(defaults, (min_ncc, min_full, min_margin), strict=True)
+    )
+    return best.ncc >= thresholds[0] and best.full_ncc >= thresholds[1] and margin >= thresholds[2]
 
 
 def candidate_margin(candidates) -> float:
@@ -299,7 +311,7 @@ def masked_zncc(left: np.ndarray, right: np.ndarray, mask: np.ndarray) -> float:
     """Zero-normalized cross-correlation over one shared boolean mask."""
 
     selected = np.asarray(mask, dtype=bool)
-    if selected.shape != left.shape or selected.shape != right.shape:
+    if left.shape != right.shape or selected.shape != left.shape[:2]:
         raise ValueError("ZNCC inputs and mask must have the same shape")
     if not selected.any():
         return 0.0
@@ -316,8 +328,10 @@ def _zncc_values(left_values: np.ndarray, right_values: np.ndarray) -> float:
         return 0.0
     left_values = np.asarray(left_values, dtype=np.float64)
     right_values = np.asarray(right_values, dtype=np.float64)
-    left_values -= left_values.mean()
-    right_values -= right_values.mean()
+    left_values -= left_values.mean(axis=0)
+    right_values -= right_values.mean(axis=0)
+    left_values = left_values.ravel()
+    right_values = right_values.ravel()
     # These are short 1-D reductions repeated for every candidate. Dispatching
     # them to a process-wide BLAS thread pool adds latency on the control path.
     left_sq = np.einsum(_DOT_EXPRESSION, left_values, left_values, optimize=False)
@@ -343,13 +357,15 @@ def robust_masked_zncc(
     """
 
     selected = np.asarray(mask, dtype=bool)
-    if selected.shape != left.shape or selected.shape != right.shape:
+    if left.shape != right.shape or selected.shape != left.shape[:2]:
         raise ValueError("ZNCC inputs and mask must have the same shape")
     if not selected.any():
         return NccScore(0.0, 0.0, 0.0)
     left_values = np.asarray(left, dtype=np.float64)[selected]
     right_values = np.asarray(right, dtype=np.float64)[selected]
     full_score = _zncc_values(left_values, right_values)
+    if left.ndim == 3:
+        return NccScore(full_score, full_score, 1.0)
     trim = max(0.0, min(0.60, float(trim_ratio)))
     if left_values.size < 16 or trim <= 0.0:
         return NccScore(full_score, full_score, 1.0)
@@ -529,18 +545,24 @@ class MinimapMapLocator:
         top_k: int = DEFAULT_TOP_K,
         candidate_merge_distance_m: float = DEFAULT_CANDIDATE_MERGE_DISTANCE_M,
         robust_trim_ratio: float = DEFAULT_ROBUST_TRIM_RATIO,
-        min_valid_ncc: float = MIN_VALID_NCC,
-        min_accept_ncc: float = MIN_ACCEPT_NCC,
-        min_accept_margin: float = MIN_ACCEPT_MARGIN,
+        min_valid_ncc: float | None = None,
+        min_accept_ncc: float | None = None,
+        min_accept_margin: float | None = None,
     ) -> None:
-        gray = _as_gray(map_image)
-        if gray is None:
-            raise ValueError("Map image could not be converted to grayscale")
+        image = map_image
+        if isinstance(image, np.ndarray) and image.ndim == 3 and image.shape[2] == 4:
+            image = image[:, :, :3].copy()
+            image[map_image[:, :, 3] == 0] = 0
+        if not isinstance(image, np.ndarray) or image.ndim not in (2, 3):
+            raise ValueError("Map image must be grayscale, BGR or BGRA")
+        if image.ndim == 3 and image.shape[2] != 3:
+            raise ValueError("Map image must be grayscale, BGR or BGRA")
         if not 0 < coarse_factor <= 1:
             raise ValueError("coarse_factor must be in (0, 1]")
         if scale_override is not None and scale_override <= 0:
             raise ValueError("scale_override must be positive")
-        self.map_image = gray
+        self.map_image = image
+        self.color = image.ndim == 3
         self.calibration = calibration
         self.scale_override = scale_override
         self.coarse_factor = float(coarse_factor)
@@ -552,9 +574,15 @@ class MinimapMapLocator:
         self.robust_trim_ratio = float(robust_trim_ratio)
         if not 0.0 <= self.robust_trim_ratio < 1.0:
             raise ValueError("robust_trim_ratio must be in [0, 1)")
-        self.min_valid_ncc = float(min_valid_ncc)
-        self.min_accept_ncc = float(min_accept_ncc)
-        self.min_accept_margin = float(min_accept_margin)
+        self.min_valid_ncc = float(
+            min_valid_ncc if min_valid_ncc is not None else (0.45 if self.color else MIN_VALID_NCC)
+        )
+        self.min_accept_ncc = float(
+            min_accept_ncc if min_accept_ncc is not None else (0.45 if self.color else MIN_ACCEPT_NCC)
+        )
+        self.min_accept_margin = float(
+            min_accept_margin if min_accept_margin is not None else (0.10 if self.color else MIN_ACCEPT_MARGIN)
+        )
         self._mask_cache: OrderedDict[MinimapGeometry, tuple[np.ndarray, np.ndarray]] = OrderedDict()
         self._coarse_cache: dict[tuple[float, float], np.ndarray] = {}
         self.last_failure_reason = ""
@@ -570,7 +598,7 @@ class MinimapMapLocator:
         mapping_path: str | Path,
         **kwargs: Any,
     ) -> MinimapMapLocator:
-        map_image = cv2.imread(str(map_path), cv2.IMREAD_GRAYSCALE)
+        map_image = cv2.imread(str(map_path), cv2.IMREAD_COLOR)
         if map_image is None:
             raise ValueError(f"Could not read map image: {map_path}")
         calibration = MapCalibration.from_mapping_file(mapping_path)
@@ -608,13 +636,13 @@ class MinimapMapLocator:
             return self._reject("minimap_mask_too_small: required_pixels=64")
         mask, mask8 = cached
         roi = frame[y0:y1, x0:x1]
-        ring = _as_gray(roi).copy()
+        ring = roi[:, :, :3].copy() if self.color else _as_gray(roi).copy()
         center = (geometry.center_x - x0, geometry.center_y - y0)
         rim_sectors = None
 
         def texture_valid(pixels, stage):
             nonlocal rim_sectors
-            details = _texture_details(pixels, center, geometry.outer_radius)
+            details = _texture_details(_as_gray(pixels), center, geometry.outer_radius)
             textured = sum(value >= 1.0 for value in details)
             if textured >= 6:
                 return True
@@ -633,13 +661,17 @@ class MinimapMapLocator:
         if not texture_valid(ring, "raw"):
             return None
         visible = self._visible_masks(roi, mask, mask8, half)
+        if self.color and visible is not None:
+            visible = self._white_visible_masks(roi, visible[0], visible[1], half)
         if visible is None:
             return self._reject("minimap_icon_occlusion: required_total=0.55 required_quadrant=0.35")
         mask, mask8 = visible
-        mean = float(ring[mask].mean())
+        mean = ring[mask].mean(axis=0)
         flat = ring.copy()
         flat[~mask] = mean
         if not texture_valid(flat, "masked"):
+            if self.color:
+                return None
             visible = self._legacy_visible_masks(roi, cached[0], cached[1], half)
             if visible is None:
                 return None
@@ -682,6 +714,12 @@ class MinimapMapLocator:
                 self._mask_cache.popitem(last=False)
         self._mask_cache.move_to_end(geometry)
         return cached
+
+    @staticmethod
+    def _white_visible_masks(roi, mask, mask8, half):
+        white = np.all(roi[:, :, :3] == 255, axis=2).astype(np.uint8)
+        excluded = cv2.dilate(white, np.ones((5, 5), dtype=np.uint8))
+        return MinimapMapLocator._checked_visible_masks(mask, excluded, half)
 
     @staticmethod
     def _visible_masks(roi, mask, mask8, half):
@@ -790,6 +828,7 @@ class MinimapMapLocator:
             coarse_score=float(coarse_score),
             full_ncc=score.full_score,
             inlier_ratio=score.inlier_ratio,
+            color=self.color,
         )
 
     def _refine(
@@ -810,7 +849,7 @@ class MinimapMapLocator:
         local_map = self.map_image[y0:y1, x0:x1]
         if local_map.size == 0:
             return None
-        minimum, maximum, _min_location, _max_location = cv2.minMaxLoc(local_map)
+        minimum, maximum = local_map.min(), local_map.max()
         if minimum == maximum:
             return None
         local_map = cv2.resize(local_map, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
@@ -819,7 +858,7 @@ class MinimapMapLocator:
         scores = cv2.matchTemplate(
             local_map,
             template.ring,
-            cv2.TM_CCORR_NORMED,
+            cv2.TM_CCOEFF_NORMED if self.color else cv2.TM_CCORR_NORMED,
             mask=template.mask8,
         )
         scores = _sanitize_scores(scores)
@@ -946,7 +985,7 @@ class MinimapMapLocator:
         local_map = self.map_image[y0:y1, x0:x1]
         if local_map.size == 0:
             return self._reject("minimap_search_outside_map")
-        minimum, maximum, _min_location, _max_location = cv2.minMaxLoc(local_map)
+        minimum, maximum = local_map.min(), local_map.max()
         if minimum == maximum:
             return self._reject("minimap_search_region_blank")
         local_map = cv2.resize(local_map, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
@@ -956,7 +995,7 @@ class MinimapMapLocator:
             cv2.matchTemplate(
                 local_map,
                 template.ring,
-                cv2.TM_CCORR_NORMED,
+                cv2.TM_CCOEFF_NORMED if self.color else cv2.TM_CCORR_NORMED,
                 mask=template.mask8,
             )
         )
@@ -1034,9 +1073,9 @@ class MinimapTracker:
         min_search_radius_m: float = 8.0,
         max_speed_m_s: float = 20.0,
         pending_max_gap_s: float = 0.5,
-        initial_min_ncc: float = 0.85,
-        initial_min_full_ncc: float = 0.65,
-        initial_min_margin: float = 0.08,
+        initial_min_ncc: float | None = None,
+        initial_min_full_ncc: float | None = None,
+        initial_min_margin: float | None = None,
     ) -> None:
         if promote_hits < 1:
             raise ValueError("promote_hits must be >= 1")
@@ -1052,7 +1091,7 @@ class MinimapTracker:
         ):
             raise ValueError("adaptive search and pending thresholds must be finite and positive")
         if not all(
-            math.isfinite(v) and 0 <= v <= 1
+            v is None or (math.isfinite(v) and 0 <= v <= 1)
             for v in (
                 initial_min_ncc,
                 initial_min_full_ncc,
@@ -1060,9 +1099,12 @@ class MinimapTracker:
             )
         ):
             raise ValueError("initial confidence thresholds must be finite and in [0, 1]")
-        self.initial_min_ncc = float(initial_min_ncc)
-        self.initial_min_full_ncc = float(initial_min_full_ncc)
-        self.initial_min_margin = float(initial_min_margin)
+        color = getattr(locator, "color", False) is True
+        self.initial_min_ncc = initial_min_ncc if initial_min_ncc is not None else (0.45 if color else 0.85)
+        self.initial_min_full_ncc = (
+            initial_min_full_ncc if initial_min_full_ncc is not None else (0.45 if color else 0.65)
+        )
+        self.initial_min_margin = initial_min_margin if initial_min_margin is not None else (0.10 if color else 0.08)
         self.min_search_radius_m = min(float(min_search_radius_m), float(search_radius_m))
         self.max_speed_m_s = float(max_speed_m_s)
         self.pending_max_gap_s = float(pending_max_gap_s)
@@ -1139,9 +1181,9 @@ class MinimapTracker:
             best.map_id != previous.map_id
             or best.tier_id is None
             or best.tier_id != previous.tier_id
-            or best.ncc < self.initial_min_ncc
-            or best.full_ncc < self.initial_min_full_ncc
-            or locate.margin < self.initial_min_margin
+            or not strong_candidate(
+                best, locate.margin, self.initial_min_ncc, self.initial_min_full_ncc, self.initial_min_margin
+            )
             or not all(math.isfinite(v) for v in predicted_world)
             or math.hypot(best.world_x - predicted_world[0], best.world_z - predicted_world[1]) > 1.0
             or self._distance(best, previous) > self.consistency_distance_m + self.max_speed_m_s * (now - previous_t)
@@ -1160,6 +1202,8 @@ class MinimapTracker:
         prior_radius_m: float = 50.0,
         prediction_world: tuple[float, float] | None = None,
         prediction_radius_m: float = 35.0,
+        recovery_world: tuple[float, float] | None = None,
+        recovery_map_id: str | None = None,
     ) -> TrackResult:
         """Run one visual frame and update the convinced/pending state."""
 
@@ -1181,9 +1225,24 @@ class MinimapTracker:
             and self._convinced_t is not None
             and 0 <= current - self._convinced_t <= self.stale_after_s
         )
-        result, used_prior, used_prediction = self._locate_frame(
-            frame, geometry, current, fresh, prior_world, prior_radius_m, prediction_world, prediction_radius_m
-        )
+        if recovery_world is not None:
+            # A live visual chain supplies a search region, never an absolute
+            # observation. Keep incomplete local results instead of escalating
+            # to all maps/floors when the last absolute fix becomes stale.
+            locate_on_map = getattr(self.locator, "locate_on_map", None)
+            if callable(locate_on_map):
+                result = locate_on_map(
+                    frame, recovery_map_id, recovery_world, geometry, search_radius_m=self.search_radius_m
+                )
+            else:
+                result = self.locator.locate_near(frame, recovery_world, geometry, search_radius_m=self.search_radius_m)
+            used_prior, used_prediction = True, False
+            if result is not None and result.status != "accepted":
+                result = replace(result, status="rejected")
+        else:
+            result, used_prior, used_prediction = self._locate_frame(
+                frame, geometry, current, fresh, prior_world, prior_radius_m, prediction_world, prediction_radius_m
+            )
         if result is None:
             # Invalid/absent minimaps must invalidate even a recently trusted pose.
             self.reset()
@@ -1320,10 +1379,8 @@ class MinimapTracker:
     def _confirm_acquisition(self, result, current, previous_update, used_prior):
         best = result.best
         # Time alone cannot turn a repeated weak or ambiguous distant match into a fix.
-        if (
-            best.ncc < self.initial_min_ncc
-            or best.full_ncc < self.initial_min_full_ncc
-            or result.margin < self.initial_min_margin
+        if not strong_candidate(
+            best, result.margin, self.initial_min_ncc, self.initial_min_full_ncc, self.initial_min_margin
         ):
             self._pending = None
             self._pending_hits = 0

@@ -7,7 +7,7 @@ import unittest
 from dataclasses import replace
 from itertools import product
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import cv2
 import numpy as np
@@ -32,6 +32,47 @@ from src.localization.minimap_odometry import region_geometry
 
 
 class TestMinimapMapLocatorMath(unittest.TestCase):
+    def test_color_zncc_matches_opencv_without_residual_trimming(self):
+        rng = np.random.default_rng(204)
+        left = rng.integers(0, 256, (24, 24, 3), dtype=np.uint8)
+        right = rng.integers(0, 256, left.shape, dtype=np.uint8)
+        mask = rng.random(left.shape[:2]) > 0.2
+        expected = cv2.matchTemplate(left, right, cv2.TM_CCOEFF_NORMED, mask=mask.astype(np.uint8))[0, 0]
+        actual = robust_masked_zncc(left, right, mask)
+        self.assertAlmostEqual(actual.score, float(expected), places=5)
+        self.assertEqual(actual.score, actual.full_score)
+        self.assertEqual(actual.inlier_ratio, 1.0)
+
+    def test_color_mask_removes_exact_white_with_two_pixel_padding(self):
+        roi = np.zeros((31, 31, 3), dtype=np.uint8)
+        roi[10, 10] = 255
+        roi[20, 20] = 254
+        mask = np.ones((31, 31), dtype=bool)
+        visible, _ = MinimapMapLocator._white_visible_masks(roi, mask, mask.astype(np.uint8) * 255, 15)
+        expected = mask.copy()
+        expected[8:13, 8:13] = False
+        np.testing.assert_array_equal(visible, expected)
+
+    def test_color_tracker_uses_color_score_thresholds(self):
+        calibration = MapCalibration(np.eye(2, 3), np.eye(2, 3))
+        locator = MinimapMapLocator(np.zeros((10, 10, 3), np.uint8), calibration)
+        tracker = MinimapTracker(locator)
+        self.assertEqual(tracker.initial_min_ncc, 0.45)
+        self.assertEqual(tracker.initial_min_full_ncc, 0.45)
+        self.assertEqual(tracker.initial_min_margin, 0.10)
+
+    def test_color_tracker_still_requires_score_margin_and_two_frames(self):
+        for score, margin, expected in ((0.44, 0.20, False), (0.50, 0.09, False), (0.50, 0.12, True)):
+            with self.subTest(score=score, margin=margin):
+                candidate = MapCandidate(40, 40, 10, 10, score, full_ncc=score, tier_id="__main__", color=True)
+                result = LocateResult("accepted", "test", candidate, (candidate,), 0.01, 1, spatial_margin=margin)
+                locator = Mock(color=True)
+                locator.locate_global.return_value = result
+                locator.locate_near.return_value = result
+                tracker = MinimapTracker(locator)
+                self.assertFalse(tracker.update(None, None, now=1).accepted)
+                self.assertEqual(tracker.update(None, None, now=1.2).accepted, expected)
+
     def test_map_world_matrix_and_inverse(self):
         matrix = np.array([[4.0, 0.25, -100.0], [0.5, -4.0, 200.0]])
         homogeneous = np.vstack((matrix, np.array([0.0, 0.0, 1.0])))
@@ -168,7 +209,7 @@ class TestMinimapMapLocatorFiles(unittest.TestCase):
                 scale_override=1.0,
             )
 
-        self.assertEqual(locator.map_image.shape, (10, 20))
+        self.assertEqual(locator.map_image.shape, (10, 20, 3))
         self.assertEqual(locator.calibration.image_width, 20)
         self.assertEqual(locator.calibration.image_height, 10)
 

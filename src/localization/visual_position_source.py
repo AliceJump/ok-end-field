@@ -73,6 +73,7 @@ class VisualPositionSource:
         self._shape = None
         self._origin = None
         self._last_absolute_t = None
+        self._anchor_tier_id = None
         self._last_clock = None
         self._last_state = {}
         self._sequence = 0
@@ -104,6 +105,7 @@ class VisualPositionSource:
         self.keyframe_chain = None
         self._keyframe_tick = self._keyframe_uid = 0
         self._shape = self._origin = self._last_absolute_t = self._last_clock = None
+        self._anchor_tier_id = None
         self._last_state = {}
         self._sequence += 1
 
@@ -203,17 +205,24 @@ class VisualPositionSource:
             predicted_world = self.locator.calibration.map_to_world(*(predicted / self._scale))
             if previous_clock is None or clock - previous_clock > self.tracker.stale_after_s:
                 predicted_world = None
+        recovery_world = None
+        if self._has_live_visual_chain(clock) and self._last_state.get("position_trusted"):
+            recovery_world = predicted_world or (self._last_state["x"], self._last_state["z"])
         match = self.tracker.update(
             frame,
             geometry,
             now=clock,
             prediction_world=predicted_world,
             prediction_radius_m=self.tracker.min_search_radius_m,
+            recovery_world=recovery_world,
+            recovery_map_id=self.map_id,
         )
         match, measured = self._confirm_motion(frame, match, clock, measured)
         # A pending NCC observation may still be propagated for a bounded
         # interval through verified visual edges. Its candidate position is
         # never used as a position.
+        if self._origin is not None and match.locate is not None and self._identity_changed(match.locate.best):
+            return self._lose_tracking(match)
         if not match.accepted and not self._can_continue_visual_chain(match, clock):
             return self._lose_tracking(match)
         delta, anchor, strong = self._update_absolute_anchor(match, clock)
@@ -239,6 +248,7 @@ class VisualPositionSource:
             }
         if not strong and measured and measured.get("reanchored") and not measured.get("benign_reanchor"):
             self.tracker.reset()
+            self._lose_tracking(match)
             return self.unavailable("visual_odometry_lost")
         raw = self._origin + delta
         corrected, chain_result = self._correct_visual_chains(
@@ -257,25 +267,31 @@ class VisualPositionSource:
         return self._publish_visual_state(clock, match, measured, delta, corrected, chain_result, strong)
 
     def _can_continue_visual_chain(self, match, clock):
-        if (
-            match.locate is None
-            or self._origin is None
-            or self._last_absolute_t is None
-            or self.chain is None
-            or self.evidence is None
-            or self.evidence.previous is None
-            or not 0 < clock - self.evidence.previous.time <= self.evidence.max_gap_s
-        ):
-            return False
-        previous = self.tracker._convinced
-        candidate = match.locate.best
-        # A temporary NCC ambiguity can keep the existing layer's visual chain
-        # alive; any map/floor transition or unknown floor evidence breaks it.
+        # Unknown tier is absence of a new floor observation. It cannot replace
+        # the anchor, and propagation still requires fresh edges and the full
+        # inherited error/residual budget below. A known transition breaks it.
         return bool(
-            previous is not None
-            and candidate.map_id in (None, previous.map_id)
-            and candidate.tier_id is not None
-            and candidate.tier_id == previous.tier_id
+            match.locate is not None
+            and self._has_live_visual_chain(clock)
+            and self._anchor_tier_id is not None
+            and not self._identity_changed(match.locate.best)
+        )
+
+    def _has_live_visual_chain(self, clock):
+        return bool(
+            self._origin is not None
+            and self._last_absolute_t is not None
+            and self.chain is not None
+            and self.evidence is not None
+            and self.evidence.previous is not None
+            and self._evidence_result is not None
+            and self._evidence_result.trusted
+            and 0 < clock - self.evidence.previous.time <= self.evidence.max_gap_s
+        )
+
+    def _identity_changed(self, candidate):
+        return candidate.map_id not in (None, self.map_id) or (
+            self._anchor_tier_id is not None and candidate.tier_id not in (None, self._anchor_tier_id)
         )
 
     def _chain_within_error_budget(self, result):
@@ -355,6 +371,7 @@ class VisualPositionSource:
         # Never let a chain propagate through loading, teleportation or loss.
         self._origin = None
         self._last_absolute_t = None
+        self._anchor_tier_id = None
         self.odometry.reset()
         if self.chain is not None:
             self.chain.reset()
@@ -424,9 +441,7 @@ class VisualPositionSource:
         if absolute is None:
             return self._lose_tracking(match)
         x, z = self.locator.calibration.map_to_world(*(corrected / self._scale))
-        tier_trusted = absolute.tier_id is not None and (
-            strong or (self._last_state.get("tier_trusted") and self._last_state.get("tier_id") == absolute.tier_id)
-        )
+        tier_trusted = absolute.tier_id is not None and (strong or self._anchor_tier_id == absolute.tier_id)
         speed = None
         dt = measured.get("dt", 0)
         if measured.get("sampled") and dt > 0:
@@ -457,6 +472,9 @@ class VisualPositionSource:
             "visual_full_ncc": absolute.full_ncc,
             "visual_margin": match.locate.margin,
             "visual_tracking_reason": match.reason,
+            "visual_locate_status": match.locate.status,
+            "visual_locate_reason": match.locate.reason,
+            "visual_candidate_tier_id": match.locate.best.tier_id,
             "visual_anchor_chain_correction_m": chain_result.correction_m if chain_result else None,
             "visual_anchor_chain_reason": chain_result.reason if chain_result else "disabled",
             "visual_anchor_chain_connected": bool(chain_result and chain_result.connected_to_anchor),
@@ -480,6 +498,8 @@ class VisualPositionSource:
             absolute.ncc >= self.tracker.initial_min_ncc
             and absolute.full_ncc >= self.tracker.initial_min_full_ncc
             and match.locate.margin >= self.tracker.initial_min_margin
+            and (absolute.tier_id is not None or match.locate.layer_margin is None)
+            and (self._anchor_tier_id is None or absolute.tier_id == self._anchor_tier_id)
         )
         delta = np.asarray(self.odometry.position_px())
         anchor = np.array([absolute.map_x, absolute.map_y]) * self._scale if strong else None
@@ -488,4 +508,5 @@ class VisualPositionSource:
                 self._sequence += 1
             self._origin = anchor - delta
             self._last_absolute_t = clock
+            self._anchor_tier_id = absolute.tier_id
         return delta, anchor, strong

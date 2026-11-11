@@ -18,6 +18,7 @@ from src.localization.minimap_map_locator import (
     MinimapMapLocator,
     candidate_margin,
     deduplicate_candidates,
+    strong_candidate,
 )
 
 
@@ -40,6 +41,7 @@ def layer_calibration(bounds, width, height):
 class LayeredMinimapLocator:
     def __init__(self, base, map_id, layer_root, catalog):
         self.base, self.map_id = base, map_id
+        self.color = getattr(base, "color", False) is True
         self.calibration = base.calibration
         self.root = Path(layer_root).resolve()
         entries = catalog.get("layers", [])
@@ -121,11 +123,11 @@ class LayeredMinimapLocator:
         if (width, height) != (entry["width"], entry["height"]):
             raise ValueError(f"layer_image_size_mismatch:{key}")
         if image.ndim == 3 and image.shape[2] == 4:
-            gray = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
-            gray[image[:, :, 3] == 0] = 0
-            image = gray
-        elif image.ndim == 3:
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            color = image[:, :, :3].copy()
+            color[image[:, :, 3] == 0] = 0
+            image = color
+        elif image.ndim == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         calibration, (fx, fy) = layer_calibration(entry["bounds"], width, height)
         image = cv2.resize(image, None, fx=fx, fy=fy, interpolation=cv2.INTER_AREA)
         return MinimapMapLocator(image, calibration)
@@ -157,7 +159,7 @@ class LayeredMinimapLocator:
             self._recent = None
             return None
         search_prior = prior
-        if prior is None and base.confidence >= 0.85 and base.best.full_ncc >= 0.65 and base.margin >= 0.08:
+        if prior is None and strong_candidate(base.best, base.margin):
             search_prior = (base.best.world_x, base.best.world_z)
         candidates = [replace(c, tier_id="__main__") for c in base.candidates]
         complete = self.tier_coverage_complete
@@ -187,7 +189,7 @@ class LayeredMinimapLocator:
         spatial_margin = candidate_margin(spatial)
         competing_layers = [c for c in candidates[1:] if c.tier_id != candidates[0].tier_id]
         layer_margin = candidate_margin([candidates[0], *competing_layers])
-        if not complete or layer_margin < 0.08:
+        if not complete or layer_margin < (0.10 if self.color else 0.08):
             # Identical X/Z on two floors can prove position but cannot prove tier.
             candidates[0] = replace(candidates[0], tier_id=None)
         result = LocateResult(
@@ -201,7 +203,7 @@ class LayeredMinimapLocator:
             spatial_margin=spatial_margin,
             layer_margin=layer_margin,
         )
-        if result.confidence >= 0.85 and result.best.full_ncc >= 0.65 and result.margin >= 0.08:
+        if strong_candidate(result.best, result.margin):
             self._recent = (time.monotonic(), (result.best.world_x, result.best.world_z))
         if scan_pending:
             # Resource warm-up is not evidence of uniqueness. Hold publication
@@ -267,8 +269,7 @@ class LayeredMinimapLocator:
         if self._recent is not None:
             result = self._search(frame, geometry, self._recent[1])
             if result is not None and (
-                result.reason == "layer_scan_pending"
-                or (result.confidence >= 0.85 and result.best.full_ncc >= 0.65 and result.margin >= 0.08)
+                result.reason == "layer_scan_pending" or (strong_candidate(result.best, result.margin))
             ):
                 return result
         return self._search(frame, geometry, base_result=base_result)
