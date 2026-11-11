@@ -6,12 +6,21 @@ from unittest.mock import patch  # 临时禁止定位服务自动重登
 
 from src.localization.capture_position_source import CAPTURE_HEALTH_MISSED_HANDSHAKE, CAPTURE_HEALTH_NO_CONNECTION  # 需要重登的抓包状态
 
+from src.data.FeatureList import FeatureList as fL  # 识别登录入口
 from src.tasks.localization.MinimapRealtimePosition import MinimapRealtimePosition  # 复用共享定位服务
 
 
 class Task(MinimapRealtimePosition):  # MCP 临时采集任务
     def reset_to_start(self):  # 从用户当前所在的位置开始
-        self.ensure_main()  # 必要时退出菜单并回到大世界
+        wait_login = self.wait_login  # 保留普通登录弹窗处理
+
+        def check_login():  # 每次恢复界面时检查是否进入登录页
+            if self.find_one(fL.logout) or self.find_one(fL.login_in):  # 检测登录入口
+                raise RuntimeError("采集前需要手动登录游戏")  # 不自动登录
+            return wait_login()  # 其他状态继续使用正常恢复流程
+
+        with patch.object(self, "wait_login", side_effect=check_login):  # 仅采集准备阶段拦截登录
+            self.ensure_main()  # 必要时退出菜单并回到大世界
 
     def verify_start_state(self):  # 采集前检查游戏状态
         assert self.in_world(), "当前不在大世界"  # 不从菜单开始采集
@@ -31,6 +40,8 @@ class Task(MinimapRealtimePosition):  # MCP 临时采集任务
         with patch.object(service, "ensure_capture_session", side_effect=check_capture_session), path.open("w", encoding="utf-8") as stream:  # 退出时恢复服务方法
             while self.active_time() - started < 300:  # 最多记录五分钟
                 state = self.world_pose(frame=self.next_frame(), max_age=0.6)  # 使用新帧采样
+                if state and state.get("source") == "capture" and not state.get("position_trusted"):  # 旧坐标也可能来自失效连接
+                    check_capture_session(reason="抓包定位不可信")  # 需要重登时停止
                 if state and state.get("position_trusted"):  # 只保留可信位置
                     sample = {key: state.get(key) for key in ("map_id", "x", "z")}  # 保存地图和坐标
                     sample["elapsed"] = self.active_time() - started  # 记录相对时间
