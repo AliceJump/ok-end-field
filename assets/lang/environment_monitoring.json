@@ -154,6 +154,14 @@
     "ko_KR": {"string": "잔영"},
     "es_ES": {"string": "Éthillu"}
   },
+  "vigorous_cistern_slug": {
+    "zh_CN": {"string": "充满活力的蓄水源石虫"},
+    "zh_TW": {"string": "充滿活力的蓄水源石蟲"},
+    "en_US": {"string": "Vigorous Cistern Originium Slug"},
+    "ja_JP": {"string": "活発になっている貯水オリジムシ"},
+    "ko_KR": {"string": "활기찬 저수 원석충"},
+    "es_ES": {"string": "Babosa de Originio de cisterna vigorosa"}
+  },
   "cistern_originium_slugs": {
     "zh_CN": {
       "string": "蓄水源石虫"

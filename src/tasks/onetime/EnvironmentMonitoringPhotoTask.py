@@ -10,7 +10,8 @@ from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到�
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
     AnnularWaterfallRoute,  # 环形瀑布路线
-    CisternOriginiumSlugsRoute,  # 普通源石虫短路线
+    CisternOriginiumSlugsRoute,
+    VigorousCisternSlugRoute,  # 普通源石虫短路线
     EternalSunsetRoute,  # 栖霞驻影网格路线
     MiniShellbeastRoute,  # 小壳兽网格路线
     PoolLotusRoute,  # 小池荷短路线
@@ -21,6 +22,7 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
 
 OBSERVATIONS = {  # 观察点语言键对应路线类
     "pool_lotus": PoolLotusRoute,  # 小池荷向右取景
+    "vigorous_cistern_slug": VigorousCisternSlugRoute,  # 活力源石虫向左取景
     "cistern_originium_slugs": CisternOriginiumSlugsRoute,  # 普通源石虫向左取景
     "thillu": StationaryObservationRoute,  # 表象在传送落点向右取景
     "peach_tree": StationaryObservationRoute,  # 桃树在传送落点即可取景
