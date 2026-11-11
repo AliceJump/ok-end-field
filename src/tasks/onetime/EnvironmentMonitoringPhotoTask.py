@@ -50,7 +50,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
         self.selected_observation = None  # 每次执行重新建立交接信息
         self.navigation = None  # 匹配观察点后创建对应导航组件
-        self.completed_observations = set()  # 本次运行已拍摄的点位
+        self.completed_observations = set()  # 本次运行已处理的点位，包括失败的点位
 
     @staticmethod  # 标题符号不是观察点身份的一部分
     def normalize_title(text):  # 兼容符号、空白与英文大小写差异
@@ -233,18 +233,15 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             self.select_terminal(terminal)  # 选择终端并等待稳定
             for observation in self.available_observations():  # 只考虑可操作卡片
                 identity = self.normalize_title(observation["name"])  # 同名点位不区分终端
-                if identity in self.completed_observations:  # 照片关闭后卡片可能仍显示可操作
+                if identity in self.completed_observations:  # 已成功或失败的点位不再尝试
                     continue  # 本次运行不重复拍摄
                 navigation_class = self.observation_route(observation["name"])  # 只选择已注册路线的点位
                 if not navigation_class:  # 尚未支持的观察点
                     continue  # 跳过尚未支持的委托
+                self.selected_observation = {"name": observation["name"], "terminal": terminal}  # 先记录点位以便失败后跳过
                 self.enter_observation(observation)  # 接取或继续所选观察点
                 self.navigation = navigation_class(self)  # 同一组件负责传送与后续移动
                 self.navigation.transfer()  # 根据点位选择传送方式
-                self.selected_observation = {
-                    "name": observation["name"],
-                    "terminal": terminal,
-                }  # 交给后半流程的上下文
                 self.log_info(f"[environment-monitoring] arrived: {self.selected_observation}")  # 记录实际到达任务
                 return self.selected_observation  # 一次只处理一个观察点
         self.log_info("[environment-monitoring] 没有符合条件的观察点，跳过")  # 没有支持的委托属于正常结果
@@ -389,25 +386,45 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def photograph_observation(self):  # 共用取景与拍照流程
         if not self.prepare_photo()["photo_ready"]:  # 未满足条件时不拍照
-            self.mark_task_failure("未能调整到满足条件的取景角度")  # 复用保留首条失败原因的机制
-            return False  # 日常执行器据此记录失败
+            return False  # 由循环记录当前点位失败
         self.take_photo()  # 拍照并关闭照片预览
         return True  # 预览关闭后才报告成功
+
+    def process_observation(self, observation):
+        self.selected_observation = observation
+        self.navigate_observation(observation)
+        if not self.photograph_observation():
+            raise RuntimeError("未能调整到满足条件的取景角度")
+        self.completed_observations.add(self.normalize_title(observation["name"]))
 
     def run(self):  # GUI 与一键日常共用完整流程
         try:  # 独立运行和一键日常共用执行与失败处理
             self.completed_observations = set()  # 每次运行重新扫描所有点位
+            failures = []  # 汇总各点位的失败原因
+            succeeded = 0  # 只有全部失败才报告任务失败
             for _ in range(6):  # 两个终端各有三张卡片，最多处理六个点位
                 self.navigation = None  # 每轮清除上一次观察点的导航组件
-                observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
-                if observation is None:  # 当前没有符合条件的观察点
-                    return True  # 无任务属于正常完成
-                self.navigate_observation(observation)  # 执行点位导航
-                if not self.photograph_observation():  # 取景失败时不继续下一个点位
-                    return False  # 保留失败结果
-                identity = self.normalize_title(observation["name"])  # 与扫描时使用相同身份
-                self.completed_observations.add(identity)  # 成功关闭预览后才排除重复点位
-            return True  # 达到本次运行的最大点位数
+                self.selected_observation = None  # 避免入口失败误用上一轮点位
+                try:  # 仅已确定点位的失败可以跳过
+                    observation = self.prepare_observation()  # 自动选择当前支持的观察点并传送
+                    if observation is None:  # 当前没有符合条件的观察点
+                        break  # 汇总本次执行结果
+                    self.process_observation(observation)  # 导航并拍照
+                    succeeded += 1  # 拍照成功后计数
+                except TaskDisabledException:  # 用户中止必须立即传递
+                    raise  # 不继续下一个点位
+                except Exception as error:  # 已选择的点位失败时记录并跳过
+                    if not self.selected_observation:  # 入口或扫描失败不能归属于某一点位
+                        raise  # 由外层报告并终止
+                    name = self.selected_observation["name"]  # 使用实际选择的点位名称
+                    self.completed_observations.add(self.normalize_title(name))  # 避免重复失败
+                    failures.append(f"{name}: {error}")  # 保留每个点位的失败原因
+                    self.log_info(f"[environment-monitoring] 观察点失败：{name}: {error}")  # 部分成功时仍可查看失败点位
+                    self.ensure_main()  # 无法恢复时由外层终止
+            if failures and not succeeded:  # 有尝试且全部失败
+                self.mark_task_failure(self.tr("环境监测执行失败：{error}").format(error="; ".join(failures)))  # 汇总原因
+                return False  # 日常任务报告失败
+            return True  # 无委托或至少一个成功
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器
             raise  # 不将用户中止当成普通失败
         except Exception as error:  # 当前点位不可用或取景失败
