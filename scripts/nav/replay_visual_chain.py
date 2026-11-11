@@ -140,8 +140,10 @@ def replay(path: Path, *, root: Path = ROOT, max_error_m=40.0) -> dict:
 
 
 def _validate_output_not_input(recordings, output):
+    """Reject path aliases and hard links to recordings or referenced images."""
+    output_exists = output.exists()
     for recording in recordings:
-        if output == recording:
+        if output == recording or (output_exists and output.samefile(recording)):
             raise ValueError("output_must_not_overwrite_recording")
         for line in recording.read_text(encoding="utf-8").splitlines():
             if not line.strip():
@@ -154,7 +156,7 @@ def _validate_output_not_input(recordings, output):
                 must_exist=True,
                 relative_to_root=True,
             )
-            if output == patch:
+            if output == patch or (output_exists and output.samefile(patch)):
                 raise ValueError("output_must_not_overwrite_patch")
 
 

@@ -1233,8 +1233,15 @@ class MinimapTracker:
             geometry,
             search_radius_m=self.search_radius_m,
         )
+        self._prediction_verified = None
+        self._prediction_verified_t = None
+        self._prediction_margin = 0.0
         if wide is None:
             return replace(result, reason="prediction_competition_unavailable", spatial_margin=0.0)
+        if wide.status == "rejected":
+            # An incomplete/invalid search cannot prove absence of competitors.
+            # Keep the local observation for visual propagation, never promotion.
+            return replace(result, reason=f"prediction_{wide.reason}", spatial_margin=0.0)
         competitors = [
             candidate
             for candidate in wide.candidates
@@ -1243,7 +1250,7 @@ class MinimapTracker:
             or math.hypot(candidate.world_x - best.world_x, candidate.world_z - best.world_z)
             > self.consistency_distance_m
         ]
-        wide_margin = candidate_margin([best, *competitors])
+        wide_margin = min(wide.margin, candidate_margin([best, *competitors]))
         if wide.status == "accepted" and wide_margin >= self.initial_min_margin:
             self._prediction_verified_t = now
             self._prediction_verified = best

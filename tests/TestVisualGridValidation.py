@@ -1,16 +1,18 @@
 """离线验证覆盖与时间对齐，禁止测试向游戏发送输入。"""
 
+import io
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import numpy as np
 
 from scripts.nav.path_safety import resolve_under
 from scripts.nav.validate_visual_grid import report_accuracy
-from scripts.nav.validation_task import pose_scope_status
+from scripts.nav.validation_task import GridValidationTask, pose_scope_status
 from scripts.nav.visual_validation import (
     NavigationSourcePolicy,
     align_reference,
@@ -25,6 +27,39 @@ from src.nav.grid_io import DenseGrid, GridMeta
 
 
 class TestVisualGridValidation(unittest.TestCase):
+    def test_reference_map_change_stops_even_without_usable_visual_pose(self):
+        for pose in (
+            {"position_trusted": True, "tier_id": None, "tier_trusted": False},
+            {"position_trusted": False},
+            {"position_trusted": True, "visual_duplicate_frame": True},
+        ):
+            for reference_map in ("map02", "map01"):
+                with self.subTest(pose=pose, reference_map=reference_map):
+                    task = SimpleNamespace(
+                        stop_reason="",
+                        absolute={},
+                        samples=[],
+                        sample_log=io.StringIO(),
+                        _grid_nav_w_held=False,
+                        covered=set(),
+                        traversed=set(),
+                        grid=SimpleNamespace(meta=SimpleNamespace(map_name="map02")),
+                        reference=SimpleNamespace(snapshot=Mock(return_value=({"mapId": reference_map}, 100, None))),
+                        _stop_inputs=Mock(),
+                    )
+                    task._check_stop = lambda task=task: GridValidationTask._check_stop(task)
+                    state = {"frame_t": 100, "map_id": "map02", "frame_time_source": "wgc_system_relative_time", **pose}
+                    with patch("scripts.nav.validation_task.time.time", return_value=100):
+                        if reference_map == "map01":
+                            with self.assertRaisesRegex(RuntimeError, "map_or_tier_changed"):
+                                GridValidationTask._observe(task, state)
+                            task._stop_inputs.assert_called_once()
+                        else:
+                            GridValidationTask._observe(task, state)
+                            task._stop_inputs.assert_not_called()
+                    self.assertEqual(len(task.samples), 1)
+                    self.assertFalse(task.covered or task.traversed)
+
     def test_unknown_tier_waits_but_confirmed_other_tier_stops(self):
         base = {"map_id": "map02", "tier_evidence_required": True, "position_trusted": True}
         self.assertEqual(pose_scope_status({**base, "tier_id": None, "tier_trusted": False}, "map02"), "tier_pending")

@@ -47,6 +47,7 @@ from src.localization.position_config_migration import (
     migrate_visual_map_root,
 )
 from src.localization.position_service import WorldPoseService
+from src.localization.visual_capture_coordination import VisualCaptureCoordinator
 from src.localization.visual_pose_sampling import VisualPoseSampler
 from src.localization.visual_position_source import VisualPositionSource
 from src.localization.wgc_frame_timing import FrameTiming, timing_for_frame
@@ -337,6 +338,35 @@ class TestVisualPositionSource(unittest.TestCase):
         initial = source.sample(self.frame(), now=1.2)
         self.assertTrue(initial["position_trusted"])
         return source, initial
+
+    def test_rejected_prediction_competition_cannot_reset_visual_budget_or_anchor_age(self):
+        source, _ = self._layered_source()
+        self.addCleanup(source.close)
+        initial = source.sample(self.frame(504), now=1.4)
+        locate = source.locator.locate_near
+        anchor_time = source._last_absolute_t
+        anchor_budget = initial["visual_chain_error_budget_m"]
+        wide_calls = []
+
+        def pending_layers(*args, **kwargs):
+            result = locate(*args, **kwargs)
+            if kwargs["search_radius_m"] == source.tracker.search_radius_m:
+                wide_calls.append(result)
+                return replace(result, status="rejected", reason="layer_scan_pending", spatial_margin=0.0)
+            return result
+
+        with patch.object(source.locator, "locate_near", side_effect=pending_layers):
+            for index in range(7):
+                now = 2.6 + index * 0.4
+                state = source.sample(self.frame(506 + index * 2), now=now)
+                self.assertTrue(state["position_trusted"], state)
+                self.assertFalse(state["absolute_position_valid"], state)
+                self.assertEqual(source._last_absolute_t, anchor_time)
+                self.assertAlmostEqual(state["visual_absolute_anchor_age_s"], now - anchor_time)
+                # Direct keyframe checks can shorten the path, but cannot reset
+                # its inherited cost to a newly acquired absolute anchor's cost.
+                self.assertGreater(state["visual_chain_error_budget_m"], anchor_budget)
+        self.assertEqual(len(wide_calls), 7)
 
     def test_strong_map_and_independent_motion_confirm_short_control_gap(self):
         source, initial = self._layered_source()
@@ -1601,13 +1631,121 @@ class TestVisualLayerCandidates(unittest.TestCase):
 
 
 class TestVisualPoseSampler(unittest.TestCase):
-    def test_capture_budget_yields_before_navigation_busy_retry(self):
-        sampler = VisualPoseSampler(SimpleNamespace(), Mock(), lambda: True)
-        self.assertGreater(sampler.capture_timeout, 0)
-        self.assertLess(sampler.capture_timeout, 0.1)
+    def test_delayed_probe_does_not_send_real_executor_into_busy_retry(self):
+        from ok.device.capture_methods.windows_graphics import WindowsGraphicsCaptureMethod
+        from ok.task.TaskExecutor import TaskExecutor
+
+        entered, release, navigating = (threading.Event() for _ in range(3))
+        frame = np.zeros((20, 20, 4), np.uint8)
+        capture = object.__new__(WindowsGraphicsCaptureMethod)
+        capture.exit_event = threading.Event()
+        capture.get_frame_lock = threading.RLock()
+        capture._size = (0, 0)
+
+        def delayed_capture(frame_deadline=None):
+            if frame_deadline is not None:
+                entered.set()
+                if not release.wait(3):
+                    raise RuntimeError("test did not release probe")
+            return frame
+
+        capture._do_get_frame = delayed_capture
+        original = capture.get_frame
+        executor = SimpleNamespace(
+            method=capture,
+            exit_event=capture.exit_event,
+            reset_scene=Mock(),
+            check_enabled=Mock(),
+            can_capture=lambda: True,
+            blur_overlay_processor=None,
+            sleep=Mock(side_effect=AssertionError("probe caused foreground retry sleep")),
+        )
+        results, errors = [], []
+
+        def navigate():
+            navigating.set()
+            try:
+                results.append(TaskExecutor.next_frame(executor))
+            except Exception as exc:
+                errors.append(exc)
+
+        sampler = VisualPoseSampler(capture, Mock(), lambda: True, interval=0.01)
+        sampler.start()
+        worker = threading.Thread(target=navigate)
+        try:
+            self.assertTrue(entered.wait(2))
+            worker.start()
+            self.assertTrue(navigating.wait(2))
+            # Exceed TaskExecutor's real 0.1 s lock timeout while the probe
+            # holds the actual WGC request lock, as slow compositing can do.
+            worker.join(0.2)
+            self.assertTrue(worker.is_alive())
+            sampler.stopped.set()
+        finally:
+            release.set()
+            if worker.ident is not None:
+                worker.join(3)
+            sampler.close()
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 1)
+        np.testing.assert_array_equal(results[0], frame[:, :, :3])
+        executor.sleep.assert_not_called()
+        self.assertEqual(capture.get_frame, original)
+        self.assertNotIn("get_frame", vars(capture))
+
+    def test_foreground_capture_blocks_new_probes_and_restores_override(self):
+        entered, release = threading.Event(), threading.Event()
+
+        def foreground(*args, **kwargs):
+            entered.set()
+            release.wait(3)
+
+        capture = SimpleNamespace(get_frame=foreground, get_frame_for_probe=Mock())
+        requests = VisualCaptureCoordinator(capture)
+        requests.install()
+        worker = threading.Thread(target=capture.get_frame)
+        worker.start()
+        try:
+            self.assertTrue(entered.wait(2))
+            from ok.task.exceptions import CaptureBusyException
+
+            with self.assertRaises(CaptureBusyException):
+                requests.get_frame_for_probe(0.08)
+            capture.get_frame_for_probe.assert_not_called()
+        finally:
+            release.set()
+            worker.join(3)
+            requests.close()
+        self.assertIs(capture.get_frame, foreground)
+
+    def test_failed_probe_releases_foreground_and_failed_start_restores_capture(self):
+        capture = SimpleNamespace(
+            get_frame=Mock(), get_frame_for_probe=Mock(side_effect=RuntimeError("capture failed"))
+        )
+        original = capture.get_frame
+        requests = VisualCaptureCoordinator(capture)
+        requests.install()
+        try:
+            with self.assertRaisesRegex(RuntimeError, "capture failed"):
+                requests.get_frame_for_probe(0.08)
+            self.assertFalse(requests._probe_active)
+            capture.get_frame(busy_wait=0.1)
+            original.assert_called_once_with(busy_wait=0.1)
+        finally:
+            requests.close()
+        sampler = VisualPoseSampler(capture, Mock(), lambda: True)
+        with (
+            patch.object(sampler.thread, "start", side_effect=RuntimeError("start failed")),
+            self.assertRaisesRegex(RuntimeError, "start failed"),
+        ):
+            sampler.start()
+        self.assertIs(capture.get_frame, original)
 
     def test_observation_error_is_logged_and_sampling_continues(self):
-        capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 3), np.uint8)))
+        capture = SimpleNamespace(
+            get_frame=Mock(), get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 3), np.uint8))
+        )
         continued = threading.Event()
         calls = []
 
@@ -1643,7 +1781,7 @@ class TestVisualPoseSampler(unittest.TestCase):
             continued.set()
             return frame
 
-        capture = SimpleNamespace(get_frame_for_probe=get_frame)
+        capture = SimpleNamespace(get_frame=Mock(), get_frame_for_probe=get_frame)
         sampler = VisualPoseSampler(capture, Mock(), lambda: True, interval=0.01)
         with (
             patch("src.localization.visual_pose_sampling.timing_for_frame", return_value=object()),
@@ -1662,6 +1800,7 @@ class TestVisualPoseSampler(unittest.TestCase):
         timing = FrameTiming(100.0, 1, 100.0, 0.0001)
         capture = SimpleNamespace(
             lock=threading.RLock(),
+            get_frame=Mock(),
             get_frame_for_probe=Mock(return_value=frame),
             _localization_timed_image=weakref.ref(frame),
             _localization_frame_timing=timing,
@@ -1680,7 +1819,9 @@ class TestVisualPoseSampler(unittest.TestCase):
             sampler.close()
 
     def test_sampling_progresses_during_blocked_control_and_stops_on_close(self):
-        capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 4), np.uint8)))
+        capture = SimpleNamespace(
+            get_frame=Mock(), get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 4), np.uint8))
+        )
         observed = threading.Event()
         calls = []
 
@@ -1703,7 +1844,9 @@ class TestVisualPoseSampler(unittest.TestCase):
         self.assertTrue(all(call.args == (0.01,) for call in capture.get_frame_for_probe.call_args_list))
 
     def test_paused_or_untimed_frames_do_not_create_observations(self):
-        capture = SimpleNamespace(get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 3), np.uint8)))
+        capture = SimpleNamespace(
+            get_frame=Mock(), get_frame_for_probe=Mock(return_value=np.zeros((20, 20, 3), np.uint8))
+        )
         observe = Mock()
         checked = threading.Event()
 
@@ -1743,7 +1886,9 @@ class TestVisualPoseSampler(unittest.TestCase):
             return np.zeros((20, 20, 3), np.uint8)
 
         observe = Mock()
-        sampler = VisualPoseSampler(SimpleNamespace(get_frame_for_probe=frame), observe, lambda: True, interval=0.01)
+        sampler = VisualPoseSampler(
+            SimpleNamespace(get_frame=Mock(), get_frame_for_probe=frame), observe, lambda: True, interval=0.01
+        )
         with patch("src.localization.visual_pose_sampling.timing_for_frame", return_value=object()):
             sampler.start()
             self.assertTrue(entered.wait(2))

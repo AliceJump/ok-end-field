@@ -69,6 +69,44 @@ class TestAnchorDropoutValidation(unittest.TestCase):  # 验证实验本身而�
                 report = replay(recording, root=root)
             self.assertEqual(report["max_error_m"], 40.0)
 
+    def test_replay_refuses_hard_links_to_any_input(self):
+        for target in ("recording", "patch"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                patch_path = root / "map.png"
+                patch_path.write_bytes(b"original image")
+                recording = root / "recording.jsonl"
+                recording.write_text('{"patch": "map.png"}\n', encoding="utf-8")
+                original = {path: path.read_bytes() for path in (recording, patch_path)}
+                output = root / "report.json"
+                output.hardlink_to(recording if target == "recording" else patch_path)
+                argv = ["replay_visual_chain.py", "--output", str(output), str(recording)]
+                with (
+                    patch.object(replay_visual_chain.sys, "argv", argv),
+                    patch.object(replay_visual_chain, "ROOT", root),
+                    patch.object(
+                        replay_visual_chain, "replay", side_effect=AssertionError("input conflict must stop replay")
+                    ) as run,
+                    self.assertRaisesRegex(ValueError, f"output_must_not_overwrite_{target}"),
+                ):
+                    replay_visual_chain.main()
+                run.assert_not_called()
+                for path, content in original.items():
+                    self.assertEqual(path.read_bytes(), content)
+
+    def test_replay_allows_distinct_output_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            patch_path = root / "map.png"
+            patch_path.write_bytes(b"original image")
+            recording = root / "recording.jsonl"
+            recording.write_text('{"patch": "map.png"}\n', encoding="utf-8")
+            output = root / "report.json"
+            replay_visual_chain._validate_output_not_input([recording], output)
+            output.write_bytes(b"previous report")
+            replay_visual_chain._validate_output_not_input([recording], output)
+            self.assertEqual(output.read_bytes(), b"previous report")
+
     def reference(self, t, x, z=0, **extra):  # 生成同会话独立轨迹
         return {"time": t, "x": x, "z": z, "mapId": "map02", "flow": 1, "scene": 102, **extra}  # 字段与抓包一致
 

@@ -177,6 +177,10 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         self.samples.append(row)  # 包括失败帧用于可用率统计
         self.sample_log.write(json.dumps(row, ensure_ascii=False) + "\n")  # 原始证据不因停止丢失
         self.sample_log.flush()  # 每帧落盘
+        if latest.get("mapId") != self.grid.meta.map_name:
+            # Reference identity is a run invariant, independent of visual readiness.
+            self.stop_reason = "map_or_tier_changed"
+            self._check_stop()
         if not state.get("position_trusted") or state.get("visual_duplicate_frame"):  # 失败帧不能算覆盖
             return  # 正式导航负责停车与重新定位
         if state.get("frame_time_source") != "wgc_system_relative_time":  # 本测试需要准确时间轴
@@ -185,7 +189,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         scope = pose_scope_status(state, self.grid.meta.map_name)
         if scope == "tier_pending":  # 未知楼层不是换层，等待可靠楼层证据
             return
-        if scope != "record" or latest.get("mapId") != self.grid.meta.map_name:
+        if scope != "record":
             self.stop_reason = "map_or_tier_changed"  # 保留地图身份
             self._check_stop()  # 不跨场景继续
         point = (float(state["x"]), float(state["z"]))  # 视觉验证覆盖只读取视觉输出
