@@ -23,6 +23,7 @@ from scripts.nav.visual_validation import (  # 复用可离线验证算法
     align_reference,
     connected_region,
     coverage_targets,
+    duplicate_observation,
     error_statistics,
 )
 from src.localization.capture_position_source import CapturePositionSource  # 只读取已开启的抓包后端
@@ -108,7 +109,7 @@ def report_accuracy(samples, references):  # 结束后用完整轨迹重新对�
     for row in samples:  # 不将无可信坐标的帧算成成功
         pose = row["pose"]  # 当前帧的视觉状态
         if (
-            pose.get("source") == "capture" or not pose.get("position_trusted") or pose.get("visual_duplicate_frame")
+            pose.get("source") == "capture" or not pose.get("position_trusted") or duplicate_observation(row)
         ):  # 抓包自身不能当作视觉精度样本
             continue  # 仍在原始日志中保留失败原因
         eligible += 1  # 本帧满足视觉信任门槛

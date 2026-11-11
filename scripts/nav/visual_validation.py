@@ -10,6 +10,11 @@ import numpy as np  # 批量计算覆盖率和误差分位数
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid  # 复用网格格式与临时副本
 
 
+def duplicate_observation(row):
+    """Use consumer-local identity when available, retaining compatibility with older logs."""
+    return row.get("validation_duplicate", row["pose"].get("visual_duplicate_frame", False))
+
+
 def navigation_pose_ready(pose):  # 与正式导航保持同样的楼层确认前置条件
     return bool(
         pose and pose.get("position_trusted") and (not pose.get("tier_evidence_required") or pose.get("tier_trusted"))

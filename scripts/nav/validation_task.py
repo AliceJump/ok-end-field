@@ -15,6 +15,7 @@ from scripts.nav.visual_validation import (
     ReferenceTimeline,
     align_reference,
     connected_region,
+    duplicate_observation,
     navigation_pose_ready,
     nearby_cells,
     temporary_obstacle_grid,
@@ -50,7 +51,6 @@ def coverage_pose_ready(state, map_id):
     """Require an independent, timestamped visual observation in the validation scope."""
     return (
         state.get("position_trusted")
-        and not state.get("visual_duplicate_frame")
         and state.get("frame_time_source") == "wgc_system_relative_time"
         and pose_scope_status(state, map_id) == "record"
     )
@@ -58,7 +58,7 @@ def coverage_pose_ready(state, map_id):
 
 def paired_visual_reference(row, timeline, map_id):
     """Apply the same eligibility and temporal pairing contract online and in the report."""
-    if not coverage_pose_ready(row["pose"], map_id):
+    if duplicate_observation(row) or not coverage_pose_ready(row["pose"], map_id):
         return None
     return align_reference(timeline, row["frame_t"], map_id, flow=row["flow"], stationary=row["stationary_reference"])
 
@@ -66,6 +66,7 @@ def paired_visual_reference(row, timeline, map_id):
 class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 与 EfInteraction
     validation = None  # 由命令行入口在启动前注入本次参数
     stop_reason = ""  # 不在任务未运行时启用测试限制
+    validation_failure = ""  # 验证失败不由监视线程的停止请求覆盖
     navigation_running = False  # 仅记录当前正式导航调用的警告
 
     def log_warning(self, message, *args, **kwargs):  # 保留生产失败原因供结构化报告使用
@@ -155,9 +156,9 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
                 interaction.send_key_up(key)  # EfInteraction 负责失焦时安全松键
 
     def _check_stop(self):  # 任务可中断的等待点与导航观测点共用此检查
-        if self.stop_reason:  # F8、失焦或误差保护已触发
+        if self.validation_failure or self.stop_reason:  # F8、失焦或误差保护已触发
             self._stop_inputs()  # 先保证停止移动
-            raise RuntimeError(self.stop_reason)  # 由本任务保存部分结果
+            raise RuntimeError(self.validation_failure or self.stop_reason)  # 由本任务保存部分结果
 
     def sleep(self, timeout):  # 保留框架的暂停、禁用与画面刷新行为
         self._check_stop()  # 等待前检查现场停止请求
@@ -188,11 +189,18 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             self.stop_reason = "reference_unavailable_or_dead_flow"  # 不用旧会话当真值
             self._check_stop()  # 停下并留存现场
         stamp = float(state.get("frame_t") or 0)  # 使用生产服务的 WGC 呈现时间
+        identifiable = (
+            math.isfinite(stamp) and stamp > 0 and state.get("frame_time_source") == "wgc_system_relative_time"
+        )
+        duplicate = stamp in self._observed_frames if identifiable else bool(state.get("visual_duplicate_frame"))
+        if identifiable:
+            self._observed_frames.add(stamp)
         row = {
             "frame_t": stamp,
             "observed_at": time.time(),
             "frame_age_s": time.time() - stamp,
             "pose": dict(state),
+            "validation_duplicate": duplicate,  # 缓存命中不等于本验证器已消费该帧
             "absolute": self.absolute,
             "navigation_source": navigation_source,  # 区分独立视觉观测与实际控制来源
             "flow": latest.get("flow"),
@@ -207,7 +215,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             # Reference identity is a run invariant, independent of visual readiness.
             self.stop_reason = "map_or_tier_changed"
             self._check_stop()
-        if state.get("position_trusted") and not state.get("visual_duplicate_frame"):
+        if state.get("position_trusted"):
             if state.get("frame_time_source") != "wgc_system_relative_time":
                 self.stop_reason = "missing_wgc_presentation_timestamp"
                 self._check_stop()
@@ -215,7 +223,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             if scope not in ("record", "tier_pending"):
                 self.stop_reason = "map_or_tier_changed"
                 self._check_stop()
-            if scope == "record":
+            if scope == "record" and not duplicate:
                 self.traversed.update(
                     nearby_cells(self.region, self.grid.index_of_world(state["x"], state["z"]), self.coverage_steps)
                 )
@@ -224,9 +232,14 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
 
     def _process_reference_samples(self, references, *, final=False):
         """Drain observations in capture order, retaining frames awaiting a right reference."""
+        if self.validation_failure:
+            return
         timeline = ReferenceTimeline(references or [])
         while self._validation_cursor < len(self.samples):
             row = self.samples[self._validation_cursor]
+            if duplicate_observation(row):
+                self._validation_cursor += 1
+                continue  # Re-reading a consumed frame neither adds evidence nor breaks its error streak.
             pose, stamp = row["pose"], row["frame_t"]
             reference = paired_visual_reference(row, timeline, self.grid.meta.map_name)
             awaiting_right = not timeline.times or stamp > timeline.times[-1]
@@ -248,7 +261,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
                     nearby_cells(self.region, self.grid.index_of_world(pose["x"], pose["z"]), self.coverage_steps)
                 )
             if self.error_hits >= 3:
-                self.stop_reason = self.stop_reason or f"sustained_position_error: {distance:.2f}m"
+                self.validation_failure = f"sustained_position_error: {distance:.2f}m"
                 break
 
     def _write_progress(self, point):  # 视觉失败时仍报告抓包续跑进度
@@ -411,6 +424,8 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         self.options, self.grid, self.region, targets, self.directory, plan = self.validation  # 获取本次有限计划
         self.samples, self.covered, self.arrived = [], set(), []  # 保留真实采样进度
         self._validation_cursor = 0
+        self._observed_frames = set()
+        self.validation_failure = ""
         self.covered.update(self.options.resume_covered)  # 续跑仅继承已验证覆盖
         self.traversed = set(self.options.resume_traversed) | self.covered  # 总遍历范围包括历史视觉覆盖
         self.source_policy = NavigationSourcePolicy(self.options.capture_fallback)  # 只有显式授权才接管
@@ -562,10 +577,9 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             if self.last_frame is not None:  # 只保存无账户标识的小地图区域
                 cv2.imwrite(str(self.directory / "last_hud.png"), self.last_frame[:280, :340])  # 留下定位证据
         references = self.reference.snapshot()[2] if self.reference is not None else []
-        previous_stop = self.stop_reason
         self._process_reference_samples(references, final=True)
-        if self.stop_reason and not previous_stop:
-            status, reason = "stopped", self.stop_reason
+        if self.validation_failure:
+            status, reason = "stopped", self.validation_failure
         elif reason == "connected_region_traversed":
             status = "completed" if self.traversed == self.covered else "completed_with_visual_gaps"
         verified = self._reference_verified_cells(references)
@@ -573,6 +587,8 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             **plan,
             "status": status,
             "reason": reason,
+            "stop_request": self.stop_reason,
+            "validation_failure": self.validation_failure,
             "elapsed_s": time.monotonic() - started,
             "covered_cells": len(self.covered),
             "reference_verified_cells": len(verified),
@@ -637,6 +653,8 @@ def run_validation_task(args, grid, region, targets, directory, plan):  # 使用
         runtime.quit()  # 设置执行器退出事件
         runtime.task_executor.destroy()  # 释放输入、设备和定位服务
     report = getattr(task, "report", {})  # 任务可能在初始化阶段就失败
+    if report.get("validation_failure"):
+        return 1
     return (
         0
         if report.get("status") == "completed"
