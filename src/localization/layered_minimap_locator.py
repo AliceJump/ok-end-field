@@ -11,6 +11,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from src.localization.layer_search_index import LayerSearchIndex
 from src.localization.localization_workers import ResourcePending
 from src.localization.minimap_map_locator import (
     LocateResult,
@@ -66,6 +67,9 @@ class LayeredMinimapLocator:
         self._resource_workers = None
         self._pending_layers = {}
         self._resource_retry_at = {}
+        self._search_index = None
+        self._pending_index = None
+        self._proposal_index = 0
         self.tier_coverage_complete = not any(
             str(k).startswith(f"scene_{map_id}_") for k in catalog.get("missing_logic_ids", [])
         )
@@ -152,7 +156,7 @@ class LayeredMinimapLocator:
         dz = max(b["south"] - prior[1], 0, prior[1] - b["north"])
         return math.hypot(dx, dz) <= radius
 
-    def _search(self, frame, geometry, prior=None, radius=80.0, *, base_result=None):
+    def _search(self, frame, geometry, prior=None, radius=80.0, *, base_result=None, extra_candidates=()):
         started = time.perf_counter()
         base = self._base_result(frame, geometry, prior, radius, base_result)
         if base is None:
@@ -162,6 +166,7 @@ class LayeredMinimapLocator:
         if prior is None and strong_candidate(base.best, base.margin):
             search_prior = (base.best.world_x, base.best.world_z)
         candidates = [replace(c, tier_id="__main__") for c in base.candidates]
+        candidates.extend(extra_candidates)
         complete = self.tier_coverage_complete
         scan_pending = False
         entries = self.entries
@@ -205,6 +210,7 @@ class LayeredMinimapLocator:
         )
         if strong_candidate(result.best, result.margin):
             self._recent = (time.monotonic(), (result.best.world_x, result.best.world_z))
+            self._proposal_index = 0
         if scan_pending:
             # Resource warm-up is not evidence of uniqueness. Hold publication
             # until all nearby floor alternatives have been checked on one frame.
@@ -263,7 +269,7 @@ class LayeredMinimapLocator:
                 candidates.extend(self._world_candidates(result, entry))
         return candidates, complete, pending
 
-    def locate_global(self, frame, geometry, *, base_result=None):
+    def locate_global(self, frame, geometry, *, base_result=None, use_index=True):
         # This is only a search hint; publication freshness belongs to the
         # tracker. Resource decoding and turning must not erase the ROI hint.
         if self._recent is not None:
@@ -272,7 +278,69 @@ class LayeredMinimapLocator:
                 result.reason == "layer_scan_pending" or (strong_candidate(result.best, result.margin))
             ):
                 return result
+        base_result = base_result or self.base.locate_global(frame, geometry)
+        if use_index and base_result is not None and not strong_candidate(base_result.best, base_result.margin):
+            try:
+                proposals = self.rank_layers(frame, geometry)
+                if proposals and self._proposal_index < min(8, len(proposals)):
+                    result = self.locate_proposed_layer(frame, geometry, proposals[self._proposal_index][1])
+                    if result is not None:
+                        if result.reason != "layer_scan_pending" and not strong_candidate(result.best, result.margin):
+                            self._proposal_index += 1
+                        return result
+                    self._proposal_index += 1
+                else:
+                    self._proposal_index = 0
+            except ResourcePending:
+                return replace(base_result, status="rejected", reason="layer_scan_pending", spatial_margin=0)
         return self._search(frame, geometry, base_result=base_result)
+
+    def rank_layers(self, frame, geometry):
+        """Rank only; coarse scores can never become accepted coordinates."""
+        if not self.entries:
+            return []
+        template = self.base._prepare_template(frame, geometry)
+        if template is None:
+            return []
+        self.prepare_layer_index()
+        return self._search_index.rank(template, self._scale(frame.shape[1]))
+
+    def prepare_layer_index(self):
+        """Prepare compact resources without producing visual evidence."""
+        if not self.entries:
+            return
+        if self._search_index is None:
+            if self._resource_workers is None:
+                self._search_index = LayerSearchIndex.build(self.root, self.entries, color=self.color)
+            else:
+                if self._resource_workers.closed:
+                    raise ResourcePending()
+                if self._pending_index is None:
+                    self._pending_index = self._resource_workers.resources.submit(
+                        LayerSearchIndex.build, self.root, tuple(self.entries), color=self.color
+                    )
+                if not self._pending_index.done():
+                    raise ResourcePending()
+                self._search_index = self._pending_index.result()
+                self._pending_index = None
+
+    def locate_proposed_layer(self, frame, geometry, tier_id):
+        entry = next(entry for entry in self.entries if entry["id"] == tier_id)
+        self._pinned_ids = {tier_id}
+        try:
+            floor = self._load(entry)
+        except (OSError, ValueError):
+            return None
+        # Search the entire original floor, not a small ROI around a coarse
+        # peak. Distant lookalikes remain competitors under the original gates.
+        result = floor.locate_global(frame, geometry)
+        if result is None or not strong_candidate(result.best, result.margin):
+            return None
+        candidates = tuple(self._world_candidates(result, entry))
+        if not candidates:
+            return None
+        prior = (result.best.world_x, result.best.world_z)
+        return self._search(frame, geometry, prior, extra_candidates=candidates)
 
     def locate_near(self, frame, previous_world, geometry, *, search_radius_m=80.0):
         return self._search(frame, geometry, previous_world, search_radius_m)

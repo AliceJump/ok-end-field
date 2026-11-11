@@ -6,6 +6,7 @@ from dataclasses import replace
 
 import numpy as np
 
+from src.localization.localization_workers import ResourcePending
 from src.localization.minimap_map_locator import (
     LocateResult,
     MapCalibration,
@@ -33,6 +34,11 @@ class MapSetLocator:
         self._resource_retry_at = {}
         self._resource_errors = {}
         self.last_failure_reason = ""
+        self._cold_layers = False
+        self._proposal_index = 0
+        self._skip_index_once = False
+        self._cold_map_order = ()
+        self._cold_map_cursor = 0
 
     def prewarm(self):
         if self._workers is not None and not self._workers.closed:
@@ -102,6 +108,9 @@ class MapSetLocator:
         )
         if strong_candidate(best, margin):
             self._active = best.map_id
+            self._cold_layers = False
+            self._proposal_index = 0
+            self._cold_map_cursor = 0
         return result
 
     @staticmethod
@@ -215,6 +224,10 @@ class MapSetLocator:
         active_result = self._active_result(frame, geometry)
         if active_result is not None:
             return active_result
+        if self._cold_layers:
+            result = self._locate_cold_layers(frame, geometry, started)
+            if result is not None or self._cold_layers:
+                return result
         # First compare inexpensive main-map searches. Expanding every weak map
         # into every floor makes a cold sample take minutes on a real asset set.
         results = self._compare_base_maps(frame, geometry)
@@ -227,6 +240,18 @@ class MapSetLocator:
             self.last_failure_reason = f"minimap_no_map_candidates: {failures}"
             return None
         strong = strong_candidate(combined.best, combined.margin)
+        use_index = not self._skip_index_once
+        self._skip_index_once = False
+        if not strong and use_index and any(getattr(locator, "entries", ()) for locator in self._cache.values()):
+            # Position ambiguity within one map is not a reason to give every
+            # map equal decode time. This ordering is a hint, never confidence.
+            self._cold_map_order = tuple(
+                mid
+                for mid, _ in sorted(results, key=lambda item: item[1].confidence if item[1] else -1, reverse=True)
+                if getattr(self._cache[mid], "entries", ())
+            )
+            self._cold_layers = True
+            return self._locate_cold_layers(frame, geometry, started)
         available = [mid for mid in self.map_ids if mid in self._cache]
         selected = combined.best.map_id if strong else available[self._scan_index % len(available)]
         if not strong:
@@ -234,9 +259,50 @@ class MapSetLocator:
         locator = self._load(selected)
         if hasattr(locator, "base"):
             base_result = next(r for mid, r in results if mid == selected)
-            layered = locator.locate_global(frame, geometry, base_result=base_result)
+            options = {"use_index": use_index} if callable(getattr(locator, "rank_layers", None)) else {}
+            layered = locator.locate_global(frame, geometry, base_result=base_result, **options)
             results = [(mid, layered if mid == selected else r) for mid, r in results]
         return self._combine(results, started, None)
+
+    def _locate_cold_layers(self, frame, geometry, started):
+        order = self._cold_map_order or tuple(
+            mid for mid, locator in self._cache.items() if callable(getattr(locator, "rank_layers", None))
+        )
+        mid = order[self._cold_map_cursor % len(order)] if order else None
+        try:
+            proposals = self._cache[mid].rank_layers(frame, geometry) if mid else []
+        except ResourcePending:
+            self.last_failure_reason = "layer_index_pending"
+            return None
+        if not proposals or self._proposal_index >= min(8, len(proposals)):
+            # An accelerator miss must still reach the ordinary full scan.
+            self._cold_layers = False
+            self._proposal_index = 0
+            self._skip_index_once = True
+            self._cold_map_cursor += 1
+            self.last_failure_reason = "layer_index_no_confirmed_candidate"
+            return None
+        _, tier = proposals[self._proposal_index]
+        try:
+            result = self._cache[mid].locate_proposed_layer(frame, geometry, tier)
+        except ResourcePending:
+            self.last_failure_reason = "layer_scan_pending"
+            return None
+        if result is None or (
+            result.reason != "layer_scan_pending" and not strong_candidate(result.best, result.margin)
+        ):
+            self._proposal_index += 1
+            self.last_failure_reason = "layer_index_candidate_rejected"
+            return None
+        if result.reason == "layer_scan_pending":
+            return self._combine([(mid, result)], started, None)
+        # Full-resolution competitors from every base map still participate on
+        # this same frame; no thumbnail score is used for confidence/margin.
+        results = self._compare_base_maps(frame, geometry)
+        combined = self._combine([(key, result if key == mid else base) for key, base in results], started, None)
+        if combined is not None and not strong_candidate(combined.best, combined.margin):
+            self._proposal_index += 1
+        return combined
 
     def _active_result(self, frame, geometry):
         if not self._active:

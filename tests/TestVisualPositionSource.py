@@ -28,6 +28,7 @@ from src.core.PositionConfig import (
     DEFAULT_VISUAL_MAP_ROOT,
 )
 from src.localization.calibrated_map_store import CalibratedMapStore
+from src.localization.layer_search_index import LayerSearchIndex
 from src.localization.layered_minimap_locator import LayeredMinimapLocator, layer_calibration
 from src.localization.localization_workers import LocalizationWorkers, ResourcePending
 from src.localization.map_set_locator import MapSetLocator
@@ -1551,6 +1552,91 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
 
 
 class TestAutomaticMapCompetition(unittest.TestCase):
+    def test_within_map_ambiguity_prioritizes_visual_map_order_without_accepting_it(self):
+        locator = self.locator()
+        maps = {
+            mid: SimpleNamespace(entries=[{}], rank_layers=Mock(side_effect=ResourcePending))
+            for mid in ("map01", "map02")
+        }
+        locator._cache.update(maps)
+        locator._frame_gate._prepare_template = Mock(return_value=object())
+        locator._warm_base_resources = Mock(return_value=True)
+        locator._compare_base_maps = Mock(
+            return_value=[("map01", self.result(0.6, 0.01)), ("map02", self.result(0.75, 0.01))]
+        )
+        self.assertIsNone(locator.locate_global(None, None))
+        self.assertEqual(locator._cold_map_order, ("map02", "map01"))
+        self.assertIsNone(locator._active)
+        maps["map02"].rank_layers.assert_called_once()
+        maps["map01"].rank_layers.assert_not_called()
+        # Exhausting one map's proposal budget must give the next map a turn.
+        maps["map02"].rank_layers.side_effect = None
+        maps["map02"].rank_layers.return_value = []
+        locator._locate_cold_layers(None, None, 0)
+        self.assertEqual(locator._cold_map_cursor, 1)
+        locator._locate_cold_layers(None, None, 0)
+        maps["map01"].rank_layers.assert_called_once()
+
+    def test_index_proposals_cannot_bypass_other_map_competition_or_confirmation(self):
+        for competing_score, accepted in ((0.98, False), (0.5, True)):
+            with self.subTest(competing_score=competing_score):
+                locator = self.locator()
+                floor = SimpleNamespace(
+                    entries=[{}],
+                    rank_layers=Mock(return_value=[(1.0, "last_floor")]),
+                    locate_proposed_layer=Mock(return_value=self.result(0.99)),
+                )
+                locator._cache.update(map01=SimpleNamespace(), map02=floor)
+                locator._cold_layers = True
+                locator._frame_gate._prepare_template = Mock(return_value=object())
+                locator._warm_base_resources = Mock(return_value=True)
+                locator._active_result = Mock(return_value=None)
+                locator._compare_base_maps = Mock(
+                    return_value=[("map01", self.result(competing_score)), ("map02", self.result(0.6))]
+                )
+                tracker = MinimapTracker(locator)
+                first = tracker.update(None, None, now=1)
+                self.assertFalse(first.accepted)
+                second = tracker.update(None, None, now=1.2)
+                self.assertEqual(second.accepted, accepted)
+                if accepted:
+                    self.assertEqual(second.position.map_id, "map02")
+                    self.assertEqual(second.position.ncc, 0.99)
+
+    def test_pending_index_does_not_repeat_base_search_or_decode_unselected_maps(self):
+        locator = self.locator()
+        first = SimpleNamespace(rank_layers=Mock(side_effect=ResourcePending))
+        second = SimpleNamespace(rank_layers=Mock(return_value=[(0.9, "floor")]))
+        locator._cache.update(map01=first, map02=second)
+        locator._cold_layers = True
+        locator._frame_gate._prepare_template = Mock(return_value=object())
+        locator._warm_base_resources = Mock(return_value=True)
+        locator._compare_base_maps = Mock(side_effect=AssertionError("warm-up must not redo base searches"))
+        for _ in range(3):
+            self.assertIsNone(locator.locate_global(None, None))
+            self.assertEqual(locator.last_failure_reason, "layer_index_pending")
+        self.assertEqual(first.rank_layers.call_count, 3)
+        second.rank_layers.assert_not_called()
+
+    def test_exhausted_index_falls_back_to_round_robin_full_scan(self):
+        locator = self.locator()
+        weak = self.result(0.6, margin=0.01)
+        floor = SimpleNamespace(
+            entries=[{}],
+            base=object(),
+            rank_layers=Mock(return_value=[(0.99, "floor")]),
+            locate_proposed_layer=Mock(return_value=None),
+            locate_global=Mock(return_value=weak),
+        )
+        locator._cache.update(map01=floor)
+        locator._cold_layers = True
+        locator._frame_gate._prepare_template = Mock(return_value=object())
+        locator._warm_base_resources = Mock(return_value=True)
+        locator._compare_base_maps = Mock(return_value=[("map01", weak)])
+        self.assertIsNone(locator.locate_global(None, None))
+        locator.locate_global(None, None)
+        floor.locate_global.assert_called_once_with(None, None, base_result=weak, use_index=False)
+
     def test_chain_recovery_uses_anchored_map_even_when_active_hint_changes(self):
         locator = self.locator()
         locator._cache.update(
@@ -1777,6 +1863,92 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
 
 class TestVisualLayerCandidates(unittest.TestCase):
+    def test_single_map_index_advances_after_full_competition_rejects_a_proposal(self):
+        locator = self.locator(0.5, 0.99)
+        locator.rank_layers = Mock(return_value=[(1.0, "wrong"), (0.9, "floor1")])
+        locator.locate_proposed_layer = Mock(side_effect=[self.result(0.5), self.result(0.99, tier="floor1")])
+        self.assertEqual(locator.locate_global(None, None).best.ncc, 0.5)
+        result = locator.locate_global(None, None)
+        self.assertEqual(result.best.tier_id, "floor1")
+        self.assertEqual([call.args[2] for call in locator.locate_proposed_layer.call_args_list], ["wrong", "floor1"])
+
+    def test_floor_index_ranks_pixels_instead_of_catalog_order(self):
+        rng = np.random.default_rng(77)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entries = []
+            for i in range(16):
+                pixels = rng.integers(0, 255, (64, 64, 3), dtype=np.uint8)
+                name = f"floor{i}.png"
+                cv2.imwrite(str(root / name), pixels)
+                entries.append(
+                    {
+                        "id": str(i),
+                        "path": name,
+                        "width": 64,
+                        "height": 64,
+                        "bounds": {"west": 0, "east": 128, "south": 0, "north": 128},
+                    }
+                )
+            index = LayerSearchIndex.build(root, entries, color=True)
+            template = SimpleNamespace(flat=pixels[20:36, 25:41])
+            ranks = index.rank(template, 0.125)
+            self.assertEqual(ranks[0][1], "15")
+            self.assertGreater(ranks[0][0], 0.99)
+            self.assertFalse(index.images[0][1].flags.writeable)
+            changed = SimpleNamespace(flat=index.images[0][1][20:36, 25:41])
+            self.assertEqual(index.rank(changed, 0.125)[0][1], "0")
+
+    def test_closed_resource_pool_cannot_adopt_a_late_floor_index(self):
+        from concurrent.futures import Future
+
+        locator = self.locator()
+        locator.base._prepare_template = Mock(return_value=object())
+        future = Future()
+        workers = SimpleNamespace(closed=False, resources=SimpleNamespace(submit=Mock(return_value=future)))
+        locator._resource_workers = workers
+        frame = np.zeros((10, 10, 3), dtype=np.uint8)
+        for _ in range(2):
+            with self.assertRaises(ResourcePending):
+                locator.rank_layers(frame, None)
+        workers.resources.submit.assert_called_once()
+        future.set_result(LayerSearchIndex(()))
+        workers.closed = True
+        with self.assertRaises(ResourcePending):
+            locator.rank_layers(frame, None)
+        self.assertIsNone(locator._search_index)
+
+    def test_index_hint_keeps_overlap_and_distant_floor_competitors(self):
+        locator = self.locator(0.5, 0.99)
+        floor = locator._load.return_value
+        alternative = replace(self.result(0.98).best, world_x=1000, world_z=1000)
+        best = self.result(0.99)
+        floor.locate_global.return_value = replace(best, candidates=(best.best, alternative))
+        self.assertIsNone(locator.locate_proposed_layer(None, None, "floor1"))
+        # A good full-floor result is still ambiguous against an overlapping floor.
+        floor.locate_global.return_value = best
+        locator.entries.append({**locator.entries[0], "id": "floor2"})
+        locator._cache.update(floor1=floor, floor2=floor)
+        result = locator.locate_proposed_layer(None, None, "floor1")
+        self.assertIsNone(result.best.tier_id)
+        self.assertEqual(result.layer_margin, 0)
+
+    def test_index_hint_waits_for_all_overlapping_resources(self):
+        locator = self.locator(0.5, 0.99)
+        floor = locator._load.return_value
+        locator.entries.append({**locator.entries[0], "id": "floor2"})
+
+        def load(entry):
+            if entry["id"] == "floor1":
+                return floor
+            raise ResourcePending()
+
+        locator._load.side_effect = load
+        result = locator.locate_proposed_layer(None, None, "floor1")
+        self.assertEqual(result.reason, "layer_scan_pending")
+        self.assertEqual(result.status, "rejected")
+        self.assertEqual(result.margin, 0)
+
     def test_recovery_checks_only_layers_intersecting_80_meter_circle(self):
         locator = self.locator(0.6, 0.5)
         template = locator.entries[0]
