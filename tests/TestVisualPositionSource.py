@@ -858,6 +858,10 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
                 service._executor.paused = True
                 self.assertFalse(enabled())
                 service._executor.paused = False
+                service.config[CONFIG_USE_EXPERIMENTAL] = True
+                self.assertFalse(enabled())
+                service.config[CONFIG_USE_EXPERIMENTAL] = False
+                self.assertTrue(enabled())
                 with service.visual_sampling(owner):
                     factory.assert_called_once()
                 raise RuntimeError("navigation failed")
@@ -948,6 +952,46 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
                 self.fail("failed startup must not enter navigation")
             factory.return_value.close.assert_called_once()
             self.assertIsNone(service._visual_sampler)
+
+    def test_capture_mode_switch_stops_probes_after_inflight_capture_finishes(self):
+        service = self.service()
+        entered, release, disabled = threading.Event(), threading.Event(), threading.Event()
+        probe = Mock(side_effect=lambda _: (entered.set(), release.wait(3), np.zeros((20, 20, 3), np.uint8))[-1])
+        capture = SimpleNamespace(get_frame=Mock(), get_frame_for_probe=probe)
+        service._executor.method = capture
+        service._executor.exit_event = threading.Event()
+        service._executor.paused = False
+        service._sample_continuous_visual = Mock()
+        owner = SimpleNamespace(paused=False, enabled=True)
+
+        def create(capture, observe, enabled):
+            disabled_checks = 0
+
+            def check():
+                nonlocal disabled_checks
+                result = enabled()
+                if not result:
+                    disabled_checks += 1
+                    if disabled_checks >= 2:
+                        disabled.set()
+                return result
+
+            return VisualPoseSampler(capture, observe, check, interval=0.01)
+
+        with (
+            patch("src.localization.position_service.VisualPoseSampler", side_effect=create),
+            patch("src.localization.visual_pose_sampling.timing_for_frame", return_value=object()),
+            service.visual_sampling(owner),
+        ):
+            try:
+                self.assertTrue(entered.wait(2))
+                service.config[CONFIG_USE_EXPERIMENTAL] = True
+            finally:
+                release.set()
+            self.assertTrue(disabled.wait(2))
+        probe.assert_called_once()
+        service._sample_continuous_visual.assert_not_called()
+        self.assertIsNone(service._visual_sampler)
 
     def test_continuous_observation_failure_resets_partial_source_state(self):
         service = self.service()

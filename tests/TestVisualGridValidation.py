@@ -55,9 +55,11 @@ class TestVisualGridValidation(unittest.TestCase):
             reference=SimpleNamespace(snapshot=Mock(return_value=(reference, 100, [reference]))),
             _stop_inputs=Mock(),
             error_hits=0,
+            _validation_cursor=0,
             options=SimpleNamespace(max_error=1),
         )
         task._check_stop = lambda: GridValidationTask._check_stop(task)
+        task._process_reference_samples = MethodType(GridValidationTask._process_reference_samples, task)
         pose = {
             "frame_t": 100,
             "map_id": "map02",
@@ -77,7 +79,7 @@ class TestVisualGridValidation(unittest.TestCase):
             self.assertEqual(task.error_hits, 1)
             self.assertFalse(task.covered)
             self.assertTrue(task.traversed)
-            reference["time"] = 90
+            reference["time"] = 100.4
             GridValidationTask._observe(task, pose)
             self.assertEqual(task.error_hits, 0)
             self.assertFalse(task.covered)
@@ -94,6 +96,57 @@ class TestVisualGridValidation(unittest.TestCase):
                 GridValidationTask._observe(task, pose)
                 self.assertEqual(bool(task.covered), valid)
                 self.assertEqual(bool(GridValidationTask._reference_verified_cells(task, rows)), valid)
+
+    def test_late_right_reference_validates_pending_frame_once(self):
+        task, pose, reference = self._observation_task()
+        reference.update(time=99.9, x=2, z=2)
+        with patch("scripts.nav.validation_task.time.time", return_value=100.4):
+            GridValidationTask._observe(task, pose)
+        self.assertEqual(task._validation_cursor, 0)
+        self.assertFalse(task.covered)
+        task._process_reference_samples([reference, {**reference, "time": 100.2}])
+        self.assertEqual(task.covered, task.traversed)
+        self.assertEqual(task._validation_cursor, 1)
+        task._process_reference_samples([reference, {**reference, "time": 100.2, "x": 30}])
+        self.assertEqual(task.error_hits, 0)  # A consumed observation is never counted twice.
+
+    def test_late_reference_batch_can_supply_both_bracketing_points(self):
+        task, pose, reference = self._observation_task()
+        reference.update(time=98, x=2, z=2)
+        with patch("scripts.nav.validation_task.time.time", return_value=100.4):
+            GridValidationTask._observe(task, pose)
+        self.assertEqual(task._validation_cursor, 0)
+        task._process_reference_samples([{**reference, "time": 99.9}, {**reference, "time": 100.2}])
+        self.assertEqual(task.covered, task.traversed)
+
+    def test_late_reference_triggers_error_stop_in_original_frame_order(self):
+        task, pose, reference = self._observation_task()
+        reference["time"] = 99.9
+        with patch("scripts.nav.validation_task.time.time", return_value=100.4):
+            for stamp in (100, 100.1, 100.2):
+                GridValidationTask._observe(task, {**pose, "frame_t": stamp})
+            self.assertEqual(task.error_hits, 0)
+            right = {**reference, "time": 100.3}
+            task.reference.snapshot.return_value = (right, 100.4, [reference, right])
+            with self.assertRaisesRegex(RuntimeError, "sustained_position_error"):
+                GridValidationTask._observe(task, {**pose, "frame_t": 100.25})
+        self.assertEqual(task.error_hits, 3)
+        self.assertEqual(task._validation_cursor, 3)
+        self.assertFalse(task.covered)
+        task._stop_inputs.assert_called_once()
+
+    def test_invalid_frame_breaks_error_streak_even_while_waiting_for_reference(self):
+        task, pose, reference = self._observation_task()
+        reference["time"] = 99.9
+        with patch("scripts.nav.validation_task.time.time", return_value=100.4):
+            for index in range(4):
+                GridValidationTask._observe(
+                    task, {**pose, "frame_t": 100 + index * 0.1, "position_trusted": index != 1}
+                )
+        task._process_reference_samples([reference, {**reference, "time": 100.4}])
+        self.assertEqual(task.error_hits, 2)
+        self.assertEqual(task._validation_cursor, 4)
+        self.assertFalse(task.stop_reason)
 
     def test_unusable_samples_break_sustained_error_streak(self):
         for invalid in (
@@ -164,7 +217,7 @@ class TestVisualGridValidation(unittest.TestCase):
             next_frame=Mock(),
             navigate_grid_to=Mock(),
         )
-        for name in ("_validation_resources", "_reference_verified_cells", "_check_stop"):
+        for name in ("_validation_resources", "_reference_verified_cells", "_process_reference_samples", "_check_stop"):
             setattr(task, name, MethodType(getattr(GridValidationTask, name), task))
         options = SimpleNamespace(
             resume_covered=[],
@@ -245,6 +298,53 @@ class TestVisualGridValidation(unittest.TestCase):
             self.assertEqual(task.report["elapsed_s"], 60)
             task.navigate_grid_to.assert_not_called()
 
+    def test_final_reference_flush_updates_report_resume_and_error_protection(self):
+        for coordinate, stopped in ((0.5, False), (1.5, True)):
+            with self.subTest(coordinate=coordinate), tempfile.TemporaryDirectory() as directory:
+                task, _service = self._run_task(Path(directory))
+                task._grid_nav_w_held = True
+                clock = SimpleNamespace(now=0)
+                task.sleep = lambda _, clock=clock: setattr(clock, "now", clock.now + 10)
+                records = [{"mapId": "map02", "time": 99.9, "x": 0.5, "z": 0.5, "flow": 3, "speed": 1}]
+
+                def observe(task=task, coordinate=coordinate, **kwargs):
+                    pose = {
+                        "frame_t": 100 + len(task.samples) * 0.05,
+                        "frame_time_source": "wgc_system_relative_time",
+                        "map_id": "map02",
+                        "tier_id": "__main__",
+                        "tier_trusted": True,
+                        "position_trusted": True,
+                        "x": coordinate,
+                        "z": coordinate,
+                    }
+                    GridValidationTask._observe(task, pose)
+                    return pose
+
+                task.world_pose = observe
+                reference = SimpleNamespace(
+                    snapshot=lambda records=records: (records[-1], 100.4, list(records)),
+                    close=lambda records=records: records.append({**records[0], "time": 100.4}),
+                )
+                guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
+                with (
+                    patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
+                    patch("scripts.nav.validation_task.threading.Thread", return_value=guard),
+                    patch("scripts.nav.validation_task.time.sleep"),
+                    patch("scripts.nav.validation_task.time.time", return_value=100.4),
+                    patch("scripts.nav.validation_task.time.monotonic", side_effect=lambda clock=clock: clock.now),
+                ):
+                    GridValidationTask.run.__wrapped__(task)
+                saved = json.loads((Path(directory) / "covered_cells.json").read_text(encoding="utf-8"))
+                self.assertEqual(task.report["covered_cells"], len(saved))
+                if stopped:
+                    self.assertEqual(task.report["status"], "stopped")
+                    self.assertIn("sustained_position_error", task.report["reason"])
+                    self.assertFalse(saved)
+                else:
+                    self.assertTrue(saved)
+                    self.assertEqual(task.report["visual_unavailable_cells"], 0)
+
     def test_reference_map_change_stops_even_without_usable_visual_pose(self):
         for pose in (
             {"position_trusted": True, "tier_id": None, "tier_trusted": False},
@@ -264,8 +364,11 @@ class TestVisualGridValidation(unittest.TestCase):
                         grid=SimpleNamespace(meta=SimpleNamespace(map_name="map02")),
                         reference=SimpleNamespace(snapshot=Mock(return_value=({"mapId": reference_map}, 100, None))),
                         _stop_inputs=Mock(),
+                        error_hits=0,
+                        _validation_cursor=0,
                     )
                     task._check_stop = lambda task=task: GridValidationTask._check_stop(task)
+                    task._process_reference_samples = MethodType(GridValidationTask._process_reference_samples, task)
                     state = {"frame_t": 100, "map_id": "map02", "frame_time_source": "wgc_system_relative_time", **pose}
                     with patch("scripts.nav.validation_task.time.time", return_value=100):
                         if reference_map == "map01":

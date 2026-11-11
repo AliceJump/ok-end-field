@@ -46,6 +46,23 @@ def pose_scope_status(state, map_id):
     return "record"
 
 
+def coverage_pose_ready(state, map_id):
+    """Require an independent, timestamped visual observation in the validation scope."""
+    return (
+        state.get("position_trusted")
+        and not state.get("visual_duplicate_frame")
+        and state.get("frame_time_source") == "wgc_system_relative_time"
+        and pose_scope_status(state, map_id) == "record"
+    )
+
+
+def paired_visual_reference(row, timeline, map_id):
+    """Apply the same eligibility and temporal pairing contract online and in the report."""
+    if not coverage_pose_ready(row["pose"], map_id):
+        return None
+    return align_reference(timeline, row["frame_t"], map_id, flow=row["flow"], stationary=row["stationary_reference"])
+
+
 class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 与 EfInteraction
     validation = None  # 由命令行入口在启动前注入本次参数
     stop_reason = ""  # 不在任务未运行时启用测试限制
@@ -190,39 +207,49 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             # Reference identity is a run invariant, independent of visual readiness.
             self.stop_reason = "map_or_tier_changed"
             self._check_stop()
-        if not state.get("position_trusted") or state.get("visual_duplicate_frame"):  # 失败帧不能算覆盖
-            self.error_hits = 0
-            return  # 正式导航负责停车与重新定位
-        if state.get("frame_time_source") != "wgc_system_relative_time":  # 本测试需要准确时间轴
-            self.stop_reason = "missing_wgc_presentation_timestamp"  # 不用采样结束时间伪装图像时间
-            self._check_stop()  # 停止不可靠的精度验证
-        scope = pose_scope_status(state, self.grid.meta.map_name)
-        if scope == "tier_pending":  # 未知楼层不是换层，等待可靠楼层证据
-            self.error_hits = 0
-            return
-        if scope != "record":
-            self.stop_reason = "map_or_tier_changed"  # 保留地图身份
-            self._check_stop()  # 不跨场景继续
-        point = (float(state["x"]), float(state["z"]))  # 视觉验证覆盖只读取视觉输出
-        observed_cells = nearby_cells(self.region, self.grid.index_of_world(*point), self.coverage_steps)  # 不跨墙计数
-        self.traversed.update(observed_cells)  # 总遍历包含所有可信视觉观测
-        reference = align_reference(
-            references,
-            stamp,
-            self.grid.meta.map_name,
-            flow=row["flow"],
-            stationary=row["stationary_reference"],
-        )
-        if reference is not None:
-            distance = math.dist(point, (reference["x"], reference["z"]))  # 不回灌真值修正定位
-            self.error_hits = self.error_hits + 1 if distance > self.options.max_error else 0  # 避免单帧时差误停
+        if state.get("position_trusted") and not state.get("visual_duplicate_frame"):
+            if state.get("frame_time_source") != "wgc_system_relative_time":
+                self.stop_reason = "missing_wgc_presentation_timestamp"
+                self._check_stop()
+            scope = pose_scope_status(state, self.grid.meta.map_name)
+            if scope not in ("record", "tier_pending"):
+                self.stop_reason = "map_or_tier_changed"
+                self._check_stop()
+            if scope == "record":
+                self.traversed.update(
+                    nearby_cells(self.region, self.grid.index_of_world(state["x"], state["z"]), self.coverage_steps)
+                )
+        self._process_reference_samples(references)
+        self._check_stop()
+
+    def _process_reference_samples(self, references, *, final=False):
+        """Drain observations in capture order, retaining frames awaiting a right reference."""
+        timeline = ReferenceTimeline(references or [])
+        while self._validation_cursor < len(self.samples):
+            row = self.samples[self._validation_cursor]
+            pose, stamp = row["pose"], row["frame_t"]
+            reference = paired_visual_reference(row, timeline, self.grid.meta.map_name)
+            awaiting_right = not timeline.times or stamp > timeline.times[-1]
+            if (
+                reference is None
+                and awaiting_right
+                and not final
+                and coverage_pose_ready(pose, self.grid.meta.map_name)
+            ):
+                break  # Later frames and invalid-frame streak breaks must keep their original order.
+            self._validation_cursor += 1
+            if reference is None:
+                self.error_hits = 0
+                continue
+            distance = math.dist((pose["x"], pose["z"]), (reference["x"], reference["z"]))
+            self.error_hits = self.error_hits + 1 if distance > self.options.max_error else 0
             if distance <= self.options.max_error:
-                self.covered.update(observed_cells)
-            if self.error_hits >= 3:  # 连续偏差才停止
-                self.stop_reason = f"sustained_position_error: {distance:.2f}m"  # 写明实测偏差
-                self._check_stop()  # 不带着持续错误继续跑
-        else:
-            self.error_hits = 0
+                self.covered.update(
+                    nearby_cells(self.region, self.grid.index_of_world(pose["x"], pose["z"]), self.coverage_steps)
+                )
+            if self.error_hits >= 3:
+                self.stop_reason = self.stop_reason or f"sustained_position_error: {distance:.2f}m"
+                break
 
     def _write_progress(self, point):  # 视觉失败时仍报告抓包续跑进度
         if time.monotonic() - self.last_progress_log >= 5:  # 进度日志限频
@@ -368,19 +395,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         timeline, verified = ReferenceTimeline(references), set()
         for row in self.samples:
             pose = row["pose"]
-            if (
-                not pose.get("position_trusted")
-                or pose.get("visual_duplicate_frame")
-                or pose_scope_status(pose, self.grid.meta.map_name) != "record"
-            ):
-                continue
-            ref = align_reference(
-                timeline,
-                row["frame_t"],
-                self.grid.meta.map_name,
-                flow=row["flow"],
-                stationary=row["stationary_reference"],
-            )
+            ref = paired_visual_reference(row, timeline, self.grid.meta.map_name)
             if ref is not None and math.dist((pose["x"], pose["z"]), (ref["x"], ref["z"])) <= self.options.max_error:
                 verified.update(
                     nearby_cells(self.region, self.grid.index_of_world(ref["x"], ref["z"]), self.coverage_steps)
@@ -395,6 +410,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
 
         self.options, self.grid, self.region, targets, self.directory, plan = self.validation  # 获取本次有限计划
         self.samples, self.covered, self.arrived = [], set(), []  # 保留真实采样进度
+        self._validation_cursor = 0
         self.covered.update(self.options.resume_covered)  # 续跑仅继承已验证覆盖
         self.traversed = set(self.options.resume_traversed) | self.covered  # 总遍历范围包括历史视觉覆盖
         self.source_policy = NavigationSourcePolicy(self.options.capture_fallback)  # 只有显式授权才接管
@@ -546,6 +562,12 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             if self.last_frame is not None:  # 只保存无账户标识的小地图区域
                 cv2.imwrite(str(self.directory / "last_hud.png"), self.last_frame[:280, :340])  # 留下定位证据
         references = self.reference.snapshot()[2] if self.reference is not None else []
+        previous_stop = self.stop_reason
+        self._process_reference_samples(references, final=True)
+        if self.stop_reason and not previous_stop:
+            status, reason = "stopped", self.stop_reason
+        elif reason == "connected_region_traversed":
+            status = "completed" if self.traversed == self.covered else "completed_with_visual_gaps"
         verified = self._reference_verified_cells(references)
         self.report = {
             **plan,

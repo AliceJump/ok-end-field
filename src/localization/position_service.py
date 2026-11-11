@@ -276,6 +276,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
                 and not self.executor.paused
                 and not owner.paused
                 and owner.enabled
+                and not self.experimental_capture_enabled()
                 and self.executor.method is capture
             ),
         )
