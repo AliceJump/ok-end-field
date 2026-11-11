@@ -606,15 +606,22 @@ class GridNavigationMixin(RuntimeStateMixin):
         # Sampling belongs to the position service; the follower still consumes
         # its ordinary pose contract and never selects a localization source.
         sampling = getattr(position_service, "visual_sampling", None)
-        with sampling(self) if callable(sampling) else nullcontext():
-            try:
-                while not self._grid_navigation_timed_out(session.deadline, session.limit):
-                    ctx = self._grid_nav_poll(session)
-                    outcome = self._grid_nav_advance(ctx)
-                    if outcome is not None:
-                        return outcome
-                return False
-            finally:
+        entered = False
+        try:
+            with sampling(self) if callable(sampling) else nullcontext():
+                entered = True
+                try:
+                    while not self._grid_navigation_timed_out(session.deadline, session.limit):
+                        ctx = self._grid_nav_poll(session)
+                        outcome = self._grid_nav_advance(ctx)
+                        if outcome is not None:
+                            return outcome
+                    return False
+                finally:
+                    self._set_grid_walking(False)
+                    self._restore_grid_zip_line_run_mode()
+        finally:
+            if not entered:  # Admission failure must restore setup without running a control tick.
                 self._set_grid_walking(False)
                 self._restore_grid_zip_line_run_mode()
 

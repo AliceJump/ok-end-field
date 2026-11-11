@@ -36,6 +36,40 @@ class TestAnchorDropoutValidation(unittest.TestCase):  # 验证实验本身而�
                 self.assertEqual(report["failure"], f"{key}_changed")
                 load.assert_called_once()
 
+    def test_cli_reports_prefix_with_missing_patch_beyond_identity_boundary(self):
+        for key, existing_output in (("map_id", False), ("segment", True)):
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                image = root / "map.png"
+                image.write_bytes(b"image")
+                first = {"scale_m_per_px": 1, "t": 1, "patch": "map.png", "map_id": "map02", "segment": 1}
+                rows = [first, {**first, "t": 1.2, key: "changed", "patch": "missing.png"}]
+                recording = root / "recording.jsonl"
+                recording.write_text("\n".join(map(json.dumps, rows)), encoding="utf-8")
+                for name in ("src/localization/minimap_visual_anchor_chain.py", "scripts/nav/replay_visual_chain.py"):
+                    source = root / name
+                    source.parent.mkdir(parents=True, exist_ok=True)
+                    source.write_text("source", encoding="utf-8")
+                output = root / "report.json"
+                if existing_output:
+                    output.write_text("old report", encoding="utf-8")
+                node = SimpleNamespace(path=image, gray=np.zeros((32, 32)), alpha=np.ones((32, 32)))
+                with (
+                    patch.object(replay_visual_chain.sys, "argv", ["replay", str(recording), "--output", str(output)]),
+                    patch.object(replay_visual_chain, "ROOT", root),
+                    patch.object(
+                        replay_visual_chain,
+                        "replay",
+                        side_effect=lambda path, root=root, **kw: replay(path, root=root, **kw),
+                    ),
+                    patch.object(replay_visual_chain, "_load_patch_node", return_value=node),
+                    patch("builtins.print"),
+                ):
+                    replay_visual_chain.main()
+                report = json.loads(output.read_text(encoding="utf-8"))
+                self.assertEqual(report["recordings"][0]["trusted_prefix_frames"], 1)
+                self.assertEqual(report["recordings"][0]["failure"], f"{key}_changed")
+
     def test_cli_passes_explicit_and_default_error_budget(self):
         for value in (None, "10"):
             with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:

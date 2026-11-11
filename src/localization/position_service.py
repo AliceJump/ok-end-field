@@ -12,6 +12,8 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
+from ok.task.exceptions import CaptureException
+
 from src.core.BaseEfTask import BaseEfTask
 from src.core.global_config_store import get_global_config
 from src.core.NavConfig import NAV_CONFIG_NAME, NAV_MAP_ID_KEY
@@ -254,15 +256,18 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
     def visual_sampling(self, owner):
         """Keep actual observations flowing while navigation plans or sends input."""
         capture = getattr(self.executor, "method", None)
-        if self._visual_sampler is not None and not self._visual_sampler.thread.is_alive():
-            self._visual_sampler = None
-        if (
-            self.experimental_capture_enabled()
-            or not callable(getattr(capture, "get_frame_for_probe", None))
-            or self._visual_sampler is not None
-        ):
+        if self.experimental_capture_enabled() or not callable(getattr(capture, "get_frame_for_probe", None)):
             yield
             return
+        previous = self._visual_sampler
+        if previous is not None:
+            if previous.thread.is_alive() and not previous.stopped.is_set():
+                yield  # A nested navigation scope shares its still-active owner.
+                return
+            if previous.thread.is_alive() and not previous.close():
+                raise CaptureException("previous visual sampler is still stopping")
+            if self._visual_sampler is previous:
+                self._visual_sampler = None
         sampler = VisualPoseSampler(
             capture,
             self._sample_continuous_visual,

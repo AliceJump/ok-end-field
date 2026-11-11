@@ -451,6 +451,21 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertEqual(events, ["start", "close"])
         self.assertFalse(self.task.w_down)
 
+    def test_sampling_admission_failure_restores_navigation_setup(self):
+        @contextmanager
+        def sampling(_owner):
+            raise RuntimeError("sampler unavailable")
+            yield  # pragma: no cover
+
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = mock.Mock()
+        self.task._restore_grid_zip_line_run_mode = mock.Mock()
+        with self.assertRaisesRegex(RuntimeError, "sampler unavailable"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.task._grid_nav_poll.assert_not_called()
+        self.task._restore_grid_zip_line_run_mode.assert_called_once()
+        self.assertFalse(self.task.w_down)
+
     def test_navigation_can_stop_before_goal_for_final_approach(self):
         self.task.x = 1.0
         self.task.z = 0.5

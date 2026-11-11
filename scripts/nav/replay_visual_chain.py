@@ -152,7 +152,6 @@ def _recorded_patches(recording):
                 recording.parent,
                 row.get("patch") or "",
                 label="patch",
-                must_exist=True,
                 relative_to_root=True,
             )
 
@@ -164,7 +163,7 @@ def _validate_output_not_input(recordings, output):
         if output == recording or (output_exists and output.samefile(recording)):
             raise ValueError("output_must_not_overwrite_recording")
         for patch in _recorded_patches(recording):
-            if output == patch or (output_exists and output.samefile(patch)):
+            if output == patch or (output_exists and patch.exists() and output.samefile(patch)):
                 raise ValueError("output_must_not_overwrite_patch")
 
 

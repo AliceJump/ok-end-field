@@ -848,6 +848,7 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         service._executor.paused = False
         owner = SimpleNamespace(paused=False, enabled=True)
         with patch("src.localization.position_service.VisualPoseSampler") as factory:
+            factory.return_value.stopped.is_set.return_value = False
             with self.assertRaisesRegex(RuntimeError, "navigation failed"), service.visual_sampling(owner):
                 enabled = factory.call_args.args[2]
                 self.assertTrue(enabled())
@@ -877,13 +878,65 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
             with service.visual_sampling(owner):
                 pass
             self.assertIs(service._visual_sampler, sampler)
-            with service.visual_sampling(owner):
-                factory.assert_called_once()
+            sampler.stopped.is_set.return_value = True
+            from ok.task.exceptions import CaptureException
+
+            with self.assertRaisesRegex(CaptureException, "still stopping"), service.visual_sampling(owner):
+                self.fail("navigation must not run without continuous observations")
+            factory.assert_called_once()
             sampler.thread.is_alive.return_value = False
             sampler.close.return_value = True
             with service.visual_sampling(owner):
                 self.assertEqual(factory.call_count, 2)
             self.assertIsNone(service._visual_sampler)
+
+    def test_next_navigation_waits_for_capture_handoff_and_owns_replacement(self):
+        service = self.service()
+        entered, release, observed = threading.Event(), threading.Event(), threading.Event()
+
+        def capture_frame(_timeout):
+            entered.set()
+            release.wait(3)
+            return np.zeros((20, 20, 3), np.uint8)
+
+        capture = SimpleNamespace(get_frame=Mock(), get_frame_for_probe=capture_frame)
+        original = capture.get_frame
+        service._executor.method = capture
+        service._executor.exit_event = threading.Event()
+        service._executor.paused = False
+        service._sample_continuous_visual = lambda *_: observed.set()
+        owner = SimpleNamespace(paused=False, enabled=True)
+        old = VisualPoseSampler(capture, Mock(), lambda: True, interval=0.01, close_timeout=0.02)
+        service._visual_sampler = old
+        old.start()
+        timer = threading.Timer(0.05, release.set)
+        try:
+            self.assertTrue(entered.wait(2))
+            self.assertFalse(old.close())
+            old.close_timeout = 1.0
+            timer.start()
+
+            def create(*args):
+                self.assertTrue(old.finished.is_set())
+                self.assertIs(capture.get_frame, original)
+                return VisualPoseSampler(*args, interval=0.01)
+
+            with (
+                patch("src.localization.position_service.VisualPoseSampler", side_effect=create),
+                patch("src.localization.visual_pose_sampling.timing_for_frame", return_value=object()),
+                service.visual_sampling(owner),
+            ):
+                replacement = service._visual_sampler
+                self.assertIsNot(replacement, old)
+                self.assertTrue(observed.wait(2))
+            self.assertIsNone(service._visual_sampler)
+            self.assertFalse(replacement.thread.is_alive())
+            self.assertIs(capture.get_frame, original)
+        finally:
+            release.set()
+            if timer.ident is not None:
+                timer.join(2)
+            old.close()
 
     def test_sampler_start_failure_releases_service_ownership(self):
         service = self.service()

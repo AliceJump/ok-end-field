@@ -166,7 +166,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
 
     def _observe(self, state, navigation_source="visual_map"):  # 始终只记录独立视觉定位结果
         self._check_stop()  # 用户请求停止后不再发布新动作
-        latest, checked, _ = self.reference.snapshot()  # 对照源不参与定位器输入
+        latest, checked, references = self.reference.snapshot()  # 对照源不参与定位器输入
         if latest is None or time.time() - checked > 1.5:  # 活连接与后端健康都是必要条件
             self.stop_reason = "reference_unavailable_or_dead_flow"  # 不用旧会话当真值
             self._check_stop()  # 停下并留存现场
@@ -206,10 +206,15 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         point = (float(state["x"]), float(state["z"]))  # 视觉验证覆盖只读取视觉输出
         observed_cells = nearby_cells(self.region, self.grid.index_of_world(*point), self.coverage_steps)  # 不跨墙计数
         self.traversed.update(observed_cells)  # 总遍历包含所有可信视觉观测
-        if (
-            abs(stamp - float(latest.get("time") or 0)) <= 0.5 or row["stationary_reference"]
-        ):  # 原始最新值仅用于误差保护
-            distance = math.dist(point, (latest["x"], latest["z"]))  # 不回灌真值修正定位
+        reference = align_reference(
+            references,
+            stamp,
+            self.grid.meta.map_name,
+            flow=row["flow"],
+            stationary=row["stationary_reference"],
+        )
+        if reference is not None:
+            distance = math.dist(point, (reference["x"], reference["z"]))  # 不回灌真值修正定位
             self.error_hits = self.error_hits + 1 if distance > self.options.max_error else 0  # 避免单帧时差误停
             if distance <= self.options.max_error:
                 self.covered.update(observed_cells)

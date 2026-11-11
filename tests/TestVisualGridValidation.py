@@ -52,7 +52,7 @@ class TestVisualGridValidation(unittest.TestCase):
             grid=grid,
             region=grid.cells == 1,
             coverage_steps=0,
-            reference=SimpleNamespace(snapshot=Mock(return_value=(reference, 100, []))),
+            reference=SimpleNamespace(snapshot=Mock(return_value=(reference, 100, [reference]))),
             _stop_inputs=Mock(),
             error_hits=0,
             options=SimpleNamespace(max_error=1),
@@ -84,6 +84,16 @@ class TestVisualGridValidation(unittest.TestCase):
             reference.update(time=100, x=2, z=2)
             GridValidationTask._observe(task, pose)
             self.assertEqual(task.covered, task.traversed)
+
+    def test_coverage_requires_reference_bracketing_not_just_nearby_time(self):
+        for times, valid in (((100.4,), False), ((99.6,), False), ((99.8, 100.2), True)):
+            with self.subTest(times=times), patch("scripts.nav.validation_task.time.time", return_value=100.4):
+                task, pose, reference = self._observation_task()
+                rows = [{**reference, "time": stamp, "x": 2, "z": 2} for stamp in times]
+                task.reference.snapshot.return_value = (rows[-1], 100.4, rows)
+                GridValidationTask._observe(task, pose)
+                self.assertEqual(bool(task.covered), valid)
+                self.assertEqual(bool(GridValidationTask._reference_verified_cells(task, rows)), valid)
 
     def test_unusable_samples_break_sustained_error_streak(self):
         for invalid in (
