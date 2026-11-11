@@ -195,13 +195,15 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         duplicate = stamp in self._observed_frames if identifiable else bool(state.get("visual_duplicate_frame"))
         if identifiable:
             self._observed_frames.add(stamp)
+        pose = dict(state)
+        absolute = pose.pop("_validation_absolute", None)
         row = {
             "frame_t": stamp,
             "observed_at": time.time(),
             "frame_age_s": time.time() - stamp,
-            "pose": dict(state),
+            "pose": pose,
             "validation_duplicate": duplicate,  # 缓存命中不等于本验证器已消费该帧
-            "absolute": self.absolute,
+            "absolute": absolute,
             "navigation_source": navigation_source,  # 区分独立视觉观测与实际控制来源
             "flow": latest.get("flow"),
             "stationary_reference": not self._grid_nav_w_held
@@ -371,18 +373,22 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
                 resources.callback(setattr, service, "_locate_visual_frame", original_locate)
 
                 def observe_locate(frame, stamp, timing):
-                    self.last_frame, self.absolute = frame, None
+                    self.last_frame = frame
+                    absolute = None
                     tracker = service._visual_source.tracker
                     original_update = tracker.update
 
                     def observe_update(*args, **kwargs):
+                        nonlocal absolute
                         result = original_update(*args, **kwargs)
-                        self.absolute = result.position.to_dict() if result.position is not None else None
+                        absolute = result.position.to_dict() if result.position is not None else None
                         return result
 
                     tracker.update = observe_update
                     try:
-                        return original_locate(frame, stamp, timing)
+                        state = original_locate(frame, stamp, timing)
+                        # Carry diagnostics with the sampled state, including any later cache hit.
+                        return {**state, "_validation_absolute": absolute}
                     finally:
                         tracker.update = original_update
 
@@ -450,7 +456,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
                     nearby_cells(self.region, self.grid.index_of_world(*failure["goal"]), self.coverage_steps)
                 )  # 使用相同覆盖半径
         self._save_obstacles()  # 启动前保留完整续跑证据
-        self.goal, self.absolute, self.last_frame = None, None, None  # 尚无采样与目标
+        self.goal, self.last_frame = None, None  # 尚无采样与目标
         self.last_progress_log, self.error_hits = 0.0, 0  # 初始化诊断节流
         self.movement_started = False  # 只在发起导航后检查前台失焦
         self.deadline = time.monotonic() + self.options.seconds  # 整体任务时间限制

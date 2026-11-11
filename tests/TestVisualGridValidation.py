@@ -4,6 +4,7 @@ import io
 import json
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from types import MethodType, SimpleNamespace
@@ -45,7 +46,6 @@ class TestVisualGridValidation(unittest.TestCase):
         task = SimpleNamespace(
             stop_reason="",
             validation_failure="",
-            absolute=None,
             samples=[],
             sample_log=io.StringIO(),
             _grid_nav_w_held=True,
@@ -151,6 +151,70 @@ class TestVisualGridValidation(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "sustained_position_error"):
                 GridValidationTask._observe(task, {**cached, "frame_t": 100.2})
         self.assertEqual(task.error_hits, 3)
+
+    def test_absolute_match_stays_with_cached_frame_after_later_background_results(self):
+        task, pose, reference = self._observation_task()
+        reference.update(x=2, z=2)
+        references = [reference, {**reference, "time": 100.2}]
+        recorder = SimpleNamespace(snapshot=Mock(return_value=(reference, 100.4, references)), close=Mock())
+        tracker = SimpleNamespace(
+            update=Mock(
+                side_effect=[
+                    SimpleNamespace(position=SimpleNamespace(to_dict=lambda: {"world_x": 2, "world_z": 2})),
+                    SimpleNamespace(position=SimpleNamespace(to_dict=lambda: {"world_x": 9, "world_z": 9})),
+                    SimpleNamespace(position=None),
+                ]
+            )
+        )
+        original_update = tracker.update
+
+        def locate(_frame, stamp, _timing):
+            tracker.update()
+            return {**pose, "frame_t": stamp}
+
+        service = SimpleNamespace(
+            config={},
+            sample_world_pose=Mock(),
+            _locate_visual_frame=locate,
+            _visual_source=SimpleNamespace(tracker=tracker, odometry=SimpleNamespace(_sample_min_dt=0.1)),
+            _visual_sampler=object(),
+            executor=SimpleNamespace(method=object()),
+        )
+        task.get_runtime_position_service = Mock(return_value=service)
+        task.guard_done, task._watch = threading.Event(), Mock()
+        task.options.port = 8000
+        guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
+        timing = SimpleNamespace(frame_time=99.95, source="wgc_system_relative_time")
+        with tempfile.TemporaryDirectory() as directory:
+            task.directory = Path(directory)
+            with (
+                patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=recorder),
+                patch("scripts.nav.validation_task.threading.Thread", return_value=guard),
+                patch("scripts.nav.validation_task.time.sleep"),
+                patch("scripts.nav.validation_task.time.time", return_value=100.4),
+                patch("src.localization.position_service.timing_for_frame", return_value=timing),
+                GridValidationTask._validation_resources(task),
+            ):
+                service._sampled_visual_state = service._locate_visual_frame(object(), 100, None)
+                cached = WorldPoseService._sample_visual_pose(service, object())
+                newer = service._locate_visual_frame(object(), 100.1, None)
+                missed = service._locate_visual_frame(object(), 100.2, None)
+                for state in (cached, newer, missed):
+                    GridValidationTask._observe(task, state)
+        self.assertTrue(cached["visual_duplicate_frame"])
+        self.assertEqual(
+            [row["absolute"] for row in task.samples],
+            [
+                {"world_x": 2, "world_z": 2},
+                {"world_x": 9, "world_z": 9},
+                None,
+            ],
+        )
+        self.assertTrue(all("_validation_absolute" not in row["pose"] for row in task.samples))
+        report = report_accuracy(task.samples[:1], references)
+        self.assertEqual(report["absolute_time_aligned"]["median_m"], 0)
+        self.assertIs(tracker.update, original_update)
+        self.assertIs(service._locate_visual_frame, locate)
 
     def test_late_reference_batch_can_supply_both_bracketing_points(self):
         task, pose, reference = self._observation_task()
