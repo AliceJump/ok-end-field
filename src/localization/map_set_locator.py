@@ -19,7 +19,7 @@ from src.localization.minimap_map_locator import (
 
 
 class MapSetLocator:
-    def __init__(self, store, map_ids, *, workers=None):
+    def __init__(self, store, map_ids, *, workers=None, require_all_maps=False):
         self.color = True
         self.store, self.map_ids = store, tuple(map_ids)
         self.calibration = MapCalibration(
@@ -30,6 +30,7 @@ class MapSetLocator:
         self._active = None
         self._scan_index = 0
         self._workers = workers
+        self._require_all_maps = require_all_maps
         self._pending_maps = {}
         self._resource_retry_at = {}
         self._resource_errors = {}
@@ -172,7 +173,7 @@ class MapSetLocator:
                     # transform; the normalized frame is only for map competition.
                     self.calibration = getattr(locator, "calibration", self.calibration)
                 del self._pending_maps[mid]
-            return ready and bool(self._cache)
+            return ready and bool(self._cache) and (not self._require_all_maps or not self._resource_errors)
         for mid in self.map_ids:
             if mid not in self._cache:
                 # One resource per sample; partial map sets cannot prove uniqueness.
@@ -185,7 +186,7 @@ class MapSetLocator:
                     self._resource_retry_at[mid] = time.monotonic() + 5
                     self._resource_errors[mid] = str(exc)
                 return False
-        return bool(self._cache)
+        return bool(self._cache) and (not self._require_all_maps or not self._resource_errors)
 
     def _compare_base_maps(self, frame, geometry):
         if self._workers is not None:

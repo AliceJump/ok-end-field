@@ -67,7 +67,7 @@ class TiledMapImage:
             raise ValueError("invalid tiled image geometry")
         if not 32 <= tile_size <= 2048:
             raise ValueError("invalid tile size")
-        self.shape = (height, width, 3)
+        self._native_shape = (height, width, 3)
         self.tile_size = tile_size
         expected = {
             f"{x},{y}" for y in range(math.ceil(height / tile_size)) for x in range(math.ceil(width / tile_size))
@@ -112,6 +112,10 @@ class TiledMapImage:
         return cls(root, metadata, source=Path(path))
 
     @property
+    def shape(self):
+        return self._native_shape
+
+    @property
     def nbytes(self):
         with self._lock:
             return self._bytes
@@ -144,17 +148,34 @@ class TiledMapImage:
             if digest != record["sha256"]:
                 raise ValueError("corrupt tiled image resource")
 
-    def _read(self, record):
+    def _read(self, record, *, mask_alpha=False):
         path = self._resource_path(record)
         with self._lock:
             if self._closed:
                 raise ValueError("tiled image closed")
-        data = path.read_bytes()
-        if hashlib.sha256(data).hexdigest() != record["sha256"]:
+        size = record.get("size")
+        with path.open("rb") as stream:
+            data = stream.read() if size is None else stream.read(size + 1)
+        if (size is not None and len(data) != size) or hashlib.sha256(data).hexdigest() != record["sha256"]:
             raise ValueError(f"corrupt tiled image resource: {record['path']}")
-        pixels = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
-        if pixels is None or list(pixels.shape[:2]) != record["shape"]:
+        try:
+            pixels = cv2.imdecode(
+                np.frombuffer(data, np.uint8), cv2.IMREAD_UNCHANGED if mask_alpha else cv2.IMREAD_COLOR
+            )
+        except cv2.error as exc:
+            raise ValueError(f"invalid tiled image resource: {record['path']}") from exc
+        if (
+            pixels is None
+            or list(pixels.shape[:2]) != record["shape"]
+            or pixels.dtype != np.uint8
+            or pixels.ndim != 3
+            or pixels.shape[2] not in (3, 4)
+        ):
             raise ValueError(f"invalid tiled image resource: {record['path']}")
+        if pixels.shape[2] == 4:
+            color = pixels[:, :, :3].copy()
+            color[pixels[:, :, 3] == 0] = 0
+            pixels = color
         pixels.setflags(write=False)
         with self._lock:
             if self._closed:
@@ -230,6 +251,9 @@ class TiledMapImage:
             raise ValueError("floor proposal image is missing")
         return self._read(record)
 
+    def _read_tile(self, record):
+        return self._read(record)
+
     def _tile(self, x, y):
         key = f"{x},{y}"
         with self._lock:
@@ -238,10 +262,10 @@ class TiledMapImage:
             if key in self._cache:
                 self._cache.move_to_end(key)
                 return self._cache[key]
-        pixels = self._read(self.metadata["tiles"][key])
+        pixels = self._read_tile(self.metadata["tiles"][key])
         expected = (
-            min(self.tile_size, self.shape[0] - y * self.tile_size),
-            min(self.tile_size, self.shape[1] - x * self.tile_size),
+            min(self.tile_size, self._native_shape[0] - y * self.tile_size),
+            min(self.tile_size, self._native_shape[1] - x * self.tile_size),
         )
         if pixels.shape[:2] != expected:
             raise ValueError("tile dimensions do not match grid")
@@ -263,6 +287,9 @@ class TiledMapImage:
             raise ValueError("tiled image requires contiguous regions")
         y0, y1, _ = rows.indices(self.shape[0])
         x0, x1, _ = columns.indices(self.shape[1])
+        return self._read_region(y0, y1, x0, x1)
+
+    def _read_region(self, y0, y1, x0, x1):
         result = np.empty((max(0, y1 - y0), max(0, x1 - x0), 3), np.uint8)
         if result.size == 0:
             return result

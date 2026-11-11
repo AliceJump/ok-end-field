@@ -38,6 +38,7 @@ from src.core.PositionConfig import (
 from src.localization.calibrated_map_store import CalibratedMapStore
 from src.localization.capture_pose_mixin import CapturePoseMixin
 from src.localization.minimap_heading_mixin import MinimapHeadingMixin
+from src.localization.native_tile_image import UnpreparedTileOverview
 from src.localization.visual_pose_sampling import VisualPoseSampler
 from src.localization.visual_position_source import KeyframeConfig, VisualPositionSource
 from src.localization.wgc_frame_timing import MAX_FRAME_LEAD_S, timing_for_frame
@@ -308,6 +309,9 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             return self._visual_source.unavailable("stale_visual_frame")
         try:
             return self._visual_source.sample(frame, now=stamp)
+        except UnpreparedTileOverview:
+            self._visual_source.reset()
+            return self._visual_source.unavailable(f"visual_search_width_unprepared:{frame.shape[1]}")
         except (OSError, ValueError) as exc:
             self._visual_source.reset()
             return self._visual_source.unavailable(f"visual_resource_error:{type(exc).__name__}")

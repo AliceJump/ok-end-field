@@ -11,8 +11,8 @@ from pathlib import Path
 
 import cv2
 
-from src.localization.calibrated_map_store import resolve_bundle_path
 from src.localization.layered_minimap_locator import layer_calibration
+from src.localization.localization_bundle import TILED_KIND, resolve_bundle_path
 from src.localization.localization_workers import _DECODE_BUDGET, decode_memory_bytes
 from src.localization.minimap_map_locator import COARSE_FACTOR, minimap_map_scale
 from src.localization.tiled_map_image import CACHE_ROOT, TiledMapImage, descriptor_key, source_descriptor
@@ -155,6 +155,8 @@ def prepare_bundle(root, widths=DEFAULT_WIDTHS, *, cache_root=CACHE_ROOT, force=
     _check_cancelled(stop)
     root = Path(root).resolve()
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    if manifest.get("kind") == TILED_KIND:
+        return
     scales = [minimap_map_scale(width) * COARSE_FACTOR for width in widths]
     for entry in manifest["base_maps"]:
         if entry["zoom"] == "4":

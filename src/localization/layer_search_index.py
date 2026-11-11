@@ -24,11 +24,21 @@ class LayerSearchIndex:
 
     @classmethod
     def load_or_build(
-        cls, root, entries, *, color, cache_dir=Path("cache/localization/layer-index"), resources=None, stop=None
+        cls,
+        root,
+        entries,
+        *,
+        color,
+        cache_dir=Path("cache/localization/layer-index"),
+        resources=None,
+        stop=None,
+        bundle=None,
     ):
         """Reuse derived pixels, never previous-frame scores or positions."""
         root = Path(root).resolve()
         entries = tuple(entries)
+        if bundle is not None:
+            return cls.build(root, entries, color=color, resources=resources, stop=stop, bundle=bundle)
         identity = json.dumps([str(root), [entry["id"] for entry in entries], color])
         cache_path = Path(cache_dir) / (hashlib.sha256(identity.encode()).hexdigest() + ".npz")
         signature = cls._signature(root, entries, color)
@@ -95,9 +105,11 @@ class LayerSearchIndex:
         )
 
     @classmethod
-    def build(cls, root, entries, *, color, resources=None, stop=None):
+    def build(cls, root, entries, *, color, resources=None, stop=None, bundle=None):
         images = []
         entries = tuple(entries)
+        decode = cls._decode_entry if bundle is None else cls._read_bundle_proposal
+        options = {"bundle": bundle} if bundle is not None else {}
         # Bound submitted futures as well as workers. Only small thumbnails
         # survive each task; full-resolution arrays die inside the decoder.
         for offset in range(0, len(entries), 4):
@@ -105,7 +117,7 @@ class LayerSearchIndex:
                 raise CancelledError()
             batch = entries[offset : offset + 4]
             if resources is None:
-                results = [cls._decode_entry(root, entry, color) for entry in batch]
+                results = [decode(root, entry, color, **options) for entry in batch]
             else:
                 futures = []
                 try:
@@ -113,11 +125,16 @@ class LayerSearchIndex:
                         width, height = cls._size(entry)
                         futures.append(
                             resources.submit(
-                                cls._decode_entry,
+                                decode,
                                 root,
                                 entry,
                                 color,
-                                memory_bytes=decode_memory_bytes(entry["width"], entry["height"], width * height),
+                                memory_bytes=(
+                                    decode_memory_bytes(width, height)
+                                    if bundle is not None
+                                    else decode_memory_bytes(entry["width"], entry["height"], width * height)
+                                ),
+                                **options,
                             )
                         )
                     results = ordered_results(futures, stop)
@@ -126,6 +143,23 @@ class LayerSearchIndex:
                         future.cancel()
             images.extend(result for result in results if result is not None)
         return cls(tuple(images))
+
+    @staticmethod
+    def _read_bundle_proposal(root, entry, color, *, bundle):
+        # A damaged rank image only disables this proposal. The full search
+        # still checks the corresponding floor before proving uniqueness.
+        try:
+            tiled = bundle.open_floor(root, entry)
+            try:
+                image = tiled.proposal()
+            finally:
+                tiled.close()
+        except (OSError, ValueError):
+            return None
+        if not color:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            image.setflags(write=False)
+        return entry["id"], image
 
     @classmethod
     def _decode_entry(cls, root, entry, color):

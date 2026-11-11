@@ -3,24 +3,12 @@
 import json
 import re
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 
+from src.localization.localization_bundle import TILED_KIND, LocalizationTileBundle, resolve_bundle_path
 from src.localization.localization_workers import decode_memory_bytes
 from src.localization.minimap_map_locator import MapCalibration, MinimapMapLocator
 from src.localization.tiled_map_image import TiledMapImage
-
-
-def resolve_bundle_path(root: Path, name: str) -> Path:
-    """Resolve a manifest path confined to its bundle."""
-    if not isinstance(name, str) or not name or "\\" in name:
-        raise ValueError(f"Invalid localization resource path: {name!r}")
-    relative = PurePosixPath(name)
-    if not relative.parts or relative.is_absolute() or PureWindowsPath(name).drive or ".." in relative.parts:
-        raise ValueError(f"Invalid localization resource path: {name!r}")
-    path = root.joinpath(*relative.parts).resolve()
-    if not path.is_relative_to(root):
-        raise ValueError(f"Localization resource escapes bundle: {name}")
-    return path
 
 
 @dataclass(frozen=True)
@@ -34,13 +22,18 @@ class CalibratedMapStore:
     def __init__(self, root):
         self.root = Path(root).expanduser().resolve()
 
+    @staticmethod
+    def _is_tiled(manifest):
+        return manifest is not None and manifest.get("kind") == TILED_KIND
+
     def _read_manifest(self):
         path = self.root.parent / "manifest.json"
         try:
             manifest = json.loads(path.read_text(encoding="utf-8"))
         except FileNotFoundError:
             return None
-        if isinstance(manifest, dict) and manifest.get("kind") == "okef-visual-localization":
+        kinds = ("okef-visual-localization", TILED_KIND)
+        if isinstance(manifest, dict) and manifest.get("kind") in kinds:
             if resolve_bundle_path(path.parent, manifest.get("maps_root")) != self.root:
                 return None  # The sibling manifest describes a different configured map directory.
         elif self.root.name != "maps":
@@ -48,7 +41,7 @@ class CalibratedMapStore:
         if (
             not isinstance(manifest, dict)
             or manifest.get("schema_version") != 1
-            or manifest.get("kind") != "okef-visual-localization"
+            or manifest.get("kind") not in kinds
             or not isinstance(manifest.get("base_maps"), list)
         ):
             raise ValueError(f"Invalid visual localization manifest: {path}")
@@ -90,7 +83,11 @@ class CalibratedMapStore:
         return files
 
     @staticmethod
-    def _available_maps(files):
+    def _available_maps(files, *, tiled=False):
+        if tiled:
+            # Declared maps must all participate, even if an asset is broken.
+            # Their resource loads verify the index and calibration.
+            return sorted(files)
         available = []
         for map_id, paths in files.items():
             if not paths.image.is_file():
@@ -104,11 +101,15 @@ class CalibratedMapStore:
         return sorted(available)
 
     def available_maps(self):
-        return self._available_maps(self._map_files(self._read_manifest()))
+        manifest = self._read_manifest()
+        return self._available_maps(self._map_files(manifest), tiled=self._is_tiled(manifest))
 
     def decode_memory_bytes(self, map_id):
         try:
-            paths = self._map_files(self._read_manifest())[map_id]
+            manifest = self._read_manifest()
+            if self._is_tiled(manifest):
+                return 64 * 1024**2
+            paths = self._map_files(manifest)[map_id]
             size = paths.size
             if size is None:
                 calibration = MapCalibration.from_mapping_file(paths.mapping)
@@ -129,36 +130,50 @@ class CalibratedMapStore:
         try:
             manifest = self._read_manifest()
             files = self._map_files(manifest)
+            tiled = self._is_tiled(manifest)
             if background:
                 from src.localization.localization_workers import LocalizationWorkers
                 from src.localization.map_set_locator import MapSetLocator
                 from src.localization.tile_preparation_service import request_preparation
 
-                available = self._available_maps(files)
+                available = self._available_maps(files, tiled=tiled)
                 if map_id and map_id not in available:
                     raise ValueError("invalid_visual_map_id")
                 if not available:
                     raise ValueError("visual_map_assets_missing")
-                request_preparation(self.root)
-                return map_id, MapSetLocator(self, [map_id] if map_id else available, workers=LocalizationWorkers())
+                if not tiled:
+                    request_preparation(self.root)
+                return map_id, MapSetLocator(
+                    self, [map_id] if map_id else available, workers=LocalizationWorkers(), require_all_maps=tiled
+                )
             return self._load_resources(map_id, files, manifest)
         except (KeyError, TypeError, OverflowError) as exc:
             raise ValueError("invalid_visual_map_metadata") from exc
 
     def _load_resources(self, map_id, files, manifest):
+        tiled = self._is_tiled(manifest)
         if not map_id:
-            available = self._available_maps(files)
+            available = self._available_maps(files, tiled=tiled)
             if not available:
                 raise ValueError("visual_map_assets_missing")
             if len(available) > 1:
                 from src.localization.map_set_locator import MapSetLocator
 
-                return "", MapSetLocator(self, available)
+                return "", MapSetLocator(self, available, require_all_maps=tiled)
             map_id = available[0]
         if map_id not in files:
             raise ValueError("invalid_visual_map_id")
         paths = files[map_id]
-        locator = MinimapMapLocator.from_files(paths.image, paths.mapping)
+        bundle = None
+        if tiled:
+            bundle = LocalizationTileBundle(self.root.parent, manifest)
+            mapping = bundle.read_json(paths.mapping)
+            calibration = MapCalibration.from_mapping(mapping, name=paths.mapping.stem)
+            if (calibration.image_width, calibration.image_height) != paths.size:
+                raise ValueError(f"Visual base map calibration size does not match manifest: {map_id}")
+            locator = MinimapMapLocator(bundle.open_base(paths.image, map_id, paths.size, paths.mapping), calibration)
+        else:
+            locator = MinimapMapLocator.from_files(paths.image, paths.mapping)
         height, width = locator.map_image.shape[:2]
         if paths.size is not None and (width, height) != paths.size:
             raise ValueError(f"Visual base map size does not match manifest: {map_id}")
@@ -171,12 +186,16 @@ class CalibratedMapStore:
         if manifest is not None or catalog_path.is_file():
             from src.localization.layered_minimap_locator import LayeredMinimapLocator
 
-            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            catalog = (
+                bundle.read_json(catalog_path)
+                if bundle is not None
+                else json.loads(catalog_path.read_text(encoding="utf-8"))
+            )
             if (
                 not isinstance(catalog, dict)
                 or catalog.get("schema_version") != 1
                 or not isinstance(catalog.get("layers"), list)
             ):
                 raise ValueError("invalid_visual_layer_catalog")
-            locator = LayeredMinimapLocator(locator, map_id, layer_root, catalog)
+            locator = LayeredMinimapLocator(locator, map_id, layer_root, catalog, bundle=bundle)
         return map_id, locator

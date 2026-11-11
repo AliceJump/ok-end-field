@@ -73,6 +73,10 @@ class MapCalibration:
     @classmethod
     def from_mapping_file(cls, path: str | Path) -> MapCalibration:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
+        return cls.from_mapping(data, name=Path(path).stem)
+
+    @classmethod
+    def from_mapping(cls, data, *, name: str) -> MapCalibration:
         if not isinstance(data, dict):
             raise ValueError("Map mapping must be an object")
         matrix = np.asarray(data["matrix"], dtype=np.float64)
@@ -88,7 +92,7 @@ class MapCalibration:
             inverse_matrix=np.asarray(inverse, dtype=np.float64),
             image_width=int(size.get("width") or 0),
             image_height=int(size.get("height") or 0),
-            map_name=str(data.get("map_name") or Path(path).stem),
+            map_name=str(data.get("map_name") or name),
         )
 
     def map_to_world(self, map_x: float, map_y: float) -> tuple[float, float]:

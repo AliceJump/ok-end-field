@@ -12,8 +12,8 @@ import numpy as np
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.localization.calibrated_map_store import resolve_bundle_path
 from src.localization.layered_minimap_locator import layer_calibration
+from src.localization.localization_bundle import TILED_KIND, LocalizationTileBundle, resolve_bundle_path
 from src.localization.minimap_map_locator import MapCalibration
 
 
@@ -42,7 +42,8 @@ def verify(root: Path):
     root = root.resolve()
     manifest = _read_json(root / "manifest.json")
     _require(manifest["schema_version"] == 1, "Unsupported localization manifest version")
-    _require(manifest["kind"] == "okef-visual-localization", "Unexpected localization bundle kind")
+    _require(manifest["kind"] in {"okef-visual-localization", TILED_KIND}, "Unexpected localization bundle kind")
+    bundle = LocalizationTileBundle(root, manifest) if manifest["kind"] == TILED_KIND else None
     files = set()
     total_bytes = 0
     for entry in manifest["files"]:
@@ -74,7 +75,12 @@ def verify(root: Path):
             image.is_relative_to(maps_root) and mapping.is_relative_to(maps_root),
             f"Base map resource is outside maps_root: {key}",
         )
-        size = _verify_image(image, entry)
+        if bundle is None:
+            size = _verify_image(image, entry)
+        else:
+            size = (entry["width"], entry["height"])
+            tiled = bundle.open_base(image, entry["map_id"], size, mapping)
+            referenced.update(resolve_bundle_path(root, record["path"]) for record in tiled.resource_records())
         calibration = MapCalibration.from_mapping_file(mapping)
         _require(size == (calibration.image_width, calibration.image_height), f"Mapping image_size mismatch: {mapping}")
         forward = np.vstack((calibration.matrix, [0, 0, 1]))
@@ -96,7 +102,12 @@ def verify(root: Path):
         tiers.add(tier)
         image = resolve_bundle_path(layers_root, entry["path"])
         _require(image.name == entry["filename"], f"Layer filename disagrees with path: {tier}")
-        size = _verify_image(image, entry)
+        if bundle is None:
+            size = _verify_image(image, entry)
+        else:
+            size = (entry["width"], entry["height"])
+            tiled = bundle.open_floor(layers_root, entry)
+            referenced.update(resolve_bundle_path(root, record["path"]) for record in tiled.resource_records())
         layer_calibration(entry["bounds"], *size)
         category = entry["map_category"]
         _require(category in {"layered", "independent"}, f"Unknown map category: {tier}")

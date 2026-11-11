@@ -50,6 +50,7 @@ from src.localization.minimap_map_locator import (
     _has_minimap_texture,
     candidate_margin,
 )
+from src.localization.native_tile_image import UnpreparedTileOverview
 from src.localization.position_config_migration import (
     backup_retired_position_settings,
     migrate_item_position_overrides,
@@ -1349,6 +1350,16 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         self.assertFalse(state["position_trusted"])
         service._locate_visual_frame.assert_called_once()
         service._visual_source.unavailable.assert_called_once_with("visual_result_too_old")
+
+    def test_unprepared_tile_search_width_is_reported_and_clears_tracking(self):
+        service = self.service()
+        service._visual_source = Mock()
+        service._visual_source.sample.side_effect = UnpreparedTileOverview()
+        frame = np.zeros((768, 1366, 3), np.uint8)
+        state = service._locate_visual_frame(frame, 100, None)
+        service._visual_source.reset.assert_called_once()
+        service._visual_source.unavailable.assert_called_once_with("visual_search_width_unprepared:1366")
+        self.assertIs(state, service._visual_source.unavailable.return_value)
 
     def test_service_has_no_ws_mixin_or_runtime_import(self):
         self.assertFalse(any("Ws" in cls.__name__ for cls in WorldPoseService.__mro__))

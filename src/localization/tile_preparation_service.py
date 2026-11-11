@@ -59,8 +59,8 @@ class TilePreparationService:
             try:
                 store = CalibratedMapStore(root)
                 manifest = store._read_manifest()
-                if manifest is None:
-                    continue  # Legacy unbundled maps retain their original loader.
+                if manifest is None or store._is_tiled(manifest):
+                    continue  # Unbundled maps and published tiles require no generation.
                 store._map_files(manifest)  # Validate the configured bundle before generation.
                 logger.info("Checking localization tiles: %s", root)
                 reused = generated = 0

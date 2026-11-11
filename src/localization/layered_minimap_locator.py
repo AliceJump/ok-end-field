@@ -41,20 +41,25 @@ def layer_calibration(bounds, width, height):
 
 
 class LayeredMinimapLocator:
-    def __init__(self, base, map_id, layer_root, catalog):
+    def __init__(self, base, map_id, layer_root, catalog, *, bundle=None):
         self.base, self.map_id = base, map_id
         self.color = getattr(base, "color", False) is True
         self.calibration = base.calibration
         self.root = Path(layer_root).resolve()
+        self._bundle = bundle
         entries = catalog.get("layers", [])
         if not all(isinstance(e, dict) for e in entries):
             raise ValueError("invalid_visual_layer_entry")
         self.entries = [dict(e) for e in entries if e.get("map_name") == map_id and e.get("map_category") == "layered"]
+        seen_ids = set()
         for entry in self.entries:
             if not all(k in entry for k in ("id", "path", "width", "height", "bounds")):
                 raise ValueError("invalid_visual_layer_entry")
             if not all(isinstance(entry[k], str) and entry[k] for k in ("id", "path")):
                 raise ValueError("invalid_visual_layer_entry")
+            if bundle is not None and entry["id"] in seen_ids:
+                raise ValueError("duplicate_visual_layer_id")
+            seen_ids.add(entry["id"])
             layer_calibration(entry["bounds"], entry["width"], entry["height"])
             entry["bounds"] = {k: float(entry["bounds"][k]) for k in ("west", "east", "south", "north")}
             if not (self.root / entry["path"]).resolve().is_relative_to(self.root):
@@ -119,7 +124,11 @@ class LayeredMinimapLocator:
                 self._pending_layers[key] = self._resource_workers.resources.submit(
                     self._decode,
                     dict(entry),
-                    memory_bytes=decode_memory_bytes(entry["width"], entry["height"], output_pixels),
+                    memory_bytes=(
+                        64 * 1024**2
+                        if self._bundle is not None
+                        else decode_memory_bytes(entry["width"], entry["height"], output_pixels)
+                    ),
                 )
             future = self._pending_layers[key]
             if not future.done():
@@ -138,10 +147,12 @@ class LayeredMinimapLocator:
     def _decode(self, entry):
         """Decode without changing caches, search hints or tracking state."""
         key = entry["id"]
+        calibration, (fx, fy) = layer_calibration(entry["bounds"], entry["width"], entry["height"])
+        if self._bundle is not None:
+            return MinimapMapLocator(self._bundle.open_floor(self.root, entry), calibration)
         path = (self.root / entry["path"]).resolve()
         if not path.is_relative_to(self.root):
             raise ValueError("layer image escapes resource root")
-        calibration, (fx, fy) = layer_calibration(entry["bounds"], entry["width"], entry["height"])
         tiled = TiledMapImage.open_prepared(path, (entry["width"], entry["height"]), **floor_options(entry))
         if tiled is not None:
             return MinimapMapLocator(tiled, calibration)
@@ -350,8 +361,11 @@ class LayeredMinimapLocator:
         if not self.entries:
             return
         if self._search_index is None:
+            options = {"bundle": self._bundle} if self._bundle is not None else {}
             if self._resource_workers is None:
-                self._search_index = LayerSearchIndex.load_or_build(self.root, self.entries, color=self.color)
+                self._search_index = LayerSearchIndex.load_or_build(
+                    self.root, self.entries, color=self.color, **options
+                )
             else:
                 if self._resource_workers.closed:
                     raise ResourcePending()
@@ -363,6 +377,7 @@ class LayeredMinimapLocator:
                         color=self.color,
                         resources=self._resource_workers.resources,
                         stop=self._resource_workers.stop,
+                        **options,
                     )
                 if not self._pending_index.done():
                     raise ResourcePending()
