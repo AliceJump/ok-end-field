@@ -92,13 +92,19 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         titles = {
             "pier_waterwheel": ("码头水车", "碼頭水車", "Pier Waterwheel", "渡し場の水車", "부두 물레방아"),
             "peach_tree": (
-                "念念家的桃树", "念念家的桃樹", "Peach Tree at Babbles's Home",
-                "ネンネンの家にある桃の木", "염념이네 복숭아나무",
+                "念念家的桃树",
+                "念念家的桃樹",
+                "Peach Tree at Babbles's Home",
+                "ネンネンの家にある桃の木",
+                "염념이네 복숭아나무",
             ),
             "feranmut_heart": ("巨兽心脏", "巨獸心臟", "Feranmut Heart", "巨獣の心臓", "베헤모스의 심장"),
             "observant_fowlbeast": (
-                "东张西望的黑腹雉羽兽", "東張西望的黑腹雉羽獸", "Observant Sable-chested Fowlbeast",
-                "キョロキョロする黒腹羽獣", "두리번거리는 세이블체스티드 파울비스트",
+                "东张西望的黑腹雉羽兽",
+                "東張西望的黑腹雉羽獸",
+                "Observant Sable-chested Fowlbeast",
+                "キョロキョロする黒腹羽獣",
+                "두리번거리는 세이블체스티드 파울비스트",
             ),
         }
         locales = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR")
@@ -349,7 +355,10 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertEqual(task.wait_ui_stable.call_count, 2)
 
     def test_monitoring_entry_failure_does_not_click_blindly(self):
-        for condition, error in (("wait_click_feature", "未找到环境监测入口"), ("wait_ui_stable", "地区建设页面未稳定")):
+        for condition, error in (
+            ("wait_click_feature", "未找到环境监测入口"),
+            ("wait_ui_stable", "地区建设页面未稳定"),
+        ):
             with self.subTest(condition=condition):
                 task = self.task()
                 getattr(task, condition).return_value = False

@@ -238,7 +238,10 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
                 navigation_class = self.observation_route(observation["name"])  # 只选择已注册路线的点位
                 if not navigation_class:  # 尚未支持的观察点
                     continue  # 跳过尚未支持的委托
-                self.selected_observation = {"name": observation["name"], "terminal": terminal}  # 先记录点位以便失败后跳过
+                self.selected_observation = {
+                    "name": observation["name"],
+                    "terminal": terminal,
+                }  # 先记录点位以便失败后跳过
                 self.enter_observation(observation)  # 接取或继续所选观察点
                 self.navigation = navigation_class(self)  # 同一组件负责传送与后续移动
                 self.navigation.transfer()  # 根据点位选择传送方式
@@ -422,7 +425,9 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
                     self.log_info(f"[environment-monitoring] 观察点失败：{name}: {error}")  # 部分成功时仍可查看失败点位
                     self.ensure_main()  # 无法恢复时由外层终止
             if failures and not succeeded:  # 有尝试且全部失败
-                self.mark_task_failure(self.tr("环境监测执行失败：{error}").format(error="; ".join(failures)))  # 汇总原因
+                self.mark_task_failure(
+                    self.tr("环境监测执行失败：{error}").format(error="; ".join(failures))
+                )  # 汇总原因
                 return False  # 日常任务报告失败
             return True  # 无委托或至少一个成功
         except TaskDisabledException:  # 任务停止必须继续传递给日常执行器

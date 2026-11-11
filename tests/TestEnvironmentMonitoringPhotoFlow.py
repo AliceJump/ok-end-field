@@ -150,9 +150,11 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_failed_transfer_does_not_block_successful_observation(self):
         task = self.task()
+
         def failed_transfer():
             task.selected_observation = {"name": "小池荷"}
             raise RuntimeError("传送失败")
+
         attempts = iter((failed_transfer, lambda: {"name": "表象"}, lambda: None))
         task.prepare_observation.side_effect = lambda: next(attempts)()
         task.navigate_observation.side_effect = None
@@ -245,7 +247,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
         task.navigate_observation.side_effect = navigate_observation
         task.photograph_observation.side_effect = lambda: EnvironmentMonitoringPhotoTask.photograph_observation(task)
-        task.process_observation.side_effect = lambda observation: EnvironmentMonitoringPhotoTask.process_observation(task, observation)
+        task.process_observation.side_effect = lambda observation: EnvironmentMonitoringPhotoTask.process_observation(
+            task, observation
+        )
         task._resolve_config_key.side_effect = lambda key, category: {"r": "f6", "w": "up", "d": "right"}.get(key, key)
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
         task.next_frame.side_effect = lambda: task.frame
