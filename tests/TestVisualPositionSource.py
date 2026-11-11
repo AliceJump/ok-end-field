@@ -340,6 +340,11 @@ class TestVisualPositionSource(unittest.TestCase):
         return source, initial
 
     def test_rejected_prediction_competition_cannot_reset_visual_budget_or_anchor_age(self):
+        for status, margin in (("rejected", 0.0), ("ambiguous", 0.10)):
+            with self.subTest(status=status):
+                self._check_prediction_does_not_reset_anchor(status, margin)
+
+    def _check_prediction_does_not_reset_anchor(self, status, margin):
         source, _ = self._layered_source()
         self.addCleanup(source.close)
         initial = source.sample(self.frame(504), now=1.4)
@@ -352,7 +357,7 @@ class TestVisualPositionSource(unittest.TestCase):
             result = locate(*args, **kwargs)
             if kwargs["search_radius_m"] == source.tracker.search_radius_m:
                 wide_calls.append(result)
-                return replace(result, status="rejected", reason="layer_scan_pending", spatial_margin=0.0)
+                return replace(result, status=status, reason="competition_unverified", spatial_margin=margin)
             return result
 
         with patch.object(source.locator, "locate_near", side_effect=pending_layers):
@@ -860,6 +865,36 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
             service.config[CONFIG_USE_EXPERIMENTAL] = True
             with service.visual_sampling(owner):
                 factory.assert_called_once()
+
+    def test_stopping_sampler_keeps_ownership_until_worker_exits(self):
+        service = self.service()
+        service._executor.method = SimpleNamespace(get_frame_for_probe=Mock())
+        owner = SimpleNamespace(paused=False, enabled=True)
+        with patch("src.localization.position_service.VisualPoseSampler") as factory:
+            sampler = factory.return_value
+            sampler.close.return_value = False
+            sampler.thread.is_alive.return_value = True
+            with service.visual_sampling(owner):
+                pass
+            self.assertIs(service._visual_sampler, sampler)
+            with service.visual_sampling(owner):
+                factory.assert_called_once()
+            sampler.thread.is_alive.return_value = False
+            sampler.close.return_value = True
+            with service.visual_sampling(owner):
+                self.assertEqual(factory.call_count, 2)
+            self.assertIsNone(service._visual_sampler)
+
+    def test_sampler_start_failure_releases_service_ownership(self):
+        service = self.service()
+        service._executor.method = SimpleNamespace(get_frame_for_probe=Mock())
+        with patch("src.localization.position_service.VisualPoseSampler") as factory:
+            factory.return_value.start.side_effect = RuntimeError("start failed")
+            factory.return_value.close.return_value = True
+            with self.assertRaisesRegex(RuntimeError, "start failed"), service.visual_sampling(Mock()):
+                self.fail("failed startup must not enter navigation")
+            factory.return_value.close.assert_called_once()
+            self.assertIsNone(service._visual_sampler)
 
     def test_continuous_observation_failure_resets_partial_source_state(self):
         service = self.service()
@@ -1631,6 +1666,53 @@ class TestVisualLayerCandidates(unittest.TestCase):
 
 
 class TestVisualPoseSampler(unittest.TestCase):
+    def test_stalled_capture_has_bounded_exit_and_deferred_cleanup(self):
+        entered, release = threading.Event(), threading.Event()
+        original = Mock()
+
+        def stuck(_timeout):
+            entered.set()
+            release.wait(3)
+            return np.zeros((20, 20, 3), np.uint8)
+
+        capture = SimpleNamespace(get_frame=original, get_frame_for_probe=stuck)
+        observe = Mock()
+        sampler = VisualPoseSampler(capture, observe, lambda: True, interval=0.01, close_timeout=0.02)
+        sampler.start()
+        try:
+            self.assertTrue(entered.wait(2))
+            self.assertFalse(sampler.close())
+            self.assertTrue(sampler.thread.is_alive())
+            self.assertIsNot(capture.get_frame, original)
+            from ok.task.exceptions import CaptureException
+
+            with self.assertRaises(CaptureException):
+                capture.get_frame(busy_wait=0.1)
+            self.assertFalse(sampler.finished.is_set())
+        finally:
+            release.set()
+            sampler.thread.join(3)
+        self.assertIs(capture.get_frame, original)
+        observe.assert_not_called()
+
+    def test_foreground_wait_has_deadline_when_probe_does_not_return(self):
+        from ok.task.exceptions import CaptureException
+
+        entered, release = threading.Event(), threading.Event()
+        capture = SimpleNamespace(get_frame=Mock(), get_frame_for_probe=lambda _: (entered.set(), release.wait(3)))
+        requests = VisualCaptureCoordinator(capture, foreground_timeout=0.02)
+        requests.install()
+        worker = threading.Thread(target=lambda: requests.get_frame_for_probe(0.08))
+        worker.start()
+        try:
+            self.assertTrue(entered.wait(2))
+            with self.assertRaisesRegex(CaptureException, "stalled"):
+                capture.get_frame(busy_wait=0.1)
+        finally:
+            release.set()
+            worker.join(3)
+            requests.close()
+
     def test_delayed_probe_does_not_send_real_executor_into_busy_retry(self):
         from ok.device.capture_methods.windows_graphics import WindowsGraphicsCaptureMethod
         from ok.task.TaskExecutor import TaskExecutor

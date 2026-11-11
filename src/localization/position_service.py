@@ -254,6 +254,8 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
     def visual_sampling(self, owner):
         """Keep actual observations flowing while navigation plans or sends input."""
         capture = getattr(self.executor, "method", None)
+        if self._visual_sampler is not None and not self._visual_sampler.thread.is_alive():
+            self._visual_sampler = None
         if (
             self.experimental_capture_enabled()
             or not callable(getattr(capture, "get_frame_for_probe", None))
@@ -273,12 +275,12 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             ),
         )
         self._visual_sampler = sampler
-        sampler.start()
         try:
+            sampler.start()
             yield
         finally:
-            sampler.close()
-            if self._visual_sampler is sampler:
+            closed = sampler.close()
+            if closed and self._visual_sampler is sampler:
                 self._visual_sampler = None
 
     def _sample_continuous_visual(self, frame, stopped):

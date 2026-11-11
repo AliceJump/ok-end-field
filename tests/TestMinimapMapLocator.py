@@ -552,7 +552,7 @@ class TestMinimapTrackerRecovery(unittest.TestCase):
 
     def test_prediction_preserves_wide_margin_when_candidates_are_truncated(self):
         local = _result(10, 0, ncc=0.95)
-        wide = replace(local, status="ambiguous", spatial_margin=0.01)
+        wide = replace(local, status="accepted", spatial_margin=0.01)
         locator = _FakeLocator(local)
         tracker = MinimapTracker(locator)
         tracker._set_convinced(local.best, now=1.0)
@@ -561,6 +561,30 @@ class TestMinimapTrackerRecovery(unittest.TestCase):
         self.assertFalse(result.accepted)
         self.assertEqual(result.locate.margin, 0.01)
         self.assertIsNone(tracker._prediction_verified)
+
+    def test_ambiguous_wide_margin_above_acquisition_threshold_cannot_promote(self):
+        for now, margin in product((1.2, 3.5), (0.08, 0.10, 0.149)):
+            with self.subTest(now=now, margin=margin):
+                local = _result(10, 0, ncc=0.95)
+                wide = replace(local, status="ambiguous", spatial_margin=margin)
+                locator = _FakeLocator(local)
+                tracker = MinimapTracker(locator)
+                tracker._set_convinced(local.best, 1.0)
+                with patch.object(locator, "locate_near", side_effect=[local, wide, local, wide]):
+                    for stamp in (now, now + 0.2):
+                        result = tracker.update(None, self.g, now=stamp, prediction_world=(10, 0))
+                        self.assertFalse(result.accepted)
+                        self.assertEqual(result.pending_hits, 0)
+                        self.assertEqual(tracker._convinced_t, 1.0)
+
+    def test_fresh_nonprediction_can_track_without_strong_acquisition_margin(self):
+        local = replace(_result(10, 0), status="ambiguous", spatial_margin=0.05)
+        tracker = MinimapTracker(_FakeLocator(local))
+        tracker._set_convinced(local.best, 1.0)
+        tracked = tracker.update(None, self.g, now=1.2)
+        self.assertTrue(tracked.accepted)
+        self.assertEqual(tracker._convinced_t, 1.2)
+        self.assertLess(tracked.locate.margin, tracker.initial_min_margin)
 
     def test_ambiguous_small_window_is_verified_in_wide_window(self):
         locator = _FakeLocator(_result(100, 0))

@@ -1,17 +1,18 @@
 """离线验证覆盖与时间对齐，禁止测试向游戏发送输入。"""
 
 import io
+import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 from unittest.mock import Mock, patch
 
 import numpy as np
 
 from scripts.nav.path_safety import resolve_under
-from scripts.nav.validate_visual_grid import report_accuracy
+from scripts.nav.validate_visual_grid import ReferenceRecorder, report_accuracy
 from scripts.nav.validation_task import GridValidationTask, pose_scope_status
 from scripts.nav.visual_validation import (
     NavigationSourcePolicy,
@@ -27,6 +28,213 @@ from src.nav.grid_io import DenseGrid, GridMeta
 
 
 class TestVisualGridValidation(unittest.TestCase):
+    def test_reference_recorder_start_failure_closes_log(self):
+        handle = io.StringIO()
+        with (
+            patch("scripts.nav.validate_visual_grid.Path.open", return_value=handle),
+            patch("scripts.nav.validate_visual_grid.threading.Thread.start", side_effect=RuntimeError("start failed")),
+            self.assertRaisesRegex(RuntimeError, "start failed"),
+        ):
+            ReferenceRecorder(8000, Path("unused"))
+        self.assertTrue(handle.closed)
+
+    def _observation_task(self):
+        grid = DenseGrid(np.ones((4, 4), np.uint8), GridMeta(map_name="map02"))
+        reference = {"mapId": "map02", "time": 100, "x": 0, "z": 0, "speed": 1, "flow": 3}
+        task = SimpleNamespace(
+            stop_reason="",
+            absolute=None,
+            samples=[],
+            sample_log=io.StringIO(),
+            _grid_nav_w_held=True,
+            covered=set(),
+            traversed=set(),
+            grid=grid,
+            region=grid.cells == 1,
+            coverage_steps=0,
+            reference=SimpleNamespace(snapshot=Mock(return_value=(reference, 100, []))),
+            _stop_inputs=Mock(),
+            error_hits=0,
+            options=SimpleNamespace(max_error=1),
+        )
+        task._check_stop = lambda: GridValidationTask._check_stop(task)
+        pose = {
+            "frame_t": 100,
+            "map_id": "map02",
+            "position_trusted": True,
+            "tier_id": "__main__",
+            "tier_trusted": True,
+            "x": 2,
+            "z": 2,
+            "frame_time_source": "wgc_system_relative_time",
+        }
+        return task, pose, reference
+
+    def test_bad_or_unpaired_samples_do_not_validate_coverage(self):
+        task, pose, reference = self._observation_task()
+        with patch("scripts.nav.validation_task.time.time", return_value=100):
+            GridValidationTask._observe(task, pose)
+            self.assertEqual(task.error_hits, 1)
+            self.assertFalse(task.covered)
+            self.assertTrue(task.traversed)
+            reference["time"] = 90
+            GridValidationTask._observe(task, pose)
+            self.assertEqual(task.error_hits, 0)
+            self.assertFalse(task.covered)
+            reference.update(time=100, x=2, z=2)
+            GridValidationTask._observe(task, pose)
+            self.assertEqual(task.covered, task.traversed)
+
+    def test_unusable_samples_break_sustained_error_streak(self):
+        for invalid in (
+            {"position_trusted": False},
+            {"tier_id": None, "tier_trusted": False},
+            {"visual_duplicate_frame": True},
+        ):
+            with self.subTest(invalid=invalid), patch("scripts.nav.validation_task.time.time", return_value=100):
+                task, pose, _ = self._observation_task()
+                GridValidationTask._observe(task, pose)
+                GridValidationTask._observe(task, pose)
+                GridValidationTask._observe(task, {**pose, **invalid})
+                self.assertEqual(task.error_hits, 0)
+                GridValidationTask._observe(task, pose)
+                GridValidationTask._observe(task, pose)
+                with self.assertRaisesRegex(RuntimeError, "sustained_position_error"):
+                    GridValidationTask._observe(task, pose)
+                self.assertFalse(task.covered)
+
+    def test_reference_coverage_requires_known_main_floor_and_accurate_visual_pose(self):
+        task, pose, _ = self._observation_task()
+        pose.update(x=0.2, z=0)
+        row = {"frame_t": 10.1, "flow": 3, "stationary_reference": False, "pose": pose}
+        references = [self.record(10), self.record(10.4, 0.8)]
+        for invalid in (
+            {"tier_id": None, "tier_trusted": False},
+            {"tier_id": "floor1"},
+            {"map_id": "map01"},
+            {"visual_duplicate_frame": True},
+            {"x": 20},
+        ):
+            with self.subTest(invalid=invalid):
+                task.samples = [{**row, "pose": {**pose, **invalid}}]
+                self.assertFalse(GridValidationTask._reference_verified_cells(task, references))
+        task.samples = [row]
+        self.assertTrue(GridValidationTask._reference_verified_cells(task, references))
+
+    def test_recovery_timeout_at_max_attempt_is_not_an_obstacle(self):
+        for attempts, now, obstructed in ((3, 0, True), (2, 20, False)):
+            with self.subTest(attempts=attempts):
+                task = object.__new__(GridValidationTask)
+                task._grid_nav_follower = None
+                task._set_grid_walking = Mock()
+                task._grid_cfg_int = Mock(return_value=3)
+                task.log_warning = Mock()
+                task.active_time = Mock(return_value=now)
+                task._recover_grid_stuck = Mock()
+                ctx = SimpleNamespace(
+                    session=SimpleNamespace(recoveries=attempts, deadline=10, limit=10),
+                    step=SimpleNamespace(reason="stuck", waypoint=(1, 1), target_bearing=0),
+                    position=(0, 0),
+                    heading=0,
+                    frame=None,
+                )
+                self.assertFalse(task._grid_nav_state_stuck(ctx))
+                self.assertEqual(task.navigation_failure["recoveries"], 3)
+                self.assertEqual(task.navigation_failure["obstructed"], obstructed)
+
+    def _run_task(self, root):
+        task = SimpleNamespace(
+            stop_reason="",
+            _watch=Mock(),
+            _stop_inputs=Mock(),
+            log_warning=Mock(),
+            log_info=Mock(),
+            _save_obstacles=Mock(),
+            ensure_runtime_position_service=Mock(),
+            next_frame=Mock(),
+            navigate_grid_to=Mock(),
+        )
+        for name in ("_validation_resources", "_reference_verified_cells", "_check_stop"):
+            setattr(task, name, MethodType(getattr(GridValidationTask, name), task))
+        options = SimpleNamespace(
+            resume_covered=[],
+            resume_traversed=[],
+            resume_failures=[],
+            resume_skipped=[],
+            capture_fallback=False,
+            skip_blocked=False,
+            spacing=1,
+            seconds=60,
+            port=8000,
+            mode="record",
+            activate_game=False,
+            max_error=1,
+        )
+        grid = DenseGrid(np.ones((2, 2), np.uint8), GridMeta(map_name="map02"))
+        task.validation = (options, grid, grid.cells == 1, [(0, 0)], root, {})
+        service = SimpleNamespace(config={}, sample_world_pose=Mock(), _locate_visual_frame=Mock())
+        task.get_runtime_position_service = Mock(return_value=service)
+        return task, service
+
+    def test_initialization_failures_close_acquired_resources_and_write_report(self):
+        for stage in ("reference", "service", "guard"):
+            with self.subTest(stage=stage), tempfile.TemporaryDirectory() as directory:
+                task, service = self._run_task(Path(directory))
+                original_config, original_sample, original_locate = (
+                    service.config,
+                    service.sample_world_pose,
+                    service._locate_visual_frame,
+                )
+                reference = SimpleNamespace(close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+                guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
+                if stage == "service":
+                    task.get_runtime_position_service.side_effect = RuntimeError("service failed")
+                if stage == "guard":
+                    guard.start.side_effect = RuntimeError("guard failed")
+                with (
+                    patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference) as factory,
+                    patch("scripts.nav.validation_task.threading.Thread", return_value=guard),
+                    patch("scripts.nav.validation_task.time.sleep"),
+                ):
+                    if stage == "reference":
+                        factory.side_effect = RuntimeError("reference failed")
+                    self.assertFalse(GridValidationTask.run.__wrapped__(task))
+                self.assertTrue(task.sample_log.closed)
+                self.assertTrue(task.capture_log.closed)
+                self.assertEqual(reference.close.call_count, int(stage != "reference"))
+                self.assertIs(service.config, original_config)
+                self.assertIs(service.sample_world_pose, original_sample)
+                self.assertIs(service._locate_visual_frame, original_locate)
+                report = json.loads((Path(directory) / "report.json").read_text(encoding="utf-8"))
+                self.assertIn(f"{stage} failed", report["reason"])
+                self.assertEqual(report["status"], "stopped")
+
+    def test_record_mode_collects_failed_frames_beyond_navigation_ready_timeout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            task, _service = self._run_task(Path(directory))
+            clock = SimpleNamespace(now=0)
+            task.sleep = lambda _: setattr(clock, "now", clock.now + 10)
+
+            def observe(**kwargs):
+                pose = {"position_trusted": False, "trust_reason": "no_fix"}
+                task.samples.append({"frame_t": clock.now, "flow": 3, "stationary_reference": False, "pose": pose})
+                return pose
+
+            task.world_pose = observe
+            reference = SimpleNamespace(close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+            guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
+            with (
+                patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
+                patch("scripts.nav.validation_task.threading.Thread", return_value=guard),
+                patch("scripts.nav.validation_task.time.sleep"),
+                patch("scripts.nav.validation_task.time.monotonic", side_effect=lambda: clock.now),
+            ):
+                GridValidationTask.run.__wrapped__(task)
+            self.assertEqual(task.report["reason"], "time_limit")
+            self.assertEqual(task.report["frames"], 6)
+            self.assertEqual(task.report["elapsed_s"], 60)
+            task.navigate_grid_to.assert_not_called()
+
     def test_reference_map_change_stops_even_without_usable_visual_pose(self):
         for pose in (
             {"position_trusted": True, "tier_id": None, "tier_trusted": False},

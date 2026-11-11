@@ -1203,7 +1203,7 @@ class MinimapTracker:
         )
         if (
             fresh
-            and result.margin >= self.initial_min_margin
+            and (not used_prediction or result.margin >= self.initial_min_margin)
             and self._distance(best, self._convinced) <= convinced_radius
         ):
             self._set_convinced(best, current)
@@ -1238,8 +1238,8 @@ class MinimapTracker:
         self._prediction_margin = 0.0
         if wide is None:
             return replace(result, status="rejected", reason="prediction_competition_unavailable", spatial_margin=0.0)
-        if wide.status == "rejected":
-            # An incomplete/invalid search cannot prove absence of competitors.
+        if wide.status != "accepted":
+            # An ambiguous/incomplete search cannot prove absence of competitors.
             # Keep the local observation for visual propagation, never promotion.
             return replace(result, status="rejected", reason=f"prediction_{wide.reason}", spatial_margin=0.0)
         competitors = [
@@ -1251,7 +1251,7 @@ class MinimapTracker:
             > self.consistency_distance_m
         ]
         wide_margin = min(wide.margin, candidate_margin([best, *competitors]))
-        if wide.status == "accepted" and wide_margin >= self.initial_min_margin:
+        if wide_margin >= self.initial_min_margin:
             self._prediction_verified_t = now
             self._prediction_verified = best
             self._prediction_margin = wide_margin

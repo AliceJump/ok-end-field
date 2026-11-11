@@ -5,6 +5,7 @@ import json  # 保存逐帧原始记录
 import math  # 计算独立参考误差
 import threading  # 在导航阻塞期间仍能响应 F8
 import time  # 同时记录墙钟和运行时限
+from contextlib import ExitStack, contextmanager
 
 import cv2  # 仅保存脱敏 HUD 诊断图
 import numpy as np  # 枚举有限的可达网格
@@ -61,16 +62,24 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         return super().load_grid_for_map(map_id, **kwargs)  # 其他情况沿用项目加载逻辑
 
     def _grid_nav_state_stuck(self, ctx):  # 观察生产脱困最终结果，不改变其策略
+        self._recovery_timed_out = False
         result = super()._grid_nav_state_stuck(ctx)  # 完整执行原有恢复次数
-        if result is False:  # 只有恢复耗尽才记录通行障碍
+        if result is False:
             self.navigation_failure = {
                 "position": ctx.position,
                 "waypoint": ctx.step.waypoint,
                 "reason": ctx.step.reason,
                 "recoveries": ctx.session.recoveries,
-                "obstructed": True,
+                "obstructed": not self._recovery_timed_out,
+                "failure_kind": "timeout" if self._recovery_timed_out else "recovery_exhausted",
             }  # 保存实际受阻证据
         return result  # 保留正式状态机返回值
+
+    def _grid_navigation_timed_out(self, deadline, limit):
+        """Retain the production timeout decision instead of guessing from recovery count."""
+        expired = super()._grid_navigation_timed_out(deadline, limit)
+        self._recovery_timed_out = expired
+        return expired
 
     def _save_obstacles(self):  # 每次失败立即落盘，支持再次续跑
         from scripts.nav.validate_visual_grid import write_json  # 使用原子写入
@@ -182,28 +191,33 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             self.stop_reason = "map_or_tier_changed"
             self._check_stop()
         if not state.get("position_trusted") or state.get("visual_duplicate_frame"):  # 失败帧不能算覆盖
+            self.error_hits = 0
             return  # 正式导航负责停车与重新定位
         if state.get("frame_time_source") != "wgc_system_relative_time":  # 本测试需要准确时间轴
             self.stop_reason = "missing_wgc_presentation_timestamp"  # 不用采样结束时间伪装图像时间
             self._check_stop()  # 停止不可靠的精度验证
         scope = pose_scope_status(state, self.grid.meta.map_name)
         if scope == "tier_pending":  # 未知楼层不是换层，等待可靠楼层证据
+            self.error_hits = 0
             return
         if scope != "record":
             self.stop_reason = "map_or_tier_changed"  # 保留地图身份
             self._check_stop()  # 不跨场景继续
         point = (float(state["x"]), float(state["z"]))  # 视觉验证覆盖只读取视觉输出
         observed_cells = nearby_cells(self.region, self.grid.index_of_world(*point), self.coverage_steps)  # 不跨墙计数
-        self.covered.update(observed_cells)  # 可信视觉独立覆盖
         self.traversed.update(observed_cells)  # 总遍历包含所有可信视觉观测
         if (
             abs(stamp - float(latest.get("time") or 0)) <= 0.5 or row["stationary_reference"]
         ):  # 原始最新值仅用于误差保护
             distance = math.dist(point, (latest["x"], latest["z"]))  # 不回灌真值修正定位
             self.error_hits = self.error_hits + 1 if distance > self.options.max_error else 0  # 避免单帧时差误停
+            if distance <= self.options.max_error:
+                self.covered.update(observed_cells)
             if self.error_hits >= 3:  # 连续偏差才停止
                 self.stop_reason = f"sustained_position_error: {distance:.2f}m"  # 写明实测偏差
                 self._check_stop()  # 不带着持续错误继续跑
+        else:
+            self.error_hits = 0
 
     def _write_progress(self, point):  # 视觉失败时仍报告抓包续跑进度
         if time.monotonic() - self.last_progress_log >= 5:  # 进度日志限频
@@ -285,9 +299,91 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         self._write_progress(point)  # 两种来源下都可监控
         return selected  # 原导航状态机无需修改
 
+    @contextmanager
+    def _validation_resources(self):
+        """Own logs, reference sampling and temporary service hooks as one scope."""
+        from scripts.nav.validate_visual_grid import ReferenceRecorder
+
+        guard = None
+        with ExitStack() as resources:
+            try:
+                self.sample_log = resources.enter_context((self.directory / "visual.jsonl").open("w", encoding="utf-8"))
+                self.capture_log = resources.enter_context(
+                    (self.directory / "capture_navigation.jsonl").open("w", encoding="utf-8")
+                )
+                self.reference = ReferenceRecorder(self.options.port, self.directory)
+                resources.callback(self.reference.close)
+                service = self.get_runtime_position_service()
+                original_config = service.config
+                resources.callback(setattr, service, "config", original_config)
+                service.config = {
+                    **dict(original_config),
+                    CONFIG_USE_EXPERIMENTAL: False,
+                    CONFIG_EXPERIMENTAL_PORT: self.options.port,
+                }
+                original_sample, original_locate = service.sample_world_pose, service._locate_visual_frame
+                resources.callback(setattr, service, "sample_world_pose", original_sample)
+                resources.callback(setattr, service, "_locate_visual_frame", original_locate)
+
+                def observe_locate(frame, stamp, timing):
+                    self.last_frame, self.absolute = frame, None
+                    tracker = service._visual_source.tracker
+                    original_update = tracker.update
+
+                    def observe_update(*args, **kwargs):
+                        result = original_update(*args, **kwargs)
+                        self.absolute = result.position.to_dict() if result.position is not None else None
+                        return result
+
+                    tracker.update = observe_update
+                    try:
+                        return original_locate(frame, stamp, timing)
+                    finally:
+                        tracker.update = original_update
+
+                def observe_sample(*args, **kwargs):
+                    return self._navigation_pose(service, original_sample(*args, **kwargs))
+
+                service._locate_visual_frame, service.sample_world_pose = observe_locate, observe_sample
+                guard = threading.Thread(target=self._watch, daemon=True)
+                guard.start()
+                yield service
+            finally:
+                self.guard_done.set()
+                try:
+                    self._stop_inputs()
+                finally:
+                    if guard is not None and guard.ident is not None:
+                        guard.join(timeout=1)
+                    if self.reference is not None:
+                        time.sleep(0.4)  # Allow a final bracketing reference before closing the recorder.
+
+    def _reference_verified_cells(self, references):
+        """Count paired, accurate visual observations in the validation's map and floor."""
+        timeline, verified = ReferenceTimeline(references), set()
+        for row in self.samples:
+            pose = row["pose"]
+            if (
+                not pose.get("position_trusted")
+                or pose.get("visual_duplicate_frame")
+                or pose_scope_status(pose, self.grid.meta.map_name) != "record"
+            ):
+                continue
+            ref = align_reference(
+                timeline,
+                row["frame_t"],
+                self.grid.meta.map_name,
+                flow=row["flow"],
+                stationary=row["stationary_reference"],
+            )
+            if ref is not None and math.dist((pose["x"], pose["z"]), (ref["x"], ref["z"])) <= self.options.max_error:
+                verified.update(
+                    nearby_cells(self.region, self.grid.index_of_world(ref["x"], ref["z"]), self.coverage_steps)
+                )
+        return verified
+
     def run(self):  # 任务只编排验证点，不实现行走状态机
         from scripts.nav.validate_visual_grid import (  # 共用记录与统计工具
-            ReferenceRecorder,
             report_accuracy,
             write_json,
         )
@@ -324,46 +420,11 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         self.deadline = time.monotonic() + self.options.seconds  # 整体任务时间限制
         started = time.monotonic()  # 统计实测耗时
         self.guard_done = threading.Event()  # 管理紧急停止观察线程
-        self.reference = ReferenceRecorder(self.options.port, self.directory)  # 独立只读后端
-        self.sample_log = (self.directory / "visual.jsonl").open("w", encoding="utf-8")  # 独立保存视觉输出
-        self.capture_log = (self.directory / "capture_navigation.jsonl").open("w", encoding="utf-8")  # 不混入视觉证据
-        service = self.get_runtime_position_service()  # 使用正式 WorldPoseService
-        original_config = service.config  # 退出后恢复本实例的定位配置
-        service.config = {
-            **dict(service.config),
-            CONFIG_USE_EXPERIMENTAL: False,
-            CONFIG_EXPERIMENTAL_PORT: self.options.port,
-        }  # 独立视觉链保持开启，抓包仅作为已授权导航后备
-        original_sample, original_locate = (
-            service.sample_world_pose,
-            service._locate_visual_frame,
-        )  # 保存原始行为以便恢复
-
-        def observe_locate(frame, stamp, timing):  # 只截取绝对匹配证据，不改候选与阈值
-            self.last_frame, self.absolute = frame, None  # 防止沿用旧匹配记录
-            tracker = service._visual_source.tracker  # 使用服务实际持有的定位器
-            original_update = tracker.update  # 保留正式跟踪器行为
-
-            def observe_update(*args, **kwargs):  # 本实例的只读观察器
-                result = original_update(*args, **kwargs)  # 原样执行跟踪与确认
-                self.absolute = result.position.to_dict() if result.position is not None else None  # 区分绝对与融合结果
-                return result  # 不改变定位返回值
-
-            tracker.update = observe_update  # 临时绑定到本次采样
-            try:  # 即使定位异常也恢复方法
-                return original_locate(frame, stamp, timing)  # 生产视觉帧校验和融合照常执行
-            finally:  # 不把观察器遗留到退出后的服务
-                tracker.update = original_update  # 恢复方法
-
-        def observe_sample(*args, **kwargs):  # 导航所有 world_pose 采样都统一记录
-            state = original_sample(*args, **kwargs)  # 不另建视觉定位链
-            return self._navigation_pose(service, state)  # 持续记录视觉并选择用户授权的导航来源
-
-        service._locate_visual_frame, service.sample_world_pose = observe_locate, observe_sample  # 仅替换本实例观察入口
-        guard = threading.Thread(target=self._watch, daemon=True)  # 独立响应用户停止
-        guard.start()  # 开始有限任务保护
+        self.reference = None
+        resources = ExitStack()
         status, reason = "incomplete", "time_limit"  # 不能把未完成当作完成
         try:  # 保证导航失败也产生报告
+            resources.enter_context(self._validation_resources())
             if self.options.activate_game and self.options.mode == "run":  # 仅在用户授权的启动阶段激活
                 self.ensure_in_front()  # 复用框架窗口接口，不发送模拟按键抢焦点
                 self.wait_until(lambda: self.hwnd.is_foreground(), time_out=5)  # 等待窗口确实进入前台
@@ -372,6 +433,9 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             while time.monotonic() < self.deadline:  # 有限连通区域与时间上限
                 self._check_stop()  # 外部停止优先
                 pose = self.world_pose(frame=self.next_frame(), max_age=0.6)  # 使用项目正式姿态入口
+                if self.options.mode == "record":
+                    self.sleep(0.15)
+                    continue
                 if not navigation_pose_ready(pose):  # 初次坐标与楼层均必须经过原确认门槛
                     unready_since = time.monotonic() if unready_since is None else unready_since  # 记录连续不可用起点
                     if time.monotonic() - unready_since > 30:  # 持续不可定位时不能盲目换目标
@@ -387,9 +451,6 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
                     self.sleep(0.2)  # 框架自动刷新并保持可停止
                     continue  # 等待可信初始点
                 unready_since = None  # 完整恢复后重新计时
-                if self.options.mode == "record":  # 只观察时完全不调用导航
-                    self.sleep(0.15)  # 保持稳定采样
-                    continue  # 可由用户手动移动
                 if len(self.traversed) == len(self.region_cells):  # 总遍历完成不等于视觉全通过
                     status = (
                         "completed" if self.traversed == self.covered else "completed_with_visual_gaps"
@@ -471,34 +532,16 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
             status, reason = "stopped", self.stop_reason or f"{type(exc).__name__}: {exc}"  # 记录准确终态
             self.log_warning(reason)  # 进入正式日志
         finally:  # 先结束游戏输入，再结束采样
-            self._stop_inputs()  # 调用项目后端清理本次输入
             self.navigation_running = False  # 结束失败原因采集
-            self.guard_done.set()  # 停止紧急观察线程
-            guard.join(timeout=1)  # 等待最后一拍松键完成
-            service.sample_world_pose, service._locate_visual_frame = original_sample, original_locate  # 不污染后续任务
-            service.config = original_config  # 恢复运行前的来源设置
+            try:
+                resources.close()
+            except Exception as exc:
+                status, reason = "stopped", f"cleanup_failed: {type(exc).__name__}: {exc}"
+                self.log_warning(reason)
             if self.last_frame is not None:  # 只保存无账户标识的小地图区域
                 cv2.imwrite(str(self.directory / "last_hud.png"), self.last_frame[:280, :340])  # 留下定位证据
-            time.sleep(0.4)  # 等待最后的参考包围点到达
-            self.reference.close()  # 刷新独立抓包记录
-            self.sample_log.close()  # 关闭原始采样文件
-            self.capture_log.close()  # 关闭抓包控制证据
-        _, _, references = self.reference.snapshot()  # 使用完整轨迹重新时间对齐
-        timeline, verified = ReferenceTimeline(references), set()  # 真值覆盖单独计算，不影响导航
-        for row in self.samples:  # 只计入能和视觉帧对齐的真值观测
-            if not row["pose"].get("position_trusted"):  # 无可信定位不能算验证成功
-                continue  # 失败仍体现在可用率
-            ref = align_reference(
-                timeline,
-                row["frame_t"],
-                self.grid.meta.map_name,
-                flow=row["flow"],
-                stationary=row["stationary_reference"],
-            )  # 不做空间平移补偿
-            if ref is not None:  # 有独立配对才计真值覆盖
-                verified.update(
-                    nearby_cells(self.region, self.grid.index_of_world(ref["x"], ref["z"]), self.coverage_steps)
-                )  # 不跨墙统计
+        references = self.reference.snapshot()[2] if self.reference is not None else []
+        verified = self._reference_verified_cells(references)
         self.report = {
             **plan,
             "status": status,

@@ -44,8 +44,12 @@ class ReferenceRecorder:  # 抓包真值与视觉计算相互独立
         self.latest = None  # 保存最近原始坐标与连接健康状态
         self.checked_at = 0.0  # 单独记录本次 HTTP 健康检查时间
         self.handle = (directory / "reference.jsonl").open("w", encoding="utf-8")  # 保留精简原始真值
-        self.thread = threading.Thread(target=self._run, daemon=True)  # 不阻塞进程退出
-        self.thread.start()  # 开始观察现有后端
+        try:
+            self.thread = threading.Thread(target=self._run, daemon=True)  # 不阻塞进程退出
+            self.thread.start()  # 开始观察现有后端
+        except Exception:
+            self.handle.close()
+            raise
 
     def _run(self):  # 持续拉取后端已保存的轨迹
         fields = (

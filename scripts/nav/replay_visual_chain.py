@@ -36,6 +36,10 @@ def _replay_trace(path, rows, *, max_error_m):
     trace = []
     patch_hash = hashlib.sha256()
     for index, record in enumerate(rows):
+        boundary = next((key for key in ("map_id", "segment") if record.get(key) != rows[0].get(key)), None)
+        if boundary is not None:
+            trace.append({"index": index, "t": record["t"], "trusted": False, "reason": f"{boundary}_changed"})
+            break
         record = dict(record)
         record["patch"] = str(
             resolve_under(
@@ -139,23 +143,27 @@ def replay(path: Path, *, root: Path = ROOT, max_error_m=40.0) -> dict:
     }
 
 
-def _validate_output_not_input(recordings, output):
-    """Reject path aliases and hard links to recordings or referenced images."""
-    output_exists = output.exists()
-    for recording in recordings:
-        if output == recording or (output_exists and output.samefile(recording)):
-            raise ValueError("output_must_not_overwrite_recording")
-        for line in recording.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
+def _recorded_patches(recording):
+    """Yield every referenced input image, including frames beyond a failed prefix."""
+    for line in recording.read_text(encoding="utf-8").splitlines():
+        if line.strip():
             row = json.loads(line)
-            patch = resolve_under(
+            yield resolve_under(
                 recording.parent,
                 row.get("patch") or "",
                 label="patch",
                 must_exist=True,
                 relative_to_root=True,
             )
+
+
+def _validate_output_not_input(recordings, output):
+    """Reject path aliases and hard links to recordings or referenced images."""
+    output_exists = output.exists()
+    for recording in recordings:
+        if output == recording or (output_exists and output.samefile(recording)):
+            raise ValueError("output_must_not_overwrite_recording")
+        for patch in _recorded_patches(recording):
             if output == patch or (output_exists and output.samefile(patch)):
                 raise ValueError("output_must_not_overwrite_patch")
 
@@ -164,11 +172,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("recordings", type=Path, nargs="+")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-error-m", type=float, default=40.0)
     args = parser.parse_args()
     recordings = [resolve_under(ROOT, path, label="recording", must_exist=True) for path in args.recordings]
     output = resolve_under(ROOT, args.output, label="output")
     _validate_output_not_input(recordings, output)
-    results = [replay(path) for path in recordings]
+    results = [replay(path, max_error_m=args.max_error_m) for path in recordings]
     report = {
         "kind": "recorded relative-ring replay, not full HUD navigation",
         "limitations": [

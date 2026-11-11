@@ -1,11 +1,14 @@
 """NCC 实际停用和独立参考路程评分回归，不发送游戏输入。"""  # 实机入口另行显式启用
 
 import hashlib
+import json
 import tempfile
 import unittest  # 使用仓库测试入口
 from pathlib import Path
 from types import SimpleNamespace  # 构造最小元信息
 from unittest.mock import Mock, patch  # 验证 NCC 原方法没有执行
+
+import numpy as np
 
 from scripts.nav import replay_visual_chain
 from scripts.nav.anchor_dropout_analysis import reference_path, summarize  # 独立评分函数
@@ -16,6 +19,47 @@ from tests import TestVisualPositionSource as source_tests  # 复用合成移动
 
 
 class TestAnchorDropoutValidation(unittest.TestCase):  # 验证实验本身而非伪造成功结果
+    def test_replay_stops_before_matching_across_identity_boundary(self):
+        for key in ("map_id", "segment"):
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                image = root / "map.png"
+                image.write_bytes(b"image")
+                first = {"scale_m_per_px": 1, "t": 1, "patch": "map.png", "map_id": "map02", "segment": 1}
+                rows = [first, {**first, "t": 1.2, key: "changed", "patch": "missing.png"}]
+                recording = root / "recording.jsonl"
+                recording.write_text("\n".join(map(json.dumps, rows)), encoding="utf-8")
+                node = SimpleNamespace(path=image, gray=np.zeros((32, 32)), alpha=np.ones((32, 32)))
+                with patch.object(replay_visual_chain, "_load_patch_node", return_value=node) as load:
+                    report = replay(recording, root=root)
+                self.assertEqual(report["trusted_prefix_frames"], 1)
+                self.assertEqual(report["failure"], f"{key}_changed")
+                load.assert_called_once()
+
+    def test_cli_passes_explicit_and_default_error_budget(self):
+        for value in (None, "10"):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                recording = root / "recording.jsonl"
+                recording.write_text("", encoding="utf-8")
+                for name in ("src/localization/minimap_visual_anchor_chain.py", "scripts/nav/replay_visual_chain.py"):
+                    source = root / name
+                    source.parent.mkdir(parents=True, exist_ok=True)
+                    source.write_text("source", encoding="utf-8")
+                output = root / "report.json"
+                argv = ["replay", str(recording), "--output", str(output)]
+                if value is not None:
+                    argv.extend(["--max-error-m", value])
+                with (
+                    patch.object(replay_visual_chain.sys, "argv", argv),
+                    patch.object(replay_visual_chain, "ROOT", root),
+                    patch.object(replay_visual_chain, "replay", return_value={}) as run,
+                    patch("builtins.print"),
+                ):
+                    replay_visual_chain.main()
+                run.assert_called_once_with(recording.resolve(), max_error_m=40.0 if value is None else 10.0)
+                self.assertTrue(output.exists())
+
     def test_replay_rejects_patch_path_escape(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
