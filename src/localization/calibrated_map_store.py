@@ -120,6 +120,11 @@ class CalibratedMapStore:
             # The actual load reports invalid resources and applies backoff.
             return 1024**3
 
+    def preparation_pending(self):
+        from src.localization.tile_preparation_service import preparation_pending
+
+        return preparation_pending(self.root)
+
     def load(self, map_id="", *, background=False):
         try:
             manifest = self._read_manifest()
@@ -127,12 +132,14 @@ class CalibratedMapStore:
             if background:
                 from src.localization.localization_workers import LocalizationWorkers
                 from src.localization.map_set_locator import MapSetLocator
+                from src.localization.tile_preparation_service import request_preparation
 
                 available = self._available_maps(files)
                 if map_id and map_id not in available:
                     raise ValueError("invalid_visual_map_id")
                 if not available:
                     raise ValueError("visual_map_assets_missing")
+                request_preparation(self.root)
                 return map_id, MapSetLocator(self, [map_id] if map_id else available, workers=LocalizationWorkers())
             return self._load_resources(map_id, files, manifest)
         except (KeyError, TypeError, OverflowError) as exc:

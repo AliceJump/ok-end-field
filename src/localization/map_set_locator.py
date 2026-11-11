@@ -42,6 +42,8 @@ class MapSetLocator:
         self._cold_proposal = None
 
     def prewarm(self):
+        if self._preparation_pending():
+            return
         if self._workers is not None and not self._workers.closed:
             for mid in self.map_ids:
                 if (
@@ -52,6 +54,10 @@ class MapSetLocator:
                     estimate = getattr(self.store, "decode_memory_bytes", None)
                     size = estimate(mid) if callable(estimate) else 128 * 1024**2
                     self._pending_maps[mid] = self._workers.resources.submit(self.store.load, mid, memory_bytes=size)
+
+    def _preparation_pending(self):
+        pending = getattr(self.store, "preparation_pending", None)
+        return callable(pending) and pending() is True
 
     def close(self):
         if self._workers is not None:
@@ -134,6 +140,8 @@ class MapSetLocator:
         return "ambiguous"
 
     def _warm_base_resources(self):
+        if self._preparation_pending():
+            return False
         if self._workers is not None:
             if self._workers.closed:
                 return False

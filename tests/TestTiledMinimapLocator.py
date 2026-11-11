@@ -10,11 +10,11 @@ from unittest.mock import patch
 import cv2
 import numpy as np
 
-from scripts.nav.prepare_localization_tiles import prepare_image
 from src.localization.layer_search_index import LayerSearchIndex
 from src.localization.layered_minimap_locator import LayeredMinimapLocator, layer_calibration
 from src.localization.localization_workers import DecodeBudget
 from src.localization.minimap_map_locator import MapCalibration, MinimapGeometry, MinimapMapLocator, MinimapTracker
+from src.localization.tile_preparation import prepare_image
 from src.localization.tiled_map_image import TiledMapImage, floor_options
 
 
@@ -238,7 +238,7 @@ class TestTiledMinimapLocator(unittest.TestCase):
         tiled = self.prepare()
         before = (tiled.root / "index.json").read_bytes()
         with (
-            patch("scripts.nav.prepare_localization_tiles._write_image", side_effect=OSError("disk full")),
+            patch("src.localization.tile_preparation._write_image", side_effect=OSError("disk full")),
             self.assertRaises(OSError),
         ):
             prepare_image(self.path, (900, 800), (0.25,), cache_root=self.cache, tile_size=128, force=True)

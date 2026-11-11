@@ -24,4 +24,11 @@ if __name__ == "__main__":
         import logging
 
         logging.getLogger("ok-end-field.launcher").exception("Temporary launcher recovery failed")
-    ok.start()
+    from src.localization.tile_preparation_service import start_startup_preparation
+
+    preparation = start_startup_preparation(ok.exit_event)
+    try:
+        ok.start()
+    finally:
+        if preparation is not None:
+            preparation.close()

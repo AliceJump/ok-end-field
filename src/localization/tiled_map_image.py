@@ -7,7 +7,9 @@ import math
 import threading
 import time
 from collections import OrderedDict
+from concurrent.futures import CancelledError
 from pathlib import Path
+from typing import ClassVar
 
 import cv2
 import numpy as np
@@ -42,6 +44,19 @@ def floor_options(entry):
 
 
 class TiledMapImage:
+    _rejected_roots: ClassVar[set[Path]] = set()
+    _rejection_lock = threading.Lock()
+
+    @classmethod
+    def reject_prepared(cls, root):
+        with cls._rejection_lock:
+            cls._rejected_roots.add(Path(root).resolve())
+
+    @classmethod
+    def allow_prepared(cls, root):
+        with cls._rejection_lock:
+            cls._rejected_roots.discard(Path(root).resolve())
+
     def __init__(self, root, metadata, *, source=None, cache_bytes=8 * 1024**2):
         self.root = Path(root).resolve()
         self.metadata = metadata
@@ -80,6 +95,9 @@ class TiledMapImage:
             return None
         descriptor = source_descriptor(path, size, resize=resize, proposal_size=proposal_size)
         root = Path(cache_root) / descriptor_key(descriptor)
+        with cls._rejection_lock:
+            if root.resolve() in cls._rejected_roots:
+                return None
         try:
             metadata = json.loads((root / "index.json").read_text(encoding="utf-8"))
         except FileNotFoundError:
@@ -104,22 +122,39 @@ class TiledMapImage:
             self._cache.clear()
             self._bytes = 0
 
-    def _read(self, record):
+    def _resource_path(self, record):
         name = record["path"]
         if not isinstance(name, str) or not name:
             raise ValueError("invalid tiled image path")
         path = (self.root / name).resolve()
-        if not isinstance(name, str) or Path(name).is_absolute() or not path.is_relative_to(self.root):
+        if Path(name).is_absolute() or not path.is_relative_to(self.root):
             raise ValueError("tiled image path escapes resource root")
+        return path
+
+    def verify_resources(self, stop=None):
+        """Check derived files without decoding images during startup."""
+        records = [*self.metadata["tiles"].values(), *self.metadata["overviews"].values()]
+        if self.metadata["descriptor"]["proposal_size"] is not None:
+            records.append(self.metadata["proposal"])
+        for record in records:
+            if stop is not None and stop.is_set():
+                raise CancelledError()
+            with self._resource_path(record).open("rb") as stream:
+                digest = hashlib.file_digest(stream, "sha256").hexdigest()
+            if digest != record["sha256"]:
+                raise ValueError("corrupt tiled image resource")
+
+    def _read(self, record):
+        path = self._resource_path(record)
         with self._lock:
             if self._closed:
                 raise ValueError("tiled image closed")
         data = path.read_bytes()
         if hashlib.sha256(data).hexdigest() != record["sha256"]:
-            raise ValueError(f"corrupt tiled image resource: {name}")
+            raise ValueError(f"corrupt tiled image resource: {record['path']}")
         pixels = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
         if pixels is None or list(pixels.shape[:2]) != record["shape"]:
-            raise ValueError(f"invalid tiled image resource: {name}")
+            raise ValueError(f"invalid tiled image resource: {record['path']}")
         pixels.setflags(write=False)
         with self._lock:
             if self._closed:
