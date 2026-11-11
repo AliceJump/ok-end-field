@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
+from src.localization.localization_workers import decode_memory_bytes
 from src.localization.minimap_map_locator import MapCalibration, MinimapMapLocator
 
 
@@ -103,6 +104,18 @@ class CalibratedMapStore:
 
     def available_maps(self):
         return self._available_maps(self._map_files(self._read_manifest()))
+
+    def decode_memory_bytes(self, map_id):
+        try:
+            paths = self._map_files(self._read_manifest())[map_id]
+            size = paths.size
+            if size is None:
+                calibration = MapCalibration.from_mapping_file(paths.mapping)
+                size = (calibration.image_width, calibration.image_height)
+            return decode_memory_bytes(*size)
+        except (OSError, ValueError, KeyError, TypeError, OverflowError):
+            # The actual load reports invalid resources and applies backoff.
+            return 1024**3
 
     def load(self, map_id="", *, background=False):
         try:

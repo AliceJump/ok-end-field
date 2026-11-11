@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 
 from src.localization.layer_search_index import LayerSearchIndex
-from src.localization.localization_workers import ResourcePending
+from src.localization.localization_workers import ResourcePending, decode_memory_bytes
 from src.localization.minimap_map_locator import (
     LocateResult,
     MapCalibration,
@@ -77,6 +77,17 @@ class LayeredMinimapLocator:
     def _scale(self, width):
         return self.base._scale(width)
 
+    def close(self):
+        for future in self._pending_layers.values():
+            future.cancel()
+        self._pending_layers.clear()
+        if self._pending_index is not None:
+            self._pending_index.cancel()
+            self._pending_index = None
+        self._search_index = None
+        self._cache.clear()
+        self._cache_bytes = 0
+
     @property
     def last_failure_reason(self):
         return self.base.last_failure_reason
@@ -98,7 +109,13 @@ class LayeredMinimapLocator:
             if self._resource_workers.closed:
                 raise ResourcePending()
             if key not in self._pending_layers:
-                self._pending_layers[key] = self._resource_workers.resources.submit(self._decode, dict(entry))
+                bounds = entry["bounds"]
+                output_pixels = (bounds["east"] - bounds["west"]) * (bounds["north"] - bounds["south"]) * 16
+                self._pending_layers[key] = self._resource_workers.resources.submit(
+                    self._decode,
+                    dict(entry),
+                    memory_bytes=decode_memory_bytes(entry["width"], entry["height"], output_pixels),
+                )
             future = self._pending_layers[key]
             if not future.done():
                 raise ResourcePending()
@@ -303,7 +320,16 @@ class LayeredMinimapLocator:
         if template is None:
             return []
         self.prepare_layer_index()
-        return self._search_index.rank(template, self._scale(frame.shape[1]))
+        if self._resource_workers is None:
+            return self._search_index.rank(template, self._scale(frame.shape[1]))
+        if self._resource_workers.closed:
+            raise ResourcePending()
+        return self._search_index.rank(
+            template,
+            self._scale(frame.shape[1]),
+            executor=self._resource_workers.rankings,
+            stop=self._resource_workers.stop,
+        )
 
     def prepare_layer_index(self):
         """Prepare compact resources without producing visual evidence."""
@@ -316,8 +342,13 @@ class LayeredMinimapLocator:
                 if self._resource_workers.closed:
                     raise ResourcePending()
                 if self._pending_index is None:
-                    self._pending_index = self._resource_workers.resources.submit(
-                        LayerSearchIndex.load_or_build, self.root, tuple(self.entries), color=self.color
+                    self._pending_index = self._resource_workers.indexes.submit(
+                        LayerSearchIndex.load_or_build,
+                        self.root,
+                        tuple(self.entries),
+                        color=self.color,
+                        resources=self._resource_workers.resources,
+                        stop=self._resource_workers.stop,
                     )
                 if not self._pending_index.done():
                     raise ResourcePending()

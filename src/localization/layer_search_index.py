@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import tempfile
+from concurrent.futures import CancelledError
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +13,8 @@ from zipfile import BadZipFile
 import cv2
 import numpy as np
 
+from src.localization.localization_workers import decode_memory_bytes, ordered_results
+
 
 @dataclass(frozen=True)
 class LayerSearchIndex:
@@ -19,7 +22,9 @@ class LayerSearchIndex:
     pixels_per_meter: float = 0.5
 
     @classmethod
-    def load_or_build(cls, root, entries, *, color, cache_dir=Path("cache/localization/layer-index")):
+    def load_or_build(
+        cls, root, entries, *, color, cache_dir=Path("cache/localization/layer-index"), resources=None, stop=None
+    ):
         """Reuse derived pixels, never previous-frame scores or positions."""
         root = Path(root).resolve()
         entries = tuple(entries)
@@ -41,7 +46,9 @@ class LayerSearchIndex:
                     return cls(tuple(images))
         except (OSError, ValueError, TypeError, KeyError, EOFError, BadZipFile):
             pass
-        index = cls.build(root, entries, color=color)
+        index = cls.build(root, entries, color=color, resources=resources, stop=stop)
+        if stop is not None and stop.is_set():
+            raise CancelledError()
         # Do not publish a partial index or one built while resources changed.
         if len(index.images) != len(entries) or signature != cls._signature(root, entries, color):
             return index
@@ -87,40 +94,82 @@ class LayerSearchIndex:
         )
 
     @classmethod
-    def build(cls, root, entries, *, color):
+    def build(cls, root, entries, *, color, resources=None, stop=None):
         images = []
-        for entry in entries:
-            path = (root / entry["path"]).resolve()
-            if not path.is_relative_to(root):
-                raise ValueError("layer image escapes resource root")
-            image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
-            if image is None or image.shape[:2] != (entry["height"], entry["width"]):
-                # This index is only an accelerator. The ordinary full scan
-                # retains resource retry and fail-closed overlap checks.
-                continue
-            # Resize before channel copies/masking: keeping full-resolution
-            # decoded floors would make both cold loading and memory unbounded.
-            image = cv2.resize(image, cls._size(entry), interpolation=cv2.INTER_AREA)
-            if image.ndim == 3 and image.shape[2] == 4:
-                alpha = image[:, :, 3]
-                image = image[:, :, :3].copy()
-                image[alpha == 0] = 0
-            if color and image.ndim == 2:
-                image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-            elif not color and image.ndim == 3:
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            image.setflags(write=False)
-            images.append((entry["id"], image))
+        entries = tuple(entries)
+        # Bound submitted futures as well as workers. Only small thumbnails
+        # survive each task; full-resolution arrays die inside the decoder.
+        for offset in range(0, len(entries), 4):
+            if stop is not None and stop.is_set():
+                raise CancelledError()
+            batch = entries[offset : offset + 4]
+            if resources is None:
+                results = [cls._decode_entry(root, entry, color) for entry in batch]
+            else:
+                futures = []
+                try:
+                    for entry in batch:
+                        width, height = cls._size(entry)
+                        futures.append(
+                            resources.submit(
+                                cls._decode_entry,
+                                root,
+                                entry,
+                                color,
+                                memory_bytes=decode_memory_bytes(entry["width"], entry["height"], width * height),
+                            )
+                        )
+                    results = ordered_results(futures, stop)
+                finally:
+                    for future in futures:
+                        future.cancel()
+            images.extend(result for result in results if result is not None)
         return cls(tuple(images))
 
-    def rank(self, template, map_scale):
+    @classmethod
+    def _decode_entry(cls, root, entry, color):
+        path = (root / entry["path"]).resolve()
+        if not path.is_relative_to(root):
+            raise ValueError("layer image escapes resource root")
+        image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+        if image is None or image.shape[:2] != (entry["height"], entry["width"]):
+            # The full scan retains retry and fail-closed overlap checks.
+            return None
+        image = cv2.resize(image, cls._size(entry), interpolation=cv2.INTER_AREA)
+        if image.ndim == 3 and image.shape[2] == 4:
+            alpha = image[:, :, 3]
+            image = image[:, :, :3].copy()
+            image[alpha == 0] = 0
+        if color and image.ndim == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        elif not color and image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        image.setflags(write=False)
+        return entry["id"], image
+
+    def rank(self, template, map_scale, *, executor=None, stop=None):
         size = max(4, round(template.flat.shape[0] * self.pixels_per_meter / (4 * map_scale)))
         thumbnail = cv2.resize(template.flat, (size, size), interpolation=cv2.INTER_AREA)
+        thumbnail.setflags(write=False)
+        if executor is None:
+            return sorted(self._rank_images(self.images, thumbnail), reverse=True)
+        futures = []
+        try:
+            for i in range(min(4, len(self.images))):
+                futures.append(executor.submit(self._rank_images, self.images[i::4], thumbnail))
+            return sorted((proposal for batch in ordered_results(futures, stop) for proposal in batch), reverse=True)
+        finally:
+            for future in futures:
+                future.cancel()
+
+    @staticmethod
+    def _rank_images(images, thumbnail):
+        size = thumbnail.shape[0]
         proposals = []
-        for tier_id, image in self.images:
+        for tier_id, image in images:
             if min(image.shape[:2]) < size:
                 continue
             scores = cv2.matchTemplate(image, thumbnail, cv2.TM_CCOEFF_NORMED)
             scores = np.where(np.isfinite(scores), scores, -1)
             proposals.append((float(scores.max()), tier_id))
-        return sorted(proposals, reverse=True)
+        return proposals

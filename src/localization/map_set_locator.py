@@ -49,12 +49,18 @@ class MapSetLocator:
                     and mid not in self._pending_maps
                     and time.monotonic() >= self._resource_retry_at.get(mid, 0)
                 ):
-                    self._pending_maps[mid] = self._workers.resources.submit(self.store.load, mid)
+                    estimate = getattr(self.store, "decode_memory_bytes", None)
+                    size = estimate(mid) if callable(estimate) else 128 * 1024**2
+                    self._pending_maps[mid] = self._workers.resources.submit(self.store.load, mid, memory_bytes=size)
 
     def close(self):
         if self._workers is not None:
             self._workers.close()
         self._pending_maps.clear()
+        for locator in self._cache.values():
+            close = getattr(locator, "close", None)
+            if callable(close):
+                close()
         self._cache.clear()
 
     def _scale(self, width):

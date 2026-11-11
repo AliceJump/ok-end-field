@@ -7,6 +7,7 @@ import tempfile
 import threading
 import unittest
 import weakref
+from concurrent.futures import CancelledError, wait
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -30,7 +31,13 @@ from src.core.PositionConfig import (
 from src.localization.calibrated_map_store import CalibratedMapStore
 from src.localization.layer_search_index import LayerSearchIndex
 from src.localization.layered_minimap_locator import LayeredMinimapLocator, layer_calibration
-from src.localization.localization_workers import LocalizationWorkers, ResourcePending
+from src.localization.localization_workers import (
+    DecodeBudget,
+    LocalizationWorkers,
+    ResourcePending,
+    _ResourceExecutor,
+    ordered_results,
+)
 from src.localization.map_set_locator import MapSetLocator
 from src.localization.minimap_map_locator import (
     LocateResult,
@@ -1360,7 +1367,7 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         path.write_text(json.dumps(values), encoding="utf-8")
         mid, locator = CalibratedMapStore(self.root).load("map02", background=True)
         locator.prewarm()
-        locator._workers.resources.submit(lambda: None).result(timeout=3)
+        self.assertFalse(wait(tuple(locator._pending_maps.values()), timeout=3).not_done)
         self.assertTrue(locator._warm_base_resources())
         self.assertEqual(mid, "map02")
         np.testing.assert_array_equal(locator.calibration.matrix, values["matrix"])
@@ -1551,6 +1558,268 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
         self.assertIsNone(result["x"])
 
 
+class TestLocalizationWorkerBudget(unittest.TestCase):
+    def test_failed_future_does_not_retain_decoded_image_through_traceback(self):
+        pool = _ResourceExecutor(budget=DecodeBudget(lambda: 0))
+        references = []
+
+        def decode_inner():
+            image = np.zeros((32, 32), np.uint8)
+            references.append(weakref.ref(image))
+            raise ValueError("invalid decoded image")
+
+        def decode():
+            try:
+                decode_inner()
+            except ValueError as exc:
+                raise ValueError("invalid decoded image wrapper") from exc
+
+        try:
+            future = pool.submit(decode)
+            with self.assertRaisesRegex(ValueError, "invalid decoded image"):
+                future.result(timeout=3)
+            self.assertIsNone(references[0]())
+            self.assertIsInstance(future.exception(), ValueError)
+        finally:
+            pool.shutdown(wait=True, cancel_futures=True)
+
+    def test_graceful_shutdown_drains_results_without_cancelling_them(self):
+        pool = _ResourceExecutor(budget=DecodeBudget(lambda: 0))
+        futures = [pool.submit(lambda value=i: value) for i in range(5)]
+        pool.shutdown(wait=True)
+        self.assertEqual([future.result(timeout=1) for future in futures], list(range(5)))
+        self.assertEqual(pool._budget.reserved_bytes, 0)
+
+    def test_task_timeout_error_is_preserved_after_other_results_are_drained(self):
+        pool = _ResourceExecutor(2, budget=None)
+        try:
+            failed = pool.submit(Mock(side_effect=TimeoutError("decoder timeout")))
+            completed = pool.submit(lambda: 1)
+            with self.assertRaisesRegex(TimeoutError, "decoder timeout"):
+                ordered_results([failed, completed], threading.Event())
+            self.assertTrue(completed.done())
+        finally:
+            pool.shutdown(wait=True, cancel_futures=True)
+
+    def test_failed_memory_probe_falls_back_to_one_decoder(self):
+        budget = DecodeBudget(Mock(side_effect=OSError("unavailable")))
+        self.assertTrue(budget.acquire(100))
+        self.assertFalse(budget.acquire(100))
+        budget.release(100)
+        self.assertEqual((budget.active, budget.reserved_bytes), (0, 0))
+
+    def test_idle_workers_release_completed_results_and_bound_arguments(self):
+        budget = DecodeBudget(lambda: 0)
+        pool = _ResourceExecutor(budget=budget)
+        released = threading.Event()
+        original = budget.release
+
+        def record_release(size):
+            original(size)
+            released.set()
+
+        class Decoder:
+            def run(self, pixels):
+                return pixels
+
+        budget.release = record_release
+        owner = Decoder()
+        pixels = np.zeros((32, 32), np.uint8)
+        owner_ref, pixels_ref = weakref.ref(owner), weakref.ref(pixels)
+        try:
+            future = pool.submit(owner.run, pixels)
+            future.result(timeout=3)
+            self.assertTrue(released.wait(3))
+            del owner, pixels, future
+            self.assertIsNone(owner_ref())
+            self.assertIsNone(pixels_ref())
+            self.assertTrue(any(thread.is_alive() for thread in pool._threads))
+        finally:
+            pool.shutdown(wait=True, cancel_futures=True)
+
+    def test_memory_admission_allows_one_two_or_four_decoders(self):
+        for available, concurrency in ((0, 1), (250, 2), (1000, 4)):
+            with self.subTest(available=available):
+                budget = DecodeBudget(lambda amount=available: amount, reserve_bytes=0)
+                pool = _ResourceExecutor(budget=budget)
+                release = threading.Event()
+                entered = [threading.Event() for _ in range(4)]
+
+                def decode(i, entered=entered, release=release):
+                    entered[i].set()
+                    self.assertTrue(release.wait(3))
+                    return i
+
+                try:
+                    futures = [pool.submit(decode, i, memory_bytes=100) for i in range(4)]
+                    for event in entered[:concurrency]:
+                        self.assertTrue(event.wait(3))
+                    for event in entered[concurrency:]:
+                        self.assertFalse(event.wait(0.05))
+                    release.set()
+                    self.assertEqual([f.result(timeout=3) for f in futures], list(range(4)))
+                finally:
+                    release.set()
+                    pool.shutdown(wait=True, cancel_futures=True)
+                self.assertEqual((budget.active, budget.reserved_bytes), (0, 0))
+                self.assertFalse(any(thread.is_alive() for thread in pool._threads))
+
+    def test_memory_drop_stops_new_work_and_recovery_expands_again(self):
+        memory = [1000]
+        budget = DecodeBudget(lambda: memory[0], reserve_bytes=0)
+        pool = _ResourceExecutor(budget=budget)
+        entered = [threading.Event() for _ in range(8)]
+        release = [threading.Event() for _ in range(8)]
+
+        def decode(i):
+            entered[i].set()
+            self.assertTrue(release[i].wait(3))
+
+        try:
+            first = [pool.submit(decode, i, memory_bytes=100) for i in range(4)]
+            self.assertTrue(all(event.wait(3) for event in entered[:4]))
+            memory[0] = 150
+            next_job = pool.submit(decode, 4, memory_bytes=100)
+            for event in release[:3]:
+                event.set()
+            for future in first[:3]:
+                future.result(timeout=3)
+            self.assertFalse(entered[4].wait(0.1))
+            release[3].set()
+            self.assertTrue(entered[4].wait(3))
+            memory[0] = 1000
+            more = [pool.submit(decode, i, memory_bytes=100) for i in range(5, 8)]
+            self.assertTrue(all(event.wait(3) for event in entered[5:]))
+            for event in release:
+                event.set()
+            for future in [*first, next_job, *more]:
+                future.result(timeout=3)
+        finally:
+            for event in release:
+                event.set()
+            pool.shutdown(wait=True, cancel_futures=True)
+        self.assertEqual(budget.reserved_bytes, 0)
+
+    def test_retiring_and_new_sources_share_one_decode_budget(self):
+        budget = DecodeBudget(lambda: 0)
+        first, second = _ResourceExecutor(budget=budget), _ResourceExecutor(budget=budget)
+        entered, release, next_entered = threading.Event(), threading.Event(), threading.Event()
+        try:
+            old = first.submit(lambda: (entered.set(), release.wait(3)))
+            self.assertTrue(entered.wait(3))
+            first.shutdown(wait=False, cancel_futures=True)
+            new = second.submit(next_entered.set)
+            self.assertFalse(next_entered.wait(0.1))
+            release.set()
+            with self.assertRaises(CancelledError):
+                old.result(timeout=3)
+            new.result(timeout=3)
+        finally:
+            release.set()
+            first.shutdown(wait=True, cancel_futures=True)
+            second.shutdown(wait=True, cancel_futures=True)
+        self.assertEqual((budget.active, budget.reserved_bytes), (0, 0))
+
+    def test_close_cancels_queue_discards_late_image_and_releases_memory(self):
+        pool = _ResourceExecutor(budget=DecodeBudget(lambda: 0))
+        entered, release = threading.Event(), threading.Event()
+        references = []
+
+        def decode():
+            pixels = np.zeros((32, 32), np.uint8)
+            references.append(weakref.ref(pixels))
+            entered.set()
+            self.assertTrue(release.wait(3))
+            return pixels
+
+        try:
+            running = pool.submit(decode)
+            self.assertTrue(entered.wait(3))
+            queued = pool.submit(Mock(side_effect=AssertionError("cancelled work ran")))
+            pool.shutdown(wait=False, cancel_futures=True)
+            self.assertTrue(queued.cancelled())
+            self.assertFalse(wait([queued], timeout=0.1).not_done)
+            with self.assertRaises(RuntimeError):
+                pool.submit(lambda: None)
+            release.set()
+            with self.assertRaises(CancelledError):
+                running.result(timeout=3)
+        finally:
+            release.set()
+            pool.shutdown(wait=True, cancel_futures=True)
+        self.assertIsNone(references[0]())
+        self.assertEqual(pool._budget.reserved_bytes, 0)
+
+    def test_decode_failure_releases_reservation_and_next_job_can_run(self):
+        budget = DecodeBudget(lambda: 0)
+        pool = _ResourceExecutor(budget=budget)
+        try:
+            failed = pool.submit(Mock(side_effect=ValueError("bad pixels")))
+            succeeded = pool.submit(lambda: 42)
+            with self.assertRaisesRegex(ValueError, "bad pixels"):
+                failed.result(timeout=3)
+            self.assertEqual(succeeded.result(timeout=3), 42)
+        finally:
+            pool.shutdown(wait=True, cancel_futures=True)
+        self.assertEqual((budget.active, budget.reserved_bytes), (0, 0))
+
+    def test_parallel_rank_uses_four_read_only_jobs_and_matches_serial_results(self):
+        pixels = np.random.default_rng(31).integers(0, 255, (64, 64, 3), np.uint8)
+        pixels.setflags(write=False)
+        index = LayerSearchIndex(tuple((str(i), pixels) for i in range(8)))
+        template = SimpleNamespace(flat=pixels[16:32, 16:32])
+        expected = index.rank(template, 0.125)
+        barrier = threading.Barrier(4)
+        original = index._rank_images
+
+        def rank(images, thumbnail):
+            self.assertFalse(thumbnail.flags.writeable)
+            barrier.wait(timeout=3)
+            return original(images, thumbnail)
+
+        pool = _ResourceExecutor(4, budget=None)
+        try:
+            with patch.object(LayerSearchIndex, "_rank_images", side_effect=rank):
+                self.assertEqual(index.rank(template, 0.125, executor=pool), expected)
+            threads = tuple(pool._threads)
+            for _ in range(4):
+                self.assertEqual(index.rank(template, 0.125, executor=pool), expected)
+            self.assertEqual(tuple(pool._threads), threads)
+        finally:
+            pool.shutdown(wait=True, cancel_futures=True)
+
+    def test_failed_ranking_drains_the_other_jobs_before_return(self):
+        pool = _ResourceExecutor(2, budget=None)
+        entered, release, returned = threading.Event(), threading.Event(), threading.Event()
+        errors = []
+
+        def collect():
+            try:
+                ordered_results(
+                    [
+                        pool.submit(Mock(side_effect=ValueError("failed rank"))),
+                        pool.submit(lambda: (entered.set(), release.wait(3))),
+                    ]
+                )
+            except ValueError as exc:
+                errors.append(str(exc))
+            finally:
+                returned.set()
+
+        thread = threading.Thread(target=collect)
+        try:
+            thread.start()
+            self.assertTrue(entered.wait(3))
+            self.assertFalse(returned.wait(0.05))
+            release.set()
+            self.assertTrue(returned.wait(3))
+            self.assertEqual(errors, ["failed rank"])
+        finally:
+            release.set()
+            thread.join(timeout=3)
+            pool.shutdown(wait=True, cancel_futures=True)
+
+
 class TestAutomaticMapCompetition(unittest.TestCase):
     def test_decoding_retains_only_tier_hint_and_validates_the_current_frame(self):
         locator = self.locator()
@@ -1704,7 +1973,7 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
         locator = MapSetLocator(SimpleNamespace(load=load), ["map01", "map02"], workers=pool)
         locator.prewarm()
-        pool.resources.submit(lambda: None).result(timeout=3)
+        self.assertFalse(wait(tuple(locator._pending_maps.values()), timeout=3).not_done)
         self.assertTrue(locator._warm_base_resources())
         self.assertEqual([mid for mid, _ in locator._compare_base_maps(np.zeros((3, 3, 3), np.uint8), None)], ["map02"])
 
@@ -1732,7 +2001,7 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         self.assertFalse(locator._warm_base_resources())
         self.assertEqual(locator._cache, {})
         release.set()
-        pool.resources.submit(lambda: None).result(timeout=3)
+        self.assertFalse(wait(tuple(locator._pending_maps.values()), timeout=3).not_done)
         self.assertEqual(locator._cache, {})  # Workers never publish caches.
         self.assertTrue(locator._warm_base_resources())
         self.assertEqual(list(locator._cache), ["map01", "map02"])
@@ -1810,7 +2079,8 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         future = locator._pending_maps["map01"]
         locator.close()
         release.set()
-        future.result(timeout=3)
+        with self.assertRaises(CancelledError):
+            future.result(timeout=3)
         self.assertFalse(locator._warm_base_resources())
         self.assertEqual(locator._cache, {})
 
@@ -1820,14 +2090,14 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         locator = MapSetLocator(store, ["map01"], workers=pool)
         with patch("src.localization.map_set_locator.time.monotonic", return_value=10):
             locator.prewarm()
-            pool.resources.submit(lambda: None).result(timeout=3)
+            self.assertFalse(wait(tuple(locator._pending_maps.values()), timeout=3).not_done)
             self.assertFalse(locator._warm_base_resources())
             self.assertFalse(locator._warm_base_resources())
             self.assertEqual(store.load.call_count, 1)
             self.assertEqual(locator._resource_errors, {"map01": "invalid image"})
         with patch("src.localization.map_set_locator.time.monotonic", return_value=16):
             locator.prewarm()
-            pool.resources.submit(lambda: None).result(timeout=3)
+            self.assertFalse(wait(tuple(locator._pending_maps.values()), timeout=3).not_done)
             self.assertTrue(locator._warm_base_resources())
             self.assertEqual(locator._resource_errors, {})
         self.assertEqual(store.load.call_count, 2)
@@ -1878,6 +2148,119 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
 
 class TestVisualLayerCandidates(unittest.TestCase):
+    def test_four_parallel_index_decoders_preserve_catalog_order_and_pixels(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entry = self.index_fixture(root)
+            entries = [{**entry, "id": str(i)} for i in range(8)]
+            expected = LayerSearchIndex.build(root, entries, color=True)
+            budget = DecodeBudget(lambda: 1024**3)
+            pool = _ResourceExecutor(budget=budget)
+            barrier = threading.Barrier(4)
+            original = LayerSearchIndex._decode_entry
+
+            def decode(*args):
+                barrier.wait(timeout=3)
+                return original(*args)
+
+            try:
+                with patch.object(LayerSearchIndex, "_decode_entry", side_effect=decode):
+                    actual = LayerSearchIndex.build(root, entries, color=True, resources=pool)
+                self.assertEqual([name for name, _ in actual.images], [name for name, _ in expected.images])
+                for (_, pixels), (_, reference) in zip(actual.images, expected.images, strict=True):
+                    np.testing.assert_array_equal(pixels, reference)
+            finally:
+                pool.shutdown(wait=True, cancel_futures=True)
+            self.assertEqual(budget.reserved_bytes, 0)
+
+    def test_parallel_index_matches_serial_and_can_progress_with_one_decode_slot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entry = self.index_fixture(root)
+            entries = [{**entry, "id": str(i)} for i in range(9)]
+            expected = LayerSearchIndex.build(root, entries, color=True)
+            pool = LocalizationWorkers()
+            pool.resources._budget = DecodeBudget(lambda: 0)
+            try:
+                job = pool.indexes.submit(
+                    LayerSearchIndex.load_or_build,
+                    root,
+                    entries,
+                    color=True,
+                    cache_dir=root / "cache",
+                    resources=pool.resources,
+                    stop=pool.stop,
+                )
+                actual = job.result(timeout=3)
+                self.assertEqual([name for name, _ in actual.images], [name for name, _ in expected.images])
+                for (_, image), (_, reference) in zip(actual.images, expected.images, strict=True):
+                    np.testing.assert_array_equal(image, reference)
+                    self.assertFalse(image.flags.writeable)
+            finally:
+                pool.close()
+                pool.indexes.shutdown(wait=True, cancel_futures=True)
+                pool.resources.shutdown(wait=True, cancel_futures=True)
+
+    def test_close_abandons_index_coordinator_without_waiting_for_blocked_decode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entry = self.index_fixture(root)
+            entries = [{**entry, "id": str(i)} for i in range(8)]
+            pool = LocalizationWorkers()
+            pool.resources._budget = DecodeBudget(lambda: 0)
+            entered, release = threading.Event(), threading.Event()
+            original = LayerSearchIndex._decode_entry
+
+            def blocked(*args):
+                entered.set()
+                self.assertTrue(release.wait(3))
+                return original(*args)
+
+            try:
+                with patch.object(LayerSearchIndex, "_decode_entry", side_effect=blocked) as decode:
+                    job = pool.indexes.submit(
+                        LayerSearchIndex.load_or_build,
+                        root,
+                        entries,
+                        color=True,
+                        cache_dir=root / "cache",
+                        resources=pool.resources,
+                        stop=pool.stop,
+                    )
+                    self.assertTrue(entered.wait(3))
+                    pool.close()
+                    with self.assertRaises(CancelledError):
+                        job.result(timeout=1)
+                    self.assertFalse((root / "cache").exists())
+                    self.assertEqual(decode.call_count, 1)
+                    release.set()
+                    pool.resources.shutdown(wait=True, cancel_futures=True)
+            finally:
+                release.set()
+                pool.close()
+                pool.indexes.shutdown(wait=True, cancel_futures=True)
+                pool.resources.shutdown(wait=True, cancel_futures=True)
+            self.assertEqual(pool.resources._budget.reserved_bytes, 0)
+
+    def test_close_releases_layer_cache_and_cancels_queued_resources(self):
+        from concurrent.futures import Future
+
+        locator = self.locator()
+        pixels = np.zeros((32, 32), np.uint8)
+        reference = weakref.ref(pixels)
+        locator._cache["floor"] = SimpleNamespace(map_image=pixels)
+        locator._cache_bytes = pixels.nbytes
+        del pixels
+        floor, index = Future(), Future()
+        locator._pending_layers["floor"] = floor
+        locator._pending_index = index
+        locator.close()
+        self.assertTrue(floor.cancelled())
+        self.assertTrue(index.cancelled())
+        self.assertIsNone(reference())
+        self.assertEqual(locator._cache_bytes, 0)
+        self.assertEqual(locator._pending_layers, {})
+
     def index_fixture(self, root):
         entry = self.locator().entries[0]
         pixels = np.random.default_rng(24).integers(0, 255, (80, 80, 3), dtype=np.uint8)
@@ -2003,13 +2386,18 @@ class TestVisualLayerCandidates(unittest.TestCase):
         locator = self.locator()
         locator.base._prepare_template = Mock(return_value=object())
         future = Future()
-        workers = SimpleNamespace(closed=False, resources=SimpleNamespace(submit=Mock(return_value=future)))
+        workers = SimpleNamespace(
+            closed=False,
+            resources=object(),
+            stop=threading.Event(),
+            indexes=SimpleNamespace(submit=Mock(return_value=future)),
+        )
         locator._resource_workers = workers
         frame = np.zeros((10, 10, 3), dtype=np.uint8)
         for _ in range(2):
             with self.assertRaises(ResourcePending):
                 locator.rank_layers(frame, None)
-        workers.resources.submit.assert_called_once()
+        workers.indexes.submit.assert_called_once()
         future.set_result(LayerSearchIndex(()))
         workers.closed = True
         with self.assertRaises(ResourcePending):
@@ -2148,7 +2536,7 @@ class TestVisualLayerCandidates(unittest.TestCase):
         self.assertEqual(first.margin, 0)
         self.assertTrue(entered.wait(3))
         release.set()
-        pool.resources.submit(lambda: None).result(timeout=3)
+        self.assertFalse(wait(tuple(locator._pending_layers.values()), timeout=3).not_done)
         self.assertEqual(locator._cache, {})
         second = locator.locate_global(None, None)
         self.assertEqual(second.status, "accepted")
@@ -2190,7 +2578,7 @@ class TestVisualLayerCandidates(unittest.TestCase):
         self.assertEqual(locator._scan_index, 0)
         self.assertEqual(list(locator._pending_layers), ["floor1"])
         release.set()
-        pool.resources.submit(lambda: None).result(timeout=3)
+        self.assertFalse(wait(tuple(locator._pending_layers.values()), timeout=3).not_done)
         locator.locate_global(None, None)
         self.assertEqual(locator._scan_index, 1)
         locator._decode.assert_called_once()
