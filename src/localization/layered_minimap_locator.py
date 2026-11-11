@@ -311,13 +311,13 @@ class LayeredMinimapLocator:
             return
         if self._search_index is None:
             if self._resource_workers is None:
-                self._search_index = LayerSearchIndex.build(self.root, self.entries, color=self.color)
+                self._search_index = LayerSearchIndex.load_or_build(self.root, self.entries, color=self.color)
             else:
                 if self._resource_workers.closed:
                     raise ResourcePending()
                 if self._pending_index is None:
                     self._pending_index = self._resource_workers.resources.submit(
-                        LayerSearchIndex.build, self.root, tuple(self.entries), color=self.color
+                        LayerSearchIndex.load_or_build, self.root, tuple(self.entries), color=self.color
                     )
                 if not self._pending_index.done():
                     raise ResourcePending()
@@ -325,6 +325,10 @@ class LayeredMinimapLocator:
                 self._pending_index = None
 
     def locate_proposed_layer(self, frame, geometry, tier_id):
+        if any(not future.done() for future in self._pending_layers.values()):
+            # Waiting frames add no uniqueness evidence. Once resources finish,
+            # redo the full search and overlap competition on a fresh frame.
+            raise ResourcePending()
         entry = next(entry for entry in self.entries if entry["id"] == tier_id)
         self._pinned_ids = {tier_id}
         try:

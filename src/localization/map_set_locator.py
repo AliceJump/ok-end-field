@@ -39,6 +39,7 @@ class MapSetLocator:
         self._skip_index_once = False
         self._cold_map_order = ()
         self._cold_map_cursor = 0
+        self._cold_proposal = None
 
     def prewarm(self):
         if self._workers is not None and not self._workers.closed:
@@ -111,6 +112,7 @@ class MapSetLocator:
             self._cold_layers = False
             self._proposal_index = 0
             self._cold_map_cursor = 0
+            self._cold_proposal = None
         return result
 
     @staticmethod
@@ -269,20 +271,25 @@ class MapSetLocator:
             mid for mid, locator in self._cache.items() if callable(getattr(locator, "rank_layers", None))
         )
         mid = order[self._cold_map_cursor % len(order)] if order else None
-        try:
-            proposals = self._cache[mid].rank_layers(frame, geometry) if mid else []
-        except ResourcePending:
-            self.last_failure_reason = "layer_index_pending"
-            return None
-        if not proposals or self._proposal_index >= min(8, len(proposals)):
-            # An accelerator miss must still reach the ordinary full scan.
-            self._cold_layers = False
-            self._proposal_index = 0
-            self._skip_index_once = True
-            self._cold_map_cursor += 1
-            self.last_failure_reason = "layer_index_no_confirmed_candidate"
-            return None
-        _, tier = proposals[self._proposal_index]
+        if self._cold_proposal is None or self._cold_proposal[0] != mid:
+            try:
+                proposals = self._cache[mid].rank_layers(frame, geometry) if mid else []
+            except ResourcePending:
+                self.last_failure_reason = "layer_index_pending"
+                return None
+            if not proposals or self._proposal_index >= min(8, len(proposals)):
+                # An accelerator miss must still reach the ordinary full scan.
+                self._cold_layers = False
+                self._proposal_index = 0
+                self._cold_proposal = None
+                self._skip_index_once = True
+                self._cold_map_cursor += 1
+                self.last_failure_reason = "layer_index_no_confirmed_candidate"
+                return None
+            self._cold_proposal = (mid, proposals[self._proposal_index][1])
+        # Retain only the tier hint while decoding, never its score or pixels.
+        # Full matching and all competitors below use the current frame.
+        _, tier = self._cold_proposal
         try:
             result = self._cache[mid].locate_proposed_layer(frame, geometry, tier)
         except ResourcePending:
@@ -292,6 +299,7 @@ class MapSetLocator:
             result.reason != "layer_scan_pending" and not strong_candidate(result.best, result.margin)
         ):
             self._proposal_index += 1
+            self._cold_proposal = None
             self.last_failure_reason = "layer_index_candidate_rejected"
             return None
         if result.reason == "layer_scan_pending":
@@ -302,6 +310,7 @@ class MapSetLocator:
         combined = self._combine([(key, result if key == mid else base) for key, base in results], started, None)
         if combined is not None and not strong_candidate(combined.best, combined.margin):
             self._proposal_index += 1
+            self._cold_proposal = None
         return combined
 
     def _active_result(self, frame, geometry):

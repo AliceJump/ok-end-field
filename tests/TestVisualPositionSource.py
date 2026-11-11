@@ -1552,6 +1552,21 @@ class TestMapAssetsAndSourceService(unittest.TestCase):
 
 
 class TestAutomaticMapCompetition(unittest.TestCase):
+    def test_decoding_retains_only_tier_hint_and_validates_the_current_frame(self):
+        locator = self.locator()
+        floor = SimpleNamespace(
+            rank_layers=Mock(return_value=[(1.0, "floor")]),
+            locate_proposed_layer=Mock(side_effect=[ResourcePending, self.result(0.99)]),
+        )
+        locator._cache.update(map02=floor)
+        locator._compare_base_maps = Mock(return_value=[("map02", self.result(0.5))])
+        self.assertIsNone(locator._locate_cold_layers("old", None, 0))
+        result = locator._locate_cold_layers("current", None, 0)
+        floor.rank_layers.assert_called_once_with("old", None)
+        floor.locate_proposed_layer.assert_called_with("current", None, "floor")
+        self.assertEqual(result.best.ncc, 0.99)
+        self.assertIsNone(locator._cold_proposal)
+
     def test_within_map_ambiguity_prioritizes_visual_map_order_without_accepting_it(self):
         locator = self.locator()
         maps = {
@@ -1863,6 +1878,89 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
 
 class TestVisualLayerCandidates(unittest.TestCase):
+    def index_fixture(self, root):
+        entry = self.locator().entries[0]
+        pixels = np.random.default_rng(24).integers(0, 255, (80, 80, 3), dtype=np.uint8)
+        cv2.imwrite(str(root / entry["path"]), pixels)
+        return entry
+
+    def test_persisted_index_skips_full_image_decode_and_preserves_pixels(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entries = [self.index_fixture(root)]
+            initial = LayerSearchIndex.load_or_build(root, entries, color=True, cache_dir=root / "cache")
+            with patch.object(LayerSearchIndex, "build", side_effect=AssertionError("must reuse derived pixels")):
+                loaded = LayerSearchIndex.load_or_build(root, entries, color=True, cache_dir=root / "cache")
+            np.testing.assert_array_equal(initial.images[0][1], loaded.images[0][1])
+            self.assertFalse(loaded.images[0][1].flags.writeable)
+
+    def test_persisted_index_invalidates_changed_source_bounds_and_color(self):
+        for change in ("source", "bounds", "color"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                entry = self.index_fixture(root)
+                LayerSearchIndex.load_or_build(root, [entry], color=True, cache_dir=root / "cache")
+                if change == "source":
+                    cv2.imwrite(str(root / entry["path"]), np.zeros((80, 80, 3), np.uint8))
+                if change == "bounds":
+                    entry["bounds"] = {**entry["bounds"], "east": 40}
+                with patch.object(LayerSearchIndex, "build", wraps=LayerSearchIndex.build) as build:
+                    LayerSearchIndex.load_or_build(root, [entry], color=change != "color", cache_dir=root / "cache")
+                build.assert_called_once()
+
+    def test_damaged_index_or_invalid_pixel_shape_rebuilds(self):
+        for damage in ("truncated", "shape", "npy"):
+            with self.subTest(damage=damage), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                entries = [self.index_fixture(root)]
+                LayerSearchIndex.load_or_build(root, entries, color=True, cache_dir=root / "cache")
+                path = next((root / "cache").glob("*.npz"))
+                if damage == "truncated":
+                    path.write_bytes(b"PK invalid zip")
+                elif damage == "npy":
+                    with path.open("wb") as handle:
+                        np.save(handle, np.zeros((1, 1)))
+                else:
+                    np.savez(path, signature=LayerSearchIndex._signature(root, entries, True), image_0=np.zeros((1, 1)))
+                with patch.object(LayerSearchIndex, "build", wraps=LayerSearchIndex.build) as build:
+                    loaded = LayerSearchIndex.load_or_build(root, entries, color=True, cache_dir=root / "cache")
+                build.assert_called_once()
+                self.assertEqual(loaded.images[0][1].shape, (10, 10, 3))
+
+    def test_failed_cache_publication_keeps_usable_index_without_partial_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entries = [self.index_fixture(root)]
+            with patch("src.localization.layer_search_index.os.replace", side_effect=PermissionError):
+                loaded = LayerSearchIndex.load_or_build(root, entries, color=True, cache_dir=root / "cache")
+            self.assertEqual(len(loaded.images), 1)
+            self.assertEqual(list((root / "cache").iterdir()), [])
+
+    def test_source_change_during_index_build_does_not_publish_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entries = [self.index_fixture(root)]
+            with patch.object(LayerSearchIndex, "_signature", side_effect=["before", "after"]):
+                loaded = LayerSearchIndex.load_or_build(root, entries, color=True, cache_dir=root / "cache")
+            self.assertEqual(len(loaded.images), 1)
+            self.assertFalse((root / "cache").exists())
+
+    def test_overlap_loading_skips_repeat_full_search_then_matches_current_frame(self):
+        from concurrent.futures import Future
+
+        locator = self.locator(0.5, 0.99)
+        floor = locator._load.return_value
+        pending = Future()
+        locator._pending_layers["floor1"] = pending
+        for _ in range(3):
+            with self.assertRaises(ResourcePending):
+                locator.locate_proposed_layer("old", None, "floor1")
+        floor.locate_global.assert_not_called()
+        pending.set_result(floor)
+        result = locator.locate_proposed_layer("current", None, "floor1")
+        floor.locate_global.assert_called_once_with("current", None)
+        self.assertEqual(result.best.tier_id, "floor1")
+
     def test_single_map_index_advances_after_full_competition_rejects_a_proposal(self):
         locator = self.locator(0.5, 0.99)
         locator.rank_layers = Mock(return_value=[(1.0, "wrong"), (0.9, "floor1")])
