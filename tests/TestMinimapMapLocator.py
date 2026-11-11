@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from dataclasses import replace
+from itertools import product
 from pathlib import Path
 from unittest.mock import patch
 
@@ -532,18 +533,19 @@ class TestMinimapTrackerRecovery(unittest.TestCase):
     def test_rejected_wide_search_cannot_refresh_or_promote_prediction(self):
         local = _result(10, 0, ncc=0.95)
         wide = replace(local, status="rejected", reason="layer_scan_pending", spatial_margin=0.0)
-        for first_time in (1.2, 3.5):
-            with self.subTest(first_time=first_time):
+        for first_time, min_margin, verification in product((1.2, 3.5), (0.0, 0.08), (wide, None)):
+            with self.subTest(first_time=first_time, min_margin=min_margin, unavailable=verification is None):
                 locator = _FakeLocator(local)
-                tracker = MinimapTracker(locator, promote_hits=2)
+                tracker = MinimapTracker(locator, promote_hits=2, initial_min_margin=min_margin)
                 anchor = _candidate(10, 0)
                 tracker._set_convinced(anchor, now=1.0)
-                with patch.object(locator, "locate_near", side_effect=[local, wide, local, wide]):
+                with patch.object(locator, "locate_near", side_effect=[local, verification, local, verification]):
                     for now in (first_time, first_time + 0.2):
                         result = tracker.update(None, self.g, now=now, prediction_world=(10, 0))
                         self.assertFalse(result.accepted)
                         self.assertEqual(result.pending_hits, 0)
                         self.assertEqual(result.locate.margin, 0.0)
+                        self.assertEqual(result.locate.status, "rejected")
                         self.assertIs(tracker.convinced, anchor)
                         self.assertEqual(tracker._convinced_t, 1.0)
                         self.assertIsNone(tracker._prediction_verified)

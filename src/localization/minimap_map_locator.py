@@ -1189,14 +1189,14 @@ class MinimapTracker:
             self.reset()
             reason = getattr(self.locator, "last_failure_reason", "") or "no_valid_minimap_or_match"
             return TrackResult("lost", False, reason, None, None, 0, used_prior)
+        if used_prediction:
+            result = self._verify_prediction_competition(frame, geometry, result, current)
         if result.status == "rejected":
             self._pending = None
             self._pending_hits = 0
             self._pending_since = None
             return TrackResult("lost", False, result.reason, result, None, 0, used_prior)
 
-        if used_prediction:
-            result = self._verify_prediction_competition(frame, geometry, result, current)
         best = result.best
         convinced_radius = self.consistency_distance_m + self.max_speed_m_s * (
             max(0.0, current - self._convinced_t) if fresh else 0.0
@@ -1237,11 +1237,11 @@ class MinimapTracker:
         self._prediction_verified_t = None
         self._prediction_margin = 0.0
         if wide is None:
-            return replace(result, reason="prediction_competition_unavailable", spatial_margin=0.0)
+            return replace(result, status="rejected", reason="prediction_competition_unavailable", spatial_margin=0.0)
         if wide.status == "rejected":
             # An incomplete/invalid search cannot prove absence of competitors.
             # Keep the local observation for visual propagation, never promotion.
-            return replace(result, reason=f"prediction_{wide.reason}", spatial_margin=0.0)
+            return replace(result, status="rejected", reason=f"prediction_{wide.reason}", spatial_margin=0.0)
         competitors = [
             candidate
             for candidate in wide.candidates
