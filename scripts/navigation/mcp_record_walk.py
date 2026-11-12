@@ -4,9 +4,11 @@ import json  # 将可信坐标保存为 JSONL
 from pathlib import Path  # 创建轨迹文件
 from unittest.mock import patch  # 临时禁止定位服务自动重登
 
-from src.localization.capture_position_source import CAPTURE_HEALTH_MISSED_HANDSHAKE, CAPTURE_HEALTH_NO_CONNECTION  # 需要重登的抓包状态
-
 from src.data.FeatureList import FeatureList as fL  # 识别登录入口
+from src.localization.capture_position_source import (  # 需要重登的抓包状态
+    CAPTURE_HEALTH_MISSED_HANDSHAKE,
+    CAPTURE_HEALTH_NO_CONNECTION,
+)
 from src.tasks.localization.MinimapRealtimePosition import MinimapRealtimePosition  # 复用共享定位服务
 
 
@@ -31,16 +33,25 @@ class Task(MinimapRealtimePosition):  # MCP 临时采集任务
 
         def check_capture_session(*, reason):  # 采集时不允许自动重新登录
             health = service.capture_session_health()  # 读取抓包连接状态
-            if health and health.state in (CAPTURE_HEALTH_NO_CONNECTION, CAPTURE_HEALTH_MISSED_HANDSHAKE):  # 确认需要重建连接
+            if health and health.state in (
+                CAPTURE_HEALTH_NO_CONNECTION,
+                CAPTURE_HEALTH_MISSED_HANDSHAKE,
+            ):  # 确认需要重建连接
                 raise RuntimeError(f"抓包定位需要重新登录：{health.state}")  # 停止并交由用户处理
             return False  # 其他状态保持等待，不触发重新登录
+
         path = Path("logs/navigation/manual_walk.jsonl")  # 每次运行覆盖上一次轨迹
         path.parent.mkdir(parents=True, exist_ok=True)  # 创建输出目录
         started = self.active_time()  # 记录起始时间
-        with patch.object(service, "ensure_capture_session", side_effect=check_capture_session), path.open("w", encoding="utf-8") as stream:  # 退出时恢复服务方法
+        with (
+            patch.object(service, "ensure_capture_session", side_effect=check_capture_session),
+            path.open("w", encoding="utf-8") as stream,
+        ):  # 退出时恢复服务方法
             while self.active_time() - started < 300:  # 最多记录五分钟
                 state = self.world_pose(frame=self.next_frame(), max_age=0.6)  # 使用新帧采样
-                if state and state.get("source") == "capture" and not state.get("position_trusted"):  # 旧坐标也可能来自失效连接
+                if (
+                    state and state.get("source") == "capture" and not state.get("position_trusted")
+                ):  # 旧坐标也可能来自失效连接
                     check_capture_session(reason="抓包定位不可信")  # 需要重登时停止
                 if state and state.get("position_trusted"):  # 只保留可信位置
                     sample = {key: state.get(key) for key in ("map_id", "x", "z")}  # 保存地图和坐标

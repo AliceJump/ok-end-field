@@ -11,12 +11,12 @@ from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网�
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
-    VigorousCisternSlugRoute,  # 活力源石虫网格路线
     EternalSunsetRoute,  # 栖霞驻影网格路线
     MiniShellbeastRoute,  # 小壳兽网格路线
     PoolLotusRoute,  # 小池荷短路线
     StationaryObservationRoute,  # 传送后原地取景
     TianshiPillarRoute,  # 天师桩网格路线
+    VigorousCisternSlugRoute,  # 活力源石虫网格路线
     XiraniteNexusRoute,  # 枢壤仪网格路线
 )
 
