@@ -68,6 +68,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._init_runtime_state_mixin()
         self._init_capture_pose_mixin()
         self._visual_source = None
+        self._navigation_topology_provider = None
         self._source_signature = None
         self._minimap_started = False
         self._minimap_last_state = None
@@ -155,6 +156,9 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
                 map_id,
                 **chain_options,
             )
+            notify = getattr(locator, "set_search_ready_callback", None)
+            if callable(notify):
+                notify(self._wake_visual_sampler)
             self._visual_error = ""
         except (OSError, ValueError) as exc:
             self._visual_retry_at = self.active_time() + 5.0
@@ -165,6 +169,20 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
     def stop_minimap_position(self):
         with self._visual_sample_lock:
             self._stop_visual_source()
+
+    @contextmanager
+    def navigation_topology(self, provider):
+        """Use navigation's grid snapshot only for this navigation session."""
+        with self._visual_sample_lock:
+            previous = self._navigation_topology_provider
+            self._navigation_topology_provider = provider
+        try:
+            yield
+        finally:
+            with self._visual_sample_lock:
+                self._navigation_topology_provider = previous
+                if self._visual_source is not None:
+                    self._visual_source.set_navigation_topology(None)
 
     def _stop_visual_source(self):
         self._source_epoch += 1
@@ -290,6 +308,11 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             if closed and self._visual_sampler is sampler:
                 self._visual_sampler = None
 
+    def _wake_visual_sampler(self):
+        sampler = self._visual_sampler
+        if sampler is not None:
+            sampler.wake()
+
     def _sample_continuous_visual(self, frame, stopped):
         with self._visual_sample_lock:
             if stopped.is_set() or self._visual_source is None or self.experimental_capture_enabled():
@@ -308,6 +331,9 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             self._visual_source.reset()
             return self._visual_source.unavailable("stale_visual_frame")
         try:
+            provider = self._navigation_topology_provider
+            topology = provider(self._visual_source.map_id) if provider is not None else None
+            self._visual_source.set_navigation_topology(topology)
             return self._visual_source.sample(frame, now=stamp)
         except UnpreparedTileOverview:
             self._visual_source.reset()

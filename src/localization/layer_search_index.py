@@ -189,23 +189,24 @@ class LayerSearchIndex:
         image.setflags(write=False)
         return entry["id"], image
 
-    def rank(self, template, map_scale, *, executor=None, stop=None):
+    def rank(self, template, map_scale, *, executor=None, stop=None, with_positions=False):
         size = max(4, round(template.flat.shape[0] * self.pixels_per_meter / (4 * map_scale)))
         thumbnail = cv2.resize(template.flat, (size, size), interpolation=cv2.INTER_AREA)
         thumbnail.setflags(write=False)
+        options = {"with_positions": True} if with_positions else {}
         if executor is None:
-            return sorted(self._rank_images(self.images, thumbnail), reverse=True)
+            return sorted(self._rank_images(self.images, thumbnail, **options), reverse=True)
         futures = []
         try:
             for i in range(min(4, len(self.images))):
-                futures.append(executor.submit(self._rank_images, self.images[i::4], thumbnail))
+                futures.append(executor.submit(self._rank_images, self.images[i::4], thumbnail, **options))
             return sorted((proposal for batch in ordered_results(futures, stop) for proposal in batch), reverse=True)
         finally:
             for future in futures:
                 future.cancel()
 
     @staticmethod
-    def _rank_images(images, thumbnail):
+    def _rank_images(images, thumbnail, *, with_positions=False):
         size = thumbnail.shape[0]
         proposals = []
         for tier_id, image in images:
@@ -213,5 +214,9 @@ class LayerSearchIndex:
                 continue
             scores = cv2.matchTemplate(image, thumbnail, cv2.TM_CCOEFF_NORMED)
             scores = np.where(np.isfinite(scores), scores, -1)
-            proposals.append((float(scores.max()), tier_id))
+            if with_positions:
+                _, score, _, (left, top) = cv2.minMaxLoc(scores)
+                proposals.append((float(score), tier_id, (left + (size - 1) / 2, top + (size - 1) / 2)))
+            else:
+                proposals.append((float(scores.max()), tier_id))
         return proposals

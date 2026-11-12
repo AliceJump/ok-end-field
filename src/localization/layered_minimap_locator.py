@@ -5,14 +5,16 @@ from __future__ import annotations
 import math
 import time
 from collections import OrderedDict
+from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
 
 import cv2
 import numpy as np
 
+from src.localization.composite_floor_image import CompositeFloorImage
 from src.localization.layer_search_index import LayerSearchIndex
-from src.localization.localization_workers import ResourcePending, decode_memory_bytes
+from src.localization.localization_workers import ResourcePending, decode_memory_bytes, ordered_results
 from src.localization.minimap_map_locator import (
     LocateResult,
     MapCalibration,
@@ -21,6 +23,7 @@ from src.localization.minimap_map_locator import (
     deduplicate_candidates,
     strong_candidate,
 )
+from src.localization.native_tile_image import NativeTileImage
 from src.localization.tiled_map_image import TiledMapImage, floor_options
 
 
@@ -65,6 +68,7 @@ class LayeredMinimapLocator:
             if not (self.root / entry["path"]).resolve().is_relative_to(self.root):
                 raise ValueError("layer image escapes resource root")
         self._cache = OrderedDict()
+        self._composites = {}
         self._cache_bytes = 0
         self._cache_limit_bytes = 256 * 1024 * 1024
         self._pinned_ids = set()
@@ -76,6 +80,13 @@ class LayeredMinimapLocator:
         self._search_index = None
         self._pending_index = None
         self._proposal_index = 0
+        self._background_hint = None
+        self._ranked_tiers = ()
+        self._ranked_signature = None
+        self._ranked_at = 0.0
+        self._ranked_shape = None
+        self._ranked_complete = False
+        self._navigation_scope = None
         self.tier_coverage_complete = not any(
             str(k).startswith(f"scene_{map_id}_") for k in catalog.get("missing_logic_ids", [])
         )
@@ -83,7 +94,15 @@ class LayeredMinimapLocator:
     def _scale(self, width):
         return self.base._scale(width)
 
+    def set_navigation_scope(self, scope):
+        """Apply a short-lived reachability envelope from a visual anchor."""
+        self._navigation_scope = scope
+
     def close(self):
+        self.reset_proposals()
+        for locator in self._composites.values():
+            locator.close()
+        self._composites.clear()
         for locator in (self.base, *self._cache.values()):
             close = getattr(locator, "close", None)
             if callable(close):
@@ -175,7 +194,9 @@ class LayeredMinimapLocator:
         def resident(locator):
             return getattr(locator, "resident_bytes", locator.map_image.nbytes)
 
-        self._cache_bytes = sum(resident(locator) for locator in self._cache.values())
+        self._cache_bytes = sum(resident(locator) for locator in self._cache.values()) + sum(
+            locator.resident_bytes for locator in self._composites.values()
+        )
         while self._cache_bytes > self._cache_limit_bytes and len(self._cache) > 1:
             removable = next((k for k in self._cache if k not in self._pinned_ids), None)
             if removable is None:
@@ -185,6 +206,119 @@ class LayeredMinimapLocator:
                 break
             removed = self._cache.pop(removable)
             self._cache_bytes -= resident(removed)
+            composite = self._composites.pop(removable, None)
+            if composite is not None:
+                self._cache_bytes -= composite.resident_bytes
+                composite.close()
+
+    def _matching_locator(self, entry, floor):
+        """Keep raw floor resources for ranking; match their rendered overlay."""
+        if not isinstance(floor.map_image, NativeTileImage):
+            return floor
+        key = entry["id"]
+        if key not in self._composites:
+            image = CompositeFloorImage(
+                floor.map_image,
+                floor.calibration,
+                self.base.map_image,
+                self.base.calibration,
+            )
+            self._composites[key] = MinimapMapLocator(image, image.calibration)
+        return self._composites[key]
+
+    def _prepare_global_search(self, locator, frame, *, wait_for_resources=False):
+        if self._resource_workers is None:
+            return True
+        if self._resource_workers.closed:
+            return False
+        prepare = getattr(locator, "prepare_global_search", None)
+        options = {"wait": True, "stop": self._resource_workers.stop} if wait_for_resources else {}
+        return not callable(prepare) or prepare(frame.shape[1], self._resource_workers.resources, **options)
+
+    def reset_proposals(self):
+        """Discard only untrusted order/position hints, never reuse observations."""
+        self._background_hint = None
+        self._ranked_tiers = ()
+        self._ranked_signature = None
+        self._ranked_shape = None
+        self._ranked_at = 0.0
+        self._ranked_complete = False
+
+    def release_proposal_resources(self):
+        """Keep compact ordering hints after validation, not ranking pixels."""
+        self._search_index = None
+
+    def seed_proposals(self, base_result):
+        # Base matching already includes independently normalized dim terrain.
+        # Preserve only its best coordinate as a place to rank floor hypotheses.
+        if base_result is not None:
+            self._background_hint = (base_result.best.world_x, base_result.best.world_z)
+
+    def _await_resources(self, futures):
+        workers = self._resource_workers
+        # _load adopts each result and applies the existing per-floor
+        # failure/backoff rules; broken competitors cannot prove a tier.
+        with suppress(OSError, ValueError):
+            ordered_results(tuple(futures), None if workers is None else workers.stop)
+
+    def _warm_layers(self, entries, *, wait_for_resources):
+        """Submit all required resources before waiting; keep this set pinned."""
+        self._pinned_ids.update(entry["id"] for entry in entries)
+        ready, pending = [], []
+        for entry in entries:
+            try:
+                ready.append((entry, self._load(entry)))
+            except ResourcePending:
+                pending.append(entry)
+            except (OSError, ValueError):
+                pass
+        if pending and wait_for_resources:
+            self._await_resources(
+                self._pending_layers[entry["id"]] for entry in pending if entry["id"] in self._pending_layers
+            )
+            for entry in pending:
+                with suppress(OSError, ValueError):
+                    ready.append((entry, self._load(entry)))
+        elif pending:
+            raise ResourcePending()
+        return ready
+
+    def _background_proposals(self, frame, geometry, template, *, wait_for_resources):
+        if self._bundle is None or self._background_hint is None or template.dim_terrain is None:
+            return []
+        # A base-map hint does not limit the eventual floor search. It only
+        # identifies small rendered patches worth checking before raw thumbnails.
+        prior, radius = self._background_hint, 8.0
+        entries = [entry for entry in self.entries if self._near_bounds(entry, prior, radius)]
+        ready = self._warm_layers(entries, wait_for_resources=wait_for_resources)
+        ready = [(entry, self._matching_locator(entry, floor)) for entry, floor in ready]
+        if not ready:
+            return []
+        results = self._match_near_layers(frame, geometry, prior, radius, ready)
+        proposals = [
+            (result.confidence, entry["id"])
+            for (entry, _), result in zip(ready, results, strict=True)
+            if result is not None and strong_candidate(result.best, result.margin)
+        ]
+        return sorted(proposals, reverse=True)
+
+    def _single_sided_proposals(self, template, frame_width, *, wait_for_resources):
+        ranked = self._rank_raw_layers(
+            template, frame_width, wait_for_resources=wait_for_resources, with_positions=True
+        )
+        entries = {entry["id"]: entry for entry in self.entries}
+        proposals = []
+        for index, (score, tier, center) in enumerate(ranked):
+            if index < 3:
+                bounds = entries[tier]["bounds"]
+                ppm = LayerSearchIndex.pixels_per_meter
+                prior = (bounds["west"] + center[0] / ppm, bounds["north"] - center[1] / ppm)
+                background = self.base.proposal_background_score(template, frame_width, prior)
+                # Dark terrain can promote an ordering hint, never remove a
+                # candidate or supply the final floor score/position/margin.
+                score += (1 - score) * background
+            proposals.append((score, tier))
+        return sorted(proposals, reverse=True)
 
     @staticmethod
     def _near_bounds(entry, prior, radius):
@@ -204,11 +338,16 @@ class LayeredMinimapLocator:
         search_prior = prior
         if prior is None and strong_candidate(base.best, base.margin):
             search_prior = (base.best.world_x, base.best.world_z)
-        candidates = [replace(c, tier_id="__main__") for c in base.candidates]
-        candidates.extend(extra_candidates)
+        scope = self._navigation_scope
+
+        def allows_tier(tier):
+            return scope is None or scope.allows_tier(self.map_id, tier)
+
+        candidates = [replace(c, tier_id="__main__") for c in base.candidates] if allows_tier("__main__") else []
+        candidates.extend(c for c in extra_candidates if allows_tier(c.tier_id))
         complete = self.tier_coverage_complete
         scan_pending = False
-        entries = self.entries
+        entries = [entry for entry in self.entries if allows_tier(entry["id"])]
         global_scan = search_prior is None and bool(entries)
         if global_scan:
             # A weak main-map frame must not decode and globally scan dozens of
@@ -227,18 +366,23 @@ class LayeredMinimapLocator:
         candidates.extend(layer_candidates)
         complete = complete and layers_complete
         scan_pending = scan_pending or layers_pending
+        if not candidates:
+            return replace(base, status="rejected", reason="navigation_topology_no_candidates", spatial_margin=0)
         candidates = deduplicate_candidates(candidates)
         spatial = deduplicate_candidates([replace(c, tier_id=None) for c in candidates])
         status, reason = self.base._status(spatial)
         spatial_margin = candidate_margin(spatial)
         competing_layers = [c for c in candidates[1:] if c.tier_id != candidates[0].tier_id]
         layer_margin = candidate_margin([candidates[0], *competing_layers])
+        reachable = scope is None or scope.allows_candidate(
+            self.map_id, candidates[0].tier_id, candidates[0].world_x, candidates[0].world_z
+        )
         if not complete or layer_margin < (0.10 if self.color else 0.08):
             # Identical X/Z on two floors can prove position but cannot prove tier.
             candidates[0] = replace(candidates[0], tier_id=None)
         result = LocateResult(
-            status,
-            reason,
+            status if reachable else "rejected",
+            reason if reachable else "navigation_topology_unreachable",
             candidates[0],
             tuple(candidates[: self.base.top_k]),
             time.perf_counter() - started,
@@ -247,7 +391,10 @@ class LayeredMinimapLocator:
             spatial_margin=spatial_margin,
             layer_margin=layer_margin,
         )
-        if strong_candidate(result.best, result.margin):
+        # Keep same-floor competitors even when their cells are unreachable:
+        # per-floor top-k truncation may hide weaker reachable alternatives.
+        # Reachability can veto a peak, never manufacture spatial uniqueness.
+        if reachable and strong_candidate(result.best, result.margin):
             self._recent = (time.monotonic(), (result.best.world_x, result.best.world_z))
             self._proposal_index = 0
         if scan_pending:
@@ -277,6 +424,8 @@ class LayeredMinimapLocator:
     def _layer_candidates(self, frame, geometry, prior, radius, entries):
         candidates = []
         complete, pending, decoded = True, False, False
+        bundled_near = self._bundle is not None and prior is not None
+        ready = []
         self._pinned_ids = {entry["id"] for entry in entries if self._near_bounds(entry, prior, radius)}
         for key in list(self._pending_layers):
             if key not in self._pinned_ids:
@@ -299,6 +448,13 @@ class LayeredMinimapLocator:
             except (OSError, ValueError):
                 complete = False
                 continue
+            locator = self._matching_locator(entry, locator)
+            if prior is None and not self._prepare_global_search(locator, frame):
+                pending, complete = True, False
+                continue
+            if bundled_near:
+                ready.append((entry, locator))
+                continue
             result = (
                 locator.locate_global(frame, geometry)
                 if prior is None
@@ -306,10 +462,46 @@ class LayeredMinimapLocator:
             )
             if result is not None:
                 candidates.extend(self._world_candidates(result, entry))
+        if ready:
+            for (entry, _), result in zip(
+                ready, self._match_near_layers(frame, geometry, prior, radius, ready), strict=True
+            ):
+                if result is not None:
+                    candidates.extend(self._world_candidates(result, entry))
         # Region reads grow tiled locators after loading their metadata. Recount
         # on cache hits too, once the current overlapping set has been checked.
         self._evict_layers()
         return candidates, complete, pending
+
+    def _match_near_layers(self, frame, geometry, prior, radius, ready):
+        first = ready[0][1]
+        template = first._prepare_template(frame, geometry)
+        if template is None:
+            for _, locator in ready:
+                locator.last_failure_reason = first.last_failure_reason
+            return [None] * len(ready)
+        args = (template, frame.shape[1], prior, radius)
+        workers = self._resource_workers
+        if workers is None or len(ready) == 1:
+            return [locator._locate_near_template(*args) for _, locator in ready]
+
+        # Only pass the prepared pixels, with no reference to the capture
+        # buffer. The shared template is immutable before entering the pool.
+        template.flat.setflags(write=False)
+        template.ring.setflags(write=False)
+        template.mask.setflags(write=False)
+        template.mask8.setflags(write=False)
+        _ = template.color_zncc
+        _ = template.dim_terrain
+        futures = []
+        try:
+            for _, locator in ready:
+                futures.append(workers.matches.submit(locator._locate_near_template, *args))
+        finally:
+            # Drain even after a submission or matching failure. Another
+            # frame must never reuse a floor locator while it is still busy.
+            results = ordered_results(futures)
+        return results
 
     def locate_global(self, frame, geometry, *, base_result=None, use_index=True):
         # This is only a search hint; publication freshness belongs to the
@@ -321,9 +513,11 @@ class LayeredMinimapLocator:
             ):
                 return result
         base_result = base_result or self.base.locate_global(frame, geometry)
+        self.seed_proposals(base_result)
         if use_index and base_result is not None and not strong_candidate(base_result.best, base_result.margin):
             try:
-                proposals = self.rank_layers(frame, geometry)
+                options = {"required_count": min(8, self._proposal_index + 1)} if self._proposal_index else {}
+                proposals = self.rank_layers(frame, geometry, **options)
                 if proposals and self._proposal_index < min(8, len(proposals)):
                     result = self.locate_proposed_layer(frame, geometry, proposals[self._proposal_index][1])
                     if result is not None:
@@ -337,26 +531,71 @@ class LayeredMinimapLocator:
                 return replace(base_result, status="rejected", reason="layer_scan_pending", spatial_margin=0)
         return self._search(frame, geometry, base_result=base_result)
 
-    def rank_layers(self, frame, geometry):
+    def rank_layers(self, frame, geometry, *, wait_for_resources=False, required_count=1, fresh_scores=False):
         """Rank only; coarse scores can never become accepted coordinates."""
         if not self.entries:
             return []
         template = self.base._prepare_template(frame, geometry)
         if template is None:
             return []
-        self.prepare_layer_index()
+        if self._resource_workers is not None and self._resource_workers.closed:
+            raise ResourcePending()
+        signature = cv2.resize(template.flat, (16, 16), interpolation=cv2.INTER_AREA)
+        now = time.monotonic()
+        reusable = (
+            not fresh_scores
+            and self._ranked_tiers
+            and self._ranked_shape == frame.shape
+            and 0 <= now - self._ranked_at <= 10
+            and cv2.norm(signature, self._ranked_signature, cv2.NORM_L1) / signature.size <= 8
+        )
+        if reusable and (self._ranked_complete or len(self._ranked_tiers) >= required_count):
+            # Only IDs survive. Scores from earlier frames cannot supply
+            # confidence, coordinates, coverage or temporal confirmation.
+            return [(0.0, tier) for tier in self._ranked_tiers]
+        if (
+            not reusable
+            and getattr(template, "dim_terrain", None) is None
+            and getattr(template, "proposal_dim_mask", None) is not None
+        ):
+            proposals = self._single_sided_proposals(template, frame.shape[1], wait_for_resources=wait_for_resources)
+            self._ranked_complete = True
+        else:
+            background = (
+                [(0.0, tier) for tier in self._ranked_tiers]
+                if reusable
+                else self._background_proposals(frame, geometry, template, wait_for_resources=wait_for_resources)
+            )
+            if not reusable:
+                self._ranked_complete = False
+            proposals = background
+            if len(background) < required_count:
+                raw = self._rank_raw_layers(template, frame.shape[1], wait_for_resources=wait_for_resources)
+                preferred = {tier for _, tier in background}
+                proposals = background + [(score, tier) for score, tier in raw if tier not in preferred]
+                self._ranked_complete = True
+        self._ranked_tiers = tuple(tier for _, tier in proposals)
+        self._ranked_signature = signature
+        self._ranked_shape = frame.shape
+        self._ranked_at = time.monotonic()
+        return proposals
+
+    def _rank_raw_layers(self, template, frame_width, *, wait_for_resources, with_positions=False):
+        self.prepare_layer_index(wait_for_resources=wait_for_resources)
+        options = {"with_positions": True} if with_positions else {}
         if self._resource_workers is None:
-            return self._search_index.rank(template, self._scale(frame.shape[1]))
+            return self._search_index.rank(template, self._scale(frame_width), **options)
         if self._resource_workers.closed:
             raise ResourcePending()
         return self._search_index.rank(
             template,
-            self._scale(frame.shape[1]),
+            self._scale(frame_width),
             executor=self._resource_workers.rankings,
             stop=self._resource_workers.stop,
+            **options,
         )
 
-    def prepare_layer_index(self):
+    def prepare_layer_index(self, *, wait_for_resources=False):
         """Prepare compact resources without producing visual evidence."""
         if not self.entries:
             return
@@ -379,22 +618,31 @@ class LayeredMinimapLocator:
                         stop=self._resource_workers.stop,
                         **options,
                     )
+                if wait_for_resources:
+                    ordered_results((self._pending_index,), self._resource_workers.stop)
                 if not self._pending_index.done():
                     raise ResourcePending()
                 self._search_index = self._pending_index.result()
                 self._pending_index = None
 
-    def locate_proposed_layer(self, frame, geometry, tier_id):
+    def locate_proposed_layer(self, frame, geometry, tier_id, *, wait_for_resources=False):
+        if wait_for_resources:
+            self._await_resources(self._pending_layers.values())
         if any(not future.done() for future in self._pending_layers.values()):
             # Waiting frames add no uniqueness evidence. Once resources finish,
             # redo the full search and overlap competition on a fresh frame.
             raise ResourcePending()
         entry = next(entry for entry in self.entries if entry["id"] == tier_id)
         self._pinned_ids = {tier_id}
+        if wait_for_resources:
+            self._warm_layers([entry], wait_for_resources=True)
         try:
             floor = self._load(entry)
         except (OSError, ValueError):
             return None
+        floor = self._matching_locator(entry, floor)
+        if not self._prepare_global_search(floor, frame, wait_for_resources=wait_for_resources):
+            raise ResourcePending()
         # Search the entire original floor, not a small ROI around a coarse
         # peak. Distant lookalikes remain competitors under the original gates.
         result = floor.locate_global(frame, geometry)
@@ -404,7 +652,20 @@ class LayeredMinimapLocator:
         if not candidates:
             return None
         prior = (result.best.world_x, result.best.world_z)
-        return self._search(frame, geometry, prior, extra_candidates=candidates)
+        if wait_for_resources:
+            # The immutable background snapshot and its full-floor result stay
+            # in this one acquisition job. Publication still requires new frames.
+            scope = self._navigation_scope
+            entries = [
+                e
+                for e in self.entries
+                if self._near_bounds(e, prior, 80) and (scope is None or scope.allows_tier(self.map_id, e["id"]))
+            ]
+            self._warm_layers(entries, wait_for_resources=True)
+        combined = self._search(frame, geometry, prior, extra_candidates=candidates)
+        if combined is not None and strong_candidate(combined.best, combined.margin):
+            self.release_proposal_resources()
+        return combined
 
     def locate_near(self, frame, previous_world, geometry, *, search_radius_m=80.0):
         return self._search(frame, geometry, previous_world, search_radius_m)

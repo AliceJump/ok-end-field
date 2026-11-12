@@ -80,6 +80,44 @@ class VisualPositionSource:
         self._scale = None
         self._state_lock = threading.RLock()
         self._closed = False
+        self._navigation_topology = None
+        self._topology_anchor = None
+
+    def set_navigation_topology(self, topology):
+        with self._state_lock:
+            if topology is self._navigation_topology:
+                return
+            self._navigation_topology = topology
+            self._topology_anchor = None
+            self._set_navigation_scope(None)
+            state = self._last_state
+            if topology is not None and state.get("absolute_position_valid") and state.get("tier_trusted"):
+                self._remember_topology_anchor(state)
+
+    def _set_navigation_scope(self, scope):
+        setter = getattr(self.locator, "set_navigation_scope", None)
+        if callable(setter):
+            setter(scope)
+
+    def _remember_topology_anchor(self, state):
+        self._topology_anchor = (state["frame_t"], state["map_id"], state["tier_id"], (state["x"], state["z"]))
+
+    def _prepare_navigation_scope(self, clock):
+        anchor = self._topology_anchor
+        scope = None
+        if self._navigation_topology is not None and anchor is not None:
+            age = clock - anchor[0]
+            if 0 <= age <= self.tracker.stale_after_s:
+                scope = self._navigation_topology.scope(
+                    anchor[1],
+                    anchor[2],
+                    anchor[3],
+                    self.tracker.consistency_distance_m + self.tracker.max_speed_m_s * age,
+                )
+            else:
+                self._topology_anchor = None
+        self._set_navigation_scope(scope)
+        return scope
 
     def close(self):
         with self._state_lock:
@@ -94,6 +132,8 @@ class VisualPositionSource:
             self._reset()
 
     def _reset(self):
+        self._topology_anchor = None
+        self._set_navigation_scope(None)
         self.tracker.reset()
         self.map_id = self._configured_map_id
         reset_locator = getattr(self.locator, "reset_tracking", None)
@@ -186,6 +226,11 @@ class VisualPositionSource:
         self._last_clock = clock
         geometry = MinimapGeometry.from_frame(shape[1], shape[0])
         measured = self.odometry.sample(frame, now=clock) if self.odometry is not None else None
+        if measured and measured.get("reanchored") and not measured.get("benign_reanchor"):
+            # A discontinuous frame must compete without the old floor filter,
+            # even if a lookalike would otherwise produce a strong match.
+            self._topology_anchor = None
+            self._set_navigation_scope(None)
         predicted_world = None
         if (
             self._origin is not None
@@ -206,8 +251,13 @@ class VisualPositionSource:
             if previous_clock is None or clock - previous_clock > self.tracker.stale_after_s:
                 predicted_world = None
         recovery_world = None
+        topology_scope = self._prepare_navigation_scope(clock)
         if self._has_live_visual_chain(clock) and self._last_state.get("position_trusted"):
             recovery_world = predicted_world or (self._last_state["x"], self._last_state["z"])
+        elif topology_scope is not None:
+            # Ambiguity may break the motion chain, but a recent absolute fix
+            # still bounds reachable floors. It never becomes a published pose.
+            recovery_world = self._topology_anchor[3]
         match = self.tracker.update(
             frame,
             geometry,
@@ -247,6 +297,8 @@ class VisualPositionSource:
                 "odom_reason": "too_soon",
             }
         if not strong and measured and measured.get("reanchored") and not measured.get("benign_reanchor"):
+            self._topology_anchor = None
+            self._set_navigation_scope(None)
             self.tracker.reset()
             self._lose_tracking(match)
             return self.unavailable("visual_odometry_lost")
@@ -365,8 +417,10 @@ class VisualPositionSource:
 
     def _lose_tracking(self, match):
         if match.locate is None:
+            self._topology_anchor = None
+            self._set_navigation_scope(None)
             reset_locator = getattr(self.locator, "reset_tracking", None)
-            if callable(reset_locator):
+            if callable(reset_locator) and match.reason != "visual_global_search_pending":
                 reset_locator()
         # Never let a chain propagate through loading, teleportation or loss.
         self._origin = None
@@ -487,6 +541,8 @@ class VisualPositionSource:
         }
         self._last_state["tier_margin"] = match.locate.layer_margin
         self._last_state.update(tier_id=absolute.tier_id, tier_trusted=tier_trusted, tier_evidence_required=True)
+        if strong and tier_trusted and self._navigation_topology is not None:
+            self._remember_topology_anchor(self._last_state)
         return dict(self._last_state)
 
     def _update_absolute_anchor(self, match, clock):

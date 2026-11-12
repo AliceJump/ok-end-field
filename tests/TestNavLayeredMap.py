@@ -16,6 +16,8 @@ from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, GRID_SUFFIX, new_grid, save
 from src.nav.layered_map import (
     MAIN_TIER,
     LayeredMap,
+    TierLink,
+    TierLinkEndpoint,
     discover_layer_paths,
     discover_layers,
     endpoint_cells,
@@ -27,6 +29,7 @@ from src.nav.layered_map import (
     resolve_tier_by_height,
     resolve_tier_for_point,
 )
+from src.nav.navigation_topology import NavigationTopology
 
 _REAL_DATA = Path(r"E:\LuQing\python\nav-grid-editor\assets\nav-grid-data")
 
@@ -456,6 +459,117 @@ class TestCatalogDegradation(unittest.TestCase):
                 (root / name).write_text(json.dumps({"layers": [{"id": tier, "level_id": "lv009"}]}), encoding="utf-8")
             layered = load_layered_map(root, "map02", zoom="4")
             self.assertEqual(layered.declared_tiers["lv009"], ("explicit",))
+
+
+class TestNavigationTopology(unittest.TestCase):
+    @staticmethod
+    def _link(source, target, *, source_x=0, target_x=0, bidirectional=False, kind="stairs"):
+        def endpoint(tier, x):
+            return TierLinkEndpoint("map02", tier, "4", {"x0": x, "z0": 0, "x1": x + 1, "z1": 1})
+
+        return TierLink("test", endpoint(source, source_x), endpoint(target, target_x), bidirectional, kind, 999)
+
+    def test_disconnected_island_and_diagonal_corner_are_not_reachable(self):
+        for rows, candidate in ((["ooo###ooo"], (8.5, 0.5)), (["o#", "#o"], (1.5, 1.5))):
+            topology = NavigationTopology(LayeredMap({("map02", ""): _grid(rows)}), tolerance_m=0)
+            scope = topology.scope("map02", MAIN_TIER, (0.5, 0.5), 100)
+            self.assertTrue(scope.allows_candidate("map02", "", 0.5, 0.5))
+            self.assertFalse(scope.allows_candidate("map02", "", *candidate))
+
+    def test_physical_link_span_and_direction_control_neighbor_floor(self):
+        layered = LayeredMap(
+            {
+                ("map02", "a"): _grid(["oooooooooo"], tier="a"),
+                ("map02", "b"): _grid(["oo"], tier="b", origin=(100, 0, 0)),
+            },
+            (self._link("a", "b", source_x=8, target_x=100),),
+        )
+        topology = NavigationTopology(layered, tolerance_m=0)
+        short = topology.scope("map02", "a", (0.5, 0.5), 99)
+        self.assertFalse(short.allows_tier("map02", "b"))
+        long = topology.scope("map02", "a", (0.5, 0.5), 100)
+        self.assertTrue(long.allows_candidate("map02", "b", 100.5, 0.5))
+        reverse = topology.scope("map02", "b", (100.5, 0.5), 200)
+        self.assertFalse(reverse.allows_tier("map02", "a"))
+
+    def test_portal_and_bidirectional_links_are_explicit(self):
+        layered = LayeredMap(
+            {("map02", "a"): _grid(["o"], tier="a"), ("map02", "b"): _grid(["o"], tier="b", origin=(100, 0, 0))},
+            (self._link("a", "b", target_x=100, bidirectional=True, kind="portal"),),
+        )
+        topology = NavigationTopology(layered, tolerance_m=0)
+        for tier, point, other, destination in (
+            ("a", (0.5, 0.5), "b", (100.5, 0.5)),
+            ("b", (100.5, 0.5), "a", (0.5, 0.5)),
+        ):
+            self.assertTrue(topology.scope("map02", tier, point, 0).allows_candidate("map02", other, *destination))
+
+    def test_missing_floor_keeps_competitors_but_unknown_cells_are_blocked(self):
+        topology = NavigationTopology(LayeredMap({("map02", ""): _grid(["oo...ooo"])}), tolerance_m=0)
+        scope = topology.scope("map02", MAIN_TIER, (0.5, 0.5), 1)
+        for tier, x, z in (("missing", 99, 99), (None, 7.5, 0.5)):
+            self.assertTrue(scope.allows_candidate("map02", tier, x, z))
+        for x, z in ((99, 99), (3.5, 0.5)):
+            self.assertFalse(scope.allows_candidate("map02", "", x, z))
+        self.assertTrue(scope.allows_tier("map02", "missing"))
+        self.assertTrue(scope.allows_tier("unknown-map", "floor"))
+
+    def test_unknown_corridor_does_not_connect_islands_or_other_floors(self):
+        topology = NavigationTopology(
+            LayeredMap({("map02", ""): _grid(["oo...ooo"]), ("map02", "b"): _grid(["o..o"], tier="b")}),
+            tolerance_m=0,
+        )
+        scope = topology.scope("map02", MAIN_TIER, (0.5, 0.5), 7)
+        self.assertFalse(scope.allows_candidate("map02", "", 7.5, 0.5))
+        self.assertFalse(scope.allows_tier("map02", "b"))
+        self.assertFalse(scope.allows_candidate("map02", "b", 1.5, 0.5))
+
+    def test_reachable_missing_intermediary_disables_all_filtering(self):
+        layered = LayeredMap(
+            {("map02", "a"): _grid(["oo"], tier="a")},
+            (self._link("a", "missing", target_x=1),),
+        )
+        self.assertIsNone(NavigationTopology(layered).scope("map02", "a", (0.5, 0.5), 10))
+
+    def test_unknown_connector_endpoints_cannot_be_walked(self):
+        for source_rows, target_rows, destination in ((["o."], ["o"], 2.5), (["oo"], [".o"], 3.5)):
+            with self.subTest(source_rows=source_rows, target_rows=target_rows):
+                layered = LayeredMap(
+                    {
+                        ("map02", "a"): _grid(source_rows, tier="a"),
+                        ("map02", "b"): _grid(target_rows, tier="b", origin=(2, 0, 0)),
+                    },
+                    (self._link("a", "b", source_x=1, target_x=2),),
+                )
+                scope = NavigationTopology(layered, tolerance_m=0).scope("map02", "a", (0.5, 0.5), 3)
+                self.assertIsNotNone(scope)
+                self.assertFalse(scope.allows_tier("map02", "b"))
+                self.assertFalse(scope.allows_candidate("map02", "b", destination, 0.5))
+
+    def test_invalid_anchor_or_budget_and_overflow_return_no_partial_scope(self):
+        topology = NavigationTopology(LayeredMap({("map02", ""): _grid(["ooo#."])}), max_expand=1)
+        self.assertIsNone(topology.scope("map02", "", (0.5, 0.5), 10))
+        for tier, point, budget in (
+            (None, (0.5, 0.5), 1),
+            ("missing", (0.5, 0.5), 1),
+            ("", (3.5, 0.5), 1),
+            ("", (4.5, 0.5), 1),
+            ("", (99, 99), 1),
+            ("", (float("nan"), 0), 1),
+            ("", (0.5, 0.5), -1),
+            ("", (0.5, 0.5), float("inf")),
+        ):
+            self.assertIsNone(topology.scope("map02", tier, point, budget))
+
+    def test_scope_is_snapshot_and_tolerance_is_not_added_per_edge(self):
+        grid = _grid(["oooooooooo"])
+        topology = NavigationTopology(LayeredMap({("map02", ""): grid}))
+        scope = topology.scope("map02", "", (0.5, 0.5), 1)
+        grid.cells[:] = CELL_BLOCKED
+        self.assertTrue(scope.allows_candidate("map02", "", 3.5, 0.5))
+        self.assertFalse(scope.allows_candidate("map02", "", 4.5, 0.5))
+        with self.assertRaises(TypeError):
+            scope._distances[("map02", "")][(0, 0)] = 999
 
 
 if __name__ == "__main__":

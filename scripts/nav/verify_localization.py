@@ -13,7 +13,12 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.localization.layered_minimap_locator import layer_calibration
-from src.localization.localization_bundle import TILED_KIND, LocalizationTileBundle, resolve_bundle_path
+from src.localization.localization_bundle import (
+    TILED_KIND,
+    TILED_SCHEMA_VERSIONS,
+    LocalizationTileBundle,
+    resolve_bundle_path,
+)
 from src.localization.minimap_map_locator import MapCalibration
 
 
@@ -41,9 +46,12 @@ def _verify_image(path, entry):
 def verify(root: Path):
     root = root.resolve()
     manifest = _read_json(root / "manifest.json")
-    _require(manifest["schema_version"] == 1, "Unsupported localization manifest version")
     _require(manifest["kind"] in {"okef-visual-localization", TILED_KIND}, "Unexpected localization bundle kind")
+    versions = TILED_SCHEMA_VERSIONS if manifest["kind"] == TILED_KIND else (1,)
+    _require(manifest["schema_version"] in versions, "Unsupported localization manifest version")
     bundle = LocalizationTileBundle(root, manifest) if manifest["kind"] == TILED_KIND else None
+    verify_sparse = bundle is not None and bundle.version == 3
+    checked_payloads = {}
     files = set()
     total_bytes = 0
     for entry in manifest["files"]:
@@ -81,6 +89,8 @@ def verify(root: Path):
             size = (entry["width"], entry["height"])
             tiled = bundle.open_base(image, entry["map_id"], size, mapping)
             referenced.update(resolve_bundle_path(root, record["path"]) for record in tiled.resource_records())
+            if verify_sparse:
+                tiled.verify_sparse_payloads(checked_payloads)
         calibration = MapCalibration.from_mapping_file(mapping)
         _require(size == (calibration.image_width, calibration.image_height), f"Mapping image_size mismatch: {mapping}")
         forward = np.vstack((calibration.matrix, [0, 0, 1]))
@@ -108,6 +118,8 @@ def verify(root: Path):
             size = (entry["width"], entry["height"])
             tiled = bundle.open_floor(layers_root, entry)
             referenced.update(resolve_bundle_path(root, record["path"]) for record in tiled.resource_records())
+            if verify_sparse:
+                tiled.verify_sparse_payloads(checked_payloads)
         layer_calibration(entry["bounds"], *size)
         category = entry["map_category"]
         _require(category in {"layered", "independent"}, f"Unknown map category: {tier}")
@@ -121,6 +133,9 @@ def verify(root: Path):
     _require(not tiers.intersection(missing), "Missing layer also declared present")
     difference = referenced.symmetric_difference(files)
     _require(not difference, f"Manifest and catalog references differ: {sorted(difference)}")
+    if verify_sparse:
+        unlisted = {path for path in root.rglob("*") if path.is_file()} - files - {root / "manifest.json"}
+        _require(not unlisted, f"Unlisted localization files: {sorted(unlisted)}")
     return {
         "base_maps": len(map_keys),
         "layers": len(tiers),

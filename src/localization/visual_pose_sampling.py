@@ -30,6 +30,7 @@ class VisualPoseSampler:
         self.capture_timeout = min(capture_timeout, self.interval)
         self._requests = VisualCaptureCoordinator(capture)
         self.stopped = threading.Event()
+        self._wake = threading.Event()
         self.finished = threading.Event()
         self.thread = threading.Thread(target=self._run, name="VisualPoseSampler", daemon=True)
 
@@ -45,6 +46,7 @@ class VisualPoseSampler:
     def close(self):
         """Bound scope exit; the worker retains capture ownership until it finishes."""
         self.stopped.set()
+        self._wake.set()
         self._requests.cancel()
         if self.thread.ident is not None:
             self.thread.join(timeout=self.close_timeout)
@@ -52,6 +54,10 @@ class VisualPoseSampler:
             return True
         logger.warning("visual pose sampler is still stopping; capture cleanup deferred")
         return False
+
+    def wake(self):
+        """Request a fresh capture when background localization is ready."""
+        self._wake.set()
 
     def _run(self):
         try:
@@ -61,7 +67,11 @@ class VisualPoseSampler:
             self.finished.set()
 
     def _sample_loop(self):
-        while not self.stopped.wait(self.interval):
+        while not self.stopped.is_set():
+            self._wake.wait(self.interval)
+            self._wake.clear()
+            if self.stopped.is_set():
+                return
             if not self.enabled():
                 continue
             try:

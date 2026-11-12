@@ -184,6 +184,7 @@ class LocalizationWorkers:
         # Coordination must not occupy a decoder while awaiting its children.
         self.indexes = _ResourceExecutor(1, budget=None, name="VisualIndex")
         self.rankings = _ResourceExecutor(4, budget=None, name="VisualFloorRank")
+        self.acquisitions = _ResourceExecutor(1, budget=None, name="VisualAcquire")
         self.matches = ThreadPoolExecutor(max_workers=match_workers, thread_name_prefix="VisualMapSearch")
         self.stop = threading.Event()
         self.closed = False
@@ -195,4 +196,5 @@ class LocalizationWorkers:
         self.resources.shutdown(wait=False, cancel_futures=True)
         self.indexes.shutdown(wait=False, cancel_futures=True)
         self.rankings.shutdown(wait=False, cancel_futures=True)
+        self.acquisitions.shutdown(wait=False, cancel_futures=True)
         self.matches.shutdown(wait=False, cancel_futures=True)

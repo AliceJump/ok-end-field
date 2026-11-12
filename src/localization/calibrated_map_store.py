@@ -5,7 +5,12 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.localization.localization_bundle import TILED_KIND, LocalizationTileBundle, resolve_bundle_path
+from src.localization.localization_bundle import (
+    TILED_KIND,
+    TILED_SCHEMA_VERSIONS,
+    LocalizationTileBundle,
+    resolve_bundle_path,
+)
 from src.localization.localization_workers import decode_memory_bytes
 from src.localization.minimap_map_locator import MapCalibration, MinimapMapLocator
 from src.localization.tiled_map_image import TiledMapImage
@@ -40,7 +45,8 @@ class CalibratedMapStore:
             return None
         if (
             not isinstance(manifest, dict)
-            or manifest.get("schema_version") != 1
+            or manifest.get("schema_version")
+            not in (TILED_SCHEMA_VERSIONS if manifest.get("kind") == TILED_KIND else (1,))
             or manifest.get("kind") not in kinds
             or not isinstance(manifest.get("base_maps"), list)
         ):
@@ -144,7 +150,11 @@ class CalibratedMapStore:
                 if not tiled:
                     request_preparation(self.root)
                 return map_id, MapSetLocator(
-                    self, [map_id] if map_id else available, workers=LocalizationWorkers(), require_all_maps=tiled
+                    self,
+                    [map_id] if map_id else available,
+                    workers=LocalizationWorkers(),
+                    require_all_maps=tiled,
+                    async_search=True,
                 )
             return self._load_resources(map_id, files, manifest)
         except (KeyError, TypeError, OverflowError) as exc:

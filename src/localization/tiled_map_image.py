@@ -148,7 +148,7 @@ class TiledMapImage:
             if digest != record["sha256"]:
                 raise ValueError("corrupt tiled image resource")
 
-    def _read(self, record, *, mask_alpha=False):
+    def _read(self, record, *, mask_alpha=False, require_bgr=False, alpha_only=False):
         path = self._resource_path(record)
         with self._lock:
             if self._closed:
@@ -159,9 +159,8 @@ class TiledMapImage:
         if (size is not None and len(data) != size) or hashlib.sha256(data).hexdigest() != record["sha256"]:
             raise ValueError(f"corrupt tiled image resource: {record['path']}")
         try:
-            pixels = cv2.imdecode(
-                np.frombuffer(data, np.uint8), cv2.IMREAD_UNCHANGED if mask_alpha else cv2.IMREAD_COLOR
-            )
+            flags = cv2.IMREAD_UNCHANGED if mask_alpha or require_bgr or alpha_only else cv2.IMREAD_COLOR
+            pixels = cv2.imdecode(np.frombuffer(data, np.uint8), flags)
         except cv2.error as exc:
             raise ValueError(f"invalid tiled image resource: {record['path']}") from exc
         if (
@@ -170,9 +169,13 @@ class TiledMapImage:
             or pixels.dtype != np.uint8
             or pixels.ndim != 3
             or pixels.shape[2] not in (3, 4)
+            or (require_bgr and pixels.shape[2] != 3)
         ):
             raise ValueError(f"invalid tiled image resource: {record['path']}")
-        if pixels.shape[2] == 4:
+        if alpha_only:
+            alpha = pixels[:, :, 3] if pixels.shape[2] == 4 else np.full(pixels.shape[:2], 255, np.uint8)
+            pixels = alpha[:, :, None].copy()
+        elif pixels.shape[2] == 4:
             color = pixels[:, :, :3].copy()
             color[pixels[:, :, 3] == 0] = 0
             pixels = color
@@ -221,6 +224,9 @@ class TiledMapImage:
             raise ValueError("global overview dimensions do not match scale")
         return image
 
+    def coarse_overview(self, scale):
+        return self.overview(scale)
+
     def _fallback_overview(self, scale, descriptor):
         with self._lock:
             if self._closed:
@@ -254,24 +260,21 @@ class TiledMapImage:
     def _read_tile(self, record):
         return self._read(record)
 
-    def _tile(self, x, y):
-        key = f"{x},{y}"
+    def _cached_pixels(self, key):
         with self._lock:
             if self._closed:
                 raise ValueError("tiled image closed")
-            if key in self._cache:
+            pixels = self._cache.get(key)
+            if pixels is not None:
                 self._cache.move_to_end(key)
-                return self._cache[key]
-        pixels = self._read_tile(self.metadata["tiles"][key])
-        expected = (
-            min(self.tile_size, self._native_shape[0] - y * self.tile_size),
-            min(self.tile_size, self._native_shape[1] - x * self.tile_size),
-        )
-        if pixels.shape[:2] != expected:
-            raise ValueError("tile dimensions do not match grid")
+            return pixels
+
+    def _remember_pixels(self, key, pixels):
         with self._lock:
             if self._closed:
                 raise ValueError("tiled image closed")
+            if pixels.nbytes > self._limit:
+                return pixels
             previous = self._cache.pop(key, None)
             if previous is not None:
                 self._bytes -= previous.nbytes
@@ -280,6 +283,25 @@ class TiledMapImage:
             while self._bytes > self._limit:
                 self._bytes -= self._cache.popitem(last=False)[1].nbytes
         return pixels
+
+    def _tile_cache_key(self, coordinates, record):
+        return coordinates
+
+    def _tile(self, x, y):
+        coordinates = f"{x},{y}"
+        record = self.metadata["tiles"][coordinates]
+        key = self._tile_cache_key(coordinates, record)
+        cached = self._cached_pixels(key)
+        if cached is not None:
+            return cached
+        pixels = self._read_tile(record)
+        expected = (
+            min(self.tile_size, self._native_shape[0] - y * self.tile_size),
+            min(self.tile_size, self._native_shape[1] - x * self.tile_size),
+        )
+        if pixels.shape[:2] != expected:
+            raise ValueError("tile dimensions do not match grid")
+        return self._remember_pixels(key, pixels)
 
     def __getitem__(self, slices):
         rows, columns = slices
@@ -290,7 +312,7 @@ class TiledMapImage:
         return self._read_region(y0, y1, x0, x1)
 
     def _read_region(self, y0, y1, x0, x1):
-        result = np.empty((max(0, y1 - y0), max(0, x1 - x0), 3), np.uint8)
+        result = np.empty((max(0, y1 - y0), max(0, x1 - x0), self.shape[2]), np.uint8)
         if result.size == 0:
             return result
         for ty in range(y0 // self.tile_size, (y1 - 1) // self.tile_size + 1):

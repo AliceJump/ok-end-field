@@ -10,6 +10,7 @@ from src.localization.native_tile_image import NativeTileImage
 from src.localization.tiled_map_image import floor_options
 
 TILED_KIND = "okef-tiled-localization"
+TILED_SCHEMA_VERSIONS = (1, 2, 3)
 RASTER_CONVENTION = {
     "origin": "top-left",
     "pixel_coordinates": "integer-centers",
@@ -35,6 +36,9 @@ def resolve_bundle_path(root, name):
 class LocalizationTileBundle:
     def __init__(self, root, manifest):
         self.root = root
+        self.version = manifest.get("schema_version")
+        if type(self.version) is not int or self.version not in TILED_SCHEMA_VERSIONS:
+            raise ValueError("Unsupported localization tile bundle version")
         search = manifest.get("search")
         if manifest.get("raster_convention") != RASTER_CONVENTION or not isinstance(search, dict):
             raise ValueError("Unsupported localization tile coordinates")
@@ -44,8 +48,11 @@ class LocalizationTileBundle:
             or search.get("floor_rank_pixels_per_meter") != 0.5
             or search.get("coarse_factor") != COARSE_FACTOR
             or search.get("interpolation") != "OpenCV INTER_AREA"
+            or (self.version >= 2 and search.get("image_layout") != "zero-padded-roi")
         ):
             raise ValueError("Unsupported localization tile matching scales")
+        if self.version == 3 and manifest.get("tile_layout") != "zero-padded-roi":
+            raise ValueError("Unsupported native localization tile layout")
         widths = search.get("screen_widths")
         if not isinstance(widths, list) or not widths or any(type(w) is not int or w <= 0 for w in widths):
             raise ValueError("Invalid localization tile screenshot widths")
@@ -98,10 +105,79 @@ class LocalizationTileBundle:
             raise ValueError(f"Localization image record disagrees with manifest or geometry: {name}")
         return {"path": name, "size": record["size"], "sha256": record["sha256"], "shape": [height, width]}
 
+    @staticmethod
+    def _read_roi(record, width, height):
+        roi = record.get("roi")
+        if not isinstance(roi, list) or len(roi) != 4 or any(type(n) is not int for n in roi):
+            raise ValueError("Invalid localization raster ROI")
+        left, top, right, bottom = roi
+        if roi != [0, 0, 0, 0] and not (0 <= left < right <= width and 0 <= top < bottom <= height):
+            raise ValueError("Localization ROI exceeds its logical raster")
+        return (left, top, right, bottom)
+
+    @staticmethod
+    def _empty_payload(record):
+        return (
+            {"path", "size", "sha256"}.issubset(record)
+            and record["path"] is None
+            and type(record["size"]) is int
+            and record["size"] == 0
+            and record["sha256"] is None
+        )
+
+    def _crop_payload(self, record, roi):
+        left, top, right, bottom = roi
+        width, height = right - left, bottom - top
+        return self._image_record({**record, "width": width, "height": height}, width, height)
+
+    def _search_record(self, record, width, height):
+        if self.version == 1:
+            return self._image_record(record, width, height)
+        if (
+            not isinstance(record, dict)
+            or any(type(record.get(axis)) is not int or record[axis] <= 0 for axis in ("width", "height"))
+            or (record.get("width"), record.get("height")) != (width, height)
+            or record.get("fill") != [0, 0, 0]
+        ):
+            raise ValueError("Invalid zero-padded localization search image")
+        roi = self._read_roi(record, width, height)
+        if roi == (0, 0, 0, 0):
+            if not self._empty_payload(record):
+                raise ValueError("Invalid empty localization search image")
+            crop = None
+        else:
+            crop = self._crop_payload(record, roi)
+        return {"shape": [height, width], "roi": roi, "crop": crop}
+
+    def _native_record(self, record, width, height):
+        if self.version < 3:
+            return self._image_record(record, width, height)
+        if any(type(record.get(axis)) is not int for axis in ("width", "height")) or (
+            record.get("width"),
+            record.get("height"),
+        ) != (width, height):
+            raise ValueError("Invalid logical native tile size")
+        roi = self._read_roi(record, width, height)
+        storage = record.get("storage")
+        if storage == "zero":
+            if roi != (0, 0, 0, 0) or not self._empty_payload(record):
+                raise ValueError("Invalid explicitly zero native tile")
+            return None
+        if roi == (0, 0, 0, 0):
+            raise ValueError("Nonzero native tile must declare a nonempty ROI")
+        if storage == "roi":
+            payload, origin = self._crop_payload(record, roi), roi[:2]
+            payload["require_bgr"] = True
+        elif storage == "full":
+            payload, origin = self._image_record(record, width, height), (0, 0)
+        else:
+            raise ValueError("Unknown native localization tile storage")
+        return {"roi": roi, "payload": payload, "origin": origin}
+
     def _read_index(self, path, identity, size):
         index = self.read_json(path)
         expected = {
-            "schema_version": 1,
+            "schema_version": self.version,
             "kind": "okef-image-tiles",
             "complete": True,
             "width": size[0],
@@ -111,6 +187,7 @@ class LocalizationTileBundle:
         if (
             not isinstance(index, dict)
             or index.get("complete") is not True
+            or any(type(index.get(key)) is not int for key in ("schema_version", "width", "height"))
             or any(index.get(key) != value for key, value in expected.items())
         ):
             raise ValueError(f"Invalid localization image tile index: {path}")
@@ -156,7 +233,7 @@ class LocalizationTileBundle:
             key = f"{x},{y}"
             if key in tiles:
                 raise ValueError("Duplicate localization tile coordinates")
-            tiles[key] = self._image_record(record, min(edge, width - x * edge), min(edge, height - y * edge))
+            tiles[key] = self._native_record(record, min(edge, width - x * edge), min(edge, height - y * edge))
         match_width, match_height = round(width * scale[0]), round(height * scale[1])
         if index.get("match_raster") != {"width": match_width, "height": match_height, "source_scale": list(scale)}:
             raise ValueError("Localization tile match raster disagrees with calibration")
@@ -174,19 +251,26 @@ class LocalizationTileBundle:
                 or factor.hex() in overviews
             ):
                 raise ValueError("Invalid global localization search scale")
-            overviews[factor.hex()] = self._image_record(
+            overviews[factor.hex()] = self._search_record(
                 record, round(match_width * factor), round(match_height * factor)
             )
         if len(overviews) != len(self.scales):
             raise ValueError("Incomplete global localization search images")
         proposal = index.get("floor_rank")
         if proposal_size is not None:
-            proposal = self._image_record(proposal, *proposal_size)
+            proposal = self._search_record(proposal, *proposal_size)
         elif proposal is not None:
             raise ValueError("Base map must not have a floor ranking image")
         return NativeTileImage(
             self.root,
-            {"shape": [height, width], "tile_size": edge, "tiles": tiles, "overviews": overviews, "proposal": proposal},
+            {
+                "shape": [height, width],
+                "tile_size": edge,
+                "tiles": tiles,
+                "overviews": overviews,
+                "proposal": proposal,
+                "sparse_native_tiles": self.version == 3,
+            },
             scale=scale,
             match_size=(match_width, match_height),
             alpha=proposal_size is not None,

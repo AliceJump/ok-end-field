@@ -14,25 +14,30 @@ PySide6 导入时 _setupQtDirectories 会执行
 
 隔离策略
 --------
-仅操作 os.environ['PATH']，并在 setUp/tearDown 中保存恢复，不影响其它测试。
+通过 patch.dict 保存和恢复环境变量，不影响其它测试。
 不构造 ok 全局，不依赖 qfluentwidgets / PySide6 导入。
 """
 
 import os
 import unittest
+from unittest.mock import patch
 
 from src.patches.pre_config_patch import install_pre_config_patch
 
 
 class TestPreConfigPatch(unittest.TestCase):
     def setUp(self):
-        self._saved_path = os.environ.get("PATH")
+        self.enterContext(patch.dict(os.environ))
 
-    def tearDown(self):
-        if self._saved_path is None:
-            os.environ.pop("PATH", None)
-        else:
-            os.environ["PATH"] = self._saved_path
+    def test_defaults_blas_to_one_thread_before_config_import(self):
+        os.environ.pop("OPENBLAS_NUM_THREADS", None)
+        install_pre_config_patch()
+        self.assertEqual(os.environ["OPENBLAS_NUM_THREADS"], "1")
+
+    def test_preserves_explicit_blas_thread_budget(self):
+        os.environ["OPENBLAS_NUM_THREADS"] = "4"
+        install_pre_config_patch()
+        self.assertEqual(os.environ["OPENBLAS_NUM_THREADS"], "4")
 
     def test_sets_defpath_when_path_missing(self):
         os.environ.pop("PATH", None)

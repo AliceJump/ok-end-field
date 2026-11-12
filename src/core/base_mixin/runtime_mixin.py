@@ -835,12 +835,18 @@ class RuntimeMixin:
             center = (215.0 / 2560.0, 222.0 / 1440.0)
 
         # 使用缓存匹配器，支持多分辨率自适应与 LRU 限制
-        matcher = ArrowAngleMatcher(
-            template_path=None,
-            template_center=(12, 12),
-            benchmark_width=benchmark_width,
-            max_cache_scales=max_cache_scales,
-        )
+        matcher_key = (benchmark_width, max_cache_scales)
+        cached = getattr(self, "_arrow_angle_matcher", None)
+        if cached is None or cached[0] != matcher_key:
+            matcher = ArrowAngleMatcher(
+                template_path=None,
+                template_center=(12, 12),
+                benchmark_width=benchmark_width,
+                max_cache_scales=max_cache_scales,
+            )
+            self._arrow_angle_matcher = (matcher_key, matcher)
+        else:
+            matcher = cached[1]
 
         detected_angle, score = matcher.match(tgt, center=center, two_stage=two_stage)
 
