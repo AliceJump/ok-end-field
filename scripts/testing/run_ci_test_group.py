@@ -232,6 +232,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestGuiI18n.py",
             "TestItemNavigatorOverlayText.py",
             "TestQfluentNavigationPatch.py",
+            "TestTouchScrollEventFilterPatch.py",
             "TestRuntimeHelp.py",
             "TestRuntimeMixinFeatureClick.py",
             "TestTopmostMixin.py",
