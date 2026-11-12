@@ -6,12 +6,14 @@ import logging
 from collections.abc import MutableMapping
 from dataclasses import dataclass
 from functools import partial, wraps
+from operator import setitem
 
 from PySide6.QtCore import QTimer
 
 from src.core.param_preview_model import _button_config
 
 logger = logging.getLogger(__name__)
+_write_config_value = setitem
 
 
 class _BaseConfigView(MutableMapping):
@@ -28,7 +30,7 @@ class _BaseConfigView(MutableMapping):
         return self._config[key]
 
     def __setitem__(self, key, value):
-        self._config[key] = value
+        _write_config_value(self._config, key, value)
 
     def __delitem__(self, key):
         del self._config[key]
@@ -291,6 +293,8 @@ def _collect_trigger_tasks(_page, *, task_context):
 
 def install_lazy_task_tab_patch():
     """Install after the theme has selected its task and daily-matrix renderers."""
+    global _write_config_value
+
     from ok import og
     from ok.core.config_schema import resolve_config_type
     from ok.ui.qt.tasks.ConfigCard import ConfigCard, ConfigContentMixin
@@ -298,9 +302,12 @@ def install_lazy_task_tab_patch():
     from ok.ui.qt.tasks.TaskCard import TaskCard
     from ok.ui.qt.tasks.TriggerTaskTab import TriggerTaskTab
 
-    from src.gui.components.EndfieldSectionMatrix import MATRIX_GROUPS
+    from src.gui.components.EndfieldSectionMatrix import MATRIX_GROUPS, _set_base_config_value
     from src.gui.EndfieldConfigContent import visible_config_types
 
+    # Both pre-runtime cleanup and native config widgets write through this
+    # view. Install the framework-aware writer at the existing UI boundary.
+    _write_config_value = _set_base_config_value
     prepare_tasks = partial(
         _prepare_task_configs,
         config_content_class=ConfigContentMixin,

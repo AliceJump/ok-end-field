@@ -375,6 +375,12 @@ class TestNativeLazyTaskTabs(_QtTestCase):
         self.OneTimeTaskTab = OneTimeTaskTab
         self.TaskCard = TaskCard
         self.TriggerTaskTab = TriggerTaskTab
+        lazy_patch = importlib.import_module("src.patches.lazy_task_tab_patch")
+        self.enterContext(
+            patch.object(
+                lazy_patch, "_write_config_value", getattr(lazy_patch, "_write_config_value", None), create=True
+            )
+        )
         # Earlier GUI fixtures can leave subscriptions to deleted widgets.
         # Use real, isolated signals so this fixture exercises its own cards.
         events = EventBus()
@@ -696,6 +702,68 @@ class TestNativeLazyTaskTabs(_QtTestCase):
         self.assertEqual(daily.config[daily.CFG_BOAT_TASKS], [])
         self.assertEqual(config_path.read_text(encoding="utf-8"), saved)
         persist.assert_not_called()
+
+    def test_running_list_cleanup_persists_when_override_equals_cleaned_base(self):
+        from ok.core.config_schema import resolve_config_type
+
+        task = self._task("running_list_cleanup", values={"sequence": ["obsolete", "keep"], "amount": 3})
+        overrides = {"sequence": ["keep"]}
+        self.enterContext(
+            patch("src.core.base_mixin.account_override_mixin.get_account_task_overrides", return_value=overrides)
+        )
+        task._bind_account_aware_config_get()
+        task.running = True
+        task.enabled = True
+        runtime_getter = task.config.get
+        config_path = Path(task.config.config_file)
+        validated = []
+
+        def validate(key, value):
+            validated.append((key, list(value)))
+            return True, ""
+
+        task.config.validator = validate
+        persist = self.enterContext(patch.object(task.config, "save_file", wraps=task.config.save_file))
+        self.executor.onetime_tasks = [task]
+        install_lazy_task_tab_patch()
+        page = self._track_page(self.OneTimeTaskTab())
+        self.assertEqual(page.card_widgets, [])
+        self.assertEqual(task.config["sequence"], ["keep"])
+        self.assertEqual(json.loads(config_path.read_text(encoding="utf-8"))["sequence"], ["keep"])
+        self.assertEqual(validated, [("sequence", ["keep"])])
+        persist.assert_called_once()
+
+        # A base edit after preparation must also be cleaned by the real
+        # ModifyListItem constructed on first show, through the same view.
+        task.config["sequence"] = ["obsolete", "keep"]
+        validated.clear()
+        persist.reset_mock()
+        self._show_and_build(page)
+        self.assertEqual(len(page.card_widgets), 1)
+        self.assertIsInstance(page.card_widgets[0], self.TaskCard)
+        self.assertEqual(task.config["sequence"], ["keep"])
+        self.assertEqual(json.loads(config_path.read_text(encoding="utf-8"))["sequence"], ["keep"])
+        self.assertEqual(validated, [("sequence", ["keep"])])
+        persist.assert_called_once()
+
+        task.config["sequence"] = ["obsolete", "keep"]
+        saved = config_path.read_text(encoding="utf-8")
+        validated.clear()
+        persist.reset_mock()
+
+        def reject(key, value):
+            validated.append((key, list(value)))
+            return False, "fixture validation rejection"
+
+        task.config.validator = reject
+        _normalize_rendered_lists(task.config, task.default_config, task.config_type, resolve_config_type)
+        self.assertEqual(validated, [("sequence", ["keep"])])
+        self.assertEqual(task.config["sequence"], ["obsolete", "keep"])
+        self.assertEqual(config_path.read_text(encoding="utf-8"), saved)
+        persist.assert_not_called()
+        self.assertIs(task.config.get, runtime_getter)
+        self.assertEqual(runtime_getter("sequence"), ["keep"])
+        self.assertEqual(overrides, {"sequence": ["keep"]})
 
 
 if __name__ == "__main__":
