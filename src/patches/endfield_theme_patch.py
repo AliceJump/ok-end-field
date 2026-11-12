@@ -762,16 +762,8 @@ def patch_onetime_task_tab() -> None:
             daily_group_map,
         )
 
-        def _endfield_refresh_ui(self: Any) -> None:
-            # 移除旧卡片
-            for w in self.card_widgets:
-                self.remove_task_card(w)
-                if hasattr(w, "dispose"):
-                    w.dispose()
-                w.deleteLater()
-            self.card_widgets.clear()
-
-            self.tasks = []
+        def _endfield_collect_tasks(self: Any) -> list[Any]:
+            tasks = []
             executor: Any = getattr(og, "executor", None)
             if executor and hasattr(executor, "onetime_tasks"):
                 for task in executor.onetime_tasks:
@@ -782,22 +774,34 @@ def patch_onetime_task_tab() -> None:
                         continue
                     task_group = getattr(task, "group_name", None)
                     if (self.is_standalone and not task_group) or (self.group_name and task_group == self.group_name):
-                        self.tasks.append(task)
+                        tasks.append(task)
 
             # 日常分栏只保留 DailyTask 执行清单内的子任务：清单外的独立任务勾不动勾选点，改归「收尾」
             if self.group_name in MATRIX_GROUPS:
                 roster = daily_group_map()
-                dropped = [t for t in self.tasks if (getattr(t, "name", "") or "") not in roster]
+                dropped = [t for t in tasks if (getattr(t, "name", "") or "") not in roster]
                 if dropped:
                     logger.info(
                         "Endfield daily tab %s hides non-roster tasks: %s",
                         self.group_name,
                         [getattr(t, "name", "") for t in dropped],
                     )
-                self.tasks = [t for t in self.tasks if (getattr(t, "name", "") or "") in roster]
+                tasks = [t for t in tasks if (getattr(t, "name", "") or "") in roster]
                 # 行序按一条龙执行顺序，而非任务注册顺序（注册末尾的农牧领取要排在自动送货之前）
                 order = {name: index for index, name in enumerate(roster)}
-                self.tasks.sort(key=lambda task: order.get(getattr(task, "name", "") or "", len(order)))
+                tasks.sort(key=lambda task: order.get(getattr(task, "name", "") or "", len(order)))
+            return tasks
+
+        def _endfield_refresh_ui(self: Any) -> None:
+            # 移除旧卡片
+            for w in self.card_widgets:
+                self.remove_task_card(w)
+                if hasattr(w, "dispose"):
+                    w.dispose()
+                w.deleteLater()
+            self.card_widgets.clear()
+
+            self.tasks = _endfield_collect_tasks(self)
 
             # 日常类顶栏统一渲染为终末地分区矩阵（统一勾选点、策略 Tag、预估耗时与配置入口）
             if self.group_name in MATRIX_GROUPS and self.tasks:
@@ -812,6 +816,7 @@ def patch_onetime_task_tab() -> None:
                 self.card_widgets.append(card)
                 self.add_task_card(card)
 
+        OneTimeTaskTab._endfield_collect_tasks = _endfield_collect_tasks
         OneTimeTaskTab.refresh_ui = _endfield_refresh_ui
         logger.info("OneTimeTaskTab patched for Endfield subtask convergence.")
     except Exception as exc:
