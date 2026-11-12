@@ -378,7 +378,7 @@ class TestNativeLazyTaskTabs(_QtTestCase):
         # Earlier GUI fixtures can leave subscriptions to deleted widgets.
         # Use real, isolated signals so this fixture exercises its own cards.
         events = EventBus()
-        for name in ("task", "task_list_updated"):
+        for name in ("task", "task_list_updated", "config_validation"):
             self.enterContext(patch.object(communicate, name, getattr(events, name)))
         self.folder = self.enterContext(TemporaryDirectory())
         self.enterContext(patch.object(og, "app", SimpleNamespace(tr=lambda message, *args: message), create=True))
@@ -600,6 +600,102 @@ class TestNativeLazyTaskTabs(_QtTestCase):
         self.assertEqual(matrix_page.card_widgets[0].tasks, [first, second])
         self._show_and_build(trigger_page)
         self.assertEqual([card.task for card in trigger_page.card_widgets], [trigger])
+
+    def test_first_matrix_show_and_edits_keep_base_roster_while_account_is_running(self):
+        from src.core.base_mixin.account_override_mixin import AccountOverrideMixin
+        from src.gui.components.EndfieldTacticalDrawer import ConfigSyncBus
+        from src.patches.endfield_theme_patch import patch_onetime_task_tab
+
+        matrix_module = importlib.import_module("src.gui.components.EndfieldSectionMatrix")
+        checkpoint_module = importlib.import_module("src.gui.components.EndfieldCheckpointCard")
+        sync = ConfigSyncBus()
+        self.enterContext(patch.object(matrix_module, "sync_bus", sync))
+        self.enterContext(patch.object(checkpoint_module, "sync_bus", sync))
+
+        class DailyTask(AccountOverrideMixin):
+            CFG_BOAT_TASKS = "帝江号任务"
+            BOAT_TASKS = ("送礼", "帝江号整理", "帝江号收菜")
+
+        daily = DailyTask()
+        daily.name = "matrix_daily"
+        daily.default_config = {daily.CFG_BOAT_TASKS: ["送礼", "帝江号整理"]}
+        daily.config = self._config(daily.name, daily.default_config)
+        daily.running = False
+        daily.current_account_id = "account-1"
+        daily.current_user = "tester"
+        tasks = [self._task(name, group="帝江号") for name in daily.BOAT_TASKS]
+        self.executor.onetime_tasks = [daily, *tasks]
+        patch_onetime_task_tab()
+        install_lazy_task_tab_patch()
+        page = self._track_page(self.OneTimeTaskTab(False, "帝江号"))
+        self.assertEqual(page.card_widgets, [])
+        self.assertEqual(page.tasks, tasks)
+
+        overrides = {daily.CFG_BOAT_TASKS: []}
+        self.enterContext(
+            patch("src.core.base_mixin.account_override_mixin.get_account_task_overrides", return_value=overrides)
+        )
+        daily._bind_account_aware_config_get()
+        daily.running = True
+        runtime_getter = daily.config.get
+        config_path = Path(daily.config.config_file)
+        saved = config_path.read_text(encoding="utf-8")
+        persist = self.enterContext(patch.object(daily.config, "save_file", wraps=daily.config.save_file))
+        self.assertEqual(runtime_getter(daily.CFG_BOAT_TASKS), [])
+
+        self._show_and_build(page)
+        self.assertEqual(len(page.card_widgets), 1)
+        matrix = page.card_widgets[0]
+        self.assertIsInstance(matrix, matrix_module.EndfieldSectionMatrix)
+        checks = {card.task_name: card.checkbox for card in matrix.checkpoint_cards}
+        self.assertEqual(
+            {name: box.isChecked() for name, box in checks.items()},
+            {"送礼": True, "帝江号整理": True, "帝江号收菜": False},
+        )
+        self.assertEqual(config_path.read_text(encoding="utf-8"), saved)
+        persist.assert_not_called()
+
+        checks["帝江号收菜"].click()
+        self.assertEqual(daily.config[daily.CFG_BOAT_TASKS], ["送礼", "帝江号整理", "帝江号收菜"])
+        checks["送礼"].click()
+        self.assertEqual(daily.config[daily.CFG_BOAT_TASKS], ["帝江号整理", "帝江号收菜"])
+        self.assertEqual(
+            json.loads(config_path.read_text(encoding="utf-8"))[daily.CFG_BOAT_TASKS],
+            ["帝江号整理", "帝江号收菜"],
+        )
+
+        daily.config[daily.CFG_BOAT_TASKS] = ["送礼"]
+        saved = config_path.read_text(encoding="utf-8")
+        persist.reset_mock()
+        sync.config_changed.emit(daily.name)
+        self.assertEqual(
+            {name: box.isChecked() for name, box in checks.items()},
+            {"送礼": True, "帝江号整理": False, "帝江号收菜": False},
+        )
+        self.assertEqual(config_path.read_text(encoding="utf-8"), saved, "sync must not write configuration")
+        persist.assert_not_called()
+
+        checks["送礼"].click()
+        self.assertEqual(daily.config[daily.CFG_BOAT_TASKS], [], "the last base selection must be removable")
+        self.assertEqual(json.loads(config_path.read_text(encoding="utf-8"))[daily.CFG_BOAT_TASKS], [])
+        self.assertIs(daily.config.get, runtime_getter)
+        self.assertEqual(daily.config.get(daily.CFG_BOAT_TASKS), [])
+        self.assertEqual(overrides, {daily.CFG_BOAT_TASKS: []})
+
+        validated = []
+
+        def reject_selection(key, value):
+            validated.append((key, list(value)))
+            return False, "fixture validation rejection"
+
+        daily.config.validator = reject_selection
+        saved = config_path.read_text(encoding="utf-8")
+        persist.reset_mock()
+        checks["帝江号整理"].click()
+        self.assertEqual(validated, [(daily.CFG_BOAT_TASKS, ["帝江号整理"])])
+        self.assertEqual(daily.config[daily.CFG_BOAT_TASKS], [])
+        self.assertEqual(config_path.read_text(encoding="utf-8"), saved)
+        persist.assert_not_called()
 
 
 if __name__ == "__main__":

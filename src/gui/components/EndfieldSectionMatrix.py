@@ -4,6 +4,7 @@
 from typing import Any
 
 from ok import Logger, og
+from ok.util.config import Config
 from PySide6.QtCore import QEvent, Qt, QTimer  # type: ignore
 from PySide6.QtGui import QColor, QPainter  # type: ignore
 from PySide6.QtWidgets import (  # type: ignore
@@ -92,6 +93,24 @@ def find_daily_task() -> Any:
     return None
 
 
+def _base_config_get(config: Any, key: str, default: Any = None) -> Any:
+    """Read global values without a running task's account override."""
+    raw_get = getattr(config, "_raw_get", None)
+    return (raw_get if callable(raw_get) else config.get)(key, default)
+
+
+def _set_base_config_value(config: Any, key: str, value: Any) -> None:
+    # Config.__setitem__ compares through get(), which may return an account
+    # override equal to the new value. Preserve validation and persistence while
+    # comparing base values, without replacing the getter used by the worker.
+    if isinstance(config, Config) and callable(getattr(config, "_raw_get", None)):
+        if value != _base_config_get(config, key) and config.validate(key, value):
+            dict.__setitem__(config, key, value)
+            config.save_file()
+    else:
+        config[key] = value
+
+
 def _daily_feature_classes(daily: Any) -> set[type]:
     """DailyTask 实际包裹的子任务类；用于在同名任务中挑出真正的一条龙子任务。"""
     classes: set[type] = set()
@@ -139,7 +158,7 @@ def daily_group_map() -> dict[str, tuple[str, str]]:
         for source in (getattr(daily, "default_config", None), getattr(daily, "config", None)):
             if source is None or not hasattr(source, "get"):
                 continue
-            value = source.get(group_key, [])
+            value = _base_config_get(source, group_key, [])
             if isinstance(value, (list, tuple)):
                 roster_items.extend((name, group_key) for name in value)
     for attr in DAILY_ROSTER_ATTRS:
@@ -165,7 +184,7 @@ def subtask_enabled(task_name: str) -> bool:
     cfg: Any = getattr(daily, "config", None) if daily is not None else None
     if cfg is None or not hasattr(cfg, "get"):
         return False
-    return roster in (cfg.get(group_key, []) or [])
+    return roster in (_base_config_get(cfg, group_key, []) or [])
 
 
 def set_subtask_enabled(task_name: str, checked: bool) -> None:
@@ -179,7 +198,7 @@ def set_subtask_enabled(task_name: str, checked: bool) -> None:
     if cfg is None or not hasattr(cfg, "get"):
         return
 
-    current = cfg.get(group_key, [])
+    current = _base_config_get(cfg, group_key, [])
     current_list = list(current) if isinstance(current, (list, tuple)) else []
     if checked and roster not in current_list:
         current_list.append(roster)
@@ -188,7 +207,7 @@ def set_subtask_enabled(task_name: str, checked: bool) -> None:
     else:
         return
 
-    cfg[group_key] = current_list
+    _set_base_config_value(cfg, group_key, current_list)
     try:
         if hasattr(cfg, "save"):
             cfg.save()  # type: ignore
