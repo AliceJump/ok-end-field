@@ -82,6 +82,7 @@ class LayerSearchIndex:
 
     @classmethod
     def _signature(cls, root, entries, color):
+        root = Path(root).resolve()
         sources = []
         for entry in entries:
             path = (root / entry["path"]).resolve()
@@ -106,6 +107,7 @@ class LayerSearchIndex:
 
     @classmethod
     def build(cls, root, entries, *, color, resources=None, stop=None, bundle=None):
+        root = Path(root).resolve()
         images = []
         entries = tuple(entries)
         decode = cls._decode_entry if bundle is None else cls._read_bundle_proposal

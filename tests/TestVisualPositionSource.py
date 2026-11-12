@@ -2804,6 +2804,27 @@ class TestVisualLayerCandidates(unittest.TestCase):
         finally:
             workers.close()
 
+    def test_floor_index_canonicalizes_root_alias_without_allowing_escape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            entry = self.index_fixture(root)
+            (root / "alias").mkdir()
+            alias = root / "alias" / ".."
+            expected = LayerSearchIndex.build(root, [entry], color=True)
+            actual = LayerSearchIndex.build(alias, [entry], color=True)
+            np.testing.assert_array_equal(actual.images[0][1], expected.images[0][1])
+            self.assertEqual(
+                LayerSearchIndex._signature(root, [entry], True),
+                LayerSearchIndex._signature(alias, [entry], True),
+            )
+            outside = {**entry, "path": "../outside.png"}
+            for operation in (
+                lambda: LayerSearchIndex.build(alias, [outside], color=True),
+                lambda: LayerSearchIndex._signature(alias, [outside], True),
+            ):
+                with self.assertRaisesRegex(ValueError, "layer image escapes resource root"):
+                    operation()
+
     def test_four_parallel_index_decoders_preserve_catalog_order_and_pixels(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
