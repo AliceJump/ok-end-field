@@ -42,13 +42,17 @@ class LocalizationTileBundle:
         search = manifest.get("search")
         if manifest.get("raster_convention") != RASTER_CONVENTION or not isinstance(search, dict):
             raise ValueError("Unsupported localization tile coordinates")
-        if (
-            search.get("scale_constant") != DEFAULT_SCALE_CONSTANT
-            or search.get("match_pixels_per_meter") != 4
-            or search.get("floor_rank_pixels_per_meter") != 0.5
-            or search.get("coarse_factor") != COARSE_FACTOR
-            or search.get("interpolation") != "OpenCV INTER_AREA"
-            or (self.version >= 2 and search.get("image_layout") != "zero-padded-roi")
+        # These are serialized format identifiers, not measured floats. Compare
+        # the exact contract; tolerances could accept an incompatible raster.
+        expected_search = {
+            "scale_constant": DEFAULT_SCALE_CONSTANT,
+            "match_pixels_per_meter": 4,
+            "floor_rank_pixels_per_meter": 0.5,
+            "coarse_factor": COARSE_FACTOR,
+            "interpolation": "OpenCV INTER_AREA",
+        }
+        if {key: search.get(key) for key in expected_search} != expected_search or (
+            self.version >= 2 and search.get("image_layout") != "zero-padded-roi"
         ):
             raise ValueError("Unsupported localization tile matching scales")
         if self.version == 3 and manifest.get("tile_layout") != "zero-padded-roi":

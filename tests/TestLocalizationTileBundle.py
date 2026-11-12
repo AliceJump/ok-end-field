@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 import tempfile
 import threading
 import unittest
@@ -16,6 +17,7 @@ from src.localization import composite_overview_cache
 from src.localization.calibrated_map_store import CalibratedMapStore
 from src.localization.composite_floor_image import CompositeFloorImage, _blend_regions
 from src.localization.layered_minimap_locator import LayeredMinimapLocator
+from src.localization.localization_bundle import LocalizationTileBundle
 from src.localization.minimap_map_locator import (
     COARSE_FACTOR,
     MapCalibration,
@@ -413,6 +415,21 @@ class TestLocalizationTileBundle(unittest.TestCase):
         (self.root / "manifest.json").write_text(
             json.dumps({**self.manifest, "files": list(self.files.values())}), encoding="utf-8"
         )
+
+    def test_search_calibration_rejects_even_adjacent_float_values(self):
+        manifest = json.loads((self.root / "manifest.json").read_text(encoding="utf-8"))
+        LocalizationTileBundle(self.root, manifest)
+        for key in ("scale_constant", "match_pixels_per_meter", "floor_rank_pixels_per_meter", "coarse_factor"):
+            for direction in (-math.inf, math.inf):
+                changed = {
+                    **manifest,
+                    "search": {**manifest["search"], key: math.nextafter(manifest["search"][key], direction)},
+                }
+                with (
+                    self.subTest(field=key, direction=direction),
+                    self.assertRaisesRegex(ValueError, "Unsupported localization tile matching scales"),
+                ):
+                    LocalizationTileBundle(self.root, changed)
 
     def write_sparse_indexes(self, version=2):
         self.manifest["schema_version"] = version
