@@ -290,7 +290,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         frame = self.frame  # 两个区域必须使用同一帧
         pointer = self.box_of_screen(790 / 1920, 370 / 1080, 812 / 1920, 392 / 1080)  # 截图估计的指针区域
         arc = self.box_of_screen(810 / 1920, 385 / 1080, 835 / 1920, 410 / 1080)  # 截图估计的亮弧区域
-        return self.find_color(white, pointer, threshold=0.4, frame=frame, inclusive=True) and self.find_color(white, arc, threshold=0.2, frame=frame, inclusive=True)  # 两处同帧命中
+        return self.find_color(white, pointer, threshold=0.55, frame=frame, inclusive=True) and self.find_color(white, arc, threshold=0.27, frame=frame, inclusive=True)  # 两处同帧命中
 
     def open_camera(self):  # 选择工具与进入拍照分开验证
         self.next_frame()  # 入口判断使用当前页面，不沿用上一动作的旧帧
@@ -347,10 +347,8 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
         direction = self.navigation.photo_direction  # 使用当前观察点路线的取景方向
-        if not self.wait_ui_stable(  # 等待相机目标标记区域入场稳定
-            box=self.box_of_screen(0.02, 0.625, 0.14, 0.7), stable_time=0.5, max_wait=3, refresh_interval=0.1
-        ):  # 只观察拍摄目标标题和条件标记
-            raise RuntimeError("相机目标条件区域未稳定")  # 不在过渡画面判断或转动
+        if not self.wait_until(self._camera_open, time_out=3, settle_time=0.5, raise_if_not_found=False):  # 确认相机界面已就绪
+            raise RuntimeError("相机界面未就绪")  # 不在过渡画面判断或转动
         max_steps = 8  # 各点位共用最大调整次数
         self.next_frame()  # 先检查初始角度的新画面
         if self.photo_condition_met():  # 已满足条件时不转动

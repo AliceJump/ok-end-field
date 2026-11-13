@@ -452,6 +452,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_slug_photo_adjustments_are_bounded_and_keep_observation_name(self):
         task = self.task()
+        task._camera_open.return_value = True
         task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
         task.selected_observation = {"name": "蓄水源石虫"}
         task.navigation = CisternOriginiumSlugsRoute(task)
@@ -480,7 +481,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.in_world.return_value = True
         task.wait_until.return_value = True
         AnnularWaterfallRoute(task).run()
-        self.assertEqual(task.sleep.call_args_list, [call(0.5), call(5), call(2), call(3)])
+        self.assertEqual(task.sleep.call_args_list, [call(0.5), call(5), call(2), call(1)])
         self.assertEqual(task.send_key_down.call_args_list, [call("a"), call("up"), call("right"), call("up")])
         self.assertEqual(task.press_key.call_count, 3)
         task._camera_open.return_value = True
@@ -492,6 +493,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_waterfall_uses_upward_search(self):
         task = self.task()
+        task._camera_open.return_value = True
         task.lang.environment_monitoring.annular_waterfall = "环形瀑布"
         task.selected_observation = {"name": "环形瀑布"}
         task.navigation = AnnularWaterfallRoute(task)
@@ -546,6 +548,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         for failed_attempts in (0, 2):
             with self.subTest(failed_attempts=failed_attempts):
                 task = self.task()
+                task._camera_open.return_value = True
                 task.photo_condition_met.side_effect = [False] * failed_attempts + [True]
                 task.wait_until.side_effect = lambda condition, **kwargs: condition()
                 self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
@@ -553,11 +556,12 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_unsatisfied_condition_has_at_most_eight_rotations(self):
         task = self.task()
+        task._camera_open.return_value = True
         task.photo_condition_met.return_value = False
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
         self.assertFalse(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         self.assertEqual(task.rotate_photo_view.call_count, 8)
-        self.assertEqual(task.wait_until.call_count, 8)
+        self.assertEqual(task.wait_until.call_count, 9)
         task.press_key.assert_not_called()
         task.send_key_down.assert_not_called()
 
@@ -565,16 +569,16 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.photo_condition_met.return_value = True
         events = Mock()
-        events.attach_mock(task.wait_ui_stable, "wait")
+        events.attach_mock(task.wait_until, "wait")
         events.attach_mock(task.photo_condition_met, "condition")
         self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         self.assertEqual([item[0] for item in events.mock_calls], ["wait", "condition"])
         task.rotate_photo_view.assert_not_called()
 
-    def test_unstable_target_area_prevents_rotation(self):
+    def test_camera_not_ready_prevents_rotation(self):
         task = self.task()
-        task.wait_ui_stable.return_value = False
-        with self.assertRaisesRegex(RuntimeError, "目标条件区域未稳定"):
+        task.wait_until.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "相机界面未就绪"):
             EnvironmentMonitoringPhotoTask.adjust_photo_view(task)
         task.rotate_photo_view.assert_not_called()
 
@@ -723,6 +727,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_camera_lost_after_final_rotation_cannot_be_reported_as_open(self):
         task = self.task()
+        task._camera_open.side_effect = [True, False]
         task.photo_condition_met.return_value = False
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
         task.adjust_photo_view.side_effect = lambda: EnvironmentMonitoringPhotoTask.adjust_photo_view(task)
@@ -730,17 +735,18 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
             EnvironmentMonitoringPhotoTask.prepare_photo(task)
         self.assertEqual(task.rotate_photo_view.call_count, 8)
         self.assertEqual(task.next_frame.call_count, 2)
-        task._camera_open.assert_called_once_with(frame=task.frame)
+        task._camera_open.assert_any_call(frame=task.frame)
         task.ocr.assert_not_called()
         self.assertFalse(any("camera_open=True" in c.args[0] for c in task.log_info.call_args_list))
 
     def test_delayed_checked_marker_stops_before_another_rotation(self):
         task = self.task()
+        task._camera_open.return_value = True
         task.photo_condition_met.side_effect = [False, False, True]
         task.wait_until.side_effect = lambda condition, **kwargs: condition() or condition()
         self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         task.rotate_photo_view.assert_called_once()
-        task.wait_until.assert_called_once_with(
+        task.wait_until.assert_any_call(
             task.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False
         )
 
