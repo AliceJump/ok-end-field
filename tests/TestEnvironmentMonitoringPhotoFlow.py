@@ -223,6 +223,8 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def task(self):
         task = Mock()
+        task.OBSERVATIONS = EnvironmentMonitoringPhotoTask.OBSERVATIONS
+        task.matches_observation.side_effect = EnvironmentMonitoringPhotoTask.matches_observation
         task.tr.side_effect = lambda text: text
         task.box = SimpleNamespace(right=Box(960, 0, 960, 1080))
         task.box_of_screen.side_effect = lambda x1, y1, x2, y2: Box(
@@ -695,7 +697,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.prepare_observation.return_value = {"name": "古树"}
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
+            EnvironmentMonitoringPhotoTask.OBSERVATIONS,
             {"ancient_tree": (None, "right")},
         ):
             self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))

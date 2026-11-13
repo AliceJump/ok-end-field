@@ -21,29 +21,22 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
     XiraniteNexusRoute,  # 枢壤仪网格路线
 )
 
-OBSERVATIONS = {  # 观察点语言键对应路线类
-    "pool_lotus": PoolLotusRoute,  # 小池荷向右取景
-    "vigorous_cistern_slug": VigorousCisternSlugRoute,  # 活力源石虫向左取景
-    "cistern_originium_slugs": CisternOriginiumSlugsRoute,  # 普通源石虫向左取景
-    "thillu": StationaryObservationRoute,  # 表象在传送落点向右取景
-    "peach_tree": StationaryObservationRoute,  # 桃树在传送落点即可取景
-    "pier_waterwheel": StationaryObservationRoute,  # 码头水车在传送落点即可取景
-    "annular_waterfall": AnnularWaterfallRoute,  # 环形瀑布向上取景
-    "eternal_sunset": EternalSunsetRoute,  # 栖霞驻影向上取景
-    "collapsed_tianshi_pillar": TianshiPillarRoute,  # 天师桩向右取景
-    "mini_shellbeast": MiniShellbeastRoute,  # 小壳兽向左取景
-    "xiranite_nexus": XiraniteNexusRoute,  # 枢壤仪向右取景
-    "feranmut_heart": StationaryObservationRoute,  # 巨兽心脏原地向右搜索
-    "observant_fowlbeast": StationaryObservationRoute,  # 雉羽兽原地向右搜索
-}  # 仅注册已支持的点位
-
-OBSERVATION_MATCH_MODES = {  # 未指定时使用语言资源的包含或正则匹配
-    "cistern_originium_slugs": "exact",  # 避免匹配同名活力版
-    "collapsed_tianshi_pillar": "edit_distance",  # 容忍一个字符的 OCR 错误
-}
-
-
 class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin):  # 共用接取、传送与相机流程
+    OBSERVATIONS = {  # 点位语言键、路线与匹配方式
+        "pool_lotus": (PoolLotusRoute, "contains"),  # 小池荷向右取景
+        "vigorous_cistern_slug": (VigorousCisternSlugRoute, "contains"),  # 活力源石虫向左取景
+        "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "exact"),  # 普通源石虫向左取景
+        "thillu": (StationaryObservationRoute, "contains"),  # 表象在传送落点向右取景
+        "peach_tree": (StationaryObservationRoute, "contains"),  # 桃树在传送落点即可取景
+        "pier_waterwheel": (StationaryObservationRoute, "contains"),  # 码头水车在传送落点即可取景
+        "annular_waterfall": (AnnularWaterfallRoute, "contains"),  # 环形瀑布向上取景
+        "eternal_sunset": (EternalSunsetRoute, "contains"),  # 栖霞驻影向上取景
+        "collapsed_tianshi_pillar": (TianshiPillarRoute, "edit_distance"),  # 天师桩向右取景
+        "mini_shellbeast": (MiniShellbeastRoute, "contains"),  # 小壳兽向左取景
+        "xiranite_nexus": (XiraniteNexusRoute, "contains"),  # 枢壤仪向右取景
+        "feranmut_heart": (StationaryObservationRoute, "contains"),  # 巨兽心脏原地向右搜索
+        "observant_fowlbeast": (StationaryObservationRoute, "contains"),  # 雉羽兽原地向右搜索
+    }
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
 
     def __init__(self, *args, **kwargs):  # 构造阶段不操作游戏
@@ -64,27 +57,27 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
     def normalize_title(text):  # 兼容符号、空白与英文大小写差异
         return re.sub(r"[\W_]+", "", text).casefold()  # 保留各语言文字
 
+    @classmethod
+    def matches_observation(cls, normalized, name, mode):
+        if mode == "pattern":
+            return isinstance(name, re.Pattern) and bool(normalized) and not name.search("") and bool(name.search(normalized))
+        if not isinstance(name, str):
+            return False
+        expected = cls.normalize_title(name)
+        if not expected:
+            return False
+        if mode == "exact":
+            return normalized == expected
+        if mode == "edit_distance":
+            return _edit_distance(normalized, expected, max_distance=1) is not None
+        return mode == "contains" and expected in normalized
+
     def observation_key(self, title):  # 按标题识别已注册路线的观察点
         normalized = self.normalize_title(title)  # 不依赖引号和空格
         matched = None  # 多个观察点同时匹配时不能猜测
-        for key in OBSERVATIONS:  # 只识别支持导航的观察点
+        for key, (_, mode) in self.OBSERVATIONS.items():  # 只识别支持导航的观察点
             name = getattr(self.lang.environment_monitoring, key, None)  # 从语言资源读取当前语言名称
-            if isinstance(name, re.Pattern):  # 语言资源中的正则用于短识别词
-                found = bool(normalized) and not name.search("") and bool(name.search(normalized))  # 不接受空匹配
-            elif isinstance(name, str):  # 字面名称按点位选择匹配方式
-                expected = self.normalize_title(name)  # 与标题使用相同的归一化规则
-                mode = OBSERVATION_MATCH_MODES.get(key, "contains")
-                if not expected:
-                    found = False
-                elif mode == "exact":
-                    found = normalized == expected
-                elif mode == "edit_distance":
-                    found = _edit_distance(normalized, expected, max_distance=1) is not None
-                else:
-                    found = expected in normalized
-            else:  # 没有可用的语言名称
-                found = False  # 不将空值视为匹配
-            if not found:  # 当前观察点不匹配
+            if not self.matches_observation(normalized, name, mode):  # 当前观察点不匹配
                 continue  # 检查下一个已注册点位
             if matched is not None:  # 多个观察点匹配同一卡片
                 return None  # 停止而不是根据注册顺序猜测
@@ -92,8 +85,8 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         return matched  # 未匹配时返回 None
 
     def observation_route(self, title):  # 仅已注册导航的观察点允许自动接取
-        observation = OBSERVATIONS.get(self.observation_key(title))  # 查找已注册点位
-        return observation if observation else None  # 未匹配时返回 None
+        observation = self.OBSERVATIONS.get(self.observation_key(title))  # 查找已注册点位
+        return observation[0] if observation else None  # 未匹配时返回 None
 
     def open_monitoring(self):  # 从任意可恢复页面进入环境监测
         self.ensure_main()  # 复用主界面恢复

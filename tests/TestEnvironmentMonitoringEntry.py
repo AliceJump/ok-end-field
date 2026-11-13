@@ -12,7 +12,7 @@ from ok import Box
 from ok.util.color import calculate_color_percentage
 
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.onetime.EnvironmentMonitoringPhotoTask import OBSERVATIONS, EnvironmentMonitoringPhotoTask
+from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 from src.tasks.onetime.EnvironmentMonitoringRoute import (
     CisternOriginiumSlugsRoute,
     EnvironmentMonitoringRoute,
@@ -627,8 +627,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.prepare_task([supported], [])
         task.lang.environment_monitoring.ancient_tree = "古树"
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
-            {"ancient_tree": PoolLotusRoute},
+            EnvironmentMonitoringPhotoTask.OBSERVATIONS,
+            {"ancient_tree": (PoolLotusRoute, "contains")},
         ):
             self.assertEqual(task.prepare_observation()["name"], "古树")
         task.enter_observation.assert_called_once_with(supported)
@@ -660,11 +660,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
             task = self.task()
             task.lang.environment_monitoring = SimpleNamespace()
-            for key in OBSERVATIONS:
+            for key in EnvironmentMonitoringPhotoTask.OBSERVATIONS:
                 node = data[key][locale]
                 value = re.compile(node["pattern"]) if "pattern" in node else node["string"]
                 setattr(task.lang.environment_monitoring, key, value)
-            for key in OBSERVATIONS:
+            for key in EnvironmentMonitoringPhotoTask.OBSERVATIONS:
                 node = data[key][locale]
                 title = node.get("string", node.get("pattern"))
                 for example in (title, f"“{title}”"):
@@ -703,8 +703,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                     value = re.compile(node["pattern"]) if "pattern" in node else node["string"]
                     setattr(task.lang.environment_monitoring, key, value)
                     with patch.dict(
-                        "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
-                        {key: PoolLotusRoute},
+                        EnvironmentMonitoringPhotoTask.OBSERVATIONS,
+                        {key: (PoolLotusRoute, "pattern" if "pattern" in node else "contains")},
                         clear=True,
                     ):
                         sample = node.get("pattern", node.get("string")).split("|")[0]
@@ -719,8 +719,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang.environment_monitoring.first = re.compile("小池")
         task.lang.environment_monitoring.second = re.compile("池荷")
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
-            {"first": PoolLotusRoute, "second": PoolLotusRoute},
+            EnvironmentMonitoringPhotoTask.OBSERVATIONS,
+            {"first": (PoolLotusRoute, "pattern"), "second": (PoolLotusRoute, "pattern")},
             clear=True,
         ):
             self.assertIsNone(task.observation_route("小池荷"))
@@ -729,8 +729,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task = self.task()
         task.lang.environment_monitoring.ecology_near_the_field_logistics_depot = re.compile("储备站")
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
-            {"ecology_near_the_field_logistics_depot": PoolLotusRoute},
+            EnvironmentMonitoringPhotoTask.OBSERVATIONS,
+            {"ecology_near_the_field_logistics_depot": (PoolLotusRoute, "pattern")},
             clear=True,
         ):
             self.assertEqual(task.observation_route("储备站周围的生态环境"), PoolLotusRoute)
