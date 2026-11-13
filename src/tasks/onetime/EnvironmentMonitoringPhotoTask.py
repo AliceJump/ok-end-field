@@ -285,6 +285,20 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             and self.find_one(fL.plus_button, box=self.box_of_screen(0.59, 0.90, 0.64, 0.96), frame=frame)
         )  # 右侧退出键与底部焦距加号必须同时命中默认阈值
 
+    def _camera_wheel_selected(self):  # 左上指针和亮弧同时出现表示选中相机
+        white = {"r": (220, 255), "g": (220, 255), "b": (220, 255)}  # 截图中的白色指针和亮弧
+        frame = self.frame  # 两个区域必须使用同一帧
+        regions = (  # 根据 1920x1080 截图估计指针及亮弧内部区域
+            (794, 373, 806, 385),  # 白色指针
+            (778, 431, 786, 439),  # 亮弧下段
+            (814, 385, 822, 393),  # 亮弧中段
+            (855, 355, 863, 363),  # 亮弧上段
+        )
+        return all(  # 所有区域必须在同一帧达到默认白色占比
+            self.find_color(white, self.box_of_screen(x1 / 1920, y1 / 1080, x2 / 1920, y2 / 1080), frame=frame)  # 按屏幕尺寸换算
+            for x1, y1, x2, y2 in regions  # 依次检查指针和亮弧
+        )
+
     def open_camera(self):  # 选择工具与进入拍照分开验证
         self.next_frame()  # 入口判断使用当前页面，不沿用上一动作的旧帧
         if self._camera_open():  # 已在相机时不再按 R 切换视角
@@ -293,16 +307,14 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         tool_key = self._resolve_config_key("r", "common")  # 遵循快捷工具键设置
         self.send_key_down(tool_key)  # 长按打开工具轮盘
         try:  # 中止或异常也要释放工具键
-            if not self.wait_ui_stable(
-                box=self.box_of_screen(0.3, 0.2, 0.7, 0.8), stable_time=1.2, max_wait=5, refresh_interval=0.2
-            ):  # 长按期间等待轮盘区域稳定，稳定时间覆盖已验证的展开时长
-                raise RuntimeError("工具轮盘未稳定")  # 不在持续变化的界面选择工具
+            white = {"r": (220, 255), "g": (220, 255), "b": (220, 255)}  # 相机图标白色主体
+            icon = self.box_of_screen(735 / 1920, 319 / 1080, 786 / 1920, 355 / 1080)  # 截图估计的图标区域
+            if not self.wait_color(white, icon, threshold=0.45, time_out=5, settle_time=0.2, raise_if_not_found=False):  # 等待相机图标出现
+                raise RuntimeError("工具轮盘未展开")  # 识别失败不移动光标
             self._require_input_focus()  # 真实光标移动前再次检查目标窗口
             self.smooth_drag((0.5, 0.5), (0.396, 0.312), duration=0.3)  # 实测左上相机位置；此接口仅移动光标，不按鼠标
-            if not self.wait_ui_stable(
-                box=self.box_of_screen(0.3, 0.2, 0.7, 0.8), stable_time=0.3, max_wait=3, refresh_interval=0.1
-            ):  # 等待悬停后的轮盘区域稳定
-                raise RuntimeError("工具轮盘悬停未稳定")  # 不将过渡中的选择视为完成
+            if not self.wait_until(self._camera_wheel_selected, time_out=3, settle_time=0.2, raise_if_not_found=False):  # 等待相机扇区亮起
+                raise RuntimeError("工具轮盘未选中相机")  # 选中失败不按拍照键
         finally:  # 不留下长按状态
             self.send_key_up(tool_key)  # 松开确认工具选择
         if not self.wait_until(
@@ -342,10 +354,8 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
         direction = self.navigation.photo_direction  # 使用当前观察点路线的取景方向
-        if not self.wait_ui_stable(  # 等待相机目标标记区域入场稳定
-            box=self.box_of_screen(0.02, 0.625, 0.14, 0.7), stable_time=0.5, max_wait=3, refresh_interval=0.1
-        ):  # 只观察拍摄目标标题和条件标记
-            raise RuntimeError("相机目标条件区域未稳定")  # 不在过渡画面判断或转动
+        if not self.wait_until(self._camera_open, time_out=3, settle_time=0.5, raise_if_not_found=False):  # 确认相机界面已就绪
+            raise RuntimeError("相机界面未就绪")  # 不在过渡画面判断或转动
         max_steps = 8  # 各点位共用最大调整次数
         self.next_frame()  # 先检查初始角度的新画面
         if self.photo_condition_met():  # 已满足条件时不转动

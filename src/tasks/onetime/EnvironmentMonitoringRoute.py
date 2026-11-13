@@ -64,7 +64,7 @@ class AnnularWaterfallRoute(EnvironmentMonitoringRoute):  # 环形瀑布传送�
 
     def run(self):  # 先左走一步，再按顺序冲刺
         self.run_route("环形瀑布", (("a", 0.5),))  # 一步暂按半秒估计
-        self.run_route("环形瀑布", (("w", 5), ("d", 2), ("w", 3)), sprint=True)  # 按指定时间冲刺
+        self.run_route("环形瀑布", (("w", 5), ("d", 2), ("w", 1)), sprint=True)  # 按指定时间冲刺
 
 
 class XiraniteNexusRoute(EnvironmentMonitoringRoute):  # 枢壤仪世界坐标路线
