@@ -40,6 +40,7 @@ class ReferenceRecorder:  # 抓包真值与视觉计算相互独立
     def __init__(self, port, directory):  # 初始化只读 HTTP 客户端
         self.source = CapturePositionSource(port, timeout=0.5)  # 不启停后端或改变登录状态
         self.records = {}  # 以连接和采集时刻去重
+        self._ordered_records = []
         self.lock = threading.Lock()  # 保护后台更新快照
         self.stop = threading.Event()  # 控制后台退出
         self.latest = None  # 保存最近原始坐标与连接健康状态
@@ -83,13 +84,14 @@ class ReferenceRecorder:  # 抓包真值与视觉计算相互独立
                         key = (row["flow"], row["time"], row["sampleId"])  # 不重复计数同一抓包点
                         if key not in self.records:  # 只追加新点
                             self.records[key] = row  # 保存完整测试轨迹
+                            self._ordered_records.append(row)
                             self.handle.write(json.dumps(row) + "\n")  # 每行一条便于中断后恢复
                     self.handle.flush()  # 及时落盘
             self.stop.wait(0.1)  # 十赫兹拉取，不忙等
 
-    def snapshot(self):  # 返回一致的只读快照
+    def snapshot(self, *, since=0):  # 返回一致的只读快照
         with self.lock:  # 避免读到一半更新的连接状态
-            return self.latest, self.checked_at, list(self.records.values())  # 调用者不能改动内部字典
+            return self.latest, self.checked_at, self._ordered_records[since:]
 
     def close(self):  # 等待后台安全结束
         self.stop.set()  # 唤醒后台轮询

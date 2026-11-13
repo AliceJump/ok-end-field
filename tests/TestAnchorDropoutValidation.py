@@ -201,6 +201,14 @@ class TestAnchorDropoutValidation(unittest.TestCase):  # 验证实验本身而�
                 )  # 完成当前观测或统计步骤
             )  # 不给缺口零误差
 
+    def test_exact_reference_endpoints_cannot_bridge_different_or_missing_scenes(self):
+        for scenes in ((102, 103), (None, None), (102, None)):
+            timeline = ReferenceTimeline(
+                [self.reference(1, 0, scene=scenes[0]), self.reference(1.2, 1, scene=scenes[1])]
+            )
+            for allow_gaps in (False, True):
+                self.assertIsNone(reference_path(timeline, 1, 1.2, "map02", 1, allow_gaps=allow_gaps))
+
     def test_raw_error_and_incremental_drift_are_separate_and_failure_not_scored(self):  # 不隐去标定偏置
         references = [self.reference(1 + i * 0.2, i) for i in range(7)]  # 五米每秒连续轨迹
 

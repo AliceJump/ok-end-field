@@ -5,7 +5,6 @@ import json
 import logging
 import math
 import threading
-import time
 from collections import OrderedDict
 from concurrent.futures import CancelledError
 from pathlib import Path
@@ -14,7 +13,7 @@ from typing import ClassVar
 import cv2
 import numpy as np
 
-from src.localization.localization_workers import _DECODE_BUDGET, decode_memory_bytes
+from src.localization.localization_workers import _DECODE_BUDGET, decode_memory_bytes, decode_reservation
 
 CACHE_ROOT = Path("cache/localization/tiled-images")
 FORMAT_VERSION = 1
@@ -102,6 +101,8 @@ class TiledMapImage:
             metadata = json.loads((root / "index.json").read_text(encoding="utf-8"))
         except FileNotFoundError:
             return None
+        if not isinstance(metadata, dict):
+            raise ValueError("invalid tiled image index")
         if metadata.get("descriptor") != descriptor:
             raise ValueError("tiled image does not match source")
         expected = [size[1], size[0]]
@@ -185,6 +186,18 @@ class TiledMapImage:
                 raise ValueError("tiled image closed")
         return pixels
 
+    def overview_memory_bytes(self, scale):
+        output_pixels = round(self.shape[0] * scale) * round(self.shape[1] * scale)
+        descriptor = self.metadata.get("descriptor")
+        if descriptor is not None and float(scale).hex() not in self.metadata["overviews"]:
+            return decode_memory_bytes(*descriptor["source_size"], self.shape[0] * self.shape[1] + output_pixels)
+        return 64 * 1024**2 + output_pixels * 4
+
+    def _check_open(self):
+        with self._lock:
+            if self._closed:
+                raise ValueError("tiled image closed")
+
     def overview(self, scale):
         with self._lock:
             if self._closed:
@@ -208,16 +221,9 @@ class TiledMapImage:
                 != descriptor
             ):
                 raise ValueError("source changed after tiled image opened")
-            size = decode_memory_bytes(*descriptor["source_size"], self.shape[0] * self.shape[1])
-            while not _DECODE_BUDGET.acquire(size):
-                with self._lock:
-                    if self._closed:
-                        raise ValueError("tiled image closed")
-                time.sleep(0.05)
-            try:
+            size = self.overview_memory_bytes(scale)
+            with decode_reservation(size, budget=_DECODE_BUDGET, check_open=self._check_open):
                 return self._fallback_overview(scale, descriptor)
-            finally:
-                _DECODE_BUDGET.release(size)
         image = self._read(record)
         expected = (round(self.shape[0] * scale), round(self.shape[1] * scale))
         if image.shape[:2] != expected:

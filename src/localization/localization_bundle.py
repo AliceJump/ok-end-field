@@ -167,7 +167,7 @@ class LocalizationTileBundle:
             if roi != (0, 0, 0, 0) or not self._empty_payload(record):
                 raise ValueError("Invalid explicitly zero native tile")
             return None
-        if roi == (0, 0, 0, 0):
+        if roi == (0, 0, 0, 0) and storage != "full":
             raise ValueError("Nonzero native tile must declare a nonempty ROI")
         if storage == "roi":
             payload, origin = self._crop_payload(record, roi), roi[:2]

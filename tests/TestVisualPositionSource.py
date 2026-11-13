@@ -7,7 +7,7 @@ import tempfile
 import threading
 import unittest
 import weakref
-from concurrent.futures import CancelledError, wait
+from concurrent.futures import CancelledError, Future, wait
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -69,6 +69,22 @@ from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
 
 
 class TestVisualPositionSource(unittest.TestCase):
+    def test_accepted_weak_match_still_publishes_when_chain_correction_is_disabled(self):
+        source = VisualPositionSource(self.task, self.locator, "map02", chain_enabled=False)
+        self.addCleanup(source.close)
+        source.sample(self.frame(), now=1)
+        self.assertTrue(source.sample(self.frame(), now=1.2)["position_trusted"])
+        geometry = MinimapGeometry.from_frame(self.width, self.height)
+        match = source.tracker.update(self.frame(504), geometry, now=1.4)
+        self.assertTrue(match.accepted)
+        weak = replace(match.locate.best, ncc=0.5, full_ncc=0.5)
+        match = replace(match, locate=replace(match.locate, best=weak), position=weak)
+        with patch.object(source.tracker, "update", return_value=match):
+            state = source.sample(self.frame(504), now=1.4)
+        self.assertTrue(state["position_trusted"], state)
+        self.assertIsNone(source.chain)
+        self.assertEqual(source._last_absolute_t, 1.2)
+
     def test_unsampled_odometry_keeps_new_absolute_fix_without_adding_cached_chain_frames(self):
         source = VisualPositionSource(self.task, self.locator, "map02")
         source.sample(self.frame(), now=1)
@@ -1958,6 +1974,20 @@ class TestLocalizationWorkerBudget(unittest.TestCase):
 
 
 class TestAutomaticMapCompetition(unittest.TestCase):
+    def test_local_entries_do_not_touch_locators_during_background_search(self):
+        locator = self.locator()
+        locator._active = "map01"
+        locator._search_future = Future()
+        locator._load = Mock(side_effect=AssertionError("concurrent cache access"))
+        for entry in (
+            lambda: locator.locate_near(None, (0, 0), None),
+            lambda: locator.locate_near(None, (0, 0), None, use_global=True),
+            lambda: locator.locate_on_map(None, "map01", (0, 0), None),
+        ):
+            self.assertIsNone(entry())
+            self.assertEqual(locator.last_failure_reason, "visual_global_search_pending")
+        locator._search_future.set_result(None)
+
     def test_snapshot_orders_floor_proposals_across_maps_and_reuses_all_main_competitors(self):
         locator = MapSetLocator(SimpleNamespace(), ["map01", "map02"], workers=self.workers(), async_search=True)
         maps = {}
@@ -2610,6 +2640,16 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
 
 class TestVisualLayerCandidates(unittest.TestCase):
+    def test_empty_main_search_is_not_repeated_or_recomputed_when_supplied(self):
+        locator = self.locator()
+        locator.base.locate_global = Mock(return_value=None)
+        locator._search = Mock(side_effect=AssertionError("repeated main search"))
+        self.assertIsNone(locator.locate_global(None, None))
+        locator.base.locate_global.assert_called_once()
+        locator.base.locate_global.reset_mock()
+        self.assertIsNone(locator.locate_global(None, None, base_result=None))
+        locator.base.locate_global.assert_not_called()
+
     def test_single_sided_background_only_promotes_proposals_and_retains_all_raw_fallbacks(self):
         locator = self.locator()
         locator.entries = [dict(locator.entries[0], id=str(i)) for i in range(8)]

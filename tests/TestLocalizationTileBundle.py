@@ -622,6 +622,24 @@ class TestLocalizationTileBundle(unittest.TestCase):
         alpha.close()
         self.assertGreater(floor.map_image[:4, :4].size, 0)
 
+    def test_v3_alpha_outside_matching_roi_and_entirely_black_tiles_are_preserved(self):
+        self.pixels[:, :, :3] = 0
+        self.pixels[:, :, 3] = 255
+        self.pixels[20:40, 20:40, :3] = (30, 60, 90)
+        self.write_floor((0.8, 0.8))
+        self.make_sparse_indexes(version=3)
+        for tile in self.floor_index["tiles"]:
+            tile["roi"] = [20, 20, 40, 40] if tile["column"] == tile["row"] == 0 else [0, 0, 0, 0]
+        self.write_sparse_indexes(version=3)
+        _, locator = self.store.load("main")
+        self.addCleanup(locator.close)
+        source = locator._load(locator.entries[0]).map_image
+        source.verify_sparse_payloads({})
+        alpha = source.alpha_image()
+        self.addCleanup(alpha.close)
+        np.testing.assert_array_equal(alpha[:, :], np.full(alpha.shape, 255, np.uint8))
+        np.testing.assert_array_equal(source[:, :], self.floor_match)
+
     def test_corrupt_native_alpha_is_not_treated_as_uncovered_floor(self):
         _, locator = self.store.load("main")
         self.addCleanup(locator.close)

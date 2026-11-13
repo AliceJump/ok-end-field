@@ -26,6 +26,8 @@ from src.localization.minimap_map_locator import (
 from src.localization.native_tile_image import NativeTileImage
 from src.localization.tiled_map_image import TiledMapImage, floor_options
 
+_UNSEARCHED = object()
+
 
 def layer_calibration(bounds, width, height):
     try:
@@ -503,7 +505,7 @@ class LayeredMinimapLocator:
             results = ordered_results(futures)
         return results
 
-    def locate_global(self, frame, geometry, *, base_result=None, use_index=True):
+    def locate_global(self, frame, geometry, *, base_result=_UNSEARCHED, use_index=True):
         # This is only a search hint; publication freshness belongs to the
         # tracker. Resource decoding and turning must not erase the ROI hint.
         if self._recent is not None:
@@ -512,9 +514,13 @@ class LayeredMinimapLocator:
                 result.reason == "layer_scan_pending" or (strong_candidate(result.best, result.margin))
             ):
                 return result
-        base_result = base_result or self.base.locate_global(frame, geometry)
+        if base_result is _UNSEARCHED:
+            base_result = self.base.locate_global(frame, geometry)
+        if base_result is None:
+            self._recent = None
+            return None
         self.seed_proposals(base_result)
-        if use_index and base_result is not None and not strong_candidate(base_result.best, base_result.margin):
+        if use_index and not strong_candidate(base_result.best, base_result.margin):
             try:
                 options = {"required_count": min(8, self._proposal_index + 1)} if self._proposal_index else {}
                 proposals = self.rank_layers(frame, geometry, **options)

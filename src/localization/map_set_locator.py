@@ -593,6 +593,9 @@ class MapSetLocator:
         return None
 
     def locate_near(self, frame, previous_world, geometry, *, search_radius_m=80.0, use_global=False):
+        if self._search_future is not None and not self._search_future.done():
+            self.last_failure_reason = "visual_global_search_pending"
+            return None
         self.last_failure_reason = ""
         started = time.perf_counter()
         if not self._active:
@@ -610,6 +613,9 @@ class MapSetLocator:
 
     def locate_on_map(self, frame, map_id, previous_world, geometry, *, search_radius_m=80.0):
         """Bound live-chain recovery to its anchored map, independently of hints."""
+        if self._search_future is not None and not self._search_future.done():
+            self.last_failure_reason = "visual_global_search_pending"
+            return None
         self.last_failure_reason = ""
         if map_id not in self._cache:
             self.last_failure_reason = "visual_recovery_map_unavailable"

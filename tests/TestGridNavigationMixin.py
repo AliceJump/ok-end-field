@@ -452,15 +452,20 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertFalse(self.task.w_down)
 
     def test_navigation_topology_uses_observed_map_and_scopes_sampling(self):
+        from src.localization.position_service import WorldPoseService
+
         events = []
         layered, topology = object(), object()
+        observed = {**self.task.minimap_position(), "map_id": "observed_map"}
+        source = SimpleNamespace(
+            map_id="observed_map", sample=mock.Mock(return_value=observed), set_navigation_topology=mock.Mock()
+        )
+        service = SimpleNamespace(_visual_source=source, _navigation_topology_provider=None)
 
         @contextmanager
         def topology_context(provider):
             events.append("topology_start")
-            self.assertIsNone(provider(""))
-            self.assertIs(provider("observed_map"), topology)
-            self.assertIs(provider("observed_map"), topology)
+            service._navigation_topology_provider = provider
             try:
                 yield
             finally:
@@ -480,7 +485,7 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.task.navigation_topology = topology_context
         self.task.visual_sampling = sampling
-        self.task._grid_nav_poll = mock.Mock(return_value=object())
+        self.task.world_pose = lambda frame, **kwargs: WorldPoseService._locate_visual_frame(service, frame, 1, None)
         self.task._grid_nav_advance = mock.Mock(return_value=True)
         self.task._grid_layered_map = mock.Mock(return_value=layered)
         with mock.patch(
@@ -489,9 +494,34 @@ class TestGridNavigationMixin(unittest.TestCase):
             self.assertTrue(
                 self.task.navigate_grid_to((4.5, 0.5), map_id="requested_map", grid_dir="custom_grids", zoom="4")
             )
-        self.task._grid_layered_map.assert_called_once_with("observed_map", grid_dir="custom_grids", zoom="4")
+        self.assertEqual(self.task._grid_nav_advance.call_args.args[0].map_id, "observed_map")
+        source.set_navigation_topology.assert_called_once_with(topology)
+        self.task._grid_layered_map.assert_called_once_with(
+            "observed_map", grid_path=None, grid_dir="custom_grids", zoom="4"
+        )
         factory.assert_called_once_with(layered)
         self.assertEqual(events, ["topology_start", "sampling_start", "sampling_close", "topology_close"])
+
+    def test_account_zip_line_snapshot_disables_incomplete_grid_topology_during_navigation(self):
+        selected = {}
+
+        @contextmanager
+        def topology_context(provider):
+            selected["provider"] = provider
+            yield
+
+        def advance(ctx):
+            provider = selected["provider"]
+            self.assertIsNotNone(provider(ctx.map_id))
+            self.task._grid_nav_zip_line_cache[ctx.map_id] = SimpleNamespace(links=(object(),))
+            self.assertIsNone(provider(ctx.map_id))
+            return True
+
+        self.task.navigation_topology = topology_context
+        self.task._grid_layered_map = mock.Mock(return_value=object())
+        self.task._grid_nav_advance = advance
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.NavigationTopology", return_value=object()):
+            self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
 
     def test_navigation_cancellation_closes_sampling_before_topology_scope(self):
         events = []

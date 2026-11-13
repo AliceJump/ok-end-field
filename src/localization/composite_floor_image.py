@@ -59,6 +59,10 @@ class CompositeFloorImage(TiledMapImage):
     def shape(self):
         return self._shape
 
+    def overview_memory_bytes(self, scale):
+        # Composite overviews read bounded regions, never decode a full source.
+        return 64 * 1024**2 + round(self.shape[0] * scale) * round(self.shape[1] * scale) * 4
+
     @property
     def nbytes(self):
         return super().nbytes + self.alpha.nbytes + sum(mask.nbytes for mask in self._coverage_cache.values())

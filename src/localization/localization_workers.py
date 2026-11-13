@@ -1,9 +1,11 @@
 """Bounded native work; tracking state and cache publication stay on the caller."""
 
 import threading
+import time
 import traceback
 from collections import deque
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, wait
+from contextlib import contextmanager
 
 import psutil
 
@@ -44,6 +46,27 @@ class DecodeBudget:
 
 
 _DECODE_BUDGET = DecodeBudget()
+_RESOURCE_RESERVATION = threading.local()
+
+
+@contextmanager
+def decode_reservation(size, *, budget=_DECODE_BUDGET, check_open=lambda: None):
+    """Reuse a worker's peak reservation instead of waiting on itself."""
+    held = getattr(_RESOURCE_RESERVATION, "held", None)
+    if held is not None and held[0] is budget:
+        if size > held[1]:
+            raise ValueError("decode exceeds resource worker reservation")
+        check_open()
+        yield
+        return
+    while not budget.acquire(size):
+        check_open()
+        time.sleep(0.05)
+    try:
+        check_open()
+        yield
+    finally:
+        budget.release(size)
 
 
 def _clear_exception_frames(error):
@@ -128,8 +151,10 @@ class _ResourceExecutor:
                         self._condition.wait(timeout=0.05)
             size = item[4]
             try:
+                _RESOURCE_RESERVATION.held = (self._budget, size)
                 self._execute(item)
             finally:
+                _RESOURCE_RESERVATION.held = None
                 del item  # Do not retain images or bound locators while idle.
                 if self._budget is not None:
                     self._budget.release(size)

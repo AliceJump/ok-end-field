@@ -12,7 +12,7 @@ import numpy as np
 
 from src.localization.layer_search_index import LayerSearchIndex
 from src.localization.layered_minimap_locator import LayeredMinimapLocator, layer_calibration
-from src.localization.localization_workers import DecodeBudget
+from src.localization.localization_workers import DecodeBudget, _ResourceExecutor
 from src.localization.minimap_map_locator import MapCalibration, MinimapGeometry, MinimapMapLocator, MinimapTracker
 from src.localization.tile_preparation import prepare_image
 from src.localization.tiled_map_image import TiledMapImage, floor_options
@@ -108,6 +108,31 @@ class TestTiledMinimapLocator(unittest.TestCase):
         ):
             tiled.overview(0.3)
         self.assertEqual((budget.active, budget.reserved_bytes), (0, 0))
+
+    def test_resource_worker_fallback_reserves_its_full_peak_only_once(self):
+        tiled = self.prepare()
+        locator = MinimapMapLocator(tiled, self.calibration, scale_override=0.6)
+        budget = DecodeBudget(available=lambda: 0)
+        workers = _ResourceExecutor(budget=budget)
+        try:
+            with patch("src.localization.tiled_map_image._DECODE_BUDGET", budget):
+                self.assertFalse(locator.prepare_global_search(440, workers))
+                pixels = next(iter(locator._pending_coarse.values())).result(timeout=5)
+                self.assertTrue(locator.prepare_global_search(440, workers))
+                np.testing.assert_array_equal(
+                    pixels, cv2.resize(self.image, None, fx=0.3, fy=0.3, interpolation=cv2.INTER_AREA)
+                )
+        finally:
+            tiled.close()
+            workers.shutdown(wait=True, cancel_futures=True)
+        self.assertEqual((budget.active, budget.reserved_bytes), (0, 0))
+
+    def test_non_object_prepared_indexes_fall_back_to_original_image(self):
+        tiled = self.prepare()
+        for value in (None, [], "invalid", 1):
+            with self.subTest(value=value):
+                (tiled.root / "index.json").write_text(json.dumps(value), encoding="utf-8")
+                self.assertIsNone(TiledMapImage.open_prepared(self.path, (900, 800), cache_root=self.cache))
 
     def test_closed_source_does_not_publish_late_decoded_tiles(self):
         tiled = self.prepare()

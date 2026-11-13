@@ -306,7 +306,11 @@ class VisualPositionSource:
         corrected, chain_result = self._correct_visual_chains(
             clock, raw, anchor, sampled=bool(measured and measured.get("sampled", False))
         )
-        if not strong and not self._chain_within_error_budget(chain_result):
+        if (
+            not strong
+            and (not match.accepted or self.chain is not None)
+            and not self._chain_within_error_budget(chain_result)
+        ):
             evidence = self._evidence_result
             self._lose_tracking(match)
             self._last_state.update(

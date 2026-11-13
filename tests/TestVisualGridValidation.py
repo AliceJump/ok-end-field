@@ -17,6 +17,7 @@ from scripts.nav.validate_visual_grid import ReferenceRecorder, report_accuracy
 from scripts.nav.validation_task import GridValidationTask, pose_scope_status, run_validation_task
 from scripts.nav.visual_validation import (
     NavigationSourcePolicy,
+    ReferenceTimeline,
     align_reference,
     connected_region,
     coverage_targets,
@@ -40,6 +41,20 @@ class TestVisualGridValidation(unittest.TestCase):
             ReferenceRecorder(8000, Path("unused"))
         self.assertTrue(handle.closed)
 
+    def test_reference_recorder_cursor_returns_only_new_records(self):
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch("scripts.nav.validate_visual_grid.threading.Thread.start"),
+        ):
+            recorder = ReferenceRecorder(8000, Path(directory))
+            with recorder.handle:
+                recorder._ordered_records.extend(self.record(10 + i) for i in range(1000))
+                rows = recorder.snapshot()[2]
+                self.assertEqual(len(rows), 1000)
+                recorder._ordered_records.append(self.record(1010))
+                self.assertEqual(recorder.snapshot(since=len(rows))[2], [self.record(1010)])
+                self.assertEqual(recorder.snapshot(since=1001)[2], [])
+
     def _observation_task(self):
         grid = DenseGrid(np.ones((4, 4), np.uint8), GridMeta(map_name="map02"))
         reference = {"mapId": "map02", "time": 100, "x": 0, "z": 0, "speed": 1, "flow": 3}
@@ -58,6 +73,8 @@ class TestVisualGridValidation(unittest.TestCase):
             _stop_inputs=Mock(),
             error_hits=0,
             _validation_cursor=0,
+            _reference_cursor=0,
+            _reference_timeline=ReferenceTimeline([]),
             _observed_frames=set(),
             options=SimpleNamespace(max_error=1),
         )
@@ -446,7 +463,7 @@ class TestVisualGridValidation(unittest.TestCase):
                     records.append({**records[0], "time": 100.4})
 
                 reference = SimpleNamespace(
-                    snapshot=lambda records=records: (records[-1], 100.4, list(records)),
+                    snapshot=lambda records=records, since=0: (records[-1], 100.4, records[since:]),
                     close=close_reference,
                 )
                 guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
@@ -519,10 +536,12 @@ class TestVisualGridValidation(unittest.TestCase):
                         covered=set(),
                         traversed=set(),
                         grid=SimpleNamespace(meta=SimpleNamespace(map_name="map02")),
-                        reference=SimpleNamespace(snapshot=Mock(return_value=({"mapId": reference_map}, 100, None))),
+                        reference=SimpleNamespace(snapshot=Mock(return_value=({"mapId": reference_map}, 100, []))),
                         _stop_inputs=Mock(),
                         error_hits=0,
                         _validation_cursor=0,
+                        _reference_cursor=0,
+                        _reference_timeline=ReferenceTimeline([]),
                         _observed_frames=set(),
                         validation_failure="",
                     )
@@ -676,6 +695,30 @@ class TestVisualGridValidation(unittest.TestCase):
         self.assertAlmostEqual(aligned["x"], 0.2)
         self.assertEqual(aligned["mode"], "interpolated")
         self.assertIsNone(align_reference(records, 10.6, "map02", flow=3))
+
+    def test_incremental_reference_index_validates_only_new_records_and_keeps_stable_order(self):
+        records = [self.record(10), self.record(10.4, 0.8)]
+        timeline = ReferenceTimeline(records)
+        incoming = [self.record(10.2, 0.4), self.record(10.4, 1), self.record(10.6, 1.2), {"time": 0}]
+        from scripts.nav.visual_validation import valid_reference
+
+        with patch("scripts.nav.visual_validation.valid_reference", wraps=valid_reference) as check:
+            timeline.extend(incoming)
+        self.assertEqual(check.call_count, len(incoming))
+        expected = ReferenceTimeline([*records, *incoming])
+        self.assertEqual(timeline.samples, expected.samples)
+        self.assertEqual(timeline.times, expected.times)
+
+    def test_source_switch_counts_new_cached_observations_only_once(self):
+        policy = NavigationSourcePolicy(True)
+        for index in range(3):
+            pose = {"frame_t": index + 1, "position_trusted": False, "visual_duplicate_frame": True}
+            for _ in range(4):
+                self.assertEqual(policy.choose(pose), "capture" if index == 2 else "visual_map")
+        for index in range(3):
+            pose = {"frame_t": index + 4, "position_trusted": True, "visual_duplicate_frame": True}
+            for _ in range(4):
+                self.assertEqual(policy.choose(pose), "visual_map" if index == 2 else "capture")
 
     def test_never_interpolates_dead_session_map_switch_gap_or_teleport(self):
         for change in ({"flow": 4}, {"mapId": "map01"}, {"scene": 5}, {"time": 12}, {"x": 100}, {"replayed": True}):

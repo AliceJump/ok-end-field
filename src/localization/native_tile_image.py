@@ -238,6 +238,12 @@ class NativeTileImage(TiledMapImage):
                     continue
                 ox, oy = tx * edge, ty * edge
                 left, top, right, bottom = tile["roi"]
+                if self._alpha_only:
+                    # The matching ROI describes nonzero BGR, not coverage.
+                    # A full payload can retain opaque black outside that ROI.
+                    left, top = tile["origin"]
+                    height, width = tile["payload"]["shape"]
+                    right, bottom = left + width, top + height
                 left, top = max(x0, ox + left), max(y0, oy + top)
                 right, bottom = min(x1, ox + right), min(y1, oy + bottom)
                 if left >= right or top >= bottom:

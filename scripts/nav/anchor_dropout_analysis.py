@@ -25,7 +25,7 @@ def reference_path(timeline, start, end, map_id, flow, *, allow_gaps=False):  # 
             return None  # 有缺口的路程不能当作已验证上限
         if any(r.get("mapId", map_id) != map_id or r.get("flow", flow) != flow for r in (left, right)):  # 不跨地图会话
             return None  # 保持独立真值身份
-        if left.get("scene", right.get("scene")) != right.get("scene", left.get("scene")):  # 不跨场景跳变
+        if left.get("scene") is None or left.get("scene") != right.get("scene"):  # 不跨场景或缺失身份
             return None  # 避免过渡时刻假精度
         distance += step  # 使用原始坐标，不拟合比例尺
     return distance  # 只是观测到的折线长度

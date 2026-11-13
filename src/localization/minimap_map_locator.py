@@ -911,10 +911,15 @@ class MinimapMapLocator:
         future = self._pending_coarse.get(key)
         if future is None:
             output_pixels = round(self.map_image.shape[0] * scale) * round(self.map_image.shape[1] * scale)
+            memory_bytes = (
+                self.map_image.overview_memory_bytes(scale)
+                if isinstance(self.map_image, TiledMapImage)
+                else 64 * 1024**2 + output_pixels * 4
+            )
             self._pending_coarse[key] = executor.submit(
                 self._build_coarse,
                 scale,
-                memory_bytes=64 * 1024**2 + output_pixels * 4,
+                memory_bytes=memory_bytes,
             )
             future = self._pending_coarse[key]
             if not wait:

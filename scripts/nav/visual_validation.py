@@ -1,7 +1,7 @@
 """网格覆盖与抓包时间对齐的纯计算工具，不发送游戏输入。"""  # 支持离线单元测试
 
 import math  # 计算误差与有限值校验
-from bisect import bisect_left  # 按采集时刻查找相邻参考点
+from bisect import bisect_left, bisect_right  # 按采集时刻查找相邻参考点
 from collections import deque  # 使用广度优先遍历连通网格
 
 import cv2  # 对可走网格标记连通区域
@@ -24,8 +24,14 @@ def navigation_pose_ready(pose):  # 与正式导航保持同样的楼层确认�
 class NavigationSourcePolicy:  # 只决定控制来源，不修改视觉定位器
     def __init__(self, enabled):  # 默认保持纯视觉验证
         self.enabled, self.capture, self.good, self.bad = enabled, False, 0, 0  # 分开统计连续恢复和失败
+        self._last_frame = None
 
     def choose(self, pose):  # 连续三帧确认避免来回切换
+        stamp = (pose or {}).get("frame_t")
+        if isinstance(stamp, (int, float)) and math.isfinite(stamp) and stamp > 0:
+            if self._last_frame is not None and stamp <= self._last_frame:
+                return "capture" if self.capture else "visual_map"
+            self._last_frame = stamp
         ready = navigation_pose_ready(pose)  # 复用与导航一致的可用性条件
         self.good = self.good + 1 if ready else 0  # 连续恢复计数
         self.bad = self.bad + 1 if not ready else 0  # 连续失败计数
@@ -124,8 +130,23 @@ def valid_reference(record):  # 过滤无效、重播或未标时的数据
 
 class ReferenceTimeline:  # 长时间遍历只排序一次参考轨迹
     def __init__(self, records):  # 建立可重复查询的时间索引
-        self.samples = sorted((r for r in records if valid_reference(r)), key=lambda r: float(r["time"]))  # 过滤无效点
-        self.times = [float(r["time"]) for r in self.samples]  # 后续查询使用二分查找
+        self.samples, self.times = [], []
+        self.extend(records)
+
+    def extend(self, records):
+        """Validate only new records; retain stable ordering for late arrivals."""
+        incoming = sorted((r for r in records if valid_reference(r)), key=lambda r: float(r["time"]))
+        if not incoming:
+            return
+        if not self.times or float(incoming[0]["time"]) >= self.times[-1]:
+            self.samples.extend(incoming)
+            self.times.extend(float(row["time"]) for row in incoming)
+            return
+        for row in incoming:
+            stamp = float(row["time"])
+            index = bisect_right(self.times, stamp)
+            self.times.insert(index, stamp)
+            self.samples.insert(index, row)
 
 
 def align_reference(records, stamp, map_id, *, flow=None, max_gap=0.6, stationary=False):  # 对齐到图像呈现时刻
@@ -153,6 +174,9 @@ def align_reference(records, stamp, map_id, *, flow=None, max_gap=0.6, stationar
             "z": left["z"] + weight * (right["z"] - left["z"]),
             "mode": "interpolated",
             "gap_s": end - begin,
+            "scene": left.get("scene"),
+            "mapId": left.get("mapId"),
+            "flow": left.get("flow"),
         }  # 输出未做空间校正的真值
     if (
         stationary
@@ -160,7 +184,15 @@ def align_reference(records, stamp, map_id, *, flow=None, max_gap=0.6, stationar
         and stamp >= begin
         and (index == len(samples) or end - stamp > max_gap)
     ):  # 静止停发坐标
-        return {"x": left["x"], "z": left["z"], "mode": "stationary_hold", "gap_s": stamp - begin}  # 单列静止保留值
+        return {
+            "x": left["x"],
+            "z": left["z"],
+            "mode": "stationary_hold",
+            "gap_s": stamp - begin,
+            "scene": left.get("scene"),
+            "mapId": left.get("mapId"),
+            "flow": left.get("flow"),
+        }  # 单列静止保留值
     return None  # 移动时绝不以旧点外推代替准确坐标
 
 

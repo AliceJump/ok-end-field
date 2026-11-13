@@ -184,7 +184,9 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
 
     def _observe(self, state, navigation_source="visual_map"):  # 始终只记录独立视觉定位结果
         self._check_stop()  # 用户请求停止后不再发布新动作
-        latest, checked, references = self.reference.snapshot()  # 对照源不参与定位器输入
+        latest, checked, references = self.reference.snapshot(since=self._reference_cursor)
+        self._reference_cursor += len(references)
+        self._reference_timeline.extend(references)
         if latest is None or time.time() - checked > 1.5:  # 活连接与后端健康都是必要条件
             self.stop_reason = "reference_unavailable_or_dead_flow"  # 不用旧会话当真值
             self._check_stop()  # 停下并留存现场
@@ -229,14 +231,16 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
                 self.traversed.update(
                     nearby_cells(self.region, self.grid.index_of_world(state["x"], state["z"]), self.coverage_steps)
                 )
-        self._process_reference_samples(references)
+        self._process_reference_samples(self._reference_timeline)
         self._check_stop()
 
     def _process_reference_samples(self, references, *, final=False):
         """Drain observations in capture order, retaining frames awaiting a right reference."""
         if self.validation_failure:
             return
-        timeline = ReferenceTimeline(references or [])
+        if self._validation_cursor >= len(self.samples):
+            return
+        timeline = references if isinstance(references, ReferenceTimeline) else ReferenceTimeline(references or [])
         while self._validation_cursor < len(self.samples):
             row = self.samples[self._validation_cursor]
             if duplicate_observation(row):
@@ -430,6 +434,8 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
         self.options, self.grid, self.region, targets, self.directory, plan = self.validation  # 获取本次有限计划
         self.samples, self.covered, self.arrived = [], set(), []  # 保留真实采样进度
         self._validation_cursor = 0
+        self._reference_cursor = 0
+        self._reference_timeline = ReferenceTimeline([])
         self._observed_frames = set()
         self.validation_failure = ""
         self.covered.update(self.options.resume_covered)  # 续跑仅继承已验证覆盖
@@ -539,6 +545,7 @@ class GridValidationTask(MinimapNavigateToPoint):  # 复用 GridNavigationMixin 
                     self.goal,
                     map_id=self.grid.meta.map_name,
                     grid_path=str(self.options.grid.resolve()),
+                    goal_tier=self.grid.meta.tier,
                     timeout=min(180, max(1, self.deadline - time.monotonic())),
                     stop_distance=0.8,
                 ):  # 正式路径规划、转向、卡住与恢复全量复用
