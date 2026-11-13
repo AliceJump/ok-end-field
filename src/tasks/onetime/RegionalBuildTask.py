@@ -6,7 +6,6 @@ from qfluentwidgets import FluentIcon
 from src.core.config_migration import merge_bool_options
 from src.core.learning.policy import learning_epoch
 from src.core.sequence_parser import parse_sequence_list
-from src.core.text_matching import edit_distance
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list, goods_dict, outpost_dict
 from src.data.world_map_utils import (
@@ -17,7 +16,7 @@ from src.data.world_map_utils import (
 )
 from src.icons import Icons
 from src.image.hsv_config import HSVRange as hR
-from src.tasks.mixin.common import Common, GoodsInfo
+from src.tasks.mixin.common import Common, GoodsInfo, edit_distance
 from src.tasks.mixin.region_scope_mixin import RegionScopeMixin
 from src.tasks.mixin.workflow_learning import trade_entry_after_visit
 from src.tasks.navigation.mixin.map_mixin import MapMixin

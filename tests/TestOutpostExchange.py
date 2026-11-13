@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 from ok.feature.Box import find_boxes_by_name
 
-from src.core.text_matching import edit_distance
+from src.tasks.mixin.common import edit_distance
 from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 

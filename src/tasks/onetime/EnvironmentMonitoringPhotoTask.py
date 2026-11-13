@@ -8,7 +8,7 @@ from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地�
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin  # 复用世界坐标导航
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
-from src.core.text_matching import edit_distance  # 复用已有的有界编辑距离
+from src.tasks.mixin.common import edit_distance  # 复用已有的有界编辑距离
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
