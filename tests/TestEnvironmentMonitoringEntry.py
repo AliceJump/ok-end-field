@@ -19,6 +19,7 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (
     EternalSunsetRoute,
     PoolLotusRoute,
     StationaryObservationRoute,
+    TianshiPillarRoute,
 )
 
 
@@ -42,7 +43,8 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             for title in examples:
                 with self.subTest(point=key, locale=locale, title=title):
                     task = self.task()
-                    setattr(task.lang.environment_monitoring, key, names[locale]["string"])
+                    node = names[locale]
+                    setattr(task.lang.environment_monitoring, key, re.compile(node["pattern"]) if "pattern" in node else node["string"])
                     self.assertIs(task.observation_route(title), route)
 
     def task(self, width=1920, height=1080):
@@ -368,11 +370,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 task.click_relative.assert_not_called()
                 task.wait_click_ocr.assert_not_called()
 
-    def test_completed_terminal_without_action_buttons_does_not_read_titles(self):
+    def test_completed_terminal_logs_titles_without_action_buttons(self):
         task = self.task()
         task._observation_action = Mock(return_value=None)
         self.assertEqual(task.available_observations(), [])
-        task.ocr.assert_not_called()
+        task.ocr.assert_called_once()
 
     def test_split_title_does_not_select_an_unsupported_fragment(self):
         task = self.task()
@@ -642,6 +644,17 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         titles = {locale: (title, title + "其他") for locale, title in examples}
         self.assert_localized_routes("pool_lotus", titles, PoolLotusRoute)
 
+    def test_tianshi_pillar_matches_title_with_missing_character(self):
+        self.assert_localized_routes("collapsed_tianshi_pillar", {
+            "zh_CN": ("倒塌的天师桩", "倒的天师桩", "倒塌的天师庄"),
+            "zh_TW": ("倒塌的天師樁", "倒的天師樁"),
+        }, TianshiPillarRoute)
+        task = self.task()
+        task.lang.environment_monitoring.collapsed_tianshi_pillar = self.language_data()["collapsed_tianshi_pillar"]["zh_CN"]["string"]
+        self.assertIsNone(task.observation_route("天师桩"))
+        self.assertIsNone(task.observation_route("完好的天师桩"))
+        self.assertIsNone(task.observation_route("安思园的天师桩"))
+
     def test_registered_points_match_resources_without_cross_matches(self):
         data = self.language_data()
         for locale in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
@@ -686,16 +699,19 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             for key, names in short_names.items():
                 with self.subTest(locale=locale, point=key):
                     task = self.task()
-                    setattr(task.lang.environment_monitoring, key, re.compile(names[locale]["pattern"]))
+                    node = names[locale]
+                    value = re.compile(node["pattern"]) if "pattern" in node else node["string"]
+                    setattr(task.lang.environment_monitoring, key, value)
                     with patch.dict(
                         "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
                         {key: PoolLotusRoute},
                         clear=True,
                     ):
-                        self.assertEqual(task.observation_route(names[locale]["pattern"]), PoolLotusRoute)
+                        sample = node.get("pattern", node.get("string")).split("|")[0]
+                        self.assertEqual(task.observation_route(sample), PoolLotusRoute)
                         for other, titles in points.items():
                             node = titles[locale]
-                            actual = task.observation_route(node.get("string", node.get("pattern")))
+                            actual = task.observation_route(node.get("string", node.get("pattern")).split("|")[0])
                             self.assertEqual(actual, PoolLotusRoute if other == key else None, other)
 
     def test_ambiguous_short_name_never_selects_a_route(self):
@@ -730,7 +746,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             task.prepare_observation()
         task.to_near_transfer_point.assert_called_once_with(need_track=False)
         self.assertEqual(task.selected_observation["name"], "小池荷")
-        task.log_info.assert_not_called()
+        self.assertFalse(any('arrived:' in str(c) for c in task.log_info.call_args_list))
 
 
 if __name__ == "__main__":

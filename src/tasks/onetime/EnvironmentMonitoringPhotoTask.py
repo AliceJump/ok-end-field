@@ -8,6 +8,7 @@ from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地�
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin  # 复用世界坐标导航
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
+from src.tasks.onetime.RegionalBuildTask import _edit_distance  # 复用已有的有界编辑距离
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
@@ -35,6 +36,11 @@ OBSERVATIONS = {  # 观察点语言键对应路线类
     "feranmut_heart": StationaryObservationRoute,  # 巨兽心脏原地向右搜索
     "observant_fowlbeast": StationaryObservationRoute,  # 雉羽兽原地向右搜索
 }  # 仅注册已支持的点位
+
+OBSERVATION_MATCH_MODES = {  # 未指定时使用语言资源的包含或正则匹配
+    "cistern_originium_slugs": "exact",  # 避免匹配同名活力版
+    "collapsed_tianshi_pillar": "edit_distance",  # 容忍一个字符的 OCR 错误
+}
 
 
 class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin):  # 共用接取、传送与相机流程
@@ -67,9 +73,15 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
                 found = bool(normalized) and not name.search("") and bool(name.search(normalized))  # 不接受空匹配
             elif isinstance(name, str):  # 字面名称按点位选择匹配方式
                 expected = self.normalize_title(name)  # 与标题使用相同的归一化规则
-                found = bool(expected) and expected in normalized  # 其他点位允许名称只是标题的一部分
-                if key == "cistern_originium_slugs":  # 同名活力版包含普通源石虫名称
-                    found = found and normalized == expected  # 普通源石虫要求完整一致
+                mode = OBSERVATION_MATCH_MODES.get(key, "contains")
+                if not expected:
+                    found = False
+                elif mode == "exact":
+                    found = normalized == expected
+                elif mode == "edit_distance":
+                    found = _edit_distance(normalized, expected, max_distance=1) is not None
+                else:
+                    found = expected in normalized
             else:  # 没有可用的语言名称
                 found = False  # 不将空值视为匹配
             if not found:  # 当前观察点不匹配
@@ -151,13 +163,22 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def available_observations(self):  # 从当前终端的三张卡片读取可执行委托
         observations = []  # 只记录有操作按钮的卡片
-        titles_on_page = None  # 没有可操作卡片时无需 OCR，同一稳定页的标题最多读取一次
+        try:
+            titles_on_page = self.ocr()  # 记录所有卡片标题，便于排查按钮状态
+        except TaskDisabledException:
+            raise
+        except Exception as error:
+            self.log_info(f"[environment-monitoring] 卡片诊断 OCR 失败: {error}")
+            titles_on_page = None  # 可操作卡片仍走原有识别与失败处理
         for index in range(3):  # 当前界面实测固定三列
             left = 0.049 + index * 0.304  # 根据 1920x1080 实测截图估计卡片左边界
             right = min(left + 0.293, 0.96)  # 根据实测截图估计卡片右边界
             title_box = self.box_of_screen(left, 0.285, right, 0.33)  # 标题下界避开拍摄说明的识别框
             action_box = self.box_of_screen(left, 0.85, right, 0.925)  # 仅本卡片底部操作区
-            if not self._observation_action(action_box):  # 已收录卡片没有黄或白底按钮
+            action = self._observation_action(action_box)
+            if not action:  # 已收录卡片没有黄或白底按钮
+                diagnostic_titles = [] if titles_on_page is None else [item.name for item in titles_on_page if title_box.x <= item.x < title_box.x + title_box.width and title_box.y <= item.y < title_box.y + title_box.height]
+                self.log_info(f"[environment-monitoring] 卡片 {index + 1}: action=none titles={diagnostic_titles}")
                 continue  # 不接取已完成观察点
             if titles_on_page is None:  # 观察点会轮换，图标和颜色不能证明具体身份
                 titles_on_page = self.ocr()  # 为本页可操作卡片复用同一次完整标题识别
@@ -170,6 +191,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             if not titles:  # 没有标题时不能推测点位
                 raise RuntimeError("无法识别环境监测观察点标题")  # 识别异常不能当作没有符合条件的点位
             title = min(titles, key=lambda item: (item.y, item.x))  # 取卡片最上方的文字作为标题
+            self.log_info(f"[environment-monitoring] 卡片 {index + 1}: action={action} titles={[item.name for item in titles]} selected={title.name!r}")
             observations.append({"name": title.name, "action_box": action_box})  # 保留标题与操作区域
         return observations  # 返回当前终端候选
 
@@ -233,12 +255,15 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         self.open_monitoring()  # 每次从明确入口开始
         for terminal in self.TERMINAL_LEFTS:  # 按固定左右顺序遍历两个终端
             self.select_terminal(terminal)  # 选择终端并等待稳定
+            self.log_info(f"[environment-monitoring] 扫描终端: {terminal}")
             for observation in self.available_observations():  # 只考虑可操作卡片
                 identity = self.normalize_title(observation["name"])  # 同名点位不区分终端
                 if identity in self.completed_observations:  # 已成功或失败的点位不再尝试
+                    self.log_info(f"[environment-monitoring] 跳过已处理点位: {observation['name']!r}")
                     continue  # 本次运行不重复拍摄
                 navigation_class = self.observation_route(observation["name"])  # 只选择已注册路线的点位
                 if not navigation_class:  # 尚未支持的观察点
+                    self.log_info(f"[environment-monitoring] 标题未匹配唯一路线: {observation['name']!r}")
                     continue  # 跳过尚未支持的委托
                 self.selected_observation = {
                     "name": observation["name"],
