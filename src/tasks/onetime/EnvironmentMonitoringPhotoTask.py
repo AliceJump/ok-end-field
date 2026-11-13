@@ -249,11 +249,14 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             self.select_terminal(terminal)  # 选择终端并等待稳定
             self.log_info(f"[environment-monitoring] 扫描终端: {terminal}")
             for observation in self.available_observations():  # 只考虑可操作卡片
-                identity = self.normalize_title(observation["name"])  # 同名点位不区分终端
+                identity = self.observation_key(observation["name"])  # 相同点位不因 OCR 差异重复尝试
+                if identity is None:
+                    self.log_info(f"[environment-monitoring] 标题未匹配唯一路线: {observation['name']!r}")
+                    continue
                 if identity in self.completed_observations:  # 已成功或失败的点位不再尝试
                     self.log_info(f"[environment-monitoring] 跳过已处理点位: {observation['name']!r}")
                     continue  # 本次运行不重复拍摄
-                navigation_class = self.observation_route(observation["name"])  # 只选择已注册路线的点位
+                navigation_class = self.OBSERVATIONS[identity][0]  # 使用已确认的点位路线
                 if not navigation_class:  # 尚未支持的观察点
                     self.log_info(f"[environment-monitoring] 标题未匹配唯一路线: {observation['name']!r}")
                     continue  # 跳过尚未支持的委托
@@ -417,7 +420,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         self.navigate_observation(observation)
         if not self.photograph_observation():
             raise RuntimeError("未能调整到满足条件的取景角度")
-        self.completed_observations.add(self.normalize_title(observation["name"]))
+        self.completed_observations.add(self.observation_key(observation["name"]))
 
     def run(self):  # GUI 与一键日常共用完整流程
         try:  # 独立运行和一键日常共用执行与失败处理
@@ -439,7 +442,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
                     if not self.selected_observation:  # 入口或扫描失败不能归属于某一点位
                         raise  # 由外层报告并终止
                     name = self.selected_observation["name"]  # 使用实际选择的点位名称
-                    self.completed_observations.add(self.normalize_title(name))  # 避免重复失败
+                    self.completed_observations.add(self.observation_key(name))  # 避免重复失败
                     failures.append(f"{name}: {error}")  # 保留每个点位的失败原因
                     self.log_info(f"[environment-monitoring] 观察点失败：{name}: {error}")  # 部分成功时仍可查看失败点位
                     self.ensure_main()  # 无法恢复时由外层终止

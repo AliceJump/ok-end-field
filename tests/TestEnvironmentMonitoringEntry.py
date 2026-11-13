@@ -129,7 +129,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
 
     def test_completed_card_is_skipped_across_terminals(self):
         task = self.task()
-        task.completed_observations = {"小池荷"}
+        task.completed_observations = {"pool_lotus"}
         task.open_monitoring = Mock()
         task.select_terminal = Mock()
         task.available_observations = Mock(
@@ -142,6 +142,17 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.open_observation_map = Mock()
         result = task.prepare_observation()
         self.assertIsNone(result)
+        task.enter_observation.assert_not_called()
+
+    def test_failed_tianshi_title_variant_is_skipped(self):
+        task = self.task()
+        task.lang.environment_monitoring.collapsed_tianshi_pillar = "倒塌的天师桩"
+        task.completed_observations = {task.observation_key("倒的天师桩")}
+        task.open_monitoring = Mock()
+        task.select_terminal = Mock()
+        task.available_observations = Mock(side_effect=[[{"name": "倒塌的天师桩"}], []])
+        task.enter_observation = Mock()
+        self.assertIsNone(task.prepare_observation())
         task.enter_observation.assert_not_called()
 
     def test_available_cards_bind_buttons_to_their_own_titles_at_multiple_sizes(self):
