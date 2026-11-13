@@ -2,7 +2,7 @@
 <rect width="100%" height="100%" rx="16" fill="#0b1220"/>
 <rect x="1" y="1" width="518" height="432" rx="15" fill="none" stroke="#1f2937"/>
 <text x="24" y="38" fill="#e5e7eb" font-size="20" font-weight="700" font-family="Segoe UI, Arial">Monthly Downloads</text>
-<text x="24" y="56" fill="#94a3b8" font-size="12" font-family="Segoe UI, Arial">11 months · 42,926 total downloads</text>
+<text x="24" y="56" fill="#94a3b8" font-size="12" font-family="Segoe UI, Arial">11 months · 42,987 total downloads</text>
 <text x="24" y="88" fill="#e2e8f0" font-size="13" font-family="Segoe UI, Arial">2026-01</text>
 <text x="500" y="88" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">6,643</text>
 <rect x="110" y="78" width="340" height="10" rx="5" fill="#1f2937"/>
@@ -40,11 +40,11 @@
 <rect x="110" y="334" width="340" height="10" rx="5" fill="#1f2937"/>
 <rect x="106" y="334" width="134" height="10" rx="5" fill="#06b6d4"/>
 <text x="24" y="376" fill="#e2e8f0" font-size="13" font-family="Segoe UI, Arial">2026-10</text>
-<text x="500" y="376" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">3,975</text>
+<text x="500" y="376" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">3,976</text>
 <rect x="110" y="366" width="340" height="10" rx="5" fill="#1f2937"/>
 <rect x="106" y="366" width="203" height="10" rx="5" fill="#14b8a6"/>
 <text x="24" y="408" fill="#e2e8f0" font-size="13" font-family="Segoe UI, Arial">2026-11</text>
-<text x="500" y="408" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">915</text>
+<text x="500" y="408" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">975</text>
 <rect x="110" y="398" width="340" height="10" rx="5" fill="#1f2937"/>
-<rect x="106" y="398" width="46" height="10" rx="5" fill="#22c55e"/>
+<rect x="106" y="398" width="49" height="10" rx="5" fill="#22c55e"/>
 </svg>
