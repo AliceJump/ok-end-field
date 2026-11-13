@@ -8,7 +8,7 @@ from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地�
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin  # 复用世界坐标导航
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
-from src.tasks.onetime.RegionalBuildTask import _edit_distance  # 复用已有的有界编辑距离
+from src.core.text_matching import edit_distance  # 复用已有的有界编辑距离
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
@@ -68,7 +68,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         if mode == "exact":
             return normalized == expected
         if mode == "edit_distance":
-            return _edit_distance(normalized, expected, max_distance=1) is not None
+            return edit_distance(normalized, expected, max_distance=1) is not None
         return mode == "contains" and expected in normalized
 
     def observation_key(self, title):  # 按标题识别已注册路线的观察点

@@ -5,7 +5,8 @@ from unittest.mock import Mock, patch
 
 from ok.feature.Box import find_boxes_by_name
 
-from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask, _edit_distance
+from src.core.text_matching import edit_distance
+from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 
 class TestOutpostExchange(unittest.TestCase):
@@ -78,10 +79,10 @@ class TestOutpostExchange(unittest.TestCase):
         for left, right, expected in cases:
             with self.subTest(left=left, right=right):
                 for first, second in ((left, right), (right, left)):
-                    self.assertEqual(_edit_distance(first, second), expected)
-                    self.assertEqual(_edit_distance(first, second, max_distance=expected), expected)
+                    self.assertEqual(edit_distance(first, second), expected)
+                    self.assertEqual(edit_distance(first, second, max_distance=expected), expected)
                     if expected > 0:
-                        self.assertIsNone(_edit_distance(first, second, max_distance=expected - 1))
+                        self.assertIsNone(edit_distance(first, second, max_distance=expected - 1))
 
     def test_activity_goods_choose_nearest_candidate(self):
         cases = [
