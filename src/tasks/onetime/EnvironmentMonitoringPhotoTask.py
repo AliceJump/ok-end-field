@@ -290,9 +290,9 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         frame = self.frame  # 两个区域必须使用同一帧
         regions = (  # 根据 1920x1080 截图估计指针及亮弧内部区域
             (794, 373, 806, 385),  # 白色指针
-            (814, 385, 822, 393),  # 亮弧下段
-            (825, 375, 833, 383),  # 亮弧中段
-            (835, 367, 843, 375),  # 亮弧上段
+            (778, 431, 786, 439),  # 亮弧下段
+            (814, 385, 822, 393),  # 亮弧中段
+            (855, 355, 863, 363),  # 亮弧上段
         )
         return all(  # 所有区域必须在同一帧达到默认白色占比
             self.find_color(white, self.box_of_screen(x1 / 1920, y1 / 1080, x2 / 1920, y2 / 1080), frame=frame)  # 按屏幕尺寸换算
