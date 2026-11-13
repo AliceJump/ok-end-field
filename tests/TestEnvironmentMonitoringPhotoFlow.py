@@ -161,7 +161,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.photograph_observation.side_effect = None
         task.photograph_observation.return_value = True
         self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
-        self.assertEqual(task.completed_observations, {"小池荷", "表象"})
+        self.assertEqual(task.completed_observations, {"pool_lotus", "thillu"})
         task.mark_task_failure.assert_not_called()
         task.ensure_main.assert_called_once()
 
@@ -201,7 +201,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.navigate_observation.side_effect = None
         task.photograph_observation.side_effect = [False, True]
         self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
-        self.assertEqual(task.completed_observations, {"小池荷", "表象"})
+        self.assertEqual(task.completed_observations, {"pool_lotus", "thillu"})
         task.mark_task_failure.assert_not_called()
         task.ensure_main.assert_called_once()
 
@@ -223,6 +223,8 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def task(self):
         task = Mock()
+        task.OBSERVATIONS = EnvironmentMonitoringPhotoTask.OBSERVATIONS
+        task._matches_observation.side_effect = lambda normalized, name, mode: EnvironmentMonitoringPhotoTask._matches_observation(task, normalized, name, mode)
         task.tr.side_effect = lambda text: text
         task.box = SimpleNamespace(right=Box(960, 0, 960, 1080))
         task.box_of_screen.side_effect = lambda x1, y1, x2, y2: Box(
@@ -235,7 +237,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.normalize_title.side_effect = EnvironmentMonitoringPhotoTask.normalize_title
         task.selected_observation = {"name": "小池荷"}
         task.prepare_photo.return_value = {"photo_ready": False, "photo_taken": False}
-        task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", ancient_tree="古树"))
+        task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", thillu="表象", ancient_tree="古树"))
         task.observation_key.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_key(task, title)
         task.observation_route.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_route(task, title)
 
@@ -611,7 +613,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertTrue(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
         self.assertEqual(task.navigate_observation.call_count, 2)
         self.assertEqual(task.photograph_observation.call_count, 2)
-        self.assertEqual(task.completed_observations, {"小池荷", "表象"})
+        self.assertEqual(task.completed_observations, {"pool_lotus", "thillu"})
 
     def test_run_stops_after_six_observations(self):
         task = self.task()
@@ -695,7 +697,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task = self.task()
         task.prepare_observation.return_value = {"name": "古树"}
         with patch.dict(
-            "src.tasks.onetime.EnvironmentMonitoringPhotoTask.OBSERVATIONS",
+            EnvironmentMonitoringPhotoTask.OBSERVATIONS,
             {"ancient_tree": (None, "right")},
         ):
             self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
