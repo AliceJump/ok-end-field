@@ -57,13 +57,12 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
     def normalize_title(text):  # 兼容符号、空白与英文大小写差异
         return re.sub(r"[\W_]+", "", text).casefold()  # 保留各语言文字
 
-    @classmethod
-    def matches_observation(cls, normalized, name, mode):
+    def _matches_observation(self, normalized, name, mode):
         if mode == "pattern":
             return isinstance(name, re.Pattern) and bool(normalized) and not name.search("") and bool(name.search(normalized))
         if not isinstance(name, str):
             return False
-        expected = cls.normalize_title(name)
+        expected = self.normalize_title(name)
         if not expected:
             return False
         if mode == "exact":
@@ -77,7 +76,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         matched = None  # 多个观察点同时匹配时不能猜测
         for key, (_, mode) in self.OBSERVATIONS.items():  # 只识别支持导航的观察点
             name = getattr(self.lang.environment_monitoring, key, None)  # 从语言资源读取当前语言名称
-            if not self.matches_observation(normalized, name, mode):  # 当前观察点不匹配
+            if not self._matches_observation(normalized, name, mode):  # 当前观察点不匹配
                 continue  # 检查下一个已注册点位
             if matched is not None:  # 多个观察点匹配同一卡片
                 return None  # 停止而不是根据注册顺序猜测
