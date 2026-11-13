@@ -282,7 +282,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_tool_selection_cancellation_and_drag_failure_release_tool(self):
         for failing_method, error in (
-            ("wait_ui_stable", TaskDisabledException()),
+            ("wait_color", TaskDisabledException()),
             ("smooth_drag", RuntimeError("drag interrupted")),
         ):
             with self.subTest(failing_method=failing_method):
@@ -294,15 +294,25 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
                 task.send_key_up.assert_called_once_with("f6")
                 task.press_key.assert_not_called()
 
+    def test_wheel_detection_uses_camera_icon_and_selected_ring(self):
+        task = self.task()
+        task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
+        task.find_color.side_effect = [True, False]
+        self.assertFalse(EnvironmentMonitoringPhotoTask._camera_wheel_selected(task))
+        task.find_color.side_effect = [True, True]
+        self.assertTrue(EnvironmentMonitoringPhotoTask._camera_wheel_selected(task))
+        for detection in task.find_color.call_args_list:
+            self.assertIs(detection.kwargs["frame"], task.frame)
+
     def test_selecting_camera_waits_after_tool_release_before_short_press(self):
         task = self.task()
-        task.wait_until.side_effect = [False, True]
+        task.wait_until.side_effect = [True, False, True]
         events = Mock()
         events.attach_mock(task.send_key_up, "release")
         events.attach_mock(task.wait_until, "observe")
         events.attach_mock(task.press_key, "press")
         EnvironmentMonitoringPhotoTask.open_camera(task)
-        tail = events.mock_calls
+        tail = events.mock_calls[1:]
         self.assertEqual(tail[0], call.release("f6"))
         self.assertIs(tail[1].args[0], task._camera_open)
         self.assertGreater(tail[1].kwargs["time_out"], 0)
@@ -345,7 +355,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
 
     def test_failed_camera_entry_is_not_reported_as_open(self):
         task = self.task()
-        task.wait_until.side_effect = [False, False]
+        task.wait_until.side_effect = [True, False, False]
         with self.assertRaisesRegex(RuntimeError, "未进入拍照界面"):
             EnvironmentMonitoringPhotoTask.open_camera(task)
         task.press_key.assert_called_once_with("r", down_time=0.15)
