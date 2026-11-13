@@ -288,9 +288,16 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
     def _camera_wheel_selected(self):  # 左上指针和亮弧同时出现表示选中相机
         white = {"r": (220, 255), "g": (220, 255), "b": (220, 255)}  # 截图中的白色指针和亮弧
         frame = self.frame  # 两个区域必须使用同一帧
-        pointer = self.box_of_screen(795 / 1920, 374 / 1080, 805 / 1920, 384 / 1080)  # 截图估计的指针区域
-        arc = self.box_of_screen(814 / 1920, 385 / 1080, 822 / 1920, 393 / 1080)  # 截图估计的亮弧区域
-        return self.find_color(white, pointer, threshold=0.9, frame=frame, inclusive=True) and self.find_color(white, arc, threshold=0.9, frame=frame, inclusive=True)  # 两处同帧命中
+        regions = (  # 根据 1920x1080 截图估计指针及亮弧内部区域
+            (794, 373, 806, 385),  # 白色指针
+            (814, 385, 822, 393),  # 亮弧下段
+            (825, 375, 833, 383),  # 亮弧中段
+            (835, 367, 843, 375),  # 亮弧上段
+        )
+        return all(  # 所有区域必须在同一帧达到默认白色占比
+            self.find_color(white, self.box_of_screen(x1 / 1920, y1 / 1080, x2 / 1920, y2 / 1080), frame=frame)  # 按屏幕尺寸换算
+            for x1, y1, x2, y2 in regions  # 依次检查指针和亮弧
+        )
 
     def open_camera(self):  # 选择工具与进入拍照分开验证
         self.next_frame()  # 入口判断使用当前页面，不沿用上一动作的旧帧

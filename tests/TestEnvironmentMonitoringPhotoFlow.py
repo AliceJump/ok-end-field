@@ -299,7 +299,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
         task.find_color.side_effect = [True, False]
         self.assertFalse(EnvironmentMonitoringPhotoTask._camera_wheel_selected(task))
-        task.find_color.side_effect = [True, True]
+        task.find_color.side_effect = [True, True, True, True]
         self.assertTrue(EnvironmentMonitoringPhotoTask._camera_wheel_selected(task))
         for detection in task.find_color.call_args_list:
             self.assertIs(detection.kwargs["frame"], task.frame)
