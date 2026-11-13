@@ -155,6 +155,28 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertIsNone(task.prepare_observation())
         task.enter_observation.assert_not_called()
 
+    def test_failed_navigation_skips_same_point_with_corrected_title(self):
+        task = self.task()
+        task.lang.environment_monitoring.collapsed_tianshi_pillar = "倒塌的天师桩"
+        task.open_monitoring = Mock()
+        task.select_terminal = Mock()
+        task.available_observations = Mock(side_effect=[
+            [{"name": "倒的天师桩"}], [{"name": "倒塌的天师桩"}], [],
+        ])
+        task.enter_observation = Mock()
+        task.navigate_observation = Mock(side_effect=RuntimeError("导航失败"))
+        task.photograph_observation = Mock()
+        task.mark_task_failure = Mock()
+        task.tr = lambda text: text
+        with patch.object(TianshiPillarRoute, "transfer") as transfer:
+            self.assertFalse(EnvironmentMonitoringPhotoTask.run.__wrapped__(task))
+        task.navigate_observation.assert_called_once()
+        transfer.assert_called_once()
+        task.enter_observation.assert_called_once()
+        task.photograph_observation.assert_not_called()
+        self.assertEqual(task.completed_observations, {"collapsed_tianshi_pillar"})
+        self.assertIn("导航失败", task.mark_task_failure.call_args.args[0])
+
     def test_available_cards_bind_buttons_to_their_own_titles_at_multiple_sizes(self):
         for width, height in self.SCREEN_SIZES:
             with self.subTest(size=(width, height)):
