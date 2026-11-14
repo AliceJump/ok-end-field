@@ -13,11 +13,13 @@ import numpy as np
 from scripts.nav.visual_validation import (
     NavigationSourcePolicy,
     ReferenceTimeline,
-    align_reference,
     connected_region,
+    coverage_pose_ready,
     duplicate_observation,
     navigation_pose_ready,
     nearby_cells,
+    paired_visual_reference,
+    pose_scope_status,
     reference_map_id,
     temporary_obstacle_grid,
 )
@@ -31,37 +33,6 @@ from src.nav.grid_io import save_grid
 from src.nav.route_follower import GridRouteFollower
 from src.runtime_state.world_pose import publish_world_pose
 from src.tasks.navigation.MinimapNavigateToPoint import MinimapNavigateToPoint
-
-
-def pose_scope_status(state, map_id):
-    """Classify whether a visual pose is usable for this main-map validation."""
-
-    if state.get("map_id") != map_id:
-        return "map_changed"
-    tier_id = state.get("tier_id")
-    tier_trusted = bool(state.get("tier_trusted"))
-    tier_required = bool(state.get("tier_evidence_required", True))
-    if tier_required and (not tier_trusted or tier_id is None):
-        return "tier_pending"
-    if tier_trusted and tier_id not in (None, "__main__"):
-        return "tier_changed"
-    return "record"
-
-
-def coverage_pose_ready(state, map_id):
-    """Require an independent, timestamped visual observation in the validation scope."""
-    return (
-        state.get("position_trusted")
-        and state.get("frame_time_source") == "wgc_system_relative_time"
-        and pose_scope_status(state, map_id) == "record"
-    )
-
-
-def paired_visual_reference(row, timeline, map_id):
-    """Apply the same eligibility and temporal pairing contract online and in the report."""
-    if duplicate_observation(row) or not coverage_pose_ready(row["pose"], map_id):
-        return None
-    return align_reference(timeline, row["frame_t"], map_id, flow=row["flow"], stationary=row["stationary_reference"])
 
 
 class GridValidationTask(MinimapNavigateToPoint):
@@ -105,6 +76,8 @@ class GridValidationTask(MinimapNavigateToPoint):
 
         self.navigation_grid = temporary_obstacle_grid(self.grid, self.failures if self.options.skip_blocked else [])
         self.target_planner = GridRouteFollower(self.navigation_grid, self._grid_follower_config()).planner
+        self._grid_nav_layered_cache.clear()
+        self._grid_nav_layered_planner_cache.clear()
         write_json(self.directory / "blocked_points.json", self.failures)
         write_json(self.directory / "skipped_cells.json", sorted(self.skipped))
         write_json(self.directory / "covered_cells.json", sorted(self.covered))
@@ -610,7 +583,7 @@ class GridValidationTask(MinimapNavigateToPoint):
             ),
             "frames": len(self.samples),
             "trusted_frames": sum(bool(r["pose"].get("position_trusted")) for r in self.samples),
-            "accuracy": report_accuracy(self.samples, references),
+            "accuracy": report_accuracy(self.samples, references, map_id=self.grid.meta.map_name),
             "navigation_implementation": "MinimapNavigateToPoint.navigate_grid_to / WorldPoseService / EfInteraction",
         }
         write_json(self.directory / "report.json", self.report)

@@ -29,6 +29,7 @@ from scripts.nav.visual_validation import (
 from src.localization.capture_position_source import CapturePositionSource
 from src.localization.position_service import WorldPoseService
 from src.nav.grid_io import DenseGrid, GridMeta
+from src.nav.route_follower import FollowerConfig
 
 
 class TestVisualGridValidation(unittest.TestCase):
@@ -454,6 +455,39 @@ class TestVisualGridValidation(unittest.TestCase):
             source.reset.assert_called_once()
             self.assertTrue(all(c.args[0].shape == (720, 1280, 3) for c in source.sample.call_args_list))
 
+    def test_replay_pairs_unique_measurements_with_their_original_frame_metadata(self):
+        from scripts import replay_world_pose
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            samples = [
+                {"frame": "frame.png", "frame_t": stamp, "map_id": "map02", "flow": index}
+                for index, stamp in enumerate((10, 10, 10.05, 10.1, 10.2))
+            ]
+            (root / "samples.jsonl").write_text("".join(json.dumps(s) + "\n" for s in samples), encoding="utf-8")
+            pose = {"position_trusted": True, "trust_reason": "visual_map", "map_id": "map02", "x": 1, "z": 2}
+            source = SimpleNamespace(
+                sample=Mock(
+                    side_effect=[
+                        {**pose, "frame_t": stamp, "visual_duplicate_frame": duplicate}
+                        for stamp, duplicate in ((10, False), (10, True), (10, False), (10.05, False), (10.1, True))
+                    ]
+                )
+            )
+            trajectory = SimpleNamespace(at=Mock(return_value=(np.array([1, 2]), np.zeros(2))))
+            with (
+                patch.object(replay_world_pose.cv2, "imread", return_value=np.zeros((720, 1280, 3), np.uint8)),
+                patch.object(replay_world_pose, "VisualPositionSource", return_value=source),
+                patch.object(replay_world_pose, "trajectory_for", return_value=trajectory),
+                patch("builtins.print"),
+            ):
+                report = replay_world_pose.replay(
+                    root, SimpleNamespace(load=lambda: ("map02", object())), root / "output"
+                )
+            self.assertEqual(report["paired_frames"], 2)
+            self.assertEqual([c.args[0] for c in trajectory.at.call_args_list], [10, 10.05])
+            self.assertEqual([c.args[1]["flow"] for c in trajectory.at.call_args_list], [0, 2])
+
     def test_reference_readiness_timeout_closes_resources_before_service_mutation(self):
         with tempfile.TemporaryDirectory() as directory:
             task, service = self._run_task(Path(directory))
@@ -862,6 +896,25 @@ class TestVisualGridValidation(unittest.TestCase):
         self.assertTrue(result.ok)
         self.assertTrue(all(temporary.is_free(*cell) for cell in result.cells))
 
+    def test_obstacle_refresh_invalidates_both_layered_map_and_planner_snapshots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            task = SimpleNamespace(
+                grid=DenseGrid(np.ones((4, 4), np.uint8), GridMeta(map_name="map02")),
+                failures=[],
+                options=SimpleNamespace(skip_blocked=True),
+                directory=Path(directory),
+                covered=set(),
+                traversed=set(),
+                skipped=set(),
+                _grid_nav_layered_cache={"old": object()},
+                _grid_nav_layered_planner_cache={1: object()},
+                _grid_follower_config=lambda: FollowerConfig(allow_unknown=False),
+            )
+            GridValidationTask._save_obstacles(task)
+            self.assertEqual(task._grid_nav_layered_cache, {})
+            self.assertEqual(task._grid_nav_layered_planner_cache, {})
+            self.assertIs(task.target_planner.grid, task.navigation_grid)
+
     def test_unconfirmed_timeout_does_not_change_walkability(self):
         grid = DenseGrid(np.ones((12, 12), np.uint8), GridMeta())
         temporary = temporary_obstacle_grid(grid, [{"position": (3.5, 5.5), "goal": (7.5, 5.5)}])
@@ -956,13 +1009,26 @@ class TestVisualGridValidation(unittest.TestCase):
         self.assertIsNone(align_reference(records, 99.8, "map02", flow=3, stationary=True))
 
     def test_untrusted_and_duplicate_frames_do_not_inflate_accuracy(self):
-        pose = {"position_trusted": True, "map_id": "map02", "x": 0.2, "z": 0}
+        pose = {
+            "position_trusted": True,
+            "map_id": "map02",
+            "x": 0.2,
+            "z": 0,
+            "tier_trusted": True,
+            "tier_id": "__main__",
+            "frame_time_source": "wgc_system_relative_time",
+        }
         good = {"frame_t": 10.1, "flow": 3, "pose": pose, "absolute": {"world_x": 0.2, "world_z": 0}}
         rows = [
             good,
             {**good, "pose": {**pose, "visual_duplicate_frame": True}},
             {**good, "pose": {**pose, "position_trusted": False}},
+            {**good, "pose": {**pose, "tier_trusted": False, "tier_id": None}},
+            {**good, "pose": {**pose, "tier_id": "floor1"}},
+            {**good, "pose": {**pose, "map_id": "map01"}},
+            {**good, "pose": {**pose, "frame_time_source": "sample_time_fallback"}},
+            {**good, "frame_t": float("nan")},
         ]
-        report = report_accuracy(rows, [self.record(10), self.record(10.4, 0.8)])
+        report = report_accuracy(rows, [self.record(10), self.record(10.4, 0.8)], map_id="map02")
         self.assertEqual(report["eligible_frames"], 1)
         self.assertEqual(report["unpaired_frames"], 0)

@@ -87,6 +87,25 @@ class LayeredNavigationWiringTest(unittest.TestCase):
                 self.assertTrue(result.ok, result.reason)  # Default directory is ambiguous at this goal.
                 self.assertIsNone(self.task._grid_layered_map("test", **options))
 
+    def test_explicit_floor_file_cannot_supply_a_confirmed_main_route(self):
+        from src.core.GridNavConfig import CONFIG_GRID_FILE
+
+        path = self.root / f"test__lv1_4{GRID_SUFFIX}"
+        for configured in (False, True):
+            with self.subTest(configured=configured):
+                self.task.config[CONFIG_GRID_FILE] = str(path) if configured else ""
+                options = {} if configured else {"grid_path": str(path)}
+                result = self.task.plan_grid_path(
+                    (0.5, 0.5),
+                    (3.5, 0.5),
+                    map_id="test",
+                    start_pose=self._visual_pose("__main__"),
+                    goal_tier="__main__",
+                    **options,
+                )
+                self.assertFalse(result.ok)
+                self.assertIn("不一致", result.reason)
+
     def test_preview_rebuilds_layer_planner_after_unknown_cell_policy_changes(self):
         from src.core.GridNavConfig import CONFIG_GRID_ALLOW_UNKNOWN
 

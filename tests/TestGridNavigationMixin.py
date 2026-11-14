@@ -503,7 +503,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         factory.assert_called_once_with(layered)
         self.assertEqual(events, ["topology_start", "sampling_start", "sampling_close", "topology_close"])
 
-    def test_account_zip_line_snapshot_disables_incomplete_grid_topology_during_navigation(self):
+    def test_unmodeled_routes_disable_incomplete_grid_topology_during_navigation(self):
         selected = {}
 
         @contextmanager
@@ -512,7 +512,13 @@ class TestGridNavigationMixin(unittest.TestCase):
             yield
 
         def advance(ctx):
+            from src.core.GridNavConfig import CONFIG_GRID_ALLOW_UNKNOWN
+
             provider = selected["provider"]
+            self.assertIsNotNone(provider(ctx.map_id))
+            self.task.config[CONFIG_GRID_ALLOW_UNKNOWN] = True
+            self.assertIsNone(provider(ctx.map_id))
+            self.task.config[CONFIG_GRID_ALLOW_UNKNOWN] = False
             self.assertIsNotNone(provider(ctx.map_id))
             self.task._grid_nav_zip_line_cache[ctx.map_id] = SimpleNamespace(links=(object(),))
             self.assertIsNone(provider(ctx.map_id))

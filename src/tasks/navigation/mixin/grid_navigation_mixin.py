@@ -662,6 +662,9 @@ class GridNavigationMixin(RuntimeStateMixin):
             # Resolve the grid only after vision identifies the current map.
             if not visual_map_id:
                 return None
+            if self._grid_follower_config().allow_unknown:
+                # This known-free snapshot cannot bound an opt-in unknown route.
+                return None
             # Account routes are independent of links.json. Once planning has
             # loaded a usable zip-line graph, its landings cannot be rejected
             # by a grid-only reachability scope. Full visual competition stays.
@@ -2352,8 +2355,21 @@ class GridNavigationMixin(RuntimeStateMixin):
         # 例外是 ``allow_same_main``：主图自己的可行走区会被切成互不相通的几块（实测
         # 674 格 / 4757 格），从其中一块到另一块只有"进一层再出来"这条路，而那是单层
         # 网格表达不了的。单层规划失败时调用方会带这个开关再来一次。
-        if start_tier == goal_tier == "" and not allow_same_main:
-            return None, ""
+        if start_tier == goal_tier == "":
+            explicit = str(
+                (
+                    self._grid_config_get(CONFIG_GRID_FILE, "")
+                    if session.request.grid_path is None
+                    else session.request.grid_path
+                )
+                or ""
+            ).strip()
+            if explicit:
+                selected = self.load_grid_for_map(ctx.map_id, grid_path=explicit)
+                if selected is None or normalize_tier(selected.meta.tier):
+                    return None, "指定网格文件的楼层与已确认的大地图起终点不一致"
+            if not allow_same_main:
+                return None, ""
         start_grid = layered.layers.get(layer_key(ctx.map_id, start_tier))
         goal_grid = layered.layers.get(layer_key(ctx.map_id, goal_tier))
         if start_grid is None or goal_grid is None:
