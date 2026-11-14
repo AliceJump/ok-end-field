@@ -5,10 +5,10 @@ from ok import Box, TaskDisabledException  # 保留选中背景检测的像素�
 from qfluentwidgets import FluentIcon  # 复用日常任务分组图标
 
 from src.data.FeatureList import FeatureList as fL  # 复用任务定位、地图和相机模板
+from src.tasks.mixin.common import edit_distance  # 复用已有的有界编辑距离
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin  # 复用世界坐标导航
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
-from src.tasks.mixin.common import edit_distance  # 复用已有的有界编辑距离
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
@@ -20,6 +20,7 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
     VigorousCisternSlugRoute,  # 活力源石虫网格路线
     XiraniteNexusRoute,  # 枢壤仪网格路线
 )
+
 
 class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin):  # 共用接取、传送与相机流程
     OBSERVATIONS = {  # 点位语言键、路线与匹配方式
@@ -59,7 +60,12 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def _matches_observation(self, normalized, name, mode):
         if mode == "pattern":
-            return isinstance(name, re.Pattern) and bool(normalized) and not name.search("") and bool(name.search(normalized))
+            return (
+                isinstance(name, re.Pattern)
+                and bool(normalized)
+                and not name.search("")
+                and bool(name.search(normalized))
+            )
         if not isinstance(name, str):
             return False
         expected = self.normalize_title(name)
@@ -169,7 +175,16 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             action_box = self.box_of_screen(left, 0.85, right, 0.925)  # 仅本卡片底部操作区
             action = self._observation_action(action_box)
             if not action:  # 已收录卡片没有黄或白底按钮
-                diagnostic_titles = [] if titles_on_page is None else [item.name for item in titles_on_page if title_box.x <= item.x < title_box.x + title_box.width and title_box.y <= item.y < title_box.y + title_box.height]
+                diagnostic_titles = (
+                    []
+                    if titles_on_page is None
+                    else [
+                        item.name
+                        for item in titles_on_page
+                        if title_box.x <= item.x < title_box.x + title_box.width
+                        and title_box.y <= item.y < title_box.y + title_box.height
+                    ]
+                )
                 self.log_info(f"[environment-monitoring] 卡片 {index + 1}: action=none titles={diagnostic_titles}")
                 continue  # 不接取已完成观察点
             if titles_on_page is None:  # 观察点会轮换，图标和颜色不能证明具体身份
@@ -183,7 +198,9 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             if not titles:  # 没有标题时不能推测点位
                 raise RuntimeError("无法识别环境监测观察点标题")  # 识别异常不能当作没有符合条件的点位
             title = min(titles, key=lambda item: (item.y, item.x))  # 取卡片最上方的文字作为标题
-            self.log_info(f"[environment-monitoring] 卡片 {index + 1}: action={action} titles={[item.name for item in titles]} selected={title.name!r}")
+            self.log_info(
+                f"[environment-monitoring] 卡片 {index + 1}: action={action} titles={[item.name for item in titles]} selected={title.name!r}"
+            )
             observations.append({"name": title.name, "action_box": action_box})  # 保留标题与操作区域
         return observations  # 返回当前终端候选
 
@@ -295,7 +312,9 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             (855, 355, 863, 363),  # 亮弧上段
         )
         return all(  # 所有区域必须在同一帧达到默认白色占比
-            self.find_color(white, self.box_of_screen(x1 / 1920, y1 / 1080, x2 / 1920, y2 / 1080), frame=frame)  # 按屏幕尺寸换算
+            self.find_color(
+                white, self.box_of_screen(x1 / 1920, y1 / 1080, x2 / 1920, y2 / 1080), frame=frame
+            )  # 按屏幕尺寸换算
             for x1, y1, x2, y2 in regions  # 依次检查指针和亮弧
         )
 
@@ -309,11 +328,15 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         try:  # 中止或异常也要释放工具键
             white = {"r": (220, 255), "g": (220, 255), "b": (220, 255)}  # 相机图标白色主体
             icon = self.box_of_screen(735 / 1920, 319 / 1080, 786 / 1920, 355 / 1080)  # 截图估计的图标区域
-            if not self.wait_color(white, icon, threshold=0.45, time_out=5, settle_time=0.2, raise_if_not_found=False):  # 等待相机图标出现
+            if not self.wait_color(
+                white, icon, threshold=0.45, time_out=5, settle_time=0.2, raise_if_not_found=False
+            ):  # 等待相机图标出现
                 raise RuntimeError("工具轮盘未展开")  # 识别失败不移动光标
             self._require_input_focus()  # 真实光标移动前再次检查目标窗口
             self.smooth_drag((0.5, 0.5), (0.396, 0.312), duration=0.3)  # 实测左上相机位置；此接口仅移动光标，不按鼠标
-            if not self.wait_until(self._camera_wheel_selected, time_out=3, settle_time=0.2, raise_if_not_found=False):  # 等待相机扇区亮起
+            if not self.wait_until(
+                self._camera_wheel_selected, time_out=3, settle_time=0.2, raise_if_not_found=False
+            ):  # 等待相机扇区亮起
                 raise RuntimeError("工具轮盘未选中相机")  # 选中失败不按拍照键
         finally:  # 不留下长按状态
             self.send_key_up(tool_key)  # 松开确认工具选择
@@ -354,7 +377,9 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
 
     def adjust_photo_view(self):  # 有界寻找满足条件的朝向，不移动角色
         direction = self.navigation.photo_direction  # 使用当前观察点路线的取景方向
-        if not self.wait_until(self._camera_open, time_out=3, settle_time=0.5, raise_if_not_found=False):  # 确认相机界面已就绪
+        if not self.wait_until(
+            self._camera_open, time_out=3, settle_time=0.5, raise_if_not_found=False
+        ):  # 确认相机界面已就绪
             raise RuntimeError("相机界面未就绪")  # 不在过渡画面判断或转动
         max_steps = 8  # 各点位共用最大调整次数
         self.next_frame()  # 先检查初始角度的新画面

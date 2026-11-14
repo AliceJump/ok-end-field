@@ -44,7 +44,11 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
                 with self.subTest(point=key, locale=locale, title=title):
                     task = self.task()
                     node = names[locale]
-                    setattr(task.lang.environment_monitoring, key, re.compile(node["pattern"]) if "pattern" in node else node["string"])
+                    setattr(
+                        task.lang.environment_monitoring,
+                        key,
+                        re.compile(node["pattern"]) if "pattern" in node else node["string"],
+                    )
                     self.assertIs(task.observation_route(title), route)
 
     def task(self, width=1920, height=1080):
@@ -160,9 +164,13 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         task.lang.environment_monitoring.collapsed_tianshi_pillar = "倒塌的天师桩"
         task.open_monitoring = Mock()
         task.select_terminal = Mock()
-        task.available_observations = Mock(side_effect=[
-            [{"name": "倒的天师桩"}], [{"name": "倒塌的天师桩"}], [],
-        ])
+        task.available_observations = Mock(
+            side_effect=[
+                [{"name": "倒的天师桩"}],
+                [{"name": "倒塌的天师桩"}],
+                [],
+            ]
+        )
         task.enter_observation = Mock()
         task.navigate_observation = Mock(side_effect=RuntimeError("导航失败"))
         task.photograph_observation = Mock()
@@ -678,12 +686,18 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assert_localized_routes("pool_lotus", titles, PoolLotusRoute)
 
     def test_tianshi_pillar_matches_title_with_missing_character(self):
-        self.assert_localized_routes("collapsed_tianshi_pillar", {
-            "zh_CN": ("倒塌的天师桩", "倒的天师桩", "倒塌的天师庄"),
-            "zh_TW": ("倒塌的天師樁", "倒的天師樁"),
-        }, TianshiPillarRoute)
+        self.assert_localized_routes(
+            "collapsed_tianshi_pillar",
+            {
+                "zh_CN": ("倒塌的天师桩", "倒的天师桩", "倒塌的天师庄"),
+                "zh_TW": ("倒塌的天師樁", "倒的天師樁"),
+            },
+            TianshiPillarRoute,
+        )
         task = self.task()
-        task.lang.environment_monitoring.collapsed_tianshi_pillar = self.language_data()["collapsed_tianshi_pillar"]["zh_CN"]["string"]
+        task.lang.environment_monitoring.collapsed_tianshi_pillar = self.language_data()["collapsed_tianshi_pillar"][
+            "zh_CN"
+        ]["string"]
         self.assertIsNone(task.observation_route("天师桩"))
         self.assertIsNone(task.observation_route("完好的天师桩"))
         self.assertIsNone(task.observation_route("安思园的天师桩"))
@@ -779,7 +793,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             task.prepare_observation()
         task.to_near_transfer_point.assert_called_once_with(need_track=False)
         self.assertEqual(task.selected_observation["name"], "小池荷")
-        self.assertFalse(any('arrived:' in str(c) for c in task.log_info.call_args_list))
+        self.assertFalse(any("arrived:" in str(c) for c in task.log_info.call_args_list))
 
 
 if __name__ == "__main__":

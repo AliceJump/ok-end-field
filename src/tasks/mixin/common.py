@@ -57,7 +57,6 @@ def edit_distance(left: str, right: str, max_distance: int | None = None) -> int
     return distance if max_distance is None or distance <= max_distance else None
 
 
-
 def build_name_patterns(find_name: str):
     """
     根据角色名称生成 OCR 匹配模式（优化版：合并 regex，避免组合爆炸）
