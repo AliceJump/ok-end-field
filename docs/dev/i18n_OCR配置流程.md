@@ -53,6 +53,55 @@ locale 来源和规范化规则：
 
 `BaseEfTask.runtime_locale` 只暴露提取到的原始字符串；真正的活动 locale 规范化发生在 `LangAccessor` 中。
 
+### 2.1 GUI 语言必须与游戏内语言一致
+
+`executor.locale` 唯一来源是 **GUI 界面语言**，与游戏内实际语言无关：
+
+```text
+configs/ui_config.json 的 MainWindow.Language
+  -> ok.ui.qt.util.app.init_app_config()  读 cfg.get(cfg.language).value（QLocale）
+  -> ok 启动时 task_executor.locale = 该 QLocale
+  -> BaseEfTask.__init__ 的 get_lang_accessor(self) 取 locale.name()
+  -> _normalize_locale() 规范化为活动 locale
+  -> assets/lang/<module>.json 中对应 locale 节点
+```
+
+因此有一条约定：**GUI 语言应与游戏内界面语言一致**。该一致性由用户手动操作保证，工具不会自动检测游戏内语言。两者不一致时不会报任何语言错误，只会表现为「找不到入口/元素」的静默失配，因为 OCR 本身识别得很准，只是选中的 pattern 语种不对。
+
+例外只有 OCR pattern 的简繁字形差异：匹配层会把 pattern 与 OCR 文本都归一成简体再比对（见 2.2），简体 pattern 因此能命中繁体界面。但业务代码直接比较 `box.name` 或 `lang.*.string` 的地方仍按 OCR 原文判断，语言对齐依然必要。
+
+下表是**未安装 2.2 匹配层归一补丁时**的失配表现（安装了补丁之后这些例子都能命中，见 2.2）。表的意义在于说明"语言不匹配会让整片识别静默失效"，而不是说这些 pattern 永远匹配不上。
+
+典型表现（GUI 简体、游戏繁体，补丁安装前）：
+
+| key | 选中的 pattern（简体） | 游戏实际显示 | 结果（补丁安装前） |
+|------|------------------------|--------------|------|
+| `k_ed7e11a1` | `丰碑` | `豐碑留名·魔林` | 失配 |
+| `k_4cc61900` | `触碰` | `觸碰` | 失配 |
+| `k_ebbfb983` | `苦难` | `苦難` | 失配 |
+| `k_2da75f4f` | `影拓\|活动期间\|普通模式` | `影拓\|活動期間\|普通模式` | 失配 |
+
+反方向（GUI 繁体、游戏简体）同理。
+
+检查与设置方式：`configs/ui_config.json` 的 `MainWindow.Language`，取值 `zh_CN` 或 `zh_TW`，改完需重启 GUI（该配置项声明了 `restart=True`）。
+
+实例：2026-10-29 影拓丰碑的「活动入口」识别在游戏繁体、GUI 简体时反复失败。日志显示 OCR 输出 `豐碑留名·魔林` 置信度 0.91~0.94，而 pattern 是简体 `丰碑`，`wait_click_ocr` 等满 5 秒仍无命中；把 GUI 语言切成 `zh_TW` 后，按该 locale 解析出的 `k_ed7e11a1`/`k_2da75f4f`/`k_ebbfb983`/`k_4cc61900` 对同一批繁体 OCR 文本全部命中（离线核对，非真机复跑）。
+
+不要用 `ocr_text_fix.json` 兜底简繁差异：该机制只能逐字补，`觸碰`、`苦難`、`活動期間` 等仍需各自补一遍，且属于治标；简繁是一整套语种问题，匹配层的繁简归一见 2.2。
+
+### 2.2 OCR 简繁自动归一（匹配层）
+
+ok-ww 的对应做法是在 `config.py` 打开 `'ocr': {'auto_simplify': True}`，由 ok-script `BaseTask.fix_texts` 用 `OpenCC('jp2t')` + `OpenCC('t2s')` **改写 OCR 输出**。本仓库沿用同一条转换链（`src/core/ocr_zh_convert.py`，依赖 `opencc==1.2.0`），但把 hook 放在匹配层（`src/patches/ocr_zh_convert_patch.py`，在 `install_startup_patches()` 中注册）：
+
+1. 包装 `ok.feature.Box.find_boxes_by_name` / `find_box_by_name` 以及 `ok.task.task` 中的同名引用。
+2. 比对前把 `match`（`str`、`re.Pattern` 或列表）与每个 `Box.name` 归一成简体。
+3. 返回的仍是原始 `Box` 对象，`Box.name` 不被改写。
+
+因此 `丰碑`、`触碰`、`苦难`、`活动期间` 这类简体 pattern 可以直接命中游戏繁体文本；反方向同样成立，因为两侧都被归一到简体。限制：
+
+- 业务代码若在匹配之外直接比较 `box.name`，看到的仍是 OCR 原文（繁体）。
+- 归一依赖 OpenCC；`import opencc` 失败或转换抛异常时补丁自动退回框架原有的匹配行为，不阻断调用链。
+
 ## 3. 统一 JSON schema
 
 资源路径是单文件：
@@ -226,11 +275,12 @@ uv run --locked python -X utf8 -m unittest tests.TestPoLocaleConsistency -v
 
 语言节点未生效时依次检查：
 
-1. 文件是否为 `assets/lang/<module>.json`。
-2. 顶层 key 和代码属性是否完全一致。
-3. 运行时 locale 是否在 `ACTIVE_LOCALES_CONFIG` 中启用。
-4. locale 节点是否只包含一个合法类型字段。
-5. 正则字符串是否为有效 Python 正则。
-6. 重新运行 `TestCheckLang` 并生成类型存根，确认语义 key、旧 key 和生成 diff 与资源改动一致；动态引用另行人工检查。
+1. GUI 语言（`configs/ui_config.json` 的 `MainWindow.Language`）是否与游戏内界面语言一致；不一致时选中的是整个错误语种的节点，先对齐再查其它项。
+2. 文件是否为 `assets/lang/<module>.json`。
+3. 顶层 key 和代码属性是否完全一致。
+4. 运行时 locale 是否在 `ACTIVE_LOCALES_CONFIG` 中启用。
+5. locale 节点是否只包含一个合法类型字段。
+6. 正则字符串是否为有效 Python 正则。
+7. 重新运行 `TestCheckLang` 并生成类型存根，确认语义 key、旧 key 和生成 diff 与资源改动一致；动态引用另行人工检查。
 
 OCR 稳定误识时，先确认是否只是匹配问题。只有等长字符混淆适合加入 `ocr_text_fix.json`；长度变化、词序变化或仅某一业务成立的纠错应在语言 pattern 或业务解析中处理。
