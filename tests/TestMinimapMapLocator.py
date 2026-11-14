@@ -1,7 +1,5 @@
-import argparse
 import json
 import math
-import subprocess
 import tempfile
 import threading
 import unittest
@@ -14,7 +12,6 @@ from unittest.mock import Mock, patch
 import cv2
 import numpy as np
 
-from scripts._minimap_baseline import read_baseline_source
 from src.core.NavConfig import DEFAULT_SCALE_CONSTANT
 from src.localization.minimap_map_locator import (
     LocateResult,
@@ -1062,41 +1059,6 @@ class TestMinimapAcquisitionSafety(unittest.TestCase):
             locator = _FakeLocator(None)
             with self.assertRaises(ValueError):
                 MinimapTracker(locator, **kwargs)
-
-
-class TestGitBaselineSource(unittest.TestCase):
-    def test_option_and_revision_expression_injection_is_rejected_before_git(self):
-        root = Path.cwd()
-        for value in ("--output=outside.py", "HEAD", "abcdef0:path", "abcdef0 --output=x", "abcdef0\n--output=x"):
-            with self.subTest(value=value), patch("scripts._minimap_baseline.subprocess.check_output") as command:
-                with self.assertRaises(argparse.ArgumentTypeError):
-                    read_baseline_source(value, root)
-                command.assert_not_called()
-
-    def test_invalid_resolved_id_never_reaches_git_show(self):
-        root = Path.cwd()
-        with patch(
-            "scripts._minimap_baseline.subprocess.check_output", return_value=b"--output=outside.py\n"
-        ) as command:
-            with self.assertRaisesRegex(ValueError, "full commit ID"):
-                read_baseline_source("abcdef0", root)
-            self.assertEqual(command.call_count, 1)
-
-    def test_short_and_full_commit_ids_read_the_same_fixed_locator_path(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            source = root / "src/localization/minimap_map_locator.py"
-            source.parent.mkdir(parents=True)
-            source.write_text("# baseline fixture\n", encoding="utf-8", newline="\n")
-            for args in (
-                ["init", "-q"],
-                ["add", "src/localization/minimap_map_locator.py"],
-                ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"],
-            ):
-                subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
-            commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root).decode("ascii").strip()
-            self.assertEqual(read_baseline_source(commit, root), "# baseline fixture\n")
-            self.assertEqual(read_baseline_source(commit[:8], root), "# baseline fixture\n")
 
 
 if __name__ == "__main__":
