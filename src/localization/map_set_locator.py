@@ -397,46 +397,18 @@ class MapSetLocator:
             tiers = {tier for _, tier in proposals}
             proposals = [*proposals, *((0.0, entry["id"]) for entry in locator.entries if entry.get("id") not in tiers)]
             pending.extend((score, -order, mid, tier) for score, tier in proposals)
-        validated = {}
+        layer_results = {mid: [] for mid in maps}
         for _, _, mid, tier in sorted(pending, key=lambda item: (item[0], item[1]), reverse=True):
             if self._workers is not None and self._workers.closed:
                 return None
             result = self._cache[mid].locate_proposed_layer(
-                frame,
-                geometry,
-                tier,
-                wait_for_resources=True,
-                complete_competition=True,
-                base_result=base_by_map.get(mid),
+                frame, geometry, tier, wait_for_resources=True, complete_competition=True
             )
-            if result is None:
-                continue
-            if result.reason == "layer_scan_pending":
+            if result is not None and result.reason == "layer_scan_pending":
                 return self._combine([(mid, result)], started, None, commit_hint=False)
-            previous = validated.get(mid)
-            if previous is not None:
-                winner, other = (result, previous) if result.confidence > previous.confidence else (previous, result)
-                candidates = deduplicate_candidates([*winner.candidates, *other.candidates])
-                spatial = deduplicate_candidates([replace(c, tier_id=None) for c in candidates])
-                layer_margin = candidate_margin(
-                    [candidates[0], *(c for c in candidates[1:] if c.tier_id != candidates[0].tier_id)]
-                )
-                best = candidates[0]
-                if winner.best.tier_id is None or layer_margin < (0.10 if best.color else 0.08):
-                    best = replace(best, tier_id=None)
-                result = replace(
-                    winner,
-                    best=best,
-                    candidates=(best, *candidates[1:]),
-                    spatial_margin=min(winner.margin, candidate_margin(spatial)),
-                    layer_margin=layer_margin,
-                )
-            validated[mid] = result
-            results[mid] = result
-        scope = self._navigation_scope
+            layer_results[mid].append((tier, result))
         for mid in maps:
-            if mid not in validated and scope is not None and not scope.allows_tier(mid, "__main__"):
-                results.pop(mid, None)
+            results[mid] = self._cache[mid].combine_global_results(base_by_map.get(mid), layer_results[mid])
         return self._combine([(mid, results[mid]) for mid in self.map_ids if mid in results], started, None)
 
     def _active_result(self, frame, geometry):
