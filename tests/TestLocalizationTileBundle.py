@@ -262,8 +262,24 @@ class TestZeroPaddedSearchRaster(unittest.TestCase):
                 expected = cv2.matchTemplate(raster.as_dense(), template, cv2.TM_CCOEFF_NORMED)
                 np.testing.assert_array_equal(raster.match_scores(template), expected)
 
+    def test_sparse_bounds_keep_constant_template_scores_inside_and_outside_blocks(self):
+        image = np.zeros((20, 22, 3), np.uint8)
+        template = np.full((3, 4, 3), (7, 15, 80), np.uint8)
+        for method in (cv2.TM_CCOEFF_NORMED, cv2.TM_CCORR_NORMED):
+            with self.subTest(method=method):
+                actual = correlate_bounded(image, template, output_bounds=(3, 4, 9, 10), block_size=4, method=method)
+                np.testing.assert_array_equal(actual, cv2.matchTemplate(image, template, method))
+
 
 class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
+    def test_verifier_rejects_noninteger_catalog_versions_with_valid_hashes(self):
+        for version in (True, 1.0, "1", None):
+            with self.subTest(version=version):
+                self.write_json("layers/catalog.json", {"schema_version": version, "layers": [self.floor]})
+                self.write_manifest()
+                with self.assertRaisesRegex(ValueError, "Unsupported layer catalog version"):
+                    verify(self.root)
+
     def test_bundle_requires_the_normalized_search_width(self):
         manifest = json.loads((self.root / "manifest.json").read_text(encoding="utf-8"))
         manifest["search"]["screen_widths"] = [1920]
@@ -943,9 +959,13 @@ class TestLocalizationCache(unittest.TestCase):
         pixels = np.zeros((10, 10, 3), np.uint8)
         composite_overview_cache.save_overview("../escape", pixels)
         self.assertIsNone(composite_overview_cache.load_overview("../escape", pixels.shape))
-        with patch.object(np, "savez", side_effect=OSError("disk full")):
-            composite_overview_cache.save_overview("a" * 64, pixels)
-        self.assertEqual(list(self.overviews.iterdir()), [])
+        for owner, name, error in (
+            (np, "savez", OSError("disk full")),
+            (composite_overview_cache.hashlib, "sha256", MemoryError("checksum allocation")),
+        ):
+            with self.subTest(error=type(error).__name__), patch.object(owner, name, side_effect=error):
+                composite_overview_cache.save_overview("a" * 64, pixels)
+            self.assertEqual(list(self.overviews.iterdir()), [])
 
     def test_unremovable_old_entry_prevents_adding_cache_over_budget(self):
         old = self.overviews / ("a" * 64 + ".npz")

@@ -88,7 +88,9 @@ def verify(root: Path):
         referenced.update((image, mapping))
 
     catalog = _read_json(catalog_path)
-    _require(catalog["schema_version"] == 1, "Unsupported layer catalog version")
+    _require(
+        type(catalog["schema_version"]) is int and catalog["schema_version"] == 1, "Unsupported layer catalog version"
+    )
     tiers = set()
     independent = 0
     for entry in catalog["layers"]:

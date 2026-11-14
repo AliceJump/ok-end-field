@@ -650,12 +650,15 @@ class LayeredMinimapLocator:
                         stop=self._resource_workers.stop,
                         **options,
                     )
-                if wait_for_resources:
-                    ordered_results((self._pending_index,), self._resource_workers.stop)
-                if not self._pending_index.done():
+                future = self._pending_index
+                if not wait_for_resources and not future.done():
                     raise ResourcePending()
-                self._search_index = self._pending_index.result()
-                self._pending_index = None
+                try:
+                    if wait_for_resources:
+                        ordered_results((future,), self._resource_workers.stop)
+                    self._search_index = future.result()
+                finally:
+                    self._pending_index = None
 
     def locate_proposed_layer(
         self, frame, geometry, tier_id, *, wait_for_resources=False, complete_competition=False, base_result=None
