@@ -431,19 +431,28 @@ class TestVisualGridValidation(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "samples.jsonl").write_text(
-                json.dumps({"frame": "frame.png", "frame_t": 123.5}) + "\n", encoding="utf-8"
+                "".join(json.dumps({"frame": "frame.png", "frame_t": t}) + "\n" for t in (123.5, 124.0, 124.5)),
+                encoding="utf-8",
             )
             frame = np.zeros((1080, 1920, 3), np.uint8)
-            source = SimpleNamespace(sample=Mock(return_value={"position_trusted": False, "trust_reason": "no_fix"}))
+            source = SimpleNamespace(
+                reset=Mock(), sample=Mock(return_value={"position_trusted": False, "trust_reason": "no_fix"})
+            )
             store = SimpleNamespace(load=Mock(return_value=("map02", object())))
             with (
-                patch.object(replay_world_pose.cv2, "imread", return_value=frame),
+                patch.object(
+                    replay_world_pose.cv2,
+                    "imread",
+                    side_effect=[frame, np.zeros((720, 1280, 3), np.uint8), np.zeros((720, 1280, 3), np.uint8)],
+                ),
                 patch.object(replay_world_pose, "VisualPositionSource", return_value=source),
                 patch("builtins.print"),
             ):
                 replay_world_pose.replay(root, store, root / "output")
             self.assertEqual(source.sample.call_args.args[0].shape, (720, 1280, 3))
-            self.assertEqual(source.sample.call_args.kwargs["now"], 123.5)
+            self.assertEqual([c.kwargs["now"] for c in source.sample.call_args_list], [123.5, 124.0, 124.5])
+            source.reset.assert_called_once()
+            self.assertTrue(all(c.args[0].shape == (720, 1280, 3) for c in source.sample.call_args_list))
 
     def test_reference_readiness_timeout_closes_resources_before_service_mutation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -489,6 +498,33 @@ class TestVisualGridValidation(unittest.TestCase):
             self.assertEqual(len(goals), 4)
             self.assertFalse(task.covered)
             self.assertEqual(task.report["status"], "completed_with_visual_gaps")
+
+    def test_transient_navigation_failure_retries_the_same_target_three_times(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            task, _ = self._run_task(root)
+            options, grid, _, _, _, _ = task.validation
+            options.mode, options.grid, options.skip_blocked = "run", root / "grid.npz", True
+            # One uncovered target remains; a transient failure must not mark it tested.
+            options.resume_covered = [(0, 0), (0, 1), (1, 0)]
+            task.world_pose = Mock(return_value={"position_trusted": True, "x": 0.5, "z": 0.5})
+            task.navigate_grid_to.return_value = False
+            task.sleep = Mock()
+            from src.nav.grid_planner import GridPlanner
+
+            task.navigation_grid, task.target_planner = grid, GridPlanner(grid, allow_unknown=False)
+            reference = SimpleNamespace(close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+            guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
+            with (
+                patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
+                patch("scripts.nav.validation_task.threading.Thread", return_value=guard),
+                patch("scripts.nav.validation_task.time.sleep"),
+            ):
+                GridValidationTask.run.__wrapped__(task)
+            self.assertEqual(task.navigate_grid_to.call_count, 3)
+            self.assertEqual({c.args[0] for c in task.navigate_grid_to.call_args_list}, {(1.5, 1.5)})
+            self.assertEqual(len(task.navigation_failures), 3)
+            self.assertIn("navigation_unavailable", task.report["reason"])
 
     def test_initialization_failures_close_acquired_resources_and_write_report(self):
         for stage in ("reference", "service", "guard"):

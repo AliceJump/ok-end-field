@@ -567,6 +567,26 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertIsNone(outcome, "跨完末尾连接还需新帧确认楼层")
         self.assertTrue(any("落点即目标" in line for line in self.task.logs), self.task.logs[-3:])
 
+    def test_final_layered_segment_respects_smaller_stop_distance(self):
+        from src.nav.route_follower import DONE
+
+        session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5, stop_distance=0.25)
+        self.assertEqual(self.task._try_layered_route_on_plan(ctx, ctx.position, session.goal), (True, True))
+        initial_radius = self.task._grid_nav_follower.config.goal_radius
+        self.assertGreater(initial_radius, session.stop_distance)
+        session.segment_index = len(session.route.segments) - 1
+        self.assertTrue(self.task._activate_layered_segment(ctx))
+        follower = self.task._grid_nav_follower
+        self.assertEqual(follower.config.goal_radius, 0.25)
+        self.assertNotEqual(follower.update((5.5, 0.5), 90, 1).action, DONE)
+        self.assertEqual(follower.update((6.5, 0.5), 90, 1.2).action, DONE)
+
+    def test_last_segment_before_trailing_link_keeps_approach_radius(self):
+        session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5, stop_distance=0.25)
+        self.assertEqual(self.task._try_layered_route_on_plan(ctx, ctx.position, session.goal), (True, True))
+        self.assertTrue(session.route.transitions[-1])
+        self.assertEqual(self.task._grid_nav_follower.config.goal_radius, self.task._grid_follower_config().goal_radius)
+
     def test_exhausted_layered_route_replans_outside_goal_radius(self):
         session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(10.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))

@@ -1976,6 +1976,24 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         self.assertIsNone(locator._active)
         self.assertEqual(result.status, "ambiguous")
 
+    def test_scope_excluded_main_cannot_survive_empty_floor_validation(self):
+        for allowed, floor_result in ((False, None), (True, None), (False, self.result(0.95))):
+            with self.subTest(main_allowed=allowed, floor_matched=floor_result is not None):
+                locator = MapSetLocator(SimpleNamespace(), ["map01"])
+                locator._navigation_scope = SimpleNamespace(allows_tier=lambda mid, tier, allowed=allowed: allowed)
+                locator._cache["map01"] = SimpleNamespace(
+                    entries=[{"id": "floor"}],
+                    rank_layers=Mock(return_value=[(1.0, "floor")]),
+                    locate_proposed_layer=Mock(return_value=floor_result),
+                )
+                result = locator._search_snapshot_proposals(None, None, 0, [("map01", self.result(0.99))])
+                if not allowed and floor_result is None:
+                    self.assertIsNone(result)
+                    self.assertIsNone(locator._active)
+                else:
+                    self.assertIsNotNone(result)
+                    self.assertEqual(result.confidence, 0.99 if allowed else 0.95)
+
     def test_local_entries_do_not_touch_locators_during_background_search(self):
         locator = self.locator()
         locator._active = "map01"
