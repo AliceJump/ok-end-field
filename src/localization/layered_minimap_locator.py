@@ -364,12 +364,20 @@ class LayeredMinimapLocator:
         candidates.extend(layer_candidates)
         complete = complete and layers_complete
         scan_pending = scan_pending or layers_pending
+        return self._finish_search(candidates, base, started, prior, complete=complete, scan_pending=scan_pending)
+
+    def _finish_search(self, candidates, base, started, prior, *, complete, scan_pending=False, margin_limit=None):
+        scope = self._navigation_scope
         if not candidates:
             return replace(base, status="rejected", reason="navigation_topology_no_candidates", spatial_margin=0)
         candidates = deduplicate_candidates(candidates)
         spatial = deduplicate_candidates([replace(c, tier_id=None) for c in candidates])
         status, reason = self.base._status(spatial)
         spatial_margin = candidate_margin(spatial)
+        if margin_limit is not None:
+            spatial_margin = min(spatial_margin, margin_limit)
+        if status == "accepted" and spatial_margin < self.base.min_accept_margin:
+            status, reason = "ambiguous", f"NCC={candidates[0].ncc:.3f}, margin={spatial_margin:.3f}"
         competing_layers = [c for c in candidates[1:] if c.tier_id != candidates[0].tier_id]
         layer_margin = candidate_margin([candidates[0], *competing_layers])
         reachable = scope is None or scope.allows_candidate(
@@ -399,6 +407,30 @@ class LayeredMinimapLocator:
             # Resource warm-up is not evidence of uniqueness. Hold publication
             # until all nearby floor alternatives have been checked on one frame.
             result = replace(result, status="rejected", reason="layer_scan_pending", spatial_margin=0)
+        return result
+
+    def combine_global_results(self, base_result, layer_results):
+        """Merge one immutable frame's complete searches without matching any ROI again."""
+        started = time.perf_counter()
+        scope = self._navigation_scope
+        sources = [("__main__", base_result), *layer_results]
+        candidates, owners = [], []
+        for tier, result in sources:
+            if result is None or (scope is not None and not scope.allows_tier(self.map_id, tier)):
+                continue
+            for candidate in result.candidates:
+                candidates.append(replace(candidate, tier_id=tier))
+                owners.append(result)
+        base = next((r for _, r in sources if r is not None), None)
+        if base is None:
+            return None
+        best_index = max(range(len(candidates)), key=lambda i: candidates[i].ncc) if candidates else None
+        limit = owners[best_index].margin if best_index is not None else 1.0
+        result = self._finish_search(
+            candidates, base, started, None, complete=self.tier_coverage_complete, margin_limit=limit
+        )
+        if result is not None and strong_candidate(result.best, result.margin):
+            self.release_proposal_resources()
         return result
 
     def _base_result(self, frame, geometry, prior, radius, base_result):
@@ -649,12 +681,20 @@ class LayeredMinimapLocator:
             raise ResourcePending()
         # Search the entire original floor, not a small ROI around a coarse
         # peak. Distant lookalikes remain competitors under the original gates.
-        result = floor.locate_global(frame, geometry)
+        try:
+            result = floor.locate_global(frame, geometry)
+        finally:
+            if complete_competition:
+                self._evict_layers()
         if result is None or (not complete_competition and not strong_candidate(result.best, result.margin)):
             return None
         candidates = tuple(self._world_candidates(result, entry))
         if not candidates:
             return None
+        if complete_competition:
+            # MapSetLocator owns all maps/floors for this same frame. Preserve the
+            # full-floor alternatives here and merge them once after every search.
+            return replace(result, best=candidates[0], candidates=candidates, spatial_margin=result.margin)
         prior = (result.best.world_x, result.best.world_z)
         if wait_for_resources:
             # The immutable background snapshot and its full-floor result stay
