@@ -1,5 +1,6 @@
 """Pre-load compatibility for retiring WS positioning without losing settings."""
 
+import logging
 import shutil
 from pathlib import Path
 
@@ -55,7 +56,15 @@ def migrate_visual_map_root():
     current = values.get(CONFIG_VISUAL_MAP_ROOT)
     if not isinstance(current, str) or current.strip().replace("\\", "/").rstrip("/") != "assets/localization/maps":
         return False
-    if CalibratedMapStore(current.strip()).available_maps():
+    try:
+        if CalibratedMapStore(current.strip()).available_maps():
+            return False
+    except (FileNotFoundError, NotADirectoryError, ValueError):
+        pass
+    except OSError:
+        logging.getLogger(__name__).warning(
+            "Cannot inspect visual resources; retaining the configured directory", exc_info=True
+        )
         return False
     backup = Path(config_path("position_source_migration_backup", "v2", source.name))
     if not backup.exists():

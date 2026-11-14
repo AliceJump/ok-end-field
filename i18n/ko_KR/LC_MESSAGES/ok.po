@@ -3652,3 +3652,11 @@ msgstr ""
 #: src/core/GridNavConfig.py
 msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
 msgstr "경유점까지의 거리가 이 값보다 짧으면 미리 감속합니다. 보정 각도가 작고 위치 갱신이 빠르면 속도와 샘플링 시간에 따른 안전거리를 확보하면서 회전을 계속합니다."
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "目标楼层(可选)"
+msgstr "목표 층(선택 사항)"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
+msgstr "비워 두면 목표 좌표로 층을 판단합니다. 층 ID 또는 대지도를 지정하는 __main__을 입력하세요."

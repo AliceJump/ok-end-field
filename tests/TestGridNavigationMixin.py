@@ -3,6 +3,7 @@
 import math
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -424,6 +425,182 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
 
         self.assertEqual(refreshes, [""])
+
+    def test_navigation_sampling_scope_stops_inputs_before_closing_on_failure(self):
+        events = []
+
+        @contextmanager
+        def sampling(owner):
+            self.assertIs(owner, self.task)
+            events.append("start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("close")
+
+        def failed_tick(session):
+            self.task._set_grid_walking(True)
+            self.assertEqual(events, ["start"])
+            raise RuntimeError("control failure")
+
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = failed_tick
+        with self.assertRaisesRegex(RuntimeError, "control failure"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.assertEqual(events, ["start", "close"])
+        self.assertFalse(self.task.w_down)
+
+    def test_navigation_topology_uses_observed_map_and_scopes_sampling(self):
+        from src.localization.position_service import WorldPoseService
+
+        events = []
+        layered, topology = object(), object()
+        observed = {**self.task.minimap_position(), "map_id": "observed_map"}
+        source = SimpleNamespace(
+            map_id="observed_map", sample=mock.Mock(return_value=observed), set_navigation_topology=mock.Mock()
+        )
+        service = SimpleNamespace(_visual_source=source, _navigation_topology_provider=None, _visual_input_shape=None)
+        self.task.next_frame = lambda: np.zeros((720, 1280, 3), np.uint8)
+
+        @contextmanager
+        def topology_context(provider):
+            events.append("topology_start")
+            service._navigation_topology_provider = provider
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("topology_close")
+
+        @contextmanager
+        def sampling(owner):
+            self.assertIs(owner, self.task)
+            self.assertEqual(events, ["topology_start"])
+            events.append("sampling_start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("sampling_close")
+
+        self.task.navigation_topology = topology_context
+        self.task.visual_sampling = sampling
+        self.task.world_pose = lambda frame, **kwargs: WorldPoseService._locate_visual_frame(service, frame, 1, None)
+        self.task._grid_nav_advance = mock.Mock(return_value=True)
+        self.task._grid_layered_map = mock.Mock(return_value=layered)
+        with mock.patch(
+            "src.tasks.navigation.mixin.grid_navigation_mixin.NavigationTopology", return_value=topology
+        ) as factory:
+            self.assertTrue(
+                self.task.navigate_grid_to((4.5, 0.5), map_id="requested_map", grid_dir="custom_grids", zoom="4")
+            )
+        self.assertEqual(self.task._grid_nav_advance.call_args.args[0].map_id, "observed_map")
+        source.set_navigation_topology.assert_called_once_with(topology)
+        self.task._grid_layered_map.assert_called_once_with(
+            "observed_map", grid_path=None, grid_dir="custom_grids", zoom="4"
+        )
+        factory.assert_called_once_with(layered)
+        self.assertEqual(events, ["topology_start", "sampling_start", "sampling_close", "topology_close"])
+
+    def test_unmodeled_routes_disable_incomplete_grid_topology_during_navigation(self):
+        selected = {}
+
+        @contextmanager
+        def topology_context(provider):
+            selected["provider"] = provider
+            yield
+
+        def advance(ctx):
+            from src.core.GridNavConfig import CONFIG_GRID_ALLOW_UNKNOWN
+
+            provider = selected["provider"]
+            self.assertIsNotNone(provider(ctx.map_id))
+            self.task.config[CONFIG_GRID_ALLOW_UNKNOWN] = True
+            self.assertIsNone(provider(ctx.map_id))
+            self.task.config[CONFIG_GRID_ALLOW_UNKNOWN] = False
+            self.assertIsNotNone(provider(ctx.map_id))
+            self.task._grid_nav_zip_line_cache[ctx.map_id] = SimpleNamespace(links=(object(),))
+            self.assertIsNone(provider(ctx.map_id))
+            return True
+
+        self.task.navigation_topology = topology_context
+        self.task._grid_layered_map = mock.Mock(return_value=object())
+        self.task._grid_nav_advance = advance
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.NavigationTopology", return_value=object()):
+            self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+
+    def test_navigation_cancellation_closes_sampling_before_topology_scope(self):
+        events = []
+
+        @contextmanager
+        def topology_context(_provider):
+            events.append("topology_start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("topology_close")
+
+        @contextmanager
+        def sampling(_owner):
+            events.append("sampling_start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("sampling_close")
+
+        def cancelled_poll(_session):
+            self.task._set_grid_walking(True)
+            raise InterruptedError("navigation cancelled")
+
+        self.task.navigation_topology = topology_context
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = cancelled_poll
+        with self.assertRaisesRegex(InterruptedError, "navigation cancelled"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.assertEqual(events, ["topology_start", "sampling_start", "sampling_close", "topology_close"])
+
+    def test_sampling_admission_failure_closes_navigation_topology_scope(self):
+        events = []
+
+        @contextmanager
+        def topology_context(_provider):
+            events.append("topology_start")
+            try:
+                yield
+            finally:
+                events.append("topology_close")
+
+        @contextmanager
+        def sampling(_owner):
+            raise RuntimeError("sampler unavailable")
+            yield  # pragma: no cover
+
+        self.task.navigation_topology = topology_context
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = mock.Mock()
+        with self.assertRaisesRegex(RuntimeError, "sampler unavailable"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.task._grid_nav_poll.assert_not_called()
+        self.assertEqual(events, ["topology_start", "topology_close"])
+        self.assertFalse(self.task.w_down)
+
+    def test_sampling_admission_failure_restores_navigation_setup(self):
+        @contextmanager
+        def sampling(_owner):
+            raise RuntimeError("sampler unavailable")
+            yield  # pragma: no cover
+
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = mock.Mock()
+        self.task._restore_grid_zip_line_run_mode = mock.Mock()
+        with self.assertRaisesRegex(RuntimeError, "sampler unavailable"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.task._grid_nav_poll.assert_not_called()
+        self.task._restore_grid_zip_line_run_mode.assert_called_once()
+        self.assertFalse(self.task.w_down)
 
     def test_navigation_can_stop_before_goal_for_final_approach(self):
         self.task.x = 1.0
@@ -1311,7 +1488,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             self.task._grid_nav_poll(ctx.session)
             self.assertEqual(ctx.session.walk_speed_m_s, 9)
 
-    def test_poll_budget_keeps_recent_peak_then_expires_it(self):
+    def test_poll_forecast_releases_isolated_peak_but_keeps_current_sample_cost(self):
         ctx = self._control_tick()
         original = self.task.minimap_position
         for i, duration in enumerate((0.8, 0.1, 0.1, 0.1, 0.1, 0.1)):
@@ -1322,7 +1499,48 @@ class TestGridNavigationMixin(unittest.TestCase):
 
             self.task.minimap_position = sample
             self.task._grid_nav_poll(ctx.session)
-            self.assertAlmostEqual(ctx.session.poll_duration_s, 0.8 if i < 5 else 0.1)
+            self.assertAlmostEqual(ctx.session.poll_latest_duration_s, duration)
+            self.assertAlmostEqual(ctx.session.poll_duration_s, (0.8, 0.45, 0.1, 0.1, 0.1, 0.1)[i])
+
+    def test_configured_heading_and_turn_tolerances_reach_follower_and_controller(self):
+        self.task.config.update({"行走朝向容差(度)": 8, "转向到位容差(度)": 6})
+        self.assertEqual(self.task._grid_follower_config().heading_tolerance, 8)
+        ctx = self._control_tick()
+        ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=90, distance_to_waypoint=3)
+        self.task.pose_turn_to_bearing = mock.Mock(return_value={"ok": True})
+        self.task._grid_nav_state_turn(ctx)
+        self.assertEqual(self.task.pose_turn_to_bearing.call_args.kwargs["tolerance"], 6)
+        self.task.config.update({"行走朝向容差(度)": float("nan"), "转向到位容差(度)": float("inf")})
+        self.assertEqual(self.task._grid_heading_tolerance(), 4)
+        self.assertEqual(self.task._grid_turn_tolerance(), 4)
+
+    def test_moving_age_uses_capture_time_without_double_counting_turn(self):
+        ctx = self._control_tick(frame_t=100, frame_time_source="wgc_system_relative_time")
+        ctx.walking_during_sample = True
+        ctx.session.poll_duration_s = 0.8
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=100.1):
+            self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx), 0.1)
+            self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.04), 0.1)
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=101.2):
+            self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx), 1.2)
+        ctx.session.poll_latest_duration_s = 0.3
+        for stamp in (float("nan"), float("inf"), None, 102):
+            ctx.pose["frame_t"] = stamp
+            with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=101):
+                self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.2), 0.5)
+        ctx.walking_during_sample = False
+        self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.2), 0.2)
+
+    def test_fresh_moving_pose_does_not_charge_old_peak_twice_for_braking(self):
+        ctx = self._control_tick(frame_t=100, frame_time_source="wgc_system_relative_time")
+        ctx.walking_during_sample = True
+        ctx.session.poll_duration_s = 0.6
+        ctx.step = FollowerStep(WALK, distance_to_waypoint=10)
+        self.task._set_grid_walking(True)
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=100.05):
+            self.task._grid_nav_walk_interval(ctx)
+        self.assertTrue(self.task.w_down)
+        self.assertAlmostEqual(self.task.t, ctx.tick)
 
     def test_split_rotation_reserve_can_exceed_configured_stop_distance(self):
         ctx = self._control_tick()

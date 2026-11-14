@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.analyze_minimap_timing import Trajectory, speed_bin, stats  # noqa: E402
 from src.localization.calibrated_map_store import CalibratedMapStore  # noqa: E402
+from src.localization.visual_frame import normalize_visual_frame  # noqa: E402
 from src.localization.visual_position_source import VisualPositionSource  # noqa: E402
 
 
@@ -42,8 +43,9 @@ def replay(dataset, store, output):
     samples = read_rows(dataset / "samples.jsonl")
     map_id, locator = store.load()
     task = SimpleNamespace(width=0, height=0, active_time=lambda: 0)
-    source = VisualPositionSource(task, locator, map_id, max_correction_m=10)
+    source = VisualPositionSource(task, locator, map_id, max_correction_m=40)
     rows = []
+    previous_shape = None
     for index, sample in enumerate(samples):
         frame = cv2.imread(str(dataset / sample["frame"]))
         if frame is None:
@@ -51,7 +53,11 @@ def replay(dataset, store, output):
         task.height, task.width = frame.shape[:2]
         # Decode and truth IO are outside timing; all visual search/chain work is inside.
         begin = time.perf_counter()
-        state = source.sample(frame, now=sample["frame_t"])
+        shape = frame.shape[:2]
+        if previous_shape is not None and shape != previous_shape:
+            source.reset()
+        previous_shape = shape
+        state = source.sample(normalize_visual_frame(frame), now=sample["frame_t"])
         elapsed_ms = (time.perf_counter() - begin) * 1000
         rows.append({"sample": sample, "pose": state, "elapsed_ms": elapsed_ms})
         if index % 25 == 0:
@@ -59,15 +65,27 @@ def replay(dataset, store, output):
     # The truth reference is deliberately constructed only after all inference.
     trajectory = trajectory_for(dataset)
     paired = []
+    samples_by_time = {}
+    for sample in samples:
+        samples_by_time.setdefault(float(sample["frame_t"]), sample)
+    paired_observations = set()
     for row in rows:
-        sample, pose = row["sample"], row["pose"]
-        truth = trajectory.at(sample["frame_t"], sample)
-        if not pose["position_trusted"] or truth is None:
+        pose = row["pose"]
+        if not pose["position_trusted"] or pose.get("visual_duplicate_frame"):
             continue
+        stamp = pose["frame_t"]
+        identity = (pose["map_id"], stamp)
+        reference_sample = samples_by_time.get(stamp)
+        if identity in paired_observations or reference_sample is None:
+            continue
+        truth = trajectory.at(stamp, reference_sample)
+        if truth is None:
+            continue
+        paired_observations.add(identity)
         error = float(np.linalg.norm(np.array([pose["x"], pose["z"]]) - truth[0]))
         row["error_m"] = error
         row["speed_bin"] = speed_bin(float(np.linalg.norm(truth[1])))
-        row["wrong_map"] = pose["map_id"] != sample["map_id"]
+        row["wrong_map"] = pose["map_id"] != reference_sample["map_id"]
         paired.append(row)
     trusted = [r for r in rows if r["pose"]["position_trusted"]]
     first_trusted = next((i for i, r in enumerate(rows) if r["pose"]["position_trusted"]), len(rows))
@@ -94,6 +112,7 @@ def replay(dataset, store, output):
         },
         "truth_seeded": False,
         "limitations": "Packet receive time, <=0.5s interpolation brackets only; no extrapolation or delay correction. "
+        "Accuracy uses unique measurement frame times; retained repeats are omitted. "
         "Residual includes map calibration and game/packet latency. Floor labels lack independent live truth. "
         "Replay tests the production visual algorithm; it does not emulate runtime frame-age rejection.",
     }

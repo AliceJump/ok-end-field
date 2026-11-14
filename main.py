@@ -24,4 +24,7 @@ if __name__ == "__main__":
         import logging
 
         logging.getLogger("ok-end-field.launcher").exception("Temporary launcher recovery failed")
+    from src.localization.localization_cache import start_cache_maintenance
+
+    start_cache_maintenance(ok.exit_event)
     ok.start()

@@ -333,7 +333,9 @@ class MinimapHeadingMixin:
         # 目标是一轮到位（只按一次 W，角色只前移一小步）；多轮只是兜底
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
         full_probe = max_probe_s is None or max_probe_s >= max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
-        if control_state is not None and result["rounds"] > 0 and result["ok"] and full_probe:
+        # A settled full probe establishes the camera/character baseline even
+        # when the target is missed; the next call can then measure input gain.
+        if control_state is not None and result["rounds"] > 0 and feedback_settled and full_probe:
             control_state.update(
                 configured=per_px,
                 gain=control_per_px,
@@ -367,7 +369,7 @@ class MinimapHeadingMixin:
         )
         result["ok"] = settled and after is not None and abs(result["error"]) <= tolerance
         full_probe = max_probe_s is None or max_probe_s >= max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
-        if result["ok"] and full_probe:
+        if settled and after is not None and full_probe:
             control_state.update(
                 configured=per_px, gain=per_px, heading=after, gain_samples=[], observed_at=time.monotonic()
             )
