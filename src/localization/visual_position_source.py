@@ -283,13 +283,16 @@ class VisualPositionSource:
             self.tracker.reset()
             self._lose_tracking(match)
             return self.unavailable("visual_absolute_anchor_stale")
+        fresh_absolute = bool(
+            self._last_state.get("absolute_position_valid")
+            and 0 <= clock - self._last_absolute_t <= self.tracker.stale_after_s
+        )
         if (
             not strong
             and measured
             and measured.get("reason") == "too_soon"
             and self._last_state.get("position_trusted")
-            and self._evidence_result is not None
-            and self._evidence_result.trusted
+            and (self._has_live_visual_chain(clock) or fresh_absolute)
         ):
             # Throttling is not a failed visual edge. Return the last measured
             # position with its ORIGINAL frame time; neither evidence nor its

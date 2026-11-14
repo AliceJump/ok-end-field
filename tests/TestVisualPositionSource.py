@@ -147,6 +147,28 @@ class TestVisualPositionSource(unittest.TestCase):
             self.assertFalse(lost["position_trusted"])
             self.assertIsNone(source.estimate())
 
+    def test_too_soon_preserves_fresh_absolute_fix_without_chain_evidence(self):
+        source = VisualPositionSource(self.task, self.locator, "map02")
+        self.addCleanup(source.close)
+        source.sample(self.frame(), now=1)
+        with patch.object(source.odometry, "sample", return_value={"sampled": False, "reason": "too_soon"}):
+            anchored = source.sample(self.frame(), now=1.2)
+            self.assertTrue(anchored["absolute_position_valid"])
+            self.assertIsNone(source._evidence_result)
+            geometry = MinimapGeometry.from_frame(self.width, self.height)
+            match = source.tracker.update(self.frame(), geometry, now=1.3)
+            weak = replace(match.position, ncc=0.5, full_ncc=0.5)
+            match = replace(match, locate=replace(match.locate, best=weak), position=weak)
+            with patch.object(source.tracker, "update", return_value=match):
+                retained = source.sample(self.frame(), now=1.3)
+                self.assertTrue(retained["position_trusted"])
+                self.assertTrue(retained["visual_duplicate_frame"])
+                self.assertEqual(retained["frame_t"], 1.2)
+                self.assertEqual(source._last_absolute_t, 1.2)
+                self.assertIsNone(source._evidence_result)
+                expired = source.sample(self.frame(), now=1.2 + source.tracker.stale_after_s + 0.1)
+                self.assertFalse(expired["position_trusted"])
+
     def test_too_soon_does_not_hide_loading_or_floor_change(self):
         for failure in ("loading", "floor"):
             with self.subTest(failure=failure):
@@ -2644,6 +2666,25 @@ class TestAutomaticMapCompetition(unittest.TestCase):
 
 
 class TestVisualLayerCandidates(unittest.TestCase):
+    def test_failed_index_can_be_resubmitted_with_and_without_waiting(self):
+        for wait_for_resources in (False, True):
+            with self.subTest(wait=wait_for_resources):
+                locator = self.locator()
+                failed, recovered = Future(), Future()
+                failed.set_exception(OSError("temporary resource failure"))
+                index = object()
+                recovered.set_result(index)
+                submit = Mock(side_effect=[failed, recovered])
+                locator._resource_workers = SimpleNamespace(
+                    closed=False, indexes=SimpleNamespace(submit=submit), resources=object(), stop=threading.Event()
+                )
+                with self.assertRaisesRegex(OSError, "temporary resource failure"):
+                    locator.prepare_layer_index(wait_for_resources=wait_for_resources)
+                self.assertIsNone(locator._pending_index)
+                locator.prepare_layer_index(wait_for_resources=wait_for_resources)
+                self.assertIs(locator._search_index, index)
+                self.assertEqual(submit.call_count, 2)
+
     def test_complete_floor_searches_merge_once_without_overlap_rematching(self):
         locator = self.locator(0.5, 0.99)
         floor = locator._load.return_value

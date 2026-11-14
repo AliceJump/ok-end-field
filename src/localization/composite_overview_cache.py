@@ -127,7 +127,7 @@ def save_overview(key, pixels):
             target = root / f"{key}.npz"
             temporary.replace(target)
             _prune(root, keep=target)
-    except OSError:
+    except (OSError, MemoryError):
         pass
     finally:
         if temporary is not None:

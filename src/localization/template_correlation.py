@@ -224,7 +224,10 @@ def correlate_bounded(
         # Sparse rasters know which windows can intersect stored pixels. All
         # other windows are constant zero; retain OpenCV's score convention.
         left, top, right_limit, bottom_limit = output_bounds
-        scores = np.full((sh, sw), 0.0 if mask is None else np.nan, np.float32)
+        zero_score = np.nan if mask is not None else 0.0
+        if mask is None and method == cv2.TM_CCOEFF_NORMED and not np.any(np.ptp(template, axis=(0, 1))):
+            zero_score = 1.0
+        scores = np.full((sh, sw), zero_score, np.float32)
     if allowed is not None:
         if allowed.shape != (sh, sw):
             raise ValueError("candidate mask shape differs from score grid")
