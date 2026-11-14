@@ -1236,6 +1236,7 @@ class TimedCombatLogic:
                 if now < ready_at:
                     task.sleep(0.1)
                     continue
+                now = task.active_time()
                 if not self.team and now >= next_team:
                     next_team = now + 1
                     detect_deadline = min(now + 0.3, deadline) if deadline is not None else now + 0.3

@@ -461,6 +461,59 @@ class TestReactiveDodge(unittest.TestCase):
                 with self.subTest(exit_seconds=exit_seconds, deadline=deadline):
                     assert_case(exit_seconds, deadline)
 
+    def test_timed_team_budgets_start_after_inference(self):
+        def assert_case(has_team, deadline):
+            task = FakeTask()
+            task.mouse_up = Mock()
+            task.log_info = Mock()
+            task.next_frame = lambda: task.sleep(0.01)
+            task._check_single_exit_condition = lambda: task.now >= 2.0
+            task.is_combat_ended = bool
+            task.click = Mock()
+            detector = FakeDetector()
+
+            def infer(frame, compatibility=True):
+                detector.calls += 1
+                task.sleep(0.35)
+                return []
+
+            detector.detect = infer
+            dodge = ReactiveDodge(task, lambda: detector)
+            dodge.detector = detector
+
+            def wall_clock():
+                return task.now + 100.0
+
+            run, logic = self._timed_runtime(task, dodge, wall_clock)
+            logic.team = ["operator"] if has_team else []
+            observations = []
+
+            def record_budget(detect_deadline):
+                observations.append((task.active_time(), detect_deadline))
+
+            logic._detect_team.side_effect = record_budget
+            logic._refresh_team_slots = Mock(side_effect=record_budget)
+            with patch("time.monotonic", side_effect=wall_clock):
+                self.assertIs(run(logic, deadline=deadline), deadline is None)
+            selected = logic._refresh_team_slots if has_team else logic._detect_team
+            unselected = logic._detect_team if has_team else logic._refresh_team_slots
+            selected.assert_called()
+            unselected.assert_not_called()
+            self.assertGreater(detector.calls, 0)
+            budget = 0.2 if has_team else 0.3
+            for started, cutoff in observations:
+                self.assertGreater(cutoff, started)
+                expected_budget = min(budget, deadline - started) if deadline is not None else budget
+                self.assertAlmostEqual(cutoff - started, expected_budget)
+                if deadline is not None:
+                    self.assertLessEqual(cutoff, deadline)
+            self.assertTrue(detector.closed)
+
+        for has_team in (False, True):
+            for deadline in (None, 1.5):
+                with self.subTest(has_team=has_team, deadline=deadline):
+                    assert_case(has_team, deadline)
+
     def test_actual_timed_loop_respects_guards_and_consumes_dodge_frame(self):
         root = Path(__file__).resolve().parents[1]
         tree = ast.parse((root / "src/tasks/onetime/TimedCombatLogic.py").read_text(encoding="utf-8"))
