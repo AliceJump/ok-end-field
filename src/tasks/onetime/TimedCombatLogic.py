@@ -1190,7 +1190,7 @@ class TimedCombatLogic:
                 if deadline is not None and now >= deadline:
                     return False
                 task.next_frame()
-                frame_captured_at = task.active_time()
+                frame_captured_at = time.monotonic()
                 if now >= next_exit:
                     next_exit = now + 0.5
                     condition = task._check_single_exit_condition()
@@ -1217,6 +1217,8 @@ class TimedCombatLogic:
                     frame_captured_at=frame_captured_at,
                 ):
                     continue
+                if deadline is not None and task.active_time() >= deadline:
+                    return False
                 if enemy_paused:
                     force_normal_attack = now >= next_normal_attack
                     self._hold(True, force=force_normal_attack)

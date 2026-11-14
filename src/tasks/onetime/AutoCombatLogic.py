@@ -1,3 +1,4 @@
+import time
 import traceback
 
 from src.config import config as app_config
@@ -314,12 +315,13 @@ class AutoCombatLogic:
                     and task.get_battle_config(KEY_REACTIVE_DODGE, False)
                 ):
                     task.next_frame()
+                    frame_captured_at = time.monotonic()
                     if deadline is not None and task.active_time() >= deadline:
                         return True, "return_false"
                     if reactive_dodge.step(
                         lambda: task.mouse_up(key="left"),
                         deadline=deadline,
-                        frame_captured_at=task.active_time(),
+                        frame_captured_at=frame_captured_at,
                     ):
                         continue
                 task.approach_enemy()
@@ -685,13 +687,14 @@ class AutoCombatLogic:
 
                 if not self._exit_pending and task.get_battle_config(KEY_REACTIVE_DODGE, False):
                     task.next_frame()
+                    frame_captured_at = time.monotonic()
                     dodge_started = task.active_time()
                     if deadline is not None and dodge_started >= deadline:
                         return False
                     frame_consumed = reactive_dodge.step(
                         lambda: task.mouse_up(key="left"),
                         deadline=deadline,
-                        frame_captured_at=dodge_started,
+                        frame_captured_at=frame_captured_at,
                     )
                     if self.rotation_enabled:
                         # Model compilation and dodge handling are not failed

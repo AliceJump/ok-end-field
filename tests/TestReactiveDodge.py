@@ -1,9 +1,10 @@
 import ast
+import time
 import traceback
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import cv2
 import numpy as np
@@ -157,19 +158,41 @@ class TestReactiveDodge(unittest.TestCase):
 
     def test_old_capture_is_skipped_before_and_after_inference(self):
         self.ready()
-        self.assertTrue(self.dodge.step(self.release, frame_captured_at=0.1))
-        self.assertEqual(self.detector.calls, 0)
 
         def moderately_slow(frame, compatibility=True):
             self.task.now += 0.4
             return [box()]
 
-        self.detector.detect = moderately_slow
-        # 0.2s old at inference start, 0.6s old by its end.
-        self.assertTrue(self.dodge.step(self.release, frame_captured_at=0.8))
+        with patch("time.monotonic", side_effect=self.task.active_time):
+            self.assertFalse(self.dodge.step(self.release, frame_captured_at=0.1))
+            self.assertEqual(self.detector.calls, 0)
+            self.detector.detect = moderately_slow
+            # 0.2s old at inference start, 0.6s old by its end.
+            self.assertFalse(self.dodge.step(self.release, frame_captured_at=0.8))
         self.assertEqual(self.task.events, [])
         self.assertFalse(self.dodge.failed)
         self.assertEqual(self.dodge.slow_frames, 0)
+
+    def test_pause_during_inference_expires_frame_without_slow_failure(self):
+        self.ready()
+        wall_time = [100.0]
+        original_detect = self.detector.detect
+
+        def infer_while_paused(frame, compatibility=True):
+            self.task.now += 0.2
+            wall_time[0] += 0.8
+            return original_detect(frame, compatibility=compatibility)
+
+        self.detector.detect = infer_while_paused
+        with patch("time.monotonic", side_effect=lambda: wall_time[0]):
+            self.assertFalse(self.dodge.step(self.release, frame_captured_at=wall_time[0]))
+            self.assertEqual(self.task.events, [])
+            self.assertEqual(self.dodge.slow_frames, 0)
+            self.assertFalse(self.dodge.failed)
+            self.detector.detect = original_detect
+            self.assertTrue(self.dodge.step(self.release))
+        self.assertEqual(self.detector.calls, 2)
+        self.assertEqual(self.task.events, ["release", "lshift"])
 
     def test_inference_failure_disables_once_and_releases(self):
         self.ready()
@@ -357,6 +380,87 @@ class TestReactiveDodge(unittest.TestCase):
             else:
                 self.assertIn("if not self._exit_pending and", source)
 
+    def _timed_runtime(self, task, dodge, wall_clock):
+        """Execute the actual scheduler loop with controlled capture and input."""
+        root = Path(__file__).resolve().parents[1]
+        tree = ast.parse((root / "src/tasks/onetime/TimedCombatLogic.py").read_text(encoding="utf-8"))
+        cls = next(n for n in tree.body if isinstance(n, ast.ClassDef))
+        method = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "run")
+        namespace = {
+            "ReactiveDodge": lambda task: dodge,
+            "reset_enemy_presence_probe": lambda task: None,
+            "time": SimpleNamespace(monotonic=wall_clock),
+        }
+        exec(compile(ast.Module(body=[method], type_ignores=[]), "timed_runtime", "exec"), namespace)
+        logic = SimpleNamespace(
+            task=task,
+            main_control=SimpleNamespace(reset=Mock(), waiting_for_confirmation=lambda now: False),
+            store={},
+            _hold=Mock(),
+            _enemy_operation_paused=lambda: False,
+            _allowed=lambda: True,
+            _clock=task.active_time,
+            _NORMAL_ATTACK_REASSERT_INTERVAL=0.25,
+            team=[],
+            _detect_team=Mock(),
+            step=Mock(),
+        )
+        return namespace["run"], logic
+
+    def test_timed_stale_frames_preserve_scheduling_until_deadline(self):
+        def assert_case(exit_seconds, deadline):
+            task = FakeTask()
+            wall_time = [101.0]
+
+            def advance(seconds):
+                task.now += seconds
+                wall_time[0] += seconds
+
+            task.mouse_up = Mock()
+            task.log_info = Mock()
+            task.next_frame = lambda: advance(0.01)
+            task._check_single_exit_condition = Mock(side_effect=lambda: advance(exit_seconds))
+            task.is_combat_ended = lambda condition: False
+            task.click = Mock()
+            task.sleep = advance
+            detector = FakeDetector()
+
+            def infer(frame, compatibility=True):
+                detector.calls += 1
+                advance(0.2)
+                return [box()]
+
+            detector.detect = infer
+            dodge = ReactiveDodge(task, lambda: detector)
+            dodge.detector = detector  # Exercise steady state after the one-time model load.
+            run, logic = self._timed_runtime(task, dodge, lambda: wall_time[0])
+            hold_times, skill_times = [], []
+            logic._hold.side_effect = lambda enabled, **kwargs: hold_times.append(task.now) if enabled else None
+            logic.step.side_effect = lambda: skill_times.append(task.now)
+            with patch("time.monotonic", side_effect=lambda: wall_time[0]):
+                self.assertIs(run(logic, deadline=deadline), False)
+            if deadline == 1.5:
+                self.assertEqual(hold_times, [])
+                self.assertEqual(skill_times, [])
+            else:
+                self.assertGreaterEqual(len(hold_times), 3)
+                self.assertGreaterEqual(len(skill_times), 3)
+                self.assertGreaterEqual(task._check_single_exit_condition.call_count, 3)
+                if exit_seconds == 0.35:
+                    self.assertGreaterEqual(detector.calls, 3)
+                else:
+                    self.assertEqual(detector.calls, 0)
+            self.assertTrue(all(instant < deadline for instant in hold_times + skill_times))
+            self.assertNotIn("lshift", task.events)
+            self.assertEqual(dodge.slow_frames, 0)
+            self.assertFalse(dodge.failed)
+            self.assertTrue(detector.closed)
+
+        for exit_seconds in (0.35, 0.6):
+            for deadline in (1.5, 4.0):
+                with self.subTest(exit_seconds=exit_seconds, deadline=deadline):
+                    assert_case(exit_seconds, deadline)
+
     def test_actual_timed_loop_respects_guards_and_consumes_dodge_frame(self):
         root = Path(__file__).resolve().parents[1]
         tree = ast.parse((root / "src/tasks/onetime/TimedCombatLogic.py").read_text(encoding="utf-8"))
@@ -390,6 +494,7 @@ class TestReactiveDodge(unittest.TestCase):
                 namespace = {
                     "ReactiveDodge": lambda task, dodge=dodge: dodge,
                     "reset_enemy_presence_probe": lambda task: None,
+                    "time": time,
                 }
                 exec(compile(ast.Module(body=[method], type_ignores=[]), "actual_timed_loop", "exec"), namespace)
                 logic = SimpleNamespace(
@@ -444,7 +549,11 @@ class TestReactiveDodge(unittest.TestCase):
             return True
 
         dodge = SimpleNamespace(step=dodge_step, close=Mock())
-        namespace = {"ReactiveDodge": lambda task: dodge, "reset_enemy_presence_probe": lambda task: None}
+        namespace = {
+            "ReactiveDodge": lambda task: dodge,
+            "reset_enemy_presence_probe": lambda task: None,
+            "time": SimpleNamespace(monotonic=task.active_time),
+        }
         exec(compile(ast.Module(body=[method], type_ignores=[]), "actual_timed_pause", "exec"), namespace)
         logic = SimpleNamespace(
             task=task,
@@ -487,7 +596,7 @@ class TestReactiveDodge(unittest.TestCase):
                 task.is_combat_ended = lambda condition: False
                 dodge = SimpleNamespace(step=Mock(return_value=True), close=Mock())
                 namespace = dict(vars(BattleConfig))
-                namespace.update(ReactiveDodge=lambda task, dodge=dodge: dodge, traceback=traceback)
+                namespace.update(ReactiveDodge=lambda task, dodge=dodge: dodge, traceback=traceback, time=time)
                 exec(compile(ast.Module(body=[method], type_ignores=[]), "actual_normal_loop", "exec"), namespace)
                 logic = SimpleNamespace(
                     task=task,
@@ -516,7 +625,7 @@ class TestReactiveDodge(unittest.TestCase):
         tree = ast.parse((root / "src/tasks/onetime/AutoCombatLogic.py").read_text(encoding="utf-8"))
         cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "AutoCombatLogic")
         method = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "_exec_rotation_token")
-        namespace = {"KEY_REACTIVE_DODGE": KEY_REACTIVE_DODGE}
+        namespace = {"KEY_REACTIVE_DODGE": KEY_REACTIVE_DODGE, "time": time}
         exec(compile(ast.Module(body=[method], type_ignores=[]), "actual_filler_loop", "exec"), namespace)
         task = FakeTask()
         task.log_info = Mock()
@@ -575,7 +684,7 @@ class TestReactiveDodge(unittest.TestCase):
         task._parse_skill_sequence = lambda text: text.split(",")
         dodge = SimpleNamespace(step=Mock(return_value=False), close=Mock())
         namespace = dict(vars(BattleConfig))
-        namespace.update(ReactiveDodge=lambda task: dodge, traceback=traceback)
+        namespace.update(ReactiveDodge=lambda task: dodge, traceback=traceback, time=time)
         exec(compile(ast.Module(body=methods, type_ignores=[]), "normal_runtime", "exec"), namespace)
         logic = SimpleNamespace(
             task=task,
@@ -591,6 +700,31 @@ class TestReactiveDodge(unittest.TestCase):
         )
         logic._exec_rotation_token = lambda token, deadline: namespace["_exec_rotation_token"](logic, token, deadline)
         return namespace, logic, task, dodge
+
+    def test_normal_and_filler_capture_use_wall_clock(self):
+        def assert_capture(filler):
+            namespace, logic, task, dodge = self._normal_runtime()
+            namespace["time"] = SimpleNamespace(monotonic=lambda: task.now + 100.0)
+            observed = []
+
+            def check_capture(*args, frame_captured_at, **kwargs):
+                observed.append((frame_captured_at, task.now + 100.0))
+                return False
+
+            dodge.step.side_effect = check_capture
+            if filler:
+                logic._reactive_dodge = dodge
+                logic._exit_pending = False
+                logic.auto_rotation_active = False
+                self.assertEqual(logic._exec_rotation_token("normal_5", 1.5), (True, "return_false"))
+            else:
+                self.assertIs(namespace["_run_confirmed_combat"](logic, None, False, 1.5), False)
+            self.assertTrue(observed)
+            self.assertTrue(all(captured == expected for captured, expected in observed), observed)
+
+        for filler in (False, True):
+            with self.subTest(filler=filler):
+                assert_capture(filler)
 
     def test_normal_and_filler_capture_deadlines_block_later_actions(self):
         for filler in (False, True):

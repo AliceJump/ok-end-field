@@ -3,6 +3,7 @@
 Decision adapted from MaaEnd (AGPL-3.0); see assets/models/maaend/README.md.
 """
 
+import time
 from contextlib import suppress
 from pathlib import Path
 
@@ -114,8 +115,9 @@ class ReactiveDodge:
     def step(self, release_attack, allowed=lambda: True, deadline=None, frame_captured_at=None):
         """Return True when this frame is consumed, not necessarily a dodge.
 
-        Model initialization or stale inference also consume the frame so the
-        caller rechecks deadlines and obtains a new frame before skill decisions.
+        Model initialization, missing frames and slow inference consume the frame
+        so the caller rechecks deadlines and captures again. Expired frames only
+        skip dodge detection, allowing ordinary combat to refresh or continue.
         rotation_pause_seconds counts only loading and actual dodge handling,
         so routine inference does not extend a failed manual token's watchdog.
         """
@@ -128,9 +130,10 @@ class ReactiveDodge:
         # A missing frame is a capture hiccup, not a permanent model failure.
         if not self._valid_frame(frame):
             return True
-        captured_at = now if frame_captured_at is None else frame_captured_at
-        if now - captured_at > self.MAX_FRAME_AGE:
-            return True
+        frame_now = time.monotonic()
+        captured_at = frame_now if frame_captured_at is None else frame_captured_at
+        if frame_now - captured_at > self.MAX_FRAME_AGE:
+            return False
         compatibility = task.get_battle_config(KEY_REACTIVE_DODGE_COMPAT, True)
         try:
             if self.detector is None:
@@ -150,11 +153,11 @@ class ReactiveDodge:
         after = task.active_time()
         if self._inference_too_slow(after - now):
             return True
-        # A fast inference on an already old frame is still unsafe to act on.
-        if after - captured_at > self.MAX_FRAME_AGE:
-            return True
         if deadline is not None and after >= deadline:
             return True
+        # Pauses age the image even though gameplay timers exclude them.
+        if time.monotonic() - captured_at > self.MAX_FRAME_AGE:
+            return False
         if not allowed():
             return False
         if not needs_dodge(boxes, frame.shape[1], frame.shape[0], compatibility):
