@@ -135,7 +135,7 @@ class TestReactiveDodge(unittest.TestCase):
         self.detector.detect = slow
         self.assertTrue(self.dodge.step(self.release))
         self.assertEqual(self.dodge.slow_frames, 1)
-        self.detector.detect = lambda frame: []
+        self.detector.detect = lambda frame, compatibility=True: []
         self.assertFalse(self.dodge.step(self.release))
         self.assertEqual(self.dodge.slow_frames, 0)
         self.assertFalse(self.dodge.failed)
