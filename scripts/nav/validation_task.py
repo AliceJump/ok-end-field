@@ -332,7 +332,9 @@ class GridValidationTask(MinimapNavigateToPoint):
             self.route_seq += 1
             self.route_token = token
         selected.update(sync_seq=self.route_seq, source=source, sample_t=visual["sample_t"])
-        if selected.get("position_trusted"):
+        if navigation_pose_ready(selected) and (
+            source == "capture" or pose_scope_status(selected, self.grid.meta.map_name) == "record"
+        ):
             point = (selected["x"], selected["z"])
             self.traversed.update(nearby_cells(self.region, self.grid.index_of_world(*point), self.coverage_steps))
         else:
@@ -360,6 +362,9 @@ class GridValidationTask(MinimapNavigateToPoint):
                 )
                 self.reference = ReferenceRecorder(self.options.port, self.directory)
                 resources.callback(self.reference.close)
+                wait_ready = getattr(self.reference, "wait_ready", None)
+                if callable(wait_ready) and not wait_ready(2.0):
+                    raise RuntimeError("reference_initial_sample_timeout")
                 service = self.get_runtime_position_service()
                 original_config = service.config
                 resources.callback(setattr, service, "config", original_config)
@@ -476,6 +481,7 @@ class GridValidationTask(MinimapNavigateToPoint):
                 self.wait_until(lambda: self.hwnd.is_foreground(), time_out=5)
             self.ensure_runtime_position_service(force_start=True)
             remaining = set(targets)
+            attempted = set()
             while time.monotonic() < self.deadline:
                 self._check_stop()
                 pose = self.world_pose(frame=self.next_frame(), max_age=0.6)
@@ -495,11 +501,10 @@ class GridValidationTask(MinimapNavigateToPoint):
                     self.sleep(0.2)
                     continue
                 unready_since = None
-                if len(self.traversed) == len(self.region_cells):
-                    status = "completed" if self.traversed == self.covered else "completed_with_visual_gaps"
-                    reason = "connected_region_traversed"
+                if self.region_cells.issubset(self.covered):
+                    status, reason = "completed", "connected_region_covered"
                     break
-                remaining.difference_update(self.traversed)
+                remaining.difference_update(self.covered)
                 point = (pose["x"], pose["z"])
                 free = self.navigation_grid.nearest_free(*self.navigation_grid.index_of_world(*point), max_radius=2)
                 if free is None:
@@ -508,10 +513,10 @@ class GridValidationTask(MinimapNavigateToPoint):
                 reachable_region, _ = connected_region(self.navigation_grid, self.navigation_grid.world_of_index(*free))
                 available = self.region_cells.intersection(map(tuple, np.argwhere(reachable_region).tolist()))
                 self.deferred = self.region_cells - available
-                pending = available - self.traversed - (self.skipped if self.options.skip_blocked else set())
+                pending = available - self.covered - attempted - (self.skipped if self.options.skip_blocked else set())
                 choices = remaining.intersection(pending) or pending
                 if not choices:
-                    status, reason = "completed_with_skips", "remaining_reachable_region_tested"
+                    status, reason = "completed_with_visual_gaps", "remaining_reachable_region_tested"
                     break
                 reachable = [p for p in choices if math.dist(point, self.grid.world_of_index(*p)) > 2.0]
                 selection = self.target_planner.plan_multi([free], sorted(reachable or choices), time_budget_s=10)
@@ -519,6 +524,7 @@ class GridValidationTask(MinimapNavigateToPoint):
                     reason = "target_selection_failed: " + selection.reason
                     break
                 target = selection.goal_cell
+                attempted.add(target)
                 self.goal = self.grid.world_of_index(*target)
                 self.movement_started = True
                 self.navigation_failure = {}
@@ -573,8 +579,8 @@ class GridValidationTask(MinimapNavigateToPoint):
         self._process_reference_samples(references, final=True)
         if self.validation_failure:
             status, reason = "stopped", self.validation_failure
-        elif reason == "connected_region_traversed":
-            status = "completed" if self.traversed == self.covered else "completed_with_visual_gaps"
+        elif reason in ("connected_region_covered", "remaining_reachable_region_tested"):
+            status = "completed" if self.region_cells.issubset(self.covered) else "completed_with_visual_gaps"
         verified = self._reference_verified_cells(references)
         self.report = {
             **plan,

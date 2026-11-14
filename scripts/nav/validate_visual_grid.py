@@ -43,6 +43,7 @@ class ReferenceRecorder:
         self._ordered_records = []
         self.lock = threading.Lock()
         self.stop = threading.Event()
+        self.ready = threading.Event()
         self.latest = None
         self.checked_at = 0.0
         self.handle = (directory / "reference.jsonl").open("w", encoding="utf-8")
@@ -89,6 +90,7 @@ class ReferenceRecorder:
                             self._ordered_records.append(row)
                             self.handle.write(json.dumps(row) + "\n")
                     self.handle.flush()
+            self.ready.set()
             self.stop.wait(0.1)
 
     def _with_identity(self, record, state):
@@ -102,6 +104,9 @@ class ReferenceRecorder:
         with self.lock:
             records = [] if since is None else self._ordered_records[since:]
             return self.latest, self.checked_at, records
+
+    def wait_ready(self, timeout):
+        return self.ready.wait(timeout)
 
     def close(self):
         self.stop.set()

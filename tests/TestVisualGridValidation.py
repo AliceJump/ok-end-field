@@ -144,7 +144,7 @@ class TestVisualGridValidation(unittest.TestCase):
             self.assertEqual(task.error_hits, 1)
             self.assertFalse(task.covered)
             self.assertTrue(task.traversed)
-            reference["time"] = 100.4
+            reference["time"] = 100.8
             GridValidationTask._observe(task, {**pose, "frame_t": 100.1})
             self.assertEqual(task.error_hits, 0)
             self.assertFalse(task.covered)
@@ -412,6 +412,84 @@ class TestVisualGridValidation(unittest.TestCase):
         task.get_runtime_position_service = Mock(return_value=service)
         return task, service
 
+    def test_navigation_pose_does_not_count_unconfirmed_visual_tier_as_traversed(self):
+        task, pose, _ = self._observation_task()
+        task.source_policy = NavigationSourcePolicy(False)
+        task.route_source, task.route_token, task.route_seq = "visual_map", None, 0
+        task._observe, task._write_progress = Mock(), Mock()
+        service = SimpleNamespace(runtime_state_hub=Mock())
+        pose.update(tier_trusted=False, tier_evidence_required=True, sample_t=100)
+        with patch("scripts.nav.validation_task.publish_world_pose"):
+            GridValidationTask._navigation_pose(task, service, pose)
+            self.assertFalse(task.traversed)
+            GridValidationTask._navigation_pose(task, service, {**pose, "tier_trusted": True})
+        self.assertTrue(task.traversed)
+
+    def test_replay_uses_runtime_visual_width_and_preserves_timestamp(self):
+        from scripts import replay_world_pose
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "samples.jsonl").write_text(
+                json.dumps({"frame": "frame.png", "frame_t": 123.5}) + "\n", encoding="utf-8"
+            )
+            frame = np.zeros((1080, 1920, 3), np.uint8)
+            source = SimpleNamespace(sample=Mock(return_value={"position_trusted": False, "trust_reason": "no_fix"}))
+            store = SimpleNamespace(load=Mock(return_value=("map02", object())))
+            with (
+                patch.object(replay_world_pose.cv2, "imread", return_value=frame),
+                patch.object(replay_world_pose, "VisualPositionSource", return_value=source),
+                patch("builtins.print"),
+            ):
+                replay_world_pose.replay(root, store, root / "output")
+            self.assertEqual(source.sample.call_args.args[0].shape, (720, 1280, 3))
+            self.assertEqual(source.sample.call_args.kwargs["now"], 123.5)
+
+    def test_reference_readiness_timeout_closes_resources_before_service_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            task, service = self._run_task(Path(directory))
+            original_config = service.config
+            reference = SimpleNamespace(
+                wait_ready=Mock(return_value=False), close=Mock(), snapshot=Mock(return_value=(None, 0, []))
+            )
+            with (
+                patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
+                patch("scripts.nav.validation_task.time.sleep"),
+            ):
+                self.assertFalse(GridValidationTask.run.__wrapped__(task))
+            reference.wait_ready.assert_called_once_with(2.0)
+            reference.close.assert_called_once()
+            self.assertTrue(task.sample_log.closed)
+            self.assertTrue(task.capture_log.closed)
+            self.assertIs(service.config, original_config)
+            task.get_runtime_position_service.assert_not_called()
+            self.assertIn("reference_initial_sample_timeout", task.report["reason"])
+
+    def test_resume_revisits_traversed_cells_without_visual_coverage_once_per_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            task, _ = self._run_task(root)
+            options, grid, region, _, _, _ = task.validation
+            options.mode, options.grid = "run", root / "grid.npz"
+            options.resume_traversed = list(map(tuple, np.argwhere(region).tolist()))
+            task.world_pose = Mock(return_value={"position_trusted": True, "x": 0.5, "z": 0.5})
+            from src.nav.grid_planner import GridPlanner
+
+            task.navigation_grid, task.target_planner = grid, GridPlanner(grid, allow_unknown=False)
+            reference = SimpleNamespace(close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+            guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
+            with (
+                patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
+                patch("scripts.nav.validation_task.threading.Thread", return_value=guard),
+                patch("scripts.nav.validation_task.time.sleep"),
+            ):
+                GridValidationTask.run.__wrapped__(task)
+            goals = [c.args[0] for c in task.navigate_grid_to.call_args_list]
+            self.assertEqual(len(goals), len(set(goals)))
+            self.assertEqual(len(goals), 4)
+            self.assertFalse(task.covered)
+            self.assertEqual(task.report["status"], "completed_with_visual_gaps")
+
     def test_initialization_failures_close_acquired_resources_and_write_report(self):
         for stage in ("reference", "service", "guard"):
             with self.subTest(stage=stage), tempfile.TemporaryDirectory() as directory:
@@ -664,6 +742,58 @@ class TestVisualGridValidation(unittest.TestCase):
         self.assertEqual([enabled.choose(good) for _ in range(3)], ["capture", "capture", "visual_map"])
         self.assertEqual(enabled.choose(bad), "visual_map")
 
+    def test_expired_retained_frame_can_trigger_explicit_capture_fallback(self):
+        policy = NavigationSourcePolicy(True)
+        good = {"position_trusted": True, "frame_t": 100}
+        for _ in range(3):
+            self.assertEqual(policy.choose(good), "visual_map")
+        self.assertEqual(policy.good, 1)
+        stale = {**good, "position_trusted": False, "trust_reason": "visual_result_too_old"}
+        self.assertEqual([policy.choose(stale) for _ in range(3)], ["visual_map", "visual_map", "capture"])
+        for i in range(3):
+            selected = policy.choose({**good, "frame_t": 101 + i})
+        self.assertEqual(selected, "visual_map")
+
+    def test_numeric_reference_strings_are_normalized_without_mutating_input(self):
+        records = [
+            {**self.record(10), "time": "10", "x": "3", "z": "4"},
+            {**self.record(10.4), "time": "10.4", "x": "5", "z": "6"},
+        ]
+        timeline = ReferenceTimeline(records)
+        exact = align_reference(timeline, 10, "map02")
+        between = align_reference(timeline, 10.2, "map02")
+        self.assertEqual((exact["x"], exact["z"]), (3, 4))
+        self.assertAlmostEqual(between["x"], 4)
+        self.assertAlmostEqual(between["z"], 5)
+        self.assertEqual(records[0]["x"], "3")
+
+    def test_reference_recorder_waits_for_the_first_sampling_attempt(self):
+        entered, release = threading.Event(), threading.Event()
+        source = Mock()
+
+        def fetch():
+            entered.set()
+            release.wait(2)
+            return {"lastPosition": self.record(100)}
+
+        source.fetch_state.side_effect = fetch
+        source._flow_liveness.return_value = (None, None, True)
+        source._resolve_map_id.return_value = ("map02", "test")
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch("scripts.nav.validate_visual_grid.CapturePositionSource", return_value=source),
+        ):
+            recorder = ReferenceRecorder(8000, Path(directory))
+            try:
+                self.assertTrue(entered.wait(1))
+                self.assertFalse(recorder.wait_ready(0.01))
+                release.set()
+                self.assertTrue(recorder.wait_ready(1))
+                self.assertIsNotNone(recorder.snapshot()[0])
+            finally:
+                release.set()
+                recorder.close()
+
     def test_capture_coordinates_never_count_as_visual_accuracy(self):
         row = {
             "frame_t": 10.1,
@@ -755,14 +885,12 @@ class TestVisualGridValidation(unittest.TestCase):
         self.assertEqual(timeline.samples, expected.samples)
         self.assertEqual(timeline.times, expected.times)
 
-    def test_source_switch_counts_new_cached_observations_only_once(self):
+    def test_source_switch_counts_invalid_polls_but_requires_distinct_good_frames(self):
         policy = NavigationSourcePolicy(True)
+        invalid = {"frame_t": 1, "position_trusted": False}
+        self.assertEqual([policy.choose(invalid) for _ in range(3)], ["visual_map", "visual_map", "capture"])
         for index in range(3):
-            pose = {"frame_t": index + 1, "position_trusted": False, "visual_duplicate_frame": True}
-            for _ in range(4):
-                self.assertEqual(policy.choose(pose), "capture" if index == 2 else "visual_map")
-        for index in range(3):
-            pose = {"frame_t": index + 4, "position_trusted": True, "visual_duplicate_frame": True}
+            pose = {"frame_t": index + 2, "position_trusted": True, "visual_duplicate_frame": True}
             for _ in range(4):
                 self.assertEqual(policy.choose(pose), "visual_map" if index == 2 else "capture")
 

@@ -625,7 +625,9 @@ class LayeredMinimapLocator:
                 self._search_index = self._pending_index.result()
                 self._pending_index = None
 
-    def locate_proposed_layer(self, frame, geometry, tier_id, *, wait_for_resources=False):
+    def locate_proposed_layer(
+        self, frame, geometry, tier_id, *, wait_for_resources=False, complete_competition=False, base_result=None
+    ):
         if wait_for_resources:
             self._await_resources(self._pending_layers.values())
         if any(not future.done() for future in self._pending_layers.values()):
@@ -639,6 +641,8 @@ class LayeredMinimapLocator:
         try:
             floor = self._load(entry)
         except (OSError, ValueError):
+            if complete_competition:
+                raise ResourcePending() from None
             return None
         floor = self._matching_locator(entry, floor)
         if not self._prepare_global_search(floor, frame, wait_for_resources=wait_for_resources):
@@ -646,7 +650,7 @@ class LayeredMinimapLocator:
         # Search the entire original floor, not a small ROI around a coarse
         # peak. Distant lookalikes remain competitors under the original gates.
         result = floor.locate_global(frame, geometry)
-        if result is None or not strong_candidate(result.best, result.margin):
+        if result is None or (not complete_competition and not strong_candidate(result.best, result.margin)):
             return None
         candidates = tuple(self._world_candidates(result, entry))
         if not candidates:
@@ -662,7 +666,7 @@ class LayeredMinimapLocator:
                 if self._near_bounds(e, prior, 80) and (scope is None or scope.allows_tier(self.map_id, e["id"]))
             ]
             self._warm_layers(entries, wait_for_resources=True)
-        combined = self._search(frame, geometry, prior, extra_candidates=candidates)
+        combined = self._search(frame, geometry, prior, base_result=base_result, extra_candidates=candidates)
         if combined is not None and strong_candidate(combined.best, combined.margin):
             self.release_proposal_resources()
         return combined

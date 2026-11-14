@@ -28,19 +28,12 @@ class MapSetLocator:
         self._frame_gate = MinimapMapLocator(np.zeros((1, 1, 3), dtype=np.uint8), self.calibration)
         self._cache = OrderedDict()
         self._active = None
-        self._scan_index = 0
         self._workers = workers
         self._require_all_maps = require_all_maps
         self._pending_maps = {}
         self._resource_retry_at = {}
         self._resource_errors = {}
         self.last_failure_reason = ""
-        self._cold_layers = False
-        self._proposal_index = 0
-        self._skip_index_once = False
-        self._cold_map_order = ()
-        self._cold_map_cursor = 0
-        self._cold_proposal = None
         self._navigation_scope = None
         self._async_search = bool(async_search and workers is not None)
         self._search_future = None
@@ -121,12 +114,6 @@ class MapSetLocator:
 
     def _clear_search_hint(self):
         self._active = None
-        self._cold_layers = False
-        self._cold_proposal = None
-        self._proposal_index = 0
-        self._cold_map_order = ()
-        self._cold_map_cursor = 0
-        self._skip_index_once = False
         for locator in self._cache.values():
             if hasattr(locator, "_recent"):
                 locator._recent = None
@@ -145,7 +132,7 @@ class MapSetLocator:
             setter(self._navigation_scope)
         return self._cache[map_id]
 
-    def _combine(self, results, started, prior):
+    def _combine(self, results, started, prior, *, commit_hint=True):
         results = [(mid, r) for mid, r in results if r is not None]
         if not results:
             return None
@@ -184,12 +171,8 @@ class MapSetLocator:
             spatial_margin=margin,
             layer_margin=chosen_result.layer_margin,
         )
-        if not topology_rejected and strong_candidate(best, margin):
+        if commit_hint and not pending_resources and not topology_rejected and strong_candidate(best, margin):
             self._active = best.map_id
-            self._cold_layers = False
-            self._proposal_index = 0
-            self._cold_map_cursor = 0
-            self._cold_proposal = None
         return result
 
     @staticmethod
@@ -367,212 +350,90 @@ class MapSetLocator:
         return None
 
     def _search_global_ready(self, frame, geometry, started):
-        if self._async_search:
-            return self._search_snapshot(frame, geometry, started)
-        # Map identity is only a search hint. Re-evaluate its visual evidence on
-        # this frame; do not discard the hint merely because resource decoding
-        # took two seconds. Position freshness is enforced by the source/tracker.
-        active_result = None if self._async_search else self._active_result(frame, geometry)
-        if active_result is not None:
-            return active_result
-        if self._cold_layers:
-            result = self._locate_cold_layers(frame, geometry, started)
-            if result is not None or self._cold_layers:
+        if not self._async_search:
+            result = self._active_result(frame, geometry)
+            if result is not None:
                 return result
-        # First compare inexpensive main-map searches. Expanding every weak map
-        # into every floor makes a cold sample take minutes on a real asset set.
-        results = self._compare_base_maps(frame, geometry)
-        for mid, result in results:
-            seed = getattr(self._cache[mid], "seed_proposals", None)
-            if callable(seed):
-                seed(result)
-        combined = self._combine(results, started, None)
-        if combined is None:
-            failures = "; ".join(
-                f"{mid}={getattr(self._cache[mid], 'last_failure_reason', '') or 'minimap_no_candidates'}"
-                for mid, _ in results
-            )
-            self.last_failure_reason = f"minimap_no_map_candidates: {failures}"
-            return None
-        strong = strong_candidate(combined.best, combined.margin)
-        use_index = not self._skip_index_once
-        self._skip_index_once = False
-        if not strong and use_index and any(getattr(locator, "entries", ()) for locator in self._cache.values()):
-            # Position ambiguity within one map is not a reason to give every
-            # map equal decode time. This ordering is a hint, never confidence.
-            self._cold_map_order = tuple(
-                mid
-                for mid, _ in sorted(results, key=lambda item: item[1].confidence if item[1] else -1, reverse=True)
-                if getattr(self._cache[mid], "entries", ())
-            )
-            self._cold_layers = True
-            # Only this background job owns an immutable snapshot. Keep its
-            # competitor results on the call stack, never in a cross-frame cache.
-            return self._locate_cold_layers(
-                frame, geometry, started, base_results=results if self._async_search else None
-            )
-        available = [mid for mid in self.map_ids if mid in self._cache]
-        selected = combined.best.map_id if strong else available[self._scan_index % len(available)]
-        if not strong:
-            self._scan_index += 1
-        locator = self._load(selected)
-        if hasattr(locator, "base"):
-            base_result = next(r for mid, r in results if mid == selected)
-            options = {"use_index": use_index} if callable(getattr(locator, "rank_layers", None)) else {}
-            layered = locator.locate_global(frame, geometry, base_result=base_result, **options)
-            results = [(mid, layered if mid == selected else r) for mid, r in results]
-        return self._combine(results, started, None)
+        return self._search_snapshot(frame, geometry, started)
 
     def _search_snapshot(self, frame, geometry, started):
-        """Keep one frame's complete main-map evidence on this job's stack only."""
+        """Complete one frame's map/floor competition before retaining a hint."""
+        self._active = None
         results = self._compare_base_maps(frame, geometry)
         for mid, result in results:
             seed = getattr(self._cache[mid], "seed_proposals", None)
             if callable(seed):
                 seed(result)
-        combined = self._combine(results, started, None)
-        if combined is None:
-            self.last_failure_reason = "minimap_no_map_candidates"
-            return None
-        strong = strong_candidate(combined.best, combined.margin)
-        use_index = not self._skip_index_once
-        self._skip_index_once = False
-        if not strong and use_index:
-            try:
-                proposed = self._search_snapshot_proposals(frame, geometry, started, results)
-            except ResourcePending:
-                self.last_failure_reason = "layer_scan_pending"
-                return None
-            if proposed is not None:
-                if proposed.reason != "layer_scan_pending" and not strong_candidate(proposed.best, proposed.margin):
-                    self._skip_index_once = True
-                return proposed
-            self._skip_index_once = True
-        if self._workers.closed:
-            return None
-        # An accelerator miss still reaches the ordinary rotating full scan.
-        available = [mid for mid in self.map_ids if mid in self._cache]
-        selected = combined.best.map_id if strong else available[self._scan_index % len(available)]
-        if not strong:
-            self._scan_index += 1
-        locator = self._load(selected)
-        if hasattr(locator, "base"):
-            base_result = next(r for mid, r in results if mid == selected)
-            layered = locator.locate_global(frame, geometry, base_result=base_result, use_index=False)
-            results = [(mid, layered if mid == selected else r) for mid, r in results]
-        return self._combine(results, started, None)
-
-    def _search_snapshot_proposals(self, frame, geometry, started, base_results):
-        """Compare fresh proposals across maps; they never replace confidence."""
-        results = dict(base_results)
-        maps = [mid for mid in self.map_ids if mid in self._cache and getattr(self._cache[mid], "entries", ())]
-        proposals, seen, expanded, validated = {}, {}, set(), {}
-        combined = None
-        for mid in maps:
-            if self._workers.closed:
-                return None
-            proposals[mid] = self._cache[mid].rank_layers(frame, geometry, wait_for_resources=True, fresh_scores=True)[
-                :8
-            ]
-            seen[mid] = set()
-        while True:
-            pending = [
-                (score, -order, mid, tier)
-                for order, mid in enumerate(maps)
-                for score, tier in proposals[mid]
-                if tier not in seen[mid]
-            ]
-            if not pending or self._workers.closed:
-                return combined
-            _, _, mid, tier = max(pending, key=lambda item: (item[0], item[1]))
-            seen[mid].add(tier)
-            result = self._cache[mid].locate_proposed_layer(frame, geometry, tier, wait_for_resources=True)
-            if result is not None and (
-                result.reason == "layer_scan_pending" or strong_candidate(result.best, result.margin)
-            ):
-                previous = validated.get(mid)
-                if previous is not None and result.reason != "layer_scan_pending":
-                    # A later floor must not erase an earlier competitor from
-                    # this same snapshot, even if neither is unique yet.
-                    winner, other = (
-                        (result, previous) if result.confidence > previous.confidence else (previous, result)
-                    )
-                    candidates = deduplicate_candidates([*winner.candidates, *other.candidates])
-                    spatial = deduplicate_candidates([replace(c, tier_id=None) for c in candidates])
-                    result = replace(
-                        winner,
-                        candidates=tuple(candidates),
-                        spatial_margin=min(winner.margin, candidate_margin(spatial)),
-                    )
-                validated[mid] = result
-                results[mid] = result
-                combined = self._combine([(key, results[key]) for key in self.map_ids if key in results], started, None)
-                if combined is not None and (
-                    combined.reason == "layer_scan_pending" or strong_candidate(combined.best, combined.margin)
-                ):
-                    return combined
-            if mid not in expanded and len(seen[mid]) == len(proposals[mid]) and len(proposals[mid]) < 8:
-                # Background-only suggestions remain lazy; a miss restores raw
-                # proposals without throwing away another map's better hints.
-                expanded.add(mid)
-                proposals[mid] = self._cache[mid].rank_layers(
-                    frame, geometry, wait_for_resources=True, required_count=8
-                )[:8]
-
-    def _locate_cold_layers(self, frame, geometry, started, *, base_results=None):
-        order = self._cold_map_order or tuple(
-            mid for mid, locator in self._cache.items() if callable(getattr(locator, "rank_layers", None))
-        )
-        mid = order[self._cold_map_cursor % len(order)] if order else None
-        options = {"wait_for_resources": True} if self._async_search else {}
-        if self._cold_proposal is None or self._cold_proposal[0] != mid:
-            try:
-                rank_options = {"required_count": min(8, self._proposal_index + 1)} if self._proposal_index else {}
-                proposals = self._cache[mid].rank_layers(frame, geometry, **options, **rank_options) if mid else []
-            except ResourcePending:
-                self.last_failure_reason = "layer_index_pending"
-                return None
-            if not proposals or self._proposal_index >= min(8, len(proposals)):
-                # An accelerator miss must still reach the ordinary full scan.
-                self._cold_layers = False
-                self._proposal_index = 0
-                self._cold_proposal = None
-                self._skip_index_once = True
-                self._cold_map_cursor += 1
-                self.last_failure_reason = "layer_index_no_confirmed_candidate"
-                return None
-            self._cold_proposal = (mid, proposals[self._proposal_index][1])
-        # Retain only the tier hint while decoding, never its score or pixels.
-        # Full matching and all competitors below use the current frame.
-        _, tier = self._cold_proposal
+        results = [
+            (
+                mid,
+                self._cache[mid].locate_global(frame, geometry, base_result=result, use_index=False)
+                if hasattr(self._cache[mid], "base") and not getattr(self._cache[mid], "entries", ())
+                else result,
+            )
+            for mid, result in results
+        ]
+        if not any(getattr(locator, "entries", ()) for locator in self._cache.values()):
+            return self._combine(results, started, None)
         try:
-            result = self._cache[mid].locate_proposed_layer(frame, geometry, tier, **options)
+            return self._search_snapshot_proposals(frame, geometry, started, results)
         except ResourcePending:
             self.last_failure_reason = "layer_scan_pending"
             return None
-        if result is None or (
-            result.reason != "layer_scan_pending" and not strong_candidate(result.best, result.margin)
-        ):
-            self._proposal_index += 1
-            self._cold_proposal = None
-            self.last_failure_reason = "layer_index_candidate_rejected"
-            return None
-        if result.reason == "layer_scan_pending":
-            return self._combine([(mid, result)], started, None)
-        # Other maps still receive full global competition on this same frame;
-        # no thumbnail score is used for confidence/margin.
-        # The proposed floor's result already contains its main-map/overlap
-        # competition. Previously the full base search for this map was run
-        # and immediately overwritten here, contributing no evidence at all.
-        results = dict(
-            self._compare_base_maps(frame, geometry, skip_map_id=mid) if base_results is None else base_results
-        )
-        results[mid] = result
-        combined = self._combine([(key, results[key]) for key in self.map_ids if key in results], started, None)
-        if combined is not None and not strong_candidate(combined.best, combined.margin):
-            self._proposal_index += 1
-            self._cold_proposal = None
-        return combined
+
+    def _search_snapshot_proposals(self, frame, geometry, started, base_results):
+        """Proposal scores order work; every declared floor remains a competitor."""
+        base_by_map = dict(base_results)
+        results = dict(base_by_map)
+        maps = [mid for mid in self.map_ids if mid in self._cache and getattr(self._cache[mid], "entries", ())]
+        pending = []
+        for order, mid in enumerate(maps):
+            if self._workers is not None and self._workers.closed:
+                return None
+            locator = self._cache[mid]
+            proposals = locator.rank_layers(
+                frame, geometry, wait_for_resources=True, fresh_scores=True, required_count=len(locator.entries)
+            )
+            tiers = {tier for _, tier in proposals}
+            proposals = [*proposals, *((0.0, entry["id"]) for entry in locator.entries if entry.get("id") not in tiers)]
+            pending.extend((score, -order, mid, tier) for score, tier in proposals)
+        validated = {}
+        for _, _, mid, tier in sorted(pending, key=lambda item: (item[0], item[1]), reverse=True):
+            if self._workers is not None and self._workers.closed:
+                return None
+            result = self._cache[mid].locate_proposed_layer(
+                frame,
+                geometry,
+                tier,
+                wait_for_resources=True,
+                complete_competition=True,
+                base_result=base_by_map.get(mid),
+            )
+            if result is None:
+                continue
+            if result.reason == "layer_scan_pending":
+                return self._combine([(mid, result)], started, None, commit_hint=False)
+            previous = validated.get(mid)
+            if previous is not None:
+                winner, other = (result, previous) if result.confidence > previous.confidence else (previous, result)
+                candidates = deduplicate_candidates([*winner.candidates, *other.candidates])
+                spatial = deduplicate_candidates([replace(c, tier_id=None) for c in candidates])
+                layer_margin = candidate_margin(
+                    [candidates[0], *(c for c in candidates[1:] if c.tier_id != candidates[0].tier_id)]
+                )
+                best = candidates[0]
+                if winner.best.tier_id is None or layer_margin < (0.10 if best.color else 0.08):
+                    best = replace(best, tier_id=None)
+                result = replace(
+                    winner,
+                    best=best,
+                    candidates=(best, *candidates[1:]),
+                    spatial_margin=min(winner.margin, candidate_margin(spatial)),
+                    layer_margin=layer_margin,
+                )
+            validated[mid] = result
+            results[mid] = result
+        return self._combine([(mid, results[mid]) for mid in self.map_ids if mid in results], started, None)
 
     def _active_result(self, frame, geometry):
         if not self._active:

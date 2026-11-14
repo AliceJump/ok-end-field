@@ -866,6 +866,23 @@ class TestMinimapTrackerRecovery(unittest.TestCase):
                         self.assertEqual(tracker._convinced_t, 1.0)
                         self.assertIsNone(tracker._prediction_verified)
 
+    def test_ordinary_fallback_invalidates_prediction_competition(self):
+        local = _result(10, 0, ncc=0.95)
+        for fallback in (local, replace(local, status="rejected")):
+            with self.subTest(status=fallback.status):
+                locator = _FakeLocator(local)
+                tracker = MinimapTracker(locator)
+                with patch.object(locator, "locate_near", return_value=local) as near:
+                    tracker.update(None, self.g, now=1, prediction_world=(10, 0))
+                    self.assertIsNotNone(tracker._prediction_verified)
+                    with patch.object(tracker, "_locate_frame", return_value=(fallback, False, False)):
+                        tracker.update(None, self.g, now=1.1)
+                    self.assertIsNone(tracker._prediction_verified)
+                    before = near.call_count
+                    tracker.update(None, self.g, now=1.2, prediction_world=(10, 0))
+                    self.assertEqual(near.call_count - before, 2)
+                    self.assertEqual(near.call_args.kwargs["search_radius_m"], tracker.search_radius_m)
+
     def test_prediction_preserves_wide_margin_when_candidates_are_truncated(self):
         local = _result(10, 0, ncc=0.95)
         wide = replace(local, status="accepted", spatial_margin=0.01)

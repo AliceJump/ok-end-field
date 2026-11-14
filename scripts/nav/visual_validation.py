@@ -27,12 +27,12 @@ class NavigationSourcePolicy:
         self._last_frame = None
 
     def choose(self, pose):
+        ready = navigation_pose_ready(pose)
         stamp = (pose or {}).get("frame_t")
         if isinstance(stamp, (int, float)) and math.isfinite(stamp) and stamp > 0:
-            if self._last_frame is not None and stamp <= self._last_frame:
+            if ready and self._last_frame is not None and stamp <= self._last_frame:
                 return "capture" if self.capture else "visual_map"
             self._last_frame = stamp
-        ready = navigation_pose_ready(pose)
         self.good = self.good + 1 if ready else 0
         self.bad = self.bad + 1 if not ready else 0
         if self.enabled and self.bad >= 3:
@@ -120,7 +120,7 @@ def valid_reference(record):
     try:
         values = [float(record[key]) for key in ("time", "x", "z")]
         return all(math.isfinite(v) for v in values) and values[0] > 0 and not record.get("replayed")
-    except (KeyError, TypeError, ValueError):
+    except (KeyError, TypeError, ValueError, OverflowError):
         return False
 
 
@@ -137,7 +137,10 @@ class ReferenceTimeline:
 
     def extend(self, records):
         """Validate only new records; retain stable ordering for late arrivals."""
-        incoming = sorted((r for r in records if valid_reference(r)), key=lambda r: float(r["time"]))
+        incoming = sorted(
+            ({**r, **{key: float(r[key]) for key in ("time", "x", "z")}} for r in records if valid_reference(r)),
+            key=lambda r: r["time"],
+        )
         if not incoming:
             return
         if not self.times or float(incoming[0]["time"]) >= self.times[-1]:
