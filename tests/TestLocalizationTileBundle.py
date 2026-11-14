@@ -947,7 +947,7 @@ class TestLocalizationCache(unittest.TestCase):
         unlink = Path.unlink
 
         def remove(path, *args, **kwargs):
-            if path == old:
+            if path.resolve() == old.resolve():
                 raise PermissionError("cache is in use")
             return unlink(path, *args, **kwargs)
 
@@ -966,6 +966,59 @@ class TestLocalizationCache(unittest.TestCase):
             data[position : position + 2] = b"\x63\x00"
         path.write_bytes(data)
         self.assertIsNone(composite_overview_cache.load_overview(key, pixels.shape))
+
+    def test_windows_short_root_alias_supports_publication_reads_and_retired_cleanup(self):
+        import os
+
+        from src.localization.localization_cache import maintain_cache, safe_directory
+
+        if os.name != "nt":
+            self.skipTest("Windows 8.3 paths")
+        import win32api
+
+        long_root = self.root / "long-localization-cache-directory"
+        long_root.mkdir()
+        alias = Path(win32api.GetShortPathName(str(long_root)))
+        if str(alias).casefold() == str(long_root).casefold():
+            self.skipTest("8.3 names are disabled on this volume")
+        self.assertEqual(safe_directory(alias), long_root.resolve())
+        pixels = np.arange(300, dtype=np.uint8).reshape(10, 10, 3)
+        with patch.object(composite_overview_cache, "CACHE_ROOT", alias / "composite-overviews"):
+            composite_overview_cache.save_overview("a" * 64, pixels)
+            np.testing.assert_array_equal(composite_overview_cache.load_overview("a" * 64, pixels.shape), pixels)
+        layers = long_root / "layer-index"
+        layers.mkdir()
+        old = layers / ("b" * 64 + ".npz")
+        old.write_bytes(b"retired")
+        maintain_cache(threading.Event(), root=alias)
+        self.assertFalse(old.exists())
+        self.assertTrue((long_root / "composite-overviews" / ("a" * 64 + ".npz")).exists())
+
+    def test_junction_in_an_ancestor_cannot_create_or_clean_cache(self):
+        import os
+
+        from src.localization.localization_cache import maintain_cache
+
+        outside = self.root.parent / "ancestor-target"
+        outside.mkdir()
+        link = self.root / "ancestor-link"
+        if os.name == "nt":
+            import _winapi
+
+            _winapi.CreateJunction(str(outside), str(link))
+        else:
+            link.symlink_to(outside, target_is_directory=True)
+        self.addCleanup(link.rmdir if os.name == "nt" else link.unlink)
+        real = outside / "nested" / "composite-overviews"
+        real.mkdir(parents=True)
+        sentinel = real / ("a" * 64 + ".npz")
+        sentinel.write_bytes(b"keep")
+        with patch.object(composite_overview_cache, "CACHE_ROOT", link / "new" / "composite-overviews"):
+            composite_overview_cache.save_overview("b" * 64, np.zeros((10, 10, 3), np.uint8))
+        with patch.object(composite_overview_cache, "MAX_BYTES", 0):
+            maintain_cache(threading.Event(), root=link / "nested")
+        self.assertFalse((outside / "new").exists())
+        self.assertEqual(sentinel.read_bytes(), b"keep")
 
     def test_v3_loader_rejects_retired_versions_and_windows_stream_paths(self):
         from src.localization.localization_bundle import resolve_bundle_path

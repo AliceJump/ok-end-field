@@ -115,10 +115,9 @@ def save_overview(key, pixels):
     if pixels.nbytes + 4096 > MAX_BYTES or not re.fullmatch(r"[0-9a-f]{64}", key):
         return
     try:
-        root = CACHE_ROOT.absolute()
-        if root.resolve() != root:
+        root = safe_directory(CACHE_ROOT, create=True)
+        if root is None:
             return
-        root.mkdir(parents=True, exist_ok=True)
         temporary = root / f".{key}.{uuid.uuid4().hex}.tmp"
         with temporary.open("wb") as stream:
             np.savez(stream, pixels=pixels, sha256=hashlib.sha256(pixels.tobytes()).hexdigest())
