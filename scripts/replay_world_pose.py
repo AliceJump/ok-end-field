@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.analyze_minimap_timing import Trajectory, speed_bin, stats  # noqa: E402
 from src.localization.calibrated_map_store import CalibratedMapStore  # noqa: E402
+from src.localization.visual_frame import normalize_visual_frame  # noqa: E402
 from src.localization.visual_position_source import VisualPositionSource  # noqa: E402
 
 
@@ -51,7 +52,7 @@ def replay(dataset, store, output):
         task.height, task.width = frame.shape[:2]
         # Decode and truth IO are outside timing; all visual search/chain work is inside.
         begin = time.perf_counter()
-        state = source.sample(frame, now=sample["frame_t"])
+        state = source.sample(normalize_visual_frame(frame), now=sample["frame_t"])
         elapsed_ms = (time.perf_counter() - begin) * 1000
         rows.append({"sample": sample, "pose": state, "elapsed_ms": elapsed_ms})
         if index % 25 == 0:

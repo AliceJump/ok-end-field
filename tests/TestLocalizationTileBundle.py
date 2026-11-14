@@ -264,6 +264,12 @@ class TestZeroPaddedSearchRaster(unittest.TestCase):
 
 
 class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
+    def test_bundle_requires_the_normalized_search_width(self):
+        manifest = json.loads((self.root / "manifest.json").read_text(encoding="utf-8"))
+        manifest["search"]["screen_widths"] = [1920]
+        with self.assertRaisesRegex(ValueError, "normalized localization screenshot width"):
+            LocalizationTileBundle(self.root, manifest)
+
     def test_search_calibration_rejects_even_adjacent_float_values(self):
         manifest = json.loads((self.root / "manifest.json").read_text(encoding="utf-8"))
         LocalizationTileBundle(self.root, manifest)
@@ -949,6 +955,23 @@ class TestLocalizationCache(unittest.TestCase):
         def remove(path, *args, **kwargs):
             if path.resolve() == old.resolve():
                 raise PermissionError("cache is in use")
+            return unlink(path, *args, **kwargs)
+
+        with patch.object(Path, "unlink", remove), patch.object(composite_overview_cache, "MAX_BYTES", 5000):
+            composite_overview_cache.save_overview("b" * 64, np.zeros((10, 10, 3), np.uint8))
+        self.assertEqual(list(self.overviews.iterdir()), [old])
+
+    def test_expired_unremovable_file_still_consumes_quota(self):
+        import os
+
+        old = self.overviews / ("a" * 64 + ".npz")
+        old.write_bytes(b"x" * 4900)
+        os.utime(old, (1, 1))
+        unlink = Path.unlink
+
+        def remove(path, *args, **kwargs):
+            if path.resolve() == old.resolve():
+                raise PermissionError("expired file in use")
             return unlink(path, *args, **kwargs)
 
         with patch.object(Path, "unlink", remove), patch.object(composite_overview_cache, "MAX_BYTES", 5000):

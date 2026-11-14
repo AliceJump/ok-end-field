@@ -1546,6 +1546,10 @@ class MinimapTracker:
             return TrackResult("lost", False, reason, None, None, 0, used_prior)
         if used_prediction:
             result = self._verify_prediction_competition(frame, geometry, result, current)
+        elif recovery_world is None:
+            self._prediction_verified = None
+            self._prediction_verified_t = None
+            self._prediction_margin = 0.0
         if result.status == "rejected":
             self._pending = None
             self._pending_hits = 0

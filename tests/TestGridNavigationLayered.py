@@ -567,6 +567,31 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertIsNone(outcome, "跨完末尾连接还需新帧确认楼层")
         self.assertTrue(any("落点即目标" in line for line in self.task.logs), self.task.logs[-3:])
 
+    def test_exhausted_layered_route_replans_outside_goal_radius(self):
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(10.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        session.segment_index = len(session.route.segments)
+        ctx.pose["y"] = 5.0
+        with patch.object(self.task, "_grid_nav_state_call", return_value=None) as dispatch:
+            self.assertIsNone(self.task._grid_nav_state_done(ctx))
+        dispatch.assert_called_once_with(NavState.PLAN, ctx)
+
+    def test_trailing_link_uses_recovery_goal(self):
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        session.recovery_goal = (1.5, 0.5)
+        with patch.object(self.task, "_walk_trailing_layered_link", return_value=True) as walk:
+            self.task._advance_layered_segment(ctx)
+        self.assertEqual(walk.call_args.kwargs["end"], session.recovery_goal)
+
+    def test_trailing_link_does_not_walk_after_failed_aim(self):
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        with patch.object(self.task, "_aim_grid_view_to_bearing", return_value=False):
+            self.assertFalse(self.task._walk_trailing_layered_link(ctx, session.route.transitions[0][0]))
+        self.assertNotIn("w", self.task.key_down_events)
+        self.assertFalse(self.task.w_down)
+
     def _move_across_final_stairs(self, ctx):
         self._report_visual_floor()
         self.task.x, ctx.x = 0.5, 0.5
@@ -869,6 +894,29 @@ class RopeCrossingTest(unittest.TestCase):
     def _cross(self, link):
         """执行一次跨越。``ctx`` 目前只是历史参数，仍按真实入口传进去。"""
         return self.task._cross_layered_link(self.ctx, link)
+
+    def test_visual_rope_crossing_uses_confirmed_floor_without_height(self):
+        for ascent, trusted in ((False, True), (True, True), (False, False), (True, False)):
+            with self.subTest(ascent=ascent, trusted=trusted):
+                task, layered, ctx = self._make_task()
+                task.y = task.lower_y if ascent else task.upper_y
+                original = task.world_pose
+
+                def visual(original=original, task=task, trusted=trusted, **kwargs):
+                    return {
+                        **original(**kwargs),
+                        "y": None,
+                        "position_trusted": True,
+                        "map_id": "test",
+                        "tier_evidence_required": True,
+                        "tier_trusted": trusted,
+                        "tier_id": "lv1" if task.y == task.upper_y else "__main__",
+                    }
+
+                link = layered.links[0].reversed if ascent else layered.links[0]
+                with patch.object(task, "world_pose", side_effect=visual):
+                    self.assertEqual(task._cross_layered_link(ctx, link), trusted)
+                self.assertFalse(task.w_down)
 
     def test_descent_walks_instead_of_riding_a_zip_line(self):
         self.task.zip_line_list_go = lambda *args, **kwargs: self.fail("绳索下行不该复用滑索执行")

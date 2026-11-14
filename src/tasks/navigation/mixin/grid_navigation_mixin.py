@@ -1428,6 +1428,12 @@ class GridNavigationMixin(RuntimeStateMixin):
                 # 为 0 的收尾步行段，把连接留在最后一个槽位。那条连接同样必须执行，否则会
                 # 把"还要跳一层"直接报成已经到达。
                 return self._advance_layered_segment(ctx)
+        endpoint = session.recovery_goal or session.goal
+        radius = (
+            session.stop_distance if session.stop_distance is not None else self._grid_follower_config().goal_radius
+        )
+        if session.layered and math.dist(ctx.position, endpoint) > max(0.0, radius):
+            return self._grid_nav_state_call(NavState.PLAN, ctx)
         if session.recovery_goal is not None:
             wait = self._grid_nav_sync(ctx, SyncReason.BACKTRACK_DONE)
             if wait.timed_out:
@@ -2464,7 +2470,9 @@ class GridNavigationMixin(RuntimeStateMixin):
                 index + 1 >= len(route.segments)
                 and link.kind != "rope"
                 and not self._walk_trailing_layered_link(
-                    ctx, link, end=session.goal if offset == len(group) - 1 else link.target.center
+                    ctx,
+                    link,
+                    end=(session.recovery_goal or session.goal) if offset == len(group) - 1 else link.target.center,
                 )
             ):
                 return False
@@ -2515,7 +2523,8 @@ class GridNavigationMixin(RuntimeStateMixin):
                 if remaining > 0.5:
                     bearing = bearing_to_point(current.x, current.z, *end)
                     self._set_grid_walking(False)
-                    self._aim_grid_view_to_bearing(bearing, reason="跨层连接")
+                    if not self._aim_grid_view_to_bearing(bearing, reason="跨层连接"):
+                        return False
                 if current.pose.get("frame_time_source") == "wgc_system_relative_time":
                     ctx.session.last_walk_frame = current.pose.get("frame_t")
                 self._set_grid_walking(True)
@@ -2636,13 +2645,20 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._set_grid_walking(True)
         try:
             while True:
-                point = self._grid_nav_pose_point()
+                pose = self._grid_nav_rope_pose()
+                point = None if pose is None else (pose["x"], pose["y"], pose["z"])
                 if point is None:
                     self.log_warning("绳索下行：读不到当前坐标，停止前进", notify=True)
                     return False
                 stalled = (
                     0.0
-                    if previous is None or math.dist(point, previous) >= GRID_ROPE_STALL_EPS_M
+                    if previous is None
+                    or math.hypot(
+                        point[0] - previous[0],
+                        point[2] - previous[2],
+                        point[1] - previous[1] if point[1] is not None and previous[1] is not None else 0.0,
+                    )
+                    >= GRID_ROPE_STALL_EPS_M
                     else stalled + GRID_ROPE_POLL_S
                 )
                 previous = point
@@ -2656,10 +2672,10 @@ class GridNavigationMixin(RuntimeStateMixin):
                 ):
                     self._aim_grid_view_to_bearing(bearing, reason="绳索下行", log_success=False)
                     aimed_bearing = bearing
-                if target_range is not None and target_range[0] <= point[1] <= target_range[1]:
-                    self.log_info(f"绳索下行完成：高度 {point[1]:.1f} 已落到 {link.target.tier or '大地图'}")
+                if self._grid_rope_target_reached(pose, link, target_range):
+                    self.log_info(f"绳索下行完成：已确认到达 {link.target.tier or '大地图'}")
                     return True
-                if target_range is None:
+                if target_range is None and point[1] is not None:
                     walked = distance_xz((point[0], point[2]), start)
                     if walked >= walked_enough:
                         self.log_info(f"绳索下行完成：已走过 {walked:.1f}m（无高度区间可验证）")
@@ -2686,8 +2702,10 @@ class GridNavigationMixin(RuntimeStateMixin):
         """绳索上行：对准绳索、点 ``fL.gather_icon2`` 交互图标，等高度升到目标层。"""
         start = link.source.center
         end = link.target.center
-        point = self._grid_nav_pose_point()
-        origin = (point[0], point[2]) if point is not None else start
+        pose = self._grid_nav_rope_pose()
+        if pose is None:
+            return False
+        origin = (pose["x"], pose["z"])
         bearing = bearing_to_point(origin[0], origin[1], end[0], end[1])
         span = math.hypot(end[0] - start[0], end[1] - start[1])
         self.log_info(f"跨层：绳索上行，找交互图标登索（水平 {span:.1f}m，方位 {bearing:.1f}°）")
@@ -2724,9 +2742,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         """等角色被绳索送到目标层；超时说明点击没生效，告警并判失败。"""
         deadline = self.active_time() + GRID_ROPE_RIDE_TIMEOUT_S
         while True:
-            point = self._grid_nav_pose_point()
-            if point is not None and target_range[0] <= point[1] <= target_range[1]:
-                self.log_info(f"绳索上行完成：高度 {point[1]:.1f} 已进入 {link.target.tier or '大地图'}")
+            pose = self._grid_nav_rope_pose()
+            if pose is not None and self._grid_rope_target_reached(pose, link, target_range):
+                self.log_info(f"绳索上行完成：已确认到达 {link.target.tier or '大地图'}")
                 return True
             if self.active_time() >= deadline:
                 self.log_warning(
@@ -2737,18 +2755,30 @@ class GridNavigationMixin(RuntimeStateMixin):
                 return False
             self.sleep(GRID_ROPE_POLL_S)
 
-    def _grid_nav_pose_point(self) -> tuple[float, float, float] | None:
-        """读一帧最新的世界坐标（含高度）；读不到返回 ``None``。
-
-        绳索的上下行都要靠高度验证，所以这里不能拿旧快照凑合，也不把缺失的 Y 当成 0。
-        """
+    def _grid_nav_rope_pose(self):
+        """Read fresh trusted coordinates; absent height remains unknown."""
         pose = self.world_pose(frame=self.next_frame(), max_age=2.0)
-        if not pose:
+        if not pose or not pose.get("position_trusted", True):
             return None
         try:
-            return float(pose["x"]), float(pose["y"]), float(pose["z"])
+            x, z = float(pose["x"]), float(pose["z"])
+            y = None if pose.get("y") is None else float(pose["y"])
+            if not all(math.isfinite(v) for v in (x, z)) or (y is not None and not math.isfinite(y)):
+                return None
+            return {**pose, "x": x, "y": y, "z": z}
         except (KeyError, TypeError, ValueError):
             return None
+
+    @staticmethod
+    def _grid_rope_target_reached(pose, link, target_range):
+        if pose.get("y") is not None and target_range is not None:
+            return target_range[0] <= pose["y"] <= target_range[1]
+        return bool(
+            pose.get("tier_trusted")
+            and pose.get("tier_id") is not None
+            and pose.get("map_id") == link.target.map_name
+            and normalize_tier(pose["tier_id"]) == normalize_tier(link.target.tier)
+        )
 
     def _aim_grid_view_to_bearing(self, bearing: float, *, reason: str, log_success: bool = True) -> bool:
         """只转视角对准某个世界方位；未到位只告警，不阻断调用方。

@@ -57,7 +57,7 @@ class LocalizationBundleFixture:
                 "index_base": 0,
             },
             "search": {
-                "screen_widths": [1920, 2560],
+                "screen_widths": [1280, 1920, 2560],
                 "scale_constant": 1706.5,
                 "match_pixels_per_meter": 4,
                 "floor_rank_pixels_per_meter": 0.5,

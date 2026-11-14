@@ -8,6 +8,7 @@ from pathlib import PurePosixPath, PureWindowsPath
 from src.localization.minimap_map_locator import COARSE_FACTOR, DEFAULT_SCALE_CONSTANT, minimap_map_scale
 from src.localization.native_tile_image import NativeTileImage
 from src.localization.tiled_map_image import floor_options
+from src.localization.visual_frame import VISUAL_FRAME_WIDTH
 
 TILED_KIND = "okef-tiled-localization"
 TILED_SCHEMA_VERSION = 3
@@ -63,6 +64,8 @@ class LocalizationTileBundle:
         self.scales = {w: minimap_map_scale(w) * COARSE_FACTOR for w in widths}
         if len(self.scales) != len(widths):
             raise ValueError("Duplicate localization tile screenshot width")
+        if VISUAL_FRAME_WIDTH not in widths:
+            raise ValueError("Missing normalized localization screenshot width")
         self.files = {}
         records = manifest.get("files")
         if not isinstance(records, list):

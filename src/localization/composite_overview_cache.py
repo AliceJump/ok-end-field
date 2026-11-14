@@ -149,9 +149,12 @@ def _prune(root, *, keep=None):
                     path.unlink()
             elif re.fullmatch(r"[0-9a-f]{64}\.npz", path.name):
                 if path != keep and now - stamp.st_mtime > MAX_AGE_S:
-                    path.unlink()
-                else:
-                    entries.append((stamp.st_mtime_ns, stamp.st_size, path))
+                    try:
+                        path.unlink()
+                        continue
+                    except OSError:
+                        pass
+                entries.append((stamp.st_mtime_ns, stamp.st_size, path))
         except OSError:
             continue
     total, count = sum(size for _, size, _ in entries), len(entries)
