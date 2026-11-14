@@ -1482,7 +1482,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             self.task._grid_nav_poll(ctx.session)
             self.assertEqual(ctx.session.walk_speed_m_s, 9)
 
-    def test_poll_budget_keeps_recent_peak_then_expires_it(self):
+    def test_poll_forecast_releases_isolated_peak_but_keeps_current_sample_cost(self):
         ctx = self._control_tick()
         original = self.task.minimap_position
         for i, duration in enumerate((0.8, 0.1, 0.1, 0.1, 0.1, 0.1)):
@@ -1493,7 +1493,48 @@ class TestGridNavigationMixin(unittest.TestCase):
 
             self.task.minimap_position = sample
             self.task._grid_nav_poll(ctx.session)
-            self.assertAlmostEqual(ctx.session.poll_duration_s, 0.8 if i < 5 else 0.1)
+            self.assertAlmostEqual(ctx.session.poll_latest_duration_s, duration)
+            self.assertAlmostEqual(ctx.session.poll_duration_s, (0.8, 0.45, 0.1, 0.1, 0.1, 0.1)[i])
+
+    def test_configured_heading_and_turn_tolerances_reach_follower_and_controller(self):
+        self.task.config.update({"行走朝向容差(度)": 8, "转向到位容差(度)": 6})
+        self.assertEqual(self.task._grid_follower_config().heading_tolerance, 8)
+        ctx = self._control_tick()
+        ctx.step = FollowerStep(TURN, target_bearing=90, heading_error=90, distance_to_waypoint=3)
+        self.task.pose_turn_to_bearing = mock.Mock(return_value={"ok": True})
+        self.task._grid_nav_state_turn(ctx)
+        self.assertEqual(self.task.pose_turn_to_bearing.call_args.kwargs["tolerance"], 6)
+        self.task.config.update({"行走朝向容差(度)": float("nan"), "转向到位容差(度)": float("inf")})
+        self.assertEqual(self.task._grid_heading_tolerance(), 4)
+        self.assertEqual(self.task._grid_turn_tolerance(), 4)
+
+    def test_moving_age_uses_capture_time_without_double_counting_turn(self):
+        ctx = self._control_tick(frame_t=100, frame_time_source="wgc_system_relative_time")
+        ctx.walking_during_sample = True
+        ctx.session.poll_duration_s = 0.8
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=100.1):
+            self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx), 0.1)
+            self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.04), 0.1)
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=101.2):
+            self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx), 1.2)
+        ctx.session.poll_latest_duration_s = 0.3
+        for stamp in (float("nan"), float("inf"), None, 102):
+            ctx.pose["frame_t"] = stamp
+            with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=101):
+                self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.2), 0.5)
+        ctx.walking_during_sample = False
+        self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.2), 0.2)
+
+    def test_fresh_moving_pose_does_not_charge_old_peak_twice_for_braking(self):
+        ctx = self._control_tick(frame_t=100, frame_time_source="wgc_system_relative_time")
+        ctx.walking_during_sample = True
+        ctx.session.poll_duration_s = 0.6
+        ctx.step = FollowerStep(WALK, distance_to_waypoint=10)
+        self.task._set_grid_walking(True)
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=100.05):
+            self.task._grid_nav_walk_interval(ctx)
+        self.assertTrue(self.task.w_down)
+        self.assertAlmostEqual(self.task.t, ctx.tick)
 
     def test_split_rotation_reserve_can_exceed_configured_stop_distance(self):
         ctx = self._control_tick()

@@ -179,8 +179,9 @@ class NavSession:
     last_sync_seq: int = 0
     #: 单轮转向之间保留有效反馈；只在当前会话中使用，不写入配置。
     turn_control: dict = field(default_factory=dict)
-    #: 最近采样耗时的保守估计，供近点行走提前留出定位时间。
+    #: 下一次采样的耗时预留；当前画面的年龄另按捕获时间计算。
     poll_duration_s: float = 0.0
+    poll_latest_duration_s: float = 0.0
     poll_durations_s: list[float] = field(default_factory=list)
     #: 保留最近一次可信的移动速度，停车后的零速度不能用来估计下一次起步。
     walk_speed_m_s: float = 8.0

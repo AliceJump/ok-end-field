@@ -112,10 +112,12 @@ class TestReadHeading(unittest.TestCase):
         task.press_key = press
         task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
         config = task.config.copy()
-        result = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.06)
+        state = {}
+        result = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.06, control_state=state)
         self.assertTrue(result["ok"])
         self.assertEqual(presses, [0.06])
         self.assertEqual(task.config, config)
+        self.assertNotIn("gain", state)
 
     def test_short_probe_without_heading_response_cannot_report_success(self):
         task = _FakeTurnTask()
@@ -253,13 +255,18 @@ class TestTurnToBearing(unittest.TestCase):
             self.assertEqual(credit(prediction, 350, 0, 0.1), 0)
             self.assertEqual(credit(prediction, 15, 0, 0.2), 0)
 
-    def test_incomplete_or_short_probe_does_not_save_cross_call_gain(self):
-        for short in (False, True):
-            task = _FakeTurnTask(k_error=0.5 if not short else 1)
-            state = {}
-            result = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04 if short else None, control_state=state)
-            self.assertEqual(result["ok"], short)
-            self.assertNotIn("gain", state)
+    def test_stable_incomplete_full_probe_continues_gain_feedback(self):
+        task = _FakeTurnTask(k_error=0.5)
+        state = {}
+        first = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertFalse(first["ok"])
+        self.assertAlmostEqual(state["heading"], first["heading"])
+        self.assertEqual(state["gain_samples"], [])
+        second = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertIsNotNone(second["history"][0]["ratio"])
+        self.assertGreater(len(state["gain_samples"]), 0)
+        third = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertTrue(third["ok"], third)
 
     def test_split_rotation_budget_matches_actual_chunk_waits(self):
         task = _FakeTurnTask()
@@ -306,6 +313,23 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertEqual(task.sent, sent)
         self.assertEqual(task.w_presses, 1)
 
+    def test_completed_pending_full_probe_preserves_stable_missed_target(self):
+        task = _FakeTurnTask(k_error=0.5)
+        task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
+        state = {}
+        first = task.turn_to_bearing(90, max_rounds=1, max_probe_s=0.04, control_state=state)
+        self.assertFalse(first["ok"])
+        self.assertIn("pending_feedback", state)
+        sent = task.sent.copy()
+        task.press_key = lambda *args, **kw: setattr(task, "facing", task.camera)
+        second = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertFalse(second["ok"])
+        self.assertTrue(second["probe_only"])
+        self.assertEqual(task.sent, sent)
+        self.assertAlmostEqual(state["heading"], second["heading"])
+        third = task.turn_to_bearing(90, max_rounds=1, control_state=state)
+        self.assertIsNotNone(third["history"][0]["ratio"])
+
     def test_missing_short_probe_feedback_is_bounded_without_gain_learning(self):
         task = _FakeTurnTask()
         task._arrow_after_w = lambda **kw: MinimapHeadingMixin._arrow_after_w(task, **kw)
@@ -325,7 +349,8 @@ class TestTurnToBearing(unittest.TestCase):
         with patch("src.localization.minimap_heading_mixin.time.monotonic", return_value=13):
             result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
         self.assertIsNone(result["history"][0]["ratio"])
-        self.assertNotIn("gain", state)
+        self.assertEqual(state["gain_samples"], [])
+        self.assertEqual(state["gain"], task.per_px)
 
     def test_isolated_gain_outlier_does_not_replace_confirmed_gain(self):
         samples = []
@@ -361,7 +386,7 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertEqual(gain, task.per_px)
         self.assertEqual(samples, [])
 
-    def test_single_round_calls_converge_without_reusing_incomplete_gain(self):
+    def test_single_round_calls_converge_using_only_stable_feedback(self):
         task = _FakeTurnTask(facing=0, k_error=1.8)
         state = {}
         for _ in range(20):
@@ -369,10 +394,10 @@ class TestTurnToBearing(unittest.TestCase):
             self.assertLessEqual(result["rounds"], 1)
             if result["ok"]:
                 break
-            self.assertNotIn("gain", state)
+            self.assertEqual(state["heading"], result["heading"])
         self.assertTrue(result["ok"], result)
         self.assertLessEqual(abs(result["error"]), 5)
-        self.assertAlmostEqual(state["gain"], task.per_px, places=5)
+        self.assertAlmostEqual(state["gain"], task.per_px * task.k_error, places=5)
 
     def test_single_round_feedback_does_not_survive_external_heading_change(self):
         task = _FakeTurnTask(facing=0, k_error=1.8)
@@ -381,7 +406,8 @@ class TestTurnToBearing(unittest.TestCase):
         task.facing = task.camera = 40
         result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
         self.assertIsNone(result["history"][0]["ratio"])
-        self.assertNotIn("gain", state)
+        self.assertEqual(state["gain_samples"], [])
+        self.assertEqual(state["gain"], task.per_px)
 
     def test_single_round_feedback_resets_when_camera_setting_changes(self):
         task = _FakeTurnTask(facing=0, k_error=1.8)
@@ -391,7 +417,8 @@ class TestTurnToBearing(unittest.TestCase):
         task.per_px *= 2
         result = task.turn_to_bearing(90, max_rounds=1, control_state=state)
         self.assertIsNone(result["history"][0]["ratio"])
-        self.assertNotIn("gain", state)
+        self.assertEqual(state["gain_samples"], [])
+        self.assertEqual(state["gain"], task.per_px)
 
     def test_default_ratio_closes_loop_without_game_window_or_matching_input_gain(self):
         task = _FakeTurnTask(facing=0.0, k_error=0.8)

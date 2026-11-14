@@ -37,6 +37,7 @@ from dataclasses import replace
 from enum import StrEnum
 from itertools import pairwise
 from pathlib import Path
+from statistics import median
 
 from src.core.global_config_store import get_global_config
 from src.core.GridNavConfig import (
@@ -714,7 +715,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         elapsed = self.active_time() - started
         session.poll_durations_s.append(elapsed)
         del session.poll_durations_s[:-5]
-        session.poll_duration_s = max(session.poll_durations_s)
+        session.poll_latest_duration_s = elapsed
+        session.poll_duration_s = max(elapsed, median(session.poll_durations_s))
         exclude_stopped = getattr(self._grid_nav_follower, "exclude_stopped_time", None)
         if not was_walking and callable(exclude_stopped):
             exclude_stopped(elapsed)
@@ -940,7 +942,9 @@ class GridNavigationMixin(RuntimeStateMixin):
             if pose.get("frame_time_source") == "wgc_system_relative_time" and stamp is not None:
                 previous = session.last_walk_frame if session.last_walk_frame is not None else stamp
                 seconds = self._grid_nav_forward.seconds(previous, stamp)
-                horizon = session.walk_speed_m_s * (session.poll_duration_s + session.tick + 0.15)
+                horizon = session.walk_speed_m_s * (
+                    self._grid_nav_moving_age(ctx) + session.poll_duration_s + session.tick + 0.15
+                )
                 self._grid_nav_follower.input_sample = (stamp, seconds, horizon)
                 session.last_walk_frame = stamp
                 session.trail.record(
@@ -949,7 +953,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             else:
                 self._grid_nav_follower.input_sample = None
             self._grid_nav_follower.coast_horizon = session.walk_speed_m_s * (
-                2 * session.poll_duration_s + session.tick + 0.35
+                self._grid_nav_moving_age(ctx) + session.poll_duration_s + session.tick + 0.35
             ) + max(
                 self._grid_cfg_float(CONFIG_GRID_GOAL_RADIUS, 2.0),
                 self._grid_cfg_float(CONFIG_GRID_WAYPOINT_RADIUS, 1.0),
@@ -1740,9 +1744,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_walk_interval(ctx)
         return None
 
-    def _grid_nav_corner_interval(self, ctx, follower, speed, sample_cost):
+    def _grid_nav_corner_interval(self, ctx, follower, speed, sample_cost, moving_age):
         if isinstance(follower, GridRouteFollower) and follower.corner_travel and ctx.session.stop_distance is None:
-            remaining_s = follower.corner_travel / speed - (sample_cost if ctx.walking_during_sample else 0)
+            remaining_s = follower.corner_travel / speed - moving_age
             if remaining_s > sample_cost + ctx.tick:
                 self.sleep(ctx.tick)
                 return True
@@ -1776,7 +1780,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         # Use the most recent moving observation (with a margin), not that zero.
         speed = ctx.session.walk_speed_m_s
         follower = self._grid_nav_follower
-        if self._grid_nav_corner_interval(ctx, follower, speed, sample_cost):
+        moving_age = self._grid_nav_moving_age(ctx, action_duration_s=action_duration_s)
+        if self._grid_nav_corner_interval(ctx, follower, speed, sample_cost, moving_age):
             return
         radius = max(
             0.1,
@@ -1786,7 +1791,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             ),
         )
         # Include the age of this snapshot and the next synchronous sample.
-        reserve = radius + speed * (2 * sample_cost + ctx.tick + 0.1 + action_duration_s)
+        reserve = radius + speed * (moving_age + sample_cost + ctx.tick + 0.1)
         if max(float(distance), ctx.step.coast_distance) > reserve:
             self.sleep(ctx.tick)
             return
@@ -1799,7 +1804,6 @@ class GridNavigationMixin(RuntimeStateMixin):
         )
         if from_rest and self._grid_nav_landing_interval(ctx, follower, speed, sample_cost):
             return
-        moving_age = (sample_cost if ctx.walking_during_sample else 0.0) + action_duration_s
         # If next-leg visibility prevents waypoint advancement, approach its
         # cell with small steps instead of imposing a permanent stop at radius/2.
         travel_budget = min(max(0.0, float(distance)) * 0.5, max(0.0, float(distance) - radius * 0.5))
@@ -3153,20 +3157,20 @@ class GridNavigationMixin(RuntimeStateMixin):
         )
 
     def _grid_heading_tolerance(self) -> float:
-        """读取行走朝向容差，并限制在安全上限以内。"""
+        """读取行走朝向容差，保留用户配置的有效角度。"""
         configured = self._grid_cfg_float(
             CONFIG_GRID_HEADING_TOLERANCE,
             GRID_HEADING_TOLERANCE_DEG,
         )
-        return min(GRID_HEADING_TOLERANCE_DEG, max(0.0, configured))
+        return min(180.0, max(0.0, configured)) if math.isfinite(configured) else GRID_HEADING_TOLERANCE_DEG
 
     def _grid_turn_tolerance(self) -> float:
-        """读取闭环转向容差，并限制在安全上限以内。"""
+        """读取闭环转向容差，保留用户配置的有效角度。"""
         configured = self._grid_cfg_float(
             CONFIG_GRID_TURN_TOLERANCE,
             GRID_TURN_TOLERANCE_DEG,
         )
-        return min(GRID_TURN_TOLERANCE_DEG, max(0.0, configured))
+        return min(180.0, max(0.0, configured)) if math.isfinite(configured) else GRID_TURN_TOLERANCE_DEG
 
     def _grid_zip_line_esc_visible(self) -> bool | None:
         """检测大世界 ESC 模板；存在表示尚未成功登上滑索。"""
@@ -3757,6 +3761,22 @@ class GridNavigationMixin(RuntimeStateMixin):
         if not held and isinstance(self._grid_nav_follower, GridRouteFollower):
             self._grid_nav_follower.feedback.command = None
 
+    def _grid_nav_moving_age(self, ctx: NavTick, *, action_duration_s: float = 0.0) -> float:
+        """已发生但尚未体现在位置快照里的行走时间。"""
+        if not ctx.walking_during_sample:
+            return max(0.0, action_duration_s)
+        pose = ctx.pose or {}
+        stamp = pose.get("frame_t")
+        now = time.time()
+        if (
+            pose.get("frame_time_source") == "wgc_system_relative_time"
+            and isinstance(stamp, (int, float))
+            and math.isfinite(stamp)
+            and stamp <= now
+        ):
+            return max(action_duration_s, now - stamp)
+        return max(0.0, ctx.session.poll_latest_duration_s or ctx.session.poll_duration_s) + action_duration_s
+
     def _grid_turn_stop_distance(self, ctx: NavTick) -> float | None:
         """Reserve sampling, steering and braking time for small corrections."""
         if ctx.session.poll_duration_s <= 0 or ctx.step.heading_error is None or abs(ctx.step.heading_error) > 20:
@@ -3774,7 +3794,11 @@ class GridNavigationMixin(RuntimeStateMixin):
         max_angle = max(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MAX_DEG, 25.0))
         delta = max(-max_angle, min(max_angle, float(ctx.step.heading_error) * gain))
         rotation_s = self.pose_rotation_duration_s(round(delta / per_px)) if per_px else 0.0
-        return max(2.0, radius + speed * (2 * ctx.session.poll_duration_s + ctx.tick + 0.25 + rotation_s))
+        return max(
+            2.0,
+            radius
+            + speed * (self._grid_nav_moving_age(ctx) + ctx.session.poll_duration_s + ctx.tick + 0.25 + rotation_s),
+        )
 
     def _should_turn_grid_in_place(self, step: FollowerStep, *, stop_distance: float | None = None) -> bool:
         """大角度转向或接近航点时停车转向，避免画弧越过错过的航点。"""
@@ -4101,7 +4125,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         # before rotating if that unseen movement already used the budget.
         remaining = None if distance is None else max(0.0, float(distance))
         if remaining is not None and ctx.walking_during_sample:
-            remaining -= speed * session.poll_duration_s
+            remaining -= speed * self._grid_nav_moving_age(ctx)
             if remaining <= 0:
                 return None
         # A turn's W pulse is movement too: spend at most half the remaining
