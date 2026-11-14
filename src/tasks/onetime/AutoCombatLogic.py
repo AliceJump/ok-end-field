@@ -61,6 +61,7 @@ class AutoCombatLogic:
         self.normal_start_trigger: int = 2
         self.normal_skill_index: int = 0
         self._last_search_time = 0
+        self._exit_pending = False
         # 实时条件状态
         self.cond_rotation_enabled = False
         self.cond_ast: list = []
@@ -303,11 +304,18 @@ class AutoCombatLogic:
                 now_check = task.active_time()
                 if now_check - self._last_exit_check_time >= self._exit_check_interval:
                     self._last_exit_check_time = now_check
-                    if task._check_single_exit_condition():
+                    self._exit_pending = bool(task._check_single_exit_condition())
+                    if self._exit_pending:
                         return True, "break"
                 reactive_dodge = getattr(self, "_reactive_dodge", None)
-                if reactive_dodge is not None and task.get_battle_config(KEY_REACTIVE_DODGE, False):
+                if (
+                    not self._exit_pending
+                    and reactive_dodge is not None
+                    and task.get_battle_config(KEY_REACTIVE_DODGE, False)
+                ):
                     task.next_frame()
+                    if deadline is not None and task.active_time() >= deadline:
+                        return True, "return_false"
                     if reactive_dodge.step(
                         lambda: task.mouse_up(key="left"),
                         deadline=deadline,
@@ -316,6 +324,8 @@ class AutoCombatLogic:
                         continue
                 task.approach_enemy()
                 task.next_frame()
+                if deadline is not None and task.active_time() >= deadline:
+                    return True, "return_false"
                 _probe_pulse = getattr(task, "probe_pulse", None)
                 if callable(_probe_pulse):
                     _probe_pulse()
@@ -610,7 +620,7 @@ class AutoCombatLogic:
 
         reactive_dodge = ReactiveDodge(task)
         self._reactive_dodge = reactive_dodge
-        exit_pending = False
+        self._exit_pending = False
         try:
             while True:
                 if deadline is not None and task.active_time() >= deadline:
@@ -624,7 +634,7 @@ class AutoCombatLogic:
                     self._last_exit_check_time = now
 
                     exit_condition = task._check_single_exit_condition()
-                    exit_pending = bool(exit_condition)
+                    self._exit_pending = bool(exit_condition)
                     if exit_condition:
                         if task.debug:
                             task.screenshot("out_of_combat")
@@ -673,16 +683,26 @@ class AutoCombatLogic:
                     finally:
                         self._last_team_detect_time = task.active_time()
 
-                if not exit_pending and task.get_battle_config(KEY_REACTIVE_DODGE, False):
+                if not self._exit_pending and task.get_battle_config(KEY_REACTIVE_DODGE, False):
                     task.next_frame()
-                    if reactive_dodge.step(
+                    dodge_started = task.active_time()
+                    if deadline is not None and dodge_started >= deadline:
+                        return False
+                    frame_consumed = reactive_dodge.step(
                         lambda: task.mouse_up(key="left"),
                         deadline=deadline,
-                        frame_captured_at=task.active_time(),
-                    ):
+                        frame_captured_at=dodge_started,
+                    )
+                    if self.rotation_enabled:
+                        # Model compilation and dodge handling are not failed
+                        # attempts to advance the manual rotation.
+                        self.last_rotation_ok_time += task.active_time() - dodge_started
+                    if frame_consumed:
                         continue
                 task.approach_enemy()
                 task.next_frame()
+                if deadline is not None and task.active_time() >= deadline:
+                    return False
 
                 # 独立脉冲探针：与战斗模式/配置无关，观测后立即继续本帧逻辑
                 # （getattr 守卫兼容无 probe_pulse 能力的测试替身）

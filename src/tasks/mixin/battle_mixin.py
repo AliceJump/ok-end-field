@@ -1030,14 +1030,15 @@ class BattleMixin(BaseEfTask):
         return None
 
     def recover_target_too_far(self) -> bool:
-        """Lock the current target and dodge forward when no dodge cooldown is active."""
-        clock = getattr(self, "active_time", None)
-        if callable(clock) and clock() < max(
-            getattr(self, "_reactive_dodge_next_at", 0.0),
-            getattr(self, "_enemy_direction_next_dodge_at", 0.0),
-        ):
-            # The unconfirmed skill can retry after the cooldown expires.
-            return False
+        """Close range immediately unless opt-in reactive dodge is cooling down."""
+        if self.get_battle_config(KEY_REACTIVE_DODGE, False):
+            clock = getattr(self, "active_time", None)
+            if callable(clock) and clock() < max(
+                getattr(self, "_reactive_dodge_next_at", 0.0),
+                getattr(self, "_enemy_direction_next_dodge_at", 0.0),
+            ):
+                # The unconfirmed skill can retry after the cooldown expires.
+                return False
         self.log_info("时间排轴距离恢复: 中键索敌后向前闪避贴近敌人")
         self.click(key="middle", down_time=0.002)
         # Give target lock/camera steering one short beat before deciding the
