@@ -13,16 +13,26 @@ _GENERATION = re.compile(r"generation-[0-9a-f]{32}")
 _TILE_FILE = re.compile(r"(?:index\.json|proposal\.webp|overview-\d+\.webp|tile-\d+-\d+\.webp)")
 
 
-def safe_directory(path):
+def safe_directory(path, *, create=False):
     path = Path(path).absolute()
-    if path.resolve() != path or not path.is_dir():
+    # A Windows 8.3 name resolves to a different spelling without being a link.
+    # Inspect the original chain before canonicalizing away reparse points.
+    ancestors = (path, *path.parents)
+    if any(part.is_symlink() or part.is_junction() for part in ancestors):
         return None
-    return path
+    if create:
+        path.mkdir(parents=True, exist_ok=True)
+        if any(part.is_symlink() or part.is_junction() for part in ancestors):
+            return None
+    return path.resolve() if path.is_dir() else None
 
 
 def regular_file(path, root):
     return (
-        path.parent == root and path.resolve() == path and stat.S_ISREG(path.lstat().st_mode) and not path.is_junction()
+        safe_directory(path.parent) == root
+        and not path.is_symlink()
+        and not path.is_junction()
+        and stat.S_ISREG(path.lstat().st_mode)
     )
 
 
