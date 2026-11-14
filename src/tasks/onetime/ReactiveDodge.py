@@ -40,7 +40,7 @@ class MaaEndDodgeDetector:
             gain = min(detector.input_height / height, detector.input_width / width)
             cx = (dodge_output[0, 0] - padding[1]) * (1280 / (gain * width))
             cy = (dodge_output[0, 1] - padding[0]) * (720 / (gain * height))
-            ignored = (500 <= cx) & (cx < 780) & (265 <= cy) & (cy < 590)
+            ignored = (cx >= 500) & (cx < 780) & (cy >= 265) & (cy < 590)
             dodge_output[0, 4 + 14, ignored] = 0
         return ground + detector._postprocess(dodge_output, padding, (height, width), 0.7, 14)
 
@@ -94,24 +94,32 @@ class ReactiveDodge:
             self.close()
         return True
 
-    def step(self, release_attack, allowed=lambda: True, deadline=None, frame_captured_at=None):
-        """Return True when this frame is consumed, not necessarily a dodge.
-
-        Model initialization or stale inference also consume the frame so the
-        caller rechecks deadlines and obtains a new frame before skill decisions.
-        """
+    def _ready_inference_time(self, allowed, deadline):
+        """Return the start time if enabled, allowed and outside both cooldowns."""
         task = self.task
         if self.failed or not task.get_battle_config(KEY_REACTIVE_DODGE, False) or not allowed():
-            return False
+            return None
         now = task.active_time()
         if now < max(
             self.next_at,
             getattr(task, "_enemy_direction_next_dodge_at", 0.0),
             getattr(task, "_reactive_dodge_next_at", 0.0),
         ):
-            return False
+            return None
         if deadline is not None and now >= deadline:
+            return None
+        return now
+
+    def step(self, release_attack, allowed=lambda: True, deadline=None, frame_captured_at=None):
+        """Return True when this frame is consumed, not necessarily a dodge.
+
+        Model initialization or stale inference also consume the frame so the
+        caller rechecks deadlines and obtains a new frame before skill decisions.
+        """
+        now = self._ready_inference_time(allowed, deadline)
+        if now is None:
             return False
+        task = self.task
         frame = task.frame
         # A missing frame is a capture hiccup, not a permanent model failure.
         if not self._valid_frame(frame):
