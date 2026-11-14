@@ -523,6 +523,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
     def test_advancing_switches_to_the_next_layer_grid(self):
         session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
+        self._move_across_final_stairs(ctx)
         outcome = self.task._advance_layered_segment(ctx)
         self.assertIsNone(outcome, "还有下一段时应继续，而不是结束导航")
         self.assertEqual(session.segment_index, 1)
@@ -536,6 +537,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         from src.nav.route_follower import DONE, FollowerStep
 
         ctx.step = FollowerStep(DONE, distance_to_goal=0.1)
+        self._move_across_final_stairs(ctx)
         outcome = self.task._grid_nav_state_done(ctx)
         self.assertIsNone(outcome, "应当换段继续，而不是返回 True 结束")
         self.assertEqual(session.segment_index, 1)
@@ -589,7 +591,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
     def test_final_layered_segment_respects_smaller_stop_distance(self):
         from src.nav.route_follower import DONE
 
-        session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5, stop_distance=0.25)
+        session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(6.9, 0.9), goal_y=5, stop_distance=0.25)
         self.assertEqual(self.task._try_layered_route_on_plan(ctx, ctx.position, session.goal), (True, True))
         initial_radius = self.task._grid_nav_follower.config.goal_radius
         self.assertGreater(initial_radius, session.stop_distance)
@@ -597,8 +599,10 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertTrue(self.task._activate_layered_segment(ctx))
         follower = self.task._grid_nav_follower
         self.assertEqual(follower.config.goal_radius, 0.25)
+        self.assertEqual(follower.goal, session.goal)
         self.assertNotEqual(follower.update((5.5, 0.5), 90, 1).action, DONE)
-        self.assertEqual(follower.update((6.5, 0.5), 90, 1.2).action, DONE)
+        self.assertNotEqual(follower.update((6.5, 0.5), 45, 1.2).action, DONE)
+        self.assertEqual(follower.update(session.goal, 45, 1.4).action, DONE)
 
     def test_last_segment_before_trailing_link_keeps_approach_radius(self):
         session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5, stop_distance=0.25)
@@ -728,36 +732,38 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertFalse(self.task.w_down)
 
     def test_full_loop_drives_a_cross_layer_route_to_completion(self):
-        """跑**完整的** ``navigate_grid_to`` 主循环，而不只是调辅助函数。
+        """只有真实行走进入楼梯才改变可信楼层，随后继续走非格中心终点。"""
+        for crossing_x in (0.5, 1.0):
+            with self.subTest(crossing_x=crossing_x):
+                self.task = task = _HeadingWalkingTask(self.root)
+                self._report_visual_floor()
+                crossings = []
 
-        这是本文件里唯一覆盖"接线接对了没"的测试：主循环是
-        ``取快照 → 判定 → 派发``，分层接管后要能顺着"分段 → 跨层 → 下一段"一路走到终点。
-        只测辅助函数会漏掉主循环里的装配错误（例如 DONE 时没换段、规划后没接着跟随）。
+                def walk(seconds, *, task=task, crossing_x=crossing_x, crossings=crossings):
+                    seconds = max(0.0, float(seconds))
+                    task.t += seconds
+                    if task.w_down:
+                        radians = math.radians(task.heading)
+                        task.x += math.sin(radians) * seconds * 0.8
+                        task.z += math.cos(radians) * seconds * 0.8
+                        if task.x <= crossing_x and task.y == 105:
+                            crossings.append(task.x)
+                            task.y = 5.0
 
-        模拟的一处必要约定：跨层**会改变所在高度**。游戏里走过楼梯/门时 y 会变，而
-        ``_cross_layered_link`` 的"走过去"分支本来不做物理动作，所以这里在测试任务里
-        把 y 跟着改掉——不改的话人还在旧层的高度上，"中途换层"的守护会（正确地）判定
-        与当前分段不符并重规划，测试就测不到正常路径了。
-        """
-        task = self.task
-        original_cross = task._cross_layered_link
+                task.sleep = walk
+                task.x, task.z, task.y = 3.5, 0.5, 105.0
+                goal = (6.9, 0.9)
+                result = task.navigate_grid_to(goal, goal_y=5.0, map_id="test", stop_distance=0.25, timeout=60.0)
 
-        def crossing(ctx, link):
-            outcome = original_cross(ctx, link)
-            if outcome is not False:
-                task.y = 105.0 if link.target.tier else 5.0
-            return outcome
-
-        task._cross_layered_link = crossing  # type: ignore[method-assign]
-        task.x, task.z, task.y = 3.5, 0.5, 105.0
-
-        result = task.navigate_grid_to((6.5, 0.5), goal_y=5.0, map_id="test", timeout=60.0)
-
-        self.assertTrue(result, f"完整主循环没能走完跨层路线；日志尾部={task.logs[-6:]}")
-        self.assertLess(abs(task.x - 6.5), 2.5, f"最终位置 x={task.x}")
-        self.assertTrue(any("分层路线" in line for line in task.logs), "应当走了分层路径")
-        self.assertTrue(any("跨层" in line for line in task.logs), "应当执行过跨层")
-        self.assertFalse(task.w_down, "结束时必须松开 W")
+                self.assertTrue(result, f"完整主循环没能走完跨层路线；日志尾部={task.logs[-6:]}")
+                self.assertEqual(len(crossings), 1)
+                self.assertLessEqual(math.dist((task.x, task.z), goal), 0.25)
+                self.assertTrue(any("分层路线" in line for line in task.logs), "应当走了分层路径")
+                if crossing_x == 0.5:
+                    self.assertTrue(any("跨层：" in line for line in task.logs), "应当执行过跨层")
+                else:
+                    self.assertTrue(any("视觉确认楼层已变化" in line for line in task.logs))
+                self.assertFalse(task.w_down, "结束时必须松开 W")
 
     def test_full_loop_fails_cleanly_when_the_route_is_unreachable(self):
         """分层路线走不通时，完整主循环应当**以失败结束**，而不是卡到超时或走单层。"""
