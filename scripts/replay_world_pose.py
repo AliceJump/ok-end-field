@@ -45,6 +45,7 @@ def replay(dataset, store, output):
     task = SimpleNamespace(width=0, height=0, active_time=lambda: 0)
     source = VisualPositionSource(task, locator, map_id, max_correction_m=40)
     rows = []
+    previous_shape = None
     for index, sample in enumerate(samples):
         frame = cv2.imread(str(dataset / sample["frame"]))
         if frame is None:
@@ -52,6 +53,10 @@ def replay(dataset, store, output):
         task.height, task.width = frame.shape[:2]
         # Decode and truth IO are outside timing; all visual search/chain work is inside.
         begin = time.perf_counter()
+        shape = frame.shape[:2]
+        if previous_shape is not None and shape != previous_shape:
+            source.reset()
+        previous_shape = shape
         state = source.sample(normalize_visual_frame(frame), now=sample["frame_t"])
         elapsed_ms = (time.perf_counter() - begin) * 1000
         rows.append({"sample": sample, "pose": state, "elapsed_ms": elapsed_ms})

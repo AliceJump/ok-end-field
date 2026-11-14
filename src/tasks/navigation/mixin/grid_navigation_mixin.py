@@ -2422,9 +2422,13 @@ class GridNavigationMixin(RuntimeStateMixin):
         if grid is None:
             self.log_warning(f"分层分段的层没有网格：{segment.key}")
             return False
+        config = self._grid_follower_config()
+        trailing = route.transitions[index] if index < len(route.transitions) else ()
+        if index == len(route.segments) - 1 and not trailing and session.stop_distance is not None:
+            config = replace(config, goal_radius=min(config.goal_radius, max(0.0, session.stop_distance)))
         follower = GridRouteFollower(
             grid,
-            self._grid_follower_config(),
+            config,
             zip_lines=self._grid_zip_lines_for_map(ctx.map_id),
         )
         waypoints = segment.plan.waypoints

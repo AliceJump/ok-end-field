@@ -542,6 +542,7 @@ class GridValidationTask(MinimapNavigateToPoint):
                         break
                     self.navigation_running = False
                     if not self.navigation_failure.get("obstructed"):
+                        attempted.discard(target)
                         event = {
                             "goal": self.goal,
                             "time": time.time(),

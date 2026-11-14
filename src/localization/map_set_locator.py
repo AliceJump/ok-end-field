@@ -433,6 +433,10 @@ class MapSetLocator:
                 )
             validated[mid] = result
             results[mid] = result
+        scope = self._navigation_scope
+        for mid in maps:
+            if mid not in validated and scope is not None and not scope.allows_tier(mid, "__main__"):
+                results.pop(mid, None)
         return self._combine([(mid, results[mid]) for mid in self.map_ids if mid in results], started, None)
 
     def _active_result(self, frame, geometry):
