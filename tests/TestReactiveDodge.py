@@ -659,6 +659,7 @@ class TestReactiveDodge(unittest.TestCase):
         detector = FakeDetector()
 
         def infer(frame, compatibility=True):
+            detector.calls += 1
             task.now += 0.4
             return []
 
@@ -674,6 +675,7 @@ class TestReactiveDodge(unittest.TestCase):
 
         logic._exec_rotation_token = fail_token
         self.assertFalse(namespace["_run_confirmed_combat"](logic, None, False, 9.0))
+        self.assertGreater(detector.calls, 0)
         self.assertEqual(len(fallback_times), 1)
         # The watchdog starts at t=1; one capture/inference/decision iteration
         # is 0.6s. Five wall-clock seconds must expire within one iteration.
