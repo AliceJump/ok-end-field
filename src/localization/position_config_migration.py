@@ -55,8 +55,11 @@ def migrate_visual_map_root():
     current = values.get(CONFIG_VISUAL_MAP_ROOT)
     if not isinstance(current, str) or current.strip().replace("\\", "/").rstrip("/") != "assets/localization/maps":
         return False
-    if CalibratedMapStore(current.strip()).available_maps():
-        return False
+    try:
+        if CalibratedMapStore(current.strip()).available_maps():
+            return False
+    except (OSError, ValueError):
+        pass
     backup = Path(config_path("position_source_migration_backup", "v2", source.name))
     if not backup.exists():
         backup.parent.mkdir(parents=True, exist_ok=True)

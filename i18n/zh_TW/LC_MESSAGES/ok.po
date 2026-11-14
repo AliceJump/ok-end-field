@@ -3586,3 +3586,11 @@ msgstr "地圖設施查詢憑證；不參與視覺或抓包定位。留空則使
 #: src/core/GridNavConfig.py
 msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
 msgstr "距航點小於此距離時提前減速；角度小且位置更新及時，可依速度與取樣耗時保留安全距離後繼續轉向"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "目标楼层(可选)"
+msgstr "目標樓層(可選)"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
+msgstr "留空按目標座標自動判層；填寫樓層 ID，或 __main__ 指定大地圖"

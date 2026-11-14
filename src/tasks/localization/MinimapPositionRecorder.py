@@ -45,6 +45,7 @@ from src.localization.minimap_sample_stitch import (
     summarize_records,
     write_jsonl,
 )
+from src.localization.visual_frame import VISUAL_FRAME_WIDTH, normalize_visual_frame
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 CONFIG_INTERVAL = "采样间隔(秒)"
@@ -157,6 +158,9 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
         scale = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
         task_w = int(getattr(position_task, "width", 0) or 0)
         task_h = int(getattr(position_task, "height", 0) or 0)
+        if task_w > 0:
+            task_h = round(task_h * VISUAL_FRAME_WIDTH / task_w)
+            task_w = VISUAL_FRAME_WIDTH
 
         records: list[dict] = []
         calibrations: list[dict] = []
@@ -230,8 +234,9 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                 if fusion_now is not None:
                     map_to_world_px = fusion_now.map_to_world_px
                 scale_now = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
-                task_w_now = int(getattr(position_task, "width", 0) or task_w)
-                task_h_now = int(getattr(position_task, "height", 0) or task_h)
+                # Saved pixels must use the same scale as the odometry matrix.
+                frame = normalize_visual_frame(frame)
+                task_h_now, task_w_now = frame.shape[:2]
                 if map_to_world_px is None:
                     continue
                 profile_now = (

@@ -3617,3 +3617,11 @@ msgstr "マップ施設の照会用認証情報。視覚・パケット測位に
 #: src/core/GridNavConfig.py
 msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
 msgstr "経由点までの距離がこの値未満なら早めに減速します。角度補正が小さく位置更新が十分に速い場合は、速度と取得時間に応じた安全距離を確保して旋回を続けます。"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "目标楼层(可选)"
+msgstr "目標階層（任意）"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
+msgstr "空欄の場合は目標座標から階層を判定します。階層 ID、または大マップを指定する __main__ を入力してください。"

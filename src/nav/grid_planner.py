@@ -42,6 +42,10 @@ import math
 import time
 from array import array
 from dataclasses import dataclass, field, replace
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.nav.layered_planner import LayeredRoute
 
 import numpy as np
 
@@ -130,6 +134,8 @@ class PlanResult:
     zip_line_steps: list[ZipLineRouteStep] = field(default_factory=list)
     #: 需要先停车校准、对准后再进入的窄道入口航点下标（宽度只有一格的通路）
     narrow_entries: tuple[int, ...] = ()
+    #: 分层预览保留完整分段与连接；waypoints 仅供展示。
+    layered_route: LayeredRoute | None = None
 
     def __repr__(self) -> str:
         if not self.ok:

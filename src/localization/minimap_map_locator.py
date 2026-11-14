@@ -16,8 +16,8 @@ import json
 import math
 import time
 from collections import OrderedDict
-from dataclasses import dataclass
-from functools import lru_cache
+from dataclasses import dataclass, replace
+from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -25,12 +25,16 @@ import cv2
 import numpy as np
 
 from src.core.NavConfig import DEFAULT_SCALE_CONSTANT
+from src.localization.localization_workers import ordered_results
 from src.localization.minimap_odometry import (
     DEFAULT_CENTER_RATIO,
     DEFAULT_R_OUTER_RATIO,
     annulus_mask,
     region_geometry,
 )
+from src.localization.native_tile_image import ZeroPaddedSearchRaster
+from src.localization.template_correlation import correlate_bounded, correlate_color_zncc
+from src.localization.tiled_map_image import TiledMapImage
 
 MAP_PIXELS_PER_METER = 4.0
 COARSE_FACTOR = 0.5
@@ -72,6 +76,10 @@ class MapCalibration:
     @classmethod
     def from_mapping_file(cls, path: str | Path) -> MapCalibration:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
+        return cls.from_mapping(data, name=Path(path).stem)
+
+    @classmethod
+    def from_mapping(cls, data, *, name: str) -> MapCalibration:
         if not isinstance(data, dict):
             raise ValueError("Map mapping must be an object")
         matrix = np.asarray(data["matrix"], dtype=np.float64)
@@ -87,7 +95,7 @@ class MapCalibration:
             inverse_matrix=np.asarray(inverse, dtype=np.float64),
             image_width=int(size.get("width") or 0),
             image_height=int(size.get("height") or 0),
-            map_name=str(data.get("map_name") or Path(path).stem),
+            map_name=str(data.get("map_name") or name),
         )
 
     def map_to_world(self, map_x: float, map_y: float) -> tuple[float, float]:
@@ -173,6 +181,7 @@ class MapCandidate:
     inlier_ratio: float = 1.0
     tier_id: str | None = None
     map_id: str | None = None
+    color: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -186,7 +195,18 @@ class MapCandidate:
             "inlier_ratio": self.inlier_ratio,
             "tier_id": self.tier_id,
             "map_id": self.map_id,
+            "color": self.color,
         }
+
+
+def strong_candidate(best, margin, min_ncc=None, min_full=None, min_margin=None):
+    """Apply score thresholds in the candidate's matching space."""
+    defaults = (0.45, 0.45, 0.10) if best.color else (0.85, 0.65, 0.08)
+    thresholds = tuple(
+        default if override is None else override
+        for default, override in zip(defaults, (min_ncc, min_full, min_margin), strict=True)
+    )
+    return best.ncc >= thresholds[0] and best.full_ncc >= thresholds[1] and margin >= thresholds[2]
 
 
 def candidate_margin(candidates) -> float:
@@ -276,6 +296,65 @@ class _PreparedTemplate:
     mask8: np.ndarray
     center_offset: tuple[float, float] = (0.0, 0.0)
 
+    @cached_property
+    def color_zncc(self) -> tuple[np.ndarray, float]:
+        values, norm = _centered_zncc(self.ring[self.mask])
+        values.setflags(write=False)
+        return values, norm
+
+    @cached_property
+    def dim_terrain(self):
+        """One frame-derived mask shared by every map, floor and candidate.
+
+        Global NCC is dominated by a bright floor's repeated pattern. A broad,
+        textured dim component supplies a second independently normalized view.
+        Never infer this mask from a candidate's alpha or matching residuals.
+        """
+        if self.ring.ndim != 3:
+            return None
+        gray = _as_gray(self.ring)
+        values = gray[self.mask]
+        threshold, _ = cv2.threshold(values, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        dim = self.mask & (gray <= threshold)
+        fraction = dim.sum() / self.mask.sum()
+        if not 0.55 <= fraction <= 0.95:
+            return None
+        low, high = gray[dim], gray[self.mask & ~dim]
+        # A uniform/one-mode image or quantization noise is not independent
+        # background evidence. Require texture and a clearly darker population.
+        if low.std() < 4 or high.mean() < 2 * max(1, low.mean()):
+            return None
+        half = gray.shape[0] // 2
+        for rows, cols in (
+            (slice(None, half), slice(None, half)),
+            (slice(None, half), slice(half, None)),
+            (slice(half, None), slice(None, half)),
+            (slice(half, None), slice(half, None)),
+        ):
+            if dim[rows, cols].sum() < 0.35 * self.mask[rows, cols].sum():
+                return None
+        mask8 = dim.astype(np.uint8) * 255
+        centered, norm = _centered_zncc(self.ring[dim])
+        for pixels in (dim, mask8, centered):
+            pixels.setflags(write=False)
+        return dim, mask8, (centered, norm)
+
+    @cached_property
+    def proposal_dim_mask(self):
+        """Allow one-sided dark terrain to order searches, never to score a fix."""
+        if self.ring.ndim != 3:
+            return None
+        gray = _as_gray(self.ring)
+        threshold, _ = cv2.threshold(gray[self.mask], 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        dim = self.mask & (gray <= threshold)
+        if not 0.20 <= dim.sum() / self.mask.sum() <= 0.95:
+            return None
+        low, high = gray[dim], gray[self.mask & ~dim]
+        if low.std() < 4 or high.mean() < 2 * max(1, low.mean()):
+            return None
+        dim.setflags(write=False)
+        return dim
+
 
 @dataclass(frozen=True)
 class NccScore:
@@ -299,7 +378,7 @@ def masked_zncc(left: np.ndarray, right: np.ndarray, mask: np.ndarray) -> float:
     """Zero-normalized cross-correlation over one shared boolean mask."""
 
     selected = np.asarray(mask, dtype=bool)
-    if selected.shape != left.shape or selected.shape != right.shape:
+    if left.shape != right.shape or selected.shape != left.shape[:2]:
         raise ValueError("ZNCC inputs and mask must have the same shape")
     if not selected.any():
         return 0.0
@@ -311,21 +390,30 @@ def masked_zncc(left: np.ndarray, right: np.ndarray, mask: np.ndarray) -> float:
 _DOT_EXPRESSION = "i,i->"
 
 
-def _zncc_values(left_values: np.ndarray, right_values: np.ndarray) -> float:
-    if left_values.size == 0 or right_values.size == 0:
-        return 0.0
-    left_values = np.asarray(left_values, dtype=np.float64)
-    right_values = np.asarray(right_values, dtype=np.float64)
-    left_values -= left_values.mean()
-    right_values -= right_values.mean()
+def _centered_zncc(values: np.ndarray) -> tuple[np.ndarray, float]:
+    values = np.asarray(values, dtype=np.float64)
+    if values.size == 0:
+        return values.ravel(), 0.0
+    values -= values.mean(axis=0)
+    values = values.ravel()
     # These are short 1-D reductions repeated for every candidate. Dispatching
     # them to a process-wide BLAS thread pool adds latency on the control path.
-    left_sq = np.einsum(_DOT_EXPRESSION, left_values, left_values, optimize=False)
-    right_sq = np.einsum(_DOT_EXPRESSION, right_values, right_values, optimize=False)
-    denominator = math.sqrt(float(left_sq)) * math.sqrt(float(right_sq))
+    return values, math.sqrt(float(np.einsum(_DOT_EXPRESSION, values, values, optimize=False)))
+
+
+def _zncc_centered(left: tuple[np.ndarray, float], right: tuple[np.ndarray, float]) -> float:
+    left_values, left_norm = left
+    right_values, right_norm = right
+    denominator = left_norm * right_norm
     if denominator <= 1e-12:
         return 0.0
     return float(np.einsum(_DOT_EXPRESSION, left_values, right_values, optimize=False) / denominator)
+
+
+def _zncc_values(left_values: np.ndarray, right_values: np.ndarray) -> float:
+    if left_values.size == 0 or right_values.size == 0:
+        return 0.0
+    return _zncc_centered(_centered_zncc(left_values), _centered_zncc(right_values))
 
 
 def robust_masked_zncc(
@@ -343,13 +431,15 @@ def robust_masked_zncc(
     """
 
     selected = np.asarray(mask, dtype=bool)
-    if selected.shape != left.shape or selected.shape != right.shape:
+    if left.shape != right.shape or selected.shape != left.shape[:2]:
         raise ValueError("ZNCC inputs and mask must have the same shape")
     if not selected.any():
         return NccScore(0.0, 0.0, 0.0)
     left_values = np.asarray(left, dtype=np.float64)[selected]
     right_values = np.asarray(right, dtype=np.float64)[selected]
     full_score = _zncc_values(left_values, right_values)
+    if left.ndim == 3:
+        return NccScore(full_score, full_score, 1.0)
     trim = max(0.0, min(0.60, float(trim_ratio)))
     if left_values.size < 16 or trim <= 0.0:
         return NccScore(full_score, full_score, 1.0)
@@ -446,17 +536,53 @@ def _texture_sectors(size: int, center: tuple[float, float], radius: float) -> t
     return tuple(annulus & (angles >= i) & (angles < i + 1) for i in range(8))
 
 
+def _texture_details(ring: np.ndarray, center: tuple[float, float], radius: float) -> tuple[float, ...]:
+    sectors = _texture_sectors(ring.shape[0], center, radius)
+    detail = cv2.absdiff(ring, cv2.GaussianBlur(ring, (5, 5), 0))
+    return tuple(float(detail[sector].mean()) if sector.any() else 0.0 for sector in sectors)
+
+
 def _has_minimap_texture(ring: np.ndarray, center: tuple[float, float], radius: float) -> bool:
     """Conservative plausibility gate, not a semantic guarantee that HUD is visible.
 
     Loading-logo edges may have high contrast but only occupy a few sectors.
     Require terrain detail in at least six sectors; color is intentionally irrelevant.
     """
-    sectors = _texture_sectors(ring.shape[0], center, radius)
-    if any(not sector.any() for sector in sectors):
-        return False
-    detail = cv2.absdiff(ring, cv2.GaussianBlur(ring, (5, 5), 0))
-    return sum(float(detail[sector].mean()) >= 1.0 for sector in sectors) >= 6
+    return sum(value >= 1.0 for value in _texture_details(ring, center, radius)) >= 6
+
+
+def _minimap_rim_sectors(frame: np.ndarray, geometry: MinimapGeometry) -> int:
+    """Independent HUD evidence for sparse terrain, outside the matching annulus.
+
+    Require a thin bright circular ridge in six of eight sectors at one common
+    radius. A three-sample radial tolerance accommodates subpixel HUD centering;
+    unrelated edges at different radii cannot collectively manufacture a rim.
+    This only permits a search: NCC, uniqueness and temporal gates still apply.
+    """
+    radius = geometry.outer_radius
+    delta = max(1.0, radius * 0.036)
+    extent = radius * 1.10 + delta + 1
+    height, width = frame.shape[:2]
+    cx, cy = geometry.center_x, geometry.center_y
+    if cx - extent < 0 or cy - extent < 0 or cx + extent >= width or cy + extent >= height:
+        return 0
+    # Convert only the HUD crop, not every full frame for every map/layer.
+    x0, y0 = math.floor(cx - extent), math.floor(cy - extent)
+    roi = frame[y0 : math.ceil(cy + extent) + 1, x0 : math.ceil(cx + extent) + 1]
+    gray = _as_gray(roi).astype(np.float32)
+    angles = (np.arange(128) + 0.5) * (2 * np.pi / 128)
+    radii = np.linspace(0.94, 1.10, 17)[:, None] * radius
+    cos, sin = np.cos(angles), np.sin(angles)
+
+    def sample(offset):
+        x = (cx - x0 + cos * (radii + offset)).astype(np.float32)
+        y = (cy - y0 + sin * (radii + offset)).astype(np.float32)
+        return cv2.remap(gray, x, y, cv2.INTER_LINEAR)
+
+    ridge = sample(0) - (sample(-delta) + sample(delta)) / 2
+    ridge = np.maximum.reduce((ridge[:-2], ridge[1:-1], ridge[2:]))
+    coverage = (ridge > 4.0).reshape(-1, 8, 16).mean(axis=2)
+    return int((coverage >= 0.5).sum(axis=1).max())
 
 
 def _sanitize_scores(scores: np.ndarray) -> np.ndarray:
@@ -466,7 +592,8 @@ def _sanitize_scores(scores: np.ndarray) -> np.ndarray:
 def _top_peaks(scores: np.ndarray, count: int, *, min_distance: int) -> list[tuple[float, tuple[int, int]]]:
     if scores.size == 0 or count <= 0:
         return []
-    work = _sanitize_scores(scores).copy()
+    work = scores.copy()
+    np.nan_to_num(work, copy=False, nan=-1.0, posinf=-1.0, neginf=-1.0)
     peaks: list[tuple[float, tuple[int, int]]] = []
     radius = max(1, int(min_distance))
     while len(peaks) < count:
@@ -484,7 +611,7 @@ class MinimapMapLocator:
 
     def __init__(
         self,
-        map_image: np.ndarray,
+        map_image: np.ndarray | TiledMapImage,
         calibration: MapCalibration,
         *,
         scale_override: float | None = None,
@@ -493,18 +620,26 @@ class MinimapMapLocator:
         top_k: int = DEFAULT_TOP_K,
         candidate_merge_distance_m: float = DEFAULT_CANDIDATE_MERGE_DISTANCE_M,
         robust_trim_ratio: float = DEFAULT_ROBUST_TRIM_RATIO,
-        min_valid_ncc: float = MIN_VALID_NCC,
-        min_accept_ncc: float = MIN_ACCEPT_NCC,
-        min_accept_margin: float = MIN_ACCEPT_MARGIN,
+        min_valid_ncc: float | None = None,
+        min_accept_ncc: float | None = None,
+        min_accept_margin: float | None = None,
     ) -> None:
-        gray = _as_gray(map_image)
-        if gray is None:
-            raise ValueError("Map image could not be converted to grayscale")
+        tiled = isinstance(map_image, TiledMapImage)
+        image = map_image
+        if isinstance(image, np.ndarray) and image.ndim == 3 and image.shape[2] == 4:
+            image = image[:, :, :3].copy()
+            image[map_image[:, :, 3] == 0] = 0
+        if not tiled:
+            if not isinstance(image, np.ndarray) or image.ndim not in (2, 3):
+                raise ValueError("Map image must be grayscale, BGR or BGRA")
+            if image.ndim == 3 and image.shape[2] != 3:
+                raise ValueError("Map image must be grayscale, BGR or BGRA")
         if not 0 < coarse_factor <= 1:
             raise ValueError("coarse_factor must be in (0, 1]")
         if scale_override is not None and scale_override <= 0:
             raise ValueError("scale_override must be positive")
-        self.map_image = gray
+        self.map_image = image
+        self.color = tiled or image.ndim == 3
         self.calibration = calibration
         self.scale_override = scale_override
         self.coarse_factor = float(coarse_factor)
@@ -516,11 +651,37 @@ class MinimapMapLocator:
         self.robust_trim_ratio = float(robust_trim_ratio)
         if not 0.0 <= self.robust_trim_ratio < 1.0:
             raise ValueError("robust_trim_ratio must be in [0, 1)")
-        self.min_valid_ncc = float(min_valid_ncc)
-        self.min_accept_ncc = float(min_accept_ncc)
-        self.min_accept_margin = float(min_accept_margin)
+        self.min_valid_ncc = float(
+            min_valid_ncc if min_valid_ncc is not None else (0.45 if self.color else MIN_VALID_NCC)
+        )
+        self.min_accept_ncc = float(
+            min_accept_ncc if min_accept_ncc is not None else (0.45 if self.color else MIN_ACCEPT_NCC)
+        )
+        self.min_accept_margin = float(
+            min_accept_margin if min_accept_margin is not None else (0.10 if self.color else MIN_ACCEPT_MARGIN)
+        )
         self._mask_cache: OrderedDict[MinimapGeometry, tuple[np.ndarray, np.ndarray]] = OrderedDict()
-        self._coarse_cache: dict[tuple[float, float], np.ndarray] = {}
+        self._coarse_cache: dict[tuple[float, float], np.ndarray | ZeroPaddedSearchRaster] = {}
+        self._pending_coarse = {}
+        self._closed = False
+        self.last_failure_reason = ""
+
+    def _reject(self, reason):
+        self.last_failure_reason = reason
+        return None
+
+    @property
+    def resident_bytes(self):
+        return self.map_image.nbytes + sum(image.nbytes for image in self._coarse_cache.values())
+
+    def close(self):
+        self._closed = True
+        for future in self._pending_coarse.values():
+            future.cancel()
+        self._pending_coarse.clear()
+        self._coarse_cache.clear()
+        if isinstance(self.map_image, TiledMapImage):
+            self.map_image.close()
 
     @classmethod
     def from_files(
@@ -529,10 +690,10 @@ class MinimapMapLocator:
         mapping_path: str | Path,
         **kwargs: Any,
     ) -> MinimapMapLocator:
-        map_image = cv2.imread(str(map_path), cv2.IMREAD_GRAYSCALE)
+        calibration = MapCalibration.from_mapping_file(mapping_path)
+        map_image = cv2.imread(str(map_path), cv2.IMREAD_COLOR)
         if map_image is None:
             raise ValueError(f"Could not read map image: {map_path}")
-        calibration = MapCalibration.from_mapping_file(mapping_path)
         actual_height, actual_width = map_image.shape[:2]
         if calibration.image_width <= 0 or calibration.image_height <= 0:
             raise ValueError(f"Mapping does not declare image_size: {mapping_path}")
@@ -551,8 +712,9 @@ class MinimapMapLocator:
         frame: np.ndarray | None,
         geometry: MinimapGeometry,
     ) -> _PreparedTemplate | None:
+        self.last_failure_reason = ""
         if frame is None or not isinstance(frame, np.ndarray) or frame.ndim < 2:
-            return None
+            return self._reject("minimap_frame_missing_or_invalid")
         height, width = frame.shape[:2]
         half = math.ceil(geometry.match_outer_radius)
         center_x = round(geometry.center_x)
@@ -560,31 +722,59 @@ class MinimapMapLocator:
         x0, y0 = center_x - half, center_y - half
         x1, y1 = center_x + half + 1, center_y + half + 1
         if x0 < 0 or y0 < 0 or x1 > width or y1 > height:
-            return None
+            return self._reject(f"minimap_roi_out_of_bounds: roi=({x0},{y0},{x1},{y1}) frame={width}x{height}")
         cached = self._geometry_masks(geometry, half, x0, y0)
         if cached is None:
-            return None
+            return self._reject("minimap_mask_too_small: required_pixels=64")
         mask, mask8 = cached
         roi = frame[y0:y1, x0:x1]
-        ring = _as_gray(roi).copy()
-        if not _has_minimap_texture(ring, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+        if self.color and roi.ndim == 2:
+            roi = cv2.cvtColor(roi, cv2.COLOR_GRAY2BGR)
+        ring = roi[:, :, :3].copy() if self.color else _as_gray(roi).copy()
+        center = (geometry.center_x - x0, geometry.center_y - y0)
+        rim_sectors = None
+
+        def texture_valid(pixels, stage):
+            nonlocal rim_sectors
+            details = _texture_details(_as_gray(pixels), center, geometry.outer_radius)
+            textured = sum(value >= 1.0 for value in details)
+            if textured >= 6:
+                return True
+            if rim_sectors is None:
+                rim_sectors = _minimap_rim_sectors(frame, geometry)
+            # A rim alone is not terrain. Masked glyphs must not be the only
+            # surviving detail, and a loading logo without a HUD cannot pass.
+            if textured >= 1 and rim_sectors >= 6:
+                return True
+            self._reject(
+                f"minimap_insufficient_texture: stage={stage} sectors={textured}/8 required=6 "
+                f"rim_sectors={rim_sectors}/8 details=" + ",".join(f"{v:.2f}" for v in details)
+            )
+            return False
+
+        if not texture_valid(ring, "raw"):
             return None
         visible = self._visible_masks(roi, mask, mask8, half)
+        if self.color and visible is not None:
+            visible = self._white_visible_masks(roi, visible[0], visible[1], half)
         if visible is None:
-            return None
+            return self._reject("minimap_icon_occlusion: required_total=0.55 required_quadrant=0.35")
         mask, mask8 = visible
-        mean = float(ring[mask].mean())
+        mean = ring[mask].mean(axis=0)
         flat = ring.copy()
         flat[~mask] = mean
-        if not _has_minimap_texture(flat, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+        if not texture_valid(flat, "masked"):
+            if self.color:
+                return None
             visible = self._legacy_visible_masks(roi, cached[0], cached[1], half)
             if visible is None:
                 return None
             mask, mask8 = visible
             flat = ring.copy()
             flat[~mask] = float(ring[mask].mean())
-            if not _has_minimap_texture(flat, (geometry.center_x - x0, geometry.center_y - y0), geometry.outer_radius):
+            if not texture_valid(flat, "legacy_masked"):
                 return None
+        self.last_failure_reason = ""
         return _PreparedTemplate(
             flat=flat,
             ring=ring,
@@ -620,6 +810,12 @@ class MinimapMapLocator:
         return cached
 
     @staticmethod
+    def _white_visible_masks(roi, mask, mask8, half):
+        white = np.all(roi[:, :, :3] == 255, axis=2).astype(np.uint8)
+        excluded = cv2.dilate(white, np.ones((5, 5), dtype=np.uint8))
+        return MinimapMapLocator._checked_visible_masks(mask, excluded, half)
+
+    @staticmethod
     def _visible_masks(roi, mask, mask8, half):
         """Exclude glyph cores, connected antialiasing and resolution-scaled outlines."""
         # Every candidate receives the same frame-derived exclusions. Geometry
@@ -646,11 +842,20 @@ class MinimapMapLocator:
         if not np.any(overlay & mask):
             return mask, mask8
         visible = MinimapMapLocator._checked_visible_masks(mask, overlay, half)
-        return visible if visible is not None else MinimapMapLocator._legacy_visible_masks(roi, mask, mask8, half)
+        if visible is not None:
+            return visible
+        # Bright roads/buildings can join the dim-glyph components and exhaust
+        # coverage. Drop that growth before dropping resolution-scaled outline
+        # padding: jumping straight to one pixel leaves dark icon borders in NCC.
+        if padding > 1:
+            visible = MinimapMapLocator._legacy_visible_masks(roi, mask, mask8, half, padding=padding)
+            if visible is not None:
+                return visible
+        return MinimapMapLocator._legacy_visible_masks(roi, mask, mask8, half)
 
     @staticmethod
-    def _legacy_visible_masks(roi, mask, mask8, half):
-        """Retain the original frame-only mask if wider glyph padding erases terrain."""
+    def _legacy_visible_masks(roi, mask, mask8, half, *, padding=1):
+        """Mask bright glyph seeds with bounded padding, without dim-pixel growth."""
         if roi.ndim != 3 or roi.shape[2] < 3:
             return mask, mask8
         colors = roi[:, :, :3]
@@ -658,7 +863,7 @@ class MinimapMapLocator:
         overlay = (low >= 210) | ((high >= 190) & (high.astype(np.int16) - low > 90))
         if not np.any(overlay & mask):
             return mask, mask8
-        overlay = cv2.dilate(overlay.astype(np.uint8), np.ones((3, 3), np.uint8))
+        overlay = cv2.dilate(overlay.astype(np.uint8), np.ones((2 * padding + 1, 2 * padding + 1), np.uint8))
         return MinimapMapLocator._checked_visible_masks(mask, overlay, half)
 
     @staticmethod
@@ -678,18 +883,63 @@ class MinimapMapLocator:
                 return None
         return visible, visible.astype(np.uint8) * 255
 
-    def _coarse_map(self, coarse_scale: float) -> np.ndarray:
+    def _build_coarse(self, coarse_scale):
+        if isinstance(self.map_image, TiledMapImage):
+            return self.map_image.coarse_overview(coarse_scale)
+        return cv2.resize(self.map_image, None, fx=coarse_scale, fy=coarse_scale, interpolation=cv2.INTER_AREA)
+
+    def _remember_coarse(self, key, pixels):
+        self._coarse_cache[key] = pixels
+        while len(self._coarse_cache) > 2:
+            self._coarse_cache.pop(next(iter(self._coarse_cache)))
+        return pixels
+
+    def prepare_global_search(self, frame_width, executor, *, wait=False, stop=None):
+        """Prepare pixels; only a background hint job may wait on its snapshot."""
+        if self._closed:
+            raise ValueError("minimap locator closed")
+        scale = self._scale(frame_width) * self.coarse_factor
+        key = (self.coarse_factor, scale)
+        # A resize supersedes queued work. Completed old widths must not stay
+        # alive in futures outside the two-entry coarse cache indefinitely.
+        for pending_key in tuple(self._pending_coarse):
+            if pending_key != key:
+                self._pending_coarse.pop(pending_key).cancel()
+        if key in self._coarse_cache:
+            return True
+        future = self._pending_coarse.get(key)
+        if future is None:
+            output_pixels = round(self.map_image.shape[0] * scale) * round(self.map_image.shape[1] * scale)
+            memory_bytes = (
+                self.map_image.overview_memory_bytes(scale)
+                if isinstance(self.map_image, TiledMapImage)
+                else 64 * 1024**2 + output_pixels * 4
+            )
+            self._pending_coarse[key] = executor.submit(
+                self._build_coarse,
+                scale,
+                memory_bytes=memory_bytes,
+            )
+            future = self._pending_coarse[key]
+            if not wait:
+                return False
+        if wait:
+            try:
+                ordered_results((future,), stop)
+            except Exception:
+                self._pending_coarse.pop(key, None)
+                raise
+        if not future.done():
+            return False
+        del self._pending_coarse[key]
+        self._remember_coarse(key, future.result())
+        return True
+
+    def _coarse_map(self, coarse_scale: float) -> np.ndarray | ZeroPaddedSearchRaster:
         key = (self.coarse_factor, coarse_scale)
         cached = self._coarse_cache.get(key)
         if cached is None:
-            cached = cv2.resize(
-                self.map_image,
-                None,
-                fx=coarse_scale,
-                fy=coarse_scale,
-                interpolation=cv2.INTER_AREA,
-            )
-            self._coarse_cache[key] = cached
+            cached = self._remember_coarse(key, self._build_coarse(coarse_scale))
         return cached
 
     def _candidate_from_patch(
@@ -701,12 +951,18 @@ class MinimapMapLocator:
         *,
         coarse_score: float,
     ) -> MapCandidate:
-        score = robust_masked_zncc(
-            template.ring,
-            patch,
-            template.mask,
-            trim_ratio=self.robust_trim_ratio,
-        )
+        if template.ring.ndim == 3:
+            full = _zncc_centered(template.color_zncc, _centered_zncc(patch[template.mask]))
+            dim = template.dim_terrain
+            ncc = full if dim is None else 0.5 * (full + _zncc_centered(dim[2], _centered_zncc(patch[dim[0]])))
+            score = NccScore(ncc, full, 1.0)
+        else:
+            score = robust_masked_zncc(
+                template.ring,
+                patch,
+                template.mask,
+                trim_ratio=self.robust_trim_ratio,
+            )
         world_x, world_z = self.calibration.map_to_world(map_x, map_y)
         return MapCandidate(
             map_x=float(map_x),
@@ -717,7 +973,116 @@ class MinimapMapLocator:
             coarse_score=float(coarse_score),
             full_ncc=score.full_score,
             inlier_ratio=score.inlier_ratio,
+            color=self.color,
         )
+
+    def _match_scores(self, image, template, *, coarse=False, allowed=None):
+        """Use the same balanced evidence in peak generation and final scoring."""
+        dim = template.dim_terrain
+        if coarse:
+            target = max(4, round(template.flat.shape[0] * self.coarse_factor))
+            pixels = cv2.resize(template.flat, (target, target), interpolation=cv2.INTER_AREA)
+            mask = None
+            dim_mask = (
+                None
+                if dim is None
+                else (
+                    cv2.resize(dim[0].astype(np.float32), (target, target), interpolation=cv2.INTER_AREA) >= 0.99
+                ).astype(np.uint8)
+                * 255
+            )
+        else:
+            pixels, mask = template.ring, template.mask8
+            dim_mask = None if dim is None else dim[1]
+        method = cv2.TM_CCOEFF_NORMED if coarse or self.color else cv2.TM_CCORR_NORMED
+
+        if (
+            self.color
+            and (coarse or (dim_mask is not None and np.count_nonzero(dim_mask) >= 16))
+            and pixels.dtype == np.uint8
+            and (not isinstance(image, np.ndarray) or image.dtype == np.uint8)
+        ):
+            masks = (mask,) if dim_mask is None or np.count_nonzero(dim_mask) < 16 else (mask, dim_mask)
+            bounds = image.correlation_bounds(pixels.shape[:2]) if isinstance(image, ZeroPaddedSearchRaster) else None
+            return correlate_color_zncc(
+                image, pixels, masks=masks, allowed=allowed, output_bounds=bounds, compact=not coarse
+            )
+
+        def match(selected):
+            if allowed is not None:
+                scores = correlate_bounded(image, pixels, mask=selected, block_size=256, allowed=allowed, method=method)
+            elif isinstance(image, ZeroPaddedSearchRaster):
+                scores = image.match_scores(pixels, mask=selected)
+            elif coarse:
+                scores = correlate_bounded(image, pixels, mask=selected)
+            else:
+                scores = cv2.matchTemplate(image, pixels, method, mask=selected)
+            return _sanitize_scores(scores)
+
+        full = match(mask)
+        if dim_mask is None or np.count_nonzero(dim_mask) < 16:
+            return full
+        return 0.5 * (full + match(dim_mask))
+
+    def _candidates_from_patches(self, template, patches, positions):
+        """Score bounded batches without changing masks, precision or top-k."""
+        if not patches:
+            return []
+        if template.ring.ndim != 3:
+            return [
+                self._candidate_from_patch(template, pixels, x, y, coarse_score=score)
+                for pixels, (x, y, score) in zip(patches, positions, strict=True)
+            ]
+
+        def zncc(pixels, mask, prepared):
+            values = pixels[:, mask, :].astype(np.float64)
+            values -= values.mean(axis=1, keepdims=True)
+            norms = np.sqrt(np.einsum("npc,npc->n", values, values, optimize=False)) * prepared[1]
+            numerator = np.einsum("npc,pc->n", values, prepared[0].reshape(-1, 3), optimize=False)
+            return np.divide(numerator, norms, out=np.zeros_like(numerator), where=norms > 1e-12)
+
+        candidates = []
+        dim = template.dim_terrain
+        # A per-call batch bounds scratch memory even when several floors are
+        # searched concurrently. No float patch arrays stay resident in caches.
+        for offset in range(0, len(patches), 8):
+            pixels = np.stack(patches[offset : offset + 8])
+            full = zncc(pixels, template.mask, template.color_zncc)
+            scores = full if dim is None else 0.5 * (full + zncc(pixels, dim[0], dim[2]))
+            for index, (x, y, coarse) in enumerate(positions[offset : offset + 8]):
+                world_x, world_z = self.calibration.map_to_world(x, y)
+                candidates.append(
+                    MapCandidate(
+                        float(x),
+                        float(y),
+                        world_x,
+                        world_z,
+                        float(scores[index]),
+                        coarse_score=float(coarse),
+                        full_ncc=float(full[index]),
+                        inlier_ratio=1.0,
+                        color=True,
+                    )
+                )
+        return candidates
+
+    def _candidate_grid(self, shape, *, origin, scale, center):
+        mask = getattr(self.map_image, "candidate_mask", None)
+        if callable(mask):
+            xs = origin[0] + (np.arange(shape[1]) + center[0]) / scale - 0.5
+            ys = origin[1] + (np.arange(shape[0]) + center[1]) / scale - 0.5
+            return mask(xs, ys)
+        return None
+
+    def _mask_candidate_centers(self, scores, **geometry):
+        allowed = self._candidate_grid(scores.shape, **geometry)
+        if allowed is not None:
+            scores[~allowed] = -1.0
+        return scores
+
+    def _candidate_center_valid(self, x, y):
+        mask = getattr(self.map_image, "candidate_mask", None)
+        return not callable(mask) or bool(mask([x], [y])[0, 0])
 
     def _refine(
         self,
@@ -734,31 +1099,37 @@ class MinimapMapLocator:
         y0 = max(0, round(map_y) - radius)
         x1 = min(self.map_image.shape[1], round(map_x) + radius + 1)
         y1 = min(self.map_image.shape[0], round(map_y) + radius + 1)
+        if x1 <= x0 or y1 <= y0:
+            return None
         local_map = self.map_image[y0:y1, x0:x1]
         if local_map.size == 0:
             return None
-        minimum, maximum, _min_location, _max_location = cv2.minMaxLoc(local_map)
+        minimum, maximum = local_map.min(), local_map.max()
         if minimum == maximum:
             return None
         local_map = cv2.resize(local_map, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
         if local_map.shape[0] < size or local_map.shape[1] < size:
             return None
-        scores = cv2.matchTemplate(
-            local_map,
-            template.ring,
-            cv2.TM_CCORR_NORMED,
-            mask=template.mask8,
+        allowed = self._candidate_grid(
+            (local_map.shape[0] - size + 1, local_map.shape[1] - size + 1),
+            origin=(x0, y0),
+            scale=scale,
+            center=(size / 2 + template.center_offset[0], size / 2 + template.center_offset[1]),
         )
-        scores = _sanitize_scores(scores)
+        scores = self._match_scores(local_map, template, allowed=allowed)
+        if allowed is not None:
+            scores[~allowed] = -1.0
         peaks = _top_peaks(scores, max(8, self.top_k), min_distance=1)
         max_distance = self.refine_radius_map_px + 1.0
-        candidates = []
+        patches, positions = [], []
         for _score, (left, top) in peaks:
             dx, dy = _peak_subpixel_offset(scores, left, top)
             # OpenCV resize uses source pixel centers: (u + 0.5) / scale - 0.5.
             refined_x = x0 + (left + dx + size / 2.0 + template.center_offset[0]) / scale - 0.5
             refined_y = y0 + (top + dy + size / 2.0 + template.center_offset[1]) / scale - 0.5
             if math.hypot(refined_x - map_x, refined_y - map_y) > max_distance:
+                continue
+            if not self._candidate_center_valid(refined_x, refined_y):
                 continue
             # Score the same subpixel location that we publish. Scoring the
             # integer crop while reporting an interpolated peak made an
@@ -769,15 +1140,9 @@ class MinimapMapLocator:
                 (size, size),
                 (left + dx + (size - 1) / 2, top + dy + (size - 1) / 2),
             )
-            candidates.append(
-                self._candidate_from_patch(
-                    template,
-                    patch,
-                    refined_x,
-                    refined_y,
-                    coarse_score=coarse_score,
-                )
-            )
+            patches.append(patch)
+            positions.append((refined_x, refined_y, coarse_score))
+        candidates = self._candidates_from_patches(template, patches, positions)
         return max(candidates, key=lambda candidate: candidate.ncc, default=None)
 
     def _status(self, candidates: list[MapCandidate]) -> tuple[str, str]:
@@ -790,6 +1155,25 @@ class MinimapMapLocator:
         if best >= self.min_accept_ncc and margin >= self.min_accept_margin:
             return "accepted", "high NCC with clear margin"
         return "ambiguous", f"NCC={best:.3f}, margin={margin:.3f}"
+
+    def proposal_background_score(self, template, frame_width, prior, *, radius=8.0):
+        """Score a bounded ordering hint without producing a position or evidence."""
+        mask = template.proposal_dim_mask
+        if mask is None:
+            return 0.0
+        scale = self._scale(frame_width)
+        px, py = self.calibration.world_to_map(*prior)
+        size = template.ring.shape[0]
+        radii = radius * np.linalg.norm(self.calibration.inverse_matrix[:, :2], axis=1)
+        mx, my = (math.ceil(value + size / (2 * scale)) for value in radii)
+        x0, y0 = max(0, round(px) - mx), max(0, round(py) - my)
+        x1 = min(self.map_image.shape[1], round(px) + mx + 1)
+        y1 = min(self.map_image.shape[0], round(py) + my + 1)
+        if min(round((x1 - x0) * scale), round((y1 - y0) * scale)) < size:
+            return 0.0
+        image = cv2.resize(self.map_image[y0:y1, x0:x1], None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        scores = correlate_color_zncc(image, template.ring, masks=(mask.astype(np.uint8) * 255,), compact=True)
+        return float(np.clip(scores.max(), 0, 1))
 
     def locate_global(
         self,
@@ -806,14 +1190,17 @@ class MinimapMapLocator:
         coarse_scale = scale * self.coarse_factor
         coarse_map = self._coarse_map(coarse_scale)
         target = max(4, round(template.flat.shape[0] * self.coarse_factor))
-        coarse_template = cv2.resize(
-            template.flat,
-            (target, target),
-            interpolation=cv2.INTER_AREA,
-        )
         if coarse_map.shape[0] < target or coarse_map.shape[1] < target:
-            return None
-        scores = _sanitize_scores(cv2.matchTemplate(coarse_map, coarse_template, cv2.TM_CCOEFF_NORMED))
+            return self._reject(f"minimap_map_too_small: map={coarse_map.shape} template={target}")
+        allowed = self._candidate_grid(
+            (coarse_map.shape[0] - target + 1, coarse_map.shape[1] - target + 1),
+            origin=(0, 0),
+            scale=coarse_scale,
+            center=(target / 2, target / 2),
+        )
+        scores = self._match_scores(coarse_map, template, coarse=True, allowed=allowed)
+        if allowed is not None:
+            scores[~allowed] = -1.0
         peaks = _top_peaks(scores, self.top_k, min_distance=max(4, target // 2))
         candidates = []
         for coarse_score, (left, top) in peaks:
@@ -828,13 +1215,12 @@ class MinimapMapLocator:
             )
             if refined is not None:
                 candidates.append(refined)
-        candidates = deduplicate_candidates(
-            candidates,
-            min_world_distance_m=self.candidate_merge_distance_m,
-        )[: self.top_k]
+        candidates = deduplicate_candidates(candidates, min_world_distance_m=self.candidate_merge_distance_m)[
+            : self.top_k
+        ]
         status, reason = self._status(candidates)
         if not candidates:
-            return None
+            return self._reject(f"minimap_no_candidates: search=global peaks={len(peaks)}")
         return LocateResult(
             status=status,
             reason=reason,
@@ -857,9 +1243,17 @@ class MinimapMapLocator:
 
         start = time.perf_counter()
         template = self._prepare_template(frame, geometry)
-        if template is None or search_radius_m <= 0:
+        if template is None:
             return None
-        scale = self._scale(frame.shape[1])
+        return self._locate_near_template(template, frame.shape[1], previous_world, search_radius_m, start=start)
+
+    def _locate_near_template(self, template, frame_width, previous_world, search_radius_m, *, start=None):
+        if start is None:
+            start = time.perf_counter()
+        self.last_failure_reason = ""
+        if search_radius_m <= 0:
+            return self._reject("minimap_invalid_search_radius")
+        scale = self._scale(frame_width)
         previous_x, previous_y = self.calibration.world_to_map(*previous_world)
         inverse_linear = self.calibration.inverse_matrix[:, :2]
         radii_map = float(search_radius_m) * np.linalg.norm(inverse_linear, axis=1)
@@ -869,56 +1263,63 @@ class MinimapMapLocator:
         y0 = max(0, round(previous_y) - margin_y)
         x1 = min(self.map_image.shape[1], round(previous_x) + margin_x + 1)
         y1 = min(self.map_image.shape[0], round(previous_y) + margin_y + 1)
+        if x1 <= x0 or y1 <= y0:
+            return self._reject("minimap_search_outside_map")
+        resized_shape = (round((y1 - y0) * scale), round((x1 - x0) * scale))
+        if min(resized_shape) < size:
+            return self._reject(f"minimap_map_too_small: map={resized_shape} template={size}")
+        allowed = self._candidate_grid(
+            (resized_shape[0] - size + 1, resized_shape[1] - size + 1),
+            origin=(x0, y0),
+            scale=scale,
+            center=(size / 2 + template.center_offset[0], size / 2 + template.center_offset[1]),
+        )
+        if allowed is not None and not allowed.any():
+            return self._reject("minimap_search_region_uncovered")
+        if allowed is not None and not self._coverage_reaches_radius(
+            allowed, (x0, y0), scale, size, template.center_offset, previous_world, search_radius_m
+        ):
+            return self._reject("minimap_search_region_uncovered")
         local_map = self.map_image[y0:y1, x0:x1]
         if local_map.size == 0:
-            return None
-        minimum, maximum, _min_location, _max_location = cv2.minMaxLoc(local_map)
+            return self._reject("minimap_search_outside_map")
+        minimum, maximum = local_map.min(), local_map.max()
         if minimum == maximum:
-            return None
+            return self._reject("minimap_search_region_blank")
         local_map = cv2.resize(local_map, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
         if local_map.shape[0] < size or local_map.shape[1] < size:
-            return None
-        scores = _sanitize_scores(
-            cv2.matchTemplate(
-                local_map,
-                template.ring,
-                cv2.TM_CCORR_NORMED,
-                mask=template.mask8,
-            )
-        )
+            return self._reject(f"minimap_map_too_small: map={local_map.shape} template={size}")
+        scores = self._match_scores(local_map, template, allowed=allowed)
+        if allowed is not None:
+            scores[~allowed] = -1.0
         peak_distance = max(
             2,
             math.ceil(self.candidate_merge_distance_m * np.linalg.svd(inverse_linear, compute_uv=False)[-1] * scale),
         )
         peaks = _top_peaks(scores, max(16, self.top_k * 3), min_distance=peak_distance)
-        candidates = []
+        patches, positions = [], []
         for coarse_score, (left, top) in peaks:
             dx, dy = _peak_subpixel_offset(scores, left, top)
             map_x = x0 + (left + dx + size / 2.0 + template.center_offset[0]) / scale - 0.5
             map_y = y0 + (top + dy + size / 2.0 + template.center_offset[1]) / scale - 0.5
             if math.dist(self.calibration.map_to_world(map_x, map_y), previous_world) > search_radius_m:
                 continue
+            if not self._candidate_center_valid(map_x, map_y):
+                continue
             patch = cv2.getRectSubPix(
                 local_map,
                 (size, size),
                 (left + dx + (size - 1) / 2, top + dy + (size - 1) / 2),
             )
-            candidates.append(
-                self._candidate_from_patch(
-                    template,
-                    patch,
-                    map_x,
-                    map_y,
-                    coarse_score=coarse_score,
-                )
-            )
-        candidates = deduplicate_candidates(
-            candidates,
-            min_world_distance_m=self.candidate_merge_distance_m,
-        )[: self.top_k]
+            patches.append(patch)
+            positions.append((map_x, map_y, coarse_score))
+        candidates = self._candidates_from_patches(template, patches, positions)
+        candidates = deduplicate_candidates(candidates, min_world_distance_m=self.candidate_merge_distance_m)[
+            : self.top_k
+        ]
         status, reason = self._status(candidates)
         if not candidates:
-            return None
+            return self._reject(f"minimap_no_candidates: search=local peaks={len(peaks)}")
         return LocateResult(
             status=status,
             reason=reason,
@@ -928,6 +1329,19 @@ class MinimapMapLocator:
             scale=scale,
             used_prior=True,
         )
+
+    def _coverage_reaches_radius(self, allowed, origin, scale, size, center_offset, world, radius):
+        """Reject a whole floor only if no subpixel peak can enter the circle."""
+        rows, cols = np.nonzero(allowed)
+        x = origin[0] + (cols + size / 2 + center_offset[0]) / scale - 0.5
+        y = origin[1] + (rows + size / 2 + center_offset[1]) / scale - 0.5
+        a = self.calibration.matrix
+        dx = a[0, 0] * x + a[0, 1] * y + a[0, 2] - world[0]
+        dz = a[1, 0] * x + a[1, 1] * y + a[1, 2] - world[1]
+        # Peak interpolation can move by half a score pixel in each axis.
+        # Keep that entire affine uncertainty envelope, even at circle edges.
+        slack = np.linalg.norm(a[:, :2], ord=2) * math.sqrt(0.5) / scale
+        return bool(np.any(dx * dx + dz * dz <= (radius + slack + 1e-9) ** 2))
 
 
 class MinimapTracker:
@@ -961,9 +1375,9 @@ class MinimapTracker:
         min_search_radius_m: float = 8.0,
         max_speed_m_s: float = 20.0,
         pending_max_gap_s: float = 0.5,
-        initial_min_ncc: float = 0.85,
-        initial_min_full_ncc: float = 0.65,
-        initial_min_margin: float = 0.08,
+        initial_min_ncc: float | None = None,
+        initial_min_full_ncc: float | None = None,
+        initial_min_margin: float | None = None,
     ) -> None:
         if promote_hits < 1:
             raise ValueError("promote_hits must be >= 1")
@@ -979,7 +1393,7 @@ class MinimapTracker:
         ):
             raise ValueError("adaptive search and pending thresholds must be finite and positive")
         if not all(
-            math.isfinite(v) and 0 <= v <= 1
+            v is None or (math.isfinite(v) and 0 <= v <= 1)
             for v in (
                 initial_min_ncc,
                 initial_min_full_ncc,
@@ -987,9 +1401,12 @@ class MinimapTracker:
             )
         ):
             raise ValueError("initial confidence thresholds must be finite and in [0, 1]")
-        self.initial_min_ncc = float(initial_min_ncc)
-        self.initial_min_full_ncc = float(initial_min_full_ncc)
-        self.initial_min_margin = float(initial_min_margin)
+        color = getattr(locator, "color", False) is True
+        self.initial_min_ncc = initial_min_ncc if initial_min_ncc is not None else (0.45 if color else 0.85)
+        self.initial_min_full_ncc = (
+            initial_min_full_ncc if initial_min_full_ncc is not None else (0.45 if color else 0.65)
+        )
+        self.initial_min_margin = initial_min_margin if initial_min_margin is not None else (0.10 if color else 0.08)
         self.min_search_radius_m = min(float(min_search_radius_m), float(search_radius_m))
         self.max_speed_m_s = float(max_speed_m_s)
         self.pending_max_gap_s = float(pending_max_gap_s)
@@ -1005,6 +1422,9 @@ class MinimapTracker:
         self._pending_hits = 0
         self._pending_since: float | None = None
         self._last_update_t: float | None = None
+        self._prediction_verified_t: float | None = None
+        self._prediction_verified: MapCandidate | None = None
+        self._prediction_margin = 0.0
 
     @property
     def convinced(self) -> MapCandidate | None:
@@ -1021,6 +1441,9 @@ class MinimapTracker:
         self._pending = None
         self._pending_hits = 0
         self._pending_since = None
+        self._prediction_verified_t = None
+        self._prediction_verified = None
+        self._prediction_margin = 0.0
 
     @staticmethod
     def _distance(left: MapCandidate, right: MapCandidate) -> float:
@@ -1060,9 +1483,9 @@ class MinimapTracker:
             best.map_id != previous.map_id
             or best.tier_id is None
             or best.tier_id != previous.tier_id
-            or best.ncc < self.initial_min_ncc
-            or best.full_ncc < self.initial_min_full_ncc
-            or locate.margin < self.initial_min_margin
+            or not strong_candidate(
+                best, locate.margin, self.initial_min_ncc, self.initial_min_full_ncc, self.initial_min_margin
+            )
             or not all(math.isfinite(v) for v in predicted_world)
             or math.hypot(best.world_x - predicted_world[0], best.world_z - predicted_world[1]) > 1.0
             or self._distance(best, previous) > self.consistency_distance_m + self.max_speed_m_s * (now - previous_t)
@@ -1079,6 +1502,10 @@ class MinimapTracker:
         now: float | None = None,
         prior_world: tuple[float, float] | None = None,
         prior_radius_m: float = 50.0,
+        prediction_world: tuple[float, float] | None = None,
+        prediction_radius_m: float = 35.0,
+        recovery_world: tuple[float, float] | None = None,
+        recovery_map_id: str | None = None,
     ) -> TrackResult:
         """Run one visual frame and update the convinced/pending state."""
 
@@ -1100,11 +1527,25 @@ class MinimapTracker:
             and self._convinced_t is not None
             and 0 <= current - self._convinced_t <= self.stale_after_s
         )
-        result, used_prior = self._locate_frame(frame, geometry, current, fresh, prior_world, prior_radius_m)
+        if recovery_world is not None:
+            # A live visual chain supplies a search region, never an absolute
+            # observation. Keep incomplete local results instead of escalating
+            # to all maps/floors when the last absolute fix becomes stale.
+            result = self._locate_recovery(frame, geometry, recovery_world, recovery_map_id, current, fresh)
+            used_prior, used_prediction = True, False
+            if result is not None and result.status != "accepted":
+                result = replace(result, status="rejected")
+        else:
+            result, used_prior, used_prediction = self._locate_frame(
+                frame, geometry, current, fresh, prior_world, prior_radius_m, prediction_world, prediction_radius_m
+            )
         if result is None:
             # Invalid/absent minimaps must invalidate even a recently trusted pose.
             self.reset()
-            return TrackResult("lost", False, "no_valid_minimap_or_match", None, None, 0, used_prior)
+            reason = getattr(self.locator, "last_failure_reason", "") or "no_valid_minimap_or_match"
+            return TrackResult("lost", False, reason, None, None, 0, used_prior)
+        if used_prediction:
+            result = self._verify_prediction_competition(frame, geometry, result, current)
         if result.status == "rejected":
             self._pending = None
             self._pending_hits = 0
@@ -1115,15 +1556,131 @@ class MinimapTracker:
         convinced_radius = self.consistency_distance_m + self.max_speed_m_s * (
             max(0.0, current - self._convinced_t) if fresh else 0.0
         )
-        if fresh and self._distance(best, self._convinced) <= convinced_radius:
+        if (
+            fresh
+            and (not used_prediction or result.margin >= self.initial_min_margin)
+            and self._distance(best, self._convinced) <= convinced_radius
+        ):
             self._set_convinced(best, current)
             return TrackResult("convinced", True, result.reason, result, best, 0, used_prior)
 
         return self._confirm_acquisition(result, current, previous_update, used_prior)
 
-    def _locate_frame(self, frame, geometry, current, fresh, prior_world, prior_radius_m):
+    def _locate_recovery(self, frame, geometry, world, map_id, now, fresh):
+        """Track near a fresh anchor; periodically recheck the full recovery ROI.
+
+        Only a recent accepted wide search can authorize the small window.
+        Weak evidence, a different map/floor, or expiration forces a same-frame
+        wide check. An unresolved visual chain stays on its anchored map.
+        """
+        locate_on_map = getattr(self.locator, "locate_on_map", None)
+
+        def search(radius):
+            if callable(locate_on_map):
+                return locate_on_map(frame, map_id, world, geometry, search_radius_m=radius)
+            return self.locator.locate_near(frame, world, geometry, search_radius_m=radius)
+
+        verified = self._prediction_verified
+        if (
+            fresh
+            and verified is not None
+            and self._prediction_verified_t is not None
+            and 0 <= now - self._prediction_verified_t <= self.pending_max_gap_s
+            and self._distance(verified, self._convinced) <= self.consistency_distance_m
+            and verified.map_id == map_id
+            and self._prediction_margin >= self.initial_min_margin
+        ):
+            radius = min(
+                self.search_radius_m, self.min_search_radius_m + self.max_speed_m_s * (now - self._convinced_t)
+            )
+            result = search(radius)
+            if (
+                result is not None
+                and result.status == "accepted"
+                and strong_candidate(
+                    result.best, result.margin, self.initial_min_ncc, self.initial_min_full_ncc, self.initial_min_margin
+                )
+                and self._distance(result.best, verified) <= self.consistency_distance_m
+            ):
+                return replace(result, spatial_margin=min(result.margin, self._prediction_margin))
+        self._prediction_verified = self._prediction_verified_t = None
+        self._prediction_margin = 0.0
+        result = search(self.search_radius_m)
+        if (
+            result is not None
+            and result.status == "accepted"
+            and strong_candidate(
+                result.best, result.margin, self.initial_min_ncc, self.initial_min_full_ncc, self.initial_min_margin
+            )
+        ):
+            self._prediction_verified, self._prediction_verified_t = result.best, now
+            self._prediction_margin = result.margin
+        return result
+
+    def _verify_prediction_competition(self, frame, geometry, result, now):
+        """Require an accepted predicted peak to survive the normal wider search."""
+
+        best = result.best
+        if (
+            self._prediction_verified is not None
+            and self._prediction_verified_t is not None
+            and now - self._prediction_verified_t <= self.pending_max_gap_s
+            and self._distance(best, self._prediction_verified) <= self.consistency_distance_m
+            and self._prediction_margin >= self.initial_min_margin
+        ):
+            return replace(
+                result,
+                reason=f"prediction_cached_{result.reason}",
+                spatial_margin=min(result.margin, self._prediction_margin),
+            )
+        wide = self.locator.locate_near(
+            frame,
+            (best.world_x, best.world_z),
+            geometry,
+            search_radius_m=self.search_radius_m,
+        )
+        self._prediction_verified = None
+        self._prediction_verified_t = None
+        self._prediction_margin = 0.0
+        if wide is None:
+            return replace(result, status="rejected", reason="prediction_competition_unavailable", spatial_margin=0.0)
+        if wide.status != "accepted":
+            # An ambiguous/incomplete search cannot prove absence of competitors.
+            # Keep the local observation for visual propagation, never promotion.
+            return replace(result, status="rejected", reason=f"prediction_{wide.reason}", spatial_margin=0.0)
+        competitors = [
+            candidate
+            for candidate in wide.candidates
+            if candidate.map_id != best.map_id
+            or candidate.tier_id != best.tier_id
+            or math.hypot(candidate.world_x - best.world_x, candidate.world_z - best.world_z)
+            > self.consistency_distance_m
+        ]
+        wide_margin = min(wide.margin, candidate_margin([best, *competitors]))
+        if wide_margin >= self.initial_min_margin:
+            self._prediction_verified_t = now
+            self._prediction_verified = best
+            self._prediction_margin = wide_margin
+        return replace(
+            result,
+            reason=f"prediction_{wide.reason}",
+            candidates=tuple(deduplicate_candidates([*result.candidates, *competitors])),
+            spatial_margin=min(result.margin, wide_margin),
+        )
+
+    def _locate_frame(
+        self, frame, geometry, current, fresh, prior_world, prior_radius_m, prediction_world, prediction_radius_m
+    ):
         used_prior = False
-        if fresh:
+        used_prediction = False
+        result, used_prediction = self._locate_prediction(
+            frame,
+            geometry,
+            prediction_world,
+            prediction_radius_m,
+        )
+        used_prior = used_prediction
+        if result is None and fresh:
             elapsed = current - self._convinced_t
             radius = min(self.search_radius_m, self.min_search_radius_m + self.max_speed_m_s * elapsed)
             center = (self._convinced.world_x, self._convinced.world_z)
@@ -1140,7 +1697,7 @@ class MinimapTracker:
             if result is None or result.status == "rejected":
                 result = self.locator.locate_global(frame, geometry)
                 used_prior = False
-        elif prior_world is not None:
+        elif result is None and prior_world is not None:
             result = self.locator.locate_near(
                 frame,
                 prior_world,
@@ -1148,18 +1705,29 @@ class MinimapTracker:
                 search_radius_m=max(1.0, float(prior_radius_m)),
             )
             used_prior = True
-        else:
+        elif result is None:
             result = self.locator.locate_global(frame, geometry)
 
-        return result, used_prior
+        return result, used_prior, used_prediction
+
+    def _locate_prediction(self, frame, geometry, prediction_world, prediction_radius_m):
+        if prediction_world is None:
+            return None, False
+        result = self.locator.locate_near(
+            frame,
+            prediction_world,
+            geometry,
+            search_radius_m=max(1.0, float(prediction_radius_m)),
+        )
+        if result is None or result.status != "accepted":
+            return None, False
+        return result, True
 
     def _confirm_acquisition(self, result, current, previous_update, used_prior):
         best = result.best
         # Time alone cannot turn a repeated weak or ambiguous distant match into a fix.
-        if (
-            best.ncc < self.initial_min_ncc
-            or best.full_ncc < self.initial_min_full_ncc
-            or result.margin < self.initial_min_margin
+        if not strong_candidate(
+            best, result.margin, self.initial_min_ncc, self.initial_min_full_ncc, self.initial_min_margin
         ):
             self._pending = None
             self._pending_hits = 0
