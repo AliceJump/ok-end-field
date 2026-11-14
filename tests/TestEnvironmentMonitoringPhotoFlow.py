@@ -224,7 +224,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
     def task(self):
         task = Mock()
         task.OBSERVATIONS = EnvironmentMonitoringPhotoTask.OBSERVATIONS
-        task._matches_observation.side_effect = lambda normalized, name, mode: EnvironmentMonitoringPhotoTask._matches_observation(task, normalized, name, mode)
+        task._matches_observation.side_effect = lambda normalized, name, mode: (
+            EnvironmentMonitoringPhotoTask._matches_observation(task, normalized, name, mode)
+        )
         task.tr.side_effect = lambda text: text
         task.box = SimpleNamespace(right=Box(960, 0, 960, 1080))
         task.box_of_screen.side_effect = lambda x1, y1, x2, y2: Box(
@@ -237,7 +239,9 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.normalize_title.side_effect = EnvironmentMonitoringPhotoTask.normalize_title
         task.selected_observation = {"name": "小池荷"}
         task.prepare_photo.return_value = {"photo_ready": False, "photo_taken": False}
-        task.lang = SimpleNamespace(environment_monitoring=SimpleNamespace(pool_lotus="小池荷", thillu="表象", ancient_tree="古树"))
+        task.lang = SimpleNamespace(
+            environment_monitoring=SimpleNamespace(pool_lotus="小池荷", thillu="表象", ancient_tree="古树")
+        )
         task.observation_key.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_key(task, title)
         task.observation_route.side_effect = lambda title: EnvironmentMonitoringPhotoTask.observation_route(task, title)
 
@@ -746,9 +750,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         task.wait_until.side_effect = lambda condition, **kwargs: condition() or condition()
         self.assertTrue(EnvironmentMonitoringPhotoTask.adjust_photo_view(task))
         task.rotate_photo_view.assert_called_once()
-        task.wait_until.assert_any_call(
-            task.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False
-        )
+        task.wait_until.assert_any_call(task.photo_condition_met, time_out=1, settle_time=0, raise_if_not_found=False)
 
     def test_final_frame_decides_ready_instead_of_the_previous_search_result(self):
         for search_ready, final_ready in ((True, False), (False, True)):

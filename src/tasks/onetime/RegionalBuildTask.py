@@ -22,7 +22,6 @@ from src.tasks.mixin.workflow_learning import trade_entry_after_visit
 from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
-
 _DIGITS_ONLY_RE = re.compile(r"^\d+$")
 
 
