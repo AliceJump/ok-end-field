@@ -4098,3 +4098,21 @@ msgstr ""
 #: src/core/GridNavConfig.py
 msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
 msgstr "Frena antes al estar dentro de esta distancia de un punto de ruta. Si la corrección es pequeña y la posición se actualiza a tiempo, puede seguir girando dejando una distancia segura según la velocidad y el tiempo de muestreo."
+
+msgid "MaaEnd自动闪避（实验）"
+msgstr "Esquiva automática MaaEnd (experimental)"
+
+msgid "闪避兼容重击特效"
+msgstr "Filtrar efectos de ataques fuertes"
+
+msgid "实验性视觉闪避，默认关闭。需要高特效画质；可能误判或漏判，低性能设备可能增加战斗延迟。"
+msgstr ""
+"Esquiva visual experimental, desactivada por defecto. Requiere efectos de "
+"calidad alta; puede haber detecciones erróneas u omitidas y retrasos en "
+"equipos lentos."
+
+msgid "忽略角色附近的普通闪避提示以减少重击特效误报；地面攻击提示不受影响。"
+msgstr ""
+"Ignora señales normales de esquiva cerca del personaje para reducir falsos "
+"positivos de ataques fuertes; las señales de ataques al suelo siguen "
+"activas."

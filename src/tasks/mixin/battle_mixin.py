@@ -43,6 +43,7 @@ from src.core.BattleConfig import (
     KEY_DAMAGE_ROTATION,
     KEY_ENABLE_ROTATION,
     KEY_LEGACY_COMBAT_MODE,
+    KEY_REACTIVE_DODGE,
     KEY_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST,
     KEY_SKILL_RELEASE,
@@ -1029,7 +1030,14 @@ class BattleMixin(BaseEfTask):
         return None
 
     def recover_target_too_far(self) -> bool:
-        """Lock the current target and dodge forward immediately to close range."""
+        """Lock the current target and dodge forward when no dodge cooldown is active."""
+        clock = getattr(self, "active_time", None)
+        if callable(clock) and clock() < max(
+            getattr(self, "_reactive_dodge_next_at", 0.0),
+            getattr(self, "_enemy_direction_next_dodge_at", 0.0),
+        ):
+            # The unconfirmed skill can retry after the cooldown expires.
+            return False
         self.log_info("时间排轴距离恢复: 中键索敌后向前闪避贴近敌人")
         self.click(key="middle", down_time=0.002)
         # Give target lock/camera steering one short beat before deciding the
@@ -1506,6 +1514,8 @@ class BattleMixin(BaseEfTask):
 
     def approach_enemy(self):
         """战斗中周期触发操作（无伤害数字）"""
+        if self.active_time() < getattr(self, "_reactive_dodge_next_at", 0.0):
+            return
         interval = self.get_battle_config("无数字操作间隔", 6)
         interval = max(1.0, min(float(interval), 30.0))
         if self.active_time() - getattr(self, "last_no_number_action_time", 0) < interval:
@@ -1514,6 +1524,10 @@ class BattleMixin(BaseEfTask):
         self.click(key="middle", down_time=0.002)
         self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
         self.last_no_number_action_time = self.active_time()
+        if self.get_battle_config(KEY_REACTIVE_DODGE, False):
+            from src.tasks.onetime.ReactiveDodge import REACTIVE_DODGE_COOLDOWN
+
+            self._reactive_dodge_next_at = self.last_no_number_action_time + REACTIVE_DODGE_COOLDOWN
 
     def _is_skill_bar_full(self, index):
         x1, x2 = SKILL_BAR_X_4K[index]

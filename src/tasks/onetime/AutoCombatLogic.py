@@ -10,6 +10,7 @@ from src.core.BattleConfig import (
     KEY_DAMAGE_ROTATION,
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
+    KEY_REACTIVE_DODGE,
     KEY_SKILL_ALLOWLIST,
     KEY_TIMING_ROTATION,
 )
@@ -24,6 +25,7 @@ from src.data.skill_rotation import (
 )
 from src.image.recommend_skill_detector import get_recommend_skill_detector
 from src.tasks.onetime.ImmediateTimedCombatLogic import ImmediateTimedCombatLogic as TimedCombatLogic
+from src.tasks.onetime.ReactiveDodge import ReactiveDodge
 
 
 class _TaskProbe:
@@ -303,6 +305,15 @@ class AutoCombatLogic:
                     self._last_exit_check_time = now_check
                     if task._check_single_exit_condition():
                         return True, "break"
+                reactive_dodge = getattr(self, "_reactive_dodge", None)
+                if reactive_dodge is not None and task.get_battle_config(KEY_REACTIVE_DODGE, False):
+                    task.next_frame()
+                    if reactive_dodge.step(
+                        lambda: task.mouse_up(key="left"),
+                        deadline=deadline,
+                        frame_captured_at=task.active_time(),
+                    ):
+                        continue
                 task.approach_enemy()
                 task.next_frame()
                 _probe_pulse = getattr(task, "probe_pulse", None)
@@ -597,6 +608,9 @@ class AutoCombatLogic:
             # 战斗已由 required_yellow=1 的血条门控确认，不再做固定开场等待。
             # 队伍与协议空间识别由下方主循环立即尝试并按间隔重试。
 
+        reactive_dodge = ReactiveDodge(task)
+        self._reactive_dodge = reactive_dodge
+        exit_pending = False
         try:
             while True:
                 if deadline is not None and task.active_time() >= deadline:
@@ -610,6 +624,7 @@ class AutoCombatLogic:
                     self._last_exit_check_time = now
 
                     exit_condition = task._check_single_exit_condition()
+                    exit_pending = bool(exit_condition)
                     if exit_condition:
                         if task.debug:
                             task.screenshot("out_of_combat")
@@ -658,6 +673,14 @@ class AutoCombatLogic:
                     finally:
                         self._last_team_detect_time = task.active_time()
 
+                if not exit_pending and task.get_battle_config(KEY_REACTIVE_DODGE, False):
+                    task.next_frame()
+                    if reactive_dodge.step(
+                        lambda: task.mouse_up(key="left"),
+                        deadline=deadline,
+                        frame_captured_at=task.active_time(),
+                    ):
+                        continue
                 task.approach_enemy()
                 task.next_frame()
 
@@ -703,6 +726,8 @@ class AutoCombatLogic:
             task.log_info(f"自动战斗发生异常: {exc}")
             task.log_info(traceback.format_exc())
         finally:
+            reactive_dodge.close()
+            self._reactive_dodge = None
             self._normal_attack_hold_enabled = False
             self._sync_normal_attack_hold()
         return True
