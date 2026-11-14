@@ -3,6 +3,7 @@
 import math
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -424,6 +425,176 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
 
         self.assertEqual(refreshes, [""])
+
+    def test_navigation_sampling_scope_stops_inputs_before_closing_on_failure(self):
+        events = []
+
+        @contextmanager
+        def sampling(owner):
+            self.assertIs(owner, self.task)
+            events.append("start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("close")
+
+        def failed_tick(session):
+            self.task._set_grid_walking(True)
+            self.assertEqual(events, ["start"])
+            raise RuntimeError("control failure")
+
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = failed_tick
+        with self.assertRaisesRegex(RuntimeError, "control failure"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.assertEqual(events, ["start", "close"])
+        self.assertFalse(self.task.w_down)
+
+    def test_navigation_topology_uses_observed_map_and_scopes_sampling(self):
+        from src.localization.position_service import WorldPoseService
+
+        events = []
+        layered, topology = object(), object()
+        observed = {**self.task.minimap_position(), "map_id": "observed_map"}
+        source = SimpleNamespace(
+            map_id="observed_map", sample=mock.Mock(return_value=observed), set_navigation_topology=mock.Mock()
+        )
+        service = SimpleNamespace(_visual_source=source, _navigation_topology_provider=None, _visual_input_shape=None)
+        self.task.next_frame = lambda: np.zeros((720, 1280, 3), np.uint8)
+
+        @contextmanager
+        def topology_context(provider):
+            events.append("topology_start")
+            service._navigation_topology_provider = provider
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("topology_close")
+
+        @contextmanager
+        def sampling(owner):
+            self.assertIs(owner, self.task)
+            self.assertEqual(events, ["topology_start"])
+            events.append("sampling_start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("sampling_close")
+
+        self.task.navigation_topology = topology_context
+        self.task.visual_sampling = sampling
+        self.task.world_pose = lambda frame, **kwargs: WorldPoseService._locate_visual_frame(service, frame, 1, None)
+        self.task._grid_nav_advance = mock.Mock(return_value=True)
+        self.task._grid_layered_map = mock.Mock(return_value=layered)
+        with mock.patch(
+            "src.tasks.navigation.mixin.grid_navigation_mixin.NavigationTopology", return_value=topology
+        ) as factory:
+            self.assertTrue(
+                self.task.navigate_grid_to((4.5, 0.5), map_id="requested_map", grid_dir="custom_grids", zoom="4")
+            )
+        self.assertEqual(self.task._grid_nav_advance.call_args.args[0].map_id, "observed_map")
+        source.set_navigation_topology.assert_called_once_with(topology)
+        self.task._grid_layered_map.assert_called_once_with(
+            "observed_map", grid_path=None, grid_dir="custom_grids", zoom="4"
+        )
+        factory.assert_called_once_with(layered)
+        self.assertEqual(events, ["topology_start", "sampling_start", "sampling_close", "topology_close"])
+
+    def test_account_zip_line_snapshot_disables_incomplete_grid_topology_during_navigation(self):
+        selected = {}
+
+        @contextmanager
+        def topology_context(provider):
+            selected["provider"] = provider
+            yield
+
+        def advance(ctx):
+            provider = selected["provider"]
+            self.assertIsNotNone(provider(ctx.map_id))
+            self.task._grid_nav_zip_line_cache[ctx.map_id] = SimpleNamespace(links=(object(),))
+            self.assertIsNone(provider(ctx.map_id))
+            return True
+
+        self.task.navigation_topology = topology_context
+        self.task._grid_layered_map = mock.Mock(return_value=object())
+        self.task._grid_nav_advance = advance
+        with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.NavigationTopology", return_value=object()):
+            self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+
+    def test_navigation_cancellation_closes_sampling_before_topology_scope(self):
+        events = []
+
+        @contextmanager
+        def topology_context(_provider):
+            events.append("topology_start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("topology_close")
+
+        @contextmanager
+        def sampling(_owner):
+            events.append("sampling_start")
+            try:
+                yield
+            finally:
+                self.assertFalse(self.task.w_down)
+                events.append("sampling_close")
+
+        def cancelled_poll(_session):
+            self.task._set_grid_walking(True)
+            raise InterruptedError("navigation cancelled")
+
+        self.task.navigation_topology = topology_context
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = cancelled_poll
+        with self.assertRaisesRegex(InterruptedError, "navigation cancelled"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.assertEqual(events, ["topology_start", "sampling_start", "sampling_close", "topology_close"])
+
+    def test_sampling_admission_failure_closes_navigation_topology_scope(self):
+        events = []
+
+        @contextmanager
+        def topology_context(_provider):
+            events.append("topology_start")
+            try:
+                yield
+            finally:
+                events.append("topology_close")
+
+        @contextmanager
+        def sampling(_owner):
+            raise RuntimeError("sampler unavailable")
+            yield  # pragma: no cover
+
+        self.task.navigation_topology = topology_context
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = mock.Mock()
+        with self.assertRaisesRegex(RuntimeError, "sampler unavailable"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.task._grid_nav_poll.assert_not_called()
+        self.assertEqual(events, ["topology_start", "topology_close"])
+        self.assertFalse(self.task.w_down)
+
+    def test_sampling_admission_failure_restores_navigation_setup(self):
+        @contextmanager
+        def sampling(_owner):
+            raise RuntimeError("sampler unavailable")
+            yield  # pragma: no cover
+
+        self.task.visual_sampling = sampling
+        self.task._grid_nav_poll = mock.Mock()
+        self.task._restore_grid_zip_line_run_mode = mock.Mock()
+        with self.assertRaisesRegex(RuntimeError, "sampler unavailable"):
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
+        self.task._grid_nav_poll.assert_not_called()
+        self.task._restore_grid_zip_line_run_mode.assert_called_once()
+        self.assertFalse(self.task.w_down)
 
     def test_navigation_can_stop_before_goal_for_final_approach(self):
         self.task.x = 1.0

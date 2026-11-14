@@ -1,5 +1,7 @@
 import unittest
+from unittest.mock import Mock, patch
 
+import numpy as np
 from ok import Box
 
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
@@ -26,6 +28,20 @@ class _RuntimeFeatureClickHarness(RuntimeMixin):
 
     def sleep(self, timeout):
         self.sleeps.append(timeout)
+
+
+class TestRuntimeArrowCache(unittest.TestCase):
+    def test_matching_object_survives_frames_and_rebuilds_for_options(self):
+        task = _RuntimeFeatureClickHarness(None)
+        matcher = Mock()
+        matcher.match.return_value = (42.0, 0.9)
+        frame = np.zeros((100, 100, 3), np.uint8)
+        with patch("src.image.rotated_template.ArrowAngleMatcher", return_value=matcher) as factory:
+            for _ in range(3):
+                self.assertEqual(task.get_arrow_angle(target_image=frame, smoothing_threshold=None), (42.0, 0.9))
+            self.assertEqual(factory.call_count, 1)
+            task.get_arrow_angle(target_image=frame, benchmark_width=1920)
+            self.assertEqual(factory.call_count, 2)
 
 
 class _ClickBase:

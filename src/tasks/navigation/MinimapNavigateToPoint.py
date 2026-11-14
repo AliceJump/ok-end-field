@@ -35,16 +35,19 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
         self.default_config = {
             "目标X": 0.0,
             "目标Z": 0.0,
+            "目标楼层(可选)": "",
         }
         self.config_description = {
             "目标X": "目标世界坐标 X（米；导航网格列方向）",
             "目标Z": "目标世界坐标 Z（米；导航网格行方向）",
+            "目标楼层(可选)": "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图",
         }
         self.default_config_group.update(
             {
                 "目标坐标": [
                     "目标X",
                     "目标Z",
+                    "目标楼层(可选)",
                 ],
             }
         )
@@ -64,7 +67,8 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
         if self._grid_cfg_bool(NAV_PLAN_ONLY_KEY, False):
             return self._run_plan_only(goal, map_id)
 
-        result = self.navigate_grid_to(goal, map_id=map_id)
+        goal_tier = str(self.config.get("目标楼层(可选)", "") or "").strip() or None
+        result = self.navigate_grid_to(goal, map_id=map_id, goal_tier=goal_tier)
         if result:
             self.log_info("网格导航完成", notify=True)
         else:
@@ -94,21 +98,30 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
             if x is None or z is None:
                 self.sleep(0.2)
                 continue
+            if not state.get("position_trusted", True):
+                self.sleep(0.2)
+                continue
+            if state.get("tier_evidence_required") and (not state.get("tier_trusted") or state.get("tier_id") is None):
+                self.sleep(0.2)
+                continue
 
             actual_map = str(state.get("map_id") or map_id or "")
             result = self.plan_grid_path(
                 (float(x), float(z)),
                 goal,
                 map_id=actual_map,
+                start_pose=state,
+                goal_tier=str(self.config.get("目标楼层(可选)", "") or "").strip() or None,
             )
             if not result.ok:
                 self._log_grid_plan_failure(result)
                 return False
 
-            distance = math.hypot(result.waypoints[-1][0] - x, result.waypoints[-1][1] - z)
+            endpoint = goal if result.layered_route is not None or not result.waypoints else result.waypoints[-1]
+            distance = math.hypot(endpoint[0] - x, endpoint[1] - z)
             self.log_info(
                 f"规划完成：当前位置=({x:.2f}, {z:.2f})，"
-                f"目标=({result.waypoints[-1][0]:.2f}, {result.waypoints[-1][1]:.2f})，"
+                f"目标=({endpoint[0]:.2f}, {endpoint[1]:.2f})，"
                 f"直线距离={distance:.2f}m",
                 notify=True,
             )

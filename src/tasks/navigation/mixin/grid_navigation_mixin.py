@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import math
 import time
-from contextlib import ExitStack
+from contextlib import ExitStack, nullcontext
 from dataclasses import replace
 from enum import StrEnum
 from itertools import pairwise
@@ -103,6 +103,7 @@ from src.nav.nav_state import (
     SyncReason,
     SyncWait,
 )
+from src.nav.navigation_topology import NavigationTopology
 from src.nav.route_follower import (
     DONE,
     FAILED,
@@ -392,9 +393,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_skip_board_node_id: str | None = None
         #: 分层地图缓存：键 (目录, 地图, zoom) -> LayeredMap；False 表示确认没有分层数据。
         #: 网格是子模块里的静态数据，同一次会话内不必反复读 npz。
-        self._grid_nav_layered_cache: dict[tuple[str, str, str], LayeredMap | bool] = {}
+        self._grid_nav_layered_cache: dict[tuple[str, ...], LayeredMap | bool] = {}
         #: 分层规划器缓存；键取 LayeredMap 的对象身份，值持有它的层内分段缓存。
-        self._grid_nav_layered_planner_cache: dict[int, LayeredPlanner] = {}
+        self._grid_nav_layered_planner_cache: dict[int, tuple[FollowerConfig, LayeredPlanner]] = {}
         #: 本次分层路线依据的 LayeredMap；换段时按它取当前层的网格。
         self._grid_nav_layered_active: LayeredMap | None = None
 
@@ -521,23 +522,67 @@ class GridNavigationMixin(RuntimeStateMixin):
         grid_path: str | None = None,
         grid_dir: str | None = None,
         zoom: str | None = None,
+        start_pose: dict | None = None,
+        goal_y: float | None = None,
+        goal_tier: str | None = None,
     ) -> PlanResult:
-        """只规划世界坐标路线，不执行任何游戏输入。"""
+        """只规划，不发送输入；分层结果保存在 result.layered_route。"""
         self._refresh_grid_zip_lines()
-        follower, result = self._create_grid_route(
-            start_xz,
-            goal_xz,
+        request = GridRouteRequest(
+            goal=tuple(map(float, goal_xz)),
+            goal_y=goal_y,
+            goal_tier=goal_tier,
             map_id=map_id,
             grid_path=grid_path,
             grid_dir=grid_dir,
             zoom=zoom,
         )
-        if follower is None:
-            return result
-        self._grid_nav_follower = follower
-        if result.ok:
-            self._log_grid_plan(result)
-        return result
+        limit = max(1.0, self._grid_cfg_float(CONFIG_GRID_TIMEOUT, 180.0))
+        session = NavSession(request, self.active_time() + limit, limit, 0.2)
+        ctx = NavTick(session, None, start_pose, *start_xz, map_id, 0, None, None)
+        layered = self._grid_layered_map(map_id, grid_path=grid_path, grid_dir=grid_dir, zoom=zoom)
+        route = None
+        if layered is not None:
+            route, reason = self._plan_layered_route(ctx, layered, start_xz=start_xz, goal_xz=goal_xz)
+            if reason:
+                return PlanResult(False, reason)
+        elif goal_tier is not None and normalize_tier(goal_tier):
+            return PlanResult(False, f"指定的目标楼层没有导航网格: {goal_tier}")
+        if route is None:
+            follower, result = self._create_grid_route(
+                start_xz,
+                goal_xz,
+                map_id=map_id,
+                grid_path=grid_path,
+                grid_dir=grid_dir,
+                zoom=zoom,
+                time_budget_s=max(0.0, session.deadline - self.active_time()),
+            )
+            if result.ok:
+                self._grid_nav_follower = follower
+                self._log_grid_plan(result)
+                return result
+            if layered is None:
+                return result
+            route, reason = self._plan_layered_route(
+                ctx,
+                layered,
+                start_xz=start_xz,
+                goal_xz=goal_xz,
+                allow_same_main=True,
+            )
+            if route is None:
+                return PlanResult(False, reason or result.reason)
+        self.log_info(f"分层路线预览：{len(route.segments)} 段 / {len(route.links)} 次跨层，代价={route.cost:.1f}")
+        return PlanResult(
+            True,
+            waypoints=route.waypoints,
+            cost=route.cost,
+            expanded=route.expanded,
+            risk_cells=sum(segment.plan.risk_cells for segment in route.segments),
+            notes=list(route.notes),
+            layered_route=route,
+        )
 
     def navigate_grid_to(
         self,
@@ -550,11 +595,12 @@ class GridNavigationMixin(RuntimeStateMixin):
         zoom: str | None = None,
         stop_distance: float | None = None,
         goal_y: float | None = None,
+        goal_tier: str | None = None,
     ) -> bool:
         """规划并执行到世界坐标 ``(x, z)`` 的路线；``goal_y`` 给定时按三维目标导航。
 
-        ``goal_y`` 是**分层导航的必需输入**：目标在第几层由它的高度决定（只看 Y，不看
-        ``levelId``）。不给就按大地图处理——单层地图本来就只需要平面坐标，行为不变。
+        ``goal_tier`` 可明确指定目标层；否则使用 ``goal_y``，或二维目标格的唯一可走层。
+        多层重叠时需要明确提供目标层或高度。
 
         每一拍只做三件事：
 
@@ -573,6 +619,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         request = GridRouteRequest(
             goal=(float(goal_xz[0]), float(goal_xz[1])),
             goal_y=None if goal_y is None else float(goal_y),
+            goal_tier=goal_tier,
             map_id=str(map_id or ""),
             grid_path=grid_path,
             grid_dir=grid_dir,
@@ -603,16 +650,49 @@ class GridNavigationMixin(RuntimeStateMixin):
         )
         self._reset_grid_navigation_run_state()
 
+        # Sampling belongs to the position service; the follower still consumes
+        # its ordinary pose contract and never selects a localization source.
+        sampling = getattr(position_service, "visual_sampling", None)
+        topology_context = getattr(position_service, "navigation_topology", None)
+        topologies = {}
+
+        def topology_for_map(visual_map_id):
+            # The destination and session.active_tier are plans, not observations.
+            # Resolve the grid only after vision identifies the current map.
+            if not visual_map_id:
+                return None
+            # Account routes are independent of links.json. Once planning has
+            # loaded a usable zip-line graph, its landings cannot be rejected
+            # by a grid-only reachability scope. Full visual competition stays.
+            zip_lines = self._grid_nav_zip_line_cache.get(visual_map_id)
+            if zip_lines is not None and zip_lines.links:
+                return None
+            if visual_map_id not in topologies:
+                layered = self._grid_layered_map(visual_map_id, grid_path=grid_path, grid_dir=grid_dir, zoom=zoom)
+                topologies[visual_map_id] = NavigationTopology(layered) if layered is not None else None
+            return topologies[visual_map_id]
+
+        entered = False
         try:
-            while not self._grid_navigation_timed_out(session.deadline, session.limit):
-                ctx = self._grid_nav_poll(session)
-                outcome = self._grid_nav_advance(ctx)
-                if outcome is not None:
-                    return outcome
-            return False
+            with (
+                topology_context(topology_for_map) if callable(topology_context) else nullcontext(),
+                sampling(self) if callable(sampling) else nullcontext(),
+            ):
+                entered = True
+                try:
+                    while not self._grid_navigation_timed_out(session.deadline, session.limit):
+                        ctx = self._grid_nav_poll(session)
+                        outcome = self._grid_nav_advance(ctx)
+                        if outcome is not None:
+                            return outcome
+                    return False
+                finally:
+                    self._set_grid_walking(False)
+                    self._restore_grid_zip_line_run_mode()
         finally:
-            self._set_grid_walking(False)
-            self._restore_grid_zip_line_run_mode()
+            if not entered:  # Admission failure must restore setup without running a control tick.
+                self._set_grid_walking(False)
+                self._restore_grid_zip_line_run_mode()
 
     # ------------------------------------------------------------------ #
     # 状态机：取快照、判定、派发
@@ -743,54 +823,51 @@ class GridNavigationMixin(RuntimeStateMixin):
         return None
 
     def _grid_nav_stop_layer_matches(self, ctx: NavTick) -> bool:
-        """终点接近判定只在**已经在目标层**时成立。
-
-        ``stop_distance`` 只比 XZ 距离：目标在楼上/楼下且恰好同一 XZ 时会提前报成功
-        （网格送货会同时传 ``goal_y`` 和 5m ``stop_distance``，实测跨层同 XZ 很常见），
-        于是角色还在另一层就直接进入交付搜索。这里复用与规划同一套「只看 Y」的层判定
-        确认当前层与目标层一致；没有分层数据、没有 ``goal_y`` 或取不到当前高度时保持
-        原来的平面判定。
-        """
+        """只有当前楼层与已解析目标层一致时，才允许按平面距离结束。"""
         session = ctx.session
-        if session.goal_y is None:
-            return True
-        pose = ctx.pose or {}
-        y = pose.get("y")
-        if y is None or ctx.x is None or ctx.z is None:
-            return True
-        try:
-            position = (float(ctx.x), float(y), float(ctx.z))
-            goal = (float(session.goal[0]), float(session.goal_y), float(session.goal[1]))
-        except (TypeError, ValueError):
-            return True
         layered = self._grid_layered_map(
             ctx.map_id,
+            grid_path=session.request.grid_path,
             grid_dir=session.request.grid_dir,
             zoom=session.request.zoom,
         )
         if layered is None:
-            return True
-        current_tier, _ = self._grid_tier_for_point(
-            layered,
-            ctx.map_id,
-            position,
-            label="当前位置",
-        )
-        goal_tier, _ = self._grid_tier_for_point(
-            layered,
-            ctx.map_id,
-            goal,
-            label="终点",
-        )
-        if current_tier is None or goal_tier is None:
-            # 判不出层时不提前结束：宁可继续规划（会明确失败），也不赌一个"已经到了"。
+            return session.request.goal_tier is None or normalize_tier(session.request.goal_tier) == ""
+        target_tier, _ = self._grid_goal_tier(ctx, layered)
+        if target_tier is None or ctx.x is None or ctx.z is None:
             return False
-        return current_tier == goal_tier
+        return self._grid_nav_observed_tier_matches(ctx, layered, target_tier)
+
+    def _grid_nav_observed_tier_matches(self, ctx, layered, target_tier):
+        pose = ctx.pose or {}
+        if pose.get("tier_evidence_required"):
+            return bool(
+                pose.get("tier_trusted")
+                and pose.get("tier_id") is not None
+                and normalize_tier(pose["tier_id"]) == target_tier
+            )
+        y = pose.get("y")
+        if y is not None:
+            result = resolve_tier_by_height(
+                layered,
+                map_name=ctx.map_id,
+                x=ctx.x,
+                y=y,
+                z=ctx.z,
+            )
+            if result["status"] == "unique":
+                return result["tier"] == target_tier
+            if result["status"] in ("invalid", "ambiguous"):
+                return False
+        candidates = self._grid_tiers_with_walkable_cell(layered, ctx.map_id, ctx.position)
+        return candidates == (target_tier,)
 
     def _grid_nav_follow(self, ctx: NavTick) -> bool | None:
         """跟随阶段：没有可用路线就先规划，否则取跟随器动作并派发。"""
         if self._grid_nav_follower is None or ctx.map_id != self._grid_nav_map_id:
             return self._grid_nav_state_call(NavState.PLAN, ctx)
+        if ctx.session.route is not None and ctx.session.segment_index >= len(ctx.session.route.segments):
+            return self._grid_nav_state_call(NavState.DONE, ctx)
         if self._grid_nav_segment_tier_changed(ctx):
             return self._grid_nav_state_call(NavState.PLAN, ctx)
         return self._grid_nav_run_follow(ctx)
@@ -1337,7 +1414,6 @@ class GridNavigationMixin(RuntimeStateMixin):
     def _grid_nav_state_done(self, ctx: NavTick) -> bool | None:
         """跟随器报告到达：还在回退目标上就先校准，否则成功结束。"""
         session = ctx.session
-        step = ctx.step
         self._set_grid_walking(False)
         if not self._post_stop_frame_confirmed(ctx):
             return None
@@ -1363,7 +1439,12 @@ class GridNavigationMixin(RuntimeStateMixin):
             else:
                 self.log_warning("返回已知格后校准未完成，继续原目标")
             return None
-        distance_text = f"{step.distance_to_goal:.2f}m" if step.distance_to_goal is not None else "未知"
+        if not self._grid_nav_stop_layer_matches(ctx):
+            self._wait_for_grid_position("等待确认已到达目标楼层")
+            self.sleep(ctx.tick)
+            return None
+        distance = math.dist(ctx.position, session.goal)
+        distance_text = f"{distance:.2f}m"
         self.log_info(f"已到达目标（距目标 {distance_text}）", notify=True)
         return True
 
@@ -1943,6 +2024,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self,
         map_id: str,
         *,
+        grid_path: str | None = None,
         grid_dir: str | None = None,
         zoom: str | None = None,
     ) -> LayeredMap | None:
@@ -1952,6 +2034,17 @@ class GridNavigationMixin(RuntimeStateMixin):
         否则返回 None——单层地图（实测 base01/map01 就没有分层）的行为因此与分层功能
         上线前逐字一致。
         """
+        explicit = str((self._grid_config_get(CONFIG_GRID_FILE, "") if grid_path is None else grid_path) or "").strip()
+        selected = None
+        if explicit:
+            selection_key = ("explicit", str(Path(explicit).resolve()), map_id)
+            if selection_key in self._grid_nav_layered_cache:
+                return self._grid_nav_layered_cache[selection_key] or None
+            selected = self.load_grid_for_map(map_id, grid_path=explicit)
+            if selected is None or selected.meta.map_name != map_id:
+                return None
+            grid_dir = str(Path(explicit).resolve().parent)
+            zoom = str(selected.meta.zoom)
         directory = str(
             (
                 self._grid_config_get(CONFIG_GRID_DIR, DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR])
@@ -1964,12 +2057,14 @@ class GridNavigationMixin(RuntimeStateMixin):
         if not directory or not map_id:
             return None
         requested_zoom = str((self._grid_config_get(CONFIG_GRID_ZOOM, "") if zoom is None else zoom) or "").strip()
-        cache_key = (directory, map_id, requested_zoom)
+        cache_key = (directory, map_id, requested_zoom, explicit)
         if cache_key in self._grid_nav_layered_cache:
             cached = self._grid_nav_layered_cache[cache_key]
             return cached or None
         try:
             layered = load_layered_map(directory, map_id, zoom=requested_zoom)
+            if selected is not None:
+                layered.layers[layer_key(map_id, selected.meta.tier)] = selected
         except (OSError, TypeError, ValueError) as exc:
             self.log_warning(f"分层网格加载失败，按单层导航处理 {directory}: {exc}")
             self._grid_nav_layered_cache[cache_key] = False
@@ -1977,6 +2072,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         # 至少要有一层网格才谈得上分层导航：只有 links 没有网格时无从落脚。
         relevant = bool(layered.layers) and (any(tier for _map, tier in layered.layers) or bool(layered.links))
         self._grid_nav_layered_cache[cache_key] = layered if relevant else False
+        if explicit:
+            self._grid_nav_layered_cache[selection_key] = layered if relevant else False
         if relevant:
             summary = layered.summary()
             self.log_info(
@@ -2130,6 +2227,69 @@ class GridNavigationMixin(RuntimeStateMixin):
                 found.append(tier)
         return tuple(sorted(found))
 
+    def _grid_goal_tier(self, ctx: NavTick, layered: LayeredMap) -> tuple[str | None, str]:
+        """解析最终目的地；结果绑定请求与地图，跨层和脱困重规划继续使用它。"""
+        session = ctx.session
+        context = (session.request, ctx.map_id)
+        if not all(math.isfinite(value) for value in session.goal):
+            return None, "目标坐标必须是有限数"
+        if session.goal_resolution_context == context and session.goal_tier is not None:
+            return session.goal_tier, f"终点沿用已解析楼层: {session.goal_tier or '大地图'}"
+        session.goal_tier = None
+        session.goal_resolution_context = None
+        explicit = session.request.goal_tier
+        if explicit is not None:
+            tier = normalize_tier(explicit)
+            if layered.grid(ctx.map_id, tier) is None:
+                return None, f"指定的目标楼层没有导航网格: {tier or '大地图'}"
+            note = f"终点明确指定楼层: {tier or '大地图'}"
+            if session.goal_y is not None:
+                result = resolve_tier_by_height(
+                    layered,
+                    map_name=ctx.map_id,
+                    x=session.goal[0],
+                    y=session.goal_y,
+                    z=session.goal[1],
+                )
+                if result["status"] == "invalid":
+                    return None, "目标高度无效"
+                if result["status"] == "unique" and result["tier"] != tier:
+                    return None, "指定的目标楼层与目标高度冲突"
+                if result["status"] == "ambiguous" and tier not in result["matched"]:
+                    return None, "指定的目标楼层与目标高度候选冲突"
+        elif session.goal_y is not None:
+            tier, note = self._grid_tier_for_point(
+                layered,
+                ctx.map_id,
+                (session.goal[0], session.goal_y, session.goal[1]),
+                label="终点",
+            )
+            if tier is None:
+                return None, note
+            height_result = resolve_tier_by_height(
+                layered, map_name=ctx.map_id, x=session.goal[0], y=session.goal_y, z=session.goal[1]
+            )
+            if height_result["status"] == "main" and self._grid_tiers_with_walkable_cell(
+                layered, ctx.map_id, session.goal
+            ) != (tier,):
+                return None, "目标高度未命中已标注区间，且目标 X/Z 无法唯一确认主图；请指定目标楼层"
+        elif not any(tier for name, tier in layered.layers if name == ctx.map_id):
+            tier, note = "", "终点使用单层地图"
+        else:
+            candidates = self._grid_tiers_with_walkable_cell(layered, ctx.map_id, session.goal)
+            if len(candidates) > 1:
+                shown = [candidate or "大地图" for candidate in candidates]
+                return None, f"目标楼层有歧义：目标 X/Z 在多层标了可走格 {shown}；请指定目标楼层或高度"
+            if not candidates:
+                return None, "无法确定目标楼层：目标 X/Z 没有已标注的可走格；请指定目标楼层或高度"
+            tier = candidates[0]
+            note = f"终点按网格标注解析楼层: {tier or '大地图'}（目标 X/Z 唯一可走层）"
+        if layered.grid(ctx.map_id, tier) is None:
+            return None, f"目标楼层没有导航网格: {tier or '大地图'}"
+        session.goal_tier = tier
+        session.goal_resolution_context = context
+        return tier, note
+
     def _plan_layered_route(
         self,
         ctx: NavTick,
@@ -2165,17 +2325,14 @@ class GridNavigationMixin(RuntimeStateMixin):
         )
         if start_tier is None:
             return None, start_note
-        goal_pos = None
-        if session.goal_y is not None:
-            try:
-                goal_pos = (float(goal_xz[0]), float(session.goal_y), float(goal_xz[1]))
-            except (TypeError, ValueError):
-                goal_pos = None
-        goal_tier, goal_note = self._grid_tier_for_point(layered, ctx.map_id, goal_pos, label="终点")
+        goal_tier, goal_note = self._grid_goal_tier(ctx, layered)
         if goal_tier is None:
             return None, goal_note
+        if session.recovery_goal is not None:
+            # 返回已走过的格子属于当前层；不覆盖最终目的地的楼层。
+            goal_tier = session.active_tier if session.active_tier is not None else start_tier
+            goal_note = f"回退点沿用当前层: {goal_tier or '大地图'}"
         session.start_tier = start_tier
-        session.goal_tier = goal_tier
         self.log_info(f"分层导航：{start_note}；{goal_note}")
         # **双方都在大地图**时才交回原来的单层路径（含用户滑索）：那条路径加载的就是主图
         # 网格，同层行为因此与分层功能上线前逐字一致，也不会与滑索的代价模型互相干扰。
@@ -2209,10 +2366,10 @@ class GridNavigationMixin(RuntimeStateMixin):
         每层的层内搜索都注入与路线跟随器**同一套策略参数**——少一项就会让分段代价与
         跟随器实际怎么走口径分叉，层图上的最短路也就不再是真实最优。
         """
-        planner = self._grid_nav_layered_planner_cache.get(id(layered))
-        if planner is not None:
-            return planner
         config = self._grid_follower_config()
+        cached = self._grid_nav_layered_planner_cache.get(id(layered))
+        if cached is not None and cached[0] == config:
+            return cached[1]
         planner = LayeredPlanner(
             layered,
             planner_factory=lambda grid: GridPlanner(
@@ -2228,7 +2385,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                 max_expand=config.max_expand,
             ),
         )
-        self._grid_nav_layered_planner_cache[id(layered)] = planner
+        self._grid_nav_layered_planner_cache[id(layered)] = (config, planner)
         return planner
 
     @staticmethod
@@ -2300,21 +2457,74 @@ class GridNavigationMixin(RuntimeStateMixin):
         # 用 transitions 而不是扁平的 links：两段之间可能夹着多条连接（跨多层不走路时），
         # 扁平表的长度与段数不对应，按段号取会取错。
         group = route.transitions[index] if 0 <= index < len(route.transitions) else ()
-        for link in group:
+        for offset, link in enumerate(group):
             if self._cross_layered_link(ctx, link) is False:
+                return False
+            if (
+                index + 1 >= len(route.segments)
+                and link.kind != "rope"
+                and not self._walk_trailing_layered_link(
+                    ctx, link, end=session.goal if offset == len(group) - 1 else link.target.center
+                )
+            ):
                 return False
         session.segment_index = index + 1
         if session.segment_index >= len(route.segments):
             # 这次跨层之后没有分段了：连接的落点就是终点（终点恰好压在连接端点上时会出现）。
             # 不特判的话会把最后一段重新激活一遍，导航永远走不完。
-            self.log_info("分层导航：跨层落点即目标，本次路线完成", notify=True)
-            return True
+            self.log_info("分层导航：跨层落点即目标，等待新一帧确认目标楼层")
+            self.sleep(ctx.tick)
+            return None
         kinds = "/".join(link.kind for link in group) or "连接"
         if not self._activate_layered_segment(ctx, reason=f"经 {kinds} 跨层"):
             return False
         if self._grid_navigation_timed_out(session.deadline, session.limit):
             return False
         return None
+
+    def _walk_trailing_layered_link(self, ctx, link, *, end=None):
+        """A passive final connector has no next segment to supply movement."""
+        deadline = min(ctx.session.deadline, self.active_time() + GRID_ROPE_DESCENT_TIMEOUT_S)
+        end = link.target.center if end is None else end
+        span = math.dist(link.source.center, end)
+        max_travel = min(_GRID_LINK_WALK_MAX_SPAN_M, span + 3.0)
+        origin = None
+        try:
+            while self.active_time() < deadline:
+                current = self._grid_nav_poll(ctx.session)
+                gate = self._grid_nav_classify(current)
+                if gate not in (None, NavState.STOP_REACHED):
+                    self._set_grid_walking(False)
+                    if self._grid_nav_state_call(gate, current) is False:
+                        return False
+                    continue
+                if current.map_id != link.target.map_name:
+                    return False
+                if not self._grid_nav_frame_ready(current):
+                    continue
+                layered = self._grid_nav_layered_active
+                if math.dist(current.position, end) <= 0.5 and self._grid_nav_observed_tier_matches(
+                    current, layered, link.target.tier
+                ):
+                    return True
+                if origin is None:
+                    origin = current.position
+                if math.dist(origin, current.position) > max_travel:
+                    return False
+                remaining = math.dist(current.position, end)
+                if remaining > 0.5:
+                    bearing = bearing_to_point(current.x, current.z, *end)
+                    self._set_grid_walking(False)
+                    self._aim_grid_view_to_bearing(bearing, reason="跨层连接")
+                if current.pose.get("frame_time_source") == "wgc_system_relative_time":
+                    ctx.session.last_walk_frame = current.pose.get("frame_t")
+                self._set_grid_walking(True)
+                duration = min(ctx.tick, max(1 / 30, 0.5 * remaining / max(6.0, ctx.session.walk_speed_m_s)))
+                self.sleep(min(duration, max(0.0, deadline - self.active_time())))
+                self._set_grid_walking(False)
+            return False
+        finally:
+            self._set_grid_walking(False)
 
     def _cross_layered_link(self, ctx: NavTick, link: TierLink) -> bool | None:
         """执行一次跨层连接；``False`` 表示失败（调用方结束本次导航）。
@@ -2583,10 +2793,15 @@ class GridNavigationMixin(RuntimeStateMixin):
         """
         layered = self._grid_layered_map(
             ctx.map_id,
+            grid_path=ctx.session.request.grid_path,
             grid_dir=ctx.session.request.grid_dir,
             zoom=ctx.session.request.zoom,
         )
         if layered is None:
+            requested_tier = ctx.session.request.goal_tier
+            if requested_tier is not None and normalize_tier(requested_tier):
+                self.log_warning(f"指定的目标楼层没有导航网格: {requested_tier}", notify=True)
+                return True, False
             return False, False
         if layered is not self._grid_nav_layered_active:
             self._grid_nav_layered_active = layered

@@ -52,7 +52,12 @@ from src.core.NavConfig import (
     nav_profile_for_width,
     tier_for_width,
 )
-from src.core.PositionConfig import CONFIG_COMMIT_MIN_SHIFT, DEFAULT_POSITION_CONFIG, POSITION_CONFIG_NAME
+from src.core.PositionConfig import (
+    CONFIG_COMMIT_MIN_SHIFT,
+    CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION,
+    DEFAULT_POSITION_CONFIG,
+    POSITION_CONFIG_NAME,
+)
 
 
 def _tier_keys() -> list[str]:
@@ -143,7 +148,7 @@ class TestNavProfile(unittest.TestCase):
 class TestNavConfigShape(unittest.TestCase):
     """默认值 / 说明 / 注册的结构一致性。"""
 
-    def test_minimap_test_task_keeps_only_target_coordinates_in_task_config(self):
+    def test_minimap_test_task_keeps_only_target_fields_in_task_config(self):
         path = Path(__file__).parents[1] / "src" / "tasks" / "navigation" / "MinimapNavigateToPoint.py"
         tree = ast.parse(path.read_text(encoding="utf-8"))
         class_node = next(
@@ -166,8 +171,8 @@ class TestNavConfigShape(unittest.TestCase):
                         if isinstance(key, ast.Constant) and isinstance(key.value, str)
                     }
 
-        self.assertEqual(assigned.get("default_config"), {"目标X", "目标Z"})
-        self.assertEqual(assigned.get("config_description"), {"目标X", "目标Z"})
+        self.assertEqual(assigned.get("default_config"), {"目标X", "目标Z", "目标楼层(可选)"})
+        self.assertEqual(assigned.get("config_description"), {"目标X", "目标Z", "目标楼层(可选)"})
 
     def test_every_key_has_description(self):
         for key in DEFAULT_NAV_CONFIG:
@@ -442,6 +447,14 @@ class TestFollowerDefaultsMatchGlobalConfig(unittest.TestCase):
         # 表里的键必须真的存在于全局配置，避免写错中文键名后静默跳过
         for key in self._FIELDS.values():
             self.assertIn(key, DEFAULT_GRID_NAV_CONFIG)
+
+
+class TestPositionDefaults(unittest.TestCase):
+    def test_visual_chain_error_budget_defaults_to_forty_meters(self):
+        self.assertEqual(
+            DEFAULT_POSITION_CONFIG[CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION],
+            40.0,
+        )
 
 
 if __name__ == "__main__":

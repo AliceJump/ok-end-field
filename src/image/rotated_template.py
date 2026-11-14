@@ -1,4 +1,5 @@
 import os
+import threading
 from collections import OrderedDict
 
 import cv2
@@ -146,6 +147,7 @@ class ArrowAngleMatcher:
 
         self.benchmark_width = benchmark_width
         self.max_cache_scales = max_cache_scales
+        self._lock = threading.RLock()
 
         # LRU 缓存
         # scale_q(int) -> (tpl_rgba_scaled, center_scaled)
@@ -252,6 +254,8 @@ class ArrowAngleMatcher:
             target_patch = _safe_roi(tgt, tx, ty, rw, rh)
             if target_patch is None:
                 continue
+            if target_patch.ndim == 2:
+                target_patch = cv2.cvtColor(target_patch, cv2.COLOR_GRAY2BGR)
 
             try:
                 res = cv2.matchTemplate(target_patch[:, :, :3], rotated_bgr, cv2.TM_CCORR_NORMED, mask=mask)
@@ -268,7 +272,17 @@ class ArrowAngleMatcher:
 
     def match(self, screenshot: np.ndarray, center: tuple[float, float], two_stage: bool = True) -> tuple[float, float]:
         """主匹配接口"""
-        tgt = _to_rgba(screenshot)
+        with self._lock:
+            return self._match(screenshot, center, two_stage)
+
+    def _match(self, screenshot, center, two_stage):
+        if screenshot is None or screenshot.ndim not in (2, 3):
+            raise ValueError("invalid arrow screenshot")
+        if screenshot.ndim == 3 and screenshot.shape[2] not in (3, 4):
+            raise ValueError(f"Unsupported image shape: {screenshot.shape}")
+        # Matching uses BGR only. Read small ROI views instead of converting or
+        # copying the entire screenshot; grayscale conversion is also ROI-only.
+        tgt = screenshot
         H, W = tgt.shape[:2]
 
         scale = W / self.benchmark_width
