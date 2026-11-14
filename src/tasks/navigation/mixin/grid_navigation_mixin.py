@@ -1252,6 +1252,10 @@ class GridNavigationMixin(RuntimeStateMixin):
                 return None
             self._log_grid_plan_failure(result, "导航规划失败")
             return False
+        if session.stop_distance is not None:
+            follower.config = replace(
+                follower.config, goal_radius=min(follower.config.goal_radius, max(0.0, session.stop_distance))
+            )
         self._grid_nav_follower = follower
         # 拓扑记录：单层路径用的就是主图网格，落到大地图。
         session.active_tier = self._grid_follower_tier(follower)
@@ -2453,6 +2457,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         )
         waypoints = segment.plan.waypoints
         segment_goal = tuple(waypoints[-1]) if waypoints else ctx.position
+        if index == len(route.segments) - 1 and not trailing:
+            segment_goal = session.recovery_goal or session.goal
         follower.adopt(segment.plan, goal=segment_goal, start=ctx.position)
         episode = session.recovery
         if (
@@ -2490,14 +2496,12 @@ class GridNavigationMixin(RuntimeStateMixin):
         for offset, link in enumerate(group):
             if self._cross_layered_link(ctx, link) is False:
                 return False
-            if (
-                index + 1 >= len(route.segments)
-                and link.kind != "rope"
-                and not self._walk_trailing_layered_link(
-                    ctx,
-                    link,
-                    end=(session.recovery_goal or session.goal) if offset == len(group) - 1 else link.target.center,
-                )
+            if link.kind != "rope" and not self._walk_trailing_layered_link(
+                ctx,
+                link,
+                end=(session.recovery_goal or session.goal)
+                if index + 1 >= len(route.segments) and offset == len(group) - 1
+                else link.target.center,
             ):
                 return False
         session.segment_index = index + 1
@@ -2515,7 +2519,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         return None
 
     def _walk_trailing_layered_link(self, ctx, link, *, end=None):
-        """A passive final connector has no next segment to supply movement."""
+        """Walk a passive connector with bounded motion and observed target-tier confirmation."""
         deadline = min(ctx.session.deadline, self.active_time() + GRID_ROPE_DESCENT_TIMEOUT_S)
         end = link.target.center if end is None else end
         span = math.dist(link.source.center, end)
@@ -2562,9 +2566,8 @@ class GridNavigationMixin(RuntimeStateMixin):
     def _cross_layered_link(self, ctx: NavTick, link: TierLink) -> bool | None:
         """执行一次跨层连接；``False`` 表示失败（调用方结束本次导航）。
 
-        - ``stairs`` / ``elevator`` / ``portal`` / ``door`` / ``other``：**走过去**。两端平面
-          距离通常只有一两格（实测相邻），换层由游戏里的楼梯/门完成，所以这里只切换分段，
-          物理过渡交给下一段的行走。
+        - ``stairs`` / ``elevator`` / ``portal`` / ``door`` / ``other``：校验连接并记录日志；
+          调用方执行有界步行、确认目标层后才激活下一段。
         - ``rope``：**不是滑索**，两套动作没有共同点，见 :meth:`_cross_layered_rope`。
 
         **关于距离：连接端点里没有 Y，所以这里只能算水平距离。** ``links.json`` 的 ``rect``
@@ -2575,11 +2578,6 @@ class GridNavigationMixin(RuntimeStateMixin):
         """
         if link.kind == "rope":
             return self._cross_layered_rope(link)
-        # "走过去"成立的前提是**两端几乎在同一处**（只差一层）：本实现不搬动角色，
-        # 跨完就直接在下一段的起点上开始走。实测数据里 7 条连接的两端水平距离都是
-        # 1.0~2.5m（相邻），前提成立；但这是**数据模型的隐含约定**，不是我们能校验的
-        # ——端点里没有 Y，也看不出"走多远换层"。远端一旦出现跨度很大的非绳索连接，
-        # 这里会退化成"朝下一段起点直线走"（可能穿墙），所以显式告警而不是静默。
         span = math.hypot(
             link.target.center[0] - link.source.center[0],
             link.target.center[1] - link.source.center[1],
@@ -2587,11 +2585,11 @@ class GridNavigationMixin(RuntimeStateMixin):
         if span > _GRID_LINK_WALK_MAX_SPAN_M:
             self.log_warning(
                 f"跨层连接两端相距 {span:.1f}m（超过 {_GRID_LINK_WALK_MAX_SPAN_M:g}m），"
-                f"而本实现按「走过去」处理、不会替角色搬动位置；"
-                f"下一段会从当前位置直线走向它的起点，可能不可行。"
+                f"超出有界步行跨层范围，停止导航；"
                 f"连接={link.link_id[:8]} {link.kind}",
                 notify=True,
             )
+            return False
         self.log_info(f"跨层：经 {link.kind} 从 {link.source.tier or '大地图'} 到 {link.target.tier or '大地图'}")
         return True
 
@@ -2881,6 +2879,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         for link in route.prefix:
             self.log_info(f"分层导航：起手先跨 {link.kind}（起点已在连接端点上）")
             if self._cross_layered_link(ctx, link) is False:
+                return True, False
+            if link.kind != "rope" and not self._walk_trailing_layered_link(ctx, link):
                 return True, False
         if not self._activate_layered_segment(ctx, reason="起始段"):
             return True, False
