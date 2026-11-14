@@ -696,7 +696,7 @@ class AutoCombatLogic:
                     if self.rotation_enabled:
                         # Model compilation and dodge handling are not failed
                         # attempts to advance the manual rotation.
-                        self.last_rotation_ok_time += task.active_time() - dodge_started
+                        self.last_rotation_ok_time += reactive_dodge.rotation_pause_seconds
                     if frame_consumed:
                         continue
                 task.approach_enemy()

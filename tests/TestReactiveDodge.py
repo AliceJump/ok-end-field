@@ -89,7 +89,9 @@ class TestReactiveDodge(unittest.TestCase):
         self.ready()
         self.assertTrue(self.dodge.step(self.release))
         self.assertEqual(self.task.events, ["release", "lshift"])
+        self.assertAlmostEqual(self.dodge.rotation_pause_seconds, self.dodge.RECOVERY_SECONDS)
         self.assertFalse(self.dodge.step(self.release))
+        self.assertEqual(self.dodge.rotation_pause_seconds, 0.0)
         self.task.now += 0.61
         self.assertTrue(self.dodge.step(self.release))
         self.assertEqual(self.detector.calls, 2)
@@ -650,6 +652,34 @@ class TestReactiveDodge(unittest.TestCase):
         self.assertEqual(rotation_states, [True])
         self.assertTrue(detector.closed)
         logic._do_normal_combat_frame.assert_not_called()
+
+    def test_routine_inference_does_not_extend_failed_rotation_watchdog(self):
+        namespace, logic, task, _dodge = self._normal_runtime()
+        task.config.update({"启用排轴": True, "排轴序列": "ult_1"})
+        detector = FakeDetector()
+
+        def infer(frame, compatibility=True):
+            task.now += 0.4
+            return []
+
+        detector.detect = infer
+        namespace["ReactiveDodge"] = lambda task: ReactiveDodge(task, lambda: detector)
+        fallback_times = []
+
+        def fail_token(token, deadline):
+            if not logic.rotation_active:
+                fallback_times.append(task.now)
+                task.now = deadline
+            return False, ""
+
+        logic._exec_rotation_token = fail_token
+        self.assertFalse(namespace["_run_confirmed_combat"](logic, None, False, 9.0))
+        self.assertEqual(len(fallback_times), 1)
+        # The watchdog starts at t=1; one capture/inference/decision iteration
+        # is 0.6s. Five wall-clock seconds must expire within one iteration.
+        self.assertGreaterEqual(fallback_times[0], 6.0)
+        self.assertLess(fallback_times[0], 6.6)
+        self.assertTrue(detector.closed)
 
 
 if __name__ == "__main__":
