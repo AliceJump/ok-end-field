@@ -20,11 +20,11 @@ sys.path.insert(0, str(ROOT))
 from scripts.nav.path_safety import resolve_under
 from scripts.nav.visual_validation import (
     ReferenceTimeline,
-    align_reference,
     connected_region,
     coverage_targets,
-    duplicate_observation,
+    eligible_visual_observation,
     error_statistics,
+    paired_visual_reference,
 )
 from src.localization.capture_position_source import CapturePositionSource
 from src.nav.grid_io import load_grid
@@ -114,7 +114,7 @@ class ReferenceRecorder:
         self.handle.close()
 
 
-def report_accuracy(samples, references):
+def report_accuracy(samples, references, *, map_id=None):
     references = ReferenceTimeline(references)
     groups = {
         "absolute_time_aligned": [],
@@ -125,16 +125,11 @@ def report_accuracy(samples, references):
     eligible = missing = 0
     for row in samples:
         pose = row["pose"]
-        if pose.get("source") == "capture" or not pose.get("position_trusted") or duplicate_observation(row):
+        expected_map = map_id or pose.get("map_id")
+        if not eligible_visual_observation(row, expected_map):
             continue
         eligible += 1
-        reference = align_reference(
-            references,
-            row["frame_t"],
-            pose.get("map_id"),
-            flow=row.get("flow"),
-            stationary=row.get("stationary_reference", False),
-        )
+        reference = paired_visual_reference(row, references, expected_map)
         if reference is None:
             missing += 1
             continue

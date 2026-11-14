@@ -15,6 +15,48 @@ def duplicate_observation(row):
     return row.get("validation_duplicate", row["pose"].get("visual_duplicate_frame", False))
 
 
+def pose_scope_status(state, map_id):
+    """Classify whether a visual pose belongs to this main-map validation."""
+    if state.get("map_id") != map_id:
+        return "map_changed"
+    tier_id = state.get("tier_id")
+    tier_trusted = bool(state.get("tier_trusted"))
+    if state.get("tier_evidence_required", True) and (not tier_trusted or tier_id is None):
+        return "tier_pending"
+    if tier_trusted and tier_id not in (None, "__main__"):
+        return "tier_changed"
+    return "record"
+
+
+def coverage_pose_ready(state, map_id):
+    return (
+        state.get("position_trusted")
+        and state.get("frame_time_source") == "wgc_system_relative_time"
+        and pose_scope_status(state, map_id) == "record"
+    )
+
+
+def eligible_visual_observation(row, map_id):
+    pose = row["pose"]
+    stamp = row.get("frame_t")
+    return bool(
+        pose.get("source") != "capture"
+        and coverage_pose_ready(pose, map_id)
+        and not duplicate_observation(row)
+        and isinstance(stamp, (int, float))
+        and math.isfinite(stamp)
+        and stamp > 0
+    )
+
+
+def paired_visual_reference(row, timeline, map_id):
+    if not eligible_visual_observation(row, map_id):
+        return None
+    return align_reference(
+        timeline, row["frame_t"], map_id, flow=row.get("flow"), stationary=row.get("stationary_reference", False)
+    )
+
+
 def navigation_pose_ready(pose):
     return bool(
         pose and pose.get("position_trusted") and (not pose.get("tier_evidence_required") or pose.get("tier_trusted"))

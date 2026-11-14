@@ -65,15 +65,27 @@ def replay(dataset, store, output):
     # The truth reference is deliberately constructed only after all inference.
     trajectory = trajectory_for(dataset)
     paired = []
+    samples_by_time = {}
+    for sample in samples:
+        samples_by_time.setdefault(float(sample["frame_t"]), sample)
+    paired_observations = set()
     for row in rows:
-        sample, pose = row["sample"], row["pose"]
-        truth = trajectory.at(sample["frame_t"], sample)
-        if not pose["position_trusted"] or truth is None:
+        pose = row["pose"]
+        if not pose["position_trusted"] or pose.get("visual_duplicate_frame"):
             continue
+        stamp = pose["frame_t"]
+        identity = (pose["map_id"], stamp)
+        reference_sample = samples_by_time.get(stamp)
+        if identity in paired_observations or reference_sample is None:
+            continue
+        truth = trajectory.at(stamp, reference_sample)
+        if truth is None:
+            continue
+        paired_observations.add(identity)
         error = float(np.linalg.norm(np.array([pose["x"], pose["z"]]) - truth[0]))
         row["error_m"] = error
         row["speed_bin"] = speed_bin(float(np.linalg.norm(truth[1])))
-        row["wrong_map"] = pose["map_id"] != sample["map_id"]
+        row["wrong_map"] = pose["map_id"] != reference_sample["map_id"]
         paired.append(row)
     trusted = [r for r in rows if r["pose"]["position_trusted"]]
     first_trusted = next((i for i, r in enumerate(rows) if r["pose"]["position_trusted"]), len(rows))
@@ -100,6 +112,7 @@ def replay(dataset, store, output):
         },
         "truth_seeded": False,
         "limitations": "Packet receive time, <=0.5s interpolation brackets only; no extrapolation or delay correction. "
+        "Accuracy uses unique measurement frame times; retained repeats are omitted. "
         "Residual includes map calibration and game/packet latency. Floor labels lack independent live truth. "
         "Replay tests the production visual algorithm; it does not emulate runtime frame-age rejection.",
     }

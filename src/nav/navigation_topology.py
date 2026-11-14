@@ -12,7 +12,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
-from src.nav.grid_io import CELL_FREE, CELL_UNKNOWN
+from src.nav.grid_io import CELL_FREE
 from src.nav.layered_map import LayeredMap, LayerKey, layer_key
 
 
@@ -75,7 +75,7 @@ class NavigationTopologyScope:
         if not distances:
             return False
         i, j = floor.index(x, z)
-        if floor.state(i, j) in (None, CELL_UNKNOWN):
+        if floor.state(i, j) != CELL_FREE or (i, j) not in distances:
             return False
         # Account for localization/cell quantization without connecting islands
         # in the graph itself. The allowance is applied once to total distance.

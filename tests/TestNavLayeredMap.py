@@ -462,6 +462,15 @@ class TestCatalogDegradation(unittest.TestCase):
 
 
 class TestNavigationTopology(unittest.TestCase):
+    def test_default_tolerance_cannot_cross_walls_unknown_or_disconnected_cells(self):
+        for rows, candidate in ((["o#o"], (2.5, 0.5)), (["o#"], (1.5, 0.5)), (["o."], (1.5, 0.5))):
+            with self.subTest(rows=rows):
+                scope = NavigationTopology(LayeredMap({("map02", ""): _grid(rows)})).scope(
+                    "map02", MAIN_TIER, (0.5, 0.5), 0
+                )
+                self.assertTrue(scope.allows_candidate("map02", "", 0.5, 0.5))
+                self.assertFalse(scope.allows_candidate("map02", "", *candidate))
+
     @staticmethod
     def _link(source, target, *, source_x=0, target_x=0, bidirectional=False, kind="stairs"):
         def endpoint(tier, x):
