@@ -586,17 +586,30 @@ class GameFlowMixin:
         target_matcher = get_world_map_matcher(self.lang, target_area)  # 目标地区识别条件
         expected_text = get_world_map_text(self.lang, target_area)  # 目标地区显示名称
 
-        def select_target():  # 检查当前画面并推进切换
+        self.log_info(f"[delivery-area] 开始切换目标地区={target_area}")  # 记录本次目标
+
+        def select_target():
+            """先识别底部当前地区，匹配目标则成功。
+
+            否则尝试点击已展开菜单中的目标。目标未识别时，菜单仍有地区选项就
+            稍后重试，否则点击底部当前地区展开菜单。每次点击后重新识别底部，
+            直到确认目标或外层等待超时。
+            """
             current = self.wait_ocr(match=area_matchers, box=current_box, time_out=5)  # 等待底部地区
             if not current:  # 当前地区不可见时不操作
+                self.log_info(f"[delivery-area] 未识别当前地区，继续等待目标={target_area}")
                 return False  # 等待下一帧
             if expected_text in current[0].name or target_area in current[0].name:  # 已确认目标地区
+                self.log_info(f"[delivery-area] 已确认当前地区={current[0].name}，目标={target_area}")
                 return True  # 切换完成
             if self.wait_click_ocr(match=target_matcher, box=menu_box, time_out=1, after_sleep=5):  # 等待并选择目标地区
+                self.log_info(f"[delivery-area] 已点击目标={target_area}，等待底部地区确认")
                 return False  # 下一帧确认切换结果
             if self.ocr(match=area_matchers, box=menu_box):  # 菜单仍展开但目标未识别
+                self.log_info(f"[delivery-area] 菜单已展开但未识别目标={target_area}，稍后重试")
                 self.sleep(0.5)  # 等待目标选项清晰
             else:  # 未检测到菜单选项
+                self.log_info(f"[delivery-area] 当前地区={current[0].name}，尝试展开菜单，目标={target_area}")
                 self.click(current[0], after_sleep=5)  # 尝试展开菜单并等待
             return False  # 下一帧重新确认
 

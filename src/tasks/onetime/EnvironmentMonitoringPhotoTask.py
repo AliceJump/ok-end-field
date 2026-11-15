@@ -25,21 +25,21 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
 
 class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin):  # 共用接取、传送与相机流程
     OBSERVATIONS = {  # 点位语言键、路线与匹配方式
-        "pool_lotus": (PoolLotusRoute, "contains"),  # 小池荷向右取景
-        "vigorous_cistern_slug": (VigorousCisternSlugRoute, "contains"),  # 活力源石虫向左取景
-        "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "exact"),  # 普通源石虫向左取景
-        "thillu": (StationaryObservationRoute, "contains"),  # 表象在传送落点向右取景
+        "pool_lotus": (PoolLotusRoute, "edit_distance"),  # 小池荷向右取景
+        "vigorous_cistern_slug": (VigorousCisternSlugRoute, "edit_distance"),  # 活力源石虫向左取景
+        "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "edit_distance"),  # 普通源石虫向左取景
+        "thillu": (StationaryObservationRoute, "edit_distance"),  # 表象在传送落点向右取景
         "peach_tree": (StationaryObservationRoute, "contains"),  # 桃树在传送落点即可取景
-        "pier_waterwheel": (StationaryObservationRoute, "contains"),  # 码头水车在传送落点即可取景
-        "annular_waterfall": (AnnularWaterfallRoute, "contains"),  # 环形瀑布向上取景
-        "eternal_sunset": (EternalSunsetRoute, "contains"),  # 栖霞驻影向上取景
+        "pier_waterwheel": (StationaryObservationRoute, "edit_distance"),  # 码头水车在传送落点即可取景
+        "annular_waterfall": (AnnularWaterfallRoute, "edit_distance"),  # 环形瀑布向上取景
+        "eternal_sunset": (EternalSunsetRoute, "edit_distance"),  # 栖霞驻影向上取景
         "collapsed_tianshi_pillar": (TianshiPillarRoute, "edit_distance"),  # 天师桩向右取景
-        "mini_shellbeast": (MiniShellbeastRoute, "contains"),  # 小壳兽向左取景
-        "xiranite_nexus": (XiraniteNexusRoute, "contains"),  # 枢壤仪向右取景
-        "feranmut_heart": (StationaryObservationRoute, "contains"),  # 巨兽心脏原地向右搜索
+        "mini_shellbeast": (MiniShellbeastRoute, "edit_distance"),  # 小壳兽向左取景
+        "xiranite_nexus": (XiraniteNexusRoute, "edit_distance"),  # 枢壤仪向右取景
+        "feranmut_heart": (StationaryObservationRoute, "edit_distance"),  # 巨兽心脏原地向右搜索
         "observant_fowlbeast": (StationaryObservationRoute, "contains"),  # 雉羽兽原地向右搜索
-        "water_lantern_bug": (StationaryObservationRoute, "contains"),  # 水灯虫原地向右取景
-        "withered_branches": (StationaryObservationRoute, "contains"),  # 枯枝原地向右取景
+        "water_lantern_bug": (StationaryObservationRoute, "edit_distance"),  # 水灯虫原地向右取景
+        "withered_branches": (StationaryObservationRoute, "edit_distance"),  # 枯枝原地向右取景
         "glowing_lankybeast": (GlowingLankybeastRoute, "edit_distance"),  # 吐虫长股兽向右取景
     }
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
@@ -75,8 +75,6 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         expected = self.normalize_title(name)
         if not expected:
             return False
-        if mode == "exact":
-            return normalized == expected
         if mode == "edit_distance":
             return edit_distance(normalized, expected, max_distance=1) is not None
         return mode == "contains" and expected in normalized
