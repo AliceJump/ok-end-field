@@ -141,7 +141,11 @@
   },
   "water_lantern_bug": {
     "zh_CN": {"string": "水灯虫"},
-    "zh_TW": {"string": "水燈蟲"}
+    "zh_TW": {"string": "水燈蟲"},
+    "en_US": {"string": "Waterlamp"},
+    "ja_JP": {"string": "水灯虫"},
+    "ko_KR": {"string": "수등충"},
+    "es_ES": {"string": "Lámpara de agua"}
   },
   "peach_tree": {
     "zh_CN": {"string": "桃树"},
