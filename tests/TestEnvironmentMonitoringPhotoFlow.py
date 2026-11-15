@@ -43,6 +43,16 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.sleep.call_args_list, [call(1), call(3)])
         self.assertEqual(GlowingLankybeastRoute.photo_direction, "right")
 
+    def test_full_titles_allow_one_error_and_keep_distinct_slug_routes(self):
+        task = self.task()
+        task.lang.environment_monitoring.cistern_originium_slugs = "蓄水源石虫"
+        task.lang.environment_monitoring.vigorous_cistern_slug = "充满活力的蓄水源石虫"
+        self.assertEqual(task.observation_key("蓄水源石蟲"), "cistern_originium_slugs")
+        self.assertEqual(task.observation_key("充满活力的蓄水源石虫"), "vigorous_cistern_slug")
+        self.assertEqual(task.observation_key("“小池荷”"), "pool_lotus")
+        task.lang.environment_monitoring.peach_tree = "桃树"
+        self.assertEqual(task.observation_key("念念家的桃树"), "peach_tree")
+
 
     def test_route_photo_directions(self):
         for route, direction in (
