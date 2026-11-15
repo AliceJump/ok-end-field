@@ -23,10 +23,25 @@ class TestDeliveryAreaConfig(unittest.TestCase):
         wuling = Mock(name="wuling")
         wuling.name = "武陵"
         task.wait_ocr.side_effect = [[valley], [valley], [valley], [wuling]]
-        task.ocr.side_effect = [[], [wuling], [wuling]]
+        task.wait_click_ocr.side_effect = [None, [wuling], [wuling]]
+        task.ocr.return_value = []
         task.wait_until.side_effect = lambda condition, **kwargs: next((True for _ in range(4) if condition()), None)
         self.assertTrue(GameFlowMixin.switch_to_area_delivery_list(task, "武陵"))
-        self.assertEqual(task.click.call_args_list, [call(valley, after_sleep=5), call(wuling, after_sleep=5), call(wuling, after_sleep=5)])
+        task.click.assert_called_once_with(valley, after_sleep=5)
+        self.assertEqual(task.wait_click_ocr.call_count, 3)
+
+    @patch("src.core.base_mixin.game_flow_mixin.get_world_map_text", return_value="武陵")
+    @patch("src.core.base_mixin.game_flow_mixin.get_world_map_matcher", side_effect=lambda lang, area: area)
+    def test_region_switch_keeps_open_menu_when_target_ocr_misses(self, _matcher, _text):
+        task = Mock()
+        valley = Mock()
+        valley.name = "四号谷地"
+        task.wait_ocr.return_value = [valley]
+        task.wait_click_ocr.return_value = None
+        task.ocr.return_value = [valley]
+        task.wait_until.side_effect = lambda condition, **kwargs: condition()
+        self.assertFalse(GameFlowMixin.switch_to_area_delivery_list(task, "武陵"))
+        task.click.assert_not_called()
 
     @patch("src.core.base_mixin.game_flow_mixin.get_world_map_text", return_value="武陵")
     @patch("src.core.base_mixin.game_flow_mixin.get_world_map_matcher", side_effect=lambda lang, area: area)
