@@ -27,7 +27,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
     OBSERVATIONS = {  # 点位语言键、路线与匹配方式
         "pool_lotus": (PoolLotusRoute, "edit_distance"),  # 小池荷向右取景
         "vigorous_cistern_slug": (VigorousCisternSlugRoute, "edit_distance"),  # 活力源石虫向左取景
-        "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "edit_distance_strict"),  # 普通源石虫向左取景
+        "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "edit_distance"),  # 普通源石虫向左取景
         "thillu": (StationaryObservationRoute, "edit_distance"),  # 表象在传送落点向右取景
         "peach_tree": (StationaryObservationRoute, "contains"),  # 桃树在传送落点即可取景
         "pier_waterwheel": (StationaryObservationRoute, "edit_distance"),  # 码头水车在传送落点即可取景
@@ -75,17 +75,16 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         expected = self.normalize_title(name)
         if not expected:
             return False
-        if mode == "exact":
-            return normalized == expected
-        if mode in ("edit_distance", "edit_distance_strict"):
-            if mode == "edit_distance" and expected in normalized:
-                return True
+        if mode == "edit_distance":
             if len(expected) <= 3 and len(normalized) < len(expected):
                 return False
             return edit_distance(normalized, expected, max_distance=1) is not None
         return mode == "contains" and expected in normalized
 
     def observation_key(self, title):  # 按标题识别已注册路线的观察点
+        quoted = re.findall(r"""“([^”]+)”|「([^」]+)」|"([^"]+)"|'([^']+)'""", title)  # 提取 OCR 附带说明时的引号内标题
+        if len(quoted) == 1:  # 仅存在一个明确标题时才移除引号外文字
+            title = next(part for part in quoted[0] if part)  # 引号内名称仍按原匹配规则识别
         normalized = self.normalize_title(title)  # 不依赖引号和空格
         matched = None  # 多个观察点同时匹配时不能猜测
         for key, (_, mode) in self.OBSERVATIONS.items():  # 只识别支持导航的观察点
