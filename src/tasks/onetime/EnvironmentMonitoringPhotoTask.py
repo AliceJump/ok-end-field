@@ -27,7 +27,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
     OBSERVATIONS = {  # 点位语言键、路线与匹配方式
         "pool_lotus": (PoolLotusRoute, "edit_distance"),  # 小池荷向右取景
         "vigorous_cistern_slug": (VigorousCisternSlugRoute, "edit_distance"),  # 活力源石虫向左取景
-        "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "edit_distance"),  # 普通源石虫向左取景
+        "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "edit_distance_strict"),  # 普通源石虫向左取景
         "thillu": (StationaryObservationRoute, "edit_distance"),  # 表象在传送落点向右取景
         "peach_tree": (StationaryObservationRoute, "contains"),  # 桃树在传送落点即可取景
         "pier_waterwheel": (StationaryObservationRoute, "edit_distance"),  # 码头水车在传送落点即可取景
@@ -77,7 +77,11 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             return False
         if mode == "exact":
             return normalized == expected
-        if mode == "edit_distance":
+        if mode in ("edit_distance", "edit_distance_strict"):
+            if mode == "edit_distance" and expected in normalized:
+                return True
+            if len(expected) <= 3 and len(normalized) < len(expected):
+                return False
             return edit_distance(normalized, expected, max_distance=1) is not None
         return mode == "contains" and expected in normalized
 
