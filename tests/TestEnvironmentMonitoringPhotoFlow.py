@@ -18,12 +18,32 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (
     CisternOriginiumSlugsRoute,
     EnvironmentMonitoringRoute,
     EternalSunsetRoute,
+    GlowingLankybeastRoute,
     PoolLotusRoute,
     StationaryObservationRoute,
 )
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
+    def test_glowing_lankybeast_uses_edit_distance(self):
+        task = self.task()
+        task.normalize_title.side_effect = EnvironmentMonitoringPhotoTask.normalize_title
+        matcher = EnvironmentMonitoringPhotoTask._matches_observation
+        expected = "肚子鼓气后发光的吐虫长股兽"
+        self.assertEqual(EnvironmentMonitoringPhotoTask.OBSERVATIONS["glowing_lankybeast"][1], "edit_distance")
+        self.assertTrue(matcher(task, expected, expected, "edit_distance"))
+        self.assertTrue(matcher(task, "肚子鼓气后发光的吐虫长股受", expected, "edit_distance"))
+        self.assertFalse(matcher(task, "完全不同的观察点", expected, "edit_distance"))
+    def test_glowing_lankybeast_route(self):
+        task = self.task()
+        task.in_world.return_value = True
+        task.wait_until.return_value = True
+        GlowingLankybeastRoute(task).run()
+        self.assertEqual(task.send_key_down.call_args_list, [call("s"), call("right")])
+        self.assertEqual(task.sleep.call_args_list, [call(1), call(3)])
+        self.assertEqual(GlowingLankybeastRoute.photo_direction, "right")
+
+
     def test_route_photo_directions(self):
         for route, direction in (
             (PoolLotusRoute, "right"),

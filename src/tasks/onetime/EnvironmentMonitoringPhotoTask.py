@@ -13,6 +13,7 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
     EternalSunsetRoute,  # 栖霞驻影网格路线
+    GlowingLankybeastRoute,  # 吐虫长股兽短路线
     MiniShellbeastRoute,  # 小壳兽网格路线
     PoolLotusRoute,  # 小池荷短路线
     StationaryObservationRoute,  # 传送后原地取景
@@ -39,6 +40,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         "observant_fowlbeast": (StationaryObservationRoute, "contains"),  # 雉羽兽原地向右搜索
         "water_lantern_bug": (StationaryObservationRoute, "contains"),  # 水灯虫原地向右取景
         "withered_branches": (StationaryObservationRoute, "contains"),  # 枯枝原地向右取景
+        "glowing_lankybeast": (GlowingLankybeastRoute, "edit_distance"),  # 吐虫长股兽向右取景
     }
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
 

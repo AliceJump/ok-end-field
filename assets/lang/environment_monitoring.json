@@ -139,6 +139,14 @@
     "ja_JP": {"string": "キョロキョロ"},
     "ko_KR": {"string": "두리번거리는"}
   },
+  "glowing_lankybeast": {
+    "zh_CN": {"string": "肚子鼓气后发光的吐虫长股兽"},
+    "zh_TW": {"string": "肚子鼓氣後發光的吐蟲長股獸"},
+    "en_US": {"string": "Inflated and Glowing Bugspitting Lankybeast"},
+    "ja_JP": {"string": "腹が膨らんで光る虫吐き長脚獣"},
+    "ko_KR": {"string": "배를 부풀려 빛을 내는 버그스피팅 랭키비스트"},
+    "es_ES": {"string": "Bestia larguirucha escupebichos inflada y brillante"}
+  },
   "withered_branches": {
     "zh_CN": {"string": "枯枝"},
     "zh_TW": {"string": "枯枝"},
