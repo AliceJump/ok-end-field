@@ -139,6 +139,10 @@
     "ja_JP": {"string": "キョロキョロ"},
     "ko_KR": {"string": "두리번거리는"}
   },
+  "water_lantern_bug": {
+    "zh_CN": {"string": "水灯虫"},
+    "zh_TW": {"string": "水燈蟲"}
+  },
   "peach_tree": {
     "zh_CN": {"string": "桃树"},
     "zh_TW": {"string": "桃樹"},

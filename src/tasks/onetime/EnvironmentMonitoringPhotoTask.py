@@ -37,6 +37,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         "xiranite_nexus": (XiraniteNexusRoute, "contains"),  # 枢壤仪向右取景
         "feranmut_heart": (StationaryObservationRoute, "contains"),  # 巨兽心脏原地向右搜索
         "observant_fowlbeast": (StationaryObservationRoute, "contains"),  # 雉羽兽原地向右搜索
+        "water_lantern_bug": (StationaryObservationRoute, "contains"),  # 水灯虫原地向右取景
     }
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
 
