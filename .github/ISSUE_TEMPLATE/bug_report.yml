@@ -2,6 +2,8 @@ name: Bug 反馈 / Bug Report
 description: 创建一个报告以帮助我们修复问题 / Create a report to help us fix issues
 title: "[Bug]: "
 labels: ["bug"]
+assignees:
+  - LevelDownRefine
 body:
   # --- 1. 引导信息 / Guide ---
   - type: markdown

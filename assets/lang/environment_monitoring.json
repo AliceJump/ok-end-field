@@ -139,6 +139,22 @@
     "ja_JP": {"string": "キョロキョロ"},
     "ko_KR": {"string": "두리번거리는"}
   },
+  "withered_branches": {
+    "zh_CN": {"string": "枯枝"},
+    "zh_TW": {"string": "枯枝"},
+    "en_US": {"string": "Withered Branches"},
+    "ja_JP": {"string": "枯れ枝"},
+    "ko_KR": {"string": "마른 가지"},
+    "es_ES": {"string": "Ramas marchitas"}
+  },
+  "water_lantern_bug": {
+    "zh_CN": {"string": "水灯虫"},
+    "zh_TW": {"string": "水燈蟲"},
+    "en_US": {"string": "Waterlamp"},
+    "ja_JP": {"string": "水灯虫"},
+    "ko_KR": {"string": "수등충"},
+    "es_ES": {"string": "Lámpara de agua"}
+  },
   "peach_tree": {
     "zh_CN": {"string": "桃树"},
     "zh_TW": {"string": "桃樹"},
