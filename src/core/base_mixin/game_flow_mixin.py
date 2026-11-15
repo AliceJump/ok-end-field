@@ -593,7 +593,7 @@ class GameFlowMixin:
             if expected_text in current[0].name or target_area in current[0].name:  # 已确认目标地区
                 return True  # 切换完成
             target = self.ocr(match=target_matcher, box=menu_box)  # 检查菜单中的目标选项
-            self.click(target[0] if target else current[0], after_sleep=1)  # 选择目标或展开菜单并等待响应
+            self.click(target[0] if target else current[0], after_sleep=5)  # 等待菜单或地区刷新
             return False  # 下一帧重新确认
 
         if self.wait_until(select_target, time_out=20, raise_if_not_found=False):  # 有限时间内重试

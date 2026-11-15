@@ -26,7 +26,7 @@ class TestDeliveryAreaConfig(unittest.TestCase):
         task.ocr.side_effect = [[], [wuling], [wuling]]
         task.wait_until.side_effect = lambda condition, **kwargs: next((True for _ in range(4) if condition()), None)
         self.assertTrue(GameFlowMixin.switch_to_area_delivery_list(task, "武陵"))
-        self.assertEqual(task.click.call_args_list, [call(valley, after_sleep=1), call(wuling, after_sleep=1), call(wuling, after_sleep=1)])
+        self.assertEqual(task.click.call_args_list, [call(valley, after_sleep=5), call(wuling, after_sleep=5), call(wuling, after_sleep=5)])
 
     @patch("src.core.base_mixin.game_flow_mixin.get_world_map_text", return_value="武陵")
     @patch("src.core.base_mixin.game_flow_mixin.get_world_map_matcher", side_effect=lambda lang, area: area)
