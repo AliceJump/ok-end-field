@@ -76,15 +76,10 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         if not expected:
             return False
         if mode == "edit_distance":
-            if len(expected) <= 3 and len(normalized) < len(expected):
-                return False
             return edit_distance(normalized, expected, max_distance=1) is not None
         return mode == "contains" and expected in normalized
 
     def observation_key(self, title):  # 按标题识别已注册路线的观察点
-        quoted = re.findall(r"""“([^”]+)”|「([^」]+)」|"([^"]+)"|'([^']+)'""", title)  # 提取 OCR 附带说明时的引号内标题
-        if len(quoted) == 1:  # 仅存在一个明确标题时才移除引号外文字
-            title = next(part for part in quoted[0] if part)  # 引号内名称仍按原匹配规则识别
         normalized = self.normalize_title(title)  # 不依赖引号和空格
         matched = None  # 多个观察点同时匹配时不能猜测
         for key, (_, mode) in self.OBSERVATIONS.items():  # 只识别支持导航的观察点

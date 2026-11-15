@@ -417,12 +417,12 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertEqual(task.available_observations(), [])
         task.ocr.assert_called_once()
 
-    def test_split_title_does_not_select_an_unsupported_fragment(self):
+    def test_split_short_title_uses_one_character_edit_distance(self):
         task = self.task()
         task.ocr.return_value = [Box(120, 325, 100, 20, name="小池"), Box(240, 325, 40, 20, name="荷")]
         task._observation_action = Mock(side_effect=["accept", None, None])
         candidate = task.available_observations()[0]
-        self.assertIsNone(task.observation_route(candidate["name"]))
+        self.assertIs(task.observation_route(candidate["name"]), PoolLotusRoute)
 
     def test_accept_and_go_remain_inside_the_selected_card(self):
         task = self.task()
@@ -641,7 +641,7 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             )
         )["eternal_sunset"]
         for locale, title in (
-            ("zh_CN", "拍摄生长在亭子中间的“栖霞驻影”"),
+            ("zh_CN", "“栖霞驻影”"),
             ("zh_TW", "棲霞駐影"),
             ("en_US", "Eternal Sunset"),
             ("ja_JP", "棲霞留影"),
@@ -682,8 +682,14 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
             ("ja_JP", "「池の蓮」"),
             ("ko_KR", "'작은 연못의 연꽃'"),
         )
-        titles = {locale: (title, title + "其他") for locale, title in examples}
+        titles = {locale: title for locale, title in examples}
         self.assert_localized_routes("pool_lotus", titles, PoolLotusRoute)
+
+    def test_full_title_uses_one_character_distance_without_substring_fallback(self):
+        task = self.task()
+        self.assertIs(task.observation_route("小池"), PoolLotusRoute)
+        self.assertIs(task.observation_route("小池何"), PoolLotusRoute)
+        self.assertIsNone(task.observation_route("小池荷其他"))
 
     def test_tianshi_pillar_matches_title_with_missing_character(self):
         self.assert_localized_routes(
