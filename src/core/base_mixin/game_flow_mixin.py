@@ -587,9 +587,8 @@ class GameFlowMixin:
         expected_text = get_world_map_text(self.lang, target_area)  # 目标地区显示名称
 
         def select_target():  # 检查当前画面并推进切换
-            current = self.ocr(match=area_matchers, box=current_box)  # 识别底部地区
+            current = self.wait_ocr(match=area_matchers, box=current_box, time_out=1)  # 等待底部地区
             if not current:  # 当前地区不可见时不操作
-                self.sleep(0.3)  # 避免频繁识别
                 return False  # 等待下一帧
             if expected_text in current[0].name or target_area in current[0].name:  # 已确认目标地区
                 return True  # 切换完成

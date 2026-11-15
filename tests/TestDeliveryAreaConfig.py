@@ -22,7 +22,8 @@ class TestDeliveryAreaConfig(unittest.TestCase):
         valley.name = "四号谷地"
         wuling = Mock(name="wuling")
         wuling.name = "武陵"
-        task.ocr.side_effect = [[valley], [], [valley], [wuling], [valley], [wuling], [wuling]]
+        task.wait_ocr.side_effect = [[valley], [valley], [valley], [wuling]]
+        task.ocr.side_effect = [[], [wuling], [wuling]]
         task.wait_until.side_effect = lambda condition, **kwargs: next((True for _ in range(4) if condition()), None)
         self.assertTrue(GameFlowMixin.switch_to_area_delivery_list(task, "武陵"))
         self.assertEqual(task.click.call_args_list, [call(valley, after_sleep=1), call(wuling, after_sleep=1), call(wuling, after_sleep=1)])
@@ -31,7 +32,7 @@ class TestDeliveryAreaConfig(unittest.TestCase):
     @patch("src.core.base_mixin.game_flow_mixin.get_world_map_matcher", side_effect=lambda lang, area: area)
     def test_region_switch_times_out_without_clicking_when_current_area_missing(self, _matcher, _text):
         task = Mock()
-        task.ocr.return_value = []
+        task.wait_ocr.return_value = []
         task.wait_until.side_effect = lambda condition, **kwargs: condition()
         self.assertFalse(GameFlowMixin.switch_to_area_delivery_list(task, "武陵"))
         task.click.assert_not_called()
