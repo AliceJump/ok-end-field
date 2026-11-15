@@ -339,7 +339,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         delivery_box = self.wait_ocr(match=self.lang.DeliveryTask.k_ae8fb114, time_out=5)
         if delivery_box:
             self.click(delivery_box[0])
-            self.switch_to_area_delivery_list(self.delivery_area)
+            if not self.switch_to_area_delivery_list(self.delivery_area):  # 切换失败时不在错误地区刷新
+                return False  # 结束本次接单
         else:
             self.log_info("未找到‘运送委托列表’，退出")
             return False
