@@ -46,7 +46,7 @@ class PoolLotusRoute(EnvironmentMonitoringRoute):  # 小池荷传送后短路线
 
 class GlowingLankybeastRoute(EnvironmentMonitoringRoute):  # 吐虫长股兽传送后短路线
     def run(self):  # 传送后向后、向右移动
-        self.run_route("吐虫长股兽", (("s", 1), ("d", 3)), sprint=True)  # 暂定冲刺路线，待实机验证
+        self.run_route("吐虫长股兽", (("s", 1), ("d", 3)), sprint=True)  # 已验证的冲刺路线
 
 
 class CisternOriginiumSlugsRoute(EnvironmentMonitoringRoute):  # 普通蓄水源石虫传送后短路线
