@@ -9,9 +9,33 @@ from src.data.delivery_area_service import (
     get_delivery_targets,
 )
 from src.tasks.onetime.DeliveryTask import DeliveryTask
+from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 
 
 class TestDeliveryAreaConfig(unittest.TestCase):
+    @patch("src.core.base_mixin.game_flow_mixin.get_world_map_text", return_value="武陵")
+    @patch("src.core.base_mixin.game_flow_mixin.get_world_map_matcher", side_effect=lambda lang, area: area)
+    def test_region_switch_retries_open_menu_and_confirms_current_area(self, _matcher, _text):
+        task = Mock()
+        task.box_of_screen.side_effect = ["current", "menu"]
+        valley = Mock(name="valley")
+        valley.name = "四号谷地"
+        wuling = Mock(name="wuling")
+        wuling.name = "武陵"
+        task.ocr.side_effect = [[valley], [], [valley], [wuling], [valley], [wuling], [wuling]]
+        task.wait_until.side_effect = lambda condition, **kwargs: next((True for _ in range(4) if condition()), None)
+        self.assertTrue(GameFlowMixin.switch_to_area_delivery_list(task, "武陵"))
+        self.assertEqual(task.click.call_args_list, [call(valley, after_sleep=1), call(wuling, after_sleep=1), call(wuling, after_sleep=1)])
+
+    @patch("src.core.base_mixin.game_flow_mixin.get_world_map_text", return_value="武陵")
+    @patch("src.core.base_mixin.game_flow_mixin.get_world_map_matcher", side_effect=lambda lang, area: area)
+    def test_region_switch_times_out_without_clicking_when_current_area_missing(self, _matcher, _text):
+        task = Mock()
+        task.ocr.return_value = []
+        task.wait_until.side_effect = lambda condition, **kwargs: condition()
+        self.assertFalse(GameFlowMixin.switch_to_area_delivery_list(task, "武陵"))
+        task.click.assert_not_called()
+
     def test_delivery_location_records_preserve_names_and_coordinates(self):
         self.assertEqual(get_delivery_locations("武陵"), ["武陵城", "试验园区"])
         self.assertIsNotNone(get_delivery_location_coordinate("武陵", "武陵城"))
