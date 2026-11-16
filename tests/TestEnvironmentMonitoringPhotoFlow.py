@@ -34,6 +34,7 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertTrue(matcher(task, expected, expected, "edit_distance"))
         self.assertTrue(matcher(task, "肚子鼓气后发光的吐虫长股受", expected, "edit_distance"))
         self.assertFalse(matcher(task, "完全不同的观察点", expected, "edit_distance"))
+
     def test_glowing_lankybeast_route(self):
         task = self.task()
         task.in_world.return_value = True
@@ -52,7 +53,6 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.observation_key("“小池荷”"), "pool_lotus")
         task.lang.environment_monitoring.peach_tree = "桃树"
         self.assertEqual(task.observation_key("念念家的桃树"), "peach_tree")
-
 
     def test_route_photo_directions(self):
         for route, direction in (

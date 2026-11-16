@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import Mock, call, patch
 
+from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.delivery_area_service import (
     get_delivery_location_coordinate,
@@ -9,7 +10,6 @@ from src.data.delivery_area_service import (
     get_delivery_targets,
 )
 from src.tasks.onetime.DeliveryTask import DeliveryTask
-from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 
 
 class TestDeliveryAreaConfig(unittest.TestCase):
