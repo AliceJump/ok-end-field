@@ -125,7 +125,7 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
             return "mechanics"  # 只关闭已识别的说明
         if self.find_one(fL.battle_space_left):  # 使用协议空间模板识别入场，不读取轮次文字
             return "space"  # 继续触碰光点或战斗
-        if self._activity_page():  # 可以从活动中心启动或确认退出
+        if not self.is_main() and self._activity_page():  # 排除大世界左侧的同名任务追踪
             return "activity"  # 活动选择阶段
         return None  # 动画或未知页面保持等待
 
