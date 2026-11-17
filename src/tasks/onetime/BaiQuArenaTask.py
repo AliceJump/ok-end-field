@@ -125,7 +125,7 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
             return "mechanics"  # 只关闭已识别的说明
         if self.find_one(fL.battle_space_left):  # 使用协议空间模板识别入场，不读取轮次文字
             return "space"  # 继续触碰光点或战斗
-        if self._activity_page():  # 可以从活动中心启动或确认退出
+        if not self.is_main() and self._activity_page():  # 排除大世界左侧的同名任务追踪
             return "activity"  # 活动选择阶段
         return None  # 动画或未知页面保持等待
 
@@ -224,6 +224,7 @@ class BaiQuArenaTask(Common, SearchMixin, BattleMixin):  # 百趣演武独立活
         count = int(self.config.get("刷取次数", 1))  # 兼容尚未保存新配置的用户
         if not 1 <= count <= 999:  # 运行时同样验证配置范围
             raise ValueError("百趣演武刷取次数必须在 1 到 999 之间")  # 无效配置不启动挑战
+        self.active_and_send_mouse_delta(only_activate=True)  # 开始前切换到游戏窗口
         for index in range(count):  # 按结算计数，挑战完成或中断均计一次
             self._run_once()  # 页面切换或战斗流程异常仍停止任务
             self.log_info(f"百趣演武已完成 {index + 1}/{count} 局")  # 仅在确认返回活动中心后记录进度
