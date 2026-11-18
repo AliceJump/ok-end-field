@@ -20,6 +20,7 @@ from src.localization.localization_bundle import (
     resolve_bundle_path,
 )
 from src.localization.minimap_map_locator import MapCalibration
+from src.localization.prepared_localization import PreparedLocalizationBundle
 
 
 def _require(condition, message):
@@ -118,12 +119,14 @@ def verify(root: Path):
     _require(not difference, f"Manifest and catalog references differ: {sorted(difference)}")
     unlisted = {path for path in root.rglob("*") if path.is_file()} - files - {root / "manifest.json"}
     _require(not unlisted, f"Unlisted localization files: {sorted(unlisted)}")
+    prepared = PreparedLocalizationBundle.load(root / "manifest.json")
     return {
         "base_maps": len(map_keys),
         "layers": len(tiers),
         "files": len(files),
         "bytes": total_bytes,
         "missing_logic_ids": missing,
+        "prepared": None if prepared is None else prepared.summary(),
     }
 
 

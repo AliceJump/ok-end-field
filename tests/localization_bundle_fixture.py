@@ -179,3 +179,135 @@ class LocalizationBundleFixture:
     def write_search(self, name, pixels):
         record = self.write_image(name, pixels)
         return {**record, "roi": [0, 0, record["width"], record["height"]], "fill": [0, 0, 0]}
+
+    def write_prepared(self, *, corrupt_rank=False):
+        """Write a minimal prepared-v1 package around the fixture's one floor."""
+        root = self.root
+        prepared = root / "prepared-v1"
+        prepared.mkdir()
+        dataset = {
+            "schema_version": 1,
+            "kind": "okef-nav-dataset",
+            "release_id": "fixture-release",
+        }
+        (root / "dataset.json").write_text(json.dumps(dataset), encoding="utf-8")
+
+        def write(name, data):
+            path = prepared / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+            return {
+                "path": name,
+                "size": len(data),
+                "sha256": hashlib.sha256(data).hexdigest(),
+            }
+
+        def encode_webp(pixels):
+            ok, data = cv2.imencode(".webp", pixels, [cv2.IMWRITE_WEBP_QUALITY, 90])
+            self.assertTrue(ok)
+            return data.tobytes()
+
+        atlas = np.zeros((320, 320, 3), np.uint8)
+        atlas[128:192, 128:192] = self.pixels[:64, :64, :3]
+        decoded = cv2.imdecode(np.frombuffer(encode_webp(atlas), np.uint8), cv2.IMREAD_COLOR)
+        floor_mask = np.ones((64, 64), bool)
+        floor_mask[:4, :4] = False
+        floor_mask_bytes = np.packbits(floor_mask.reshape(-1), bitorder="big").tobytes()
+        atlas_mask = np.zeros((320, 320), bool)
+        atlas_mask[128:192, 128:192] = floor_mask
+        atlas_mask_bytes = np.packbits(atlas_mask.reshape(-1), bitorder="big").tobytes()
+        floor_mask_record = write("masks/main/floor.bin", floor_mask_bytes)
+        rank_shape = (
+            max(1, round((self.floor["bounds"]["north"] - self.floor["bounds"]["south"]) * 0.5)),
+            max(1, round((self.floor["bounds"]["east"] - self.floor["bounds"]["west"]) * 0.5)),
+        )
+        rank = np.arange(rank_shape[0] * rank_shape[1] * 3, dtype=np.uint8).reshape(*rank_shape, 3)
+        rank_record = write("rank-images/main/floor.webp", encode_webp(rank))
+        if corrupt_rank:
+            (prepared / rank_record["path"]).write_bytes(b"corrupt rank")
+        atlas_record = write("atlases/main-1280.webp", encode_webp(atlas))
+        atlas_mask_record = write("atlases/main-1280-mask.bin", atlas_mask_bytes)
+        region = {"x": 128, "y": 128, "width": 64, "height": 64}
+        floor = {
+            "tier_id": self.floor["id"],
+            "map_id": self.base["map_id"],
+            "level_id": self.floor["level_id"],
+            "map_category": self.floor["map_category"],
+            "bounds": self.floor["bounds"],
+            "atlas_region": region,
+            "rank_path": rank_record["path"],
+            "rank_shape": list(rank_shape),
+            "rank_roi": [0, 0, rank_shape[1], rank_shape[0]],
+            "mask_path": floor_mask_record["path"],
+            "mask_shape": list(floor_mask.shape),
+            "mask_bytes": len(floor_mask_bytes),
+            "mask_sha256": floor_mask_record["sha256"],
+            "mask_bit_order": "big",
+            "mask_row_major": True,
+            "coverage_pixels": int(floor_mask.sum()),
+        }
+        floor_index = {
+            "schema_version": 1,
+            "input_width": 1280,
+            "maps": {self.base["map_id"]: [floor]},
+        }
+        floor_index_data = json.dumps(floor_index).encode()
+        floor_index_record = write("floor-index.json", floor_index_data)
+        records = sorted(
+            (
+                atlas_record,
+                atlas_mask_record,
+                floor_mask_record,
+                rank_record,
+                floor_index_record,
+            ),
+            key=lambda record: record["path"],
+        )
+        manifest = {
+            "kind": "okef-prepared-localization",
+            "schema_version": 1,
+            "complete": True,
+            "source": {
+                "release_id": dataset["release_id"],
+                "localization_manifest_sha256": hashlib.sha256((root / "manifest.json").read_bytes()).hexdigest(),
+                "input_width": 1280,
+                "coarse_factor": 0.5,
+                "composite_dim": 0.3,
+                "composite_padding": 320,
+                "webp_quality": 90,
+            },
+            "coverage": {
+                "layered_floors": 1,
+                "maps": {self.base["map_id"]: 1},
+                "missing_logic_ids": [],
+                "mask_encoding": "row-major-msb-first-packbits-zero-tail",
+            },
+            "atlases": {
+                self.base["map_id"]: {
+                    "path": atlas_record["path"],
+                    "mask_path": atlas_mask_record["path"],
+                    "shape": list(atlas.shape[:2]),
+                    "padding": 128,
+                    "mask_bytes": len(atlas_mask_bytes),
+                    "mask_bit_order": "big",
+                    "mask_row_major": True,
+                    "decoded_sha256": hashlib.sha256(decoded.tobytes()).hexdigest(),
+                    "regions": {self.floor["id"]: region},
+                }
+            },
+            "floors": [floor],
+            "files": records,
+        }
+        manifest_data = json.dumps(manifest).encode()
+        (prepared / "manifest.json").write_bytes(manifest_data)
+        (prepared / "validation.json").write_text(
+            json.dumps({"layered_floors": 1}),
+            encoding="utf-8",
+        )
+        (prepared / "READY").write_text(
+            "okef-prepared-localization 1 "
+            + hashlib.sha256(manifest_data).hexdigest()
+            + "\n",
+            encoding="ascii",
+        )
+        return prepared, manifest, floor

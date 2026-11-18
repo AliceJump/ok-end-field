@@ -18,6 +18,15 @@ nav-grid-data/
     layers/catalog.json
     layers/<map>/<level>/<tier>/tiles.json
     objects/...webp
+  prepared-v1/
+    manifest.json
+    READY
+    validation.json
+    floor-index.json
+    atlases/<map>-1280.webp
+    atlases/<map>-1280-mask.bin
+    masks/<map>/<tier>.bin
+    rank-images/<map>/<tier>.webp
 ```
 
 对象载荷的实际相对路径由清单和图像索引定义，不由运行端按示例路径猜测。
@@ -29,6 +38,35 @@ nav-grid-data/
 | v3 定位清单、图像索引与载荷 | `src/localization/localization_bundle.py` |
 | 基础图标定和地图集合 | `src/localization/calibrated_map_store.py` |
 | 原生瓦片与缩放区域 | `src/localization/native_tile_image.py` |
+| 预编译竞争图集、楼层索引、排序图与覆盖掩码 | `src/localization/prepared_localization.py` |
+
+## prepared-v1 竞争资源
+
+`prepared-v1/` 与 `localization/` 同级，随 `nav-grid-data` 直接发布，不是 ZIP 或可重建缓存。
+客户端仅在目录存在时启用；启用后楼层匹配读取地图级合成图集，不在运行时生成
+`CompositeFloorImage` 概览，也不重新压缩资源。
+
+`READY` 的第三段必须是 `manifest.json` 的 SHA-256。manifest 使用
+`kind=okef-prepared-localization`、`schema_version=1`、`complete=true`，并通过
+`source.release_id`、`source.localization_manifest_sha256` 绑定同一份根
+`dataset.json` 和定位清单。`source.input_width` 必须为 1280，匹配尺度固定为
+`coarse_factor=0.5`，合成参数固定为 `dim=0.3`、`padding=320`。
+
+竞争图集按地图分组，使用 BGR Q90 WebP。`atlases[].regions` 给出每个 `tier_id`
+在逻辑图集中的有界矩形，`shape`、`decoded_sha256`、文件大小和 SHA-256 都会校验。
+图集单元之间不得重叠，边缘 padding 不属于任何楼层。
+
+`floor-index.json` 与 manifest 的 `floors` 必须逐项一致。每层保留稳定的
+`tier_id`、`map_id`、`level_id`、世界 `bounds`、图集区域、逻辑排序尺寸和排序 ROI。
+排序图只能决定搜索顺序；排序文件损坏时按空提案处理，绝不能删掉该层或跳过完整竞争。
+
+逐层覆盖掩码和地图图集掩码均为行优先、MSB-first packbits，末尾补零，逻辑一维长度
+为 `width * height`。逐层掩码必须与图集对应区域逐像素一致，图集掩码必须等于全部楼层
+区域掩码的并集。Q90 RGB 不能反推覆盖，所以不能用黑色或接近黑色像素代替掩码。
+
+加载时拒绝未知目录文件、重复身份、越界路径、缺失图集/掩码、摘要不符、图集尺寸错误、
+楼层集合与源 catalog 不一致、发布身份错配和覆盖掩码不一致。否则视觉定位按资源不可用
+处理，不回退到运行时生成预编译资源。
 
 ## 网格与世界坐标
 

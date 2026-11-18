@@ -1,4 +1,5 @@
 import io
+import hashlib
 import json
 import math
 import tempfile
@@ -27,6 +28,11 @@ from src.localization.minimap_map_locator import (
     minimap_map_scale,
 )
 from src.localization.native_tile_image import ZeroPaddedSearchRaster
+from src.localization.prepared_localization import (
+    PreparedAtlasFloorImage,
+    PreparedLocalizationBundle,
+    _prepared_calibration,
+)
 from src.localization.template_correlation import correlate_bounded, correlate_color_zncc
 from tests.localization_bundle_fixture import LocalizationBundleFixture
 
@@ -573,6 +579,96 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
         self.assertFalse(locator._warm_base_resources())
         self.assertIn("missing", locator._resource_errors)
         self.assertFalse(locator._warm_base_resources())
+
+    def test_prepared_bundle_loads_atlas_floor_and_coverage_mask(self):
+        prepared_root, manifest, floor_record = self.write_prepared()
+        bundle = PreparedLocalizationBundle.load(self.root / "manifest.json")
+        self.assertIsNotNone(bundle)
+        self.assertEqual(bundle.summary()["layered_floors"], 1)
+        (entry,) = bundle.floor_entries(self.base["map_id"])
+        image = bundle.open_floor(entry)
+        self.addCleanup(image.close)
+        self.assertIsInstance(image, PreparedAtlasFloorImage)
+        expected = _prepared_calibration(
+            {
+                **entry,
+                "width": self.floor["width"],
+                "height": self.floor["height"],
+            },
+            floor_record["atlas_region"],
+        )
+        np.testing.assert_allclose(image.calibration.matrix, expected.matrix)
+        mask = image.candidate_mask([0, 10, 63, 64], [0, 10, 0, 0])
+        self.assertFalse(mask[0, 0])
+        self.assertTrue(mask[1, 1])
+        self.assertFalse(mask[0, 3])
+        rank = bundle.rank_image(entry)
+        self.assertEqual(rank.shape, (floor_record["rank_shape"][0], floor_record["rank_shape"][1], 3))
+        self.assertFalse(rank.flags.writeable)
+        self.assertTrue((prepared_root / "READY").is_file())
+        self.assertEqual(manifest["source"]["webp_quality"], 90)
+
+    def test_calibrated_map_store_uses_prepared_atlas_without_compositing(self):
+        self.write_prepared()
+        _, locator = self.store.load(self.base["map_id"])
+        self.addCleanup(locator.close)
+        self.assertIsNotNone(locator._prepared)
+        self.assertEqual(len(locator.entries), 1)
+        floor = locator._decode(locator.entries[0])
+        self.addCleanup(floor.close)
+        self.assertIsInstance(floor.map_image, PreparedAtlasFloorImage)
+        locator.prepare_layer_index()
+        ((tier_id, rank),) = locator._search_index.images
+        self.assertEqual(tier_id, self.floor["id"])
+        bounds = self.floor["bounds"]
+        self.assertEqual(
+            rank.shape,
+            (
+                max(1, round((bounds["north"] - bounds["south"]) * 0.5)),
+                max(1, round((bounds["east"] - bounds["west"]) * 0.5)),
+                3,
+            ),
+        )
+
+    def test_corrupt_prepared_rank_only_degrades_ordering(self):
+        self.write_prepared(corrupt_rank=True)
+        _, locator = self.store.load(self.base["map_id"])
+        self.addCleanup(locator.close)
+        self.assertEqual([entry["id"] for entry in locator.entries], [self.floor["id"]])
+        locator.prepare_layer_index()
+        self.assertEqual(locator._search_index.images, ())
+        floor = locator._decode(locator.entries[0])
+        self.addCleanup(floor.close)
+        self.assertIsInstance(floor.map_image, PreparedAtlasFloorImage)
+
+    def test_prepared_bundle_rejects_orphan_checksum_and_release_mismatch(self):
+        prepared_root, manifest, _floor = self.write_prepared()
+        (prepared_root / "orphan.bin").write_bytes(b"orphan")
+        with self.assertRaisesRegex(ValueError, "unlisted"):
+            PreparedLocalizationBundle.load(self.root / "manifest.json")
+        (prepared_root / "orphan.bin").unlink()
+
+        atlas = prepared_root / manifest["atlases"][self.base["map_id"]]["path"]
+        atlas.write_bytes(atlas.read_bytes() + b"corrupt")
+        with self.assertRaisesRegex(ValueError, "checksum"):
+            PreparedLocalizationBundle.load(self.root / "manifest.json")
+
+    def test_prepared_bundle_checks_dataset_release_identity(self):
+        prepared_root, manifest, _floor = self.write_prepared()
+        dataset_path = self.root / "dataset.json"
+        dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
+        dataset["release_id"] = "other-release"
+        dataset_path.write_text(json.dumps(dataset), encoding="utf-8")
+        manifest_path = prepared_root / "manifest.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        (prepared_root / "READY").write_text(
+            "okef-prepared-localization 1 "
+            + hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+            + "\n",
+            encoding="ascii",
+        )
+        with self.assertRaisesRegex(ValueError, "release"):
+            PreparedLocalizationBundle.load(self.root / "manifest.json")
 
 
 class _ArrayAlpha:

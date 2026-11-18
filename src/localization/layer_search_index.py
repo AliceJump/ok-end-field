@@ -24,12 +24,19 @@ class LayerSearchIndex:
         )
 
     @classmethod
-    def build(cls, root, entries, *, color, resources=None, stop=None, bundle=None):
+    def build(cls, root, entries, *, color, resources=None, stop=None, bundle=None, prepared=None):
         root = Path(root).resolve()
         images = []
         entries = tuple(entries)
-        decode = cls._decode_entry if bundle is None else cls._read_bundle_proposal
-        options = {"bundle": bundle} if bundle is not None else {}
+        if prepared is not None:
+            decode = cls._read_prepared_proposal
+            options = {"prepared": prepared}
+        elif bundle is not None:
+            decode = cls._read_bundle_proposal
+            options = {"bundle": bundle}
+        else:
+            decode = cls._decode_entry
+            options = {}
         # Bound submitted futures as well as workers. Only small thumbnails
         # survive each task; full-resolution arrays die inside the decoder.
         for offset in range(0, len(entries), 4):
@@ -51,7 +58,7 @@ class LayerSearchIndex:
                                 color,
                                 memory_bytes=(
                                     decode_memory_bytes(width, height)
-                                    if bundle is not None
+                                    if bundle is not None or prepared is not None
                                     else decode_memory_bytes(entry["width"], entry["height"], width * height)
                                 ),
                                 **options,
@@ -75,6 +82,21 @@ class LayerSearchIndex:
             finally:
                 tiled.close()
         except (OSError, ValueError):
+            return None
+        if not color:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            image.setflags(write=False)
+        return entry["id"], image
+
+    @staticmethod
+    def _read_prepared_proposal(root, entry, color, *, prepared):
+        # Rank images only order work. A damaged rank must not remove this
+        # floor from the complete competition performed by the locator.
+        try:
+            image = prepared.rank_image(entry)
+        except (OSError, ValueError):
+            return None
+        if image is None:
             return None
         if not color:
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

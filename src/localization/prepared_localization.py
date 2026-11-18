@@ -1,0 +1,663 @@
+"""Read-only loader for the publisher's prepared localization bundle."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import threading
+from collections import OrderedDict
+from dataclasses import dataclass
+from pathlib import Path, PurePosixPath, PureWindowsPath
+
+import cv2
+import numpy as np
+
+from src.core.NavConfig import DEFAULT_SCALE_CONSTANT
+from src.localization.localization_bundle import LocalizationTileBundle, resolve_bundle_path
+from src.localization.minimap_map_locator import (
+    COARSE_FACTOR,
+    MAP_PIXELS_PER_METER,
+    MapCalibration,
+)
+from src.localization.tiled_map_image import TiledMapImage
+
+PREPARED_DIRNAME = "prepared-v1"
+PREPARED_KIND = "okef-prepared-localization"
+PREPARED_VERSION = 1
+INPUT_WIDTH = 1280
+COMPOSITE_DIM = 0.3
+COMPOSITE_PADDING = 320
+WEBP_QUALITY = 90
+MASK_ENCODING = "row-major-msb-first-packbits-zero-tail"
+RANK_PIXELS_PER_METER = 0.5
+
+
+def _sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _digest(path: Path) -> str:
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def _read_json(path: Path):
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def _positive_int(value) -> bool:
+    return type(value) is int and value > 0
+
+
+def _finite_pair_shape(value):
+    if not isinstance(value, list) or len(value) != 2 or any(not _positive_int(item) for item in value):
+        return None
+    return int(value[0]), int(value[1])
+
+
+def resolve_prepared_path(root: Path, name) -> Path:
+    """Resolve a prepared-bundle path while rejecting escapes and aliases."""
+    if not isinstance(name, str) or not name or "\\" in name or ":" in name:
+        raise ValueError(f"Invalid prepared localization path: {name!r}")
+    relative = PurePosixPath(name)
+    if not relative.parts or relative.is_absolute() or PureWindowsPath(name).drive or ".." in relative.parts:
+        raise ValueError(f"Invalid prepared localization path: {name!r}")
+    path = root.joinpath(*relative.parts).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError(f"Prepared localization path escapes bundle: {name}")
+    return path
+
+
+def find_prepared_root(localization_manifest: Path) -> Path | None:
+    """Find prepared-v1 next to localization/ or beside a flat legacy bundle."""
+    manifest = Path(localization_manifest).resolve()
+    candidates = [manifest.parent / PREPARED_DIRNAME]
+    if manifest.parent.name.casefold() == "localization":
+        candidates.insert(0, manifest.parent.parent / PREPARED_DIRNAME)
+    return next((candidate for candidate in candidates if candidate.is_dir()), None)
+
+
+def floor_rank_shape(entry: dict) -> tuple[int, int]:
+    bounds = entry["bounds"]
+    return (
+        max(1, round((float(bounds["north"]) - float(bounds["south"])) * RANK_PIXELS_PER_METER)),
+        max(1, round((float(bounds["east"]) - float(bounds["west"])) * RANK_PIXELS_PER_METER)),
+    )
+
+
+def _floor_matrix(entry: dict) -> np.ndarray:
+    bounds = entry["bounds"]
+    west, east = float(bounds["west"]), float(bounds["east"])
+    south, north = float(bounds["south"]), float(bounds["north"])
+    width, height = int(entry["width"]), int(entry["height"])
+    sx, sy = (east - west) / width, (north - south) / height
+    return np.array(
+        [
+            [MAP_PIXELS_PER_METER**-1, 0, west + 0.125 - sx / 2],
+            [0, -(MAP_PIXELS_PER_METER**-1), north - 0.125 + sy / 2],
+        ],
+        dtype=np.float64,
+    )
+
+
+def _prepared_calibration(entry: dict, region: dict) -> MapCalibration:
+    scale = INPUT_WIDTH / (MAP_PIXELS_PER_METER * DEFAULT_SCALE_CONSTANT) * COARSE_FACTOR
+    matrix = _floor_matrix(entry)
+    matrix[:, 2] -= matrix[:, :2] @ np.array([COMPOSITE_PADDING, COMPOSITE_PADDING], dtype=np.float64)
+    linear = matrix[:, :2] / scale
+    offset = matrix[:, 2] + matrix[:, :2] @ np.array(
+        [0.5 / scale - 0.5, 0.5 / scale - 0.5],
+        dtype=np.float64,
+    )
+    offset -= linear @ np.array([region["x"], region["y"]], dtype=np.float64)
+    prepared = np.column_stack((linear, offset))
+    inverse = np.linalg.inv(np.vstack((prepared, [0, 0, 1])))[:2]
+    return MapCalibration(prepared, inverse)
+
+
+class PreparedAtlasFloorImage(TiledMapImage):
+    """A bounded view of one floor inside a shared map competition atlas."""
+
+    def __init__(self, atlas: np.ndarray, region: dict, mask: np.ndarray, calibration: MapCalibration):
+        self._atlas = atlas
+        self._region = dict(region)
+        self._mask = mask
+        self.calibration = calibration
+        self._shape = (region["height"], region["width"], 3)
+        self._closed = False
+        self._lock = threading.Lock()
+
+    @property
+    def shape(self):
+        return self._shape
+
+    @property
+    def nbytes(self):
+        return self._shape[0] * self._shape[1] * self._shape[2] + self._mask.nbytes
+
+    @property
+    def resident_bytes(self):
+        return self.nbytes
+
+    def close(self):
+        with self._lock:
+            self._closed = True
+
+    def overview_memory_bytes(self, scale):
+        return round(self._shape[0] * scale) * round(self._shape[1] * scale) * 4
+
+    def coarse_overview(self, scale):
+        pixels = self[:, :]
+        result = cv2.resize(pixels, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        result.setflags(write=False)
+        return result
+
+    def __getitem__(self, slices):
+        rows, columns = slices
+        if rows.step not in (None, 1) or columns.step not in (None, 1):
+            raise ValueError("prepared atlas image requires contiguous regions")
+        with self._lock:
+            if self._closed:
+                raise ValueError("prepared atlas image closed")
+        y0, y1, _ = rows.indices(self._shape[0])
+        x0, x1, _ = columns.indices(self._shape[1])
+        if y0 >= y1 or x0 >= x1:
+            return np.empty((max(0, y1 - y0), max(0, x1 - x0), 3), np.uint8)
+        region = self._region
+        pixels = self._atlas[
+            region["y"] + y0 : region["y"] + y1,
+            region["x"] + x0 : region["x"] + x1,
+        ]
+        pixels = np.ascontiguousarray(pixels)
+        pixels.setflags(write=False)
+        return pixels
+
+    def candidate_mask(self, xs, ys):
+        xx, yy = np.meshgrid(
+            np.rint(np.asarray(xs, dtype=np.float64)).astype(np.int64),
+            np.rint(np.asarray(ys, dtype=np.float64)).astype(np.int64),
+        )
+        height, width = self._mask.shape
+        valid = (xx >= 0) & (xx < width) & (yy >= 0) & (yy < height)
+        result = np.zeros(xx.shape, dtype=bool)
+        if np.any(valid):
+            rows, columns = np.nonzero(valid)
+            result[rows, columns] = self._mask[yy[rows, columns], xx[rows, columns]]
+        result.setflags(write=False)
+        return result
+
+
+@dataclass(frozen=True)
+class PreparedFloor:
+    entry: dict
+    calibration: MapCalibration
+    record: dict
+
+
+class PreparedLocalizationBundle:
+    """Validated manifest, atlases, masks, and rank images for prepared-v1."""
+
+    def __init__(self, root, localization_manifest):
+        self.root = Path(root).resolve()
+        self.localization_manifest_path = Path(localization_manifest).resolve()
+        self.manifest = _read_json(self.root / "manifest.json")
+        self._atlas_lock = threading.Lock()
+        self._atlas_cache = OrderedDict()
+        self._rank_failures = set()
+        self._records = self._validate_file_records()
+        self._floors = {}
+        self._floor_records = {}
+        self._atlases = {}
+        self._validate_identity_and_source()
+        self._validate_readiness()
+        self._validate_floor_and_atlas_metadata()
+        self._validate_payloads()
+        self._validate_atlas_pixels()
+        self._validate_masks_and_floors()
+
+    @classmethod
+    def load(cls, localization_manifest):
+        manifest = Path(localization_manifest).resolve()
+        root = find_prepared_root(manifest)
+        return None if root is None else cls(root, manifest)
+
+    def summary(self):
+        return {
+            "layered_floors": len(self._floor_records),
+            "maps": self.manifest["coverage"]["maps"],
+            "files": len(self._records),
+            "bytes": sum(record["size"] for record in self._records.values()),
+            "webp_quality": self.manifest["source"]["webp_quality"],
+        }
+
+    def floor_entries(self, map_id):
+        return [dict(self._floors[key].entry) for key in sorted(self._floors) if key[0] == str(map_id)]
+
+    def tier_coverage_complete(self, map_id):
+        prefix = f"scene_{map_id}_"
+        return not any(str(item).startswith(prefix) for item in self.manifest["coverage"]["missing_logic_ids"])
+
+    def open_floor(self, entry):
+        tier_id, map_id = str(entry["tier_id"]), str(entry["map_id"])
+        floor = self._floors[(map_id, tier_id)]
+        atlas = self._atlas_pixels(map_id)
+        region = floor.record["atlas_region"]
+        mask = self._floor_mask(floor)
+        return PreparedAtlasFloorImage(atlas, region, mask, floor.calibration)
+
+    def rank_image(self, entry):
+        tier_id = str(entry["tier_id"])
+        if tier_id in self._rank_failures:
+            return None
+        floor = self._floors[(str(entry["map_id"]), tier_id)]
+        record = floor.record
+        path_name = record.get("rank_path")
+        height, width = floor_rank_shape(record)
+        left, top, right, bottom = record["rank_roi"]
+        if path_name is None:
+            if (left, top, right, bottom) != (0, 0, 0, 0):
+                self._rank_failures.add(tier_id)
+                return None
+            image = np.zeros((height, width, 3), np.uint8)
+            image.setflags(write=False)
+            return image
+        file_record = self._records.get(path_name)
+        if file_record is None:
+            self._rank_failures.add(tier_id)
+            return None
+        try:
+            path = resolve_prepared_path(self.root, path_name)
+            data = path.read_bytes()
+            if len(data) != file_record["size"] or _sha256(data) != file_record["sha256"]:
+                raise ValueError("rank checksum mismatch")
+            crop = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+            if crop is None or crop.shape != (bottom - top, right - left, 3):
+                raise ValueError("rank image shape mismatch")
+            image = np.zeros((height, width, 3), np.uint8)
+            image[top:bottom, left:right] = crop
+            image.setflags(write=False)
+            return image
+        except (OSError, ValueError, cv2.error):
+            self._rank_failures.add(tier_id)
+            return None
+
+    def _validate_file_records(self):
+        records = self.manifest.get("files")
+        _require(isinstance(records, list), "Prepared localization file list is missing")
+        output = {}
+        for record in records:
+            _require(isinstance(record, dict), "Invalid prepared localization file record")
+            name, size, digest = record.get("path"), record.get("size"), record.get("sha256")
+            _require(
+                isinstance(name, str)
+                and name not in output
+                and _positive_int(size)
+                and isinstance(digest, str)
+                and len(digest) == 64,
+                f"Invalid or duplicate prepared localization resource: {name!r}",
+            )
+            int(digest, 16)
+            resolve_prepared_path(self.root, name)
+            output[name] = record
+        return output
+
+    def _validate_identity_and_source(self):
+        manifest = self.manifest
+        _require(
+            manifest.get("kind") == PREPARED_KIND
+            and type(manifest.get("schema_version")) is int
+            and manifest["schema_version"] == PREPARED_VERSION
+            and manifest.get("complete") is True,
+            "Unsupported prepared localization bundle",
+        )
+        source = manifest.get("source")
+        _require(isinstance(source, dict), "Prepared localization source is missing")
+        _require(
+            source.get("input_width") == INPUT_WIDTH
+            and source.get("coarse_factor") == COARSE_FACTOR
+            and source.get("composite_dim") == COMPOSITE_DIM
+            and source.get("composite_padding") == COMPOSITE_PADDING
+            and source.get("webp_quality") == WEBP_QUALITY,
+            "Prepared localization search settings do not match this client",
+        )
+        _require(
+            source.get("localization_manifest_sha256") == _digest(self.localization_manifest_path),
+            "Prepared localization source manifest checksum mismatch",
+        )
+        dataset_path = self.root.parent / "dataset.json"
+        dataset = _read_json(dataset_path)
+        release_id = dataset.get("release_id") if isinstance(dataset, dict) else None
+        _require(
+            isinstance(release_id, str)
+            and release_id
+            and source.get("release_id") == release_id,
+            "Prepared localization release does not match dataset.json",
+        )
+        coverage = manifest.get("coverage")
+        _require(
+            isinstance(coverage, dict)
+            and coverage.get("mask_encoding") == MASK_ENCODING
+            and _positive_int(coverage.get("layered_floors"))
+            and isinstance(coverage.get("maps"), dict)
+            and isinstance(coverage.get("missing_logic_ids"), list),
+            "Invalid prepared localization coverage metadata",
+        )
+
+    def _validate_readiness(self):
+        actual = {
+            path.relative_to(self.root).as_posix()
+            for path in self.root.rglob("*")
+            if path.is_file()
+        }
+        expected = set(self._records) | {"manifest.json", "validation.json", "READY"}
+        rank_paths = {
+            floor.get("rank_path")
+            for floor in self.manifest.get("floors", [])
+            if isinstance(floor, dict) and isinstance(floor.get("rank_path"), str)
+        }
+        _require(not (actual - expected), f"Prepared localization has unlisted files: {sorted(actual - expected)[:8]}")
+        _require(
+            not ((expected - actual) - rank_paths),
+            f"Prepared localization is missing files: {sorted((expected - actual) - rank_paths)[:8]}",
+        )
+        ready = (self.root / "READY").read_text(encoding="ascii").strip().split()
+        _require(
+            ready == [PREPARED_KIND, str(PREPARED_VERSION), _digest(self.root / "manifest.json")],
+            "Prepared localization READY marker mismatch",
+        )
+        validation = _read_json(self.root / "validation.json")
+        _require(isinstance(validation, dict), "Prepared localization validation report is invalid")
+        self._rank_paths = rank_paths
+
+    def _validate_payloads(self):
+        available = {
+            path.relative_to(self.root).as_posix()
+            for path in self.root.rglob("*")
+            if path.is_file()
+        }
+        for name, record in self._records.items():
+            path = resolve_prepared_path(self.root, name)
+            if name not in available:
+                if name in self._rank_paths:
+                    continue
+                raise ValueError(f"Prepared localization resource is missing: {name}")
+            with path.open("rb") as stream:
+                data = stream.read()
+            if len(data) != record["size"] or _sha256(data) != record["sha256"]:
+                if name in self._rank_paths:
+                    continue
+                raise ValueError(f"Prepared localization resource checksum mismatch: {name}")
+
+    def _validate_floor_and_atlas_metadata(self):
+        atlases = self.manifest.get("atlases")
+        floors = self.manifest.get("floors")
+        _require(isinstance(atlases, dict) and atlases, "Prepared localization atlases are missing")
+        _require(isinstance(floors, list), "Prepared localization floors are missing")
+        for map_id, atlas in atlases.items():
+            _require(isinstance(map_id, str) and map_id, "Invalid prepared localization map ID")
+            _require(isinstance(atlas, dict), f"Invalid prepared atlas: {map_id}")
+            path_name = atlas.get("path")
+            mask_name = atlas.get("mask_path")
+            _require(
+                isinstance(path_name, str)
+                and path_name in self._records
+                and isinstance(mask_name, str)
+                and mask_name in self._records,
+                f"Prepared atlas resource is not listed: {map_id}",
+            )
+            shape = _finite_pair_shape(atlas.get("shape"))
+            _require(shape is not None, f"Invalid prepared atlas shape: {map_id}")
+            _require(type(atlas.get("padding")) is int and atlas["padding"] >= 0, f"Invalid atlas padding: {map_id}")
+            _require(atlas.get("mask_bit_order") == "big", f"Invalid atlas mask bit order: {map_id}")
+            _require(atlas.get("mask_row_major") is True, f"Invalid atlas mask row order: {map_id}")
+            regions = atlas.get("regions")
+            _require(isinstance(regions, dict) and regions, f"Prepared atlas has no floor regions: {map_id}")
+            rects = []
+            for tier_id, region in regions.items():
+                _require(
+                    isinstance(tier_id, str)
+                    and tier_id
+                    and isinstance(region, dict)
+                    and all(type(region.get(key)) is int for key in ("x", "y", "width", "height"))
+                    and region["x"] >= 0
+                    and region["y"] >= 0
+                    and region["width"] > 0
+                    and region["height"] > 0
+                    and region["x"] + region["width"] <= shape[1]
+                    and region["y"] + region["height"] <= shape[0],
+                    f"Invalid prepared atlas region: {map_id}/{tier_id}",
+                )
+                rects.append(region)
+            for index, left in enumerate(rects):
+                for right in rects[index + 1 :]:
+                    overlap = not (
+                        left["x"] + left["width"] <= right["x"]
+                        or right["x"] + right["width"] <= left["x"]
+                        or left["y"] + left["height"] <= right["y"]
+                        or right["y"] + right["height"] <= left["y"]
+                    )
+                    _require(not overlap, f"Prepared atlas regions overlap: {map_id}")
+
+        raw_manifest = _read_json(self.localization_manifest_path)
+        raw_bundle = LocalizationTileBundle(self.localization_manifest_path.parent, raw_manifest)
+        catalog_path = resolve_bundle_path(
+            self.localization_manifest_path.parent,
+            raw_manifest.get("layer_catalog"),
+        )
+        catalog = raw_bundle.read_json(catalog_path)
+        _require(
+            isinstance(catalog, dict)
+            and catalog.get("schema_version") == 1
+            and isinstance(catalog.get("layers"), list),
+            "Invalid source layer catalog",
+        )
+        self._catalog = {
+            entry["id"]: entry
+            for entry in catalog["layers"]
+            if isinstance(entry, dict) and entry.get("map_category") == "layered"
+        }
+        missing = set(self.manifest["coverage"]["missing_logic_ids"])
+        expected_ids = set(self._catalog) - missing
+        actual_ids = set()
+        seen = set()
+        for record in floors:
+            _require(isinstance(record, dict), "Invalid prepared floor record")
+            tier_id = record.get("tier_id")
+            map_id = record.get("map_id")
+            _require(
+                isinstance(tier_id, str)
+                and tier_id
+                and tier_id not in seen
+                and isinstance(map_id, str)
+                and map_id in atlases
+                and tier_id in atlases[map_id]["regions"],
+                f"Invalid or duplicate prepared floor identity: {tier_id!r}",
+            )
+            seen.add(tier_id)
+            actual_ids.add(tier_id)
+            source = self._catalog.get(tier_id)
+            _require(source is not None, f"Prepared floor is absent from source catalog: {tier_id}")
+            _require(
+                source.get("map_name") == map_id
+                and source.get("level_id") == record.get("level_id")
+                and source.get("map_category") == record.get("map_category") == "layered"
+                and source.get("bounds") == record.get("bounds")
+                and record.get("atlas_region") == atlases[map_id]["regions"][tier_id],
+                f"Prepared floor identity disagrees with source catalog: {tier_id}",
+            )
+            bounds = record.get("bounds")
+            _require(isinstance(bounds, dict), f"Prepared floor bounds are missing: {tier_id}")
+            values = [bounds.get(key) for key in ("west", "east", "south", "north")]
+            _require(
+                all(isinstance(value, (int, float)) and math.isfinite(float(value)) for value in values)
+                and float(bounds["east"]) > float(bounds["west"])
+                and float(bounds["north"]) > float(bounds["south"]),
+                f"Invalid prepared floor bounds: {tier_id}",
+            )
+            region = record["atlas_region"]
+            mask_shape = _finite_pair_shape(record.get("mask_shape"))
+            _require(
+                mask_shape == (region["height"], region["width"])
+                and isinstance(record.get("mask_path"), str)
+                and record["mask_path"] in self._records
+                and record.get("mask_bit_order") == "big"
+                and record.get("mask_row_major") is True
+                and isinstance(record.get("mask_sha256"), str)
+                and len(record["mask_sha256"]) == 64
+                and _positive_int(record.get("mask_bytes")),
+                f"Invalid prepared floor mask metadata: {tier_id}",
+            )
+            rank_shape = _finite_pair_shape(record.get("rank_shape"))
+            rank_roi = record.get("rank_roi")
+            _require(
+                rank_shape == floor_rank_shape(record)
+                and isinstance(rank_roi, list)
+                and len(rank_roi) == 4
+                and all(type(value) is int for value in rank_roi)
+                and (
+                    tuple(rank_roi) == (0, 0, 0, 0)
+                    or (
+                        0 <= rank_roi[0] < rank_roi[2] <= rank_shape[1]
+                        and 0 <= rank_roi[1] < rank_roi[3] <= rank_shape[0]
+                    )
+                )
+                and (
+                    record.get("rank_path") is None
+                    or isinstance(record.get("rank_path"), str)
+                    and record["rank_path"] in self._records
+                ),
+                f"Invalid prepared floor rank metadata: {tier_id}",
+            )
+            entry = {
+                **record,
+                "id": tier_id,
+                "width": source["width"],
+                "height": source["height"],
+            }
+            calibration = _prepared_calibration(entry, region)
+            self._floors[(map_id, tier_id)] = PreparedFloor(entry, calibration, record)
+            self._floor_records[(map_id, tier_id)] = record
+        _require(actual_ids == expected_ids, "Prepared floor coverage disagrees with source catalog")
+        coverage_maps = self.manifest["coverage"]["maps"]
+        actual_maps = {
+            map_id: sum(1 for floor_map, _tier in self._floors if floor_map == map_id)
+            for map_id in atlases
+        }
+        _require(
+            coverage_maps == actual_maps
+            and self.manifest["coverage"]["layered_floors"] == len(self._floor_records),
+            "Prepared localization coverage count mismatch",
+        )
+        floor_index = self._bundle_json("floor-index.json")
+        expected_index = {
+            map_id: [record for record in floors if record["map_id"] == map_id]
+            for map_id in sorted(atlases)
+        }
+        _require(
+            isinstance(floor_index, dict)
+            and floor_index.get("schema_version") == PREPARED_VERSION
+            and floor_index.get("input_width") == INPUT_WIDTH
+            and floor_index.get("maps") == expected_index,
+            "floor-index.json disagrees with prepared manifest",
+        )
+
+    def _validate_atlas_pixels(self):
+        self._decoded_atlases = {}
+        for map_id, atlas in self.manifest["atlases"].items():
+            path = resolve_prepared_path(self.root, atlas["path"])
+            image = cv2.imread(str(path), cv2.IMREAD_COLOR)
+            _require(
+                image is not None and image.dtype == np.uint8 and image.shape == (*tuple(atlas["shape"]), 3),
+                f"Prepared atlas cannot be decoded: {map_id}",
+            )
+            _require(
+                _sha256(image.tobytes()) == atlas.get("decoded_sha256"),
+                f"Prepared atlas decoded checksum mismatch: {map_id}",
+            )
+            image.setflags(write=False)
+            self._decoded_atlases[map_id] = image
+
+    def _validate_masks_and_floors(self):
+        atlas_masks = {}
+        for map_id, atlas in self.manifest["atlases"].items():
+            atlas_masks[map_id] = self._decode_mask(
+                atlas["mask_path"],
+                tuple(atlas["shape"]),
+                atlas.get("mask_bytes"),
+                None,
+            )
+        unions = {map_id: np.zeros(mask.shape, bool) for map_id, mask in atlas_masks.items()}
+        for (map_id, tier_id), floor in self._floors.items():
+            record, region = floor.record, floor.record["atlas_region"]
+            mask = self._decode_mask(
+                record["mask_path"],
+                tuple(record["mask_shape"]),
+                record["mask_bytes"],
+                record["coverage_pixels"],
+                record["mask_sha256"],
+            )
+            expected = atlas_masks[map_id][
+                region["y"] : region["y"] + region["height"],
+                region["x"] : region["x"] + region["width"],
+            ]
+            _require(np.array_equal(mask, expected), f"Prepared floor mask disagrees with atlas: {tier_id}")
+            unions[map_id][
+                region["y"] : region["y"] + region["height"],
+                region["x"] : region["x"] + region["width"],
+            ] = mask
+        for map_id, atlas_mask in atlas_masks.items():
+            _require(np.array_equal(unions[map_id], atlas_mask), f"Prepared atlas mask has unexplained coverage: {map_id}")
+
+    def _decode_mask(self, name, shape, byte_count, coverage_pixels, digest=None):
+        path = resolve_prepared_path(self.root, name)
+        data = path.read_bytes()
+        count = int(np.prod(shape))
+        _require(
+            len(data) == byte_count == math.ceil(count / 8)
+            and (digest is None or _sha256(data) == digest),
+            f"Prepared mask metadata mismatch: {name}",
+        )
+        bits = np.unpackbits(np.frombuffer(data, np.uint8), bitorder="big")
+        _require(not bits[count:].any(), f"Prepared mask has nonzero tail bits: {name}")
+        mask = bits[:count].reshape(shape).astype(bool)
+        if coverage_pixels is not None:
+            _require(int(np.count_nonzero(mask)) == coverage_pixels, f"Prepared mask coverage count mismatch: {name}")
+        mask.setflags(write=False)
+        return mask
+
+    def _floor_mask(self, floor: PreparedFloor):
+        record = floor.record
+        return self._decode_mask(
+            record["mask_path"],
+            tuple(record["mask_shape"]),
+            record["mask_bytes"],
+            record["coverage_pixels"],
+            record["mask_sha256"],
+        )
+
+    def _atlas_pixels(self, map_id):
+        with self._atlas_lock:
+            image = self._atlas_cache.get(map_id)
+            if image is None:
+                image = self._decoded_atlases[map_id]
+                self._atlas_cache[map_id] = image
+            self._atlas_cache.move_to_end(map_id)
+            while len(self._atlas_cache) > 4:
+                self._atlas_cache.popitem(last=False)
+            return image
+
+    def _bundle_json(self, name):
+        path = resolve_prepared_path(self.root, name)
+        record = self._records[name]
+        data = path.read_bytes()
+        _require(
+            len(data) == record["size"] and _sha256(data) == record["sha256"],
+            f"Prepared localization JSON checksum mismatch: {name}",
+        )
+        return json.loads(data.decode("utf-8"))

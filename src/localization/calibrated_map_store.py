@@ -2,6 +2,7 @@
 
 import json
 import re
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +25,9 @@ class _MapFiles:
 class CalibratedMapStore:
     def __init__(self, root):
         self.root = Path(root).expanduser().resolve()
+        self._prepared_lock = threading.Lock()
+        self._prepared_key = None
+        self._prepared_bundle = None
 
     def _read_manifest(self):
         path = self.root.parent / "manifest.json"
@@ -38,6 +42,28 @@ class CalibratedMapStore:
         ):
             raise ValueError("invalid_visual_map_manifest")
         return manifest
+
+    def _prepared_for(self, manifest_path):
+        from src.localization.prepared_localization import (
+            PreparedLocalizationBundle,
+            find_prepared_root,
+        )
+
+        root = find_prepared_root(manifest_path)
+        if root is None:
+            return None
+        marker = (
+            (root / "READY").stat().st_mtime_ns,
+            (root / "READY").stat().st_size,
+            (root.parent / "dataset.json").stat().st_mtime_ns,
+            manifest_path.stat().st_mtime_ns,
+            manifest_path.stat().st_size,
+        )
+        with self._prepared_lock:
+            if marker != self._prepared_key:
+                self._prepared_bundle = PreparedLocalizationBundle(root, manifest_path)
+                self._prepared_key = marker
+            return self._prepared_bundle
 
     def _map_files(self, manifest):
         files = {}
@@ -93,7 +119,9 @@ class CalibratedMapStore:
         from src.localization.layered_minimap_locator import LayeredMinimapLocator
 
         paths = files[map_id]
+        manifest_path = self.root.parent / "manifest.json"
         bundle = LocalizationTileBundle(self.root.parent, manifest)
+        prepared = self._prepared_for(manifest_path)
         calibration = MapCalibration.from_mapping(bundle.read_json(paths.mapping), name=paths.mapping.stem)
         if (calibration.image_width, calibration.image_height) != paths.size:
             raise ValueError("Visual base map calibration size does not match manifest")
@@ -108,7 +136,7 @@ class CalibratedMapStore:
             raise ValueError("invalid_visual_layer_catalog")
         base = MinimapMapLocator(bundle.open_base(paths.image, map_id, paths.size, paths.mapping), calibration)
         try:
-            locator = LayeredMinimapLocator(base, map_id, layer_root, catalog, bundle=bundle)
+            locator = LayeredMinimapLocator(base, map_id, layer_root, catalog, bundle=bundle, prepared=prepared)
         except BaseException:
             base.close()
             raise

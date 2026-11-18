@@ -45,28 +45,37 @@ def layer_calibration(bounds, width, height):
 
 
 class LayeredMinimapLocator:
-    def __init__(self, base, map_id, layer_root, catalog, *, bundle=None):
+    def __init__(self, base, map_id, layer_root, catalog, *, bundle=None, prepared=None):
         self.base, self.map_id = base, map_id
         self.color = getattr(base, "color", False) is True
         self.calibration = base.calibration
         self.root = Path(layer_root).resolve()
         self._bundle = bundle
-        entries = catalog.get("layers", [])
+        self._prepared = prepared
+        entries = prepared.floor_entries(map_id) if prepared is not None else catalog.get("layers", [])
         if not all(isinstance(e, dict) for e in entries):
             raise ValueError("invalid_visual_layer_entry")
-        self.entries = [dict(e) for e in entries if e.get("map_name") == map_id and e.get("map_category") == "layered"]
+        if prepared is not None:
+            self.entries = [dict(e) for e in entries if e.get("map_category") == "layered"]
+        else:
+            self.entries = [
+                dict(e) for e in entries if e.get("map_name") == map_id and e.get("map_category") == "layered"
+            ]
         seen_ids = set()
         for entry in self.entries:
-            if not all(k in entry for k in ("id", "path", "width", "height", "bounds")):
+            required = ("id", "width", "height", "bounds")
+            if not all(k in entry for k in required):
                 raise ValueError("invalid_visual_layer_entry")
-            if not all(isinstance(entry[k], str) and entry[k] for k in ("id", "path")):
+            if not isinstance(entry["id"], str) or not entry["id"]:
+                raise ValueError("invalid_visual_layer_entry")
+            if prepared is None and (not isinstance(entry.get("path"), str) or not entry["path"]):
                 raise ValueError("invalid_visual_layer_entry")
             if bundle is not None and entry["id"] in seen_ids:
                 raise ValueError("duplicate_visual_layer_id")
             seen_ids.add(entry["id"])
             layer_calibration(entry["bounds"], entry["width"], entry["height"])
             entry["bounds"] = {k: float(entry["bounds"][k]) for k in ("west", "east", "south", "north")}
-            if not (self.root / entry["path"]).resolve().is_relative_to(self.root):
+            if prepared is None and not (self.root / entry["path"]).resolve().is_relative_to(self.root):
                 raise ValueError("layer image escapes resource root")
         self._cache = OrderedDict()
         self._composites = {}
@@ -88,8 +97,10 @@ class LayeredMinimapLocator:
         self._ranked_shape = None
         self._ranked_complete = False
         self._navigation_scope = None
-        self.tier_coverage_complete = not any(
-            str(k).startswith(f"scene_{map_id}_") for k in catalog.get("missing_logic_ids", [])
+        self.tier_coverage_complete = (
+            prepared.tier_coverage_complete(map_id)
+            if prepared is not None
+            else not any(str(k).startswith(f"scene_{map_id}_") for k in catalog.get("missing_logic_ids", []))
         )
 
     def _scale(self, width):
@@ -167,6 +178,9 @@ class LayeredMinimapLocator:
     def _decode(self, entry):
         """Decode without changing caches, search hints or tracking state."""
         key = entry["id"]
+        if self._prepared is not None:
+            image = self._prepared.open_floor(entry)
+            return MinimapMapLocator(image, image.calibration)
         calibration, (fx, fy) = layer_calibration(entry["bounds"], entry["width"], entry["height"])
         if self._bundle is not None:
             return MinimapMapLocator(self._bundle.open_floor(self.root, entry), calibration)
@@ -634,7 +648,12 @@ class LayeredMinimapLocator:
         if not self.entries:
             return
         if self._search_index is None:
-            options = {"bundle": self._bundle} if self._bundle is not None else {}
+            if self._prepared is not None:
+                options = {"prepared": self._prepared}
+            elif self._bundle is not None:
+                options = {"bundle": self._bundle}
+            else:
+                options = {}
             if self._resource_workers is None:
                 self._search_index = LayerSearchIndex.build(self.root, self.entries, color=self.color, **options)
             else:
