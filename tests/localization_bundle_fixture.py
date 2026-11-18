@@ -207,14 +207,23 @@ class LocalizationBundleFixture:
             self.assertTrue(ok)
             return data.tobytes()
 
+        full_height = self.floor["height"] + 640
+        full_width = self.floor["width"] + 640
+        prepared_scale = 1280 / (4 * 1706.5) * 0.5
+        region_height = round(full_height * prepared_scale)
+        region_width = round(full_width * prepared_scale)
         atlas = np.zeros((320, 320, 3), np.uint8)
-        atlas[128:192, 128:192] = self.pixels[:64, :64, :3]
+        atlas[128 : 128 + region_height, 128 : 128 + region_width] = cv2.resize(
+            self.pixels[: max(region_height * 2, 1), : max(region_width * 2, 1), :3],
+            (region_width, region_height),
+            interpolation=cv2.INTER_AREA,
+        )
         decoded = cv2.imdecode(np.frombuffer(encode_webp(atlas), np.uint8), cv2.IMREAD_COLOR)
-        floor_mask = np.ones((64, 64), bool)
+        floor_mask = np.ones((region_height, region_width), bool)
         floor_mask[:4, :4] = False
         floor_mask_bytes = np.packbits(floor_mask.reshape(-1), bitorder="big").tobytes()
         atlas_mask = np.zeros((320, 320), bool)
-        atlas_mask[128:192, 128:192] = floor_mask
+        atlas_mask[128 : 128 + region_height, 128 : 128 + region_width] = floor_mask
         atlas_mask_bytes = np.packbits(atlas_mask.reshape(-1), bitorder="big").tobytes()
         floor_mask_record = write("masks/main/floor.bin", floor_mask_bytes)
         rank_shape = (
@@ -227,7 +236,7 @@ class LocalizationBundleFixture:
             (prepared / rank_record["path"]).write_bytes(b"corrupt rank")
         atlas_record = write("atlases/main-1280.webp", encode_webp(atlas))
         atlas_mask_record = write("atlases/main-1280-mask.bin", atlas_mask_bytes)
-        region = {"x": 128, "y": 128, "width": 64, "height": 64}
+        region = {"x": 128, "y": 128, "width": region_width, "height": region_height}
         floor = {
             "tier_id": self.floor["id"],
             "map_id": self.base["map_id"],

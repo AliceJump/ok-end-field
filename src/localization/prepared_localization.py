@@ -31,6 +31,7 @@ COMPOSITE_PADDING = 320
 WEBP_QUALITY = 90
 MASK_ENCODING = "row-major-msb-first-packbits-zero-tail"
 RANK_PIXELS_PER_METER = 0.5
+PREPARED_SCALE = INPUT_WIDTH / (MAP_PIXELS_PER_METER * DEFAULT_SCALE_CONSTANT) * COARSE_FACTOR
 
 
 def _sha256(data: bytes) -> str:
@@ -106,30 +107,31 @@ def _floor_matrix(entry: dict) -> np.ndarray:
     )
 
 
-def _prepared_calibration(entry: dict, region: dict) -> MapCalibration:
-    scale = INPUT_WIDTH / (MAP_PIXELS_PER_METER * DEFAULT_SCALE_CONSTANT) * COARSE_FACTOR
+def _prepared_calibration(entry: dict) -> MapCalibration:
     matrix = _floor_matrix(entry)
     matrix[:, 2] -= matrix[:, :2] @ np.array([COMPOSITE_PADDING, COMPOSITE_PADDING], dtype=np.float64)
-    linear = matrix[:, :2] / scale
-    offset = matrix[:, 2] + matrix[:, :2] @ np.array(
-        [0.5 / scale - 0.5, 0.5 / scale - 0.5],
-        dtype=np.float64,
-    )
-    offset -= linear @ np.array([region["x"], region["y"]], dtype=np.float64)
-    prepared = np.column_stack((linear, offset))
-    inverse = np.linalg.inv(np.vstack((prepared, [0, 0, 1])))[:2]
-    return MapCalibration(prepared, inverse)
+    inverse = np.linalg.inv(np.vstack((matrix, [0, 0, 1])))[:2]
+    return MapCalibration(matrix, inverse)
 
 
 class PreparedAtlasFloorImage(TiledMapImage):
-    """A bounded view of one floor inside a shared map competition atlas."""
+    """A full-size floor view backed by one coarse atlas region."""
 
-    def __init__(self, atlas: np.ndarray, region: dict, mask: np.ndarray, calibration: MapCalibration):
+    def __init__(
+        self,
+        atlas: np.ndarray,
+        region: dict,
+        mask: np.ndarray,
+        calibration: MapCalibration,
+        *,
+        full_shape: tuple[int, int],
+    ):
         self._atlas = atlas
         self._region = dict(region)
         self._mask = mask
         self.calibration = calibration
-        self._shape = (region["height"], region["width"], 3)
+        self._coarse_shape = (region["height"], region["width"], 3)
+        self._shape = (full_shape[0], full_shape[1], 3)
         self._closed = False
         self._lock = threading.Lock()
 
@@ -139,7 +141,7 @@ class PreparedAtlasFloorImage(TiledMapImage):
 
     @property
     def nbytes(self):
-        return self._shape[0] * self._shape[1] * self._shape[2] + self._mask.nbytes
+        return self._coarse_shape[0] * self._coarse_shape[1] * self._coarse_shape[2] + self._mask.nbytes
 
     @property
     def resident_bytes(self):
@@ -153,8 +155,18 @@ class PreparedAtlasFloorImage(TiledMapImage):
         return round(self._shape[0] * scale) * round(self._shape[1] * scale) * 4
 
     def coarse_overview(self, scale):
-        pixels = self[:, :]
-        result = cv2.resize(pixels, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        if not math.isclose(float(scale), PREPARED_SCALE, rel_tol=0, abs_tol=1e-15):
+            raise ValueError(f"prepared atlas has no coarse overview at scale {scale!r}")
+        with self._lock:
+            if self._closed:
+                raise ValueError("prepared atlas image closed")
+        region = self._region
+        result = np.ascontiguousarray(
+            self._atlas[
+                region["y"] : region["y"] + region["height"],
+                region["x"] : region["x"] + region["width"],
+            ]
+        )
         result.setflags(write=False)
         return result
 
@@ -170,18 +182,35 @@ class PreparedAtlasFloorImage(TiledMapImage):
         if y0 >= y1 or x0 >= x1:
             return np.empty((max(0, y1 - y0), max(0, x1 - x0), 3), np.uint8)
         region = self._region
-        pixels = self._atlas[
-            region["y"] + y0 : region["y"] + y1,
-            region["x"] + x0 : region["x"] + x1,
-        ]
-        pixels = np.ascontiguousarray(pixels)
-        pixels.setflags(write=False)
-        return pixels
+        left = max(0, math.floor(x0 * PREPARED_SCALE) - 1)
+        top = max(0, math.floor(y0 * PREPARED_SCALE) - 1)
+        right = min(region["width"], math.ceil(x1 * PREPARED_SCALE) + 1)
+        bottom = min(region["height"], math.ceil(y1 * PREPARED_SCALE) + 1)
+        crop = np.ascontiguousarray(
+            self._atlas[
+                region["y"] + top : region["y"] + bottom,
+                region["x"] + left : region["x"] + right,
+            ]
+        )
+        if crop.size == 0:
+            return np.zeros((y1 - y0, x1 - x0, 3), np.uint8)
+        atlas_x = (np.arange(x0, x1, dtype=np.float32) + 0.5) * PREPARED_SCALE - 0.5 - left
+        atlas_y = (np.arange(y0, y1, dtype=np.float32) + 0.5) * PREPARED_SCALE - 0.5 - top
+        map_x, map_y = np.meshgrid(atlas_x, atlas_y)
+        result = cv2.remap(
+            crop,
+            map_x,
+            map_y,
+            interpolation=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_REPLICATE,
+        )
+        result.setflags(write=False)
+        return result
 
     def candidate_mask(self, xs, ys):
         xx, yy = np.meshgrid(
-            np.rint(np.asarray(xs, dtype=np.float64)).astype(np.int64),
-            np.rint(np.asarray(ys, dtype=np.float64)).astype(np.int64),
+            np.rint((np.asarray(xs, dtype=np.float64) + 0.5) * PREPARED_SCALE - 0.5).astype(np.int64),
+            np.rint((np.asarray(ys, dtype=np.float64) + 0.5) * PREPARED_SCALE - 0.5).astype(np.int64),
         )
         height, width = self._mask.shape
         valid = (xx >= 0) & (xx < width) & (yy >= 0) & (yy < height)
@@ -249,7 +278,17 @@ class PreparedLocalizationBundle:
         atlas = self._atlas_pixels(map_id)
         region = floor.record["atlas_region"]
         mask = self._floor_mask(floor)
-        return PreparedAtlasFloorImage(atlas, region, mask, floor.calibration)
+        full_shape = (
+            int(floor.entry["height"]) + 2 * COMPOSITE_PADDING,
+            int(floor.entry["width"]) + 2 * COMPOSITE_PADDING,
+        )
+        return PreparedAtlasFloorImage(
+            atlas,
+            region,
+            mask,
+            floor.calibration,
+            full_shape=full_shape,
+        )
 
     def rank_image(self, entry):
         tier_id = str(entry["tier_id"])
@@ -502,8 +541,16 @@ class PreparedLocalizationBundle:
             )
             region = record["atlas_region"]
             mask_shape = _finite_pair_shape(record.get("mask_shape"))
+            full_shape = (
+                int(source["height"]) + 2 * COMPOSITE_PADDING,
+                int(source["width"]) + 2 * COMPOSITE_PADDING,
+            )
+            expected_coarse_shape = (
+                round(full_shape[0] * PREPARED_SCALE),
+                round(full_shape[1] * PREPARED_SCALE),
+            )
             _require(
-                mask_shape == (region["height"], region["width"])
+                mask_shape == expected_coarse_shape == (region["height"], region["width"])
                 and isinstance(record.get("mask_path"), str)
                 and record["mask_path"] in self._records
                 and record.get("mask_bit_order") == "big"
@@ -540,7 +587,7 @@ class PreparedLocalizationBundle:
                 "width": source["width"],
                 "height": source["height"],
             }
-            calibration = _prepared_calibration(entry, region)
+            calibration = _prepared_calibration(entry)
             self._floors[(map_id, tier_id)] = PreparedFloor(entry, calibration, record)
             self._floor_records[(map_id, tier_id)] = record
         _require(actual_ids == expected_ids, "Prepared floor coverage disagrees with source catalog")

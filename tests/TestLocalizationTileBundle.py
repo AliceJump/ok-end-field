@@ -29,6 +29,7 @@ from src.localization.minimap_map_locator import (
 )
 from src.localization.native_tile_image import ZeroPaddedSearchRaster
 from src.localization.prepared_localization import (
+    PREPARED_SCALE,
     PreparedAtlasFloorImage,
     PreparedLocalizationBundle,
     _prepared_calibration,
@@ -594,11 +595,15 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
                 **entry,
                 "width": self.floor["width"],
                 "height": self.floor["height"],
-            },
-            floor_record["atlas_region"],
+            }
         )
         np.testing.assert_allclose(image.calibration.matrix, expected.matrix)
-        mask = image.candidate_mask([0, 10, 63, 64], [0, 10, 0, 0])
+        covered = (10 + 0.5) / PREPARED_SCALE - 0.5
+        mask = image.candidate_mask([0, covered, 1000, 10000], [0, covered, 0, 0])
+        coarse = image.coarse_overview(PREPARED_SCALE)
+        self.assertEqual(coarse.shape, (floor_record["atlas_region"]["height"], floor_record["atlas_region"]["width"], 3))
+        self.assertEqual(image.shape, (self.floor["height"] + 640, self.floor["width"] + 640, 3))
+        self.assertEqual(image[100:164, 100:164].shape, (64, 64, 3))
         self.assertFalse(mask[0, 0])
         self.assertTrue(mask[1, 1])
         self.assertFalse(mask[0, 3])
@@ -617,6 +622,11 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
         floor = locator._decode(locator.entries[0])
         self.addCleanup(floor.close)
         self.assertIsInstance(floor.map_image, PreparedAtlasFloorImage)
+        mask_shape = locator._prepared._floor_records[(self.base["map_id"], self.floor["id"])]["mask_shape"]
+        self.assertEqual(
+            floor._coarse_map(PREPARED_SCALE).shape,
+            (mask_shape[0], mask_shape[1], 3),
+        )
         locator.prepare_layer_index()
         ((tier_id, rank),) = locator._search_index.images
         self.assertEqual(tier_id, self.floor["id"])
