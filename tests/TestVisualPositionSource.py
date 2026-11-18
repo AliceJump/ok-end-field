@@ -2258,6 +2258,23 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         self.assertAlmostEqual(first.locate.best.ncc, 0.91)
         self.assertTrue(tracker.update(fresh, None, now=2.2).accepted)
 
+    def test_identical_async_snapshot_is_reused_without_a_second_search(self):
+        locator = self.async_locator()
+        frame = np.zeros((16, 16, 3), np.uint8)
+        completed = self.result(0.99, margin=0.2)
+        future = Future()
+        future.set_result(completed)
+        locator._search_future = future
+        locator._search_shape = frame.shape
+        locator._search_started_generation = locator._search_generation
+        locator._search_frame = frame.copy()
+        locator._search_frame.setflags(write=False)
+        locator._active = "map01"
+        locator._active_result = Mock(side_effect=AssertionError("second global search"))
+        self.assertIs(locator._locate_async(frame, None, 0), completed)
+        self.assertIsNone(locator._search_future)
+        self.assertIsNone(locator._search_frame)
+
     def test_reset_during_async_search_discards_its_late_hint(self):
         locator = self.async_locator()
         entered, release = threading.Event(), threading.Event()

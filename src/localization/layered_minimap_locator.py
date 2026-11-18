@@ -140,7 +140,7 @@ class LayeredMinimapLocator:
             return self._cache[key]
         if time.monotonic() < self._resource_retry_at.get(key, 0):
             raise ValueError(f"layer_decode_backoff:{key}")
-        if self._resource_workers is None:
+        if self._prepared is not None or self._resource_workers is None:
             try:
                 locator = self._decode(entry)
             except (OSError, ValueError):
@@ -239,6 +239,8 @@ class LayeredMinimapLocator:
         return self._composites[key]
 
     def _prepare_global_search(self, locator, frame, *, wait_for_resources=False):
+        if self._prepared is not None:
+            return True
         if self._resource_workers is None:
             return True
         if self._resource_workers.closed:
@@ -631,7 +633,7 @@ class LayeredMinimapLocator:
     def _rank_raw_layers(self, template, frame_width, *, wait_for_resources, with_positions=False):
         self.prepare_layer_index(wait_for_resources=wait_for_resources)
         options = {"with_positions": True} if with_positions else {}
-        if self._resource_workers is None:
+        if self._prepared is not None or self._resource_workers is None:
             return self._search_index.rank(template, self._scale(frame_width), **options)
         if self._resource_workers.closed:
             raise ResourcePending()
@@ -654,7 +656,7 @@ class LayeredMinimapLocator:
                 options = {"bundle": self._bundle}
             else:
                 options = {}
-            if self._resource_workers is None:
+            if self._prepared is not None or self._resource_workers is None:
                 self._search_index = LayerSearchIndex.build(self.root, self.entries, color=self.color, **options)
             else:
                 if self._resource_workers.closed:

@@ -651,6 +651,34 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
         self.addCleanup(floor.close)
         self.assertIsInstance(floor.map_image, PreparedAtlasFloorImage)
 
+    def test_prepared_layers_bypass_async_resource_pool(self):
+        self.write_prepared()
+        _, locator = self.store.load(self.base["map_id"])
+        self.addCleanup(locator.close)
+
+        def forbidden(*_args, **_kwargs):
+            raise AssertionError("prepared path submitted work to the resource pool")
+
+        locator._resource_workers = SimpleNamespace(
+            closed=False,
+            resources=SimpleNamespace(submit=forbidden),
+            indexes=SimpleNamespace(submit=forbidden),
+            rankings=SimpleNamespace(submit=forbidden),
+            stop=threading.Event(),
+        )
+        entry = locator.entries[0]
+        floor = locator._load(entry)
+        self.addCleanup(floor.close)
+        self.assertTrue(locator._prepare_global_search(floor, np.zeros((720, 1280, 3), np.uint8)))
+        locator.prepare_layer_index(wait_for_resources=True)
+        self.assertEqual([tier for tier, _image in locator._search_index.images], [self.floor["id"]])
+        ranks = locator._rank_raw_layers(
+            SimpleNamespace(flat=np.zeros((16, 16, 3), np.uint8)),
+            1280,
+            wait_for_resources=True,
+        )
+        self.assertEqual([tier for _score, tier in ranks], [self.floor["id"]])
+
     def test_prepared_bundle_rejects_orphan_checksum_and_release_mismatch(self):
         prepared_root, manifest, _floor = self.write_prepared()
         (prepared_root / "orphan.bin").write_bytes(b"orphan")

@@ -40,6 +40,7 @@ class MapSetLocator:
         self._search_generation = 0
         self._search_started_generation = 0
         self._search_shape = None
+        self._search_frame = None
         self._search_ready_callback = None
         self._closed = False
 
@@ -114,6 +115,7 @@ class MapSetLocator:
 
     def _clear_search_hint(self):
         self._active = None
+        self._search_frame = None
         for locator in self._cache.values():
             if hasattr(locator, "_recent"):
                 locator._recent = None
@@ -328,9 +330,20 @@ class MapSetLocator:
                 self.last_failure_reason = "visual_global_search_pending"
                 return None
             self._search_future = None
-            future.result()  # Surface resource failures; never publish this old-frame result.
+            snapshot = self._search_frame
+            self._search_frame = None
+            completed = future.result()  # Surface resource failures.
             if self._search_started_generation != self._search_generation:
                 self._clear_search_hint()
+            elif (
+                completed is not None
+                and snapshot is not None
+                and snapshot.shape == frame.shape
+                and np.array_equal(snapshot, frame)
+            ):
+                # Reusing an identical observation is safe; a changed frame
+                # still has to pass the fresh active-map competition below.
+                return completed
         # A completed full competition can seed only a search hint. Both the
         # current frame's nearby competition and the tracker's confirmation
         # gates must still pass before any coordinate becomes trusted.
@@ -343,6 +356,7 @@ class MapSetLocator:
         snapshot = frame.copy()
         snapshot.setflags(write=False)
         self._search_shape = snapshot.shape
+        self._search_frame = snapshot
         self._search_started_generation = self._search_generation
         self._search_future = self._workers.acquisitions.submit(self._search_global_ready, snapshot, geometry, started)
         self._search_future.add_done_callback(self._notify_search_ready)
