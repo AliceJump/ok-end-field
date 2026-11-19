@@ -570,6 +570,14 @@ class TestNavigationTopology(unittest.TestCase):
         ):
             self.assertIsNone(topology.scope("map02", tier, point, budget))
 
+    def test_search_identity_changes_with_anchor_or_reach(self):
+        topology = NavigationTopology(LayeredMap({("map02", ""): _grid(["ooooooo"])}))
+        first = topology.scope("map02", MAIN_TIER, (0.5, 0.5), 1)
+        expanded = topology.scope("map02", MAIN_TIER, (0.5, 0.5), 2)
+        moved = topology.scope("map02", MAIN_TIER, (1.5, 0.5), 1)
+        self.assertNotEqual(first.search_identity(), expanded.search_identity())
+        self.assertNotEqual(first.search_identity(), moved.search_identity())
+
     def test_scope_is_snapshot_and_tolerance_is_not_added_per_edge(self):
         grid = _grid(["oooooooooo"])
         topology = NavigationTopology(LayeredMap({("map02", ""): grid}))

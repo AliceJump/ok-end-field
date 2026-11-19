@@ -35,6 +35,7 @@ class MapSetLocator:
         self._resource_errors = {}
         self.last_failure_reason = ""
         self._navigation_scope = None
+        self._navigation_scope_key = None
         self._async_search = bool(async_search and workers is not None)
         self._search_future = None
         self._search_generation = 0
@@ -64,9 +65,19 @@ class MapSetLocator:
         self._last_failure_reason = value
 
     def set_navigation_scope(self, scope):
+        identity = getattr(scope, "search_identity", None)
+        scope_key = identity() if callable(identity) else scope
+        scope_changed = scope_key is not self._navigation_scope_key and scope_key != self._navigation_scope_key
         self._navigation_scope = scope
+        self._navigation_scope_key = scope_key
+        if scope_changed and self._search_future is not None:
+            self._search_generation += 1
         if self._search_future is not None and not self._search_future.done():
             return
+        self._apply_navigation_scope_to_cache()
+
+    def _apply_navigation_scope_to_cache(self):
+        scope = self._navigation_scope
         for locator in self._cache.values():
             setter = getattr(locator, "set_navigation_scope", None)
             if callable(setter):
@@ -335,6 +346,7 @@ class MapSetLocator:
             completed = future.result()  # Surface resource failures.
             if self._search_started_generation != self._search_generation:
                 self._clear_search_hint()
+                self._apply_navigation_scope_to_cache()
             elif (
                 completed is not None
                 and snapshot is not None

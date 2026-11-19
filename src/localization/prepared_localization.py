@@ -39,6 +39,7 @@ WEBP_QUALITY = 90
 MASK_ENCODING = "row-major-msb-first-packbits-zero-tail"
 RANK_PIXELS_PER_METER = 0.5
 PREPARED_SCALE = INPUT_WIDTH / (MAP_PIXELS_PER_METER * DEFAULT_SCALE_CONSTANT) * COARSE_FACTOR
+MAX_ATLAS_CACHE_BYTES = 128 * 1024**2
 
 
 def _sha256(data: bytes) -> str:
@@ -243,6 +244,8 @@ class PreparedLocalizationBundle:
         self.manifest = _read_json(self.root / "manifest.json")
         self._atlas_lock = threading.Lock()
         self._atlas_cache = OrderedDict()
+        self._atlas_cache_bytes = 0
+        self._atlas_paths = {}
         self._rank_failures = set()
         self._records = self._validate_file_records()
         self._floors = {}
@@ -516,8 +519,16 @@ class PreparedLocalizationBundle:
             for entry in catalog["layers"]
             if isinstance(entry, dict) and entry.get("map_category") == "layered"
         }
-        missing = set(self.manifest["coverage"]["missing_logic_ids"])
-        expected_ids = set(self._catalog) - missing
+        missing_list = self.manifest["coverage"]["missing_logic_ids"]
+        source_missing = catalog.get("missing_logic_ids", [])
+        _require(
+            isinstance(source_missing, list)
+            and all(isinstance(item, str) and item for item in source_missing)
+            and len(source_missing) == len(set(source_missing))
+            and set(source_missing) == set(missing_list),
+            "Prepared missing-layer declarations disagree with source catalog",
+        )
+        expected_ids = set(self._catalog) - set(source_missing)
         actual_ids = set()
         seen = set()
         for record in floors:
@@ -641,7 +652,6 @@ class PreparedLocalizationBundle:
         )
 
     def _validate_atlas_pixels(self):
-        self._decoded_atlases = {}
         for map_id, atlas in self.manifest["atlases"].items():
             path = resolve_prepared_path(self.root, atlas["path"])
             image = cv2.imread(str(path), cv2.IMREAD_COLOR)
@@ -653,8 +663,8 @@ class PreparedLocalizationBundle:
                 _sha256(image.tobytes()) == atlas.get("decoded_sha256"),
                 f"Prepared atlas decoded checksum mismatch: {map_id}",
             )
-            image.setflags(write=False)
-            self._decoded_atlases[map_id] = image
+            self._atlas_paths[map_id] = path
+            del image
 
     def _validate_masks_and_floors(self):
         atlas_masks = {}
@@ -718,11 +728,29 @@ class PreparedLocalizationBundle:
         with self._atlas_lock:
             image = self._atlas_cache.get(map_id)
             if image is None:
-                image = self._decoded_atlases[map_id]
+                atlas = self.manifest["atlases"][map_id]
+                path = self._atlas_paths[map_id]
+                image = cv2.imread(str(path), cv2.IMREAD_COLOR)
+                _require(
+                    image is not None
+                    and image.dtype == np.uint8
+                    and image.shape == (*tuple(atlas["shape"]), 3)
+                    and _sha256(image.tobytes()) == atlas.get("decoded_sha256"),
+                    f"Prepared atlas cannot be decoded: {map_id}",
+                )
+                image.setflags(write=False)
                 self._atlas_cache[map_id] = image
+                self._atlas_cache_bytes += image.nbytes
             self._atlas_cache.move_to_end(map_id)
-            while len(self._atlas_cache) > 4:
-                self._atlas_cache.popitem(last=False)
+            while (
+                len(self._atlas_cache) > 1
+                and (
+                    len(self._atlas_cache) > 4
+                    or self._atlas_cache_bytes > MAX_ATLAS_CACHE_BYTES
+                )
+            ):
+                _old_map_id, old_image = self._atlas_cache.popitem(last=False)
+                self._atlas_cache_bytes -= old_image.nbytes
             return image
 
     def _bundle_json(self, name):

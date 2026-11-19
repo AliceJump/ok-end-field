@@ -586,6 +586,8 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
         prepared_root, manifest, floor_record = self.write_prepared()
         bundle = PreparedLocalizationBundle.load(self.root / "manifest.json")
         self.assertIsNotNone(bundle)
+        self.assertEqual(bundle._atlas_cache, {})
+        self.assertFalse(hasattr(bundle, "_decoded_atlases"))
         self.assertEqual(bundle.summary()["layered_floors"], 1)
         (entry,) = bundle.floor_entries(self.base["map_id"])
         image = bundle.open_floor(entry)
@@ -613,6 +615,33 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
         self.assertFalse(rank.flags.writeable)
         self.assertTrue((prepared_root / "READY").is_file())
         self.assertEqual(manifest["source"]["webp_quality"], 90)
+
+    def test_prepared_atlas_cache_holds_only_opened_maps(self):
+        _, _manifest, _floor = self.write_prepared()
+        bundle = PreparedLocalizationBundle.load(self.root / "manifest.json")
+        self.assertEqual(bundle._atlas_cache_bytes, 0)
+        image = bundle.open_floor(bundle.floor_entries(self.base["map_id"])[0])
+        self.addCleanup(image.close)
+        self.assertEqual(len(bundle._atlas_cache), 1)
+        self.assertEqual(bundle._atlas_cache_bytes, next(iter(bundle._atlas_cache.values())).nbytes)
+
+    def test_prepared_missing_declarations_must_match_source_catalog(self):
+        prepared_root, manifest, _floor = self.write_prepared()
+        manifest["coverage"]["missing_logic_ids"] = [self.floor["id"]]
+        manifest_data = json.dumps(manifest).encode()
+        manifest_path = prepared_root / "manifest.json"
+        manifest_path.write_bytes(manifest_data)
+        digest = hashlib.sha256(manifest_data).hexdigest()
+        (prepared_root / "READY").write_text(
+            f"okef-prepared-localization 1 {digest}\n",
+            encoding="ascii",
+        )
+        package_path = self.package_root / "prepared-package.json"
+        package = json.loads(package_path.read_text(encoding="utf-8"))
+        package["prepared_manifest_sha256"] = digest
+        package_path.write_text(json.dumps(package), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "missing-layer declarations"):
+            PreparedLocalizationBundle.load(self.root / "manifest.json")
 
     def test_calibrated_map_store_uses_prepared_atlas_without_compositing(self):
         self.write_prepared()

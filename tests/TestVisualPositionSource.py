@@ -2325,6 +2325,25 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         self.assertIsNone(locator._search_future)
         self.assertIsNone(locator._search_frame)
 
+    def test_navigation_scope_change_invalidates_completed_async_result(self):
+        locator = self.async_locator()
+        frame = np.zeros((16, 16, 3), np.uint8)
+        future = Future()
+        future.set_result(self.result(0.99, margin=0.9))
+        scope = SimpleNamespace(search_identity=lambda: ("map01", "floor1", 1.0, 2.0))
+        locator.set_navigation_scope(scope)
+        locator._search_future = future
+        locator._search_shape = frame.shape
+        locator._search_started_generation = locator._search_generation
+        locator._search_frame = frame.copy()
+        locator._search_frame.setflags(write=False)
+        locator.set_navigation_scope(None)
+        locator._active_result = Mock(return_value=None)
+        locator._prepare_base_search = Mock(return_value=False)
+        self.assertIsNone(locator._locate_async(frame, None, 0))
+        locator._active_result.assert_called_once()
+        locator._prepare_base_search.assert_called_once()
+
     def test_reset_during_async_search_discards_its_late_hint(self):
         locator = self.async_locator()
         entered, release = threading.Event(), threading.Event()

@@ -56,6 +56,21 @@ class NavigationTopologyScope:
     _distances: Mapping[LayerKey, Mapping[tuple[int, int], float]]
     max_distance_m: float
     tolerance_m: float
+    anchor_map_id: str
+    anchor_tier_id: str
+    anchor_x: float
+    anchor_z: float
+
+    def search_identity(self):
+        """Identify constraints whose change makes a completed search stale."""
+        return (
+            self.anchor_map_id,
+            self.anchor_tier_id,
+            self.anchor_x,
+            self.anchor_z,
+            self.max_distance_m,
+            self.tolerance_m,
+        )
 
     def allows_tier(self, map_id, tier_id):
         if tier_id is None:
@@ -213,4 +228,8 @@ class NavigationTopology:
             MappingProxyType({key: MappingProxyType(value) for key, value in by_floor.items()}),
             budget,
             self.tolerance_m,
+            map_id,
+            tier_id,
+            x,
+            z,
         )
