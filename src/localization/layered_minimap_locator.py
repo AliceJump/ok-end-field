@@ -45,8 +45,22 @@ def layer_calibration(bounds, width, height):
 
 
 class LayeredMinimapLocator:
-    def __init__(self, base, map_id, layer_root, catalog, *, bundle=None, prepared=None):
+    def __init__(
+        self,
+        base,
+        map_id,
+        layer_root,
+        catalog,
+        *,
+        bundle=None,
+        prepared=None,
+        allow_unprepared=True,
+    ):
         self.base, self.map_id = base, map_id
+        if prepared is None and not allow_unprepared:
+            from src.localization.prepared_localization import PREPARED_MISSING_MESSAGE
+
+            raise ValueError(PREPARED_MISSING_MESSAGE)
         self.color = getattr(base, "color", False) is True
         self.calibration = base.calibration
         self.root = Path(layer_root).resolve()

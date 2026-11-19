@@ -16,6 +16,7 @@ import numpy as np
 
 from scripts.nav.verify_localization import verify
 from src.localization import composite_overview_cache
+from src.localization.calibrated_map_store import CalibratedMapStore
 from src.localization.composite_floor_image import CompositeFloorImage, _blend_regions
 from src.localization.layered_minimap_locator import LayeredMinimapLocator
 from src.localization.localization_bundle import LocalizationTileBundle
@@ -285,7 +286,7 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
                 self.write_json("layers/catalog.json", {"schema_version": version, "layers": [self.floor]})
                 self.write_manifest()
                 with self.assertRaisesRegex(ValueError, "Unsupported layer catalog version"):
-                    verify(self.root)
+                    verify(self.root, require_prepared=False)
 
     def test_bundle_requires_the_normalized_search_width(self):
         manifest = json.loads((self.root / "manifest.json").read_text(encoding="utf-8"))
@@ -385,17 +386,17 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
     def test_v3_verifier_rejects_incorrect_roi_and_unlisted_files(self):
         tile = self.base_index["tiles"][0]
         self.write_indexes()
-        self.assertEqual(verify(self.root)["base_maps"], 1)
+        self.assertEqual(verify(self.root, require_prepared=False)["base_maps"], 1)
         orphan = self.root / "unlisted.webp"
         orphan.write_bytes(b"unlisted")
         with self.assertRaisesRegex(ValueError, "Unlisted localization files"):
-            verify(self.root)
+            verify(self.root, require_prepared=False)
         orphan.unlink()
 
         tile["roi"] = [1, 0, tile["width"], tile["height"]]
         self.write_indexes()
         with self.assertRaisesRegex(ValueError, "ROI disagrees with matching pixels"):
-            verify(self.root)
+            verify(self.root, require_prepared=False)
 
     def test_v3_verifier_decodes_and_checks_native_crop_payload(self):
         tile = self.floor_index["tiles"][0]
@@ -408,7 +409,7 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
                 tile.update({key: crop[key] for key in ("size", "sha256")}, storage="roi", roi=[0, 0, 7, 8])
                 self.write_indexes()
                 with self.assertRaisesRegex(ValueError, "invalid tiled image resource"):
-                    verify(self.root)
+                    verify(self.root, require_prepared=False)
 
     def test_standalone_search_resources_skip_old_images_and_caches(self):
         with (
@@ -615,7 +616,7 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
 
     def test_calibrated_map_store_uses_prepared_atlas_without_compositing(self):
         self.write_prepared()
-        _, locator = self.store.load(self.base["map_id"])
+        _, locator = CalibratedMapStore(self.root / "maps").load(self.base["map_id"])
         self.addCleanup(locator.close)
         self.assertIsNotNone(locator._prepared)
         self.assertEqual(len(locator.entries), 1)
@@ -642,7 +643,7 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
 
     def test_corrupt_prepared_rank_only_degrades_ordering(self):
         self.write_prepared(corrupt_rank=True)
-        _, locator = self.store.load(self.base["map_id"])
+        _, locator = CalibratedMapStore(self.root / "maps").load(self.base["map_id"])
         self.addCleanup(locator.close)
         self.assertEqual([entry["id"] for entry in locator.entries], [self.floor["id"]])
         locator.prepare_layer_index()
@@ -653,7 +654,7 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
 
     def test_prepared_layers_bypass_async_resource_pool(self):
         self.write_prepared()
-        _, locator = self.store.load(self.base["map_id"])
+        _, locator = CalibratedMapStore(self.root / "maps").load(self.base["map_id"])
         self.addCleanup(locator.close)
 
         def forbidden(*_args, **_kwargs):
@@ -693,10 +694,14 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
 
     def test_prepared_bundle_checks_dataset_release_identity(self):
         prepared_root, manifest, _floor = self.write_prepared()
-        dataset_path = self.root / "dataset.json"
+        dataset_path = self.package_root / "dataset.json"
         dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
         dataset["release_id"] = "other-release"
         dataset_path.write_text(json.dumps(dataset), encoding="utf-8")
+        package_path = self.package_root / "prepared-package.json"
+        package = json.loads(package_path.read_text(encoding="utf-8"))
+        package["dataset_sha256"] = hashlib.sha256(dataset_path.read_bytes()).hexdigest()
+        package_path.write_text(json.dumps(package), encoding="utf-8")
         manifest_path = prepared_root / "manifest.json"
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
         (prepared_root / "READY").write_text(
@@ -707,6 +712,15 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "release"):
             PreparedLocalizationBundle.load(self.root / "manifest.json")
+
+    def test_missing_prepared_package_reports_a_complete_redownload(self):
+        (self.package_root / "prepared-package.json").unlink(missing_ok=True)
+        with self.assertRaisesRegex(ValueError, "prepared_localization_missing.*完整解压"):
+            CalibratedMapStore(self.root / "maps").load(self.base["map_id"])
+
+    def test_missing_prepared_directory_does_not_fall_back_to_compositing(self):
+        with self.assertRaisesRegex(ValueError, "prepared_localization_missing.*重新下载"):
+            CalibratedMapStore(self.root / "maps").load(self.base["map_id"])
 
 
 class _ArrayAlpha:

@@ -170,7 +170,11 @@ def main():
         ),
     )
     parser.add_argument("--mode", choices=("plan", "record", "run"), default="plan")
-    parser.add_argument("--grid", type=Path, default=ROOT / "assets/nav-grid-data/map02_4.grid.npz")
+    parser.add_argument(
+        "--grid",
+        type=Path,
+        default=ROOT / "assets/nav-grid-data/navigation/map02_4.grid.npz",
+    )
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--spacing", type=float, default=5.0)
     parser.add_argument("--seconds", type=float, default=14400)

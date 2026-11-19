@@ -433,6 +433,10 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
 
         backup_retired_position_settings()
         migrate_visual_map_root()
+    if option.name == NAV_CONFIG_NAME:
+        from src.localization.position_config_migration import migrate_grid_navigation_root
+
+        migrate_grid_navigation_root()
     state = _read_migration_state()
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)

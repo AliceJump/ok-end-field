@@ -25,7 +25,7 @@
     from src.nav import load_grid
     from src.nav.grid_planner import GridPlanner
 
-    grid = load_grid("assets/nav-grid-data/base01_4.grid.npz")
+    grid = load_grid("assets/nav-grid-data/navigation/base01_4.grid.npz")
     planner = GridPlanner(grid, margin=2)
     result = planner.plan((-40.0, -30.0), (60.0, 68.0))
 

@@ -788,7 +788,7 @@ class TestVisualGridValidation(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            grid = root / "assets/nav-grid-data/map02_4.grid.npz"
+            grid = root / "assets/nav-grid-data/navigation/map02_4.grid.npz"
             grid.parent.mkdir(parents=True)
             grid.write_bytes(b"placeholder")
             output = root / "logs" / "validation"

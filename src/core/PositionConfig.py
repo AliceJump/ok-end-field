@@ -9,7 +9,7 @@ from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 POSITION_CONFIG_NAME = "Position Config"
 
 CONFIG_VISUAL_MAP_ROOT = "视觉地图资源目录"
-DEFAULT_VISUAL_MAP_ROOT = "assets/nav-grid-data/localization/maps"
+DEFAULT_VISUAL_MAP_ROOT = "assets/nav-grid-data/navigation/localization/maps"
 
 CONFIG_WS_WAIT = "WS等待稳定秒数"
 CONFIG_WS_MIN_HITS = "WS稳定最小位置数"
@@ -59,7 +59,8 @@ DEFAULT_POSITION_CONFIG: dict = {
 }
 
 POSITION_CONFIG_DESCRIPTION: dict[str, str] = {
-    CONFIG_VISUAL_MAP_ROOT: "标定地图目录，包含 map_id/4/map_id_4.png 和对应的 _mapping.json；分层资源使用同级 layers/catalog.json。",
+    CONFIG_VISUAL_MAP_ROOT: "导航数据中的视觉地图目录，包含 map_id/4 索引、标定和分层资源；"
+    "完整包还必须包含同级 prepared 预编译资源。",
     CONFIG_MIN_SCORE: "箭头角度检测最低置信度，低于该值朝向判为不可用",
     CONFIG_COMMIT_MIN_SHIFT: "里程计位移提交阈值（像素）。误差是按采样次数累积的，"
     "而每样本位移 = 速度 * 采样间隔，所以慢走 / 原地挪时每米要积更多样本、"

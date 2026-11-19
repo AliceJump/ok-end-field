@@ -14,8 +14,12 @@ class LocalizationBundleFixture:
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name)
-        self.store = CalibratedMapStore(self.root / "maps")
+        self.package_root = Path(temporary.name) / "navigation"
+        self.root = self.package_root / "localization"
+        self.root.mkdir(parents=True)
+        # Most low-level fixtures exercise the historical on-demand decoder. The
+        # production map store is covered separately with its strict default.
+        self.store = CalibratedMapStore(self.root / "maps", require_prepared=False)
         self.files = {}
         self.pixels = np.random.default_rng(240).integers(20, 235, (129, 131, 4), dtype=np.uint8)
         self.pixels[:, :, 3] = 255
@@ -181,16 +185,18 @@ class LocalizationBundleFixture:
         return {**record, "roi": [0, 0, record["width"], record["height"]], "fill": [0, 0, 0]}
 
     def write_prepared(self, *, corrupt_rank=False):
-        """Write a minimal prepared-v1 package around the fixture's one floor."""
+        """Write a minimal prepared package around the fixture's one floor."""
         root = self.root
-        prepared = root / "prepared-v1"
+        prepared = root / "prepared"
         prepared.mkdir()
         dataset = {
             "schema_version": 1,
             "kind": "okef-nav-dataset",
             "release_id": "fixture-release",
         }
-        (root / "dataset.json").write_text(json.dumps(dataset), encoding="utf-8")
+        dataset_path = self.package_root / "dataset.json"
+        dataset_data = json.dumps(dataset).encode()
+        dataset_path.write_bytes(dataset_data)
 
         def write(name, data):
             path = prepared / name
@@ -230,10 +236,11 @@ class LocalizationBundleFixture:
             max(1, round((self.floor["bounds"]["north"] - self.floor["bounds"]["south"]) * 0.5)),
             max(1, round((self.floor["bounds"]["east"] - self.floor["bounds"]["west"]) * 0.5)),
         )
-        rank = np.arange(rank_shape[0] * rank_shape[1] * 3, dtype=np.uint8).reshape(*rank_shape, 3)
-        rank_record = write("rank-images/main/floor.webp", encode_webp(rank))
+        rank_record = self.floor_index["floor_rank"]
+        rank_path = rank_record["path"]
+        self.assertEqual([rank_record["height"], rank_record["width"]], list(rank_shape))
         if corrupt_rank:
-            (prepared / rank_record["path"]).write_bytes(b"corrupt rank")
+            (root / rank_path).write_bytes(b"corrupt rank")
         atlas_record = write("atlases/main-1280.webp", encode_webp(atlas))
         atlas_mask_record = write("atlases/main-1280-mask.bin", atlas_mask_bytes)
         region = {"x": 128, "y": 128, "width": region_width, "height": region_height}
@@ -244,7 +251,9 @@ class LocalizationBundleFixture:
             "map_category": self.floor["map_category"],
             "bounds": self.floor["bounds"],
             "atlas_region": region,
-            "rank_path": rank_record["path"],
+            "rank_path": f"localization/{rank_path}",
+            "rank_size": rank_record["size"],
+            "rank_sha256": rank_record["sha256"],
             "rank_shape": list(rank_shape),
             "rank_roi": [0, 0, rank_shape[1], rank_shape[0]],
             "mask_path": floor_mask_record["path"],
@@ -267,7 +276,6 @@ class LocalizationBundleFixture:
                 atlas_record,
                 atlas_mask_record,
                 floor_mask_record,
-                rank_record,
                 floor_index_record,
             ),
             key=lambda record: record["path"],
@@ -319,4 +327,14 @@ class LocalizationBundleFixture:
             + "\n",
             encoding="ascii",
         )
+        package = {
+            "kind": "okef-prepared-nav-package",
+            "schema_version": 1,
+            "complete": True,
+            "release_id": dataset["release_id"],
+            "dataset_sha256": hashlib.sha256(dataset_data).hexdigest(),
+            "localization_manifest_sha256": hashlib.sha256((root / "manifest.json").read_bytes()).hexdigest(),
+            "prepared_manifest_sha256": hashlib.sha256(manifest_data).hexdigest(),
+        }
+        (self.package_root / "prepared-package.json").write_text(json.dumps(package), encoding="utf-8")
         return prepared, manifest, floor

@@ -32,7 +32,7 @@ def _read_json(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def verify(root: Path):
+def verify(root: Path, *, require_prepared: bool = True):
     root = root.resolve()
     manifest = _read_json(root / "manifest.json")
     _require(manifest["kind"] == TILED_KIND, "Unexpected localization bundle kind")
@@ -117,9 +117,18 @@ def verify(root: Path):
     _require(not tiers.intersection(missing), "Missing layer also declared present")
     difference = referenced.symmetric_difference(files)
     _require(not difference, f"Manifest and catalog references differ: {sorted(difference)}")
-    unlisted = {path for path in root.rglob("*") if path.is_file()} - files - {root / "manifest.json"}
+    unlisted = {
+        path
+        for path in root.rglob("*")
+        if path.is_file()
+        and not path.is_relative_to(root / "prepared")
+    } - files - {root / "manifest.json"}
     _require(not unlisted, f"Unlisted localization files: {sorted(unlisted)}")
     prepared = PreparedLocalizationBundle.load(root / "manifest.json")
+    if prepared is None and require_prepared:
+        from src.localization.prepared_localization import PREPARED_MISSING_MESSAGE
+
+        raise ValueError(PREPARED_MISSING_MESSAGE)
     return {
         "base_maps": len(map_keys),
         "layers": len(tiers),
@@ -132,7 +141,7 @@ def verify(root: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=Path("assets/nav-grid-data/localization"))
+    parser.add_argument("--root", type=Path, default=Path("assets/nav-grid-data/navigation/localization"))
     args = parser.parse_args()
     try:
         print(json.dumps(verify(args.root), ensure_ascii=False))

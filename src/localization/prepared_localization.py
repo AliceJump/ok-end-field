@@ -22,9 +22,16 @@ from src.localization.minimap_map_locator import (
 )
 from src.localization.tiled_map_image import TiledMapImage
 
-PREPARED_DIRNAME = "prepared-v1"
+PREPARED_DIRNAME = "prepared"
 PREPARED_KIND = "okef-prepared-localization"
 PREPARED_VERSION = 1
+PACKAGE_MARKER = "prepared-package.json"
+PACKAGE_KIND = "okef-prepared-nav-package"
+PACKAGE_VERSION = 1
+PREPARED_MISSING_MESSAGE = (
+    "prepared_localization_missing: 导航定位资源不完整；"
+    "请重新下载并完整解压 nav-grid-data 的 navigation/ 目录"
+)
 INPUT_WIDTH = 1280
 COMPOSITE_DIM = 0.3
 COMPOSITE_PADDING = 320
@@ -76,12 +83,10 @@ def resolve_prepared_path(root: Path, name) -> Path:
 
 
 def find_prepared_root(localization_manifest: Path) -> Path | None:
-    """Find prepared-v1 next to localization/ or beside a flat legacy bundle."""
+    """Find the prepared runtime resources inside the localization bundle."""
     manifest = Path(localization_manifest).resolve()
-    candidates = [manifest.parent / PREPARED_DIRNAME]
-    if manifest.parent.name.casefold() == "localization":
-        candidates.insert(0, manifest.parent.parent / PREPARED_DIRNAME)
-    return next((candidate for candidate in candidates if candidate.is_dir()), None)
+    candidate = manifest.parent / PREPARED_DIRNAME
+    return candidate if candidate.is_dir() else None
 
 
 def floor_rank_shape(entry: dict) -> tuple[int, int]:
@@ -230,7 +235,7 @@ class PreparedFloor:
 
 
 class PreparedLocalizationBundle:
-    """Validated manifest, atlases, masks, and rank images for prepared-v1."""
+    """Validated prepared atlases, masks, and source-bound floor ranking."""
 
     def __init__(self, root, localization_manifest):
         self.root = Path(root).resolve()
@@ -306,14 +311,18 @@ class PreparedLocalizationBundle:
             image = np.zeros((height, width, 3), np.uint8)
             image.setflags(write=False)
             return image
-        file_record = self._records.get(path_name)
+        if not path_name.startswith("localization/"):
+            self._rank_failures.add(tier_id)
+            return None
+        source_name = path_name.removeprefix("localization/")
+        file_record = self._localization_files.get(source_name)
         if file_record is None:
             self._rank_failures.add(tier_id)
             return None
         try:
-            path = resolve_prepared_path(self.root, path_name)
+            path = resolve_prepared_path(self.root.parent.parent, path_name)
             data = path.read_bytes()
-            if len(data) != file_record["size"] or _sha256(data) != file_record["sha256"]:
+            if len(data) != file_record[0] or _sha256(data) != file_record[1]:
                 raise ValueError("rank checksum mismatch")
             crop = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
             if crop is None or crop.shape != (bottom - top, right - left, 3):
@@ -369,7 +378,18 @@ class PreparedLocalizationBundle:
             source.get("localization_manifest_sha256") == _digest(self.localization_manifest_path),
             "Prepared localization source manifest checksum mismatch",
         )
-        dataset_path = self.root.parent / "dataset.json"
+        package_root = self.root.parent.parent
+        dataset_path = package_root / "dataset.json"
+        package_path = package_root / PACKAGE_MARKER
+        _require(package_path.is_file(), PREPARED_MISSING_MESSAGE)
+        package = _read_json(package_path)
+        _require(
+            isinstance(package, dict)
+            and package.get("kind") == PACKAGE_KIND
+            and package.get("schema_version") == PACKAGE_VERSION
+            and package.get("complete") is True,
+            "Prepared navigation package identity is invalid",
+        )
         dataset = _read_json(dataset_path)
         release_id = dataset.get("release_id") if isinstance(dataset, dict) else None
         _require(
@@ -377,6 +397,13 @@ class PreparedLocalizationBundle:
             and release_id
             and source.get("release_id") == release_id,
             "Prepared localization release does not match dataset.json",
+        )
+        _require(
+            package.get("release_id") == release_id
+            and package.get("dataset_sha256") == _digest(dataset_path)
+            and package.get("localization_manifest_sha256") == _digest(self.localization_manifest_path)
+            and package.get("prepared_manifest_sha256") == _digest(self.root / "manifest.json"),
+            "Prepared navigation package checksums do not match payloads",
         )
         coverage = manifest.get("coverage")
         _require(
@@ -395,16 +422,8 @@ class PreparedLocalizationBundle:
             if path.is_file()
         }
         expected = set(self._records) | {"manifest.json", "validation.json", "READY"}
-        rank_paths = {
-            floor.get("rank_path")
-            for floor in self.manifest.get("floors", [])
-            if isinstance(floor, dict) and isinstance(floor.get("rank_path"), str)
-        }
         _require(not (actual - expected), f"Prepared localization has unlisted files: {sorted(actual - expected)[:8]}")
-        _require(
-            not ((expected - actual) - rank_paths),
-            f"Prepared localization is missing files: {sorted((expected - actual) - rank_paths)[:8]}",
-        )
+        _require(not (expected - actual), f"Prepared localization is missing files: {sorted(expected - actual)[:8]}")
         ready = (self.root / "READY").read_text(encoding="ascii").strip().split()
         _require(
             ready == [PREPARED_KIND, str(PREPARED_VERSION), _digest(self.root / "manifest.json")],
@@ -412,7 +431,6 @@ class PreparedLocalizationBundle:
         )
         validation = _read_json(self.root / "validation.json")
         _require(isinstance(validation, dict), "Prepared localization validation report is invalid")
-        self._rank_paths = rank_paths
 
     def _validate_payloads(self):
         available = {
@@ -423,14 +441,10 @@ class PreparedLocalizationBundle:
         for name, record in self._records.items():
             path = resolve_prepared_path(self.root, name)
             if name not in available:
-                if name in self._rank_paths:
-                    continue
                 raise ValueError(f"Prepared localization resource is missing: {name}")
             with path.open("rb") as stream:
                 data = stream.read()
             if len(data) != record["size"] or _sha256(data) != record["sha256"]:
-                if name in self._rank_paths:
-                    continue
                 raise ValueError(f"Prepared localization resource checksum mismatch: {name}")
 
     def _validate_floor_and_atlas_metadata(self):
@@ -485,6 +499,7 @@ class PreparedLocalizationBundle:
 
         raw_manifest = _read_json(self.localization_manifest_path)
         raw_bundle = LocalizationTileBundle(self.localization_manifest_path.parent, raw_manifest)
+        self._localization_files = raw_bundle.files
         catalog_path = resolve_bundle_path(
             self.localization_manifest_path.parent,
             raw_manifest.get("layer_catalog"),
@@ -562,6 +577,13 @@ class PreparedLocalizationBundle:
             )
             rank_shape = _finite_pair_shape(record.get("rank_shape"))
             rank_roi = record.get("rank_roi")
+            rank_path = record.get("rank_path")
+            source_rank_name = (
+                rank_path.removeprefix("localization/")
+                if isinstance(rank_path, str) and rank_path.startswith("localization/")
+                else None
+            )
+            rank_file_record = self._localization_files.get(source_rank_name) if source_rank_name else None
             _require(
                 rank_shape == floor_rank_shape(record)
                 and isinstance(rank_roi, list)
@@ -575,9 +597,13 @@ class PreparedLocalizationBundle:
                     )
                 )
                 and (
-                    record.get("rank_path") is None
-                    or isinstance(record.get("rank_path"), str)
-                    and record["rank_path"] in self._records
+                    rank_path is None
+                    and record.get("rank_size") is None
+                    and record.get("rank_sha256") is None
+                    or rank_file_record is not None
+                    and _positive_int(record.get("rank_size"))
+                    and record["rank_size"] == rank_file_record[0]
+                    and record.get("rank_sha256") == rank_file_record[1]
                 ),
                 f"Invalid prepared floor rank metadata: {tier_id}",
             )

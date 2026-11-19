@@ -23,8 +23,9 @@ class _MapFiles:
 
 
 class CalibratedMapStore:
-    def __init__(self, root):
+    def __init__(self, root, *, require_prepared=True):
         self.root = Path(root).expanduser().resolve()
+        self.require_prepared = bool(require_prepared)
         self._prepared_lock = threading.Lock()
         self._prepared_key = None
         self._prepared_bundle = None
@@ -45,23 +46,37 @@ class CalibratedMapStore:
 
     def _prepared_for(self, manifest_path):
         from src.localization.prepared_localization import (
+            PREPARED_MISSING_MESSAGE,
             PreparedLocalizationBundle,
             find_prepared_root,
         )
 
         root = find_prepared_root(manifest_path)
         if root is None:
+            if self.require_prepared:
+                raise ValueError(PREPARED_MISSING_MESSAGE)
             return None
-        marker = (
-            (root / "READY").stat().st_mtime_ns,
-            (root / "READY").stat().st_size,
-            (root.parent / "dataset.json").stat().st_mtime_ns,
-            manifest_path.stat().st_mtime_ns,
-            manifest_path.stat().st_size,
-        )
+        try:
+            marker = (
+                (root / "READY").stat().st_mtime_ns,
+                (root / "READY").stat().st_size,
+                (root.parent.parent / "dataset.json").stat().st_mtime_ns,
+                (root.parent.parent / "prepared-package.json").stat().st_mtime_ns,
+                manifest_path.stat().st_mtime_ns,
+                manifest_path.stat().st_size,
+            )
+        except OSError as exc:
+            if self.require_prepared:
+                raise ValueError(PREPARED_MISSING_MESSAGE) from exc
+            return None
         with self._prepared_lock:
             if marker != self._prepared_key:
-                self._prepared_bundle = PreparedLocalizationBundle(root, manifest_path)
+                try:
+                    self._prepared_bundle = PreparedLocalizationBundle(root, manifest_path)
+                except (OSError, ValueError) as exc:
+                    if self.require_prepared:
+                        raise ValueError(f"{PREPARED_MISSING_MESSAGE}（{exc}）") from exc
+                    return None
                 self._prepared_key = marker
             return self._prepared_bundle
 
@@ -136,7 +151,15 @@ class CalibratedMapStore:
             raise ValueError("invalid_visual_layer_catalog")
         base = MinimapMapLocator(bundle.open_base(paths.image, map_id, paths.size, paths.mapping), calibration)
         try:
-            locator = LayeredMinimapLocator(base, map_id, layer_root, catalog, bundle=bundle, prepared=prepared)
+            locator = LayeredMinimapLocator(
+                base,
+                map_id,
+                layer_root,
+                catalog,
+                bundle=bundle,
+                prepared=prepared,
+                allow_unprepared=not self.require_prepared,
+            )
         except BaseException:
             base.close()
             raise

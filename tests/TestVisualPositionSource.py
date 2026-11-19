@@ -16,6 +16,7 @@ import cv2
 import numpy as np
 
 from src.core.config_migration import apply_value_migrations
+from src.core.GridNavConfig import CONFIG_GRID_DIR, DEFAULT_GRID_NAV_CONFIG
 from src.core.NavConfig import NAV_MAP_ID_KEY
 from src.core.PositionConfig import (
     CONFIG_USE_EXPERIMENTAL,
@@ -52,6 +53,7 @@ from src.localization.minimap_map_locator import (
 from src.localization.native_tile_image import UnpreparedTileOverview
 from src.localization.position_config_migration import (
     backup_retired_position_settings,
+    migrate_grid_navigation_root,
     migrate_item_position_overrides,
     migrate_visual_map_root,
 )
@@ -1168,12 +1170,12 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         self.assertIn("maps=map02", service.log_info.call_args.args[0])
 
     def test_only_one_map_can_be_selected_automatically(self):
-        self.assertEqual(CalibratedMapStore(self.root / "maps").load()[0], "map02")
+        self.assertEqual(CalibratedMapStore(self.root / "maps", require_prepared=False).load()[0], "map02")
         self.write_map("map01")
-        map_id, locator = CalibratedMapStore(self.root / "maps").load()
+        map_id, locator = CalibratedMapStore(self.root / "maps", require_prepared=False).load()
         self.assertEqual(map_id, "")
         self.assertEqual(locator.map_ids, ("map01", "map02"))
-        store = CalibratedMapStore(self.root / "maps")
+        store = CalibratedMapStore(self.root / "maps", require_prepared=False)
         with self.assertRaisesRegex(ValueError, "invalid_visual_map_id"):
             store.load("../map02")
 
@@ -1476,7 +1478,9 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         values["matrix"] = [[0.25, 0.01, 11], [0.02, -0.25, 12]]
         self.write_json(self.base["mapping"], values)
         self.write_manifest()
-        mid, locator = CalibratedMapStore(self.root / "maps").load("map02", background=True)
+        mid, locator = CalibratedMapStore(self.root / "maps", require_prepared=False).load(
+            "map02", background=True
+        )
         locator.prewarm()
         self.assertFalse(wait(tuple(locator._pending_maps.values()), timeout=3).not_done)
         self.assertTrue(locator._warm_base_resources())
@@ -1560,7 +1564,7 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
             self.assertFalse(migrate_visual_map_root())
         expected = {**original, CONFIG_VISUAL_MAP_ROOT: DEFAULT_VISUAL_MAP_ROOT}
         self.assertEqual(json.loads(source.read_text(encoding="utf-8")), expected)
-        backup = self.root / "position_source_migration_backup/v2/Position Config.json"
+        backup = self.root / "position_source_migration_backup/v3/Position Config.json"
         self.assertEqual(json.loads(backup.read_text(encoding="utf-8")), original)
 
     def test_resource_read_error_does_not_replace_the_persisted_directory(self):
@@ -1576,7 +1580,7 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         ):
             self.assertFalse(migrate_visual_map_root())
         self.assertEqual(json.loads(source.read_text(encoding="utf-8")), original)
-        self.assertFalse((self.root / "position_source_migration_backup/v2").exists())
+        self.assertFalse((self.root / "position_source_migration_backup/v3").exists())
 
     def test_existing_v3_default_resources_remain_selected(self):
         source = self.root / "Position Config.json"
@@ -1589,12 +1593,55 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
             ),
             patch(
                 "src.localization.calibrated_map_store.CalibratedMapStore",
-                return_value=CalibratedMapStore(self.root / "maps"),
+                return_value=CalibratedMapStore(self.root / "maps", require_prepared=False),
             ),
         ):
             self.assertFalse(migrate_visual_map_root())
         self.assertEqual(json.loads(source.read_text(encoding="utf-8")), original)
-        self.assertFalse((self.root / "position_source_migration_backup/v2").exists())
+        self.assertFalse((self.root / "position_source_migration_backup/v3").exists())
+
+    def test_previous_packaged_visual_root_migrates_to_navigation(self):
+        source = self.root / "Position Config.json"
+        original = {
+            CONFIG_VISUAL_MAP_ROOT: "assets/nav-grid-data/localization/maps",
+            CONFIG_USE_EXPERIMENTAL: True,
+        }
+        source.write_text(json.dumps(original), encoding="utf-8")
+        with patch(
+            "src.localization.position_config_migration.config_path",
+            side_effect=lambda *parts: str(self.root.joinpath(*parts)),
+        ):
+            self.assertTrue(migrate_visual_map_root())
+            self.assertFalse(migrate_visual_map_root())
+        expected = {**original, CONFIG_VISUAL_MAP_ROOT: DEFAULT_VISUAL_MAP_ROOT}
+        self.assertEqual(json.loads(source.read_text(encoding="utf-8")), expected)
+        backup = self.root / "position_source_migration_backup/v3/Position Config.json"
+        self.assertEqual(json.loads(backup.read_text(encoding="utf-8")), original)
+
+    def test_grid_root_migrates_without_touching_custom_directories(self):
+        source = self.root / "Nav Config.json"
+        original = {CONFIG_GRID_DIR: "assets/nav-grid-data", "other": 9}
+        source.write_text(json.dumps(original), encoding="utf-8")
+        with patch(
+            "src.localization.position_config_migration.config_path",
+            side_effect=lambda *parts: str(self.root.joinpath(*parts)),
+        ):
+            self.assertTrue(migrate_grid_navigation_root())
+            self.assertFalse(migrate_grid_navigation_root())
+        expected = {
+            **original,
+            CONFIG_GRID_DIR: DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR],
+        }
+        self.assertEqual(json.loads(source.read_text(encoding="utf-8")), expected)
+        self.assertEqual(
+            json.loads((self.root / "nav_data_layout_migration/v1/Nav Config.json").read_text(encoding="utf-8")),
+            original,
+        )
+
+        custom = {CONFIG_GRID_DIR: "D:/custom-navigation"}
+        source.write_text(json.dumps(custom), encoding="utf-8")
+        self.assertFalse(migrate_grid_navigation_root())
+        self.assertEqual(json.loads(source.read_text(encoding="utf-8")), custom)
 
     def test_empty_existing_legacy_map_directory_migrates_to_packaged_maps(self):
         legacy = self.root / "empty"
@@ -1606,7 +1653,10 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
                 "src.localization.position_config_migration.config_path",
                 side_effect=lambda *p: str(self.root.joinpath(*p)),
             ),
-            patch("src.localization.calibrated_map_store.CalibratedMapStore", return_value=CalibratedMapStore(legacy)),
+            patch(
+                "src.localization.calibrated_map_store.CalibratedMapStore",
+                return_value=CalibratedMapStore(legacy, require_prepared=False),
+            ),
         ):
             self.assertTrue(migrate_visual_map_root())
         self.assertEqual(
@@ -1666,7 +1716,7 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
     def test_bad_mapping_and_catalog_fail_closed(self):
         mapping = self.root / self.base["mapping"]
         mapping.write_text("{}", encoding="utf-8")
-        store = CalibratedMapStore(self.root / "maps")
+        store = CalibratedMapStore(self.root / "maps", require_prepared=False)
         with self.assertRaises(ValueError):
             store.load("map02")
 

@@ -1,32 +1,39 @@
 # nav-grid-data 数据格式
 
-`assets/nav-grid-data` 是固定到具体提交的数据子模块。运行端使用当前目录，不自动下载或切换最新数据。网格、定位底图、楼层声明和跨层连接分别校验；资源存在不表示路线一定可达。
+`assets/nav-grid-data` 是固定到具体提交的数据子模块。导航运行根固定为其中的
+`navigation/`，运行端不自动下载或切换最新数据。网格、定位载荷、楼层声明、跨层连接
+和预编译竞争资源分别校验；资源存在不表示路线一定可达。
 
 ## 目录与消费入口
 
 ```text
 nav-grid-data/
-  dataset.json
-  levels.json
-  links.json
-  <map>_<zoom>.grid.npz
-  <map>__<tier>_<zoom>.grid.npz
-  localization/
-    manifest.json
-    maps/<map>/4/tiles.json
-    maps/<map>/4/<map>_4_mapping.json
-    layers/catalog.json
-    layers/<map>/<level>/<tier>/tiles.json
-    objects/...webp
-  prepared-v1/
-    manifest.json
-    READY
+  README.md
+  .gitattributes
+  navigation/
+    dataset.json
+    levels.json
+    links.json
     validation.json
-    floor-index.json
-    atlases/<map>-1280.webp
-    atlases/<map>-1280-mask.bin
-    masks/<map>/<tier>.bin
-    rank-images/<map>/<tier>.webp
+    prepared-package.json
+    <map>_<zoom>.grid.npz
+    <map>__<tier>_<zoom>.grid.npz
+    schemas/dataset.schema.json
+    localization/
+      manifest.json
+      maps/<map>/4/tiles.json
+      maps/<map>/4/<map>_4_mapping.json
+      layers/catalog.json
+      layers/<map>/<level>/<tier>/tiles.json
+      objects/...webp
+      prepared/
+        manifest.json
+        READY
+        validation.json
+        floor-index.json
+        atlases/<map>-1280.webp
+        atlases/<map>-1280-mask.bin
+        masks/<map>/<tier>.bin
 ```
 
 对象载荷的实际相对路径由清单和图像索引定义，不由运行端按示例路径猜测。
@@ -40,16 +47,19 @@ nav-grid-data/
 | 原生瓦片与缩放区域 | `src/localization/native_tile_image.py` |
 | 预编译竞争图集、楼层索引、排序图与覆盖掩码 | `src/localization/prepared_localization.py` |
 
-## prepared-v1 竞争资源
+## prepared 竞争资源
 
-`prepared-v1/` 与 `localization/` 同级，随 `nav-grid-data` 直接发布，不是 ZIP 或可重建缓存。
-客户端仅在目录存在时启用；启用后楼层匹配读取地图级合成图集，不在运行时生成
+`navigation/localization/prepared/` 随完整数据包直接发布，不是 ZIP 或可重建缓存。
+客户端把 `navigation/` 作为唯一运行根；缺少 prepared、`prepared-package.json`、
+`READY` 或任一绑定资源时报告下载不完整并拒绝定位。不会回退到运行时生成
 `CompositeFloorImage` 概览，也不重新压缩资源。
 
 `READY` 的第三段必须是 `manifest.json` 的 SHA-256。manifest 使用
 `kind=okef-prepared-localization`、`schema_version=1`、`complete=true`，并通过
 `source.release_id`、`source.localization_manifest_sha256` 绑定同一份根
-`dataset.json` 和定位清单。`source.input_width` 必须为 1280，匹配尺度固定为
+`navigation/dataset.json` 和定位清单。`navigation/prepared-package.json` 再绑定
+dataset、localization manifest、prepared manifest 的 SHA-256 和同一 release ID。
+`source.input_width` 必须为 1280，匹配尺度固定为
 `coarse_factor=0.5`，合成参数固定为 `dim=0.3`、`padding=320`。
 
 竞争图集按地图分组，使用 BGR Q90 WebP。`atlases[].regions` 给出每个 `tier_id`
@@ -58,6 +68,8 @@ nav-grid-data/
 
 `floor-index.json` 与 manifest 的 `floors` 必须逐项一致。每层保留稳定的
 `tier_id`、`map_id`、`level_id`、世界 `bounds`、图集区域、逻辑排序尺寸和排序 ROI。
+`rank_path` 直接指向 `localization/` 内已有排序图，并用 `rank_size`、
+`rank_sha256` 绑定该原文件；prepared 内不复制第二份 rank 图片。
 排序图只能决定搜索顺序；排序文件损坏时按空提案处理，绝不能删掉该层或跳过完整竞争。
 
 逐层覆盖掩码和地图图集掩码均为行优先、MSB-first packbits，末尾补零，逻辑一维长度
@@ -104,7 +116,9 @@ Y 缺失表示未知；二维网格的 `origin[1]=0` 不能当作实测高度。
 
 ## 数据集清单与发布
 
-根 `dataset.json` 使用 `kind=okef-nav-dataset`、`schema_version=1`，索引坐标系、不可变发布身份、导航文件和视觉/网格关联。它通过摘要绑定 `localization/manifest.json`，不重复定义 cells、标定矩阵或楼层 bounds。
+`navigation/dataset.json` 使用 `kind=okef-nav-dataset`、`schema_version=1`，索引坐标系、
+不可变发布身份、导航文件和视觉/网格关联。它通过摘要绑定
+`localization/manifest.json`，不重复定义 cells、标定矩阵或楼层 bounds。
 
 每条资源关联以 `(coordinate_space_id, map_name, tier, zoom)` 为联合身份。导航文件和定位子清单共同描述完整受管快照；删除以新快照为准，不能覆盖旧目录后把残留网格当作当前资源。
 
@@ -129,8 +143,8 @@ M_new[:,2] = M_old[:,2] - M_old[:,0:2] @ [L,T]
 ```powershell
 git submodule update --init -- assets/nav-grid-data
 git -C assets/nav-grid-data lfs pull
-uv run --locked python -X utf8 scripts/nav/verify_grid.py assets/nav-grid-data
-uv run --locked python -X utf8 scripts/nav/verify_localization.py --root assets/nav-grid-data/localization
+uv run --locked python -X utf8 scripts/nav/verify_grid.py assets/nav-grid-data/navigation
+uv run --locked python -X utf8 scripts/nav/verify_localization.py --root assets/nav-grid-data/navigation/localization
 ```
 
 必须取得 LFS 实体，不能将指针文本当作图片发布。更改数据后由主项目更新子模块指针并发布。定位包是正式资源，不属于 `cache/localization` 的清理对象；可重建缓存的上限和删除规则见 [小地图定位](小地图定位.md#磁盘缓存)。
