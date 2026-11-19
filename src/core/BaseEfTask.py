@@ -4,10 +4,6 @@ import time
 from datetime import datetime
 from typing import Any
 
-# 覆写框架截图时间戳格式：日期_时分秒（无毫秒）
-# 注意：ok-script 新版中 ok.gui.debug.Screenshot 只是 ok.core.screenshot 的
-# 兼容别名模块，修改别名不会影响运行时内部引用，必须直接 patch 核心模块。
-import ok.core.screenshot as _ok_screenshot
 import win32gui
 from ok import BaseTask, TaskDisabledException, TriggerTask, WaitFailedException
 from pynput.keyboard import Controller
@@ -36,9 +32,6 @@ from src.core.global_config_store import (
 )
 from src.data.lang import get_lang_accessor
 from src.interaction.ScreenPosition import ScreenPosition
-
-_ok_screenshot.get_current_time_formatted = lambda now=None: (now or datetime.now()).strftime("%Y%m%d_%H%M%S")
-
 
 def back_window(prev):
     """尝试将前台窗口恢复为 prev，返回是否实际完成恢复。"""
