@@ -14,7 +14,7 @@
 
 产物目录（默认 ``logs/minimap_position_recorder/<时间戳>/``）：
 
-- ``samples.jsonl``：逐拍记录；
+- ``samples.jsonl``：逐拍刷新到磁盘的记录，采集中也可读取；
 - ``calibrations.jsonl``：每次真实校准（含首次锚定）的残差；
 - ``patches/``：小地图圆环切片；
 - ``stitch_*_fused*.png``：按融合绝对坐标放置的拼接图；
@@ -183,7 +183,11 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
             notify=True,
         )
 
+        sample_stream = None
+        start_ready = False
+        self.info_set(CONFIG_SAVE_DIR, str(run_dir))
         try:
+            sample_stream = (run_dir / "samples.jsonl").open("w", encoding="utf-8")
             while True:
                 next_at += interval
                 now = self.active_time()
@@ -400,6 +404,11 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                     "region": patch_meta.get("region"),
                 }
                 records.append(record)
+                sample_stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+                sample_stream.flush()
+                if not start_ready and record.get("position_trusted"):
+                    start_ready = True
+                    self.log_info("起点已就绪，可以开始走路线", notify=True)
 
                 if just_synced:
                     calibrations.append(
@@ -443,6 +452,8 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                         f"{len(records)} 拍 / 校准 {len(calibrations)} 次",
                     )
         finally:
+            if sample_stream is not None:
+                sample_stream.close()
             try:
                 elapsed = self.active_time() - start
                 summary = self._finalize(
