@@ -174,6 +174,7 @@ config = {
         ["src.tasks.localization.MinimapRegionCheck", "MinimapRegionCheck"],
         ["src.tasks.localization.MinimapScaleCapture", "MinimapScaleCapture"],
         ["src.tasks.localization.MinimapPositionRecorder", "MinimapPositionRecorder"],
+        ["src.tasks.localization.ManualWalkRecorder", "ManualWalkRecorder"],
         ["src.tasks.localization.MinimapTurnToHeading", "MinimapTurnToHeading"],
         ["src.tasks.navigation.MinimapNavigateToPoint", "MinimapNavigateToPoint"],
         ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
