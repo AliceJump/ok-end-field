@@ -180,7 +180,6 @@ config = {
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
         ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],
         ["src.tasks.onetime.FarmRelatedTask", "FarmRelatedTask"],
-        ["src.tasks.onetime.BaiQuArenaTask", "BaiQuArenaTask"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],
