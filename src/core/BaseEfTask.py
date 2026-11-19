@@ -4,6 +4,8 @@ import time
 from datetime import datetime
 from typing import Any
 
+# 保持项目原有的秒级截图时间戳格式；兼容上游传入的 now 参数。
+import ok.core.screenshot as _ok_screenshot
 import win32gui
 from ok import BaseTask, TaskDisabledException, TriggerTask, WaitFailedException
 from pynput.keyboard import Controller
@@ -32,6 +34,9 @@ from src.core.global_config_store import (
 )
 from src.data.lang import get_lang_accessor
 from src.interaction.ScreenPosition import ScreenPosition
+
+_ok_screenshot.get_current_time_formatted = lambda now=None: datetime.now().strftime("%Y%m%d_%H%M%S")
+
 
 def back_window(prev):
     """尝试将前台窗口恢复为 prev，返回是否实际完成恢复。"""
