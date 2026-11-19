@@ -7,6 +7,7 @@ from typing import Any
 # 覆写框架截图时间戳格式：日期_时分秒（无毫秒）
 # 注意：ok-script 新版中 ok.gui.debug.Screenshot 只是 ok.core.screenshot 的
 # 兼容别名模块，修改别名不会影响运行时内部引用，必须直接 patch 核心模块。
+# 接受但忽略上游传入的 now 参数，始终使用当前时间。
 import ok.core.screenshot as _ok_screenshot
 import win32gui
 from ok import BaseTask, TaskDisabledException, TriggerTask, WaitFailedException
@@ -37,7 +38,7 @@ from src.core.global_config_store import (
 from src.data.lang import get_lang_accessor
 from src.interaction.ScreenPosition import ScreenPosition
 
-_ok_screenshot.get_current_time_formatted = lambda now=None: (now or datetime.now()).strftime("%Y%m%d_%H%M%S")
+_ok_screenshot.get_current_time_formatted = lambda now=None: datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def back_window(prev):
