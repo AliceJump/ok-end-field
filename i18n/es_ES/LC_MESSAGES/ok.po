@@ -4098,3 +4098,11 @@ msgstr ""
 #: src/core/GridNavConfig.py
 msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
 msgstr "Frena antes al estar dentro de esta distancia de un punto de ruta. Si la corrección es pequeña y la posición se actualiza a tiempo, puede seguir girando dejando una distancia segura según la velocidad y el tiempo de muestreo."
+
+
+msgid "导航路线采集"
+msgstr "Grabador de rutas de navegación"
+
+
+msgid "从当前位置记录手动路线。等起点就绪后再走，到达后停止任务。"
+msgstr "Graba una ruta manual desde la posición actual. Espera a que el inicio esté listo, camina y detén la tarea al llegar."

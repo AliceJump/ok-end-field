@@ -9,6 +9,7 @@ from src.patches.startup_patches import install_startup_patches  # noqa: E402
 
 if __name__ == "__main__":
     config["debug"] = True
+    config["onetime_tasks"].append(["src.tasks.localization.ManualWalkRecorder", "ManualWalkRecorder"])
     install_startup_patches()
     import ok
 
