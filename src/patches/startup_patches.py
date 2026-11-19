@@ -31,8 +31,10 @@ def install_startup_patches():
     from src.patches.task_param_preview_patch import install_task_param_preview_patch
     from src.patches.timed_enemy_absence_stability_patch import install_timed_enemy_absence_stability_patch
     from src.patches.timed_team_detection_patch import install_timed_team_detection_patch
+    from src.patches.touch_scroll_event_filter_patch import install_touch_scroll_event_filter_patch
     from src.patches.win32_gdi_point_patch import install_win32_gdi_point_patch
 
+    install_touch_scroll_event_filter_patch()
     install_wgc_frame_timing()
     install_no_frame_task_patch()
     install_cascade_dropdown_patch()
