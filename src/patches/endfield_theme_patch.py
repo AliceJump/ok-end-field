@@ -1007,9 +1007,10 @@ def install_endfield_theme_patch() -> None:
             if controller is not None:
                 for pages in controller.custom_tabs.values():
                     imported_pages.update(pages)
-            plugin_children = [entry for entry in pending_tabs if entry["widget"] in imported_pages]
-            pending_tabs = [entry for entry in pending_tabs if entry["widget"] not in imported_pages]
-            routed_tabs = route_endfield_tabs(pending_tabs, self.app.tr)
+            imported_entries, workspace_entries = [], []
+            for entry in pending_tabs:
+                (imported_entries if entry["widget"] in imported_pages else workspace_entries).append(entry)
+            routed_tabs = route_endfield_tabs(workspace_entries, self.app.tr)
 
             # 导航顶部放 ok-ef 图标、名称与版本；工作区紧随其后从上往下排
             install_navigation_paint()
@@ -1061,7 +1062,7 @@ def install_endfield_theme_patch() -> None:
 
             self._endfield_workspaces = workspaces
             # Imported plugin pages retain the framework's native navigation and lifecycle.
-            for entry in plugin_children:
+            for entry in imported_entries:
                 orig_add_sub_interface(self, entry["widget"], entry["icon"], entry["text"],
                                        NavigationItemPosition.SCROLL)
 
