@@ -404,8 +404,11 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                     "region": patch_meta.get("region"),
                 }
                 records.append(record)
-                sample_stream.write(json.dumps(record, ensure_ascii=False) + "\n")
-                sample_stream.flush()
+                try:
+                    sample_stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    sample_stream.flush()
+                except OSError as exc:
+                    self.log_warning(f"实时写入采样记录失败，继续采集并在收尾重试: {exc}")
                 if not start_ready and record.get("position_trusted"):
                     start_ready = True
                     self.log_info("起点已就绪，可以开始走路线", notify=True)
@@ -453,7 +456,10 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                     )
         finally:
             if sample_stream is not None:
-                sample_stream.close()
+                try:
+                    sample_stream.close()
+                except OSError as exc:
+                    self.log_warning(f"关闭采样记录失败，继续尝试收尾: {exc}")
             try:
                 elapsed = self.active_time() - start
                 summary = self._finalize(
