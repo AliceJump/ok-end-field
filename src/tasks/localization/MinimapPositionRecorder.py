@@ -151,10 +151,7 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
             return
 
         fusion = position_task.minimap_fusion
-        if fusion is None:
-            self.log_error("小地图融合器未初始化，无法记录。", notify=True)
-            return
-        map_to_world_px = fusion.map_to_world_px
+        map_to_world_px = fusion.map_to_world_px if fusion is not None else None
         scale = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
         task_w = int(getattr(position_task, "width", 0) or 0)
         task_h = int(getattr(position_task, "height", 0) or 0)
@@ -236,13 +233,12 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                     scale_now = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
                     task_w_now = int(getattr(position_task, "width", 0) or task_w)
                     task_h_now = int(getattr(position_task, "height", 0) or task_h)
-                    if map_to_world_px is None:
-                        continue
                     profile_now = (
                         int(task_w_now),
                         int(task_h_now),
                         float(scale_now),
-                        tuple(tuple(float(v) for v in row) for row in map_to_world_px),
+                        tuple(tuple(float(v) for v in row) for row in map_to_world_px)
+                        if map_to_world_px is not None else None,
                     )
                     profile_changed = profile_signature is not None and profile_now != profile_signature
                     if profile_changed:
