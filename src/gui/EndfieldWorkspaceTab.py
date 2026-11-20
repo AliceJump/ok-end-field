@@ -66,6 +66,7 @@ TAB_CODES = {
     "调试": "DEBUG",
     "工具与调试": "TOOLS",
     "运行代码": "CODE",
+    "插件": "PLUGINS",
 }
 
 

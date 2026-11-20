@@ -958,7 +958,7 @@ def install_endfield_theme_patch() -> None:
             )
             # Newer ok-script reorders these navigation items during its own
             # constructor, before our collected tabs become workspace pages.
-            if widget.objectName() in ("EditTaskTab", "PluginTab"):
+            if any(cls.__name__ in ("EditTaskTab", "PluginTab") for cls in type(widget).__mro__):
                 key = widget.objectName()
                 self.navigationInterface.addItem(key, icon, text, position=position)
                 temporary_navigation_keys.append(key)
@@ -998,7 +998,22 @@ def install_endfield_theme_patch() -> None:
             pending_tabs.insert(
                 0, {"widget": EndfieldCombatTab(), "icon": FluentIcon.PLAY, "text": self.app.tr("自动战斗")}
             )
-            routed_tabs = route_endfield_tabs(pending_tabs, self.app.tr)
+            from src.gui.EndfieldPluginsTab import EndfieldPluginsTab
+
+            plugin_workspace = EndfieldPluginsTab(self)
+            plugin_widgets = {getattr(self, "plugin_tab", None)}
+            plugin_widgets.update(getattr(self, "imported_tabs", {}).values())
+            controller = getattr(self, "_imported_tab_controller", None)
+            if controller is not None:
+                for pages in controller.custom_tabs.values():
+                    plugin_widgets.update(pages)
+            normal_tabs = []
+            for entry in pending_tabs:
+                if entry["widget"] in plugin_widgets:
+                    plugin_workspace.add_page(entry["widget"], entry["text"])
+                else:
+                    normal_tabs.append(entry)
+            routed_tabs = route_endfield_tabs(normal_tabs, self.app.tr)
 
             # 导航顶部放 ok-ef 图标、名称与版本；工作区紧随其后从上往下排
             install_navigation_paint()
@@ -1049,9 +1064,23 @@ def install_endfield_theme_patch() -> None:
                 workspaces.append(workspace)
 
             self._endfield_workspaces = workspaces
+            if self.config.get("plugin", False):
+                item = self.addSubInterface(
+                    plugin_workspace, FluentIcon.APPLICATION, self.app.tr("插件"),
+                    position=NavigationItemPosition.SCROLL,
+                )
+                if item is not None:
+                    style_navigation_item(item, f"{len(workspaces) + 1:02d} · PLUGINS")
+                workspaces.append(plugin_workspace)
+
+                if controller is not None:
+                    # ImportedTabs owns disposal; the workspace updates tabs on destruction.
+                    controller._add = lambda widget, name, icon: plugin_workspace.add_page(
+                        widget, self.app.tr(name)
+                    )
 
             # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
-            daily = next((ws for ws in workspaces if ws.category_code == "DAILY"), None)
+            daily = next((ws for ws in workspaces if getattr(ws, "category_code", None) == "DAILY"), None)
             if daily is not None:
                 from src.gui.EndfieldRunDock import EndfieldRunDock
 
