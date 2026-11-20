@@ -573,6 +573,7 @@ ENDFIELD_DAILY_TAB_ORDER = ("帝江号", "战斗", "奖励", "其他")
 ENDFIELD_COMBAT_TAB_ORDER = ("大世界", "自动战斗", "副本", "收尾")
 ENDFIELD_AUTOMATION_TAB_KEYS = ("计划任务", "脚本", "模板")
 ENDFIELD_DEVELOPER_TAB_KEYS = ("调试", "运行代码", "工具与调试")
+ENDFIELD_PLUGIN_TAB_KEYS = ("插件",)
 
 # 原生页签与 ok-ef 自己的自动战斗页的键取简体中文页签名，与界面语言无关；TAB_CODES、ENGLISH_TITLES 和上面的分栏都按它登记。
 # ok 的 GlobalConfigTab 只承载通知；src 里同名的全局配置页是 CustomTab，不查这张表。
@@ -589,6 +590,9 @@ NATIVE_TAB_KEYS = {
     "GlobalConfigTab": "通知",
     "SettingTab": "设置",
     "AboutTab": "关于",
+    "PluginTab": "插件",
+    "ImportedTaskTab": "插件",
+    "ImportedPluginPage": "插件",
 }
 
 
@@ -596,6 +600,9 @@ def endfield_tab_key(widget: Any, text: str) -> str:
     """按页面身份取页签键：任务分组用组名，自定义页签用未翻译的源名，原生页签按类名查表。"""
     from ok.ui.qt.widget.CustomTab import CustomTab  # type: ignore
 
+    module = type(widget).__module__
+    if module.startswith("_ok_plugin_") or module == "ok.ui.qt.plugins.imported_tabs":
+        return "插件"
     group_name = getattr(widget, "group_name", None)
     if group_name:
         return group_name
@@ -624,12 +631,12 @@ def route_endfield_tabs(
         if key in ("大世界", "收尾"):
             label = tr(shown_key)
         widget.endfield_tab_key = shown_key
-        if item.get("category") == "PLUGINS":
-            code = "PLUGINS"
-        elif key in ENDFIELD_DEVELOPER_TAB_KEYS:
+        if key in ENDFIELD_DEVELOPER_TAB_KEYS:
             code = "DEVELOPER"
         elif key in ENDFIELD_AUTOMATION_TAB_KEYS:
             code = "AUTOMATION"
+        elif key in ENDFIELD_PLUGIN_TAB_KEYS:
+            code = "PLUGINS"
         # 日常一条龙四大分栏（与 EndfieldSectionMatrix.SECTION_META 一致）
         elif key in ENDFIELD_DAILY_TAB_ORDER:
             code = "DAILY"
@@ -1001,15 +1008,6 @@ def install_endfield_theme_patch() -> None:
             pending_tabs.insert(
                 0, {"widget": EndfieldCombatTab(), "icon": FluentIcon.PLAY, "text": self.app.tr("自动战斗")}
             )
-            plugin_widgets = {getattr(self, "plugin_tab", None)}
-            plugin_widgets.update(getattr(self, "imported_tabs", {}).values())
-            controller = getattr(self, "_imported_tab_controller", None)
-            if controller is not None:
-                for pages in controller.custom_tabs.values():
-                    plugin_widgets.update(pages)
-            for entry in pending_tabs:
-                if entry["widget"] in plugin_widgets:
-                    entry["category"] = "PLUGINS"
             routed_tabs = route_endfield_tabs(pending_tabs, self.app.tr)
 
             # 导航顶部放 ok-ef 图标、名称与版本；工作区紧随其后从上往下排
@@ -1062,14 +1060,18 @@ def install_endfield_theme_patch() -> None:
                 workspaces.append(workspace)
 
             self._endfield_workspaces = workspaces
-            plugin_workspace = next((ws for ws in workspaces if ws.category_code == "PLUGINS"), None)
-            if controller is not None and plugin_workspace is not None:
-                controller._add = lambda widget, name, icon: plugin_workspace.add_page(
-                    widget, self.app.tr(name)
-                )
+            def _add_workspace_page(widget, icon, text, position=None, parent=None):
+                routed = route_endfield_tabs([{"widget": widget, "icon": icon, "text": text}], self.app.tr)
+                for workspace in self._endfield_workspaces:
+                    for title, page_icon, page in routed[workspace.category_code]:
+                        workspace.add_page(page, title, page_icon)
+                        return None
+                return orig_add_sub_interface(self, widget, icon, text, position, parent)
+
+            self.addSubInterface = _add_workspace_page
 
             # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
-            daily = next((ws for ws in workspaces if getattr(ws, "category_code", None) == "DAILY"), None)
+            daily = next((ws for ws in workspaces if ws.category_code == "DAILY"), None)
             if daily is not None:
                 from src.gui.EndfieldRunDock import EndfieldRunDock
 

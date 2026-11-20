@@ -445,36 +445,7 @@ class EndfieldWorkspaceTab(QWidget):
         # 编号页的任务行贴在一起，由 EndfieldEntryNumbering 维护间距
         row_spacing = 12 if category_code == "DAILY" else 0
         for index, (name, _, tab_widget) in enumerate(tabs, 1):
-            for attr, spacing in (("vBoxLayout", 12), ("taskCardLayout", row_spacing)):
-                layout = getattr(tab_widget, attr, None)
-                if layout is not None:
-                    layout.setSpacing(spacing)
-            container = tab_widget
-            key = tab_key(name, tab_widget)
-            plain_page = key in ("截图方式", "关于")
-            if category_code != "DAILY" and not plain_page:
-                banner = EndfieldSectionBanner(f"{index:02d}", name, english_title(key), tab_widget)
-                native_layout: Any = getattr(tab_widget, "vBoxLayout", None)
-                if isinstance(native_layout, QVBoxLayout):
-                    native_layout.insertWidget(0, banner)
-                    native_title = tab_widget.findChild(QLabel, "viewTitleLabel")
-                    if native_title is not None and native_title.text() == name:
-                        native_title.hide()
-                else:
-                    container = QWidget(self.stack)
-                    content = QVBoxLayout(container)
-                    content.setContentsMargins(16, 16, 16, 0)
-                    content.setSpacing(12)
-                    content.addWidget(banner)
-                    content.addWidget(tab_widget, 1)
-            self._page_containers[tab_widget] = container
-            self.stack.addWidget(container)
-            if category_code == "PLUGINS":
-                tab_widget.destroyed.connect(self._sync_pages)
-            if plain_page:
-                remove_page_decorations(tab_widget)
-            elif category_code != "DAILY":
-                tab_widget._endfield_numbering = EndfieldEntryNumbering(tab_widget)
+            self._mount_page(tab_widget, name, index)
 
         self.main_layout.addWidget(self.stack, 1)
 
@@ -580,14 +551,44 @@ class EndfieldWorkspaceTab(QWidget):
             btn.update()
         self.update()
 
-    def add_page(self, widget, title):
+    def _mount_page(self, tab_widget, name, index):
+        row_spacing = 12 if self.category_code == "DAILY" else 0
+        for attr, spacing in (("vBoxLayout", 12), ("taskCardLayout", row_spacing)):
+            layout = getattr(tab_widget, attr, None)
+            if layout is not None:
+                layout.setSpacing(spacing)
+        container = tab_widget
+        key = tab_key(name, tab_widget)
+        plain_page = key in ("截图方式", "关于")
+        if self.category_code != "DAILY" and not plain_page:
+            banner = EndfieldSectionBanner(f"{index:02d}", name, english_title(key), tab_widget)
+            native_layout: Any = getattr(tab_widget, "vBoxLayout", None)
+            if isinstance(native_layout, QVBoxLayout):
+                native_layout.insertWidget(0, banner)
+                native_title = tab_widget.findChild(QLabel, "viewTitleLabel")
+                if native_title is not None and native_title.text() == name:
+                    native_title.hide()
+            else:
+                container = QWidget(self.stack)
+                content = QVBoxLayout(container)
+                content.setContentsMargins(16, 16, 16, 0)
+                content.setSpacing(12)
+                content.addWidget(banner)
+                content.addWidget(tab_widget, 1)
+        self._page_containers[tab_widget] = container
+        self.stack.addWidget(container)
+        tab_widget.destroyed.connect(self._sync_pages)
+        if plain_page:
+            remove_page_decorations(tab_widget)
+        elif self.category_code != "DAILY":
+            tab_widget._endfield_numbering = EndfieldEntryNumbering(tab_widget)
+
+    def add_page(self, widget, title, icon=None):
         if self.has_child(widget):
             return
-        self.child_tabs.append((title, FluentIcon.APPLICATION, widget))
-        self._page_containers[widget] = widget
-        self.tab_bar.add_tab(title, FluentIcon.APPLICATION, "插件")
-        self.stack.addWidget(widget)
-        widget.destroyed.connect(self._sync_pages)
+        self.child_tabs.append((title, icon, widget))
+        self.tab_bar.add_tab(title, icon, tab_key(title, widget))
+        self._mount_page(widget, title, len(self.child_tabs))
 
     def _sync_pages(self):
         from shiboken6 import isValid
@@ -607,7 +608,7 @@ class EndfieldWorkspaceTab(QWidget):
             button.deleteLater()
         self.tab_bar.buttons.clear()
         for title, icon, widget in self.child_tabs:
-            self.tab_bar.add_tab(title, icon, "插件")
+            self.tab_bar.add_tab(title, icon, tab_key(title, widget))
         self.tab_bar.set_current_index(max(0, self.stack.currentIndex()))
 
     def has_child(self, widget: QWidget) -> bool:
