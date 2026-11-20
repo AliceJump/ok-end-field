@@ -614,6 +614,7 @@ def route_endfield_tabs(
         "COMBAT": [],
         "AUTOMATION": [],
         "DEVELOPER": [],
+        "PLUGINS": [],
     }
     for item in pending_tabs:
         widget, label = item["widget"], item["text"]
@@ -623,7 +624,9 @@ def route_endfield_tabs(
         if key in ("大世界", "收尾"):
             label = tr(shown_key)
         widget.endfield_tab_key = shown_key
-        if key in ENDFIELD_DEVELOPER_TAB_KEYS:
+        if item.get("category") == "PLUGINS":
+            code = "PLUGINS"
+        elif key in ENDFIELD_DEVELOPER_TAB_KEYS:
             code = "DEVELOPER"
         elif key in ENDFIELD_AUTOMATION_TAB_KEYS:
             code = "AUTOMATION"
@@ -998,22 +1001,16 @@ def install_endfield_theme_patch() -> None:
             pending_tabs.insert(
                 0, {"widget": EndfieldCombatTab(), "icon": FluentIcon.PLAY, "text": self.app.tr("自动战斗")}
             )
-            from src.gui.EndfieldPluginsTab import EndfieldPluginsTab
-
-            plugin_workspace = EndfieldPluginsTab(self)
             plugin_widgets = {getattr(self, "plugin_tab", None)}
             plugin_widgets.update(getattr(self, "imported_tabs", {}).values())
             controller = getattr(self, "_imported_tab_controller", None)
             if controller is not None:
                 for pages in controller.custom_tabs.values():
                     plugin_widgets.update(pages)
-            normal_tabs = []
             for entry in pending_tabs:
                 if entry["widget"] in plugin_widgets:
-                    plugin_workspace.add_page(entry["widget"], entry["text"])
-                else:
-                    normal_tabs.append(entry)
-            routed_tabs = route_endfield_tabs(normal_tabs, self.app.tr)
+                    entry["category"] = "PLUGINS"
+            routed_tabs = route_endfield_tabs(pending_tabs, self.app.tr)
 
             # 导航顶部放 ok-ef 图标、名称与版本；工作区紧随其后从上往下排
             install_navigation_paint()
@@ -1044,6 +1041,7 @@ def install_endfield_theme_patch() -> None:
                 ("COMBAT", "业务与战斗", "OPERATIONS", FluentIcon.ACCEPT, None, None),
                 ("AUTOMATION", "自动化调度", "AUTOMATION", FluentIcon.CALENDAR, None, None),
                 ("DEVELOPER", "开发者工具", "DEVELOPER", FluentIcon.DEVELOPER_TOOLS, None, None),
+                ("PLUGINS", "插件", "PLUGINS", FluentIcon.APPLICATION, None, None),
             )
             for code, title, nav_code, icon, action, setting in sections:
                 tabs = routed_tabs[code]
@@ -1064,20 +1062,11 @@ def install_endfield_theme_patch() -> None:
                 workspaces.append(workspace)
 
             self._endfield_workspaces = workspaces
-            if self.config.get("plugin", False):
-                item = self.addSubInterface(
-                    plugin_workspace, FluentIcon.APPLICATION, self.app.tr("插件"),
-                    position=NavigationItemPosition.SCROLL,
+            plugin_workspace = next((ws for ws in workspaces if ws.category_code == "PLUGINS"), None)
+            if controller is not None and plugin_workspace is not None:
+                controller._add = lambda widget, name, icon: plugin_workspace.add_page(
+                    widget, self.app.tr(name)
                 )
-                if item is not None:
-                    style_navigation_item(item, f"{len(workspaces) + 1:02d} · PLUGINS")
-                workspaces.append(plugin_workspace)
-
-                if controller is not None:
-                    # ImportedTabs owns disposal; the workspace updates tabs on destruction.
-                    controller._add = lambda widget, name, icon: plugin_workspace.add_page(
-                        widget, self.app.tr(name)
-                    )
 
             # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
             daily = next((ws for ws in workspaces if getattr(ws, "category_code", None) == "DAILY"), None)

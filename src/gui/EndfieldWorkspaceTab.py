@@ -469,6 +469,8 @@ class EndfieldWorkspaceTab(QWidget):
                     content.addWidget(tab_widget, 1)
             self._page_containers[tab_widget] = container
             self.stack.addWidget(container)
+            if category_code == "PLUGINS":
+                tab_widget.destroyed.connect(self._sync_pages)
             if plain_page:
                 remove_page_decorations(tab_widget)
             elif category_code != "DAILY":
@@ -577,6 +579,36 @@ class EndfieldWorkspaceTab(QWidget):
         for btn in self.tab_bar.buttons:
             btn.update()
         self.update()
+
+    def add_page(self, widget, title):
+        if self.has_child(widget):
+            return
+        self.child_tabs.append((title, FluentIcon.APPLICATION, widget))
+        self._page_containers[widget] = widget
+        self.tab_bar.add_tab(title, FluentIcon.APPLICATION, "插件")
+        self.stack.addWidget(widget)
+        widget.destroyed.connect(self._sync_pages)
+
+    def _sync_pages(self):
+        from shiboken6 import isValid
+
+        if not isValid(self) or not isValid(self.tab_bar):
+            return
+        self.child_tabs[:] = [entry for entry in self.child_tabs if isValid(entry[2])]
+        remaining = {widget for _, _, widget in self.child_tabs}
+        for widget, container in tuple(self._page_containers.items()):
+            if widget not in remaining:
+                if isValid(container):
+                    self.stack.removeWidget(container)
+                    container.deleteLater()
+                del self._page_containers[widget]
+        for button in self.tab_bar.buttons:
+            self.tab_bar.layout.removeWidget(button)
+            button.deleteLater()
+        self.tab_bar.buttons.clear()
+        for title, icon, widget in self.child_tabs:
+            self.tab_bar.add_tab(title, icon, "插件")
+        self.tab_bar.set_current_index(max(0, self.stack.currentIndex()))
 
     def has_child(self, widget: QWidget) -> bool:
         return widget in self._page_containers
