@@ -571,9 +571,8 @@ QLabel#sectionTitle {{
 # 顶栏页签命名与顺序（与 reorganize_tasks_architecture 写入的 group_name 严格一致）
 ENDFIELD_DAILY_TAB_ORDER = ("帝江号", "战斗", "奖励", "其他")
 ENDFIELD_COMBAT_TAB_ORDER = ("大世界", "自动战斗", "副本", "收尾")
-ENDFIELD_AUTOMATION_TAB_KEYS = ("计划任务", "脚本", "模板")
+ENDFIELD_AUTOMATION_TAB_KEYS = ("计划任务", "脚本", "模板", "插件")
 ENDFIELD_DEVELOPER_TAB_KEYS = ("调试", "运行代码", "工具与调试")
-ENDFIELD_PLUGIN_TAB_KEYS = ("插件",)
 
 # 原生页签与 ok-ef 自己的自动战斗页的键取简体中文页签名，与界面语言无关；TAB_CODES、ENGLISH_TITLES 和上面的分栏都按它登记。
 # ok 的 GlobalConfigTab 只承载通知；src 里同名的全局配置页是 CustomTab，不查这张表。
@@ -616,7 +615,6 @@ def route_endfield_tabs(
         "COMBAT": [],
         "AUTOMATION": [],
         "DEVELOPER": [],
-        "PLUGINS": [],
     }
     for item in pending_tabs:
         widget, label = item["widget"], item["text"]
@@ -630,8 +628,6 @@ def route_endfield_tabs(
             code = "DEVELOPER"
         elif key in ENDFIELD_AUTOMATION_TAB_KEYS:
             code = "AUTOMATION"
-        elif key in ENDFIELD_PLUGIN_TAB_KEYS:
-            code = "PLUGINS"
         # 日常一条龙四大分栏（与 EndfieldSectionMatrix.SECTION_META 一致）
         elif key in ENDFIELD_DAILY_TAB_ORDER:
             code = "DAILY"
@@ -963,6 +959,9 @@ def install_endfield_theme_patch() -> None:
             )
             # Newer ok-script reorders these navigation items during its own
             # constructor, before our collected tabs become workspace pages.
+            # ok-script Tab 使用「类名_id」作为 objectName；这里拦截了页面注册，
+            # 需临时补上导航项，供框架随后按完整 objectName 查找并调整顺序。
+            # PluginTab_ 前缀用于兼容该动态名称，同时保留旧版固定名称判断。
             if widget.objectName() in ("EditTaskTab", "PluginTab") or widget.objectName().startswith("PluginTab_"):
                 key = widget.objectName()
                 self.navigationInterface.addItem(key, icon, text, position=position)
@@ -1041,7 +1040,6 @@ def install_endfield_theme_patch() -> None:
                 ("COMBAT", "业务与战斗", "OPERATIONS", FluentIcon.ACCEPT, None, None),
                 ("AUTOMATION", "自动化调度", "AUTOMATION", FluentIcon.CALENDAR, None, None),
                 ("DEVELOPER", "开发者工具", "DEVELOPER", FluentIcon.DEVELOPER_TOOLS, None, None),
-                ("PLUGINS", "插件", "PLUGINS", FluentIcon.APPLICATION, None, None),
             )
             for code, title, nav_code, icon, action, setting in sections:
                 tabs = routed_tabs[code]
@@ -1062,19 +1060,10 @@ def install_endfield_theme_patch() -> None:
                 workspaces.append(workspace)
 
             self._endfield_workspaces = workspaces
-            plugin_parent = next((ws for ws in workspaces if ws.category_code == "PLUGINS"), None)
+            # Imported plugin pages retain the framework's native navigation and lifecycle.
             for entry in plugin_children:
                 orig_add_sub_interface(self, entry["widget"], entry["icon"], entry["text"],
-                                       NavigationItemPosition.SCROLL, plugin_parent)
-
-            def _add_plugin_navigation(widget, icon, text, position=None, parent=None):
-                # The framework owns page creation/removal; only supply the native navigation parent.
-                controller = getattr(self, "_imported_tab_controller", None)
-                if parent is None and controller is not None and controller._refreshing:
-                    parent = plugin_parent
-                return orig_add_sub_interface(self, widget, icon, text, position, parent)
-
-            self.addSubInterface = _add_plugin_navigation
+                                       NavigationItemPosition.SCROLL)
 
             # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
             daily = next((ws for ws in workspaces if ws.category_code == "DAILY"), None)

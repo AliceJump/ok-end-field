@@ -1144,9 +1144,8 @@ class NativeTextLayoutTest(unittest.TestCase):
                 "ENVIRONMENT": ["キャプチャ", "グローバル設定", "通知", "設定", "概要"],
                 "DAILY": ["帝江号", "戦闘"],
                 "COMBAT": ["<大世界>", "副本", "<其他>"],
-                "AUTOMATION": ["スケジュール"],
+                "AUTOMATION": ["スケジュール", "プラグイン"],
                 "DEVELOPER": ["ツールとデバッグ"],
-                "PLUGINS": ["プラグイン"],
             },
         )
 
