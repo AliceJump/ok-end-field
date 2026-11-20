@@ -577,7 +577,8 @@ class EndfieldWorkspaceTab(QWidget):
                 content.addWidget(tab_widget, 1)
         self._page_containers[tab_widget] = container
         self.stack.addWidget(container)
-        tab_widget.destroyed.connect(self._sync_pages)
+        if self.category_code == "PLUGINS":
+            tab_widget.destroyed.connect(self._sync_pages)
         if plain_page:
             remove_page_decorations(tab_widget)
         elif self.category_code != "DAILY":

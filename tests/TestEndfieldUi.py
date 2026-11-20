@@ -1134,6 +1134,7 @@ class NativeTextLayoutTest(unittest.TestCase):
                 ("通知", page("GlobalConfigTab")),
                 ("設定", page("SettingTab")),
                 ("概要", page("AboutTab")),
+                ("プラグイン", page("PluginTab")),
             )
         ]
         routed = route_endfield_tabs(pending, lambda text: f"<{text}>")
@@ -1145,6 +1146,7 @@ class NativeTextLayoutTest(unittest.TestCase):
                 "COMBAT": ["<大世界>", "副本", "<其他>"],
                 "AUTOMATION": ["スケジュール"],
                 "DEVELOPER": ["ツールとデバッグ"],
+                "PLUGINS": ["プラグイン"],
             },
         )
 

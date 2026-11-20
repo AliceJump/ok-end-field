@@ -591,8 +591,6 @@ NATIVE_TAB_KEYS = {
     "SettingTab": "设置",
     "AboutTab": "关于",
     "PluginTab": "插件",
-    "ImportedTaskTab": "插件",
-    "ImportedPluginPage": "插件",
 }
 
 
@@ -1061,6 +1059,9 @@ def install_endfield_theme_patch() -> None:
 
             self._endfield_workspaces = workspaces
             def _add_workspace_page(widget, icon, text, position=None, parent=None):
+                # Only plugin pages need runtime insertion; preserve native handling elsewhere.
+                if endfield_tab_key(widget, text) not in ENDFIELD_PLUGIN_TAB_KEYS:
+                    return orig_add_sub_interface(self, widget, icon, text, position, parent)
                 routed = route_endfield_tabs([{"widget": widget, "icon": icon, "text": text}], self.app.tr)
                 for workspace in self._endfield_workspaces:
                     for title, page_icon, page in routed[workspace.category_code]:
