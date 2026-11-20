@@ -970,6 +970,19 @@ def install_endfield_theme_patch() -> None:
 
         self.addSubInterface = _collector_add_sub_interface
 
+        original_update_imported_tabs = self.update_imported_tabs
+
+        def _update_imported_tabs():
+            # 插件页保留框架原生导航，不参与主题的工作区页面收集。
+            previous_add = self.addSubInterface
+            self.addSubInterface = lambda *args, **kwargs: orig_add_sub_interface(self, *args, **kwargs)
+            try:
+                return original_update_imported_tabs()
+            finally:
+                self.addSubInterface = previous_add
+
+        self.update_imported_tabs = _update_imported_tabs
+
         try:
             orig_init(self, *args, **kwargs)
         finally:
@@ -1002,15 +1015,7 @@ def install_endfield_theme_patch() -> None:
             pending_tabs.insert(
                 0, {"widget": EndfieldCombatTab(), "icon": FluentIcon.PLAY, "text": self.app.tr("自动战斗")}
             )
-            controller = getattr(self, "_imported_tab_controller", None)
-            imported_pages = set(getattr(self, "imported_tabs", {}).values())
-            if controller is not None:
-                for pages in controller.custom_tabs.values():
-                    imported_pages.update(pages)
-            imported_entries, workspace_entries = [], []
-            for entry in pending_tabs:
-                (imported_entries if entry["widget"] in imported_pages else workspace_entries).append(entry)
-            routed_tabs = route_endfield_tabs(workspace_entries, self.app.tr)
+            routed_tabs = route_endfield_tabs(pending_tabs, self.app.tr)
 
             # 导航顶部放 ok-ef 图标、名称与版本；工作区紧随其后从上往下排
             install_navigation_paint()
@@ -1061,10 +1066,6 @@ def install_endfield_theme_patch() -> None:
                 workspaces.append(workspace)
 
             self._endfield_workspaces = workspaces
-            # Imported plugin pages retain the framework's native navigation and lifecycle.
-            for entry in imported_entries:
-                orig_add_sub_interface(self, entry["widget"], entry["icon"], entry["text"],
-                                       NavigationItemPosition.SCROLL)
 
             # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
             daily = next((ws for ws in workspaces if ws.category_code == "DAILY"), None)
