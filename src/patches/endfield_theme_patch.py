@@ -598,8 +598,7 @@ def endfield_tab_key(widget: Any, text: str) -> str:
     """按页面身份取页签键：任务分组用组名，自定义页签用未翻译的源名，原生页签按类名查表。"""
     from ok.ui.qt.widget.CustomTab import CustomTab  # type: ignore
 
-    module = type(widget).__module__
-    if module.startswith("_ok_plugin_") or module == "ok.ui.qt.plugins.imported_tabs":
+    if getattr(widget, "endfield_tab_key", None) == "插件":
         return "插件"
     group_name = getattr(widget, "group_name", None)
     if group_name:
@@ -955,6 +954,9 @@ def install_endfield_theme_patch() -> None:
         def _collector_add_sub_interface(
             widget: Any, icon: Any, text: str, position: Any = None, parent: Any = None
         ) -> Any:
+            controller = getattr(self, "_imported_tab_controller", None)
+            if controller is not None and controller._refreshing:
+                widget.endfield_tab_key = "插件"
             pending_tabs.append(
                 {
                     "widget": widget,
@@ -966,7 +968,7 @@ def install_endfield_theme_patch() -> None:
             )
             # Newer ok-script reorders these navigation items during its own
             # constructor, before our collected tabs become workspace pages.
-            if any(cls.__name__ in ("EditTaskTab", "PluginTab") for cls in type(widget).__mro__):
+            if widget.objectName().split("_", 1)[0] in ("EditTaskTab", "PluginTab"):
                 key = widget.objectName()
                 self.navigationInterface.addItem(key, icon, text, position=position)
                 temporary_navigation_keys.append(key)
@@ -1059,6 +1061,9 @@ def install_endfield_theme_patch() -> None:
 
             self._endfield_workspaces = workspaces
             def _add_workspace_page(widget, icon, text, position=None, parent=None):
+                controller = getattr(self, "_imported_tab_controller", None)
+                if controller is not None and controller._refreshing:
+                    widget.endfield_tab_key = "插件"
                 # Only plugin pages need runtime insertion; preserve native handling elsewhere.
                 if endfield_tab_key(widget, text) not in ENDFIELD_PLUGIN_TAB_KEYS:
                     return orig_add_sub_interface(self, widget, icon, text, position, parent)
