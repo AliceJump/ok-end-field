@@ -598,8 +598,6 @@ def endfield_tab_key(widget: Any, text: str) -> str:
     """按页面身份取页签键：任务分组用组名，自定义页签用未翻译的源名，原生页签按类名查表。"""
     from ok.ui.qt.widget.CustomTab import CustomTab  # type: ignore
 
-    if getattr(widget, "endfield_tab_key", None) == "插件":
-        return "插件"
     group_name = getattr(widget, "group_name", None)
     if group_name:
         return group_name
@@ -954,9 +952,6 @@ def install_endfield_theme_patch() -> None:
         def _collector_add_sub_interface(
             widget: Any, icon: Any, text: str, position: Any = None, parent: Any = None
         ) -> Any:
-            controller = getattr(self, "_imported_tab_controller", None)
-            if controller is not None and controller._refreshing:
-                widget.endfield_tab_key = "插件"
             pending_tabs.append(
                 {
                     "widget": widget,
@@ -1008,6 +1003,13 @@ def install_endfield_theme_patch() -> None:
             pending_tabs.insert(
                 0, {"widget": EndfieldCombatTab(), "icon": FluentIcon.PLAY, "text": self.app.tr("自动战斗")}
             )
+            controller = getattr(self, "_imported_tab_controller", None)
+            imported_pages = set(getattr(self, "imported_tabs", {}).values())
+            if controller is not None:
+                for pages in controller.custom_tabs.values():
+                    imported_pages.update(pages)
+            plugin_children = [entry for entry in pending_tabs if entry["widget"] in imported_pages]
+            pending_tabs = [entry for entry in pending_tabs if entry["widget"] not in imported_pages]
             routed_tabs = route_endfield_tabs(pending_tabs, self.app.tr)
 
             # 导航顶部放 ok-ef 图标、名称与版本；工作区紧随其后从上往下排
@@ -1060,62 +1062,19 @@ def install_endfield_theme_patch() -> None:
                 workspaces.append(workspace)
 
             self._endfield_workspaces = workspaces
-            plugin_pages = []
-            refresh_pending = False
+            plugin_parent = next((ws for ws in workspaces if ws.category_code == "PLUGINS"), None)
+            for entry in plugin_children:
+                orig_add_sub_interface(self, entry["widget"], entry["icon"], entry["text"],
+                                       NavigationItemPosition.SCROLL, plugin_parent)
 
-            def _refresh_plugins():
-                nonlocal refresh_pending
-                from shiboken6 import isValid
-                from src.gui.EndfieldEntryCards import EndfieldSectionBanner
-
-                refresh_pending = False
-                old = next((ws for ws in workspaces if ws.category_code == "PLUGINS"), None)
-                if old is None:
-                    return
-                tabs = [(name, icon, page) for name, icon, page in old.child_tabs + plugin_pages if isValid(page)]
-                plugin_pages.clear()
-                for _, _, page in tabs:
-                    layout = getattr(page, "vBoxLayout", None)
-                    if layout is not None:
-                        for index in range(layout.count() - 1, -1, -1):
-                            banner = layout.itemAt(index).widget()
-                            if isinstance(banner, EndfieldSectionBanner):
-                                layout.removeWidget(banner)
-                                banner.deleteLater()
-                    page.setParent(self)
-                current = self.stackedWidget.currentWidget() is old
-                self.navigationInterface.removeWidget(old.objectName())
-                self.stackedWidget.removeWidget(old)
-                replacement = EndfieldWorkspaceTab("PLUGINS", "插件", tabs, self)
-                workspaces[workspaces.index(old)] = replacement
-                item = orig_add_sub_interface(self, replacement, FluentIcon.APPLICATION, self.app.tr("插件"),
-                                             NavigationItemPosition.SCROLL)
-                if item is not None:
-                    style_navigation_item(item, f"{len(workspaces):02d} · PLUGINS")
-                if current:
-                    self.switchTo(replacement)
-                old.deleteLater()
-
-            def _schedule_plugin_refresh(*_args):
-                nonlocal refresh_pending
-                if not refresh_pending:
-                    refresh_pending = True
-                    QTimer.singleShot(0, _refresh_plugins)
-
-            def _add_workspace_page(widget, icon, text, position=None, parent=None):
+            def _add_plugin_navigation(widget, icon, text, position=None, parent=None):
+                # The framework owns page creation/removal; only supply the native navigation parent.
                 controller = getattr(self, "_imported_tab_controller", None)
-                if controller is not None and controller._refreshing:
-                    widget.endfield_tab_key = "插件"
-                if endfield_tab_key(widget, text) in ENDFIELD_PLUGIN_TAB_KEYS:
-                    plugin_pages.append((text, icon, widget))
-                    _schedule_plugin_refresh()
-                    return None
+                if parent is None and controller is not None and controller._refreshing:
+                    parent = plugin_parent
                 return orig_add_sub_interface(self, widget, icon, text, position, parent)
 
-            self.addSubInterface = _add_workspace_page
-            from ok.ui.qt.Communicate import communicate
-
-            communicate.task_list_updated.connect(_schedule_plugin_refresh)
+            self.addSubInterface = _add_plugin_navigation
 
             # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
             daily = next((ws for ws in workspaces if ws.category_code == "DAILY"), None)
