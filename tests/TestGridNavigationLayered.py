@@ -16,13 +16,15 @@ import json
 import math
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
 from src.core.GridNavConfig import CONFIG_GRID_DIR
 from src.data.FeatureList import FeatureList as fL
-from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, CELL_UNKNOWN, GRID_SUFFIX, new_grid, save_grid
+from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, CELL_UNKNOWN, GRID_SUFFIX, load_grid, new_grid, save_grid
 from src.nav.nav_state import GridRouteRequest, NavSession, NavState, NavTick
 from tests.TestGridNavigationMixin import _FakeGridTask
 
@@ -68,11 +70,67 @@ class _HeadingWalkingTask(_LayeredTask):
 class LayeredNavigationWiringTest(unittest.TestCase):
     """分层导航的接线：三维目标 → 层判定 → 分层规划 → 分段跟随。"""
 
+    def test_explicit_file_and_config_file_override_default_layered_resources(self):
+        from src.core.GridNavConfig import CONFIG_GRID_FILE
+
+        custom_dir = self.root / "custom"
+        custom_dir.mkdir()
+        path = custom_dir / "selected.grid.npz"
+        grid = new_grid((1, 12), map_name="test", zoom="4")
+        grid.cells = _row(12)
+        save_grid(path, grid)
+        for configured in (False, True):
+            with self.subTest(configured=configured):
+                self.task.config[CONFIG_GRID_FILE] = str(path) if configured else ""
+                options = {} if configured else {"grid_path": str(path)}
+                result = self.task.plan_grid_path((1.5, 0.5), (3.5, 0.5), map_id="test", **options)
+                self.assertTrue(result.ok, result.reason)  # Default directory is ambiguous at this goal.
+                self.assertIsNone(self.task._grid_layered_map("test", **options))
+
+    def test_explicit_floor_file_cannot_supply_a_confirmed_main_route(self):
+        from src.core.GridNavConfig import CONFIG_GRID_FILE
+
+        path = self.root / f"test__lv1_4{GRID_SUFFIX}"
+        for configured in (False, True):
+            with self.subTest(configured=configured):
+                self.task.config[CONFIG_GRID_FILE] = str(path) if configured else ""
+                options = {} if configured else {"grid_path": str(path)}
+                result = self.task.plan_grid_path(
+                    (0.5, 0.5),
+                    (3.5, 0.5),
+                    map_id="test",
+                    start_pose=self._visual_pose("__main__"),
+                    goal_tier="__main__",
+                    **options,
+                )
+                self.assertFalse(result.ok)
+                self.assertIn("不一致", result.reason)
+
+    def test_preview_rebuilds_layer_planner_after_unknown_cell_policy_changes(self):
+        from src.core.GridNavConfig import CONFIG_GRID_ALLOW_UNKNOWN
+
+        path = self.root / f"test__lv1_4{GRID_SUFFIX}"
+        grid = load_grid(path)
+        grid.cells[0, 1] = CELL_UNKNOWN
+        save_grid(path, grid)
+        self.task.config[CONFIG_GRID_ALLOW_UNKNOWN] = True
+        args = {"map_id": "test", "start_pose": self._visual_pose(), "goal_tier": "lv1"}
+        first = self.task.plan_grid_path((0.5, 0.5), (3.5, 0.5), **args)
+        self.assertTrue(first.ok, first.reason)
+        self.task.config[CONFIG_GRID_ALLOW_UNKNOWN] = False
+        second = self.task.plan_grid_path((0.5, 0.5), (3.5, 0.5), **args)
+        self.assertFalse(second.ok)
+
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.root = Path(self._tmp.name)
         # 主图：一条 12 格的走廊
-        main = new_grid((1, 12), map_name="test", zoom="4")
+        main = new_grid(
+            (1, 12),
+            map_name="test",
+            zoom="4",
+            floor_regions=[{"x0": 0.0, "x1": 12.0, "z0": 0.0, "z1": 1.0, "y_min": 0.0, "y_max": 10.0}],
+        )
         main.cells = _row(12)
         save_grid(self.root / f"test_4{GRID_SUFFIX}", main)
         # 分层 lv1：另一条 4 格的走廊。**与主图共用同一原点**——连接的两端必须落在同一处
@@ -221,14 +279,206 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertEqual(list(session.route.tiers), ["lv1"])
         self.assertEqual(self.task._grid_nav_follower.grid.meta.tier, "lv1")
 
-    def test_goal_without_height_is_treated_as_overworld(self):
-        """调用方只给平面坐标时按大地图处理，不因为"缺 y"而失败。
+    def test_goal_without_height_uses_unique_overworld_cell(self):
+        """目标平面坐标只有大地图标了可走格时，解析到大地图。
 
         起点特意取在**分层区间之外**（x=6.5 不在 lv1 的 x∈[0,4) 里），这样两边都判成
         大地图，验证的是"缺 y 不报错"而不是"跨层能不能走"。
         """
         _session, _ctx, result = self._plan(x=6.5, z=0.5, y=105.0, goal=(9.5, 0.5))
         self.assertEqual(result, (False, False), "两点都判成大地图 -> 同层 -> 单层路径")
+
+    def _visual_pose(self, tier="lv1"):
+        return {"tier_evidence_required": True, "tier_trusted": True, "tier_id": tier, "position_trusted": True}
+
+    def _unique_floor_goal(self):
+        main_path = self.root / f"test_4{GRID_SUFFIX}"
+        main = load_grid(main_path)
+        main.cells[0, 3] = CELL_UNKNOWN
+        save_grid(main_path, main)
+
+    def test_2d_unique_floor_preview_and_execution_agree(self):
+        self._unique_floor_goal()
+        preview = self.task.plan_grid_path(
+            (1.5, 0.5),
+            (3.5, 0.5),
+            map_id="test",
+            start_pose=self._visual_pose(),
+        )
+        self.assertTrue(preview.ok, preview.reason)
+        self.assertEqual(preview.layered_route.goal_key, ("test", "lv1"))
+        self.assertEqual(preview.layered_route.tiers, ["lv1"])
+        self.assertEqual(self.task.key_down_events, [])
+        session, ctx = self._ctx(x=1.5, z=0.5, y=None, goal=(3.5, 0.5))
+        ctx.pose.update(self._visual_pose())
+        self.assertIsNone(self.task._grid_nav_state_plan(ctx))
+        self.assertEqual(session.route.goal_key, preview.layered_route.goal_key)
+        self.assertEqual(session.route.waypoints, preview.waypoints)
+
+    def test_2d_overlapping_goal_requires_explicit_floor(self):
+        preview = self.task.plan_grid_path(
+            (1.5, 0.5),
+            (3.5, 0.5),
+            map_id="test",
+            start_pose=self._visual_pose(),
+        )
+        self.assertFalse(preview.ok)
+        self.assertIn("歧义", preview.reason)
+        session, ctx = self._ctx(x=1.5, z=0.5, y=105, goal=(3.5, 0.5))
+        self.assertIs(self.task._grid_nav_state_plan(ctx), False)
+        self.assertIsNone(session.goal_tier)
+
+    def test_manual_task_executes_2d_goal_on_unique_floor(self):
+        from src.tasks.navigation.MinimapNavigateToPoint import MinimapNavigateToPoint
+
+        self._unique_floor_goal()
+        self.task.x = 1.5
+        self.task.config.update({"目标X": 3.5, "目标Z": 0.5})
+        original_pose = self.task.minimap_position
+        with (
+            patch.object(self.task, "in_world", return_value=True, create=True),
+            patch.object(
+                self.task,
+                "minimap_position",
+                side_effect=lambda **kwargs: {
+                    **original_pose(**kwargs),
+                    **self._visual_pose(),
+                },
+            ),
+        ):
+            self.assertTrue(MinimapNavigateToPoint.run.__wrapped__(self.task), self.task.logs[-8:])
+        self.assertIn("w", self.task.key_down_events)
+        self.assertFalse(self.task.w_down)
+        self.assertEqual(self.task._grid_nav_follower.grid.meta.tier, "lv1")
+
+    def test_nonfinite_2d_goal_reports_invalid_coordinates(self):
+        for value in (float("nan"), float("inf")):
+            with self.subTest(value=value):
+                result = self.task.plan_grid_path(
+                    (1.5, 0.5),
+                    (value, 0.5),
+                    map_id="test",
+                    start_pose=self._visual_pose(),
+                )
+                self.assertFalse(result.ok)
+                self.assertIn("有限数", result.reason)
+
+    def test_2d_unmarked_goal_is_not_resolved_by_allow_unknown(self):
+        for allow in (False, True):
+            with self.subTest(allow_unknown=allow):
+                self.task.config["允许穿越未知格"] = allow
+                result = self.task.plan_grid_path(
+                    (1.5, 0.5),
+                    (50.5, 0.5),
+                    map_id="test",
+                    start_pose=self._visual_pose(),
+                )
+                self.assertFalse(result.ok)
+                self.assertIn("无法确定目标楼层", result.reason)
+
+    def test_explicit_goal_floor_resolves_overlap_and_preserves_connections(self):
+        for tier, expected in (("lv1", "lv1"), ("__main__", ""), ("", "")):
+            with self.subTest(tier=tier):
+                result = self.task.plan_grid_path(
+                    (1.5, 0.5),
+                    (3.5, 0.5),
+                    map_id="test",
+                    start_pose=self._visual_pose(),
+                    goal_tier=tier,
+                )
+                self.assertTrue(result.ok, result.reason)
+                self.assertEqual(result.layered_route.goal_key, ("test", expected))
+                self.assertEqual(len(result.layered_route.links), int(expected == ""))
+                self.assertEqual(self.task.key_down_events, [])
+
+    def test_explicit_missing_floor_and_height_conflict_fail(self):
+        for tier, height, message in (
+            ("missing", None, "没有导航网格"),
+            ("__main__", 105, "冲突"),
+            ("lv1", float("nan"), "无效"),
+        ):
+            with self.subTest(tier=tier, height=height):
+                result = self.task.plan_grid_path(
+                    (1.5, 0.5),
+                    (3.5, 0.5),
+                    map_id="test",
+                    start_pose=self._visual_pose(),
+                    goal_tier=tier,
+                    goal_y=height,
+                )
+                self.assertFalse(result.ok)
+                self.assertIn(message, result.reason)
+
+    def test_replanning_keeps_goal_floor_after_current_floor_changes(self):
+        self._unique_floor_goal()
+        session, ctx = self._ctx(x=1.5, z=0.5, y=None, goal=(3.5, 0.5))
+        ctx.pose.update(self._visual_pose())
+        self.assertIsNone(self.task._grid_nav_state_plan(ctx))
+        layered = self.task._grid_layered_map("test")
+        layered.grid("test", "").cells[0, 3] = CELL_FREE
+        ctx.pose.update(self._visual_pose(""))
+        session.active_tier = ""
+        self.assertIsNone(self.task._grid_nav_state_plan(ctx))
+        self.assertEqual(session.goal_tier, "lv1")
+        self.assertEqual(session.route.start_key, ("test", ""))
+        self.assertEqual(session.route.goal_key, ("test", "lv1"))
+
+    def test_recovery_target_does_not_replace_final_goal_floor(self):
+        session, ctx = self._ctx(x=1.5, z=0.5, y=None, goal=(8.5, 0.5))
+        ctx.pose.update(self._visual_pose())
+        session.active_tier = "lv1"
+        session.recovery_goal = (2.5, 0.5)
+        self.assertIsNone(self.task._grid_nav_state_plan(ctx))
+        self.assertEqual(session.goal_tier, "")
+        self.assertEqual(session.route.goal_key, ("test", "lv1"))
+        session.recovery_goal = None
+        self.assertIsNone(self.task._grid_nav_state_plan(ctx))
+        self.assertEqual(session.route.goal_key, ("test", ""))
+
+    def test_goal_resolution_is_invalidated_for_a_new_request(self):
+        session, ctx = self._ctx(x=1.5, z=0.5, y=None, goal=(3.5, 0.5))
+        layered = self.task._grid_layered_map("test")
+        session.request = replace(session.request, goal_tier="lv1")
+        self.assertEqual(self.task._grid_goal_tier(ctx, layered)[0], "lv1")
+        session.request = replace(session.request, goal_tier="__main__")
+        self.assertEqual(self.task._grid_goal_tier(ctx, layered)[0], "")
+
+    def test_2d_arrival_requires_confirmed_target_floor(self):
+        from src.nav.route_follower import DONE, FollowerStep
+
+        session, ctx = self._ctx(x=3.5, z=0.5, y=None, goal=(3.5, 0.5), stop_distance=5)
+        session.request = replace(session.request, goal_tier="lv1")
+        ctx.pose.update(self._visual_pose(""))
+        ctx.step = FollowerStep(DONE, distance_to_goal=0)
+        self.assertIsNone(self.task._grid_nav_classify(ctx))
+        self.assertIsNone(self.task._grid_nav_state_done(ctx))
+        ctx.pose.update(self._visual_pose("lv1"), tier_trusted=False)
+        self.assertFalse(self.task._grid_nav_stop_layer_matches(ctx))
+        ctx.pose["tier_trusted"] = True
+        self.assertEqual(self.task._grid_nav_classify(ctx), NavState.STOP_REACHED)
+        self.assertIs(self.task._grid_nav_state_done(ctx), True)
+
+    def test_2d_unknown_visual_floor_cannot_start_preview(self):
+        result = self.task.plan_grid_path(
+            (1.5, 0.5),
+            (8.5, 0.5),
+            map_id="test",
+            start_pose={**self._visual_pose(), "tier_trusted": False},
+        )
+        self.assertFalse(result.ok)
+        self.assertIn("尚未确认", result.reason)
+
+    def test_missing_connections_report_topology_instead_of_unknown_cells(self):
+        (self.root / "links.json").write_text('{"schema_version": 2, "links": []}', encoding="utf-8")
+        result = self.task.plan_grid_path(
+            (1.5, 0.5),
+            (8.5, 0.5),
+            map_id="test",
+            start_pose=self._visual_pose(),
+        )
+        self.assertFalse(result.ok)
+        self.assertIn("缺少跨层连接", result.reason)
+        self.assertNotIn("允许穿越未知格", result.reason)
 
     # ---- 终点接近判定 ----
     def test_stop_distance_does_not_shortcut_across_layers(self):
@@ -273,6 +523,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
     def test_advancing_switches_to_the_next_layer_grid(self):
         session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
+        self._move_across_final_stairs(ctx)
         outcome = self.task._advance_layered_segment(ctx)
         self.assertIsNone(outcome, "还有下一段时应继续，而不是结束导航")
         self.assertEqual(session.segment_index, 1)
@@ -286,6 +537,7 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         from src.nav.route_follower import DONE, FollowerStep
 
         ctx.step = FollowerStep(DONE, distance_to_goal=0.1)
+        self._move_across_final_stairs(ctx)
         outcome = self.task._grid_nav_state_done(ctx)
         self.assertIsNone(outcome, "应当换段继续，而不是返回 True 结束")
         self.assertEqual(session.segment_index, 1)
@@ -297,7 +549,9 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         from src.nav.route_follower import DONE, FollowerStep
 
         ctx.step = FollowerStep(DONE, distance_to_goal=0.1)
-        self.assertIs(self.task._grid_nav_state_done(ctx), True, "最后一段走完才算到达")
+        ctx.x, ctx.z = 6.5, 0.5
+        ctx.pose["y"] = 5.0
+        self.assertIs(self.task._grid_nav_state_done(ctx), True, "最后一段走完且楼层一致才算到达")
 
     def test_link_landing_on_the_goal_finishes_the_route(self):
         """连接的落点正好是终点时，跨层之后就该结束——不能把最后一段再激活一遍。
@@ -310,8 +564,9 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertEqual(result, (True, True))
         self.assertEqual(len(session.route.segments), 1, "大地图那段长度为 0，已被丢弃")
         self.assertEqual(len(session.route.links), 1)
+        self._move_across_final_stairs(ctx)
         outcome = self.task._advance_layered_segment(ctx)
-        self.assertIs(outcome, True, "落点即目标，应当完成而不是继续")
+        self.assertIsNone(outcome, "跨层后必须等待新帧确认")
         self.assertTrue(any("落点即目标" in line for line in self.task.logs), self.task.logs[-3:])
 
     def test_done_handler_executes_the_trailing_link(self):
@@ -327,42 +582,188 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         from src.nav.route_follower import DONE, FollowerStep
 
         ctx.step = FollowerStep(DONE, distance_to_goal=0.1)
+        self._move_across_final_stairs(ctx)
         outcome = self.task._grid_nav_state_done(ctx)
 
-        self.assertIs(outcome, True, "跨完末尾连接才算到达")
+        self.assertIsNone(outcome, "跨完末尾连接还需新帧确认楼层")
         self.assertTrue(any("落点即目标" in line for line in self.task.logs), self.task.logs[-3:])
 
+    def test_final_layered_segment_respects_smaller_stop_distance(self):
+        from src.nav.route_follower import DONE
+
+        session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(6.9, 0.9), goal_y=5, stop_distance=0.25)
+        self.assertEqual(self.task._try_layered_route_on_plan(ctx, ctx.position, session.goal), (True, True))
+        initial_radius = self.task._grid_nav_follower.config.goal_radius
+        self.assertGreater(initial_radius, session.stop_distance)
+        session.segment_index = len(session.route.segments) - 1
+        self.assertTrue(self.task._activate_layered_segment(ctx))
+        follower = self.task._grid_nav_follower
+        self.assertEqual(follower.config.goal_radius, 0.25)
+        self.assertEqual(follower.goal, session.goal)
+        self.assertNotEqual(follower.update((5.5, 0.5), 90, 1).action, DONE)
+        self.assertNotEqual(follower.update((6.5, 0.5), 45, 1.2).action, DONE)
+        self.assertEqual(follower.update(session.goal, 45, 1.4).action, DONE)
+
+    def test_last_segment_before_trailing_link_keeps_approach_radius(self):
+        session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5, stop_distance=0.25)
+        self.assertEqual(self.task._try_layered_route_on_plan(ctx, ctx.position, session.goal), (True, True))
+        self.assertTrue(session.route.transitions[-1])
+        self.assertEqual(self.task._grid_nav_follower.config.goal_radius, self.task._grid_follower_config().goal_radius)
+
+    def test_exhausted_layered_route_replans_outside_goal_radius(self):
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(10.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        session.segment_index = len(session.route.segments)
+        ctx.pose["y"] = 5.0
+        with patch.object(self.task, "_grid_nav_state_call", return_value=None) as dispatch:
+            self.assertIsNone(self.task._grid_nav_state_done(ctx))
+        dispatch.assert_called_once_with(NavState.PLAN, ctx)
+
+    def test_trailing_link_uses_recovery_goal(self):
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        session.recovery_goal = (1.5, 0.5)
+        with patch.object(self.task, "_walk_trailing_layered_link", return_value=True) as walk:
+            self.task._advance_layered_segment(ctx)
+        self.assertEqual(walk.call_args.kwargs["end"], session.recovery_goal)
+
+    def test_trailing_link_does_not_walk_after_failed_aim(self):
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        with patch.object(self.task, "_aim_grid_view_to_bearing", return_value=False):
+            self.assertFalse(self.task._walk_trailing_layered_link(ctx, session.route.transitions[0][0]))
+        self.assertNotIn("w", self.task.key_down_events)
+        self.assertFalse(self.task.w_down)
+
+    def _move_across_final_stairs(self, ctx):
+        self._report_visual_floor()
+        self.task.x, ctx.x = 0.5, 0.5
+        sleep = self.task.sleep
+
+        def cross(seconds):
+            sleep(seconds)
+            if self.task.w_down:
+                self.task.y = 5.0
+
+        self.task.sleep = cross
+
+    def _report_visual_floor(self):
+        original = self.task.minimap_position
+        self.task.minimap_position = lambda **kwargs: {
+            **original(**kwargs),
+            "tier_evidence_required": True,
+            "tier_trusted": True,
+            "tier_id": "__main__" if self.task.y == 5.0 else "lv1",
+        }
+
+    def test_final_stairs_need_movement_and_confirmed_floor_before_success(self):
+        self._report_visual_floor()
+        sleep = self.task.sleep
+
+        def cross(seconds):
+            sleep(seconds)
+            if self.task.w_down and self.task.x <= 1.0:
+                self.task.y = 5.0
+
+        self.task.sleep = cross
+        self.task.x, self.task.z, self.task.y = 3.5, 0.5, 105.0
+        self.assertTrue(
+            self.task.navigate_grid_to((0.5, 0.5), map_id="test", goal_y=5.0, timeout=30), self.task.logs[-8:]
+        )
+        self.assertEqual(self.task.y, 5.0)
+        self.assertFalse(self.task.w_down)
+
+    def test_final_stairs_without_floor_change_fail_and_release_inputs(self):
+        _session, ctx, _ = self._plan(x=0.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        layered = self.task._grid_layered_map("test")
+        self.assertFalse(self.task._walk_trailing_layered_link(ctx, layered.links[0]))
+        self.assertFalse(self.task.w_down)
+
+    def test_height_only_goal_rejects_ambiguous_main_fallback_before_walking(self):
+        path = self.root / f"test_4{GRID_SUFFIX}"
+        main = new_grid((1, 12), map_name="test", zoom="4")
+        main.cells = _row(12)
+        save_grid(path, main)
+        _session, _ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, False))
+        self.assertFalse(self.task.w_down)
+
+    def test_final_stairs_wait_for_a_missing_pose_before_checking_map_identity(self):
+        session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        self._move_across_final_stairs(ctx)
+        session.request = replace(session.request, map_id="")
+        poll = self.task.world_pose
+        missing = [True]
+
+        def sample(**kwargs):
+            if missing:
+                missing.pop()
+                return None
+            return poll(**kwargs)
+
+        with patch.object(self.task, "world_pose", side_effect=sample):
+            self.assertTrue(self.task._walk_trailing_layered_link(ctx, session.route.transitions[0][0]))
+        self.assertFalse(self.task.w_down)
+
+    def test_final_stairs_release_w_before_slow_sampling_and_bound_near_goal_pulses(self):
+        session, ctx, result = self._plan(x=2.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5.0)
+        self.assertEqual(result, (True, True))
+        self._report_visual_floor()
+
+        def sleep(seconds):
+            self.task.t += seconds
+            if self.task.w_down:
+                self.task.x += math.sin(math.radians(self.task.heading)) * 6.0 * seconds
+                if self.task.x <= 1.0:
+                    self.task.y = 5.0
+
+        poll = self.task._grid_nav_poll
+
+        def slow_sample(current_session):
+            self.assertFalse(self.task.w_down)
+            sleep(0.45)
+            return poll(current_session)
+
+        self.task.sleep = sleep
+        with patch.object(self.task, "_grid_nav_poll", side_effect=slow_sample):
+            self.assertTrue(self.task._walk_trailing_layered_link(ctx, session.route.transitions[0][0]))
+        self.assertLessEqual(abs(self.task.x - 0.5), 0.5)
+        self.assertFalse(self.task.w_down)
+
     def test_full_loop_drives_a_cross_layer_route_to_completion(self):
-        """跑**完整的** ``navigate_grid_to`` 主循环，而不只是调辅助函数。
+        """只有真实行走进入楼梯才改变可信楼层，随后继续走非格中心终点。"""
+        for crossing_x in (0.5, 1.0):
+            with self.subTest(crossing_x=crossing_x):
+                self.task = task = _HeadingWalkingTask(self.root)
+                self._report_visual_floor()
+                crossings = []
 
-        这是本文件里唯一覆盖"接线接对了没"的测试：主循环是
-        ``取快照 → 判定 → 派发``，分层接管后要能顺着"分段 → 跨层 → 下一段"一路走到终点。
-        只测辅助函数会漏掉主循环里的装配错误（例如 DONE 时没换段、规划后没接着跟随）。
+                def walk(seconds, *, task=task, crossing_x=crossing_x, crossings=crossings):
+                    seconds = max(0.0, float(seconds))
+                    task.t += seconds
+                    if task.w_down:
+                        radians = math.radians(task.heading)
+                        task.x += math.sin(radians) * seconds * 0.8
+                        task.z += math.cos(radians) * seconds * 0.8
+                        if task.x <= crossing_x and task.y == 105:
+                            crossings.append(task.x)
+                            task.y = 5.0
 
-        模拟的一处必要约定：跨层**会改变所在高度**。游戏里走过楼梯/门时 y 会变，而
-        ``_cross_layered_link`` 的"走过去"分支本来不做物理动作，所以这里在测试任务里
-        把 y 跟着改掉——不改的话人还在旧层的高度上，"中途换层"的守护会（正确地）判定
-        与当前分段不符并重规划，测试就测不到正常路径了。
-        """
-        task = self.task
-        original_cross = task._cross_layered_link
+                task.sleep = walk
+                task.x, task.z, task.y = 3.5, 0.5, 105.0
+                goal = (6.9, 0.9)
+                result = task.navigate_grid_to(goal, goal_y=5.0, map_id="test", stop_distance=0.25, timeout=60.0)
 
-        def crossing(ctx, link):
-            outcome = original_cross(ctx, link)
-            if outcome is not False:
-                task.y = 105.0 if link.target.tier else 5.0
-            return outcome
-
-        task._cross_layered_link = crossing  # type: ignore[method-assign]
-        task.x, task.z, task.y = 3.5, 0.5, 105.0
-
-        result = task.navigate_grid_to((6.5, 0.5), goal_y=5.0, map_id="test", timeout=60.0)
-
-        self.assertTrue(result, f"完整主循环没能走完跨层路线；日志尾部={task.logs[-6:]}")
-        self.assertLess(abs(task.x - 6.5), 2.5, f"最终位置 x={task.x}")
-        self.assertTrue(any("分层路线" in line for line in task.logs), "应当走了分层路径")
-        self.assertTrue(any("跨层" in line for line in task.logs), "应当执行过跨层")
-        self.assertFalse(task.w_down, "结束时必须松开 W")
+                self.assertTrue(result, f"完整主循环没能走完跨层路线；日志尾部={task.logs[-6:]}")
+                self.assertEqual(len(crossings), 1)
+                self.assertLessEqual(math.dist((task.x, task.z), goal), 0.25)
+                self.assertTrue(any("分层路线" in line for line in task.logs), "应当走了分层路径")
+                if crossing_x == 0.5:
+                    self.assertTrue(any("跨层：" in line for line in task.logs), "应当执行过跨层")
+                else:
+                    self.assertTrue(any("视觉确认楼层已变化" in line for line in task.logs))
+                self.assertFalse(task.w_down, "结束时必须松开 W")
 
     def test_full_loop_fails_cleanly_when_the_route_is_unreachable(self):
         """分层路线走不通时，完整主循环应当**以失败结束**，而不是卡到超时或走单层。"""
@@ -539,6 +940,29 @@ class RopeCrossingTest(unittest.TestCase):
         """执行一次跨越。``ctx`` 目前只是历史参数，仍按真实入口传进去。"""
         return self.task._cross_layered_link(self.ctx, link)
 
+    def test_visual_rope_crossing_uses_confirmed_floor_without_height(self):
+        for ascent, trusted in ((False, True), (True, True), (False, False), (True, False)):
+            with self.subTest(ascent=ascent, trusted=trusted):
+                task, layered, ctx = self._make_task()
+                task.y = task.lower_y if ascent else task.upper_y
+                original = task.world_pose
+
+                def visual(original=original, task=task, trusted=trusted, **kwargs):
+                    return {
+                        **original(**kwargs),
+                        "y": None,
+                        "position_trusted": True,
+                        "map_id": "test",
+                        "tier_evidence_required": True,
+                        "tier_trusted": trusted,
+                        "tier_id": "lv1" if task.y == task.upper_y else "__main__",
+                    }
+
+                link = layered.links[0].reversed if ascent else layered.links[0]
+                with patch.object(task, "world_pose", side_effect=visual):
+                    self.assertEqual(task._cross_layered_link(ctx, link), trusted)
+                self.assertFalse(task.w_down)
+
     def test_descent_walks_instead_of_riding_a_zip_line(self):
         self.task.zip_line_list_go = lambda *args, **kwargs: self.fail("绳索下行不该复用滑索执行")
         self.task.board_zip_line = lambda *args, **kwargs: self.fail("绳索下行不该登索")
@@ -684,7 +1108,7 @@ class LayeredCurrentGridTest(unittest.TestCase):
         self.task = _LayeredTask(self.root)
         self.task.y = 105.0
         self.session = NavSession(
-            request=GridRouteRequest(goal=(10.5, 0.5), map_id="test"),
+            request=GridRouteRequest(goal=(10.5, 0.5), map_id="test", goal_tier="__main__"),
             deadline=self.task.active_time() + 180.0,
             limit=180.0,
             tick=0.2,
@@ -799,7 +1223,7 @@ class LayeredSameTierDetourTest(unittest.TestCase):
 
     def _run_plan(self, goal):
         session = NavSession(
-            request=GridRouteRequest(goal=goal, map_id="test"),
+            request=GridRouteRequest(goal=goal, map_id="test", goal_tier="__main__"),
             deadline=self.task.active_time() + 180.0,
             limit=180.0,
             tick=0.2,
@@ -826,7 +1250,7 @@ class LayeredSameTierDetourTest(unittest.TestCase):
     def test_same_tier_detour_is_not_planned_by_default(self):
         """默认策略下起终点都在大地图仍旧交回单层——分层绕行只在单层失败后才启用。"""
         session = NavSession(
-            request=GridRouteRequest(goal=(10.5, 0.5), map_id="test"),
+            request=GridRouteRequest(goal=(10.5, 0.5), map_id="test", goal_tier="__main__"),
             deadline=self.task.active_time() + 180.0,
             limit=180.0,
             tick=0.2,
@@ -837,6 +1261,69 @@ class LayeredSameTierDetourTest(unittest.TestCase):
             self.task._try_layered_route_on_plan(ctx, (0.5, 0.5), (10.5, 0.5)),
             (False, False),
         )
+
+
+class MigratedFloorRouteRegressionTest(unittest.TestCase):
+    """使用实际 map02 楼层网格验证连通性与分层路线。"""
+
+    def test_both_recorded_routes_use_the_migrated_floor(self):
+        from shutil import copyfile
+
+        from src.tasks.navigation.MinimapNavigateToPoint import MinimapNavigateToPoint
+
+        tier = "scene_map02_lv004_layer_tips_1"
+        filename = f"map02__{tier}_4{GRID_SUFFIX}"
+        fixture = Path(__file__).parent / "data" / "navigation" / filename
+        for start, goal in (
+            ((-1420.332, -1561.163), (-1369.0, -1651.0)),
+            ((-1366.755, -1651.557), (-1418.0, -1561.0)),
+        ):
+            with self.subTest(start=start, goal=goal), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                copyfile(fixture, root / filename)
+                floor = load_grid(fixture)
+                main = new_grid(
+                    floor.shape, origin=floor.meta.origin, cell_size=floor.meta.cell_size, map_name="map02", zoom="4"
+                )
+                save_grid(root / f"map02_4{GRID_SUFFIX}", main)
+                task = _LayeredTask(root)
+                task.config.update(
+                    {
+                        "离墙安全边距(格)": 2,
+                        "离墙不足代价(每格)": 2.0,
+                        "未知边缘安全距离(格)": 2,
+                        "未知边缘不足代价(每格)": 5.0,
+                        "航点简化容差(米)": 2.0,
+                        "允许穿越未知格": False,
+                        "未知格风险代价": 30.0,
+                        "搜索节点上限": 400000,
+                    }
+                )
+                pose = {
+                    "x": start[0],
+                    "z": start[1],
+                    "map_id": "map02",
+                    "position_trusted": True,
+                    "tier_evidence_required": True,
+                    "tier_trusted": True,
+                    "tier_id": tier,
+                    "absolute_position_valid": True,
+                }
+                preview = task.plan_grid_path(start, goal, map_id="map02", start_pose=pose)
+                self.assertTrue(preview.ok, preview.reason)
+                self.assertEqual(preview.layered_route.tiers, [tier])
+                self.assertEqual(preview.layered_route.links, ())
+                session = NavSession(GridRouteRequest(goal=goal, map_id="map02"), 180, 180, 0.2)
+                ctx = NavTick(session, None, pose, *start, "map02", 0, 90, 0.99)
+                self.assertIsNone(task._grid_nav_state_plan(ctx))
+                self.assertEqual(session.goal_tier, tier)
+                self.assertEqual(session.route.waypoints, preview.waypoints)
+                self.assertEqual(int((floor.cells == CELL_FREE).sum()), 1584)
+                for i, j in session.route.segments[0].plan.cells:
+                    self.assertTrue(floor.is_free(i, j))
+                with patch.object(task, "world_pose", return_value=pose):
+                    self.assertTrue(MinimapNavigateToPoint._run_plan_only(task, goal, "map02"))
+                self.assertEqual(task.key_down_events, [])
 
 
 if __name__ == "__main__":

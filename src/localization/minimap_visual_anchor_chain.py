@@ -28,9 +28,141 @@ __all__ = [
     "KeyframeResult",
     "MinimapKeyframeVisualAnchorChain",
     "MinimapVisualAnchorChainCorrector",
+    "MinimapVisualChainEvidence",
     "VisualAnchorChainNode",
     "VisualAnchorChainResult",
 ]
+
+
+@dataclass(slots=True)
+class VisualChainEvidenceResult:
+    trusted: bool
+    reason: str
+    position: np.ndarray
+    error_m: float
+    keyframe_checks: int
+    anchor_time: float | None
+
+
+@dataclass(slots=True)
+class _EvidenceNode:
+    time: float
+    gray: np.ndarray
+    alpha: np.ndarray
+    initial_pos: np.ndarray
+    error_px: float
+
+
+class MinimapVisualChainEvidence:
+    """Conservative visual error allowance, not a calibrated covariance.
+
+    Reuse the stitcher's edge measurement, including its original overlap and
+    geometric gates. Each certified path pays a positive measurement floor and
+    a distance/quality/reverse-consistency cost. Direct keyframe checks shorten
+    the path; retaining a keyframe never resets its inherited cost or anchor age.
+    Graph optimization and virtual window anchors cannot manufacture evidence.
+    """
+
+    def __init__(
+        self,
+        *,
+        scale_m_per_px,
+        max_error_m=1.0,
+        min_response=0.3,
+        keyframe_interval=10,
+        max_keyframes=16,
+        max_gap_s=2.0,
+    ):
+        self.scale = float(scale_m_per_px)
+        self.max_error_m = float(max_error_m)
+        self.min_response = float(min_response)
+        self.interval = max(1, int(keyframe_interval))
+        self.max_keyframes = max(2, int(max_keyframes))
+        self.max_gap_s = float(max_gap_s)
+        self.reset()
+
+    def reset(self):
+        self.previous = None
+        self.keyframes = deque()
+        self.anchor_time = None
+        self.tick = 0
+
+    def _edge(self, previous, current):
+        base = np.floor(current.initial_pos - previous.initial_pos).astype(np.int64)
+        options = {"alpha_threshold": 0.2, "min_overlap_px": 600, "max_correlation_size": 160}
+        forward = measure_edge(previous, current, base=base, **options)
+        reverse = measure_edge(current, previous, base=-base, **options)
+        if forward is None or reverse is None:
+            return None
+        dx, dy, response, overlap, residual = forward
+        rx, ry, reverse_response, reverse_overlap, reverse_residual = reverse
+        values = (*forward, *reverse)
+        if not all(math.isfinite(value) for value in values):
+            return None
+        closure = math.hypot(dx + rx, dy + ry)
+        if min(response, reverse_response) < self.min_response or max(residual, reverse_residual, closure) > 6.0:
+            return None
+        # Add costs, never divide by the number of correlated measurements.
+        # The nonzero distance term budgets common systematic drift even when
+        # all graph edges agree. These allowances require real-data calibration.
+        cost = (
+            0.1
+            + 0.01 * math.hypot(dx, dy)
+            + 0.5 * max(0.0, 1.0 - min(response, reverse_response))
+            + 0.25 * max(0.0, 1.0 - min(overlap, reverse_overlap))
+            + closure
+        )
+        return previous.initial_pos + np.array([dx, dy]), previous.error_px + cost
+
+    def observe(self, *, time, gray, alpha, position, anchor=None):
+        position = np.asarray(position, dtype=np.float64).reshape(2)
+        node = _EvidenceNode(float(time), gray, alpha, position.copy(), math.inf)
+        checks = 0
+        reason = "no_visual_path"
+        if anchor is not None:
+            self.reset()
+            self.anchor_time = float(time)
+            node.initial_pos = np.asarray(anchor, dtype=np.float64).reshape(2).copy()
+            node.error_px = 0.25
+            reason = "absolute_anchor"
+        elif self.previous is not None and 0 < time - self.previous.time <= self.max_gap_s:
+            candidates = []
+            previous_edge = self._edge(self.previous, node)
+            # Every presented frame needs an adjacent edge, including when it
+            # visually resembles an old keyframe after a loading/teleport gap.
+            if previous_edge is not None:
+                candidates.append(previous_edge)
+                for keyframe in self.keyframes:
+                    if keyframe is self.previous:
+                        continue
+                    edge = self._edge(keyframe, node)
+                    if edge is not None:
+                        checks += 1
+                        candidates.append(edge)
+                best_position, cost = min(candidates, key=lambda item: item[1])
+                disagreement = max(float(np.linalg.norm(p - best_position)) for p, _ in candidates)
+                if disagreement <= 6.0:
+                    node.initial_pos = best_position.copy()
+                    node.error_px = cost + disagreement
+                    reason = "visual_path"
+                else:
+                    reason = "keyframe_disagreement"
+        elif self.previous is not None:
+            reason = "visual_sample_gap"
+        error_m = node.error_px * self.scale
+        trusted = math.isfinite(error_m) and error_m <= self.max_error_m
+        if math.isfinite(error_m) and not trusted:
+            reason = "error_budget_exhausted"
+        if trusted:
+            self.previous = node
+            self.tick += 1
+            if not self.keyframes or self.tick % self.interval == 0:
+                self.keyframes.append(node)
+                # Retain the oldest still-certified view for long baselines,
+                # plus recent views. Eviction never promotes a virtual anchor.
+                if len(self.keyframes) > self.max_keyframes:
+                    del self.keyframes[1]
+        return VisualChainEvidenceResult(trusted, reason, node.initial_pos.copy(), error_m, checks, self.anchor_time)
 
 
 @dataclass(slots=True)
@@ -67,6 +199,7 @@ class VisualAnchorChainResult:
     median_response: float
     residual_median: float
     residual_max: float
+    connected_to_anchor: bool
 
 
 class MinimapVisualAnchorChainCorrector:
@@ -258,7 +391,32 @@ class MinimapVisualAnchorChainCorrector:
             median_response=median_response,
             residual_median=residual_median,
             residual_max=residual_max,
+            connected_to_anchor=self._connected_to_absolute_anchor(),
         )
+
+    def _connected_to_absolute_anchor(self, *, target_index=None, before_index=None) -> bool:
+        """Connectivity to an observed anchor or its proven connected successor."""
+        if self._absolute_anchor_uid is None:
+            return False
+        nodes = list(self._nodes)
+        index_by_uid = {node.uid: node.index for node in nodes}
+        anchor = index_by_uid.get(self._absolute_anchor_uid)
+        if anchor is None or not nodes:
+            return False
+        reachable = {anchor}
+        changed = True
+        while changed:
+            changed = False
+            for edge in self._edges:
+                if before_index is not None and max(edge.i, edge.j) >= before_index:
+                    continue
+                if edge.i in reachable and edge.j not in reachable:
+                    reachable.add(edge.j)
+                    changed = True
+                elif edge.j in reachable and edge.i not in reachable:
+                    reachable.add(edge.i)
+                    changed = True
+        return (nodes[-1].index if target_index is None else target_index) in reachable
 
     # ------------------------------------------------------------------ #
     # 内部
@@ -306,6 +464,11 @@ class MinimapVisualAnchorChainCorrector:
     def _drop_excess(self) -> None:
         if len(self._nodes) <= self._window_size:
             return
+        # The inherited position comes from the PREVIOUS solve. New edges
+        # cannot retroactively make its unanchored component trustworthy.
+        successor_connected = self._connected_to_absolute_anchor(
+            target_index=self._nodes[1].index, before_index=self._nodes[-1].index
+        )
         if self._prev_positions is not None and len(self._prev_positions) >= 2:
             self._window_anchor_pos = self._prev_positions[1].copy()
         else:
@@ -317,6 +480,7 @@ class MinimapVisualAnchorChainCorrector:
                 and len(self._prev_positions) >= 2
                 and self._nodes
                 and self._absolute_anchor_pos is not None
+                and successor_connected
             ):
                 self._absolute_anchor_pos = self._absolute_anchor_pos + (
                     self._prev_positions[1] - self._prev_positions[0]
