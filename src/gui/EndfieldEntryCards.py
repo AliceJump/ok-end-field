@@ -23,6 +23,7 @@ ENGLISH_TITLES = {
     "自动化调度": "AUTOMATION SCHEDULING",
     "系统与环境": "SYSTEM & ENVIRONMENT",
     "开发者工具": "DEVELOPER TOOLS",
+    "插件": "PLUGINS",
     "大世界": "OPEN WORLD",
     "自动战斗": "AUTO COMBAT",
     "副本": "DUNGEONS",
