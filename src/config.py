@@ -45,6 +45,7 @@ def make_bottom_left_black(frame):  # 可选. 某些游戏截图时遮挡UID使�
 
 config = {
     "custom_tasks": True,
+    "plugin": True,
     "debug": False,  # Optional, default: False
     "use_gui": True,  # 目前只支持True
     # 注册到 ok 的“设置”页（可调整 UI 颜色/主题的页面），邮件配置显示在那里。
