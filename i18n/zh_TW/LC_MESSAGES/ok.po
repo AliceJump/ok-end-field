@@ -3590,7 +3590,3 @@ msgstr "距航點小於此距離時提前減速；角度小且位置更新及時
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "外掛程式"
-
-#: src/patches/endfield_theme_patch.py
-msgid "插件总览"
-msgstr "外掛程式總覽"

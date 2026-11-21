@@ -1106,7 +1106,7 @@ class NativeTextLayoutTest(unittest.TestCase):
 
     def test_plugin_workspace_keeps_overview_and_remaining_plugin_after_unload(self):
         overview, first, second = QWidget(), QWidget(), QWidget()
-        workspace = EndfieldWorkspaceTab("PLUGINS", "插件", [("插件总览", None, overview)])
+        workspace = EndfieldWorkspaceTab("PLUGINS", "插件", [("插件", None, overview)])
         workspace.add_plugin_page(first, None, "烟火生缘传送")
         workspace.add_plugin_page(second, None, "终末地插件示例")
         self.assertEqual(workspace.stack.currentIndex(), 0)
@@ -1115,7 +1115,7 @@ class NativeTextLayoutTest(unittest.TestCase):
         self.assertIs(workspace.stack.currentWidget(), first)
         first.deleteLater()
         QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
-        self.assertEqual([button.text() for button in workspace.tab_bar.buttons], ["插件总览", "终末地插件示例"])
+        self.assertEqual([button.text() for button in workspace.tab_bar.buttons], ["插件", "终末地插件示例"])
         workspace.tab_bar.buttons[1].click()
         self.assertIs(workspace.stack.currentWidget(), second)
         workspace.deleteLater()
@@ -1161,7 +1161,7 @@ class NativeTextLayoutTest(unittest.TestCase):
                 "DAILY": ["帝江号", "戦闘"],
                 "COMBAT": ["<大世界>", "副本", "<其他>"],
                 "AUTOMATION": ["スケジュール"],
-                "PLUGINS": ["<插件总览>"],
+                "PLUGINS": ["<插件>"],
                 "DEVELOPER": ["ツールとデバッグ"],
             },
         )

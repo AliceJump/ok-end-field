@@ -67,7 +67,6 @@ TAB_CODES = {
     "工具与调试": "TOOLS",
     "运行代码": "CODE",
     "插件": "PLUGINS",
-    "插件总览": "OVERVIEW",
 }
 
 

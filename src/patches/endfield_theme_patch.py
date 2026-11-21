@@ -589,7 +589,7 @@ NATIVE_TAB_KEYS = {
     "GlobalConfigTab": "通知",
     "SettingTab": "设置",
     "AboutTab": "关于",
-    "PluginTab": "插件总览",
+    "PluginTab": "插件",
 }
 
 
@@ -622,14 +622,14 @@ def route_endfield_tabs(
         key = endfield_tab_key(widget, label)
         # 触发任务页签叫「大世界」；业务与战斗的「收尾」组显示为「其他」，归类仍按组名，免得与日常的「其他」合并
         shown_key = "其他" if key == "收尾" else key
-        if key in ("大世界", "收尾", "插件总览"):
+        if key in ("大世界", "收尾", "插件"):
             label = tr(shown_key)
         widget.endfield_tab_key = shown_key
         if key in ENDFIELD_DEVELOPER_TAB_KEYS:
             code = "DEVELOPER"
         elif key in ENDFIELD_AUTOMATION_TAB_KEYS:
             code = "AUTOMATION"
-        elif key == "插件总览":
+        elif key == "插件":
             code = "PLUGINS"
         # 日常一条龙四大分栏（与 EndfieldSectionMatrix.SECTION_META 一致）
         elif key in ENDFIELD_DAILY_TAB_ORDER:

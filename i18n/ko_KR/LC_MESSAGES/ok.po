@@ -3656,7 +3656,3 @@ msgstr "경유점까지의 거리가 이 값보다 짧으면 미리 감속합니
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "플러그인"
-
-#: src/patches/endfield_theme_patch.py
-msgid "插件总览"
-msgstr "플러그인 개요"

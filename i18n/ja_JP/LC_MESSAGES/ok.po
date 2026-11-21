@@ -3621,7 +3621,3 @@ msgstr "経由点までの距離がこの値未満なら早めに減速します
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "プラグイン"
-
-#: src/patches/endfield_theme_patch.py
-msgid "插件总览"
-msgstr "プラグイン概要"
