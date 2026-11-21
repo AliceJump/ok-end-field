@@ -94,6 +94,15 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertIs(task.observation_route("念念家的桃树"), StationaryObservationRoute)
         self.assertIs(task.observation_route("桃树"), StationaryObservationRoute)
 
+    def test_cleansing_jade_uses_stationary_route_in_all_locales(self):
+        self.assert_localized_routes(
+            "cleansing_jade",
+            {"zh_CN": "“漱玉”", "zh_TW": "「漱玉」", "en_US": "Cleansing Jade",
+             "ja_JP": "「漱玉」", "ko_KR": "수옥", "es_ES": "Jade purificador"},
+            StationaryObservationRoute,
+        )
+        self.assertEqual(StationaryObservationRoute.photo_direction, "right")
+
     def test_stationary_points_match_localized_titles(self):
         titles = {
             "pier_waterwheel": ("码头水车", "碼頭水車", "Pier Waterwheel", "渡し場の水車", "부두 물레방아"),

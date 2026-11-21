@@ -147,6 +147,14 @@
     "ko_KR": {"string": "배를 부풀려 빛을 내는 버그스피팅 랭키비스트"},
     "es_ES": {"string": "Bestia larguirucha escupebichos inflada y brillante"}
   },
+  "cleansing_jade": {
+    "zh_CN": {"string": "漱玉"},
+    "zh_TW": {"string": "漱玉"},
+    "en_US": {"string": "Cleansing Jade"},
+    "ja_JP": {"string": "漱玉"},
+    "ko_KR": {"string": "수옥"},
+    "es_ES": {"string": "Jade purificador"}
+  },
   "withered_branches": {
     "zh_CN": {"string": "枯枝"},
     "zh_TW": {"string": "枯枝"},
