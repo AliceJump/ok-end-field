@@ -14,6 +14,7 @@ from ok.util.color import calculate_color_percentage
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.onetime.EnvironmentMonitoringPhotoTask import EnvironmentMonitoringPhotoTask
 from src.tasks.onetime.EnvironmentMonitoringRoute import (
+    AutumnGoldRoute,
     CisternOriginiumSlugsRoute,
     EnvironmentMonitoringRoute,
     EternalSunsetRoute,
@@ -699,6 +700,26 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertIs(task.observation_route("小池"), PoolLotusRoute)
         self.assertIs(task.observation_route("小池何"), PoolLotusRoute)
         self.assertIsNone(task.observation_route("小池荷其他"))
+
+    def test_autumn_gold_localized_titles_and_navigation(self):
+        self.assert_localized_routes(
+            "autumn_gold",
+            {"zh_CN": "金秋时", "zh_TW": "金秋時", "en_US": "Autumn Gold",
+             "ja_JP": "錦秋時", "ko_KR": "황금빛 가을이 찾아올 때", "es_ES": "Oro otoñal"},
+            AutumnGoldRoute,
+        )
+        for success in (True, False):
+            with self.subTest(success=success):
+                task = Mock()
+                task.navigate_grid_to.return_value = success
+                route = AutumnGoldRoute(task)
+                self.assertEqual(route.photo_direction, "right")
+                if success:
+                    route.run()
+                else:
+                    with self.assertRaisesRegex(RuntimeError, "金秋时导航失败"):
+                        route.run()
+                task.navigate_grid_to.assert_called_once_with((-1628.62, -1267.79), map_id="map02")
 
     def test_tianshi_pillar_matches_title_with_missing_character(self):
         self.assert_localized_routes(

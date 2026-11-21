@@ -1,4 +1,12 @@
 {
+  "autumn_gold": {
+    "zh_CN": {"string": "金秋时"},
+    "zh_TW": {"string": "金秋時"},
+    "en_US": {"string": "Autumn Gold"},
+    "ja_JP": {"string": "錦秋時"},
+    "ko_KR": {"string": "황금빛 가을이 찾아올 때"},
+    "es_ES": {"string": "Oro otoñal"}
+  },
   "pool_lotus": {
     "zh_CN": {
       "string": "小池荷"
