@@ -410,6 +410,9 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     glowing_lankybeast: str
     """肚子鼓气后发光的吐虫长股兽"""
 
+    cleansing_jade: str
+    """漱玉"""
+
     withered_branches: str
     """枯枝"""
 

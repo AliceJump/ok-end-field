@@ -40,6 +40,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         "observant_fowlbeast": (StationaryObservationRoute, "contains"),  # 雉羽兽原地向右搜索
         "water_lantern_bug": (StationaryObservationRoute, "edit_distance"),  # 水灯虫原地向右取景
         "withered_branches": (StationaryObservationRoute, "edit_distance"),  # 枯枝原地向右取景
+        "cleansing_jade": (StationaryObservationRoute, "edit_distance"),  # 漱玉原地向右取景
         "glowing_lankybeast": (GlowingLankybeastRoute, "edit_distance"),  # 吐虫长股兽向右取景
     }
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
