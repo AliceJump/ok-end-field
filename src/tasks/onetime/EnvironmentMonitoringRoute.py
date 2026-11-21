@@ -64,6 +64,14 @@ class VigorousCisternSlugRoute(EnvironmentMonitoringRoute):  # 活力蓄水源�
             raise RuntimeError("充满活力的蓄水源石虫导航失败")  # 导航失败时停止拍照
 
 
+class AncientTreeRoute(EnvironmentMonitoringRoute):  # 古树世界坐标路线
+    photo_direction = "up"  # 向上取景
+
+    def run(self):  # 导航至记录的拍摄位置
+        if not self.task.navigate_grid_to((-957.16, -1636.97), map_id="map02"):  # 使用武陵网格
+            raise RuntimeError("古树导航失败")  # 导航失败时停止拍照
+
+
 class AnnularWaterfallRoute(EnvironmentMonitoringRoute):  # 环形瀑布传送后路线
     photo_direction = "up"  # 向上取景
 

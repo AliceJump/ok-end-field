@@ -428,6 +428,9 @@ class EnvironmentMonitoringModule(_LangModuleBaseT):
     vigorous_cistern_slug: str
     """充满活力的蓄水源石虫"""
 
+    ancient_tree: str
+    """古树"""
+
     cistern_originium_slugs: str
     """蓄水源石虫"""
 
