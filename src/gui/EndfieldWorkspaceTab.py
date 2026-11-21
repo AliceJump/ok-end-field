@@ -42,6 +42,7 @@ from src.gui.EndfieldTypography import field_font, ui_font
 
 logger = Logger.get_logger(__name__)
 
+
 # 页签眉标：短英文代号，长名称会把 9px 眉标撑出页签
 TAB_CODES = {
     "截图方式": "CAPTURE",
@@ -178,6 +179,7 @@ class EndfieldSegmentedBar(QWidget):
         self.buttons.append(btn)
         self.layout.addWidget(btn)
         if idx == 0:
+            self.current_index = idx
             btn.set_active(True)
         return idx
 
@@ -187,6 +189,14 @@ class EndfieldSegmentedBar(QWidget):
             for i, b in enumerate(self.buttons):
                 b.set_active(i == index)
             self.tabChanged.emit(index)
+
+    def remove_tab(self, index: int, current_index: int):
+        button = self.buttons.pop(index)
+        self.layout.removeWidget(button)
+        button.hide()
+        button.deleteLater()
+        self.current_index = current_index
+        self.set_current_index(current_index)
 
 
 # 页眉运行状态：英文代码与中文状态，版式同页签
@@ -343,7 +353,7 @@ class EndfieldWorkspaceTab(QWidget):
         self.setObjectName(f"{category_code.lower()}_workspace")
         self.category_code = category_code
         self.category_title = category_title
-        self.child_tabs = tabs
+        self.child_tabs: list[tuple[str, Any, QWidget]] = []
         self.primary_action_button: EndfieldActionButton | None = None
         self.secondary_action_button: EndfieldActionButton | None = None
         self._backdrop: QPixmap | None = None
@@ -389,8 +399,6 @@ class EndfieldWorkspaceTab(QWidget):
         self.header_layout.setContentsMargins(0, 0, 0, 0)
         self.header_layout.setSpacing(12)
         self.tab_bar = EndfieldSegmentedBar(self.header_bar)
-        for name, icon_obj, tab_widget in tabs:
-            self.tab_bar.add_tab(name, icon_obj, tab_key(name, tab_widget))
         self.header_layout.addWidget(self.tab_bar, 0, Qt.AlignBottom)
         self.header_layout.addStretch(1)
 
@@ -442,9 +450,10 @@ class EndfieldWorkspaceTab(QWidget):
         self.stack.setStyleSheet("#EndfieldWorkspaceStack { background: transparent; }")
 
         self._page_containers: dict[QWidget, QWidget] = {}
+        self.stack.widgetRemoved.connect(self._page_removed)
         # 编号页的任务行贴在一起，由 EndfieldEntryNumbering 维护间距
         row_spacing = 12 if category_code == "DAILY" else 0
-        for index, (name, _, tab_widget) in enumerate(tabs, 1):
+        for index, (name, icon, tab_widget) in enumerate(tabs, 1):
             for attr, spacing in (("vBoxLayout", 12), ("taskCardLayout", row_spacing)):
                 layout = getattr(tab_widget, attr, None)
                 if layout is not None:
@@ -467,8 +476,9 @@ class EndfieldWorkspaceTab(QWidget):
                     content.setSpacing(12)
                     content.addWidget(banner)
                     content.addWidget(tab_widget, 1)
-            self._page_containers[tab_widget] = container
-            self.stack.addWidget(container)
+                    # stack 持有外层容器，内页销毁时让容器一起退出页签。
+                    tab_widget.destroyed.connect(container.deleteLater)
+            self.add_page(tab_widget, name, icon, container=container)
             if plain_page:
                 remove_page_decorations(tab_widget)
             elif category_code != "DAILY":
@@ -477,8 +487,6 @@ class EndfieldWorkspaceTab(QWidget):
         self.main_layout.addWidget(self.stack, 1)
 
         self.tab_bar.tabChanged.connect(self.stack.setCurrentIndex)
-        if category_code == "PLUGINS":
-            self.stack.widgetRemoved.connect(self._remove_plugin_tab)
         self.apply_theme_colors()
         with suppress(Exception):
             qconfig.themeChanged.connect(self.apply_theme_colors)
@@ -580,20 +588,33 @@ class EndfieldWorkspaceTab(QWidget):
             btn.update()
         self.update()
 
-    def add_plugin_page(self, widget, icon, text, **_kwargs):
-        if self.stack.indexOf(widget) < 0:
-            self.tab_bar.add_tab(text, icon, "插件")
-            self.stack.addWidget(widget)
+    def add_page(self, widget: QWidget, title: str, icon=None, *, key=None, container=None):
+        if self.has_child(widget):
+            return
+        container = widget if container is None else container
+        self.child_tabs.append((title, icon, widget))
+        self._page_containers[widget] = container
+        self.tab_bar.add_tab(title, icon, key or tab_key(title, widget))
+        self.stack.addWidget(container)
 
-    def _remove_plugin_tab(self, index):
-        # 插件管理器释放页面时，Qt 自动从 stack 移除它；同步移除对应按钮。
-        button = self.tab_bar.buttons.pop(index)
-        self.tab_bar.layout.removeWidget(button)
-        button.deleteLater()
-        self.tab_bar.set_current_index(self.stack.currentIndex())
+    def remove_page(self, widget: QWidget):
+        container = self._page_containers.get(widget)
+        if container is None:
+            return
+        self.stack.removeWidget(container)
+        if container is not widget:
+            widget.setParent(self)
+            container.deleteLater()
+        widget.hide()
+
+    def _page_removed(self, index: int):
+        # Qt 在显式移除或销毁 stack 页时都发出此信号，两个入口共用一次清理。
+        _, _, widget = self.child_tabs.pop(index)
+        del self._page_containers[widget]
+        self.tab_bar.remove_tab(index, self.stack.currentIndex())
 
     def has_child(self, widget: QWidget) -> bool:
-        return widget in self._page_containers or self.stack.indexOf(widget) >= 0
+        return widget in self._page_containers
 
     def switch_to_child(self, widget: QWidget):
         idx = self.stack.indexOf(self._page_containers.get(widget, widget))

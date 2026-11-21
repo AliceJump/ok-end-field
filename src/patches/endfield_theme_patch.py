@@ -888,7 +888,7 @@ def apply_native_card_panel(card: Any) -> None:
 def install_endfield_theme_patch() -> None:
     """把终末地风格界面装到 ok-ef 主窗口。
 
-    1. 主窗口：页签按页面身份归入五个工作区，工作区顶部用切角页签切换；标题栏加「恢复默认大小」。
+    1. 主窗口：页签按页面身份归入对应工作区，工作区顶部用切角页签切换；标题栏加「恢复默认大小」。
     2. 样式：浅色、深色两套 QSS 只下发到主窗口；切换主题时同步强调色。
     3. 任务页：日常分栏渲染为分区勾选清单，战斗字段集中到「自动战斗」页，参数在右侧面板编辑。
     """
@@ -970,21 +970,12 @@ def install_endfield_theme_patch() -> None:
         self.addSubInterface = _collector_add_sub_interface
 
         original_update_imported_tabs = self.update_imported_tabs
-        plugin_workspace = None
+        workspaces_ready = False
 
         def _update_imported_tabs():
-            if plugin_workspace is None:
-                # 工作区在原生构造完成后创建。禁用插件管理页时仍沿用框架原有的导入行为。
-                if hasattr(self, "_endfield_workspaces"):
-                    return original_update_imported_tabs()
-                return
-            # 框架仍负责插件页的创建与销毁，只将本次刷新产生的页面挂到插件工作区。
-            previous_add = self.addSubInterface
-            self.addSubInterface = plugin_workspace.add_plugin_page
-            try:
+            # 原生构造会立即刷新并绑定此回调；待插件页面的宿主确定后再首次加载。
+            if workspaces_ready:
                 return original_update_imported_tabs()
-            finally:
-                self.addSubInterface = previous_add
 
         self.update_imported_tabs = _update_imported_tabs
 
@@ -1014,6 +1005,7 @@ def install_endfield_theme_patch() -> None:
             # 导入终末地工作区容器
             from src.gui.components.EndfieldSectionMatrix import open_daily_settings_drawer
             from src.gui.EndfieldCombatTab import EndfieldCombatTab
+            from src.gui.EndfieldPluginWorkspaceTab import EndfieldPluginWorkspaceTab
             from src.gui.EndfieldWorkspaceTab import EndfieldWorkspaceTab
 
             # 「自动战斗」是 ok-ef 自己的页面，和收集到的原生 Tab 一起归类
@@ -1057,7 +1049,8 @@ def install_endfield_theme_patch() -> None:
                 tabs = routed_tabs[code]
                 if not tabs:
                     continue
-                workspace = EndfieldWorkspaceTab(
+                workspace_type = EndfieldPluginWorkspaceTab if code == "PLUGINS" else EndfieldWorkspaceTab
+                workspace = workspace_type(
                     code,
                     title,
                     tabs,
@@ -1070,11 +1063,10 @@ def install_endfield_theme_patch() -> None:
                 if item is not None:
                     style_navigation_item(item, f"{len(workspaces) + 1:02d} · {nav_code}")
                 workspaces.append(workspace)
-                if code == "PLUGINS":
-                    plugin_workspace = workspace
+                if isinstance(workspace, EndfieldPluginWorkspaceTab):
+                    workspace.bind_plugins(self)
 
             self._endfield_workspaces = workspaces
-            self.update_imported_tabs()
 
             # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
             daily = next((ws for ws in workspaces if ws.category_code == "DAILY"), None)
@@ -1154,6 +1146,10 @@ def install_endfield_theme_patch() -> None:
             logger.info("Endfield UI architecture applied successfully.")
         except Exception as e:
             logger.warning("Error applying Endfield UI architecture in MainWindow: %s", e)
+        finally:
+            # 工作区未建成时，原生方法会用主窗口创建默认控制器。
+            workspaces_ready = True
+            self.update_imported_tabs()
 
     try:
         patch_theme_acceleration()

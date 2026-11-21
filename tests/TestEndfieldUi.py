@@ -1104,20 +1104,87 @@ class NativeTextLayoutTest(unittest.TestCase):
         workspace.deleteLater()
         reference.deleteLater()
 
+    def test_workspace_routes_original_page_after_removing_middle_tab(self):
+        a, b, c = QWidget(), QWidget(), QWidget()
+        workspace = EndfieldWorkspaceTab("ENVIRONMENT", "系统与环境", [("A", None, a), ("B", None, b)])
+        workspace.add_page(c, "C")
+        workspace.tab_bar.buttons[2].click()
+        workspace.remove_page(b)
+        self.assertFalse(workspace.has_child(b))
+        self.assertEqual([item.text() for item in workspace.tab_bar.buttons], ["A", "C"])
+        self.assertIs(workspace.stack.currentWidget(), c)
+        self.assertEqual(workspace.tab_bar.current_index, 1)
+        workspace.switch_to_child(a)
+        self.assertTrue(workspace.stack.currentWidget().isAncestorOf(a))
+        workspace.tab_bar.buttons[1].click()
+        self.assertIs(workspace.stack.currentWidget(), c)
+        workspace.remove_page(c)
+        workspace.remove_page(a)
+        self.assertEqual(workspace.tab_bar.current_index, -1)
+        workspace.add_page(c, "C")
+        self.assertIs(workspace.stack.currentWidget(), c)
+        self.assertEqual(workspace.tab_bar.current_index, 0)
+        workspace.deleteLater()
+
+    def test_destroying_wrapped_page_removes_its_tab(self):
+        page, other = QWidget(), QWidget()
+        workspace = EndfieldWorkspaceTab("ENVIRONMENT", "系统与环境", [("A", None, page), ("B", None, other)])
+        container = workspace.stack.currentWidget()
+        self.assertTrue(container.isAncestorOf(page))
+        page.deleteLater()
+        QApplication.sendPostedEvents(page, QEvent.Type.DeferredDelete)
+        QApplication.sendPostedEvents(container, QEvent.Type.DeferredDelete)
+        self.assertFalse(workspace.has_child(page))
+        self.assertEqual([button.text() for button in workspace.tab_bar.buttons], ["B"])
+        self.assertEqual(workspace.stack.count(), 1)
+        self.assertTrue(workspace.stack.currentWidget().isAncestorOf(other))
+        workspace.deleteLater()
+
     def test_plugin_workspace_keeps_overview_and_remaining_plugin_after_unload(self):
-        overview, first, second = QWidget(), QWidget(), QWidget()
-        workspace = EndfieldWorkspaceTab("PLUGINS", "插件", [("插件", None, overview)])
-        workspace.add_plugin_page(first, None, "烟火生缘传送")
-        workspace.add_plugin_page(second, None, "终末地插件示例")
-        self.assertEqual(workspace.stack.currentIndex(), 0)
-        self.assertTrue(workspace.has_child(first))
-        workspace.tab_bar.buttons[1].click()
-        self.assertIs(workspace.stack.currentWidget(), first)
-        first.deleteLater()
-        QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
-        self.assertEqual([button.text() for button in workspace.tab_bar.buttons], ["插件", "终末地插件示例"])
-        workspace.tab_bar.buttons[1].click()
-        self.assertIs(workspace.stack.currentWidget(), second)
+        from ok.ui.qt.plugins import imported_tabs
+
+        from src.gui.EndfieldPluginWorkspaceTab import EndfieldPluginWorkspaceTab
+
+        workspace = EndfieldPluginWorkspaceTab("PLUGINS", "插件", [("插件", None, QWidget())])
+        window = SimpleNamespace(
+            app=SimpleNamespace(tr=str), executor=None, imported_tabs={}, update_navigation_width=lambda: None
+        )
+        workspace.bind_plugins(window)
+        controller = window._imported_tab_controller
+
+        def entry(name):
+            return {"script_name": name, "folder": ".", "custom_tabs": [("plugin", name)]}
+
+        entries = {"first": entry("first")}
+
+        def load_page(folder, spec):
+            def create():
+                page = QWidget()
+                page.setObjectName(workspace.objectName())
+                if spec[1] == "first":
+                    entries["second"] = entry("second")
+                    controller.refresh()  # 页面工厂触发的刷新会被框架延迟到下一个事件循环。
+                return page
+
+            return create
+
+        with (
+            patch.object(imported_tabs, "og", SimpleNamespace(task_manager=SimpleNamespace(imported_scripts=entries))),
+            patch.object(imported_tabs, "import_plugin_class", load_page),
+            patch("ok.core.plugin_staging.finish_plugin_update"),
+        ):
+            controller.refresh()
+            QApplication.processEvents()
+            self.assertEqual([b.text() for b in workspace.tab_bar.buttons], ["插件", "first", "second"])
+            self.assertEqual(workspace.stack.currentIndex(), 0)
+            workspace.tab_bar.buttons[1].click()
+            self.assertIs(workspace.stack.currentWidget(), controller.custom_tabs["first"][0])
+            del entries["first"]
+            controller.refresh()
+            self.assertEqual([b.text() for b in workspace.tab_bar.buttons], ["插件", "second"])
+            workspace.tab_bar.buttons[1].click()
+            self.assertIs(workspace.stack.currentWidget(), controller.custom_tabs["second"][0])
+            controller.dispose()
         workspace.deleteLater()
 
     def test_tabs_route_by_page_identity_when_titles_are_translated(self):
