@@ -97,8 +97,14 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_cleansing_jade_uses_stationary_route_in_all_locales(self):
         self.assert_localized_routes(
             "cleansing_jade",
-            {"zh_CN": "“漱玉”", "zh_TW": "「漱玉」", "en_US": "Cleansing Jade",
-             "ja_JP": "「漱玉」", "ko_KR": "수옥", "es_ES": "Jade purificador"},
+            {
+                "zh_CN": "“漱玉”",
+                "zh_TW": "「漱玉」",
+                "en_US": "Cleansing Jade",
+                "ja_JP": "「漱玉」",
+                "ko_KR": "수옥",
+                "es_ES": "Jade purificador",
+            },
             StationaryObservationRoute,
         )
         self.assertEqual(StationaryObservationRoute.photo_direction, "right")
