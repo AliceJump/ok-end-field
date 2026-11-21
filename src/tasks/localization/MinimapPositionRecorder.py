@@ -14,7 +14,7 @@
 
 产物目录（默认 ``logs/minimap_position_recorder/<时间戳>/``）：
 
-- ``samples.jsonl``：逐拍记录；
+- ``samples.jsonl``：逐拍刷新到磁盘的记录，采集中也可读取；
 - ``calibrations.jsonl``：每次真实校准（含首次锚定）的残差；
 - ``patches/``：小地图圆环切片；
 - ``stitch_*_fused*.png``：按融合绝对坐标放置的拼接图；
@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import math
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -150,10 +151,7 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
             return
 
         fusion = position_task.minimap_fusion
-        if fusion is None:
-            self.log_error("小地图融合器未初始化，无法记录。", notify=True)
-            return
-        map_to_world_px = fusion.map_to_world_px
+        map_to_world_px = fusion.map_to_world_px if fusion is not None else None
         scale = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
         task_w = int(getattr(position_task, "width", 0) or 0)
         task_h = int(getattr(position_task, "height", 0) or 0)
@@ -183,265 +181,271 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
             notify=True,
         )
 
+        start_ready = False
+        self.info_set(CONFIG_SAVE_DIR, str(run_dir))
         try:
-            while True:
-                next_at += interval
-                now = self.active_time()
-                if next_at > now:
-                    self.sleep(next_at - now)
-                elif now - next_at > interval:
-                    overruns += 1
-                    next_at = now
-                now = self.active_time()
-                if now - start >= duration:
-                    break
-                if prev_tick is not None:
-                    max_period = max(max_period, now - prev_tick)
-                prev_tick = now
-                iteration += 1
+            with self._live_samples(run_dir / "samples.jsonl") as write_sample:
+                while True:
+                    next_at += interval
+                    now = self.active_time()
+                    if next_at > now:
+                        self.sleep(next_at - now)
+                    elif now - next_at > interval:
+                        overruns += 1
+                        next_at = now
+                    now = self.active_time()
+                    if now - start >= duration:
+                        break
+                    if prev_tick is not None:
+                        max_period = max(max_period, now - prev_tick)
+                    prev_tick = now
+                    iteration += 1
 
-                try:
-                    frame = self.next_frame()
-                except Exception as exc:
-                    _reraise_control_flow(exc)
-                    self.log_warning(f"next_frame 失败: {exc}")
-                    continue
-                if frame is None:
-                    continue
-                if task_w <= 0 or task_h <= 0:
-                    task_h, task_w = frame.shape[:2]
-
-                try:
-                    state = self.world_pose(
-                        frame=frame,
-                        max_age=max(0.5, interval * 3.0),
-                        now=now,
-                    )
-                except Exception as exc:
-                    _reraise_control_flow(exc)
-                    self.log_warning(f"world_pose 失败: {exc}")
-                    continue
-                if state is None:
-                    self.log_warning("运行时定位状态不可用或已过期")
-                    continue
-
-                odometry = position_task.minimap_odometry
-                fusion_now = position_task.minimap_fusion
-                if fusion_now is not None:
-                    map_to_world_px = fusion_now.map_to_world_px
-                scale_now = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
-                task_w_now = int(getattr(position_task, "width", 0) or task_w)
-                task_h_now = int(getattr(position_task, "height", 0) or task_h)
-                if map_to_world_px is None:
-                    continue
-                profile_now = (
-                    int(task_w_now),
-                    int(task_h_now),
-                    float(scale_now),
-                    tuple(tuple(float(v) for v in row) for row in map_to_world_px),
-                )
-                profile_changed = profile_signature is not None and profile_now != profile_signature
-                if profile_changed:
-                    segment += 1
-                    odom_track.reset()
-                    prev_position_px = None
-                    prev_distance_since_sync = None
-                    profile_signature = profile_now
-                scale = scale_now
-                task_w = task_w_now
-                task_h = task_h_now
-                last = odometry.last_result() if odometry is not None else None
-                last = last if isinstance(last, dict) else {}
-                last_sample = odometry.last_sample() if odometry is not None else None
-                last_sample = last_sample if isinstance(last_sample, dict) else {}
-                try:
-                    position_px = odometry.position_px() if odometry is not None else (0.0, 0.0)
-                except Exception:
-                    position_px = (0.0, 0.0)
-
-                map_id = state.get("map_id")
-                anchor_set = bool(state.get("anchor_set"))
-                just_synced = bool(state.get("just_synced"))
-                map_changed = prev_map_id is not None and map_id != prev_map_id
-                lost_anchor = bool(prev_anchor_set) and not anchor_set
-
-                if map_changed:
-                    segment += 1
-                    odom_track.reset()
-                    prev_position_px = None
-                    prev_distance_since_sync = None
-                reset_anchor = bool(just_synced or (lost_anchor and not map_changed))
-                odom_px, step_px = odom_track.update(position_px, reset_anchor=reset_anchor)
-
-                fused_px = fused_map_px(
-                    map_to_world_px,
-                    state.get("x"),
-                    state.get("z"),
-                )
-
-                patch_rel = None
-                patch_meta: dict = {}
-                can_save = max_patches == 0 or saved_patches < max_patches
-                if can_save:
                     try:
-                        patch, patch_meta = crop_minimap_patch(frame, task_w, task_h)
+                        frame = self.next_frame()
                     except Exception as exc:
-                        patch = None
-                        self.log_warning(f"裁剪小地图切片失败: {exc}")
-                    if patch is not None:
-                        patch_name = f"{iteration:06d}_{now:.3f}.png"
-                        patch_rel = f"patches/{patch_name}"
-                        if not imwrite_unicode(run_dir / patch_rel, patch):
-                            self.log_warning(f"切片写入失败: {run_dir / patch_rel}")
-                            patch_rel = None
-                        else:
-                            saved_patches += 1
-                elif not patch_limit_logged:
-                    patch_limit_logged = True
-                    self.log_info(f"已达到最大切片数 {max_patches}，后续只记录数值不再保存图片")
+                        _reraise_control_flow(exc)
+                        self.log_warning(f"next_frame 失败: {exc}")
+                        continue
+                    if frame is None:
+                        continue
+                    if task_w <= 0 or task_h <= 0:
+                        task_h, task_w = frame.shape[:2]
 
-                rest_diag = position_task.minimap_rest_diag() or {}
-                residual = state.get("sync_residual")
-                if not isinstance(residual, dict):
-                    residual = None
-                step_len = math.hypot(float(step_px[0]), float(step_px[1]))
-                record = {
-                    "i": iteration,
-                    "wall": datetime.now().isoformat(timespec="milliseconds"),
-                    "t": float(now),
-                    "segment": int(segment),
-                    "map_id": map_id,
-                    "width": int(task_w),
-                    "height": int(task_h),
-                    "scale_m_per_px": scale if scale > 0 else None,
-                    "map_to_world_px": map_to_world_px,
-                    "x": state.get("x"),
-                    "z": state.get("z"),
-                    "y": state.get("y"),
-                    "heading": state.get("heading"),
-                    "heading_score": state.get("heading_score"),
-                    "source": state.get("source"),
-                    "frame_t": state.get("frame_t"),
-                    "frame_time_source": state.get("frame_time_source"),
-                    "tier_id": state.get("tier_id"),
-                    "tier_trusted": state.get("tier_trusted"),
-                    "visual_confidence": state.get("visual_confidence"),
-                    "visual_margin": state.get("visual_margin"),
-                    "ws": state.get("ws"),
-                    "ws_xyz": state.get("ws_xyz"),
-                    "error_m": state.get("error"),
-                    "fused_px": None if fused_px is None else [fused_px[0], fused_px[1]],
-                    "odom_px": [float(odom_px[0]), float(odom_px[1])],
-                    "step_px": [float(step_px[0]), float(step_px[1])],
-                    "step_len_px": float(step_len),
-                    "step_m": None if scale <= 0 else float(step_len * scale),
-                    "position_px": [float(position_px[0]), float(position_px[1])],
-                    "anchor_dmap_px": last.get("dmap_px"),
-                    "odom_dx_px": last.get("dx_px"),
-                    "odom_dy_px": last.get("dy_px"),
-                    "odom_response": last.get("response"),
-                    "odom_dt": last.get("dt"),
-                    "odom_ok": last.get("ok"),
-                    "odom_sampled": last.get("sampled"),
-                    "odom_reason": last.get("reason"),
-                    "odom_committed": last.get("committed"),
-                    "odom_reanchored": last.get("reanchored"),
-                    "odom_benign_reanchor": last.get("benign_reanchor"),
-                    "last_sample_reason": last_sample.get("reason"),
-                    "last_sample_dmap_px": last_sample.get("dmap_px"),
-                    "position_trusted": state.get("position_trusted"),
-                    "trust_reason": state.get("trust_reason"),
-                    "raw_x": state.get("raw_x"),
-                    "raw_z": state.get("raw_z"),
-                    "visual_anchor_chain_x": state.get("visual_anchor_chain_x"),
-                    "visual_anchor_chain_z": state.get("visual_anchor_chain_z"),
-                    "visual_anchor_chain_correction_px": state.get("visual_anchor_chain_correction_px"),
-                    "visual_anchor_chain_correction_m": state.get("visual_anchor_chain_correction_m"),
-                    "visual_anchor_chain_nodes": state.get("visual_anchor_chain_nodes"),
-                    "visual_anchor_chain_edges": state.get("visual_anchor_chain_edges"),
-                    "visual_anchor_chain_anchors": state.get("visual_anchor_chain_anchors"),
-                    "visual_anchor_chain_iterations": state.get("visual_anchor_chain_iterations"),
-                    "visual_anchor_chain_min_response": state.get("visual_anchor_chain_min_response"),
-                    "visual_anchor_chain_median_response": state.get("visual_anchor_chain_median_response"),
-                    "visual_anchor_chain_residual_median": state.get("visual_anchor_chain_residual_median"),
-                    "visual_anchor_chain_residual_max": state.get("visual_anchor_chain_residual_max"),
-                    "visual_anchor_chain_reason": state.get("visual_anchor_chain_reason"),
-                    "visual_anchor_chain_keyframe_reason": state.get("visual_anchor_chain_keyframe_reason"),
-                    "visual_anchor_chain_keyframe_correction_m": state.get("visual_anchor_chain_keyframe_correction_m"),
-                    "visual_anchor_chain_keyframe_nodes": state.get("visual_anchor_chain_keyframe_nodes"),
-                    "visual_anchor_chain_keyframe_edges": state.get("visual_anchor_chain_keyframe_edges"),
-                    "visual_anchor_chain_keyframe_anchors": state.get("visual_anchor_chain_keyframe_anchors"),
-                    "visual_anchor_chain_keyframe_iterations": state.get("visual_anchor_chain_keyframe_iterations"),
-                    "visual_anchor_chain_keyframe_min_response": state.get("visual_anchor_chain_keyframe_min_response"),
-                    "visual_anchor_chain_keyframe_median_response": state.get(
-                        "visual_anchor_chain_keyframe_median_response"
-                    ),
-                    "visual_anchor_chain_keyframe_residual_median": state.get(
-                        "visual_anchor_chain_keyframe_residual_median"
-                    ),
-                    "visual_anchor_chain_keyframe_residual_max": state.get("visual_anchor_chain_keyframe_residual_max"),
-                    "anchor_set": anchor_set,
-                    "rest": state.get("rest"),
-                    "rest_reason": rest_diag.get("reason"),
-                    "map_speed_m_s": rest_diag.get("map_speed_m_s"),
-                    "ws_moved_m": rest_diag.get("ws_moved_m"),
-                    "sync_seq": state.get("sync_seq"),
-                    "just_synced": just_synced,
-                    "sync_redundant": state.get("sync_redundant"),
-                    "sync_checked": state.get("sync_checked"),
-                    "sync_needed": state.get("sync_needed"),
-                    "distance_since_sync_m": state.get("distance_since_sync"),
-                    "sync_residual": residual,
-                    "patch": patch_rel,
-                    "patch_size": patch_meta.get("size"),
-                    "patch_center": patch_meta.get("center"),
-                    "patch_r_inner": patch_meta.get("r_inner"),
-                    "patch_r_outer": patch_meta.get("r_outer"),
-                    "region": patch_meta.get("region"),
-                }
-                records.append(record)
-
-                if just_synced:
-                    calibrations.append(
-                        {
-                            "i": iteration,
-                            "wall": record["wall"],
-                            "t": float(now),
-                            "segment": int(segment),
-                            "map_id": map_id,
-                            "kind": state.get("trust_reason"),
-                            "sync_seq": state.get("sync_seq"),
-                            "residual_dist_m": None if residual is None else residual.get("dist"),
-                            "residual_dx_m": None if residual is None else residual.get("dx"),
-                            "residual_dz_m": None if residual is None else residual.get("dz"),
-                            "residual_map_x": None if residual is None else residual.get("map_x"),
-                            "residual_map_z": None if residual is None else residual.get("map_z"),
-                            "residual_ws_x": None if residual is None else residual.get("ws_x"),
-                            "residual_ws_z": None if residual is None else residual.get("ws_z"),
-                            "distance_since_sync_m": prev_distance_since_sync,
-                            "odom_before_sync_px": None
-                            if prev_position_px is None
-                            else [float(prev_position_px[0]), float(prev_position_px[1])],
-                            "step_px": [float(step_px[0]), float(step_px[1])],
-                        }
-                    )
-                    if residual is not None:
-                        self.log_info(
-                            f"[校准] #{iteration:04d} 残差={float(residual['dist']):.3f}m "
-                            f"(dx={float(residual['dx']):+.3f}, "
-                            f"dz={float(residual['dz']):+.3f})"
+                    try:
+                        state = self.world_pose(
+                            frame=frame,
+                            max_age=max(0.5, interval * 3.0),
+                            now=now,
                         )
+                    except Exception as exc:
+                        _reraise_control_flow(exc)
+                        self.log_warning(f"world_pose 失败: {exc}")
+                        continue
+                    if state is None:
+                        self.log_warning("运行时定位状态不可用或已过期")
+                        continue
 
-                prev_map_id = map_id
-                prev_anchor_set = anchor_set
-                prev_position_px = position_px
-                prev_distance_since_sync = state.get("distance_since_sync")
-
-                if iteration % 25 == 0:
-                    self.info_set(
-                        "定位采样",
-                        f"{len(records)} 拍 / 校准 {len(calibrations)} 次",
+                    odometry = position_task.minimap_odometry
+                    fusion_now = position_task.minimap_fusion
+                    if fusion_now is not None:
+                        map_to_world_px = fusion_now.map_to_world_px
+                    scale_now = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
+                    task_w_now = int(getattr(position_task, "width", 0) or task_w)
+                    task_h_now = int(getattr(position_task, "height", 0) or task_h)
+                    profile_now = (
+                        int(task_w_now),
+                        int(task_h_now),
+                        float(scale_now),
+                        tuple(tuple(float(v) for v in row) for row in map_to_world_px)
+                        if map_to_world_px is not None else None,
                     )
+                    profile_changed = profile_signature is not None and profile_now != profile_signature
+                    if profile_changed:
+                        segment += 1
+                        odom_track.reset()
+                        prev_position_px = None
+                        prev_distance_since_sync = None
+                        profile_signature = profile_now
+                    scale = scale_now
+                    task_w = task_w_now
+                    task_h = task_h_now
+                    last = odometry.last_result() if odometry is not None else None
+                    last = last if isinstance(last, dict) else {}
+                    last_sample = odometry.last_sample() if odometry is not None else None
+                    last_sample = last_sample if isinstance(last_sample, dict) else {}
+                    try:
+                        position_px = odometry.position_px() if odometry is not None else (0.0, 0.0)
+                    except Exception:
+                        position_px = (0.0, 0.0)
+
+                    map_id = state.get("map_id")
+                    anchor_set = bool(state.get("anchor_set"))
+                    just_synced = bool(state.get("just_synced"))
+                    map_changed = prev_map_id is not None and map_id != prev_map_id
+                    lost_anchor = bool(prev_anchor_set) and not anchor_set
+
+                    if map_changed:
+                        segment += 1
+                        odom_track.reset()
+                        prev_position_px = None
+                        prev_distance_since_sync = None
+                    reset_anchor = bool(just_synced or (lost_anchor and not map_changed))
+                    odom_px, step_px = odom_track.update(position_px, reset_anchor=reset_anchor)
+
+                    fused_px = fused_map_px(
+                        map_to_world_px,
+                        state.get("x"),
+                        state.get("z"),
+                    )
+
+                    patch_rel = None
+                    patch_meta: dict = {}
+                    can_save = max_patches == 0 or saved_patches < max_patches
+                    if can_save:
+                        try:
+                            patch, patch_meta = crop_minimap_patch(frame, task_w, task_h)
+                        except Exception as exc:
+                            patch = None
+                            self.log_warning(f"裁剪小地图切片失败: {exc}")
+                        if patch is not None:
+                            patch_name = f"{iteration:06d}_{now:.3f}.png"
+                            patch_rel = f"patches/{patch_name}"
+                            if not imwrite_unicode(run_dir / patch_rel, patch):
+                                self.log_warning(f"切片写入失败: {run_dir / patch_rel}")
+                                patch_rel = None
+                            else:
+                                saved_patches += 1
+                    elif not patch_limit_logged:
+                        patch_limit_logged = True
+                        self.log_info(f"已达到最大切片数 {max_patches}，后续只记录数值不再保存图片")
+
+                    rest_diag = position_task.minimap_rest_diag() or {}
+                    residual = state.get("sync_residual")
+                    if not isinstance(residual, dict):
+                        residual = None
+                    step_len = math.hypot(float(step_px[0]), float(step_px[1]))
+                    record = {
+                        "i": iteration,
+                        "wall": datetime.now().isoformat(timespec="milliseconds"),
+                        "t": float(now),
+                        "segment": int(segment),
+                        "map_id": map_id,
+                        "width": int(task_w),
+                        "height": int(task_h),
+                        "scale_m_per_px": scale if scale > 0 else None,
+                        "map_to_world_px": map_to_world_px,
+                        "x": state.get("x"),
+                        "z": state.get("z"),
+                        "y": state.get("y"),
+                        "heading": state.get("heading"),
+                        "heading_score": state.get("heading_score"),
+                        "source": state.get("source"),
+                        "frame_t": state.get("frame_t"),
+                        "frame_time_source": state.get("frame_time_source"),
+                        "tier_id": state.get("tier_id"),
+                        "tier_trusted": state.get("tier_trusted"),
+                        "visual_confidence": state.get("visual_confidence"),
+                        "visual_margin": state.get("visual_margin"),
+                        "ws": state.get("ws"),
+                        "ws_xyz": state.get("ws_xyz"),
+                        "error_m": state.get("error"),
+                        "fused_px": None if fused_px is None else [fused_px[0], fused_px[1]],
+                        "odom_px": [float(odom_px[0]), float(odom_px[1])],
+                        "step_px": [float(step_px[0]), float(step_px[1])],
+                        "step_len_px": float(step_len),
+                        "step_m": None if scale <= 0 else float(step_len * scale),
+                        "position_px": [float(position_px[0]), float(position_px[1])],
+                        "anchor_dmap_px": last.get("dmap_px"),
+                        "odom_dx_px": last.get("dx_px"),
+                        "odom_dy_px": last.get("dy_px"),
+                        "odom_response": last.get("response"),
+                        "odom_dt": last.get("dt"),
+                        "odom_ok": last.get("ok"),
+                        "odom_sampled": last.get("sampled"),
+                        "odom_reason": last.get("reason"),
+                        "odom_committed": last.get("committed"),
+                        "odom_reanchored": last.get("reanchored"),
+                        "odom_benign_reanchor": last.get("benign_reanchor"),
+                        "last_sample_reason": last_sample.get("reason"),
+                        "last_sample_dmap_px": last_sample.get("dmap_px"),
+                        "position_trusted": state.get("position_trusted"),
+                        "trust_reason": state.get("trust_reason"),
+                        "raw_x": state.get("raw_x"),
+                        "raw_z": state.get("raw_z"),
+                        "visual_anchor_chain_x": state.get("visual_anchor_chain_x"),
+                        "visual_anchor_chain_z": state.get("visual_anchor_chain_z"),
+                        "visual_anchor_chain_correction_px": state.get("visual_anchor_chain_correction_px"),
+                        "visual_anchor_chain_correction_m": state.get("visual_anchor_chain_correction_m"),
+                        "visual_anchor_chain_nodes": state.get("visual_anchor_chain_nodes"),
+                        "visual_anchor_chain_edges": state.get("visual_anchor_chain_edges"),
+                        "visual_anchor_chain_anchors": state.get("visual_anchor_chain_anchors"),
+                        "visual_anchor_chain_iterations": state.get("visual_anchor_chain_iterations"),
+                        "visual_anchor_chain_min_response": state.get("visual_anchor_chain_min_response"),
+                        "visual_anchor_chain_median_response": state.get("visual_anchor_chain_median_response"),
+                        "visual_anchor_chain_residual_median": state.get("visual_anchor_chain_residual_median"),
+                        "visual_anchor_chain_residual_max": state.get("visual_anchor_chain_residual_max"),
+                        "visual_anchor_chain_reason": state.get("visual_anchor_chain_reason"),
+                        "visual_anchor_chain_keyframe_reason": state.get("visual_anchor_chain_keyframe_reason"),
+                        "visual_anchor_chain_keyframe_correction_m": state.get("visual_anchor_chain_keyframe_correction_m"),
+                        "visual_anchor_chain_keyframe_nodes": state.get("visual_anchor_chain_keyframe_nodes"),
+                        "visual_anchor_chain_keyframe_edges": state.get("visual_anchor_chain_keyframe_edges"),
+                        "visual_anchor_chain_keyframe_anchors": state.get("visual_anchor_chain_keyframe_anchors"),
+                        "visual_anchor_chain_keyframe_iterations": state.get("visual_anchor_chain_keyframe_iterations"),
+                        "visual_anchor_chain_keyframe_min_response": state.get("visual_anchor_chain_keyframe_min_response"),
+                        "visual_anchor_chain_keyframe_median_response": state.get(
+                            "visual_anchor_chain_keyframe_median_response"
+                        ),
+                        "visual_anchor_chain_keyframe_residual_median": state.get(
+                            "visual_anchor_chain_keyframe_residual_median"
+                        ),
+                        "visual_anchor_chain_keyframe_residual_max": state.get("visual_anchor_chain_keyframe_residual_max"),
+                        "anchor_set": anchor_set,
+                        "rest": state.get("rest"),
+                        "rest_reason": rest_diag.get("reason"),
+                        "map_speed_m_s": rest_diag.get("map_speed_m_s"),
+                        "ws_moved_m": rest_diag.get("ws_moved_m"),
+                        "sync_seq": state.get("sync_seq"),
+                        "just_synced": just_synced,
+                        "sync_redundant": state.get("sync_redundant"),
+                        "sync_checked": state.get("sync_checked"),
+                        "sync_needed": state.get("sync_needed"),
+                        "distance_since_sync_m": state.get("distance_since_sync"),
+                        "sync_residual": residual,
+                        "patch": patch_rel,
+                        "patch_size": patch_meta.get("size"),
+                        "patch_center": patch_meta.get("center"),
+                        "patch_r_inner": patch_meta.get("r_inner"),
+                        "patch_r_outer": patch_meta.get("r_outer"),
+                        "region": patch_meta.get("region"),
+                    }
+                    records.append(record)
+                    write_sample(record)
+                    if not start_ready and record.get("position_trusted"):
+                        start_ready = True
+                        self.log_info("起点已就绪，可以开始走路线", notify=True)
+
+                    if just_synced:
+                        calibrations.append(
+                            {
+                                "i": iteration,
+                                "wall": record["wall"],
+                                "t": float(now),
+                                "segment": int(segment),
+                                "map_id": map_id,
+                                "kind": state.get("trust_reason"),
+                                "sync_seq": state.get("sync_seq"),
+                                "residual_dist_m": None if residual is None else residual.get("dist"),
+                                "residual_dx_m": None if residual is None else residual.get("dx"),
+                                "residual_dz_m": None if residual is None else residual.get("dz"),
+                                "residual_map_x": None if residual is None else residual.get("map_x"),
+                                "residual_map_z": None if residual is None else residual.get("map_z"),
+                                "residual_ws_x": None if residual is None else residual.get("ws_x"),
+                                "residual_ws_z": None if residual is None else residual.get("ws_z"),
+                                "distance_since_sync_m": prev_distance_since_sync,
+                                "odom_before_sync_px": None
+                                if prev_position_px is None
+                                else [float(prev_position_px[0]), float(prev_position_px[1])],
+                                "step_px": [float(step_px[0]), float(step_px[1])],
+                            }
+                        )
+                        if residual is not None:
+                            self.log_info(
+                                f"[校准] #{iteration:04d} 残差={float(residual['dist']):.3f}m "
+                                f"(dx={float(residual['dx']):+.3f}, "
+                                f"dz={float(residual['dz']):+.3f})"
+                            )
+
+                    prev_map_id = map_id
+                    prev_anchor_set = anchor_set
+                    prev_position_px = position_px
+                    prev_distance_since_sync = state.get("distance_since_sync")
+
+                    if iteration % 25 == 0:
+                        self.info_set(
+                            "定位采样",
+                            f"{len(records)} 拍 / 校准 {len(calibrations)} 次",
+                        )
         finally:
             try:
                 elapsed = self.active_time() - start
@@ -486,6 +490,33 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
             except Exception as exc:
                 _reraise_control_flow(exc)
                 self.log_warning(f"记录收尾失败: {exc}")
+
+    @contextmanager
+    def _live_samples(self, path):
+        """实时写入尽力而为；内存样本仍由收尾流程完整落盘。"""
+        stream = None
+        try:
+            stream = path.open("w", encoding="utf-8")
+        except OSError as exc:
+            self.log_warning(f"打开实时采样记录失败，继续采集: {exc}")
+
+        def write_sample(record):
+            if stream is None:
+                return
+            try:
+                stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+                stream.flush()
+            except OSError as exc:
+                self.log_warning(f"实时写入采样记录失败，继续采集并在收尾重试: {exc}")
+
+        try:
+            yield write_sample
+        finally:
+            if stream is not None:
+                try:
+                    stream.close()
+                except OSError as exc:
+                    self.log_warning(f"关闭采样记录失败，继续尝试收尾: {exc}")
 
     # ------------------------------------------------------------------ #
     # 收尾
