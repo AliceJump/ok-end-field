@@ -571,7 +571,7 @@ QLabel#sectionTitle {{
 # 顶栏页签命名与顺序（与 reorganize_tasks_architecture 写入的 group_name 严格一致）
 ENDFIELD_DAILY_TAB_ORDER = ("帝江号", "战斗", "奖励", "其他")
 ENDFIELD_COMBAT_TAB_ORDER = ("大世界", "自动战斗", "副本", "收尾")
-ENDFIELD_AUTOMATION_TAB_KEYS = ("计划任务", "脚本", "模板", "插件")
+ENDFIELD_AUTOMATION_TAB_KEYS = ("计划任务", "脚本", "模板")
 ENDFIELD_DEVELOPER_TAB_KEYS = ("调试", "运行代码", "工具与调试")
 
 # 原生页签与 ok-ef 自己的自动战斗页的键取简体中文页签名，与界面语言无关；TAB_CODES、ENGLISH_TITLES 和上面的分栏都按它登记。
@@ -589,7 +589,7 @@ NATIVE_TAB_KEYS = {
     "GlobalConfigTab": "通知",
     "SettingTab": "设置",
     "AboutTab": "关于",
-    "PluginTab": "插件",
+    "PluginTab": "插件总览",
 }
 
 
@@ -608,26 +608,29 @@ def endfield_tab_key(widget: Any, text: str) -> str:
 def route_endfield_tabs(
     pending_tabs: list[dict[str, Any]], tr: Callable[[str], str]
 ) -> dict[str, list[tuple[str, Any, Any]]]:
-    """按页签键把页面分到五个工作区并排好序；页签文字跟随界面语言，归类与排序只看键。"""
+    """按页签键分组、排序；页签文字跟随界面语言。"""
     routed: dict[str, list[tuple[str, str, Any, Any]]] = {
         "ENVIRONMENT": [],
         "DAILY": [],
         "COMBAT": [],
         "AUTOMATION": [],
         "DEVELOPER": [],
+        "PLUGINS": [],
     }
     for item in pending_tabs:
         widget, label = item["widget"], item["text"]
         key = endfield_tab_key(widget, label)
         # 触发任务页签叫「大世界」；业务与战斗的「收尾」组显示为「其他」，归类仍按组名，免得与日常的「其他」合并
         shown_key = "其他" if key == "收尾" else key
-        if key in ("大世界", "收尾"):
+        if key in ("大世界", "收尾", "插件总览"):
             label = tr(shown_key)
         widget.endfield_tab_key = shown_key
         if key in ENDFIELD_DEVELOPER_TAB_KEYS:
             code = "DEVELOPER"
         elif key in ENDFIELD_AUTOMATION_TAB_KEYS:
             code = "AUTOMATION"
+        elif key == "插件总览":
+            code = "PLUGINS"
         # 日常一条龙四大分栏（与 EndfieldSectionMatrix.SECTION_META 一致）
         elif key in ENDFIELD_DAILY_TAB_ORDER:
             code = "DAILY"
@@ -957,12 +960,8 @@ def install_endfield_theme_patch() -> None:
                     "parent": parent,
                 }
             )
-            # Newer ok-script reorders these navigation items during its own
-            # constructor, before our collected tabs become workspace pages.
-            # ok-script Tab 使用「类名_id」作为 objectName；这里拦截了页面注册，
-            # 需临时补上导航项，供框架随后按完整 objectName 查找并调整顺序。
-            # PluginTab_ 前缀用于兼容该动态名称，同时保留旧版固定名称判断。
-            if widget.objectName() in ("EditTaskTab", "PluginTab") or widget.objectName().startswith("PluginTab_"):
+            # ok-script 会在构造期间重排这两个底部导航项，工作区接管前先保留其导航键。
+            if widget in (getattr(self, "edit_task_tab", None), getattr(self, "plugin_tab", None)):
                 key = widget.objectName()
                 self.navigationInterface.addItem(key, icon, text, position=position)
                 temporary_navigation_keys.append(key)
@@ -971,11 +970,17 @@ def install_endfield_theme_patch() -> None:
         self.addSubInterface = _collector_add_sub_interface
 
         original_update_imported_tabs = self.update_imported_tabs
+        plugin_workspace = None
 
         def _update_imported_tabs():
-            # 插件页保留框架原生导航，不参与主题的工作区页面收集。
+            if plugin_workspace is None:
+                # 工作区在原生构造完成后创建。禁用插件管理页时仍沿用框架原有的导入行为。
+                if hasattr(self, "_endfield_workspaces"):
+                    return original_update_imported_tabs()
+                return
+            # 框架仍负责插件页的创建与销毁，只将本次刷新产生的页面挂到插件工作区。
             previous_add = self.addSubInterface
-            self.addSubInterface = lambda *args, **kwargs: orig_add_sub_interface(self, *args, **kwargs)
+            self.addSubInterface = plugin_workspace.add_plugin_page
             try:
                 return original_update_imported_tabs()
             finally:
@@ -1011,7 +1016,7 @@ def install_endfield_theme_patch() -> None:
             from src.gui.EndfieldCombatTab import EndfieldCombatTab
             from src.gui.EndfieldWorkspaceTab import EndfieldWorkspaceTab
 
-            # 「自动战斗」是 ok-ef 自己的页面，和收集到的原生 Tab 一起归类到五大顶级工作区
+            # 「自动战斗」是 ok-ef 自己的页面，和收集到的原生 Tab 一起归类
             pending_tabs.insert(
                 0, {"widget": EndfieldCombatTab(), "icon": FluentIcon.PLAY, "text": self.app.tr("自动战斗")}
             )
@@ -1029,7 +1034,7 @@ def install_endfield_theme_patch() -> None:
             self._endfield_tri_strip = EndfieldTriStrip(self)
             install_window_size_button(self)
 
-            # 实例化五大终末地顶级工作区
+            # 实例化终末地顶级工作区
             workspaces: list[EndfieldWorkspaceTab] = []
             # 日常任务卡片不再显示，它的总控字段改从页眉「一条龙设置」进入
             daily_settings = ("一条龙设置", lambda: open_daily_settings_drawer(self))
@@ -1046,6 +1051,7 @@ def install_endfield_theme_patch() -> None:
                 ("COMBAT", "业务与战斗", "OPERATIONS", FluentIcon.ACCEPT, None, None),
                 ("AUTOMATION", "自动化调度", "AUTOMATION", FluentIcon.CALENDAR, None, None),
                 ("DEVELOPER", "开发者工具", "DEVELOPER", FluentIcon.DEVELOPER_TOOLS, None, None),
+                ("PLUGINS", "插件", "PLUGINS", FluentIcon.APPLICATION, None, None),
             )
             for code, title, nav_code, icon, action, setting in sections:
                 tabs = routed_tabs[code]
@@ -1064,8 +1070,11 @@ def install_endfield_theme_patch() -> None:
                 if item is not None:
                     style_navigation_item(item, f"{len(workspaces) + 1:02d} · {nav_code}")
                 workspaces.append(workspace)
+                if code == "PLUGINS":
+                    plugin_workspace = workspace
 
             self._endfield_workspaces = workspaces
+            self.update_imported_tabs()
 
             # 导航底部放运行控制区：任何页面都能启动游戏、开始一条龙；页眉按钮保留原位
             daily = next((ws for ws in workspaces if ws.category_code == "DAILY"), None)

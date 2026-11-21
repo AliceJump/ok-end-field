@@ -67,6 +67,7 @@ TAB_CODES = {
     "工具与调试": "TOOLS",
     "运行代码": "CODE",
     "插件": "PLUGINS",
+    "插件总览": "OVERVIEW",
 }
 
 
@@ -174,7 +175,7 @@ class EndfieldSegmentedBar(QWidget):
     def add_tab(self, text: str, icon_obj: Any = None, key: str | None = None) -> int:
         idx = len(self.buttons)
         btn = EndfieldTabButton(text, icon_obj, self, key)
-        btn.clicked.connect(lambda: self.set_current_index(idx))
+        btn.clicked.connect(lambda: self.set_current_index(self.buttons.index(btn)))
         self.buttons.append(btn)
         self.layout.addWidget(btn)
         if idx == 0:
@@ -477,6 +478,8 @@ class EndfieldWorkspaceTab(QWidget):
         self.main_layout.addWidget(self.stack, 1)
 
         self.tab_bar.tabChanged.connect(self.stack.setCurrentIndex)
+        if category_code == "PLUGINS":
+            self.stack.widgetRemoved.connect(self._remove_plugin_tab)
         self.apply_theme_colors()
         with suppress(Exception):
             qconfig.themeChanged.connect(self.apply_theme_colors)
@@ -578,8 +581,20 @@ class EndfieldWorkspaceTab(QWidget):
             btn.update()
         self.update()
 
+    def add_plugin_page(self, widget, icon, text, **_kwargs):
+        if self.stack.indexOf(widget) < 0:
+            self.tab_bar.add_tab(text, icon, "插件")
+            self.stack.addWidget(widget)
+
+    def _remove_plugin_tab(self, index):
+        # 插件管理器释放页面时，Qt 自动从 stack 移除它；同步移除对应按钮。
+        button = self.tab_bar.buttons.pop(index)
+        self.tab_bar.layout.removeWidget(button)
+        button.deleteLater()
+        self.tab_bar.set_current_index(self.stack.currentIndex())
+
     def has_child(self, widget: QWidget) -> bool:
-        return widget in self._page_containers
+        return widget in self._page_containers or self.stack.indexOf(widget) >= 0
 
     def switch_to_child(self, widget: QWidget):
         idx = self.stack.indexOf(self._page_containers.get(widget, widget))

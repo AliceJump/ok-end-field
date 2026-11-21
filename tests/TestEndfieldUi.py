@@ -1104,6 +1104,22 @@ class NativeTextLayoutTest(unittest.TestCase):
         workspace.deleteLater()
         reference.deleteLater()
 
+    def test_plugin_workspace_keeps_overview_and_remaining_plugin_after_unload(self):
+        overview, first, second = QWidget(), QWidget(), QWidget()
+        workspace = EndfieldWorkspaceTab("PLUGINS", "插件", [("插件总览", None, overview)])
+        workspace.add_plugin_page(first, None, "烟火生缘传送")
+        workspace.add_plugin_page(second, None, "终末地插件示例")
+        self.assertEqual(workspace.stack.currentIndex(), 0)
+        self.assertTrue(workspace.has_child(first))
+        workspace.tab_bar.buttons[1].click()
+        self.assertIs(workspace.stack.currentWidget(), first)
+        first.deleteLater()
+        QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+        self.assertEqual([button.text() for button in workspace.tab_bar.buttons], ["插件总览", "终末地插件示例"])
+        workspace.tab_bar.buttons[1].click()
+        self.assertIs(workspace.stack.currentWidget(), second)
+        workspace.deleteLater()
+
     def test_tabs_route_by_page_identity_when_titles_are_translated(self):
         from ok.ui.qt.widget.CustomTab import CustomTab
 
@@ -1144,7 +1160,8 @@ class NativeTextLayoutTest(unittest.TestCase):
                 "ENVIRONMENT": ["キャプチャ", "グローバル設定", "通知", "設定", "概要"],
                 "DAILY": ["帝江号", "戦闘"],
                 "COMBAT": ["<大世界>", "副本", "<其他>"],
-                "AUTOMATION": ["スケジュール", "プラグイン"],
+                "AUTOMATION": ["スケジュール"],
+                "PLUGINS": ["<插件总览>"],
                 "DEVELOPER": ["ツールとデバッグ"],
             },
         )
