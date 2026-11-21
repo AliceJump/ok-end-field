@@ -22,6 +22,7 @@ from src.data.team_phase_planner import (
 from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycle
 from src.image.enemy_health_probe import reset_enemy_presence_probe
 from src.image.skill_bar_expected_probe import read_expected_skill_bar_sp
+from src.tasks.onetime.ReactiveDodge import ReactiveDodge
 from src.tasks.onetime.TimedMainControl import TimedMainControl
 
 
@@ -1173,6 +1174,7 @@ class TimedCombatLogic:
         self.enemy_pause_started = None
         self._enemy_absent_candidate_since = None
         task.mouse_up(key="left")
+        reactive_dodge = ReactiveDodge(task)
         try:
             if self.store is None:
                 self.store = load_skill_timings()
@@ -1188,6 +1190,7 @@ class TimedCombatLogic:
                 if deadline is not None and now >= deadline:
                     return False
                 task.next_frame()
+                frame_captured_at = time.monotonic()
                 if now >= next_exit:
                     next_exit = now + 0.5
                     condition = task._check_single_exit_condition()
@@ -1204,7 +1207,19 @@ class TimedCombatLogic:
                     self._hold(False)
                     task.sleep(0.1)
                     continue
-                if self._enemy_operation_paused():
+                # Update enemy-presence pause bookkeeping even when a dodge
+                # consumes the frame; only skill scheduling is paused.
+                enemy_paused = self._enemy_operation_paused()
+                if reactive_dodge.step(
+                    lambda: self._hold(False, force=True),
+                    allowed=lambda: self._allowed() and not self.main_control.waiting_for_confirmation(self._clock()),
+                    deadline=deadline,
+                    frame_captured_at=frame_captured_at,
+                ):
+                    continue
+                if deadline is not None and task.active_time() >= deadline:
+                    return False
+                if enemy_paused:
                     force_normal_attack = now >= next_normal_attack
                     self._hold(True, force=force_normal_attack)
                     if force_normal_attack:
@@ -1221,6 +1236,7 @@ class TimedCombatLogic:
                 if now < ready_at:
                     task.sleep(0.1)
                     continue
+                now = task.active_time()
                 if not self.team and now >= next_team:
                     next_team = now + 1
                     detect_deadline = min(now + 0.3, deadline) if deadline is not None else now + 0.3
@@ -1243,5 +1259,6 @@ class TimedCombatLogic:
             task.log_warning(f"技能时间排轴停止: {exc}")
             return False
         finally:
+            reactive_dodge.close()
             task.mouse_up(key="left")
             self._holding = False

@@ -5,6 +5,8 @@
 KEY_SKILL_RELEASE = "技能释放"
 KEY_START_SKILL_POINT = "启动技能点数"
 KEY_COMPLETE_NOTIFY = "完成通知"
+KEY_REACTIVE_DODGE = "MaaEnd自动闪避（实验）"
+KEY_REACTIVE_DODGE_COMPAT = "闪避兼容重击特效"
 KEY_NO_NUMBER_OPERATION_INTERVAL = "无数字操作间隔"
 # 兼容旧调用/旧测试保留名称；不再注册为可持久化战斗配置，也不再控制实际等待。
 KEY_BATTLE_INITIAL_WAIT = "进入战斗后的初始等待时间"
@@ -171,6 +173,8 @@ DEFAULT_PULSE_PROBE = True
 # ==========================================================
 
 DEFAULT_BATTLE_CONFIG = {
+    KEY_REACTIVE_DODGE: False,
+    KEY_REACTIVE_DODGE_COMPAT: True,
     KEY_TIMING_ROTATION: False,
     KEY_TIMING_DECISION_WINDOW: DEFAULT_TIMING_DECISION_WINDOW,
     KEY_LEGACY_COMBAT_MODE: DEFAULT_LEGACY_COMBAT_MODE,
@@ -196,6 +200,7 @@ DEFAULT_BATTLE_CONFIG = {
 # 其余字段由「技能时间排轴」或「战斗模式」继续向下展开，避免同一配置
 # 同时被多个父节点引用。
 BATTLE_ROOT_CONFIGS = [
+    KEY_REACTIVE_DODGE,
     KEY_TIMING_ROTATION,
     KEY_ULT_RELEASE_MODE,
     KEY_COMPLETE_NOTIFY,
@@ -235,6 +240,8 @@ LEGACY_COMBAT_MODE_SUB_CONFIGS = {
 # ==========================================================
 
 BATTLE_CONFIG_TYPE = {
+    KEY_REACTIVE_DODGE: {"sub_configs": {True: [KEY_REACTIVE_DODGE_COMPAT]}},
+    KEY_REACTIVE_DODGE_COMPAT: {},
     # 当前分支主开发模式。开启后旧 AutoCombat 配置整块隐藏；
     # 关闭后只展开一个旧模式选择器和旧模式公共项。
     KEY_TIMING_ROTATION: {
@@ -279,6 +286,8 @@ BATTLE_CONFIG_TYPE = {
 # ==========================================================
 
 BATTLE_CONFIG_DESCRIPTION = {
+    KEY_REACTIVE_DODGE: "实验性视觉闪避，默认关闭。需要高特效画质；可能误判或漏判，低性能设备可能增加战斗延迟。",
+    KEY_REACTIVE_DODGE_COMPAT: "忽略角色附近的普通闪避提示以减少重击特效误报；地面攻击提示不受影响。",
     KEY_TIMING_ROTATION: ("独立实验模式，优先于其他战斗策略开关。\n利用实时监测和本地技能时间数据安排出技。"),
     KEY_TIMING_DECISION_WINDOW: (
         "仅在「技能时间排轴」开启时显示。\n"

@@ -3962,3 +3962,19 @@ msgstr ""
 #: src/core/GridNavConfig.py
 msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
 msgstr "Brake early within this distance of a waypoint. For small corrections with timely position updates, turning can continue while reserving a safe distance based on speed and sampling time."
+
+msgid "MaaEnd自动闪避（实验）"
+msgstr "MaaEnd auto dodge (experimental)"
+
+msgid "闪避兼容重击特效"
+msgstr "Filter heavy-attack effects"
+
+msgid "实验性视觉闪避，默认关闭。需要高特效画质；可能误判或漏判，低性能设备可能增加战斗延迟。"
+msgstr ""
+"Experimental visual dodge, disabled by default. Requires high effects "
+"quality; false or missed detections and combat latency are possible."
+
+msgid "忽略角色附近的普通闪避提示以减少重击特效误报；地面攻击提示不受影响。"
+msgstr ""
+"Ignore ordinary dodge cues near the character to reduce heavy-attack false "
+"positives; ground attack cues remain active."

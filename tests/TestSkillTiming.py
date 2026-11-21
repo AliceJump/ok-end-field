@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
+from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_REACTIVE_DODGE, KEY_TIMING_ROTATION
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.skill_timing import SNAPSHOT, SUPPLEMENTS, SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
@@ -224,6 +224,8 @@ class FakeTask:
             return True
         if key == "完成通知":
             return False
+        if key == KEY_REACTIVE_DODGE:
+            return default
         raise AssertionError(f"Read legacy combat strategy: {key}")
 
     def get_skill_bar_sp(self):
@@ -536,6 +538,9 @@ class TestTimedCombat(unittest.TestCase):
         events = []
 
         class Harness:
+            def get_battle_config(self, key, default=None):
+                return default
+
             def log_info(self, message):
                 events.append(("log", message))
 
@@ -559,6 +564,50 @@ class TestTimedCombat(unittest.TestCase):
             ],
         )
 
+    def test_too_far_recovery_respects_reactive_and_direction_cooldowns(self):
+        events = []
+
+        class Harness:
+            now = 10.0
+            _reactive_dodge_next_at = 10.5
+            _enemy_direction_next_dodge_at = 10.7
+
+            def get_battle_config(self, key, default=None):
+                return key == KEY_REACTIVE_DODGE
+
+            def active_time(self):
+                return self.now
+
+            def log_info(self, message):
+                events.append("log")
+
+            def click(self, **kwargs):
+                events.append("click")
+
+            def sleep(self, seconds):
+                events.append("sleep")
+
+            def dodge_forward(self, **kwargs):
+                events.append("dodge")
+
+        task = Harness()
+        self.assertFalse(BattleMixin.recover_target_too_far(task))
+        self.assertEqual(events, [])
+        task.now = 10.6
+        self.assertFalse(BattleMixin.recover_target_too_far(task))
+        self.assertEqual(events, [])
+        task.now = 10.8
+        self.assertTrue(BattleMixin.recover_target_too_far(task))
+        self.assertEqual(events.count("dodge"), 3)
+
+        # Direction recovery also writes its cooldown when the opt-in feature
+        # is off; it must not change the legacy TOO_FAR recovery path.
+        events.clear()
+        task.now = 10.0
+        task.get_battle_config = lambda key, default=None: default
+        self.assertTrue(BattleMixin.recover_target_too_far(task))
+        self.assertEqual(events.count("dodge"), 3)
+
     def test_too_far_feedback_cancels_unstarted_skill_and_calls_recovery_hook(self):
         task = FakeTask()
         task.sp = 100.0
@@ -577,6 +626,36 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(logic.active, ())
         self.assertEqual(len(recoveries), 1)
         self.assertGreater(logic.battle_retry_after["1"], task.now)
+
+    def test_too_far_during_dodge_cooldown_preserves_skill_retry(self):
+        task = FakeTask()
+        task.sp = 100.0
+        task._reactive_dodge_next_at = 0.6
+        task._enemy_direction_next_dodge_at = 0.8
+        task.get_battle_config = lambda key, default=None: True if key == KEY_REACTIVE_DODGE else default
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+        task.recover_target_too_far = lambda: BattleMixin.recover_target_too_far(task)
+        dodges = []
+        task.dodge_forward = lambda **kwargs: dodges.append(task.now)
+        logic = logic_for(task)
+
+        self.assertTrue(logic._try_battle_token("1", 100.0))
+        task.now = 0.05
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.TOO_FAR)
+        self.assertEqual(task.clicks, [])
+        self.assertEqual(dodges, [])
+        self.assertIsNone(logic.pending)
+        self.assertEqual(logic.active, ())
+        self.assertEqual(logic.cursor, 0)
+        self.assertGreater(logic.battle_retry_after["1"], task.now)
+
+        task.now = max(logic.battle_retry_after["1"], task._enemy_direction_next_dodge_at)
+        self.assertTrue(logic._try_battle_token("1", 100.0))
+        self.assertEqual(task.keys, ["1", "1"])
+        task.now += 0.05
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.TOO_FAR)
+        self.assertEqual(task.clicks, ["middle"])
+        self.assertEqual(len(dodges), 3)
 
     def test_during_skill_feedback_retries_without_distance_recovery(self):
         task = FakeTask()
