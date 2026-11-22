@@ -10,6 +10,7 @@ from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
 from src.tasks.navigation.mixin.map_mixin import MapMixin  # 复用传送及到达确认
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网格导航的滑索支持
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
+    WaterTemperatureControllerRoute,
     AutumnGoldRoute,
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
@@ -27,6 +28,7 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
 
 class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin):  # 共用接取、传送与相机流程
     OBSERVATIONS = {  # 点位语言键、路线与匹配方式
+        "water_temperature_controller": (WaterTemperatureControllerRoute, "edit_distance"),
         "autumn_gold": (AutumnGoldRoute, "edit_distance"),  # 金秋时向右取景
         "pool_lotus": (PoolLotusRoute, "edit_distance"),  # 小池荷向右取景
         "vigorous_cistern_slug": (VigorousCisternSlugRoute, "edit_distance"),  # 活力源石虫向左取景

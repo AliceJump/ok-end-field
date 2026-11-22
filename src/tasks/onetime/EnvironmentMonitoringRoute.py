@@ -139,3 +139,11 @@ class AutumnGoldRoute(EnvironmentMonitoringRoute):
     def run(self):
         if not self.task.navigate_grid_to((-1628.62, -1267.79), map_id="map02"):
             raise RuntimeError("金秋时导航失败")
+
+
+class WaterTemperatureControllerRoute(EnvironmentMonitoringRoute):
+    photo_direction = "left"
+
+    def run(self):
+        if not self.task.navigate_grid_to((-1595.80, -1081.94), map_id="map02"):
+            raise RuntimeError("净水温控装置导航失败")

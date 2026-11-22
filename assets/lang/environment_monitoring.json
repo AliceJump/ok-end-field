@@ -1,4 +1,12 @@
 {
+  "water_temperature_controller": {
+    "zh_CN": {"string": "净水温控装置"},
+    "zh_TW": {"string": "淨水溫控裝置"},
+    "en_US": {"string": "Water Temperature Controller"},
+    "ja_JP": {"string": "浄水温度調整装置"},
+    "ko_KR": {"string": "정수 온도 조절 장치"},
+    "es_ES": {"string": "Controlador de temperatura del agua"}
+  },
   "autumn_gold": {
     "zh_CN": {"string": "金秋时"},
     "zh_TW": {"string": "金秋時"},

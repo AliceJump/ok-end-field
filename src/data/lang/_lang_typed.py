@@ -371,6 +371,9 @@ class DeliveryTaskModule(_LangModuleBaseT):
 class EnvironmentMonitoringModule(_LangModuleBaseT):
     """environment_monitoring — OCR 语言节点（值取自 zh_CN）"""
 
+    water_temperature_controller: str
+    """净水温控装置"""
+
     autumn_gold: str
     """金秋时"""
 
