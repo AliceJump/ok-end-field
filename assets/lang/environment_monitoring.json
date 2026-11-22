@@ -1,4 +1,12 @@
 {
+  "hanging_vines": {
+    "zh_CN": {"string": "垂藤"},
+    "zh_TW": {"string": "垂藤"},
+    "en_US": {"string": "Hanging Vines"},
+    "ja_JP": {"string": "垂れ藤"},
+    "ko_KR": {"string": "덩굴 식물"},
+    "es_ES": {"string": "Enredaderas colgantes"}
+  },
   "water_temperature_controller": {
     "zh_CN": {"string": "净水温控装置"},
     "zh_TW": {"string": "淨水溫控裝置"},
