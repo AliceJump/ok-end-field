@@ -1,0 +1,33 @@
+{
+  "frame_size": [
+    1920,
+    1080
+  ],
+  "hud_crop": [
+    0,
+    0,
+    340,
+    280
+  ],
+  "matrix": [
+    [
+      0.24998321733752876,
+      4.8572140068744996e-05,
+      -1285.4134455357143
+    ],
+    [
+      2.634280077309925e-05,
+      -0.2500111245177955,
+      161.89744260069915
+    ]
+  ],
+  "image_size": {
+    "width": 1024,
+    "height": 1024
+  },
+  "reference_xz": [
+    -1157.392333984375,
+    34.00723648071289
+  ],
+  "purpose": "Rejection regression only: map crop around reference is not proof of global localization."
+}
