@@ -17,6 +17,7 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (
     AutumnGoldRoute,
     CisternOriginiumSlugsRoute,
     EnvironmentMonitoringRoute,
+    IndoorCropsRoute,
     HangingVinesRoute,
     EternalSunsetRoute,
     PoolLotusRoute,
@@ -707,6 +708,22 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
         self.assertIs(task.observation_route("小池"), PoolLotusRoute)
         self.assertIs(task.observation_route("小池何"), PoolLotusRoute)
         self.assertIsNone(task.observation_route("小池荷其他"))
+
+    def test_indoor_crops_localized_route_and_navigation(self):
+        self.assert_localized_routes(
+            "indoor_crops",
+            {"zh_CN": "室内作物", "zh_TW": "室內作物", "en_US": "Indoor Crops",
+             "ja_JP": "室内の作物", "ko_KR": "실내 작물", "es_ES": "Cultivos de interior"},
+            IndoorCropsRoute,
+        )
+        task = Mock()
+        route = IndoorCropsRoute(task)
+        self.assertEqual(route.photo_direction, "right")
+        route.run()
+        task.navigate_grid_to.assert_called_once_with((-1405.78, -571.45), map_id="map02")
+        task.navigate_grid_to.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "室内作物导航失败"):
+            route.run()
 
     def test_hanging_vines_transfer_uses_lower_right_map_region(self):
         task = Mock()

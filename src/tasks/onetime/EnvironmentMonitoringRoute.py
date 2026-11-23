@@ -177,3 +177,11 @@ class SerenityGardenTianshiPillarRoute(EnvironmentMonitoringRoute):
     def run(self):
         if not self.task.navigate_grid_to((-1670.55, -1299.16), map_id="map02"):
             raise RuntimeError("安思园的天师桩导航失败")
+
+
+class IndoorCropsRoute(EnvironmentMonitoringRoute):
+    photo_direction = "right"
+
+    def run(self):
+        if not self.task.navigate_grid_to((-1405.78, -571.45), map_id="map02"):
+            raise RuntimeError("室内作物导航失败")
