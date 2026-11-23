@@ -222,6 +222,7 @@ faster diagnosis.
 
 ## 💬 Join Us
 
+* **Community**: [Find Discord, QQ groups, and QQ channels](https://ok-script.com/en/community/?project=ok-end-field) (links are maintained in [community_links.yml](community_links.yml)).
 * **QQ Group**: `940581952` (answer: `终末地`)
 * **QQ Channel**: [Click to join](https://pd.qq.com/s/djmm6l44y) (full or updates)
 * **Developer Group**: `1079581542` (**Note**: for developers with GitHub accounts who can run the project from source.)
