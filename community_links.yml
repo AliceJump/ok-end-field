@@ -1,0 +1,16 @@
+# Read by ok-oldking/ok-websites when generating the shared community page.
+# https://ok-script.com/community/?project=ok-end-field
+
+discord:
+  - name: Discord
+    url: https://discord.gg/vVyCatEBgA
+
+qq_channel:
+  - name: QQ频道
+    url: https://pd.qq.com/s/djmm6l44y
+
+qq_groups:
+  - name: 后日方舟
+    url: https://qm.qq.com/q/NcWHQU6q8k
+    number: "940581952"
+    max: 2000

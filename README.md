@@ -207,6 +207,7 @@ python -m unittest tests/TestGameWindow.py
 
 ## 💬 加入我们
 
+* **社区入口**：[查看 Discord、QQ 群和 QQ 频道](https://ok-script.com/community/?project=ok-end-field)（链接维护于 [community_links.yml](community_links.yml)）。
 * **QQ 交流群**: `940581952` (入群答案: `终末地`)
 * **QQ 频道**: [点击加入](https://pd.qq.com/s/djmm6l44y) (群满或获取最新资讯)
 * **开发者群**: `1079581542` ( **注意**:
