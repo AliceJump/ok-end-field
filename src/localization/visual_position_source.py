@@ -15,6 +15,7 @@ from src.localization.minimap_visual_anchor_chain import (
     MinimapKeyframeVisualAnchorChain,
     MinimapVisualAnchorChainCorrector,
 )
+from src.localization.visual_frame import normalize_visual_frame
 
 
 @dataclass(frozen=True)
@@ -164,6 +165,9 @@ class VisualPositionSource:
         if frame is None:
             self.reset()
             return self.unavailable("no_frame")
+        requires_normalization = getattr(self.locator, "requires_visual_normalization", None)
+        if callable(requires_normalization) and requires_normalization():
+            frame = normalize_visual_frame(frame)
         shape = frame.shape[:2]
         if shape == self._shape and clock == self._last_clock and self._last_state:
             # A retained presented frame is not another observation, even after
@@ -174,12 +178,16 @@ class VisualPositionSource:
         self._last_clock = clock
         geometry = MinimapGeometry.from_frame(shape[1], shape[0])
         match = self.tracker.update(frame, geometry, now=clock)
-        match, measured = self._confirm_motion(frame, match, clock)
+        observation_clock = self._match_observation_clock(match, clock)
+        if observation_clock == clock:
+            match, measured = self._confirm_motion(frame, match, clock)
+        else:
+            measured = None
         if not match.accepted:
             return self._lose_tracking(match)
         if measured is None:
             measured = self.odometry.sample(frame, now=clock)
-        delta, anchor, strong = self._update_absolute_anchor(match, clock)
+        delta, anchor, strong = self._update_absolute_anchor(match, observation_clock)
         if self._origin is None or self._last_absolute_t is None or clock - self._last_absolute_t > 2:
             self.tracker.reset()
             return self.unavailable("visual_absolute_anchor_stale")
@@ -190,7 +198,21 @@ class VisualPositionSource:
         corrected, chain_result = self._correct_visual_chains(
             clock, raw, anchor, sampled=measured.get("sampled", False)
         )
-        return self._publish_visual_state(clock, match, measured, delta, corrected, chain_result, strong)
+        return self._publish_visual_state(observation_clock, match, measured, delta, corrected, chain_result, strong)
+
+    @staticmethod
+    def _match_observation_clock(match, current):
+        locate = getattr(match, "locate", None)
+        observed_at = getattr(locate, "observed_at", None)
+        if observed_at is None:
+            return current
+        try:
+            observed_at = float(observed_at)
+        except (TypeError, ValueError):
+            return current
+        if not math.isfinite(observed_at) or observed_at > current:
+            return current
+        return max(0.0, observed_at)
 
     def _initialize_shape(self, shape):
         self.reset()
@@ -238,6 +260,13 @@ class VisualPositionSource:
         return match, measured
 
     def _lose_tracking(self, match):
+        if match.reason in {
+            "visual_global_search_pending",
+            "visual_map_resources_pending",
+            "visual_coarse_resources_pending",
+            "layer_scan_pending",
+        } or match.reason.startswith("visual_map_resources_pending:"):
+            return self.unavailable(match.reason, locate=match.locate)
         if match.locate is None:
             reset_locator = getattr(self.locator, "reset_tracking", None)
             if callable(reset_locator):
