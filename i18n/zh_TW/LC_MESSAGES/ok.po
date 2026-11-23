@@ -3590,3 +3590,11 @@ msgstr "距航點小於此距離時提前減速；角度小且位置更新及時
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "外掛程式"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "目标楼层(可选)"
+msgstr "目標樓層(可選)"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
+msgstr "留空按目標座標自動判層；填寫樓層 ID，或 __main__ 指定大地圖"

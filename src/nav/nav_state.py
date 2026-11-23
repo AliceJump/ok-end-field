@@ -141,13 +141,15 @@ class GridRouteRequest:
 
     goal: tuple[float, float]
     #: 目标的**高度**。分层地图里"终点在第几层"由它判定（只看 Y，不看 levelId）；
-    #: 为 None 表示调用方只知道平面坐标，层判定会兜底到大地图。
+    #: 为 None 时按目标 X/Z 的唯一可走层解析。
     goal_y: float | None = None
     map_id: str = ""
     grid_path: str | None = None
     grid_dir: str | None = None
     zoom: str | None = None
     stop_distance: float | None = None
+    #: None 自动解析；空串或 __main__ 明确指定大地图。
+    goal_tier: str | None = None
 
 
 @dataclass
@@ -177,8 +179,9 @@ class NavSession:
     last_sync_seq: int = 0
     #: 单轮转向之间保留有效反馈；只在当前会话中使用，不写入配置。
     turn_control: dict = field(default_factory=dict)
-    #: 最近采样耗时的保守估计，供近点行走提前留出定位时间。
+    #: 下一次采样的耗时预留；当前画面的年龄另按捕获时间计算。
     poll_duration_s: float = 0.0
+    poll_latest_duration_s: float = 0.0
     poll_durations_s: list[float] = field(default_factory=list)
     #: 保留最近一次可信的移动速度，停车后的零速度不能用来估计下一次起步。
     walk_speed_m_s: float = 8.0
@@ -204,9 +207,10 @@ class NavSession:
     #: 大多会落到"大地图"兜底，照兜底重算会把还在层上的角色丢回主图。``None`` 表示本次
     #: 导航还没有用过任何网格（首次规划），此时才需要用高度 / X-Z 去判起点在哪一层。
     active_tier: str | None = None
-    #: 起终点解析出来的层，只用于日志与状态提示。
+    #: 目标解析结果在同一请求、同一地图内保持稳定，重规划不改变目的地。
     start_tier: str = ""
-    goal_tier: str = ""
+    goal_tier: str | None = None
+    goal_resolution_context: tuple[GridRouteRequest, str] | None = None
 
     @property
     def goal(self) -> tuple[float, float]:

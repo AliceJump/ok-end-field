@@ -22,6 +22,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import math
 from dataclasses import dataclass, fields, replace
@@ -510,13 +511,20 @@ def load_grid(path) -> DenseGrid:
         raise FileNotFoundError(f"网格文件不存在: {p}")
     if not p.name.endswith(GRID_SUFFIX):
         raise ValueError(f"网格文件名必须是 *{GRID_SUFFIX}，收到 {p.name}")
-    with np.load(p, allow_pickle=False) as data:
+    return load_grid_from_bytes(p.read_bytes(), name=p.name)
+
+
+def load_grid_from_bytes(raw, *, name: str) -> DenseGrid:
+    """从已经读入的内存字节解析网格，保证摘要与解析内容来自同一份快照。"""
+    if not name.endswith(GRID_SUFFIX):
+        raise ValueError(f"网格文件名必须是 *{GRID_SUFFIX}，收到 {name}")
+    with np.load(io.BytesIO(raw), allow_pickle=False) as data:
         if "cells" not in data.files or "meta" not in data.files:
-            raise ValueError(f"{p.name}: 缺少 cells/meta，不是网格文件")
+            raise ValueError(f"{name}: 缺少 cells/meta，不是网格文件")
         arr = np.array(data["cells"])
         meta = GridMeta.from_json(str(data["meta"].item()))
     if not meta.source:
-        meta.source = f"npz:{p.name}"
+        meta.source = f"npz:{name}"
     return DenseGrid(arr, meta)
 
 

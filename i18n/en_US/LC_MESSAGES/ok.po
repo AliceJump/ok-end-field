@@ -3852,19 +3852,27 @@ msgid "百趣演武"
 msgstr "Arena of Games"
 
 msgid "按配置次数完成百趣演武：每轮抽至战力超过10或满5张，每局自动完成两轮战斗。"
-msgstr "Complete the configured number of Arena of Games runs: draw until power exceeds 10 or you hold 5 cards, then fight both rounds each run."
+msgstr ""
+"Complete the configured number of Arena of Games runs: draw until power "
+"exceeds 10 or you hold 5 cards, then fight both rounds each run."
 
 msgid "刷取次数"
 msgstr "Number of runs"
 
 msgid "每次最多包含两轮挑战，挑战中断也计为一次；中途启动会将当前局计为一次。"
-msgstr "Each run includes up to two rounds. An interrupted challenge also counts as one run; resuming a run counts as one run."
+msgstr ""
+"Each run includes up to two rounds. An interrupted challenge also counts as "
+"one run; resuming a run counts as one run."
 
 msgid "领取『祀的画』农牧和武陵城自动农植机产出。"
-msgstr "Collect farming and ranching output from Si's Painting and the Wuling City auto-farmer."
+msgstr ""
+"Collect farming and ranching output from Si's Painting and the Wuling City "
+"auto-farmer."
 
 msgid "是否领取『祀的画』农牧和武陵城自动农植机产出，并存入武陵仓库。"
-msgstr "Collect output from Si's Painting and the Wuling City auto-farmer into the Wuling depot."
+msgstr ""
+"Collect output from Si's Painting and the Wuling City auto-farmer into the "
+"Wuling depot."
 
 msgid "祀的画"
 msgstr "Si's Painting"
@@ -3961,8 +3969,21 @@ msgstr ""
 
 #: src/core/GridNavConfig.py
 msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
-msgstr "Brake early within this distance of a waypoint. For small corrections with timely position updates, turning can continue while reserving a safe distance based on speed and sampling time."
+msgstr ""
+"Brake early within this distance of a waypoint. For small corrections with "
+"timely position updates, turning can continue while reserving a safe "
+"distance based on speed and sampling time."
 
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "Plugins"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "目标楼层(可选)"
+msgstr "Target floor (optional)"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
+msgstr ""
+"Leave blank to infer the floor from target coordinates; enter a floor ID, or"
+" __main__ for the overworld."
