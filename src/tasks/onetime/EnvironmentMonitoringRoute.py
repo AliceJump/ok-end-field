@@ -169,3 +169,11 @@ class HangingVinesRoute(EnvironmentMonitoringRoute):  # 垂藤的地图传送入
     def run(self):  # 导航至切片还原的拍摄终点
         if not self.task.navigate_grid_to((-1359.5, -1127.5), map_id="map02"):  # 使用武陵网格
             raise RuntimeError("垂藤导航失败")  # 导航失败时不进入相机
+
+
+class SerenityGardenTianshiPillarRoute(EnvironmentMonitoringRoute):
+    photo_direction = "up"
+
+    def run(self):
+        if not self.task.navigate_grid_to((-1670.55, -1299.16), map_id="map02"):
+            raise RuntimeError("安思园的天师桩导航失败")
