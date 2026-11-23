@@ -1,6 +1,14 @@
 inheritance: true
 
 reviews:
+  path_filters:
+    # GitHub may omit patch data for oversized text and binary diffs, which
+    # makes the entire CodeRabbit review fail as incomplete.
+    - "!tests/TestVisualPositionSource.py"
+    - "!tests/fixtures/minimap/**"
+    - "!tests/data/navigation/**"
+    - "!i18n/**/LC_MESSAGES/*.mo"
+
   path_instructions:
     - path: "**"
       instructions: |
