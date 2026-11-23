@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 import cv2
 import numpy as np
 
+from src.localization.minimap_sample_stitch import PoseGraphEdge
 from src.localization.minimap_visual_anchor_chain import (
     MinimapKeyframeVisualAnchorChain,
     MinimapVisualAnchorChainCorrector,
+    MinimapVisualChainEvidence,
 )
 
 
@@ -22,6 +25,103 @@ def _texture(size: int = 140, seed: int = 3) -> np.ndarray:
 
 
 class TestMinimapVisualAnchorChainCorrection(unittest.TestCase):
+    def test_window_slide_cannot_anchor_a_disconnected_component(self):
+        for connected, late_bridge in ((False, False), (False, True), (True, False)):
+            with self.subTest(connected=connected, late_bridge=late_bridge):
+                chain = MinimapVisualAnchorChainCorrector(window_size=3, max_correction_m=100)
+                image = _texture()
+                alpha = np.ones_like(image, np.float32)
+
+                def edges(node, connected=connected, late_bridge=late_bridge):
+                    if not node.index or (node.index == 1 and not connected):
+                        return []
+                    edges = [PoseGraphEdge(node.index - 1, node.index, 1.0, 0.0, 0.0, 1.0, 1.0, 1)]
+                    if late_bridge and node.uid == 3:
+                        edges.append(PoseGraphEdge(0, node.index, 1.0, 0.0, 0.0, 1.0, 1.0, 3))
+                    return edges
+
+                with patch.object(chain, "_edges_to_previous", side_effect=edges):
+                    for index in range(7):
+                        result = chain.add(
+                            time=index,
+                            gray=image,
+                            alpha=alpha,
+                            initial_pos=[0, 0],
+                            anchor=[0, 0] if index == 0 else None,
+                        )
+                        if index >= 2:
+                            self.assertTrue(result.valid)
+                            self.assertEqual(result.connected_to_anchor, connected)
+
+    def test_long_visual_loop_uses_direct_keyframes_without_refreshing_anchor_age(self):
+        atlas = _texture(500, seed=35)
+        evidence = MinimapVisualChainEvidence(
+            scale_m_per_px=0.25, max_error_m=1.0, keyframe_interval=5, max_keyframes=4
+        )
+        errors = []
+        checks = 0
+        # Actual image measurements over 600 synthetic moving frames with
+        # periodic returns to old views, approximately six minutes.
+        # Positions deliberately have a small growing prior bias.
+        for i in range(600):
+            x = 100 + (i % 80 if i % 160 < 80 else 80 - i % 80) * 0.5
+            image = cv2.getRectSubPix(atlas, (140, 140), (x + 70, 170))
+            truth = np.array([x - 100, 0.0])
+            result = evidence.observe(
+                time=i * 0.6,
+                gray=image,
+                alpha=np.ones((140, 140), np.float32),
+                position=truth + np.array([0.001 * i, 0]),
+                anchor=truth if i == 0 else None,
+            )
+            self.assertTrue(result.trusted, (i, result))
+            errors.append(float(np.linalg.norm(result.position - truth)) * 0.25)
+            checks += result.keyframe_checks
+            self.assertEqual(result.anchor_time, 0)
+            self.assertLessEqual(len(evidence.keyframes), 4)
+        self.assertGreater(checks, 1000)
+        self.assertLess(max(errors), 0.5)
+        self.sequence_metrics = {
+            "frames": 600,
+            "duration_s": 599 * 0.6,
+            "max_error_m": max(errors),
+            "direct_keyframe_checks": checks,
+            "final_error_allowance_m": result.error_m,
+        }
+
+    def test_error_cost_survives_keyframe_eviction_and_stops_long_unchecked_travel(self):
+        atlas = _texture(1600, seed=61)
+        evidence = MinimapVisualChainEvidence(scale_m_per_px=1, max_error_m=3, keyframe_interval=2, max_keyframes=3)
+        result = None
+        for i in range(300):
+            image = atlas[100:240, i * 4 : i * 4 + 140]
+            result = evidence.observe(
+                time=i * 0.2,
+                gray=image,
+                alpha=np.ones((140, 140), np.float32),
+                position=[i * 4, 0],
+                anchor=[0, 0] if i == 0 else None,
+            )
+            if not result.trusted:
+                break
+        self.assertGreater(i, 1)
+        self.assertLess(i, 299)
+        self.assertEqual(result.reason, "error_budget_exhausted")
+        self.assertGreater(result.error_m, 3)
+        self.assertEqual(result.anchor_time, 0)
+        self.assertGreaterEqual(evidence.tick, 4)
+
+    def test_gap_or_unrelated_image_cannot_be_rescued_by_an_old_keyframe(self):
+        image = _texture(140, seed=30)
+        for gap, frame in ((3, image), (0.2, _texture(140, seed=70))):
+            with self.subTest(gap=gap):
+                evidence = MinimapVisualChainEvidence(scale_m_per_px=0.25)
+                evidence.observe(
+                    time=0, gray=image, alpha=np.ones_like(image, np.float32), position=[0, 0], anchor=[0, 0]
+                )
+                result = evidence.observe(time=gap, gray=frame, alpha=np.ones_like(image, np.float32), position=[0, 0])
+                self.assertFalse(result.trusted)
+
     def test_keyframe_chain_propagates_anchor_across_nonoverlapping_gap(self):
         texture = _texture(600, seed=11)
         size = 226
