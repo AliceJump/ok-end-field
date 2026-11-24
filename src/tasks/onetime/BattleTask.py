@@ -76,6 +76,15 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
     CFG_STAMINA_START_DATE = "刷体力开始日期"
     CFG_STAMINA_CONTINUE_COUNT = "体力刷完后继续刷取次数"
 
+    # 旋转扫不到终点时的脱离遮挡兜底：中键复位 + 按住 D 平移，逐帧检测。
+    # 实测 5 轮足够覆盖绝大多数边缘站位；参数不做成配置项——这条路径只在
+    # 「旋转已经失败、本来就要判负」时才走，最坏代价只是多花二十秒。
+    ESCAPE_ATTEMPTS = 5
+    ESCAPE_HOLD_SECONDS = 3.0
+    ESCAPE_MOVE_KEY = "d"
+    ESCAPE_RESET_DELAY = 0.3  # 中键后等视角回正的时间，再开始平移
+    ESCAPE_POLL_INTERVAL = 0.05
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "刷体力"
@@ -1075,6 +1084,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 return True
             return bool(self.rotate_search(search_marker))
 
+        marker_found = False
         try:
             # 已经到领奖点
             if try_click_reward():
@@ -1120,11 +1130,16 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                         break
                     self.sleep(0.1)
 
-                search_reward()
+                marker_found = search_reward()
 
             # 搜索过程中可能已经到达
             if try_click_reward():
                 return True
+
+            # 旋转没扫到终点：多半是贴墙把相机挤近了，先脱离遮挡再让下面的对中接力。
+            # 放在 try_click_reward 之后，避免「其实已经站在点位上、只是图标被挡住」时白走一趟。
+            if not is_gather and not marker_found and self._escape_blocked_view(detect_marker):
+                self.log_info("脱离遮挡后重新看到奖励点")
 
             # 对准领奖点
 
@@ -1149,7 +1164,13 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             ):
                 raise RuntimeError("导航奖励点失败")
 
-            return bool(try_click_reward(deep_search=True))
+            if try_click_reward(deep_search=True):
+                return True
+            # 秘境类没有二次寻路可退，这里就是本轮的终点。走 mark_task_failure 而非裸
+            # return：它自带 fail_{任务名} 截图，与淤积点二次寻路的失败处理保持一致。
+            if not is_gather:
+                self.mark_task_failure("未找到战斗奖励点")
+            return False
 
         except Exception as e:
             if isinstance(e, TaskDisabledException):
@@ -1161,6 +1182,41 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 return bool(self._gather_retry_navigate())
 
             raise
+
+    def _escape_blocked_view(self, detect_marker):
+        """旋转扫不到终点时的兜底：中键复位 + 按住 D 平移。
+
+        战斗结束若恰好贴着场景边缘，第三人称相机被墙体碰撞挤近，视域缩小后终点会
+        整段时间落在视野之外；原地旋转再多圈也扫不到，必须先把相机从墙里拉出来。
+        中键后停稳再检测，平移期间逐帧检测，松开后再补一帧。
+        命中即返回检测框，``ESCAPE_ATTEMPTS`` 轮都落空返回 None。
+
+        Args:
+            detect_marker: 无参回调，返回终点检测结果（非空表示命中）。
+
+        Returns:
+            命中的检测结果；全部轮次未命中返回 None。
+        """
+        key_label = self.ESCAPE_MOVE_KEY.upper()
+        for attempt in range(1, self.ESCAPE_ATTEMPTS + 1):
+            self.log_info(
+                f"旋转未找到奖励点，第 {attempt}/{self.ESCAPE_ATTEMPTS} 次中键复位 + "
+                f"按住 {key_label} {self.ESCAPE_HOLD_SECONDS:g}s"
+            )
+            self.click(key="middle", after_sleep=self.ESCAPE_RESET_DELAY)
+            if found := detect_marker():
+                return found
+            if found := self.hold_and_detect(
+                self.ESCAPE_MOVE_KEY,
+                detect_marker,
+                self.ESCAPE_HOLD_SECONDS,
+                self.ESCAPE_POLL_INTERVAL,
+            ):
+                return found
+            # 松开瞬间再补一帧：位移刚停、相机还在回位，终点可能只在这一下露头。
+            if found := detect_marker():
+                return found
+        return None
 
     def get_claim(self):
         """

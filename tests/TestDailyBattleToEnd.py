@@ -36,6 +36,12 @@ class _ToEndTaskHarness:
     def click(self, *args, **kwargs):
         self.events.append(("click", kwargs.get("key")))
 
+    def send_key_down(self, key):
+        self.events.append(("down", key))
+
+    def send_key_up(self, key):
+        self.events.append(("up", key))
+
     def yolo_detect(self, *args, **kwargs):
         self.events.append("yolo_hit")
         return [SimpleNamespace(x=200, y=300, width=20, height=20)]
@@ -77,6 +83,9 @@ class _ToEndTaskHarness:
 
     def scale_distance(self, value):
         return value
+
+    def mark_task_failure(self, message, **kwargs):
+        self.events.append(("failure", message))
 
     def log_info(self, *args, **kwargs):
         pass
@@ -380,6 +389,45 @@ class TestDailyBattleToEnd(unittest.TestCase):
 
         self.assertFalse(result)
         self.assertNotIn(("sleep", 1), task.events)
+
+    def test_rotation_miss_runs_escape_scan_until_exhausted(self):
+        """旋转整圈落空且没到点位时，必须走满兜底的每一轮（中键复位 + 按住 D）。"""
+        feature = _make_impl(_ToEndTaskHarness())
+        feature.battle_ctx = BattleContext(category_name="normal")
+        feature.yolo_detect = lambda *args, **kwargs: []
+
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+            self.assertFalse(feature.to_end())
+
+        self.assertEqual(1, feature.events.count("rotate"))
+        self.assertEqual(BattleTask.ESCAPE_ATTEMPTS, feature.events.count(("down", BattleTask.ESCAPE_MOVE_KEY)))
+        self.assertEqual(BattleTask.ESCAPE_ATTEMPTS, feature.events.count(("up", BattleTask.ESCAPE_MOVE_KEY)))
+        # 秘境类没有二次寻路可退，必须走 mark_task_failure 带上现场截图
+        self.assertIn(("failure", "未找到战斗奖励点"), feature.events)
+
+    def test_escape_hit_continues_into_alignment(self):
+        """兜底命中后要接着走对中，不能把结果丢掉直接判负。"""
+        feature = _make_impl(_ToEndTaskHarness())
+        feature.battle_ctx = BattleContext(category_name="normal")
+        feature.yolo_detect = lambda *args, **kwargs: []
+        feature._escape_blocked_view = Mock(return_value=SimpleNamespace(x=1, y=1, width=2, height=2))
+
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+            self.assertFalse(feature.to_end())
+
+        feature._escape_blocked_view.assert_called_once()
+        self.assertIn("align", feature.events)
+
+    def test_escape_skipped_when_marker_already_found(self):
+        """旋转已经扫到终点时不得再平移，否则会把刚找到的目标带出视野。"""
+        feature = _make_impl(_ToEndTaskHarness())
+        feature.battle_ctx = BattleContext(category_name="normal")
+        feature._escape_blocked_view = Mock(return_value=None)
+
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+            feature.to_end()
+
+        feature._escape_blocked_view.assert_not_called()
 
 
 if __name__ == "__main__":
