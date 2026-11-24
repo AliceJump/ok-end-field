@@ -429,6 +429,30 @@ class TestDailyBattleToEnd(unittest.TestCase):
 
         feature._escape_blocked_view.assert_not_called()
 
+    def test_escape_skipped_when_recent_observation_exists(self):
+        """旋转期间闪现过一帧、观测还在有效期内时，也不得再按 D 平移。"""
+        feature = _make_impl(_ToEndTaskHarness())
+        feature.battle_ctx = BattleContext(category_name="normal")
+        feature._escape_blocked_view = Mock(return_value=None)
+        box = SimpleNamespace(x=200, y=300, width=20, height=20)
+        armed = {"on": False}
+        feature.yolo_detect = lambda *args, **kwargs: [box] if armed["on"] else []
+
+        def rotate_miss_but_observe(check_func):
+            """旋转本身落空，但期间命中过一帧，作用域会把它记成观测。"""
+            feature.events.append("rotate")
+            armed["on"] = True
+            feature.yolo_detect(name="battle_end", box=object(), conf=0.7)
+            armed["on"] = False
+            return None
+
+        feature.rotate_search = rotate_miss_but_observe
+
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+            self.assertFalse(feature.to_end())
+
+        feature._escape_blocked_view.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

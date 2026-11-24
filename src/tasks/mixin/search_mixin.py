@@ -159,7 +159,13 @@ class SearchMixin(BaseEfTask):
                 if result := check_func():
                     return result
                 if poll_interval > 0:
-                    self.sleep(poll_interval)
+                    # 间隔不能超过剩余时间，否则配置的按住时长会被轮询间隔拉长
+                    # （duration=0.5、poll_interval=5 时键会按满 5 秒）。
+                    remaining = duration - (self.active_time() - start)
+                    # 剩余不足 1ms 就当作到点：这点零头加不回时间轴（浮点被吞），继续睡会空转。
+                    if remaining < 0.001:
+                        break
+                    self.sleep(min(poll_interval, remaining))
             return None
         finally:
             # 命中、超时、任务停止都必须松开，否则角色会一直平移。

@@ -1138,8 +1138,12 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
 
             # 旋转没扫到终点：多半是贴墙把相机挤近了，先脱离遮挡再让下面的对中接力。
             # 放在 try_click_reward 之后，避免「其实已经站在点位上、只是图标被挡住」时白走一趟。
-            if not is_gather and not marker_found and self._escape_blocked_view(detect_marker):
-                self.log_info("脱离遮挡后重新看到奖励点")
+            if not is_gather and not marker_found:
+                # try_click_reward 的收尾会补一次检测并留下新鲜观测，此时已有终点坐标，
+                # 直接交给下面的对中接力；再按键平移反而会把刚看到的目标带出视野。
+                marker_found = bool(observations.latest(marker_kind, end_feature_name))
+                if not marker_found and self._escape_blocked_view(detect_marker):
+                    self.log_info("脱离遮挡后重新看到奖励点")
 
             # 对准领奖点
 
