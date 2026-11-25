@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid
+from src.nav.layered_map import resolve_tier_by_height
 
 
 def duplicate_observation(row):
@@ -49,11 +50,35 @@ def eligible_visual_observation(row, map_id):
     )
 
 
-def paired_visual_reference(row, timeline, map_id):
+def capture_on_main_tier(state, layered, map_id):
+    """Use independent floor evidence whenever the map has multiple floors or height annotations."""
+    if state.get("tier_trusted") and state.get("tier_id") is not None:
+        return state["tier_id"] in ("", "__main__")
+    if layered is None:
+        return True
+    main = layered.grid(map_id, "")
+    if main is None or main.meta.floor_regions_error:
+        return False
+    if not (
+        main.meta.floor_regions
+        or any(layered.tier_ids())
+        or any(level == map_id or level.startswith(map_id + "_") for level in layered.declared_tiers)
+    ):
+        return True
+    result = resolve_tier_by_height(layered, map_name=map_id, x=state.get("x"), y=state.get("y"), z=state.get("z"))
+    return result["status"] == "unique" and result["tier"] == ""
+
+
+def paired_visual_reference(row, timeline, map_id, *, layered=None):
     if not eligible_visual_observation(row, map_id):
         return None
     return align_reference(
-        timeline, row["frame_t"], map_id, flow=row.get("flow"), stationary=row.get("stationary_reference", False)
+        timeline,
+        row["frame_t"],
+        map_id,
+        flow=row.get("flow"),
+        stationary=row.get("stationary_reference", False),
+        layered=layered,
     )
 
 
@@ -197,7 +222,7 @@ class ReferenceTimeline:
             self.samples.insert(index, row)
 
 
-def align_reference(records, stamp, map_id, *, flow=None, max_gap=0.6, stationary=False):
+def align_reference(records, stamp, map_id, *, flow=None, max_gap=0.6, stationary=False, layered=None):
     timeline = records if isinstance(records, ReferenceTimeline) else ReferenceTimeline(records)
     samples, times = timeline.samples, timeline.times
     if not samples:
@@ -211,6 +236,8 @@ def align_reference(records, stamp, map_id, *, flow=None, max_gap=0.6, stationar
     if any(reference_map_id(r) != map_id or (flow is not None and r.get("flow") != flow) for r in pair):
         return None
     if left.get("flow") != right.get("flow") or left.get("scene") != right.get("scene"):
+        return None
+    if not all(capture_on_main_tier(record, layered, map_id) for record in pair):
         return None
     begin, end = float(left["time"]), float(right["time"])
     if begin <= stamp <= end and end - begin <= max_gap:

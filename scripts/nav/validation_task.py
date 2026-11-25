@@ -13,6 +13,7 @@ import numpy as np
 from scripts.nav.visual_validation import (
     NavigationSourcePolicy,
     ReferenceTimeline,
+    capture_on_main_tier,
     connected_region,
     coverage_pose_ready,
     duplicate_observation,
@@ -91,7 +92,7 @@ class GridValidationTask(MinimapNavigateToPoint):
         write_diagnostic(self.directory, "skipped_cells.json", sorted(self.skipped))
         write_diagnostic(self.directory, "covered_cells.json", sorted(self.covered))
         write_diagnostic(self.directory, "traversed_cells.json", sorted(self.traversed))
-        save_grid(self.directory / "temporary.grid.npz", self.navigation_grid)
+        self._diagnostic_write(save_grid, self.directory / "temporary.grid.npz", self.navigation_grid)
 
     def _skip_failed_goal(self, point):
         self._stop_inputs()
@@ -161,6 +162,9 @@ class GridValidationTask(MinimapNavigateToPoint):
 
     def _observe(self, state, navigation_source="visual_map"):
         self._check_stop()
+        if self.reference.error:
+            self.stop_reason = self.reference.error
+            self._check_stop()
         latest, checked, references = self.reference.snapshot(since=self._reference_cursor)
         self._reference_cursor += len(references)
         self._reference_timeline.extend(references)
@@ -220,24 +224,20 @@ class GridValidationTask(MinimapNavigateToPoint):
         timeline = references if isinstance(references, ReferenceTimeline) else ReferenceTimeline(references or [])
         if not hasattr(self, "_reference_covered_baseline"):
             self._reference_covered_baseline = set(self.covered)
-        snapshot = (
-            timeline,
-            timeline.revision,
-            len(timeline.samples),
-            timeline.times[-1] if timeline.times else None,
-        )
+        snapshot = (timeline, timeline.revision, len(timeline.samples))
         previous = getattr(self, "_reference_validation_snapshot", None)
-        replayed = False
-        if previous is not None and previous != snapshot:
-            self._validation_cursor = 0
-            self.error_hits = 0
+        if previous is not None and previous[:2] != snapshot[:2]:
+            self._validation_cursor = self.error_hits = 0
             self.covered = set(self._reference_covered_baseline)
-            # 时间线变化后重新累计失败判定：已失效的 sustained_position_error
-            # 不能继续阻止重放，也不能留在最终报告里。
             self.validation_failure = ""
-            replayed = True
+            self._provisional = None
+        elif previous != snapshot and getattr(self, "_provisional", None) is not None:
+            self._validation_cursor, self.error_hits, added = self._provisional
+            self.covered.difference_update(added)
+            self.validation_failure = ""
+            self._provisional = None
         self._reference_validation_snapshot = snapshot
-        if self.validation_failure and not replayed:
+        if self.validation_failure:
             return
         while self._validation_cursor < len(self.samples):
             row = self.samples[self._validation_cursor]
@@ -245,7 +245,9 @@ class GridValidationTask(MinimapNavigateToPoint):
                 self._validation_cursor += 1
                 continue
             pose, stamp = row["pose"], row["frame_t"]
-            reference = paired_visual_reference(row, timeline, self.grid.meta.map_name)
+            reference = paired_visual_reference(
+                row, timeline, self.grid.meta.map_name, layered=self.options.reference_layers
+            )
             awaiting_right = not timeline.times or stamp > timeline.times[-1]
             if (
                 reference is None
@@ -254,6 +256,9 @@ class GridValidationTask(MinimapNavigateToPoint):
                 and coverage_pose_ready(pose, self.grid.meta.map_name)
             ):
                 break
+            if reference is not None and awaiting_right and not final and getattr(self, "_provisional", None) is None:
+                # A stationary hold may change when its right bracket arrives.
+                self._provisional = (self._validation_cursor, self.error_hits, set())
             self._validation_cursor += 1
             if reference is None:
                 self.error_hits = 0
@@ -261,9 +266,10 @@ class GridValidationTask(MinimapNavigateToPoint):
             distance = math.dist((pose["x"], pose["z"]), (reference["x"], reference["z"]))
             self.error_hits = self.error_hits + 1 if distance > self.options.max_error else 0
             if distance <= self.options.max_error:
-                self.covered.update(
-                    nearby_cells(self.region, self.grid.index_of_world(pose["x"], pose["z"]), self.coverage_steps)
-                )
+                cells = nearby_cells(self.region, self.grid.index_of_world(pose["x"], pose["z"]), self.coverage_steps)
+                if getattr(self, "_provisional", None) is not None:
+                    self._provisional[2].update(cells - self.covered)
+                self.covered.update(cells)
             if self.error_hits >= 3:
                 self.validation_failure = f"sustained_position_error: {distance:.2f}m"
                 break
@@ -295,7 +301,7 @@ class GridValidationTask(MinimapNavigateToPoint):
             self.last_progress_log = time.monotonic()
 
     def _navigation_pose(self, service, visual):
-        from scripts.nav.validate_visual_grid import capture_on_main_tier, write_diagnostic
+        from scripts.nav.validate_visual_grid import write_diagnostic
 
         source = self.source_policy.choose(visual)
         selected = dict(service._capture_world_pose() if source == "capture" else visual)
@@ -335,7 +341,9 @@ class GridValidationTask(MinimapNavigateToPoint):
             point = (selected["x"], selected["z"])
             # Capture poses carry Y but no tier verdict; a lower floor overlapping
             # the main map in X/Z must not inflate main-map traversal.
-            if source == "capture" and not capture_on_main_tier(selected, self.grid):
+            if source == "capture" and not capture_on_main_tier(
+                selected, self.options.reference_layers, self.grid.meta.map_name
+            ):
                 self.capture_frames_off_main_tier = getattr(self, "capture_frames_off_main_tier", 0) + 1
             else:
                 self.traversed.update(nearby_cells(self.region, self.grid.index_of_world(*point), self.coverage_steps))
@@ -367,6 +375,8 @@ class GridValidationTask(MinimapNavigateToPoint):
                 wait_ready = getattr(self.reference, "wait_ready", None)
                 if callable(wait_ready) and not wait_ready(2.0):
                     raise RuntimeError("reference_initial_sample_timeout")
+                if self.reference.error:
+                    raise RuntimeError(self.reference.error)
                 service = self.get_runtime_position_service()
                 original_config = service.config
                 resources.callback(setattr, service, "config", original_config)
@@ -421,7 +431,7 @@ class GridValidationTask(MinimapNavigateToPoint):
         timeline, verified = ReferenceTimeline(references), set()
         for row in self.samples:
             pose = row["pose"]
-            ref = paired_visual_reference(row, timeline, self.grid.meta.map_name)
+            ref = paired_visual_reference(row, timeline, self.grid.meta.map_name, layered=self.options.reference_layers)
             if ref is not None and math.dist((pose["x"], pose["z"]), (ref["x"], ref["z"])) <= self.options.max_error:
                 verified.update(
                     nearby_cells(self.region, self.grid.index_of_world(ref["x"], ref["z"]), self.coverage_steps)
@@ -444,6 +454,7 @@ class GridValidationTask(MinimapNavigateToPoint):
         self.covered.update(self.options.resume_covered)
         self._reference_covered_baseline = set(self.covered)
         self._reference_validation_snapshot = None
+        self._provisional = None
         self.traversed = set(self.options.resume_traversed) | self.covered
         self.source_policy = NavigationSourcePolicy(self.options.capture_fallback)
         self.source_events, self.route_source, self.route_token, self.route_seq, self.capture_frames = (
@@ -553,7 +564,9 @@ class GridValidationTask(MinimapNavigateToPoint):
                             "pose": self.samples[-1]["pose"] if self.samples else pose,
                         }
                         self.navigation_failures.append(event)
-                        write_diagnostic(self.directory, "navigation_failures.json", self.navigation_failures)
+                        self._diagnostic_write(
+                            write_diagnostic, self.directory, "navigation_failures.json", self.navigation_failures
+                        )
                         transient_failures += 1
                         if transient_failures >= 3:
                             reason = "navigation_unavailable: " + event["reason"]
@@ -581,6 +594,8 @@ class GridValidationTask(MinimapNavigateToPoint):
                 self._diagnostic_write(cv2.imwrite, str(self.directory / "last_hud.png"), self.last_frame[:280, :340])
         references = self.reference.snapshot()[2] if self.reference is not None else []
         self._process_reference_samples(references, final=True)
+        if self.reference is not None and self.reference.error:
+            self.validation_failure = self.reference.error
         if self.validation_failure:
             status, reason = "stopped", self.validation_failure
         elif (reason or self.stop_reason or "").startswith("sustained_position_error"):
@@ -616,7 +631,9 @@ class GridValidationTask(MinimapNavigateToPoint):
             ),
             "frames": len(self.samples),
             "trusted_frames": sum(bool(r["pose"].get("position_trusted")) for r in self.samples),
-            "accuracy": report_accuracy(self.samples, references, map_id=self.grid.meta.map_name),
+            "accuracy": report_accuracy(
+                self.samples, references, map_id=self.grid.meta.map_name, layered=self.options.reference_layers
+            ),
             "navigation_implementation": "MinimapNavigateToPoint.navigate_grid_to / WorldPoseService / EfInteraction",
         }
         write_diagnostic(self.directory, "report.json", self.report)

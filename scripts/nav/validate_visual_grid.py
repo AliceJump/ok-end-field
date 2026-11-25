@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.nav.path_safety import resolve_under
 from scripts.nav.visual_validation import (
     ReferenceTimeline,
+    capture_on_main_tier,
     connected_region,
     coverage_targets,
     eligible_visual_observation,
@@ -28,6 +29,7 @@ from scripts.nav.visual_validation import (
 )
 from src.localization.capture_position_source import CapturePositionSource
 from src.nav.grid_io import load_grid_from_bytes
+from src.nav.layered_map import load_layered_map
 
 
 def _write_json_atomic(target, value):
@@ -58,27 +60,6 @@ _DIAGNOSTIC_WRITERS = {
 }
 
 
-def capture_on_main_tier(state, grid):
-    """Whether a capture pose can be attributed to the main floor.
-
-    Lower floors can overlap the main map in X/Z, so a trusted *position* with
-    the same map id is not enough. A ticketed tier verdict wins; otherwise the
-    capture Y must resolve uniquely to an annotated main-map height interval.
-    """
-    tier_id = state.get("tier_id")
-    if state.get("tier_trusted") and tier_id is not None:
-        return str(tier_id) in ("", "__main__")
-    y = state.get("y")
-    regions = getattr(getattr(grid, "meta", None), "floor_regions", ()) or ()
-    if not regions:
-        # Nothing distinguishes floors here; the validation runs on one raster.
-        return True
-    if y is None:
-        return False
-    hits = [region for region in regions if region["y_min"] <= float(y) <= region["y_max"]]
-    return bool(hits) and all(str(region.get("tier") or "") in ("", "__main__") for region in hits)
-
-
 def write_diagnostic(run_directory, name, value):
     """Atomically write one allow-listed diagnostic file inside ``run_directory``.
 
@@ -98,6 +79,7 @@ class ReferenceRecorder:
         self.lock = threading.Lock()
         self.stop = threading.Event()
         self.ready = threading.Event()
+        self.error = ""
         self.latest = None
         self.checked_at = 0.0
         self.handle = (directory / "reference.jsonl").open("w", encoding="utf-8")
@@ -109,6 +91,13 @@ class ReferenceRecorder:
             raise
 
     def _run(self):
+        try:
+            self._record()
+        except Exception as exc:
+            self.error = f"reference_recording_failed: {type(exc).__name__}: {exc}"
+            self.ready.set()
+
+    def _record(self):
         fields = (
             "time",
             "captureAt",
@@ -164,11 +153,14 @@ class ReferenceRecorder:
 
     def close(self):
         self.stop.set()
-        self.thread.join(timeout=2)
-        self.handle.close()
+        self.thread.join()
+        try:
+            self.handle.close()
+        except OSError as exc:
+            self.error = f"reference_recording_failed: {type(exc).__name__}: {exc}"
 
 
-def report_accuracy(samples, references, *, map_id=None):
+def report_accuracy(samples, references, *, map_id=None, layered=None):
     references = ReferenceTimeline(references)
     groups = {
         "absolute_time_aligned": [],
@@ -183,7 +175,7 @@ def report_accuracy(samples, references, *, map_id=None):
         if not eligible_visual_observation(row, expected_map):
             continue
         eligible += 1
-        reference = paired_visual_reference(row, references, expected_map)
+        reference = paired_visual_reference(row, references, expected_map, layered=layered)
         if reference is None:
             missing += 1
             continue
@@ -262,6 +254,10 @@ def main():
     grid = load_grid_from_bytes(grid_bytes, name=args.grid.name)
     if grid.meta.map_name != sample.map_id or grid.meta.tier:
         raise RuntimeError("grid_does_not_match_current_main_map")
+    args.reference_layers = load_layered_map(args.grid.parent, sample.map_id, zoom=grid.meta.zoom)
+    args.reference_layers.layers[(sample.map_id, "")] = grid
+    if not capture_on_main_tier(vars(sample), args.reference_layers, sample.map_id):
+        raise RuntimeError("reference_start_main_tier_unconfirmed")
     start_cell = grid.index_of_world(sample.x, sample.z)
     start_free = grid.nearest_free(*start_cell, max_radius=2)
     if start_free is None or grid.is_blocked(*start_cell):
@@ -323,7 +319,7 @@ def main():
                     "position": failure["last_visual_position"],
                     "goal": failure["last_goal"],
                     "reason": failure["navigation_failure"],
-                    "obstructed": True,
+                    "obstructed": failure.get("obstructed") is True,
                     "source_run": str(args.resume.resolve()),
                 }
             ]

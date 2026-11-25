@@ -19,20 +19,64 @@ from scripts.nav.visual_validation import (
     NavigationSourcePolicy,
     ReferenceTimeline,
     align_reference,
+    capture_on_main_tier,
     connected_region,
     coverage_targets,
     error_statistics,
     navigation_pose_ready,
     nearby_cells,
+    paired_visual_reference,
     temporary_obstacle_grid,
 )
 from src.localization.capture_position_source import CapturePositionSource
 from src.localization.position_service import WorldPoseService
 from src.nav.grid_io import DenseGrid, GridMeta
+from src.nav.layered_map import LayeredMap
 from src.nav.route_follower import FollowerConfig
 
 
 class TestVisualGridValidation(unittest.TestCase):
+    def test_floor_evidence_required_for_both_reference_endpoints(self):
+        region = {"x0": 0, "x1": 4, "z0": 0, "z1": 4, "y_min": 5, "y_max": 8}
+        main = DenseGrid(np.ones((4, 4), np.uint8), GridMeta(map_name="map02", floor_regions=[region]))
+        lower = DenseGrid(
+            main.cells, GridMeta(map_name="map02", tier="lower", floor_regions=[{**region, "y_min": 0, "y_max": 2}])
+        )
+        layers = LayeredMap(layers={("map02", ""): main, ("map02", "lower"): lower})
+        start = self.record(10, y=6)
+        for invalid in ({"y": 1}, {"y": None}, {"x": 100}, {"tier_trusted": True, "tier_id": "lower"}):
+            other = {**start, **invalid, "time": 10.2}
+            self.assertFalse(capture_on_main_tier(other, layers, "map02"))
+            self.assertIsNone(align_reference([start, other], 10.1, "map02", layered=layers))
+            self.assertIsNone(align_reference([other], 10.2, "map02", layered=layers, stationary=True))
+        self.assertIsNotNone(align_reference([start], 10, "map02", layered=layers))
+
+    def test_sequential_references_do_not_revisit_settled_frames(self):
+        task, pose, reference = self._observation_task()
+        timeline = ReferenceTimeline([])
+        with patch("scripts.nav.validation_task.paired_visual_reference", wraps=paired_visual_reference) as pair:
+            for stamp in range(100, 140):
+                timeline.extend([{**reference, "time": stamp, "x": 2, "z": 2}])
+                task.samples.append({"pose": pose, "frame_t": stamp, "flow": 3})
+                task._process_reference_samples(timeline)
+            self.assertEqual(pair.call_count, 40)
+
+    def test_recorder_propagates_final_flush_error(self):
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch("scripts.nav.validate_visual_grid.threading.Thread.start"),
+        ):
+            recorder = ReferenceRecorder(8000, Path(directory))
+            recorder.source = Mock()
+            recorder.source.fetch_state.return_value = {"lastPosition": self.record(100)}
+            recorder.source._flow_liveness.return_value = (None, None, True)
+            recorder.source._resolve_map_id.return_value = ("map02", "test")
+            with recorder.handle, patch.object(recorder.handle, "flush", side_effect=OSError("disk full")):
+                recorder._run()
+            self.assertTrue(recorder.ready.is_set())
+            self.assertIn("reference_recording_failed", recorder.error)
+            self.assertIn("disk full", recorder.error)
+
     def test_diagnostic_writer_accepts_only_declared_names(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -124,14 +168,14 @@ class TestVisualGridValidation(unittest.TestCase):
             grid=grid,
             region=grid.cells == 1,
             coverage_steps=0,
-            reference=SimpleNamespace(snapshot=Mock(return_value=(reference, 100, [reference]))),
+            reference=SimpleNamespace(error="", snapshot=Mock(return_value=(reference, 100, [reference]))),
             _stop_inputs=Mock(),
             error_hits=0,
             _validation_cursor=0,
             _reference_cursor=0,
             _reference_timeline=ReferenceTimeline([]),
             _observed_frames=set(),
-            options=SimpleNamespace(max_error=1),
+            options=SimpleNamespace(max_error=1, reference_layers=None),
         )
         task._check_stop = lambda: GridValidationTask._check_stop(task)
         task._process_reference_samples = MethodType(GridValidationTask._process_reference_samples, task)
@@ -250,7 +294,7 @@ class TestVisualGridValidation(unittest.TestCase):
         task, pose, reference = self._observation_task()
         reference.update(x=2, z=2)
         references = [reference, {**reference, "time": 100.2}]
-        recorder = SimpleNamespace(snapshot=Mock(return_value=(reference, 100.4, references)), close=Mock())
+        recorder = SimpleNamespace(error="", snapshot=Mock(return_value=(reference, 100.4, references)), close=Mock())
         tracker = SimpleNamespace(
             update=Mock(
                 side_effect=[
@@ -421,9 +465,16 @@ class TestVisualGridValidation(unittest.TestCase):
             next_frame=Mock(),
             navigate_grid_to=Mock(),
         )
-        for name in ("_validation_resources", "_reference_verified_cells", "_process_reference_samples", "_check_stop"):
+        for name in (
+            "_diagnostic_write",
+            "_validation_resources",
+            "_reference_verified_cells",
+            "_process_reference_samples",
+            "_check_stop",
+        ):
             setattr(task, name, MethodType(getattr(GridValidationTask, name), task))
         options = SimpleNamespace(
+            reference_layers=None,
             resume_covered=[],
             resume_traversed=[],
             resume_failures=[],
@@ -523,7 +574,7 @@ class TestVisualGridValidation(unittest.TestCase):
             task, service = self._run_task(Path(directory))
             original_config = service.config
             reference = SimpleNamespace(
-                wait_ready=Mock(return_value=False), close=Mock(), snapshot=Mock(return_value=(None, 0, []))
+                error="", wait_ready=Mock(return_value=False), close=Mock(), snapshot=Mock(return_value=(None, 0, []))
             )
             with (
                 patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
@@ -549,7 +600,7 @@ class TestVisualGridValidation(unittest.TestCase):
             from src.nav.grid_planner import GridPlanner
 
             task.navigation_grid, task.target_planner = grid, GridPlanner(grid, allow_unknown=False)
-            reference = SimpleNamespace(close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+            reference = SimpleNamespace(error="", close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
             guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
             with (
                 patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
@@ -577,7 +628,7 @@ class TestVisualGridValidation(unittest.TestCase):
             from src.nav.grid_planner import GridPlanner
 
             task.navigation_grid, task.target_planner = grid, GridPlanner(grid, allow_unknown=False)
-            reference = SimpleNamespace(close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+            reference = SimpleNamespace(error="", close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
             guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
             with (
                 patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
@@ -599,7 +650,7 @@ class TestVisualGridValidation(unittest.TestCase):
                     service.sample_world_pose,
                     service._locate_visual_frame,
                 )
-                reference = SimpleNamespace(close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+                reference = SimpleNamespace(error="", close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
                 guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
                 if stage == "service":
                     task.get_runtime_position_service.side_effect = RuntimeError("service failed")
@@ -635,7 +686,7 @@ class TestVisualGridValidation(unittest.TestCase):
                 return pose
 
             task.world_pose = observe
-            reference = SimpleNamespace(close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+            reference = SimpleNamespace(error="", close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
             guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
             with (
                 patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
@@ -687,6 +738,7 @@ class TestVisualGridValidation(unittest.TestCase):
                     records.append({**records[0], "time": 100.4})
 
                 reference = SimpleNamespace(
+                    error="",
                     snapshot=lambda records=records, since=0: (records[-1], 100.4, records[since:]),
                     close=close_reference,
                 )
@@ -753,6 +805,7 @@ class TestVisualGridValidation(unittest.TestCase):
                 with self.subTest(pose=pose, reference_map=reference_map):
                     task = SimpleNamespace(
                         stop_reason="",
+                        options=SimpleNamespace(reference_layers=None),
                         absolute={},
                         samples=[],
                         sample_log=io.StringIO(),
@@ -760,7 +813,9 @@ class TestVisualGridValidation(unittest.TestCase):
                         covered=set(),
                         traversed=set(),
                         grid=SimpleNamespace(meta=SimpleNamespace(map_name="map02")),
-                        reference=SimpleNamespace(snapshot=Mock(return_value=({"mapId": reference_map}, 100, []))),
+                        reference=SimpleNamespace(
+                            error="", snapshot=Mock(return_value=({"mapId": reference_map}, 100, []))
+                        ),
                         _stop_inputs=Mock(),
                         error_hits=0,
                         _validation_cursor=0,
@@ -940,7 +995,11 @@ class TestVisualGridValidation(unittest.TestCase):
                 _grid_nav_layered_planner_cache={1: object()},
                 _grid_follower_config=lambda: FollowerConfig(allow_unknown=False),
             )
-            GridValidationTask._save_obstacles(task)
+            task.log_warning = Mock()
+            task._diagnostic_write = MethodType(GridValidationTask._diagnostic_write, task)
+            with patch("scripts.nav.validation_task.save_grid", side_effect=OSError("disk full")):
+                GridValidationTask._save_obstacles(task)
+            task.log_warning.assert_called_once()
             self.assertEqual(task._grid_nav_layered_cache, {})
             self.assertEqual(task._grid_nav_layered_planner_cache, {})
             self.assertIs(task.target_planner.grid, task.navigation_grid)
