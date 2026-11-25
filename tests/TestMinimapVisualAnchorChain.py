@@ -109,7 +109,7 @@ class TestMinimapVisualAnchorChainCorrection(unittest.TestCase):
         self.assertEqual(result.reason, "error_budget_exhausted")
         self.assertGreater(result.error_m, 3)
         self.assertEqual(result.anchor_time, 0)
-        self.assertGreaterEqual(evidence.tick, 4)
+        self.assertGreaterEqual(evidence.tick, 6)
 
     def test_gap_or_unrelated_image_cannot_be_rescued_by_an_old_keyframe(self):
         image = _texture(140, seed=30)

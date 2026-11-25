@@ -579,6 +579,9 @@ class TestNavigationTopology(unittest.TestCase):
         moved = topology.scope("map02", MAIN_TIER, (1.5, 0.5), 1)
         self.assertNotEqual(first.search_identity(), expanded.search_identity())
         self.assertNotEqual(first.search_identity(), moved.search_identity())
+        self.assertTrue(expanded.expands_from(first))
+        self.assertFalse(first.expands_from(expanded))
+        self.assertFalse(moved.expands_from(first))
 
     def test_scope_is_snapshot_and_tolerance_is_not_added_per_edge(self):
         grid = _grid(["oooooooooo"])

@@ -64,12 +64,28 @@ class NavigationTopologyScope:
     def search_identity(self):
         """Identify constraints whose change makes a completed search stale."""
         return (
+            id(self._floors),
             self.anchor_map_id,
             self.anchor_tier_id,
             self.anchor_x,
             self.anchor_z,
             self.max_distance_m,
             self.tolerance_m,
+        )
+
+    def expands_from(self, previous):
+        return (
+            isinstance(previous, NavigationTopologyScope)
+            and self._floors is previous._floors
+            and (self.anchor_map_id, self.anchor_tier_id, self.anchor_x, self.anchor_z, self.tolerance_m)
+            == (
+                previous.anchor_map_id,
+                previous.anchor_tier_id,
+                previous.anchor_x,
+                previous.anchor_z,
+                previous.tolerance_m,
+            )
+            and self.max_distance_m >= previous.max_distance_m
         )
 
     def allows_tier(self, map_id, tier_id):
@@ -101,15 +117,18 @@ class NavigationTopologyScope:
         # in the graph itself. The allowance is applied once to total distance.
         radius = math.ceil(self.tolerance_m / floor.cell_size) + 1
         limit = self.max_distance_m + self.tolerance_m
-        for di in range(-radius, radius + 1):
-            for dj in range(-radius, radius + 1):
-                distance = distances.get((i + di, j + dj))
-                if distance is None:
-                    continue
-                wx, wz = floor.world(i + di, j + dj)
-                offset = math.hypot(wx - x, wz - z)
-                if offset <= self.tolerance_m and distance + offset <= limit + 1e-9:
-                    return True
+        if (2 * radius + 1) ** 2 < len(distances):
+            cells = ((i + di, j + dj) for di in range(-radius, radius + 1) for dj in range(-radius, radius + 1))
+        else:
+            cells = distances
+        for cell in cells:
+            distance = distances.get(cell)
+            if distance is None:
+                continue
+            wx, wz = floor.world(*cell)
+            offset = math.hypot(wx - x, wz - z)
+            if offset <= self.tolerance_m and distance + offset <= limit + 1e-9:
+                return True
         return False
 
 

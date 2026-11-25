@@ -809,6 +809,15 @@ class TestMinimapTrackerRecovery(unittest.TestCase):
         self.assertFalse(result.accepted)
         self.assertEqual(result.pending_hits, 1)
 
+    def test_confirmation_uses_observation_times_despite_close_poll_times(self):
+        locator = _FakeLocator(replace(_result(10, 0), observed_at=100.0))
+        tracker = MinimapTracker(locator, promote_hits=2)
+        self.assertFalse(tracker.update(None, self.g, now=101.5).accepted)
+        locator.result = replace(locator.result, observed_at=101.6)
+        self.assertFalse(tracker.update(None, self.g, now=101.8).accepted)
+        locator.result = replace(locator.result, observed_at=101.7)
+        self.assertTrue(tracker.update(None, self.g, now=101.9).accepted)
+
     def test_continuous_observations_can_promote_by_duration(self):
         tracker = MinimapTracker(_FakeLocator(_result(10, 0)), promote_hits=10, promote_window_s=1)
         for now in (0, 0.4, 0.8):

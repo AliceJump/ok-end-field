@@ -65,7 +65,9 @@ class CompositeFloorImage(TiledMapImage):
 
     @property
     def nbytes(self):
-        return super().nbytes + self.alpha.nbytes + sum(mask.nbytes for mask in self._coverage_cache.values())
+        with self._lock:
+            coverage_bytes = sum(mask.nbytes for mask in self._coverage_cache.values())
+        return super().nbytes + self.alpha.nbytes + coverage_bytes
 
     def close(self):
         super().close()

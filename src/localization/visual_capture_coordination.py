@@ -45,11 +45,11 @@ class VisualCaptureCoordinator:
         try:
             with self._condition:
                 ready = self._condition.wait_for(
-                    lambda: not self._probe_active or self._cancelled,
+                    lambda: not self._probe_active,
                     timeout=self._foreground_timeout,
                 )
-                if not ready or self._probe_active:
-                    raise CaptureException("visual probe stalled or cancelled during foreground capture")
+                if not ready:
+                    raise CaptureException("visual probe stalled during foreground capture")
             return self._original(*args, **kwargs)
         finally:
             with self._condition:

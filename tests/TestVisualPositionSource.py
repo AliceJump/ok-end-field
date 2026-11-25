@@ -3,6 +3,7 @@ import json
 import subprocess
 import sys
 import threading
+import time
 import unittest
 import weakref
 from concurrent.futures import CancelledError, Future, wait
@@ -118,9 +119,7 @@ class TestVisualPositionSource(unittest.TestCase):
 
     def test_direct_source_normalizes_non_1280_frame_before_geometry(self):
         source = VisualPositionSource(self.task, self.locator, "map02")
-        rejection = SimpleNamespace(
-            status="lost", accepted=False, reason="test_rejection", locate=None, pending_hits=0
-        )
+        rejection = SimpleNamespace(status="lost", accepted=False, reason="test_rejection", locate=None, pending_hits=0)
         with (
             patch.object(source.locator, "requires_visual_normalization", return_value=True, create=True),
             patch.object(source.tracker, "update", return_value=rejection) as update,
@@ -129,7 +128,7 @@ class TestVisualPositionSource(unittest.TestCase):
         self.assertEqual(update.call_args.args[0].shape, (720, 1280, 3))
         self.assertEqual(update.call_args.args[1], MinimapGeometry.from_frame(1280, 720))
 
-    def test_published_frame_time_uses_the_async_search_snapshot(self):
+    def test_delayed_snapshot_waits_for_a_current_odometry_frame(self):
         source = VisualPositionSource(self.task, self.locator, "map02", chain_enabled=False)
         self.addCleanup(source.close)
         source._initialize_shape((360, 640))
@@ -149,7 +148,9 @@ class TestVisualPositionSource(unittest.TestCase):
             patch.object(source, "_correct_visual_chains", return_value=(np.zeros(2), None)),
         ):
             state = source.sample(self.frame(), now=5.0)
-        self.assertEqual(state["frame_t"], 4.0)
+        self.assertFalse(state["position_trusted"])
+        self.assertEqual(state["trust_reason"], "visual_snapshot_awaiting_current_frame")
+        self.assertEqual(source._last_absolute_t, 4.0)
 
     def test_anchor_init_seeds_the_first_visual_chain_anchor(self):
         source = VisualPositionSource(self.task, self.locator, "map02")
@@ -228,6 +229,7 @@ class TestVisualPositionSource(unittest.TestCase):
                 with patch.object(source.tracker, "update", return_value=rejected):
                     state = source.sample(self.frame(505), now=1.42)
                 self.assertFalse(state["position_trusted"])
+
     def test_source_serializes_sample_state_and_rejects_after_close(self):
         source = VisualPositionSource(SimpleNamespace(), SimpleNamespace(), "map02")
         entered, second_started, second_entered, release = (threading.Event() for _ in range(4))
@@ -945,7 +947,7 @@ def _recorded_map_crop(name):
 def _recorded_minimap(test, name):
     root = Path(__file__).parent / "fixtures/minimap"
     frame = np.zeros((1080, 1920, 3), np.uint8)
-    frame[:280, :340] = cv2.imread(str(root / f"{name}_hud.png"))
+    frame[:280, :340] = cv2.imdecode(np.frombuffer((root / f"{name}_hud.png").read_bytes(), np.uint8), cv2.IMREAD_COLOR)
     pixels, calibration = _recorded_map_crop(name)
     base = MinimapMapLocator(pixels, calibration)
     locator = MapSetLocator(SimpleNamespace(), ["map02"])
@@ -2459,6 +2461,7 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         locator = self.async_locator()
         frame = np.zeros((16, 16, 3), np.uint8)
         locator.set_navigation_scope(SimpleNamespace(search_identity=lambda: ("map01", "floor1", 1.0, 2.0)))
+        locator._search_started_at = time.monotonic()
         future = Future()  # still running when the scope is cleared
         locator._search_future = future
         locator._search_shape = frame.shape
@@ -2471,6 +2474,31 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         # Same pixels, later sample: the stale completed result must not be reused.
         self.assertIsNone(locator._locate_async(frame.copy(), None, 0))
         locator._prepare_base_search.assert_called_once()
+
+    def test_stale_completed_search_cannot_select_a_map_for_local_matching(self):
+        locator = self.async_locator()
+        frame = np.zeros((16, 16, 3), np.uint8)
+        for age, expected_local in ((0.5, True), (3, False)):
+            with self.subTest(age=age):
+                future = Future()
+                future.set_result(_SearchOutcome(self.result(0.99, margin=0.2), "", 123.5, "map01"))
+                locator._search_future = future
+                locator._search_shape = frame.shape
+                locator._search_started_at = time.monotonic() - age
+                with patch.object(locator, "locate_global") as global_match, patch.object(locator, "_load") as load:
+                    load.return_value.locate_near.return_value = None
+                    load.return_value.last_failure_reason = ""
+                    locator.locate_near(frame, (0, 0), None)
+                self.assertEqual(load.called, expected_local)
+                self.assertEqual(global_match.called, not expected_local)
+
+    def test_normalization_updates_after_installing_prepared_resources(self):
+        store = SimpleNamespace(has_prepared=Mock(side_effect=[False, True]))
+        locator = MapSetLocator(store, ["map01"])
+        self.assertFalse(locator.requires_visual_normalization())
+        self.assertTrue(locator.requires_visual_normalization())
+        self.assertTrue(locator.requires_visual_normalization())
+        self.assertEqual(store.has_prepared.call_count, 2)
 
     def test_navigation_scope_change_invalidates_completed_async_result(self):
         locator = self.async_locator()

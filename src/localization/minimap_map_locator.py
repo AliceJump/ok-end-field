@@ -1428,6 +1428,7 @@ class MinimapTracker:
         self._convinced_t: float | None = None
         self._pending: MapCandidate | None = None
         self._pending_hits = 0
+        self._pending_observed_at = None
         self._pending_since: float | None = None
         self._last_update_t: float | None = None
         self._prediction_verified_t: float | None = None
@@ -1546,17 +1547,14 @@ class MinimapTracker:
     ) -> TrackResult:
         """Run one visual frame and update the convinced/pending state."""
 
-        current = time.monotonic() if now is None else float(now)
+        current = time.time() if now is None else float(now)
         if not math.isfinite(current):
             raise ValueError("now must be finite")
-        if self._last_update_t is not None and (
-            current < self._last_update_t or current - self._last_update_t > self.pending_max_gap_s
-        ):
-            self._pending = None
-            self._pending_hits = 0
-            self._pending_since = None
-            if current < self._last_update_t:
-                self.reset()
+        if self._last_update_t is not None and current < self._last_update_t:
+            self.reset()
+        set_frame_time = getattr(self.locator, "set_frame_time", None)
+        if callable(set_frame_time):
+            set_frame_time(current)
         previous_update = self._last_update_t
         self._last_update_t = current
         fresh = (
@@ -1621,7 +1619,7 @@ class MinimapTracker:
             self._set_convinced(best, observed_at)
             return TrackResult("convinced", True, result.reason, result, best, 0, used_prior)
 
-        return self._confirm_acquisition(result, observed_at, previous_update, used_prior)
+        return self._confirm_acquisition(result, observed_at, used_prior)
 
     def _locate_recovery(self, frame, geometry, world, map_id, now, fresh):
         """Track near a fresh anchor; periodically recheck the full recovery ROI.
@@ -1796,7 +1794,7 @@ class MinimapTracker:
             return None, False
         return result, True
 
-    def _confirm_acquisition(self, result, current, previous_update, used_prior):
+    def _confirm_acquisition(self, result, current, used_prior):
         best = result.best
         # Time alone cannot turn a repeated weak or ambiguous distant match into a fix.
         if not strong_candidate(
@@ -1807,10 +1805,14 @@ class MinimapTracker:
             self._pending_since = None
             return TrackResult("lost", False, "insufficient_acquisition_evidence", result, None, 0, used_prior)
 
-        pending_radius = self.consistency_distance_m + self.max_speed_m_s * (
-            max(0.0, current - previous_update) if previous_update is not None else 0.0
-        )
-        if self._pending is not None and self._distance(best, self._pending) <= pending_radius:
+        gap = current - self._pending_observed_at if self._pending_observed_at is not None else math.inf
+        self._pending_observed_at = current
+        pending_radius = self.consistency_distance_m + self.max_speed_m_s * gap
+        if (
+            self._pending is not None
+            and 0 < gap <= self.pending_max_gap_s
+            and self._distance(best, self._pending) <= pending_radius
+        ):
             self._pending = best
             self._pending_hits += 1
         else:

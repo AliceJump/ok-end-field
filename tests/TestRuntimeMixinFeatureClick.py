@@ -38,7 +38,7 @@ class TestRuntimeArrowCache(unittest.TestCase):
         frame = np.zeros((100, 100, 3), np.uint8)
         with patch("src.image.rotated_template.ArrowAngleMatcher", return_value=matcher) as factory:
             for _ in range(3):
-                self.assertEqual(task.get_arrow_angle(target_image=frame, smoothing_threshold=None), (42.0, 0.9))
+                self.assertEqual(task.get_arrow_angle(target_image=frame.copy(), smoothing_threshold=None), (42.0, 0.9))
             self.assertEqual(factory.call_count, 1)
             task.get_arrow_angle(target_image=frame, benchmark_width=1920)
             self.assertEqual(factory.call_count, 2)

@@ -300,8 +300,11 @@ class VisualPositionSource:
             recovery_map_id=self.map_id,
         )
         observation_clock = self._match_observation_clock(match, clock)
-        if observation_clock == clock:
-            match, measured = self._confirm_motion(frame, match, clock, measured)
+        if observation_clock != clock:
+            # The tracker retains the map hint. Only a fresh confirmation may fuse
+            # a candidate with the current displacement and minimap ring.
+            return self.unavailable("visual_snapshot_awaiting_current_frame", locate=match.locate)
+        match, measured = self._confirm_motion(frame, match, clock, measured)
         # A pending NCC observation may still be propagated for a bounded
         # interval through verified visual edges. Its candidate position is
         # never used as a position.
@@ -616,7 +619,7 @@ class VisualPositionSource:
             # A confirmed absolute fix does not need an odometry baseline to be
             # usable. Keep odom_ok truthful for consumers of relative motion.
             "absolute_position_valid": strong,
-            "trust_reason": "visual_map" if strong else "visual_anchor_chain",
+            "trust_reason": "visual_map" if strong or self.chain is None else "visual_anchor_chain",
             "anchor_set": True,
             "sync_supported": False,
             "sync_needed": False,

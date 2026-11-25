@@ -46,6 +46,7 @@ from src.localization.minimap_sample_stitch import (
     write_jsonl,
 )
 from src.localization.visual_frame import VISUAL_FRAME_WIDTH, normalize_visual_frame
+from src.localization.wgc_frame_timing import timing_for_frame
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 CONFIG_INTERVAL = "采样间隔(秒)"
@@ -235,6 +236,10 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                     map_to_world_px = fusion_now.map_to_world_px
                 scale_now = float(getattr(position_task, "_minimap_scale", 0.0) or 0.0)
                 # Saved pixels must use the same scale as the odometry matrix.
+                timing = timing_for_frame(getattr(self.executor, "method", None), frame)
+                same_observation = (timing is None and not state.get("visual_duplicate_frame")) or (
+                    timing is not None and state.get("frame_t") == timing.frame_time
+                )
                 frame = normalize_visual_frame(frame)
                 task_h_now, task_w_now = frame.shape[:2]
                 if map_to_world_px is None:
@@ -287,7 +292,7 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                 patch_rel = None
                 patch_meta: dict = {}
                 can_save = max_patches == 0 or saved_patches < max_patches
-                if can_save:
+                if can_save and same_observation:
                     try:
                         patch, patch_meta = crop_minimap_patch(frame, task_w, task_h)
                     except Exception as exc:
@@ -301,7 +306,7 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                             patch_rel = None
                         else:
                             saved_patches += 1
-                elif not patch_limit_logged:
+                elif not can_save and not patch_limit_logged:
                     patch_limit_logged = True
                     self.log_info(f"已达到最大切片数 {max_patches}，后续只记录数值不再保存图片")
 

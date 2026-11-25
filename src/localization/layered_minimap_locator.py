@@ -304,6 +304,7 @@ class LayeredMinimapLocator:
 
     def reset_proposals(self):
         """Discard only untrusted order/position hints, never reuse observations."""
+        self._proposal_index = 0
         self._background_hint = None
         self._ranked_tiers = ()
         self._ranked_entry_key = None
@@ -943,13 +944,18 @@ class LayeredMinimapLocator:
             if complete_competition:
                 raise ResourcePending() from None
             return None
-        floor = self._matching_locator(entry, floor)
-        if not self._prepare_global_search(floor, frame, wait_for_resources=wait_for_resources):
-            raise ResourcePending()
-        # Search the entire original floor, not a small ROI around a coarse
-        # peak. Distant lookalikes remain competitors under the original gates.
         try:
+            floor = self._matching_locator(entry, floor)
+            if not self._prepare_global_search(floor, frame, wait_for_resources=wait_for_resources):
+                raise ResourcePending()
             result = floor.locate_global(frame, geometry)
+        except (OSError, ValueError) as exc:
+            self._layer_errors[tier_id] = str(exc)
+            if complete_competition:
+                raise ResourcePending() from exc
+            return None
+        else:
+            self._layer_errors.pop(tier_id, None)
         finally:
             if complete_competition:
                 self._evict_layers()

@@ -291,7 +291,8 @@ class PreparedLocalizationBundle:
         self._atlases = {}
         self._validate_identity_and_source()
         self._validate_readiness()
-        self._validate_floor_and_atlas_metadata()
+        atlases = self._validate_atlas_layout()
+        self._validate_floor_metadata(atlases)
         self._validate_payloads()
         self._register_atlas_payloads()
         self._validate_masks_and_floors()
@@ -366,7 +367,10 @@ class PreparedLocalizationBundle:
             self._rank_failures.add(tier_id)
             return None
         try:
-            path = resolve_prepared_path(self.root.parent.parent, path_name)
+            try:
+                path = resolve_prepared_path(self.root.parent.parent, path_name)
+            except RuntimeError as exc:
+                raise ValueError("unresolvable rank path") from exc
             with path.open("rb") as stream:
                 data = stream.read(file_record[0] + 1)
             if len(data) != file_record[0] or _sha256(data) != file_record[1]:
@@ -465,7 +469,10 @@ class PreparedLocalizationBundle:
         actual = {path.relative_to(self.root).as_posix() for path in self.root.rglob("*") if path.is_file()}
         expected = set(self._records) | {"manifest.json", "validation.json", "READY"}
         _require(not (actual - expected), f"Prepared localization has unlisted files: {sorted(actual - expected)[:8]}")
-        _require(not (expected - actual), f"Prepared localization is missing files: {sorted(expected - actual)[:8]}")
+        _require(
+            not (expected - actual),
+            f"Prepared localization is missing files: {sorted(expected - actual)[:8]}. {PREPARED_MISSING_MESSAGE}",
+        )
         ready = (self.root / "READY").read_text(encoding="ascii").strip().split()
         _require(
             ready == [PREPARED_KIND, str(PREPARED_VERSION), self.manifest_sha256],
@@ -494,11 +501,9 @@ class PreparedLocalizationBundle:
             if total != expected or digest.hexdigest() != record["sha256"]:
                 raise ValueError(f"Prepared localization resource checksum mismatch: {name}")
 
-    def _validate_floor_and_atlas_metadata(self):
+    def _validate_atlas_layout(self):
         atlases = self.manifest.get("atlases")
-        floors = self.manifest.get("floors")
         _require(isinstance(atlases, dict) and atlases, "Prepared localization atlases are missing")
-        _require(isinstance(floors, list), "Prepared localization floors are missing")
         for map_id, atlas in atlases.items():
             _require(isinstance(map_id, str) and map_id, "Invalid prepared localization map ID")
             _require(isinstance(atlas, dict), f"Invalid prepared atlas: {map_id}")
@@ -544,6 +549,11 @@ class PreparedLocalizationBundle:
                     )
                     _require(not overlap, f"Prepared atlas regions overlap: {map_id}")
 
+        return atlases
+
+    def _validate_floor_metadata(self, atlases):
+        floors = self.manifest.get("floors")
+        _require(isinstance(floors, list), "Prepared localization floors are missing")
         raw_manifest = _read_json(self.localization_manifest_path)
         raw_bundle = LocalizationTileBundle(self.localization_manifest_path.parent, raw_manifest)
         self._localization_files = raw_bundle.files
@@ -582,7 +592,9 @@ class PreparedLocalizationBundle:
         missing_list = self.manifest["coverage"]["missing_logic_ids"]
         source_missing = catalog.get("missing_logic_ids", [])
         manifest_coverage = raw_manifest.get("coverage")
-        manifest_missing = manifest_coverage.get("missing_logic_ids", []) if isinstance(manifest_coverage, dict) else None
+        manifest_missing = (
+            manifest_coverage.get("missing_logic_ids", []) if isinstance(manifest_coverage, dict) else None
+        )
         _require(
             isinstance(missing_list, list)
             and all(isinstance(item, str) and item for item in missing_list)
@@ -632,8 +644,12 @@ class PreparedLocalizationBundle:
             bounds = record.get("bounds")
             _require(isinstance(bounds, dict), f"Prepared floor bounds are missing: {tier_id}")
             values = [bounds.get(key) for key in ("west", "east", "south", "north")]
+            try:
+                finite = all(type(v) in (int, float) and math.isfinite(v) for v in values)
+            except OverflowError:
+                finite = False
             _require(
-                all(isinstance(value, (int, float)) and math.isfinite(float(value)) for value in values)
+                finite
                 and math.isfinite(float(bounds["east"]) - float(bounds["west"]))
                 and math.isfinite(float(bounds["north"]) - float(bounds["south"]))
                 and float(bounds["east"]) > float(bounds["west"])
@@ -722,9 +738,7 @@ class PreparedLocalizationBundle:
                     f"Source floor ranking record is invalid: {tier_id}",
                 )
                 source_rank_path = validate_bundle_relative_path(source_rank["path"]).as_posix()
-                expected_rank_path = validate_bundle_relative_path(
-                    f"localization/{source_rank_path}"
-                ).as_posix()
+                expected_rank_path = validate_bundle_relative_path(f"localization/{source_rank_path}").as_posix()
                 expected_rank_size = source_rank["size"]
                 expected_rank_sha256 = source_rank["sha256"]
                 expected_rank_roi = source_rank["roi"]
@@ -852,7 +866,9 @@ class PreparedLocalizationBundle:
         with path.open("rb") as source:
             data = source.read(byte_count + 1)
         _require(
-            len(data) == byte_count and (digest is None or _sha256(data) == digest),
+            len(data) == byte_count
+            and _sha256(data) == self._records[name]["sha256"]
+            and (digest is None or self._records[name]["sha256"] == digest),
             f"Prepared mask metadata mismatch: {name}",
         )
         bits = np.unpackbits(np.frombuffer(data, np.uint8), bitorder="big")

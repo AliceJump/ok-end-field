@@ -26,6 +26,7 @@ class _SearchOutcome:
     result: LocateResult | None
     failure_reason: str
     observed_at: float
+    active_map: str | None = None
 
 
 class MapSetLocator:
@@ -57,15 +58,20 @@ class MapSetLocator:
         self._search_started_at = 0.0
         self._search_observed_at = None
         self._search_ready_callback = None
-        self._visual_normalization_required = None
+        self._frame_time = None
+        self._expanded_scope = None
+        self._visual_normalization_required = False
         self._closed = False
 
     def set_search_ready_callback(self, callback):
         """Wake the owner for a fresh observation; never publish job results."""
         self._search_ready_callback = callback
 
+    def set_frame_time(self, stamp):
+        self._frame_time = stamp
+
     def requires_visual_normalization(self):
-        if self._visual_normalization_required is None:
+        if not self._visual_normalization_required:
             has_prepared = getattr(self.store, "has_prepared", None)
             if callable(has_prepared):
                 self._visual_normalization_required = bool(has_prepared())
@@ -90,6 +96,13 @@ class MapSetLocator:
         identity = getattr(scope, "search_identity", None)
         scope_key = identity() if callable(identity) else scope
         scope_changed = scope_key is not self._navigation_scope_key and scope_key != self._navigation_scope_key
+        # A running job measures its original frame under its original reachability budget.
+        # Apply growth only after consuming that job. Moving the anchor or tightening
+        # the budget still invalidates it immediately.
+        if self._search_future is not None and getattr(scope, "expands_from", lambda _: False)(self._navigation_scope):
+            self._expanded_scope = scope
+            return
+        self._expanded_scope = None
         self._navigation_scope = scope
         self._navigation_scope_key = scope_key
         if scope_changed:
@@ -104,6 +117,11 @@ class MapSetLocator:
 
     def _settle_search_scope(self):
         """Apply a scope change that arrived while a search was still running."""
+        if self._expanded_scope is not None and self._search_future is None:
+            self._navigation_scope = self._expanded_scope
+            self._navigation_scope_key = self._expanded_scope.search_identity()
+            self._expanded_scope = None
+            self._apply_navigation_scope_to_cache()
         if not self._scope_change_pending:
             return
         self._clear_search_hint()
@@ -345,8 +363,10 @@ class MapSetLocator:
                     self.calibration = getattr(locator, "calibration", self.calibration)
                 del self._pending_maps[mid]
             scoped_errors = self._resource_errors.keys() & required
-            return ready and any(mid in self._cache for mid in required) and (
-                not self._require_all_maps or not scoped_errors
+            return (
+                ready
+                and any(mid in self._cache for mid in required)
+                and (not self._require_all_maps or not scoped_errors)
             )
         for mid in required:
             if mid not in self._cache:
@@ -463,7 +483,7 @@ class MapSetLocator:
         if self._async_search:
             return self._locate_async(frame, geometry, started)
         completed = self._search_snapshot(frame, geometry, started)
-        return None if completed is None else replace(completed, observed_at=time.time())
+        return completed
 
     def _locate_async(self, frame, geometry, started):
         future = self._search_future
@@ -515,13 +535,14 @@ class MapSetLocator:
                 # The result belongs to the completed snapshot, whose age was
                 # checked above. Preserve that observation time so consumers do
                 # not relabel stale pixels with the polling frame's time.
+                if isinstance(outcome, _SearchOutcome):
+                    self._active = outcome.active_map
                 if search_observed_at is None:
                     return completed
                 return replace(completed, observed_at=search_observed_at)
+            self._clear_search_hint()
             self.last_failure_reason = failure_reason
-            if completed is None and failure_reason.startswith(
-                ("layer_resource_error:", "visual_map_resource_error:")
-            ):
+            if completed is None and failure_reason.startswith(("layer_resource_error:", "visual_map_resource_error:")):
                 # Preserve a resource error for this call. The next fresh frame
                 # retries the search under the existing backoff.
                 return None
@@ -545,7 +566,7 @@ class MapSetLocator:
         self._search_frame = snapshot
         self._search_started_generation = self._search_generation
         self._search_started_at = time.monotonic()
-        self._search_observed_at = time.time()
+        self._search_observed_at = self._frame_time if self._frame_time is not None else time.time()
         self._search_future = self._workers.acquisitions.submit(
             self._search_global_outcome, snapshot, geometry, started, self._search_observed_at
         )
@@ -558,7 +579,8 @@ class MapSetLocator:
 
     def _search_global_outcome(self, frame, geometry, started, observed_at):
         result = self._search_global_ready(frame, geometry, started)
-        return _SearchOutcome(result, self.last_failure_reason, observed_at)
+        hint, self._active = self._active, None
+        return _SearchOutcome(result, self.last_failure_reason, observed_at, hint)
 
     def _search_snapshot(self, frame, geometry, started):
         """Complete one frame's map/floor competition before retaining a hint."""
@@ -715,13 +737,19 @@ class MapSetLocator:
         self._discard_stale_completed_search()
         future = self._search_future
         if future is not None:
+            valid = (
+                self._search_shape == frame.shape
+                and self._search_geometry == geometry
+                and 0 <= time.monotonic() - self._search_started_at <= _SEARCH_RESULT_MAX_AGE_S
+            )
             self._search_future = None
-            self._search_frame = None
-            self._search_geometry = None
-            self._search_started_at = 0.0
-            self._search_observed_at = None
-            with suppress(BaseException):
-                future.result()
+            try:
+                outcome = future.result()
+            finally:
+                self._clear_search_hint()
+                self._settle_search_scope()
+            if valid and isinstance(outcome, _SearchOutcome):
+                self._active = outcome.active_map
         self._settle_search_scope()
         self.last_failure_reason = ""
         started = time.perf_counter()

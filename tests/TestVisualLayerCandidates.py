@@ -1152,6 +1152,8 @@ class TestVisualLayerCandidates(unittest.TestCase):
         locator._load.side_effect = ValueError("missing image")
         result = locator.locate_global(None, None)
         self.assertIsNone(result.best.tier_id)
+        self.assertEqual(result.status, "rejected")
+        self.assertEqual(result.margin, 0)
 
     def test_cold_layers_decode_once_per_sample_and_cannot_publish_early(self):
         locator = self.locator(0.99, 0.5)

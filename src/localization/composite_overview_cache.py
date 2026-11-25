@@ -38,14 +38,18 @@ def _refresh_file_stamps(paths, stamps):
             directories.setdefault(directory, {})[name] = path
     for directory, pending in directories.items():
         if len(pending) >= 4:
-            with os.scandir(directory) as entries:
-                for entry in entries:
-                    path = pending.pop(entry.name, None)
-                    if path is not None:
-                        stat = entry.stat()
-                        stamps[path] = (stat.st_size, stat.st_mtime_ns)
-                        if not pending:
-                            break
+            try:
+                with os.scandir(directory) as entries:
+                    for entry in entries:
+                        path = pending.get(entry.name)
+                        if path is not None:
+                            stat = entry.stat()
+                            stamps[path] = (stat.st_size, stat.st_mtime_ns)
+                            del pending[entry.name]
+                            if not pending:
+                                break
+            except OSError:
+                pass  # Retry any remaining names individually below.
             # A missing proposal/overview file must not break the whole competition:
             # record it as absent so the identity changes when it appears again.
         for path in pending.values():

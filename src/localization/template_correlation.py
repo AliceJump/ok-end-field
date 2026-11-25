@@ -231,7 +231,10 @@ def correlate_bounded(
     if allowed is not None:
         if allowed.shape != (sh, sw):
             raise ValueError("candidate mask shape differs from score grid")
-        scores.fill(np.nan)
+        if output_bounds is None:
+            scores.fill(np.nan)
+        else:
+            scores[np.logical_not(allowed)] = np.nan
     for y in range(top, bottom_limit, block_size):
         bottom = min(bottom_limit, y + block_size)
         for x in range(left, right_limit, block_size):
