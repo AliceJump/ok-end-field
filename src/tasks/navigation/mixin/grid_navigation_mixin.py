@@ -394,6 +394,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_skip_board_node_id: str | None = None
         #: 分层地图缓存：键 (目录, 地图, zoom) -> LayeredMap；False 表示确认没有分层数据。
         #: 网格是子模块里的静态数据，同一次会话内不必反复读 npz。
+        self._grid_nav_explicit_versions = {}
         self._grid_nav_layered_cache: dict[tuple[str, ...], LayeredMap | bool] = {}
         #: 分层规划器缓存；键取 LayeredMap 的对象身份，值持有它的层内分段缓存。
         self._grid_nav_layered_planner_cache: dict[int, tuple[FollowerConfig, LayeredPlanner]] = {}
@@ -2120,13 +2121,25 @@ class GridNavigationMixin(RuntimeStateMixin):
         selected = None
         if explicit:
             selection_key = ("explicit", str(Path(explicit).resolve()), map_id)
-            if selection_key in self._grid_nav_layered_cache:
+            try:
+                stamp = Path(explicit).stat()
+            except OSError:
+                return None
+            version = (stamp.st_ino, stamp.st_size, stamp.st_mtime_ns)
+            if (
+                self._grid_nav_explicit_versions.get(selection_key) == version
+                and selection_key in self._grid_nav_layered_cache
+            ):
                 return self._grid_nav_layered_cache[selection_key] or None
+            previous = self._grid_nav_layered_cache.pop(selection_key, None)
+            self._grid_nav_layered_planner_cache.pop(id(previous), None)
+            self._grid_nav_explicit_versions[selection_key] = version
             selected = self.load_grid_for_map(map_id, grid_path=explicit)
             if selected is None:
                 return None
             grid_dir = str(Path(explicit).resolve().parent)
             zoom = str(selected.meta.zoom)
+            map_id = map_id or selected.meta.map_name
         directory = str(
             (
                 self._grid_config_get(CONFIG_GRID_DIR, DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR])
@@ -2139,7 +2152,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         if not directory or not map_id:
             return None
         requested_zoom = str((self._grid_config_get(CONFIG_GRID_ZOOM, "") if zoom is None else zoom) or "").strip()
-        cache_key = (directory, map_id, requested_zoom, explicit)
+        cache_key = selection_key if explicit else (directory, map_id, requested_zoom, explicit)
         if cache_key in self._grid_nav_layered_cache:
             cached = self._grid_nav_layered_cache[cache_key]
             return cached or None
@@ -2154,8 +2167,6 @@ class GridNavigationMixin(RuntimeStateMixin):
         # 至少要有一层网格才谈得上分层导航：只有 links 没有网格时无从落脚。
         relevant = bool(layered.layers) and (any(tier for _map, tier in layered.layers) or bool(layered.links))
         self._grid_nav_layered_cache[cache_key] = layered if relevant else False
-        if explicit:
-            self._grid_nav_layered_cache[selection_key] = layered if relevant else False
         if relevant:
             summary = layered.summary()
             self.log_info(
@@ -2647,11 +2658,15 @@ class GridNavigationMixin(RuntimeStateMixin):
                 if math.dist(origin, current.position) > max_travel:
                     return False
                 remaining = math.dist(current.position, end)
-                if remaining > 0.5:
+                # Enter the connector toward its landing; at coincident endpoints
+                # only an observed approach direction is available.
+                if remaining > 1e-3:
                     bearing = bearing_to_point(current.x, current.z, *end)
                     self._set_grid_walking(False)
                     if not self._aim_grid_view_to_bearing(bearing, reason="跨层连接"):
                         return False
+                if self.active_time() >= deadline:
+                    return False
                 if current.pose.get("frame_time_source") == "wgc_system_relative_time":
                     ctx.session.last_walk_frame = current.pose.get("frame_t")
                 self._set_grid_walking(True)
