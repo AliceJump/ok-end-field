@@ -1,9 +1,9 @@
 """非淤积点战斗奖励二次寻路测试（工具与调试分组）。
 
 战斗结束后如果角色恰好处在场景边缘，第三人称相机被墙体碰撞挤近，视域随之变小，
-``battle_end`` 特征会落到画面之外；正式流程（``BattleTask._find_end``）只旋转一圈
-就放弃，于是走到「未发现奖励领取点」直接判负。本任务按实测有效的动作序列反复尝试，
-并在每个动作的前后各补一次检测，命中后继续走完后续的「对准 + 前进」：
+``battle_end`` 特征会落到画面之外。正式流程（``BattleTask._find_end``）旋转一圈未
+命中时会执行同一套「中键 + 按住 D」脱离后重试；本任务把这段动作拆成可观察的单步，
+每一步前后各补一次检测，命中后继续走完后续的「对准 + 前进」：
 
     中键重置视野 -> 按住 D 若干秒（全程逐帧检测 battle_end）-> 对准终点 -> 前进到领取点
 
@@ -20,8 +20,9 @@
 
 依赖：
     ``NavigationMixin`` 提供的 ``align_ocr_or_find_target_to_center`` /
-    ``navigate_until_target`` 与 ``NavigationDetectionScope``；检测框、置信度、容差和
-    超时全部沿用 ``BattleTask._find_end`` 的正式参数，保证测出来的结论能直接迁移。
+    ``navigate_until_target`` 与 ``NavigationDetectionScope``。检测框、置信度、容差和
+    超时是复制自 ``BattleTask._find_end`` 的常量（``ESCAPE_*`` 与两个 score box），
+    调整正式参数时需要同步这里，测出来的结论才能直接迁移。
 """
 
 from ok import TaskDisabledException
@@ -190,6 +191,7 @@ class BattleRewardRescanTestTask(NavigationMixin):
         def check_marker():
             """单帧检测终点；供 SearchMixin.hold_and_detect 之类的无参回调使用。"""
             return self._detect_once(search_box, min_score)
+
         self.log_info(
             f"[reward-rescan] 开始：尝试 {attempts} 轮，每轮 中键 -> 按住 {key_label} {hold_seconds:g}s，"
             f"在「{self.PHASE_BEFORE_MIDDLE}/"
@@ -246,9 +248,9 @@ class BattleRewardRescanTestTask(NavigationMixin):
 
             if not hit_box:
                 self.screenshot("BattleRewardRescan_failed")
-                summary = self.tr("二次寻路测试失败：{attempts} 轮均在四个时刻未检测到战斗终点，已保存现场截图。").format(
-                    attempts=attempts
-                )
+                summary = self.tr(
+                    "二次寻路测试失败：{attempts} 轮均在四个时刻未检测到战斗终点，已保存现场截图。"
+                ).format(attempts=attempts)
                 self.log_info(summary, notify=True)
                 self.mark_task_failure(summary)
                 return False
@@ -257,9 +259,7 @@ class BattleRewardRescanTestTask(NavigationMixin):
             self.info_set("测试进度", "前进到领取点")
             arrived, walk_elapsed = self._walk_to_reward(search_box, walk_time_out)
             hit_detail = (
-                f"按住 {key_label} {hit_elapsed:.2f}s 后"
-                if hit_phase == self.PHASE_HOLD
-                else f"「{hit_phase}」"
+                f"按住 {key_label} {hit_elapsed:.2f}s 后" if hit_phase == self.PHASE_HOLD else f"「{hit_phase}」"
             )
             if not arrived:
                 self.screenshot("BattleRewardRescan_walk_failed")
