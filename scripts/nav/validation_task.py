@@ -446,6 +446,7 @@ class GridValidationTask(MinimapNavigateToPoint):
             write_diagnostic,
         )
 
+        self.report = {}
         self.options, self.grid, self.region, targets, self.directory, plan = self.validation
         self.samples, self.covered, self.arrived = [], set(), []
         self._validation_cursor = 0
@@ -488,6 +489,7 @@ class GridValidationTask(MinimapNavigateToPoint):
         self.guard_done = threading.Event()
         self.reference = None
         resources = ExitStack()
+        measurement_error = ""
         status, reason = "incomplete", "time_limit"
         try:
             resources.enter_context(self._validation_resources())
@@ -583,7 +585,12 @@ class GridValidationTask(MinimapNavigateToPoint):
                 self.navigation_running, transient_failures = False, 0
                 self.arrived.append(self.goal)
         except Exception as exc:
-            status, reason = "stopped", self.stop_reason or f"{type(exc).__name__}: {exc}"
+            if isinstance(exc, OSError):
+                measurement_error = f"measurement_io_failed: {type(exc).__name__}: {exc}"
+            status, reason = (
+                "stopped",
+                measurement_error or self.validation_failure or self.stop_reason or f"{type(exc).__name__}: {exc}",
+            )
             self.log_warning(reason)
         finally:
             self.navigation_running = False
@@ -596,7 +603,9 @@ class GridValidationTask(MinimapNavigateToPoint):
                 self._diagnostic_write(cv2.imwrite, str(self.directory / "last_hud.png"), self.last_frame[:280, :340])
         references = self.reference.snapshot()[2] if self.reference is not None else []
         self._process_reference_samples(references, final=True)
-        if self.reference is not None and self.reference.error:
+        if measurement_error:
+            self.validation_failure = measurement_error
+        elif self.reference is not None and self.reference.error:
             self.validation_failure = self.reference.error
         if self.validation_failure:
             status, reason = "stopped", self.validation_failure
@@ -606,7 +615,7 @@ class GridValidationTask(MinimapNavigateToPoint):
         elif reason in ("connected_region_covered", "remaining_reachable_region_tested"):
             status = "completed" if self.region_cells.issubset(self.covered) else "completed_with_visual_gaps"
         verified = self._reference_verified_cells(references)
-        self.report = {
+        report = {
             **plan,
             "status": status,
             "reason": reason,
@@ -640,8 +649,11 @@ class GridValidationTask(MinimapNavigateToPoint):
         }
         write_diagnostic(self.directory, "covered_cells.json", sorted(self.covered))
         write_diagnostic(self.directory, "traversed_cells.json", sorted(self.traversed))
-        write_diagnostic(self.directory, "visual_unavailable_cells.json", sorted(self.traversed - self.covered))
-        write_diagnostic(self.directory, "report.json", self.report)
+        write_diagnostic(self.directory, "report.json", report)
+        self.report = report
+        self._diagnostic_write(
+            write_diagnostic, self.directory, "visual_unavailable_cells.json", sorted(self.traversed - self.covered)
+        )
         # Progress is a convenience copy; the resume snapshot above must not
         # depend on it succeeding.
         try:

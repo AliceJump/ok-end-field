@@ -674,6 +674,26 @@ class TestVisualGridValidation(unittest.TestCase):
                 self.assertIn(f"{stage} failed", report["reason"])
                 self.assertEqual(report["status"], "stopped")
 
+    def test_time_limit_does_not_hide_required_recording_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            task, _ = self._run_task(Path(directory))
+            reference = SimpleNamespace(error="", close=Mock(), snapshot=Mock(return_value=(None, 0, [])))
+            guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
+
+            def fail(**kwargs):
+                task.stop_reason = "time_limit"
+                raise OSError("disk full")
+
+            task.world_pose = fail
+            with (
+                patch("scripts.nav.validate_visual_grid.ReferenceRecorder", return_value=reference),
+                patch("scripts.nav.validation_task.threading.Thread", return_value=guard),
+                patch("scripts.nav.validation_task.time.sleep"),
+            ):
+                GridValidationTask.run.__wrapped__(task)
+            self.assertIn("disk full", task.report["validation_failure"])
+            self.assertEqual(task.report["status"], "stopped")
+
     def test_record_mode_collects_failed_frames_beyond_navigation_ready_timeout(self):
         with tempfile.TemporaryDirectory() as directory:
             task, _service = self._run_task(Path(directory))

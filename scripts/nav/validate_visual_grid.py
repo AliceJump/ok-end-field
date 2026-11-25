@@ -137,7 +137,8 @@ class ReferenceRecorder:
                             self._ordered_records.append(row)
                             self.handle.write(json.dumps(row) + "\n")
                     self.handle.flush()
-            self.ready.set()
+            if self.latest is not None:
+                self.ready.set()
             self.stop.wait(0.1)
 
     def _with_identity(self, record, state):
@@ -208,7 +209,7 @@ def main():
         description=__doc__,
         epilog=(
             "Run from an Administrator terminal with the game and capture backend open. "
-            "Press F8 or create OUTPUT/STOP to stop. Each run writes plan.json, progress.json, "
+            "Plan mode writes plan.json. Press F8 or create OUTPUT/STOP to stop record/run mode, which also writes progress.json, "
             "visual.jsonl, reference.jsonl and report.json to a new output directory. "
             "Use --resume DIR --skip-blocked to continue coverage. "
             "--capture-fallback explicitly allows packet navigation while visual localization fails; "
@@ -275,6 +276,7 @@ def main():
         "map_id": sample.map_id,
         "tier_id": "__main__",
         "spacing_m": args.spacing,
+        "max_error_m": args.max_error,
         "coverage_definition": "observed visual position within spacing_m along free four-connected cells; not every cell physically visited",
         "component_cells": int(region.sum()),
         "excluded_disconnected_cells": excluded,
@@ -306,6 +308,11 @@ def main():
             if traversed_file.exists()
             else set(args.resume_covered)
         )
+        # Old runs did not record their accuracy threshold. Keep their traversal
+        # history but remeasure coverage whose error bound cannot be established.
+        previous_error = previous.get("max_error_m")
+        if previous_error != args.max_error:
+            args.resume_covered.clear()
         if any(not grid.in_bounds(*p) or not region[p] for p in args.resume_covered):
             raise ValueError("resume_component_mismatch")
         if any(not grid.in_bounds(*p) or not region[p] for p in args.resume_traversed):

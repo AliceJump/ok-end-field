@@ -57,7 +57,9 @@ def capture_on_main_tier(state, layered, map_id):
     if layered is None:
         return True
     main = layered.grid(map_id, "")
-    if main is None or main.meta.floor_regions_error:
+    if main is None or any(
+        grid.meta.floor_regions_error for (name, _), grid in layered.layers.items() if name == map_id
+    ):
         return False
     if not (
         main.meta.floor_regions
@@ -230,7 +232,7 @@ def align_reference(records, stamp, map_id, *, flow=None, max_gap=0.6, stationar
     index = bisect_left(times, stamp)
     left = samples[max(0, index - 1)]
     right = samples[min(index, len(samples) - 1)]
-    if index < len(samples) and abs(times[index] - stamp) < 1e-6:
+    if index < len(samples) and times[index] == stamp:
         end = bisect_right(times, times[index])
         matches = (
             r
