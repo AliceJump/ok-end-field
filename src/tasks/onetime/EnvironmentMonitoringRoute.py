@@ -44,6 +44,13 @@ class PoolLotusRoute(EnvironmentMonitoringRoute):  # 小池荷传送后短路线
         self.run_route("小池荷", (("w", 0.5), ("d", 3)))  # 保留已验证的移动时长
 
 
+class MysteriousGraffitiRoute(EnvironmentMonitoringRoute):  # 谜之生物涂鸦传送后路线
+    photo_direction = "down"  # 向下取景
+
+    def run(self):  # 传送后前进
+        self.run_route("谜之生物的涂鸦", (("w", 2),), sprint=True)  # 向前冲刺两秒
+
+
 class GlowingLankybeastRoute(EnvironmentMonitoringRoute):  # 吐虫长股兽传送后短路线
     def run(self):  # 传送后向后、向右移动
         self.run_route("吐虫长股兽", (("s", 1), ("d", 3)), sprint=True)  # 已验证的冲刺路线
