@@ -122,21 +122,25 @@ class ReferenceRecorder:
             if state is not None:
                 last = state.get("lastPosition") or {}
                 _, _, alive = self.source._flow_liveness(state, last, time.time())
+                latest = self._with_identity(last, state) if alive else None
+                checked_at = time.time()
+                batch = {}
+                for item in [*(state.get("trajectory") or []), last]:
+                    if not isinstance(item, dict) or not item.get("time"):
+                        continue
+                    row = {key: item.get(key) for key in fields}
+                    key = (row["flow"], row["time"], row["sampleId"])
+                    if key not in self.records and key not in batch:
+                        identity_state = state if all(item.get(k) == last.get(k) for k in ("flow", "scene")) else {}
+                        batch[key] = self._with_identity(row, identity_state)
+                for row in batch.values():
+                    self.handle.write(json.dumps(row) + "\n")
+                self.handle.flush()
                 with self.lock:
-                    self.latest = self._with_identity(last, state) if alive else None
-                    self.checked_at = time.time()
-                    for item in [*(state.get("trajectory") or []), last]:
-                        if not isinstance(item, dict) or not item.get("time"):
-                            continue
-                        row = {key: item.get(key) for key in fields}
-                        key = (row["flow"], row["time"], row["sampleId"])
-                        if key not in self.records:
-                            identity_state = state if all(item.get(k) == last.get(k) for k in ("flow", "scene")) else {}
-                            row = self._with_identity(row, identity_state)
-                            self.records[key] = row
-                            self._ordered_records.append(row)
-                            self.handle.write(json.dumps(row) + "\n")
-                    self.handle.flush()
+                    self.latest = latest
+                    self.checked_at = checked_at
+                    self.records.update(batch)
+                    self._ordered_records.extend(batch.values())
             if self.latest is not None:
                 self.ready.set()
             self.stop.wait(0.1)

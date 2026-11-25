@@ -251,6 +251,20 @@ class TestVisualGridValidation(unittest.TestCase):
         self.assertFalse(task.covered)
         self.assertEqual(task.error_hits, 1)
 
+    def test_provisional_stationary_errors_wait_for_the_right_bracket(self):
+        task, pose, reference = self._observation_task()
+        timeline = ReferenceTimeline([{**reference, "time": 100, "x": 0, "z": 0, "speed": 0}])
+        task.samples = [
+            {"pose": {**pose, "x": 2, "z": 0}, "frame_t": stamp, "flow": 3, "stationary_reference": True}
+            for stamp in (100.20, 100.21, 100.22)
+        ]
+        task._process_reference_samples(timeline)
+        self.assertFalse(task.validation_failure)
+        timeline.extend([{**reference, "time": 100.4, "x": 4, "z": 0}])
+        task._process_reference_samples(timeline)
+        self.assertEqual(task.error_hits, 0)
+        self.assertTrue(task.covered)
+
     def test_background_cached_observation_is_validated_once_per_consumer(self):
         task, pose, reference = self._observation_task()
         reference.update(x=2, z=2)

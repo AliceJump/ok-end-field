@@ -271,7 +271,7 @@ class GridValidationTask(MinimapNavigateToPoint):
                 if getattr(self, "_provisional", None) is not None:
                     self._provisional[2].update(cells - self.covered)
                 self.covered.update(cells)
-            if self.error_hits >= 3:
+            if self.error_hits >= 3 and getattr(self, "_provisional", None) is None:
                 self.validation_failure = f"sustained_position_error: {distance:.2f}m"
                 break
 
