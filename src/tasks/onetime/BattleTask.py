@@ -968,18 +968,8 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             self.wait_pop_up(time_out=4)
             if not self.wait_battle_space(transition_recovery=transition_recovery):
                 return False
-            self.strafe_search(
-                lambda: self.wait_ocr(
-                    match=self.lang.daily_battle_mixin.k_4cc61900,
-                    time_out=1,
-                    box=self.box.bottom_right,
-                    log=True,
-                ),
-                keys=("w",),
-                duration=0.25,
-                passes=None,
-            )
-            self.press_key("f")
+            if not self.start_touch_challenge():
+                return False
         else:
             self.wait_pop_up(time_out=4)
         return self.auto_battle(no_battle=self.battle_ctx.no_battle)

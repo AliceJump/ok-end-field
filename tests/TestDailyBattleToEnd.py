@@ -160,7 +160,16 @@ class TestDailyBattleToEnd(unittest.TestCase):
                     self.assertEqual(BattleTask.to_battle(task, transition_recovery=recovery), entered)
                 task.wait_battle_space.assert_called_once_with(transition_recovery=recovery)
                 self.assertEqual(task.auto_battle.call_count, int(entered))
-                self.assertEqual(task.strafe_search.call_count, int(entered))
+                self.assertEqual(task.start_touch_challenge.call_count, int(entered))
+
+    def test_to_battle_does_not_start_when_challenge_fails(self):
+        task = Mock()
+        task.battle_ctx = BattleContext(category_name="危境再现")
+        task.wait_battle_space.return_value = True
+        task.start_touch_challenge.return_value = False
+        with patch("src.tasks.onetime.BattleTask.is_world_map_text", return_value=False):
+            self.assertFalse(BattleTask.to_battle(task))
+        task.auto_battle.assert_not_called()
 
     def test_recycle_recovery_checks_current_entry_button(self):
         task = Mock()
