@@ -15,6 +15,7 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航
     EternalSunsetRoute,  # 栖霞驻影网格路线
     GlowingLankybeastRoute,  # 吐虫长股兽短路线
     MiniShellbeastRoute,  # 小壳兽网格路线
+    MysteriousGraffitiRoute,  # 谜之生物涂鸦短路线
     PoolLotusRoute,  # 小池荷短路线
     StationaryObservationRoute,  # 传送后原地取景
     TianshiPillarRoute,  # 天师桩网格路线
@@ -42,6 +43,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         "withered_branches": (StationaryObservationRoute, "edit_distance"),  # 枯枝原地向右取景
         "cleansing_jade": (StationaryObservationRoute, "edit_distance"),  # 漱玉原地向右取景
         "glowing_lankybeast": (GlowingLankybeastRoute, "edit_distance"),  # 吐虫长股兽向右取景
+        "mysterious_graffiti": (MysteriousGraffitiRoute, "edit_distance"),  # 涂鸦向下取景
     }
     TERMINAL_LEFTS: ClassVar[dict[str, float]] = {"outskirts": 0.06, "marker_stone": 0.27}  # 固定顺序与标签空白区
 
@@ -361,7 +363,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
         return bool(marker)  # 圆勾出现表示拍摄条件满足
 
     def rotate_photo_view(self, direction="right"):  # 在画面中央按点位方向拖动，不触碰快门
-        if direction not in ("left", "right", "up"):  # 仅支持已注册的取景方向
+        if direction not in ("left", "right", "up", "down"):  # 仅支持已注册的取景方向
             raise ValueError(f"不支持的取景方向：{direction}")  # 禁止静默执行未知方向
         self._require_input_focus()  # 旋转视角需要实际光标移动
         self.next_frame()  # 手势前重新确认当前布局
@@ -372,6 +374,8 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
             end = (0.375, 0.45)  # 与右移等幅，保持纵坐标不变
         elif direction == "up":  # 瀑布向上搜索
             end = (0.5, 0.325)  # 小步上移，实际方向和幅度待游戏内验证
+        elif direction == "down":  # 涂鸦向下搜索
+            end = (0.5, 0.575)  # 与上移等幅
         self.mouse_down(*self.normalize_pos(start), key="left")  # 按住旋转视角用的左键
         try:  # 中止也必须释放鼠标
             self.smooth_drag(start, end, duration=0.3)  # 复用已有客户端坐标移动接口

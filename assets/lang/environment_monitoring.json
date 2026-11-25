@@ -147,6 +147,14 @@
     "ko_KR": {"string": "배를 부풀려 빛을 내는 버그스피팅 랭키비스트"},
     "es_ES": {"string": "Bestia larguirucha escupebichos inflada y brillante"}
   },
+  "mysterious_graffiti": {
+    "zh_CN": {"string": "谜之生物的涂鸦"},
+    "zh_TW": {"string": "謎之生物的塗鴉"},
+    "en_US": {"string": "Mysterious Cryptid Graffiti"},
+    "ja_JP": {"string": "謎の生物に関する落書き"},
+    "ko_KR": {"string": "미지의 생물이 남긴 낙서"},
+    "es_ES": {"string": "Grafiti de críptido misterioso"}
+  },
   "cleansing_jade": {
     "zh_CN": {"string": "漱玉"},
     "zh_TW": {"string": "漱玉"},
