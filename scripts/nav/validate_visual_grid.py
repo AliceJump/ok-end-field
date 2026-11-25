@@ -274,7 +274,20 @@ def main():
         raise RuntimeError(f"start_snap_too_far: {start_snap_m:.2f}m")
     region, excluded = connected_region(grid, start_center)
     targets = coverage_targets(grid, region, args.spacing)
+    floor_evidence = {
+        "declared_tiers": {
+            level: tiers
+            for level, tiers in args.reference_layers.declared_tiers.items()
+            if level == sample.map_id or level.startswith(sample.map_id + "_")
+        },
+        "regions": sorted(
+            (tier, layer.meta.floor_regions, layer.meta.floor_regions_error)
+            for (name, tier), layer in args.reference_layers.layers.items()
+            if name == sample.map_id
+        ),
+    }
     plan = {
+        "floor_evidence_sha256": hashlib.sha256(json.dumps(floor_evidence, sort_keys=True).encode()).hexdigest(),
         "grid": str(args.grid.resolve()),
         "grid_sha256": hashlib.sha256(grid_bytes).hexdigest(),
         "map_id": sample.map_id,
@@ -300,8 +313,8 @@ def main():
             return resolve_under(ROOT, args.resume / name, label="resume_artifact")
 
         previous = json.loads(resume_artifact("plan.json").read_text(encoding="utf-8"))
-        for key in ("grid_sha256", "map_id", "tier_id", "spacing_m", "component_cells"):
-            if previous[key] != plan[key]:
+        for key in ("grid_sha256", "floor_evidence_sha256", "map_id", "tier_id", "spacing_m", "component_cells"):
+            if previous.get(key) != plan[key]:
                 raise ValueError(f"resume_mismatch: {key}")
         args.resume_covered = set(
             map(tuple, json.loads(resume_artifact("covered_cells.json").read_text(encoding="utf-8")))

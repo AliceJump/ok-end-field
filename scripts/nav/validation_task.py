@@ -126,6 +126,12 @@ class GridValidationTask(MinimapNavigateToPoint):
             )
         return config
 
+    def _set_grid_walking(self, held):
+        was_walking = self._grid_nav_w_held
+        super()._set_grid_walking(held)
+        if was_walking and not self._grid_nav_w_held:
+            self._walk_stopped_at = time.time()
+
     def _stop_inputs(self):
         self._set_grid_walking(False)
         interaction = self.executor.interaction
@@ -191,6 +197,7 @@ class GridValidationTask(MinimapNavigateToPoint):
             "navigation_source": navigation_source,
             "flow": latest.get("flow"),
             "stationary_reference": not self._grid_nav_w_held
+            and stamp >= getattr(self, "_walk_stopped_at", 0.0)
             and float(latest.get("speed") or 0) <= 0.1
             and float(latest.get("time") or 0) <= stamp,
         }
