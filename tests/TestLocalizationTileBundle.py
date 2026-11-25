@@ -1896,4 +1896,3 @@ class TestLocalizationCache(unittest.TestCase):
             maintain_cache(threading.Event(), root=link / "nested")
         self.assertFalse((outside / "new").exists())
         self.assertEqual(sentinel.read_bytes(), b"keep")
-

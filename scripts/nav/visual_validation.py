@@ -210,7 +210,7 @@ class ReferenceTimeline:
         )
         if not incoming:
             return
-        if not self.times or float(incoming[0]["time"]) >= self.times[-1]:
+        if not self.times or float(incoming[0]["time"]) > self.times[-1]:
             self.samples.extend(incoming)
             self.times.extend(float(row["time"]) for row in incoming)
             return
@@ -231,7 +231,17 @@ def align_reference(records, stamp, map_id, *, flow=None, max_gap=0.6, stationar
     left = samples[max(0, index - 1)]
     right = samples[min(index, len(samples) - 1)]
     if index < len(samples) and abs(times[index] - stamp) < 1e-6:
-        left = right
+        end = bisect_right(times, times[index])
+        matches = (
+            r
+            for r in samples[index:end]
+            if reference_map_id(r) == map_id
+            and (flow is None or r.get("flow") == flow)
+            and capture_on_main_tier(r, layered, map_id)
+        )
+        left = right = next(matches, None)
+        if left is None:
+            return None
     pair = (left, right)
     if any(reference_map_id(r) != map_id or (flow is not None and r.get("flow") != flow) for r in pair):
         return None

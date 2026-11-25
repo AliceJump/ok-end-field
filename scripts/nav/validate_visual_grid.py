@@ -17,6 +17,10 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 
+from src.patches.pre_config_patch import install_pre_config_patch
+
+install_pre_config_patch()
+
 from scripts.nav.path_safety import resolve_under
 from scripts.nav.visual_validation import (
     ReferenceTimeline,
@@ -194,9 +198,6 @@ def report_accuracy(samples, references, *, map_id=None, layered=None):
 
 
 def execute(args, grid, region, targets, directory, plan):
-    from src.patches.pre_config_patch import install_pre_config_patch
-
-    install_pre_config_patch()
     from scripts.nav.validation_task import run_validation_task
 
     return run_validation_task(args, grid, region, targets, directory, plan)
@@ -268,7 +269,6 @@ def main():
         raise RuntimeError(f"start_snap_too_far: {start_snap_m:.2f}m")
     region, excluded = connected_region(grid, start_center)
     targets = coverage_targets(grid, region, args.spacing)
-    directory.mkdir(parents=True, exist_ok=False)
     plan = {
         "grid": str(args.grid.resolve()),
         "grid_sha256": hashlib.sha256(grid_bytes).hexdigest(),
@@ -287,6 +287,7 @@ def main():
     }
     args.resume_covered, args.resume_failures, args.resume_skipped = set(), [], set()
     args.resume_traversed = set()
+    unconfirmed = []
     if args.resume:
 
         def resume_artifact(name):
@@ -325,14 +326,15 @@ def main():
             ]
         unconfirmed = [item for item in args.resume_failures if not item.get("obstructed")]
         args.resume_failures = [item for item in args.resume_failures if item.get("obstructed")]
-        if unconfirmed:
-            write_diagnostic(directory, "inherited_unconfirmed_failures.json", unconfirmed)
         plan.update(resumed_from=str(args.resume.resolve()), inherited_covered_cells=len(args.resume_covered))
     plan["skip_blocked"] = args.skip_blocked
     plan["capture_fallback"] = args.capture_fallback
     plan["activate_game"] = args.activate_game
     if args.capture_fallback:
         plan["reference_role"] = "accuracy reference and explicit fallback navigation; never fed into visual matching"
+    directory.mkdir(parents=True, exist_ok=False)
+    if unconfirmed:
+        write_diagnostic(directory, "inherited_unconfirmed_failures.json", unconfirmed)
     write_diagnostic(directory, "plan.json", {**plan, "targets": [grid.world_of_index(*point) for point in targets]})
     print(json.dumps(plan, ensure_ascii=False), flush=True)
     return 0 if args.mode == "plan" else execute(args, grid, region, targets, directory, plan)

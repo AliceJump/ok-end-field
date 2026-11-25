@@ -89,9 +89,9 @@ class GridValidationTask(MinimapNavigateToPoint):
         self._grid_nav_layered_cache.clear()
         self._grid_nav_layered_planner_cache.clear()
         write_diagnostic(self.directory, "blocked_points.json", self.failures)
-        write_diagnostic(self.directory, "skipped_cells.json", sorted(self.skipped))
         write_diagnostic(self.directory, "covered_cells.json", sorted(self.covered))
         write_diagnostic(self.directory, "traversed_cells.json", sorted(self.traversed))
+        self._diagnostic_write(write_diagnostic, self.directory, "skipped_cells.json", sorted(self.skipped))
         self._diagnostic_write(save_grid, self.directory / "temporary.grid.npz", self.navigation_grid)
 
     def _skip_failed_goal(self, point):
@@ -150,15 +150,16 @@ class GridValidationTask(MinimapNavigateToPoint):
         while not self.guard_done.wait(0.05):
             if win32api.GetAsyncKeyState(0x77) & 0x8000 or (self.directory / "STOP").exists():
                 self.stop_reason = "manual_stop"
-            if (
+            elif (
                 self.movement_started
                 and win32gui.GetForegroundWindow() != self.executor.device_manager.hwnd_window.hwnd
             ):
                 self.stop_reason = "game_not_foreground"
-            if time.monotonic() > self.deadline:
+            elif time.monotonic() > self.deadline:
                 self.stop_reason = "time_limit"
             if self.stop_reason:
                 self._stop_inputs()
+                return
 
     def _observe(self, state, navigation_source="visual_map"):
         self._check_stop()
@@ -344,7 +345,8 @@ class GridValidationTask(MinimapNavigateToPoint):
             if source == "capture" and not capture_on_main_tier(
                 selected, self.options.reference_layers, self.grid.meta.map_name
             ):
-                self.capture_frames_off_main_tier = getattr(self, "capture_frames_off_main_tier", 0) + 1
+                selected.update(position_trusted=False, trust_reason="capture_main_tier_unconfirmed")
+                point = None
             else:
                 self.traversed.update(nearby_cells(self.region, self.grid.index_of_world(*point), self.coverage_steps))
         else:
@@ -636,10 +638,10 @@ class GridValidationTask(MinimapNavigateToPoint):
             ),
             "navigation_implementation": "MinimapNavigateToPoint.navigate_grid_to / WorldPoseService / EfInteraction",
         }
-        write_diagnostic(self.directory, "report.json", self.report)
         write_diagnostic(self.directory, "covered_cells.json", sorted(self.covered))
         write_diagnostic(self.directory, "traversed_cells.json", sorted(self.traversed))
         write_diagnostic(self.directory, "visual_unavailable_cells.json", sorted(self.traversed - self.covered))
+        write_diagnostic(self.directory, "report.json", self.report)
         # Progress is a convenience copy; the resume snapshot above must not
         # depend on it succeeding.
         try:
