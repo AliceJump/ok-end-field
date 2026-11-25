@@ -3590,3 +3590,9 @@ msgstr "距航点小于该距离时提前制动；小角度且位置更新及时
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "插件"
+
+msgid "旧水坝"
+msgstr "旧水坝"
+
+msgid "祀"
+msgstr "祀"

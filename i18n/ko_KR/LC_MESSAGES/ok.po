@@ -3656,3 +3656,9 @@ msgstr "경유점까지의 거리가 이 값보다 짧으면 미리 감속합니
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "플러그인"
+
+msgid "旧水坝"
+msgstr "옛 댐"
+
+msgid "祀"
+msgstr "사"

@@ -3966,3 +3966,9 @@ msgstr "Brake early within this distance of a waypoint. For small corrections wi
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "Plugins"
+
+msgid "旧水坝"
+msgstr "Old Dam"
+
+msgid "祀"
+msgstr "Si"

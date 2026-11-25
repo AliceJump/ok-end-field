@@ -4022,8 +4022,7 @@
     "vi_VN": {
       "pattern": "Trạm Gieo Mây Xiranflow"
     }
-  }
-,
+  },
   "k_xuesonglin": {
     "zh_CN": {
       "pattern": "雪松林"
@@ -4374,6 +4373,94 @@
     },
     "vi_VN": {
       "pattern": "Lam Kính Phủ Plasma Biến Dạng Không-Thời"
+    }
+  },
+  "old_dam": {
+    "zh_CN": {
+      "pattern": "旧水坝"
+    },
+    "zh_TW": {
+      "pattern": "舊水壩"
+    },
+    "en_US": {
+      "pattern": "Old Dam"
+    },
+    "ja_JP": {
+      "pattern": "廃ダム"
+    },
+    "ko_KR": {
+      "pattern": "옛 댐"
+    },
+    "es_ES": {
+      "pattern": "Presa Antigua"
+    },
+    "pt_BR": {
+      "pattern": "Barragem Antiga"
+    },
+    "de_DE": {
+      "pattern": "Alter Damm"
+    },
+    "fr_FR": {
+      "pattern": "Ancien barrage"
+    },
+    "id_ID": {
+      "pattern": "Bendungan Lama"
+    },
+    "it_IT": {
+      "pattern": "Diga vecchia"
+    },
+    "ru_RU": {
+      "pattern": "Старая дамба"
+    },
+    "th_TH": {
+      "pattern": "เขื่อน​เก่า"
+    },
+    "vi_VN": {
+      "pattern": "Đập Nước Cũ"
+    }
+  },
+  "si_boss": {
+    "zh_CN": {
+      "pattern": "祀"
+    },
+    "zh_TW": {
+      "pattern": "祀"
+    },
+    "en_US": {
+      "pattern": "Si"
+    },
+    "ja_JP": {
+      "pattern": "スー"
+    },
+    "ko_KR": {
+      "pattern": "사"
+    },
+    "es_ES": {
+      "pattern": "Si"
+    },
+    "pt_BR": {
+      "pattern": "Si"
+    },
+    "de_DE": {
+      "pattern": "Si"
+    },
+    "fr_FR": {
+      "pattern": "Si"
+    },
+    "id_ID": {
+      "pattern": "Si"
+    },
+    "it_IT": {
+      "pattern": "Si"
+    },
+    "ru_RU": {
+      "pattern": "Си"
+    },
+    "th_TH": {
+      "pattern": "ซือ"
+    },
+    "vi_VN": {
+      "pattern": "Si"
     }
   }
 }

@@ -4102,3 +4102,9 @@ msgstr "Frena antes al estar dentro de esta distancia de un punto de ruta. Si la
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "Complementos"
+
+msgid "旧水坝"
+msgstr "Presa Antigua"
+
+msgid "祀"
+msgstr "Si"
