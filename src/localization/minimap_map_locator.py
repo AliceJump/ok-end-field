@@ -1709,6 +1709,9 @@ class MinimapTracker:
             search_radius_m=self.search_radius_m,
         )
         self._clear_prediction_verification()
+        wait_reason = getattr(self.locator, "last_failure_reason", "") if wide is None else wide.reason
+        if self._is_waiting_reason(wait_reason or ""):
+            return replace(result, status="rejected", reason=wait_reason, spatial_margin=0.0)
         if wide is None:
             return replace(result, status="rejected", reason="prediction_competition_unavailable", spatial_margin=0.0)
         if wide.status != "accepted":

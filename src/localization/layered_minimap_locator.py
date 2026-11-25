@@ -650,24 +650,37 @@ class LayeredMinimapLocator:
                 failed.add(entry["id"])
                 pending, complete = True, False
                 continue
-            locator = self._matching_locator(entry, locator)
-            if prior is None and not self._prepare_global_search(locator, frame):
+            try:
+                locator = self._matching_locator(entry, locator)
+                if prior is None and not self._prepare_global_search(locator, frame):
+                    pending, complete = True, False
+                    continue
+                if bundled_near:
+                    ready.append((entry, locator))
+                    continue
+                result = (
+                    locator.locate_global(frame, geometry)
+                    if prior is None
+                    else locator.locate_near(frame, prior, geometry, search_radius_m=radius)
+                )
+            except (OSError, ValueError) as exc:
+                self._layer_errors[entry["id"]] = str(exc)
+                failed.add(entry["id"])
                 pending, complete = True, False
                 continue
-            if bundled_near:
-                ready.append((entry, locator))
-                continue
-            result = (
-                locator.locate_global(frame, geometry)
-                if prior is None
-                else locator.locate_near(frame, prior, geometry, search_radius_m=radius)
-            )
+            self._layer_errors.pop(entry["id"], None)
             if result is not None:
                 candidates.extend(self._world_candidates(result, entry))
         if ready:
             for (entry, _), result in zip(
                 ready, self._match_near_layers(frame, geometry, prior, radius, ready), strict=True
             ):
+                if isinstance(result, (OSError, ValueError)):
+                    self._layer_errors[entry["id"]] = str(result)
+                    failed.add(entry["id"])
+                    pending, complete = True, False
+                    continue
+                self._layer_errors.pop(entry["id"], None)
                 if result is not None:
                     candidates.extend(self._world_candidates(result, entry))
         # Region reads grow tiled locators after loading their metadata. Recount
@@ -683,9 +696,16 @@ class LayeredMinimapLocator:
                 locator.last_failure_reason = first.last_failure_reason
             return [None] * len(ready)
         args = (template, frame.shape[1], prior, radius)
+
+        def match(locator):
+            try:
+                return locator._locate_near_template(*args)
+            except (OSError, ValueError) as exc:
+                return exc
+
         workers = self._resource_workers
         if workers is None or len(ready) == 1:
-            return [locator._locate_near_template(*args) for _, locator in ready]
+            return [match(locator) for _, locator in ready]
 
         # Only pass the prepared pixels, with no reference to the capture
         # buffer. The shared template is immutable before entering the pool.
@@ -698,7 +718,7 @@ class LayeredMinimapLocator:
         futures = []
         try:
             for _, locator in ready:
-                futures.append(workers.matches.submit(locator._locate_near_template, *args))
+                futures.append(workers.matches.submit(match, locator))
         finally:
             # Drain even after a submission or matching failure. Another
             # frame must never reuse a floor locator while it is still busy.

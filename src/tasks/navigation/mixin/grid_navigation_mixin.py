@@ -852,6 +852,8 @@ class GridNavigationMixin(RuntimeStateMixin):
     def _grid_nav_stop_layer_matches(self, ctx: NavTick) -> bool:
         """只有当前楼层与已解析目标层一致时，才允许按平面距离结束。"""
         session = ctx.session
+        if session.route is not None and session.route.goal_key is not None and ctx.map_id != session.route.goal_key[0]:
+            return False
         layered = self._grid_layered_map(
             ctx.map_id,
             grid_path=session.request.grid_path,
@@ -913,7 +915,10 @@ class GridNavigationMixin(RuntimeStateMixin):
     def _grid_nav_follow(self, ctx: NavTick) -> bool | None:
         """跟随阶段：没有可用路线就先规划，否则取跟随器动作并派发。"""
         if ctx.session.route is not None and ctx.session.segment_index >= len(ctx.session.route.segments):
-            if self._grid_nav_route_exhausted_tier_mismatch(ctx):
+            expected = ctx.session.route.goal_key
+            if (expected is not None and ctx.map_id != expected[0]) or self._grid_nav_route_exhausted_tier_mismatch(
+                ctx
+            ):
                 return self._grid_nav_state_call(NavState.PLAN, ctx)
             return self._grid_nav_state_call(NavState.DONE, ctx)
         if self._grid_nav_follower is None or ctx.map_id != self._grid_nav_map_id:

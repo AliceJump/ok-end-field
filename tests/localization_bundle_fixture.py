@@ -103,21 +103,22 @@ class LocalizationBundleFixture:
     def write_index(self, name, pixels, identity, scale=(1.0, 1.0), rank_size=None):
         height, width = pixels.shape[:2]
         directory = name.removesuffix("/tiles.json")
-        tiles = []
-        for y in range(0, height, 64):
-            for x in range(0, width, 64):
-                record = self.write_image(f"{directory}/{x}-{y}.webp", pixels[y : y + 64, x : x + 64])
-                roi = [0, 0, record["width"], record["height"]]
-                if pixels.shape[2] == 4:
-                    left, top, width_roi, height_roi = cv2.boundingRect(pixels[y : y + 64, x : x + 64, 3].copy())
-                    roi = [left, top, left + width_roi, top + height_roi]
-                tiles.append({**record, "column": x // 64, "row": y // 64, "storage": "full", "roi": roi})
 
         def color(image):
             rgb = image[:, :, :3].copy()
             if image.shape[2] == 4:
                 rgb[image[:, :, 3] == 0] = 0
             return rgb
+
+        tiles = []
+        for y in range(0, height, 64):
+            for x in range(0, width, 64):
+                tile = pixels[y : y + 64, x : x + 64]
+                record = self.write_image(f"{directory}/{x}-{y}.webp", tile)
+                bgr = color(tile)
+                left, top, width_roi, height_roi = cv2.boundingRect(bgr[:, :, 0] | bgr[:, :, 1] | bgr[:, :, 2])
+                roi = [left, top, left + width_roi, top + height_roi]
+                tiles.append({**record, "column": x // 64, "row": y // 64, "storage": "full", "roi": roi})
 
         match = cv2.resize(color(pixels), None, fx=scale[0], fy=scale[1], interpolation=cv2.INTER_AREA)
         rank = None if rank_size is None else color(cv2.resize(pixels, rank_size, interpolation=cv2.INTER_AREA))
@@ -322,9 +323,7 @@ class LocalizationBundleFixture:
             encoding="utf-8",
         )
         (prepared / "READY").write_text(
-            "okef-prepared-localization 1 "
-            + hashlib.sha256(manifest_data).hexdigest()
-            + "\n",
+            "okef-prepared-localization 1 " + hashlib.sha256(manifest_data).hexdigest() + "\n",
             encoding="ascii",
         )
         package = {

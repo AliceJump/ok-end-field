@@ -1,5 +1,6 @@
 """Automatic base-map selection without packet coordinates or WS map IDs."""
 
+import threading
 import time
 from collections import OrderedDict
 from contextlib import suppress
@@ -44,6 +45,7 @@ class MapSetLocator:
         self._pending_maps = {}
         self._resource_retry_at = {}
         self._resource_errors = {}
+        self._job_state = threading.local()
         self.last_failure_reason = ""
         self._navigation_scope = None
         self._navigation_scope_key = None
@@ -86,11 +88,14 @@ class MapSetLocator:
 
     @property
     def last_failure_reason(self):
-        return self._last_failure_reason
+        return getattr(self._job_state, "failure_reason", self._last_failure_reason)
 
     @last_failure_reason.setter
     def last_failure_reason(self, value):
-        self._last_failure_reason = value
+        if hasattr(self._job_state, "failure_reason"):
+            self._job_state.failure_reason = value
+        else:
+            self._last_failure_reason = value
 
     def set_navigation_scope(self, scope):
         identity = getattr(scope, "search_identity", None)
@@ -579,9 +584,13 @@ class MapSetLocator:
         return self._search_snapshot(frame, geometry, started)
 
     def _search_global_outcome(self, frame, geometry, started, observed_at):
-        result = self._search_global_ready(frame, geometry, started)
-        hint, self._active = self._active, None
-        return _SearchOutcome(result, self.last_failure_reason, observed_at, hint)
+        self._job_state.failure_reason = ""
+        try:
+            result = self._search_global_ready(frame, geometry, started)
+            return _SearchOutcome(result, self._job_state.failure_reason, observed_at, self._active)
+        finally:
+            self._active = None
+            del self._job_state.failure_reason
 
     def _search_snapshot(self, frame, geometry, started):
         """Complete one frame's map/floor competition before retaining a hint."""
