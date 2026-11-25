@@ -167,6 +167,7 @@ config = {
         ["src.tasks.test.ZipLineScanDebugTask", "ZipLineScanDebugTask"],
         ["src.tasks.test.ZipLineReplayDebugTask", "ZipLineReplayDebugTask"],
         ["src.tasks.test.GatherNavigationTestTask", "GatherNavigationTestTask"],
+        ["src.tasks.test.BattleRewardRescanTestTask", "BattleRewardRescanTestTask"],
         ["src.tasks.test.LiaisonAlignmentTestTask", "LiaisonAlignmentTestTask"],
         ["src.tasks.test.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],

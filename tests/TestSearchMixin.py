@@ -58,5 +58,57 @@ class TestStrafeSearch(unittest.TestCase):
         self.assertEqual(events, [])
 
 
+class TestHoldAndDetect(unittest.TestCase):
+    def _task(self, clock, events):
+        def sleep(seconds):
+            events.append(("sleep", seconds))
+            clock["t"] += seconds
+
+        return SimpleNamespace(
+            active_time=lambda: clock["t"],
+            sleep=sleep,
+            send_key_down=lambda key: events.append(("down", key)),
+            send_key_up=lambda key: events.append(("up", key)),
+        )
+
+    def test_poll_interval_never_exceeds_remaining_hold_time(self):
+        """间隔大于按住时长时，按键必须按时长收敛，而不是等满一个间隔。"""
+        clock = {"t": 0.0}
+        events = []
+
+        result = SearchMixin.hold_and_detect(
+            self._task(clock, events),
+            "d",
+            lambda: None,
+            duration=0.5,
+            poll_interval=5,
+        )
+
+        self.assertIsNone(result)
+        self.assertLessEqual(clock["t"], 0.5 + 1e-9)
+        self.assertEqual(events[-1], ("up", "d"))
+
+    def test_hit_releases_key_without_waiting_for_full_duration(self):
+        clock = {"t": 0.0}
+        events = []
+        calls = {"count": 0}
+
+        def check():
+            calls["count"] += 1
+            return "hit" if calls["count"] == 2 else None
+
+        result = SearchMixin.hold_and_detect(
+            self._task(clock, events),
+            "d",
+            check,
+            duration=3.0,
+            poll_interval=0.2,
+        )
+
+        self.assertEqual(result, "hit")
+        self.assertAlmostEqual(clock["t"], 0.2)
+        self.assertEqual([event for event in events if event[0] in ("down", "up")], [("down", "d"), ("up", "d")])
+
+
 if __name__ == "__main__":
     unittest.main()
