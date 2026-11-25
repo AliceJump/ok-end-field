@@ -34,7 +34,10 @@ class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
         self.assertEqual(task.send_key_down.call_args_list, [call("up")])
         self.assertEqual(task.sleep.call_args_list, [call(2)])
         task.press_key.assert_called_once_with("shift", after_sleep=0.05)
-        self.assertEqual(EnvironmentMonitoringPhotoTask.OBSERVATIONS["mysterious_graffiti"], (MysteriousGraffitiRoute, "edit_distance"))
+        self.assertEqual(
+            EnvironmentMonitoringPhotoTask.OBSERVATIONS["mysterious_graffiti"],
+            (MysteriousGraffitiRoute, "edit_distance"),
+        )
         self.assertEqual(MysteriousGraffitiRoute.photo_direction, "down")
         task._camera_open.return_value = True
         EnvironmentMonitoringPhotoTask.rotate_photo_view(task, direction="down")
