@@ -1667,7 +1667,7 @@ class BattleMixin(BaseEfTask):
         )
 
     def start_touch_challenge(self):  # 已入场后搜索触碰点；调用任务需同时具备 SearchMixin
-        """沿用影拓的小步搜索，确认已开战或触碰成功后返回；不处理结算。"""
+        """搜索挑战触碰点或检测已开战，确认战斗开始后返回；不处理结算。"""
 
         def challenge_state():  # 每步移动后使用新画面判断
             self.next_frame()  # 刷新搜索帧
@@ -1681,7 +1681,7 @@ class BattleMixin(BaseEfTask):
             challenge_state, keys=("w",), duration=0.25, passes=None, time_out=60
         )  # 有界向前搜索
         if not state:  # 无交互提示时不盲按 F
-            self.log_info("未找到挑战触碰点")  # 保留影拓的失败原因
+            self.log_info("未找到挑战触碰点")  # 记录搜索失败原因
             return False  # 由任务决定失败处理
         if state != "combat":  # 找到提示后触碰启动
             self.press_key("f")  # 触发挑战
