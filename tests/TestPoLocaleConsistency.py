@@ -93,6 +93,12 @@ class PoLocaleConsistencyTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.catalogs = {path.parents[1].name: polib.pofile(str(path)) for path in I18N_ROOT.glob("*/LC_MESSAGES/ok.po")}
 
+    def test_compiled_catalogs_match_reviewed_sources(self):
+        for locale in ("en_US", "es_ES", "ja_JP", "ko_KR", "zh_CN", "zh_TW"):
+            with self.subTest(locale=locale):
+                mo = I18N_ROOT / locale / "LC_MESSAGES" / "ok.mo"
+                self.assertTrue(self.catalogs[locale].to_binary() == mo.read_bytes(), f"Recompile {mo} from ok.po")
+
     def test_catalog_structure_is_consistent(self):
         errors = []
         for locale, catalog in self.catalogs.items():
