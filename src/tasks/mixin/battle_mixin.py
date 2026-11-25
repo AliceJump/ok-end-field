@@ -1673,7 +1673,9 @@ class BattleMixin(BaseEfTask):
             self.next_frame()  # 刷新搜索帧
             if self.in_combat():  # 已开战时直接继续，避免重复交互
                 return "combat"  # 区分战斗和触碰提示
-            return self.ocr(match=self.lang.daily_battle_mixin.k_4cc61900, box=self.box.bottom_right)  # 搜索触碰提示
+            return self.wait_ocr(  # 沿用刷本原有的触碰提示等待与日志
+                match=self.lang.daily_battle_mixin.k_4cc61900, time_out=1, box=self.box.bottom_right, log=True
+            )
 
         state = self.strafe_search(
             challenge_state, keys=("w",), duration=0.25, passes=None, time_out=60

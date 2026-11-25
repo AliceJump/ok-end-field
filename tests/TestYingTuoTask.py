@@ -112,7 +112,7 @@ class TestYingTuoTask(unittest.TestCase):
         task.start_touch_challenge.side_effect = lambda: BattleMixin.start_touch_challenge(task)
         prompt = [object()]
         task.in_combat.side_effect = [False, False]
-        task.ocr.side_effect = [[], prompt]
+        task.wait_ocr.side_effect = [[], prompt]
 
         def search(check, **kwargs):
             self.assertEqual(kwargs["keys"], ("w",))
@@ -123,6 +123,7 @@ class TestYingTuoTask(unittest.TestCase):
 
         task.strafe_search.side_effect = search
         self.assertTrue(YingTuoTask.battle_and_exit(task))
+        task.wait_ocr.assert_called_with(match=task.lang.daily_battle_mixin.k_4cc61900, time_out=1, box=task.box.bottom_right, log=True)
         task.press_key.assert_called_once_with("f")
         self.assertLess(
             task.mock_calls.index(unittest.mock.call.press_key("f")),
@@ -175,7 +176,7 @@ class TestYingTuoTask(unittest.TestCase):
         task.in_combat.return_value = True
         task.strafe_search.side_effect = lambda check, **kwargs: check()
         self.assertTrue(YingTuoTask.battle_and_exit(task))
-        task.ocr.assert_not_called()
+        task.wait_ocr.assert_not_called()
         task.move_keys.assert_not_called()
         task.press_key.assert_not_called()
 
