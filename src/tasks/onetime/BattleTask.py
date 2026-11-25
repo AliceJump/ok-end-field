@@ -873,7 +873,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             to_text = fL.go_gather_view
         # 判断是否是高阶关卡
         is_higher_order = is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_DANGER_REHEARSAL)
-        for _ in range(5):
+        for _ in range(6):
             if is_higher_order:
                 # 高阶关卡，使用 feature_dict 查找位置
                 location = self.wait_feature(
