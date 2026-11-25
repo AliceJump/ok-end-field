@@ -206,7 +206,8 @@ class LayeredPlanner:
             result = PlanResult(False, f"缺少层 {key[1] or '主图'!r} 的网格")
         else:
             result = planner.plan_multi(start_cells, goal_cells, time_budget_s=time_budget_s)
-        self._segment_cache[cache_key] = result
+        if not result.timed_out:
+            self._segment_cache[cache_key] = result
         return result
 
     def plan(

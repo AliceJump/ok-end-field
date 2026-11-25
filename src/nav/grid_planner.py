@@ -469,7 +469,9 @@ class GridPlanner:
             )
             if self._cap_exceeded:
                 reason = f"分段搜索规模超限：扩展节点超过 max_expand={self.max_expand}"
-            return PlanResult(False, reason, expanded=self._expanded, cap_exceeded=self._cap_exceeded)
+            return PlanResult(
+                False, reason, expanded=self._expanded, cap_exceeded=self._cap_exceeded, timed_out=self._timed_out
+            )
         cells, reached, cost = search
         waypoints, _zip_steps, narrow_entries = self._route_with_zip_lines(cells, [-1] * max(0, len(cells) - 1))
         risk = sum(1 for i, j in cells if self.grid.state(i, j) == CELL_UNKNOWN)

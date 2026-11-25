@@ -536,6 +536,9 @@ class GridNavigationMixin(RuntimeStateMixin):
     ) -> PlanResult:
         """只规划，不发送输入；分层结果保存在 result.layered_route。"""
         self._refresh_grid_zip_lines()
+        map_id = map_id or (start_pose or {}).get("map_id", "")
+        if goal_y is not None and not math.isfinite(float(goal_y)):
+            return PlanResult(False, "目标高度无效")
         request = GridRouteRequest(
             goal=tuple(map(float, goal_xz)),
             goal_y=goal_y,
@@ -628,6 +631,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         只有融合定位进入最终 ``goal_radius``（或 ``stop_distance``）才返回 True。
         任何退出路径都会松开 ``W`` 并恢复滑索运行模式。
         """
+        if goal_y is not None and not math.isfinite(float(goal_y)):
+            self.log_warning("目标高度无效")
+            return False
         request = GridRouteRequest(
             goal=(float(goal_xz[0]), float(goal_xz[1])),
             goal_y=None if goal_y is None else float(goal_y),
@@ -818,6 +824,10 @@ class GridNavigationMixin(RuntimeStateMixin):
             return NavState.WAIT_POSE
         if ctx.x is None or ctx.z is None:
             return NavState.WAIT_ANCHOR
+        if ctx.pose.get("tier_evidence_required") and (
+            not ctx.pose.get("tier_trusted") or ctx.pose.get("tier_id") is None
+        ):
+            return NavState.WAIT_TRUST
         if not ctx.pose.get("position_trusted", True):
             return NavState.WAIT_TRUST
         if not ctx.pose.get("odom_ok") and not ctx.pose.get("absolute_position_valid", False):
@@ -2535,10 +2545,12 @@ class GridNavigationMixin(RuntimeStateMixin):
             zip_lines=self._grid_zip_lines_for_map(ctx.map_id),
         )
         waypoints = segment.plan.waypoints
-        segment_goal = tuple(waypoints[-1]) if waypoints else ctx.position
+        start = getattr(self, "_grid_link_landing", None) or ctx.position
+        self._grid_link_landing = None
+        segment_goal = tuple(waypoints[-1]) if waypoints else start
         if index == len(route.segments) - 1 and not trailing:
             segment_goal = session.recovery_goal or session.goal
-        follower.adopt(segment.plan, goal=segment_goal, start=ctx.position)
+        follower.adopt(segment.plan, goal=segment_goal, start=start)
         episode = session.recovery
         if (
             episode
@@ -2549,10 +2561,10 @@ class GridNavigationMixin(RuntimeStateMixin):
         ):
             follower.planner.avoid_stalled_approach(episode.departure or episode.origin, episode.unit)
             alternative = follower.planner.plan(
-                ctx.position, segment_goal, time_budget_s=max(0, session.deadline - self.active_time())
+                start, segment_goal, time_budget_s=max(0, session.deadline - self.active_time())
             )
             if alternative.ok:
-                follower.adopt(alternative, goal=segment_goal, start=ctx.position)
+                follower.adopt(alternative, goal=segment_goal, start=start)
         self._grid_nav_follower = follower
         self._grid_nav_map_id = ctx.map_id
         # 拓扑记录：跨过连接点、切到这一段之后，当前网格就是这一段的层。
@@ -2574,6 +2586,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         group = route.transitions[index] if 0 <= index < len(route.transitions) else ()
         next_segment = route.segments[index + 1] if index + 1 < len(route.segments) else None
         for offset, link in enumerate(group):
+            if self._grid_navigation_timed_out(session.deadline, session.limit):
+                return False
             if self._cross_layered_link(ctx, link) is False:
                 return False
             end = None
@@ -2626,6 +2640,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                 if math.dist(current.position, end) <= 0.5 and self._grid_nav_observed_tier_matches(
                     current, layered, link.target.tier
                 ):
+                    self._grid_link_landing = current.position
                     return True
                 if origin is None:
                     origin = current.position
@@ -2660,6 +2675,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         的 y[239,241] 推出落差 ∈ [8,12]m），而那是区间不是点。落差只用于判断绳索的上下行
         （见 :func:`_rope_goes_up`），不参与定价与对准。
         """
+        self._grid_link_landing = None
         if link.kind == "rope":
             return self._cross_layered_rope(link)
         span = math.hypot(
@@ -2779,11 +2795,17 @@ class GridNavigationMixin(RuntimeStateMixin):
                     self._aim_grid_view_to_bearing(bearing, reason="绳索下行", log_success=False)
                     aimed_bearing = bearing
                 if self._grid_rope_target_reached(pose, link, target_range):
+                    self._grid_link_landing = (point[0], point[2])
                     self.log_info(f"绳索下行完成：已确认到达 {link.target.tier or '大地图'}")
                     return True
-                if target_range is None and point[1] is not None:
+                if (
+                    target_range is None
+                    and point[1] is not None
+                    and not (pose.get("tier_evidence_required") or pose.get("tier_trusted"))
+                ):
                     walked = distance_xz((point[0], point[2]), start)
                     if walked >= walked_enough:
+                        self._grid_link_landing = (point[0], point[2])
                         self.log_info(f"绳索下行完成：已走过 {walked:.1f}m（无高度区间可验证）")
                         return True
                 if stalled >= GRID_ROPE_STALL_S:
@@ -2850,6 +2872,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         while True:
             pose = self._grid_nav_rope_pose()
             if pose is not None and self._grid_rope_target_reached(pose, link, target_range):
+                self._grid_link_landing = (pose["x"], pose["z"])
                 self.log_info(f"绳索上行完成：已确认到达 {link.target.tier or '大地图'}")
                 return True
             if self.active_time() >= deadline:
@@ -2877,8 +2900,12 @@ class GridNavigationMixin(RuntimeStateMixin):
 
     @staticmethod
     def _grid_rope_target_reached(pose, link, target_range):
-        if pose.get("y") is not None and target_range is not None:
-            return target_range[0] <= pose["y"] <= target_range[1]
+        if not pose.get("tier_evidence_required") and not pose.get("tier_trusted"):
+            return (
+                pose.get("y") is not None
+                and target_range is not None
+                and target_range[0] <= pose["y"] <= target_range[1]
+            )
         return bool(
             pose.get("tier_trusted")
             and pose.get("tier_id") is not None
@@ -2966,9 +2993,12 @@ class GridNavigationMixin(RuntimeStateMixin):
             return True, False
         ctx.session.route = route
         ctx.session.segment_index = 0
+        self._grid_link_landing = None
         # 第一段之前可能还有连接要跨：起点本身就压在某个连接端点上时，那段"步行"长度为零
         # 被规划器丢掉，跨越就落在所有分段之前。漏执行它等于少跳一层。
         for offset, link in enumerate(route.prefix):
+            if self._grid_navigation_timed_out(ctx.session.deadline, ctx.session.limit):
+                return True, False
             self.log_info(f"分层导航：起手先跨 {link.kind}（起点已在连接端点上）")
             if self._cross_layered_link(ctx, link) is False:
                 return True, False
@@ -2978,8 +3008,10 @@ class GridNavigationMixin(RuntimeStateMixin):
             if link.kind != "rope" and not self._walk_trailing_layered_link(ctx, link, end=end):
                 return True, False
         if not route.segments:
-            landed_tier = route.goal_key[1] if route.goal_key is not None else (
-                route.prefix[-1].target.tier if route.prefix else ctx.session.start_tier
+            landed_tier = (
+                route.goal_key[1]
+                if route.goal_key is not None
+                else (route.prefix[-1].target.tier if route.prefix else ctx.session.start_tier)
             )
             self._set_layered_active_tier(ctx.session, landed_tier)
             self._grid_nav_follower = None
@@ -3828,7 +3860,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             self.log_warning(f"{prefix}诊断: 本次导航剩余时间不足，未完成路径搜索")
         elif result.cap_exceeded:
             self.log_warning(f"{prefix}诊断: 扩展节点已达上限，未搜索完；可调大「{CONFIG_GRID_MAX_EXPAND}」")
-        else:
+        elif result.expanded:
             self.log_warning(f"{prefix}诊断: 起点可达区域已穷尽（共 {result.expanded} 格），不是搜索深度不够")
         if not self.allow_grid_unknown():
             self.log_warning(f"{prefix}诊断: 当前「{CONFIG_GRID_ALLOW_UNKNOWN}」关闭，只能在已知可行走区内搜索")
@@ -4050,16 +4082,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         if target_bearing is not None:
             self.pose_turn_to_bearing(
                 target_bearing,
-                tolerance=min(
-                    GRID_TURN_TOLERANCE_DEG,
-                    max(
-                        0.0,
-                        self._grid_cfg_float(
-                            CONFIG_GRID_TURN_TOLERANCE,
-                            GRID_TURN_TOLERANCE_DEG,
-                        ),
-                    ),
-                ),
+                tolerance=self._grid_turn_tolerance(),
                 max_rounds=1,
                 frame=frame,
                 min_score=self._grid_heading_min_score(),

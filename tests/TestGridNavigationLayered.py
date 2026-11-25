@@ -364,12 +364,17 @@ class LayeredNavigationWiringTest(unittest.TestCase):
                 self.assertIn("有限数", result.reason)
 
     def test_2d_unmarked_goal_is_not_resolved_by_allow_unknown(self):
+        for name in ("test_4", "test__lv1_4"):
+            path = self.root / f"{name}{GRID_SUFFIX}"
+            grid = load_grid(path)
+            grid.cells[0, 2] = CELL_UNKNOWN
+            save_grid(path, grid)
         for allow in (False, True):
             with self.subTest(allow_unknown=allow):
                 self.task.config["允许穿越未知格"] = allow
                 result = self.task.plan_grid_path(
                     (1.5, 0.5),
-                    (50.5, 0.5),
+                    (2.5, 0.5),
                     map_id="test",
                     start_pose=self._visual_pose(),
                 )
