@@ -1,6 +1,14 @@
 inheritance: true
 
 reviews:
+  # TestPoLocaleConsistency recompiles these catalogs from their reviewed PO sources.
+  path_filters:
+    - "!i18n/en_US/LC_MESSAGES/ok.mo"
+    - "!i18n/es_ES/LC_MESSAGES/ok.mo"
+    - "!i18n/ja_JP/LC_MESSAGES/ok.mo"
+    - "!i18n/ko_KR/LC_MESSAGES/ok.mo"
+    - "!i18n/zh_CN/LC_MESSAGES/ok.mo"
+    - "!i18n/zh_TW/LC_MESSAGES/ok.mo"
   path_instructions:
     - path: "**"
       instructions: |
