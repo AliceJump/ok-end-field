@@ -85,6 +85,9 @@ class NavigationTopologyScope:
                 previous.anchor_z,
                 previous.tolerance_m,
             )
+            # Cells only veto the winning peak. The margin is comparable only
+            # while the same maps and floors participate in the competition.
+            and self._distances.keys() == previous._distances.keys()
             and self.max_distance_m >= previous.max_distance_m
         )
 

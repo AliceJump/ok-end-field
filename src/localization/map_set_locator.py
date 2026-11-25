@@ -141,7 +141,8 @@ class MapSetLocator:
         with suppress(BaseException):
             future.result()
         self._clear_search_hint()
-        self._apply_navigation_scope_to_cache()
+        self._scope_change_pending = True
+        self._settle_search_scope()
 
     def _apply_navigation_scope_to_cache(self):
         scope = self._navigation_scope
@@ -729,11 +730,7 @@ class MapSetLocator:
             return replace(combined, status="rejected", reason=self.last_failure_reason, spatial_margin=0)
         return combined
 
-    def locate_near(self, frame, previous_world, geometry, *, search_radius_m=80.0, use_global=False):
-        future = self._search_future
-        if future is not None and not future.done():
-            self.last_failure_reason = "visual_global_search_pending"
-            return None
+    def _consume_search_hint(self, frame, geometry):
         self._discard_stale_completed_search()
         future = self._search_future
         if future is not None:
@@ -751,6 +748,13 @@ class MapSetLocator:
             if valid and isinstance(outcome, _SearchOutcome):
                 self._active = outcome.active_map
         self._settle_search_scope()
+
+    def locate_near(self, frame, previous_world, geometry, *, search_radius_m=80.0, use_global=False):
+        future = self._search_future
+        if future is not None and not future.done():
+            self.last_failure_reason = "visual_global_search_pending"
+            return None
+        self._consume_search_hint(frame, geometry)
         self.last_failure_reason = ""
         started = time.perf_counter()
         if not self._active:
@@ -788,8 +792,7 @@ class MapSetLocator:
         if future is not None and not future.done():
             self.last_failure_reason = "visual_global_search_pending"
             return None
-        self._discard_stale_completed_search()
-        self._settle_search_scope()
+        self._consume_search_hint(frame, geometry)
         self.last_failure_reason = ""
         if map_id not in self._cache:
             self.last_failure_reason = "visual_recovery_map_unavailable"

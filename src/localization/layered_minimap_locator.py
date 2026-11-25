@@ -238,6 +238,8 @@ class LayeredMinimapLocator:
         image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
         if image is None:
             raise ValueError(f"missing_layer_image:{key}")
+        if image.dtype != np.uint8:
+            raise ValueError(f"unsupported_layer_image_depth:{key}")
         height, width = image.shape[:2]
         if (width, height) != (entry["width"], entry["height"]):
             raise ValueError(f"layer_image_size_mismatch:{key}")
@@ -433,7 +435,7 @@ class LayeredMinimapLocator:
 
         scope_excluded = not allows_tier("__main__")
         candidates = (
-            [replace(c, tier_id="__main__") for c in base.candidates]
+            [replace(c, tier_id="__main__") for c in (base.competition_candidates or base.candidates)]
             if base is not None and allows_tier("__main__")
             else []
         )
@@ -581,7 +583,7 @@ class LayeredMinimapLocator:
         for tier, result in sources:
             if result is None or (scope is not None and not scope.allows_tier(self.map_id, tier)):
                 continue
-            for candidate in result.candidates:
+            for candidate in result.competition_candidates or result.candidates:
                 candidates.append(replace(candidate, tier_id=tier))
                 owners.append(result)
         base = next((r for _, r in sources if r is not None), None)
@@ -605,7 +607,7 @@ class LayeredMinimapLocator:
 
     def _world_candidates(self, result, entry):
         bounds = entry["bounds"]
-        for candidate in result.candidates:
+        for candidate in result.competition_candidates or result.candidates:
             if not (
                 bounds["west"] <= candidate.world_x <= bounds["east"]
                 and bounds["south"] <= candidate.world_z <= bounds["north"]
@@ -910,11 +912,15 @@ class LayeredMinimapLocator:
                 try:
                     if wait_for_resources:
                         ordered_results((future,), self._resource_workers.stop)
-                    self._search_index = future.result()
+                    index = future.result()
+                    if self._pending_index is not future or self._pending_index_key != submitted_key:
+                        raise ResourcePending()
+                    self._search_index = index
                     self._index_key = submitted_key
                 finally:
-                    self._pending_index = None
-                    self._pending_index_key = None
+                    if self._pending_index is future:
+                        self._pending_index = None
+                        self._pending_index_key = None
 
     def locate_proposed_layer(
         self,
@@ -967,7 +973,13 @@ class LayeredMinimapLocator:
         if complete_competition:
             # MapSetLocator owns all maps/floors for this same frame. Preserve the
             # full-floor alternatives here and merge them once after every search.
-            return replace(result, best=candidates[0], candidates=candidates, spatial_margin=result.margin)
+            return replace(
+                result,
+                best=candidates[0],
+                candidates=candidates,
+                competition_candidates=candidates,
+                spatial_margin=result.margin,
+            )
         prior = (result.best.world_x, result.best.world_z)
         if wait_for_resources:
             # The immutable background snapshot and its full-floor result stay

@@ -276,6 +276,8 @@ class PreparedLocalizationBundle:
     def __init__(self, root, localization_manifest):
         self.root = Path(root).resolve()
         self.localization_manifest_path = Path(localization_manifest).resolve()
+        expected = self.localization_manifest_path.parent / PREPARED_DIRNAME
+        _require(self.root == expected, "Prepared directory must belong to the requested localization package")
         self.manifest, self.manifest_sha256 = _read_json_bytes(self.root / "manifest.json")
         _require(isinstance(self.manifest, dict), "Prepared localization manifest is invalid")
         self._atlas_lock = threading.Lock()
@@ -921,7 +923,10 @@ class PreparedLocalizationBundle:
     def _atlas_pixels_locked(self, map_id):
         image = self._atlas_cache.get(map_id)
         if image is None:
-            image = self._decode_atlas_pixels(map_id)
+            try:
+                image = self._decode_atlas_pixels(map_id)
+            except (ValueError, OSError, cv2.error) as exc:
+                raise ValueError(f"{PREPARED_MISSING_MESSAGE} ({exc})") from exc
             image.setflags(write=False)
             self._atlas_cache[map_id] = image
             self._atlas_cache_bytes += image.nbytes

@@ -415,6 +415,19 @@ class TestMinimapMapLocatorSynthetic(unittest.TestCase):
             template = _PreparedTemplate(ring, ring, mask, mask.astype(np.uint8) * 255)
             self.assertIsNone(template.dim_terrain)
 
+    def test_top_one_display_keeps_real_competing_peak(self):
+        image = self.map_image.copy()
+        image[260:541, 60:341] = image[260:541, 360:641].copy()
+        locator = MinimapMapLocator(image, self.calibration, scale_override=self.scale, top_k=1)
+        for result in (
+            locator.locate_global(self.frame, self.geometry),
+            locator.locate_near(self.frame, (87.5, -100), self.geometry, search_radius_m=80),
+        ):
+            self.assertEqual(len(result.candidates), 1)
+            self.assertGreaterEqual(len(result.competition_candidates), 2)
+            self.assertLess(result.margin, 0.08)
+            self.assertNotEqual(result.status, "accepted")
+
     def test_coverage_excludes_stronger_background_alias_before_peak_selection(self):
         class CoveredMap(np.ndarray):
             def candidate_mask(self, xs, ys):

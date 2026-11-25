@@ -1263,6 +1263,7 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         service._executor.paused = False
         owner = SimpleNamespace(paused=False, enabled=True)
         with patch("src.localization.position_service.VisualPoseSampler") as factory:
+            factory.return_value.capture = service._executor.method
             factory.return_value.stopped.is_set.return_value = False
             with self.assertRaisesRegex(RuntimeError, "navigation failed"), service.visual_sampling(owner):
                 enabled = factory.call_args.args[2]
@@ -1821,6 +1822,27 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
                 ):
                     self.assertFalse(migrate_visual_map_root())
                 self.assertEqual(json.loads(source.read_text(encoding="utf-8")), values)
+
+    def test_failed_grid_migration_write_preserves_original_and_can_retry(self):
+        source = self.root / "Nav Config.json"
+        original = json.dumps({CONFIG_GRID_DIR: "assets/nav-grid-data", "other": "retained"})
+        source.write_text(original, encoding="utf-8")
+
+        def fail_after_partial_write(path, values):
+            Path(path).write_text("{", encoding="utf-8")
+            raise OSError("disk full")
+
+        with patch(
+            "src.localization.position_config_migration.config_path",
+            side_effect=lambda *parts: str(self.root.joinpath(*parts)),
+        ):
+            with patch(
+                "src.localization.position_config_migration.write_json_file", side_effect=fail_after_partial_write
+            ):
+                self.assertFalse(migrate_grid_navigation_root())
+            self.assertEqual(source.read_text(encoding="utf-8"), original)
+            self.assertTrue(migrate_grid_navigation_root())
+        self.assertEqual(json.loads(source.read_text(encoding="utf-8"))["other"], "retained")
 
     def test_resource_root_migration_does_not_create_missing_config(self):
         source = self.root / "Position Config.json"
@@ -2427,6 +2449,7 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         locator._prepare_base_search = Mock(return_value=True)
         locator._search_future = completed
         locator._search_shape = old.shape
+        locator._search_started_at = time.monotonic() - 3
         locator._search_started_generation = locator._search_generation
         locator._search_frame = old.copy()
         locator._search_frame.setflags(write=False)

@@ -286,7 +286,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             return
         previous = self._visual_sampler
         if previous is not None:
-            if previous.thread.is_alive() and not previous.stopped.is_set():
+            if previous.capture is capture and previous.thread.is_alive() and not previous.stopped.is_set():
                 yield  # A nested navigation scope shares its still-active owner.
                 return
             if previous.thread.is_alive() and not previous.close():

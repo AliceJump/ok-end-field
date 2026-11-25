@@ -240,6 +240,7 @@ class LocateResult:
     spatial_margin: float | None = None
     layer_margin: float | None = None
     observed_at: float | None = None
+    competition_candidates: tuple[MapCandidate, ...] = ()
 
     @property
     def confidence(self) -> float:
@@ -318,7 +319,7 @@ class _PreparedTemplate:
         textured dim component supplies a second independently normalized view.
         Never infer this mask from a candidate's alpha or matching residuals.
         """
-        if self.ring.ndim != 3:
+        if self.ring.ndim != 3 or self.ring.dtype != np.uint8:
             return None
         gray = _as_gray(self.ring)
         values = gray[self.mask]
@@ -1209,7 +1210,7 @@ class MinimapMapLocator:
         scores = self._match_scores(coarse_map, template, coarse=True, allowed=allowed)
         if allowed is not None:
             scores[~allowed] = -1.0
-        peaks = _top_peaks(scores, self.top_k, min_distance=max(4, target // 2))
+        peaks = _top_peaks(scores, max(DEFAULT_TOP_K, self.top_k), min_distance=max(4, target // 2))
         candidates = []
         for coarse_score, (left, top) in peaks:
             map_x = (left + target / 2.0) / coarse_scale - 0.5
@@ -1223,9 +1224,7 @@ class MinimapMapLocator:
             )
             if refined is not None:
                 candidates.append(refined)
-        candidates = deduplicate_candidates(candidates, min_world_distance_m=self.candidate_merge_distance_m)[
-            : self.top_k
-        ]
+        candidates = deduplicate_candidates(candidates, min_world_distance_m=self.candidate_merge_distance_m)
         status, reason = self._status(candidates)
         if not candidates:
             return self._reject(f"minimap_no_candidates: search=global peaks={len(peaks)}")
@@ -1233,7 +1232,9 @@ class MinimapMapLocator:
             status=status,
             reason=reason,
             best=candidates[0],
-            candidates=tuple(candidates),
+            candidates=tuple(candidates[: self.top_k]),
+            competition_candidates=tuple(candidates),
+            spatial_margin=candidate_margin(candidates),
             elapsed_s=time.perf_counter() - start,
             scale=scale,
             used_prior=False,
@@ -1322,9 +1323,7 @@ class MinimapMapLocator:
             patches.append(patch)
             positions.append((map_x, map_y, coarse_score))
         candidates = self._candidates_from_patches(template, patches, positions)
-        candidates = deduplicate_candidates(candidates, min_world_distance_m=self.candidate_merge_distance_m)[
-            : self.top_k
-        ]
+        candidates = deduplicate_candidates(candidates, min_world_distance_m=self.candidate_merge_distance_m)
         status, reason = self._status(candidates)
         if not candidates:
             return self._reject(f"minimap_no_candidates: search=local peaks={len(peaks)}")
@@ -1332,7 +1331,9 @@ class MinimapMapLocator:
             status=status,
             reason=reason,
             best=candidates[0],
-            candidates=tuple(candidates),
+            candidates=tuple(candidates[: self.top_k]),
+            competition_candidates=tuple(candidates),
+            spatial_margin=candidate_margin(candidates),
             elapsed_s=time.perf_counter() - start,
             scale=scale,
             used_prior=True,
@@ -1512,6 +1513,7 @@ class MinimapTracker:
             or previous is None
             or previous_t is None
             or locate is None
+            or (locate.observed_at is not None and locate.observed_at != now)
             or self._last_update_t != now
             or not self.stale_after_s < now - previous_t <= 4.0
         ):

@@ -62,6 +62,26 @@ def _atomic_backup(source, backup):
             temporary.unlink(missing_ok=True)
 
 
+def _write_migrated_values(source, values):
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=source.parent, prefix=f".{source.name}.", suffix=".tmp", delete=False
+        ) as stream:
+            temporary = Path(stream.name)
+        write_json_file(str(temporary), values)
+        os.replace(temporary, source)
+        return True
+    except OSError:
+        logging.getLogger(__name__).warning(
+            "Cannot save migrated %s; keeping its original settings", source.name, exc_info=True
+        )
+        return False
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def migrate_visual_map_root():
     """Move known default layouts to the packaged navigation data root."""
     from src.core.PositionConfig import CONFIG_VISUAL_MAP_ROOT, DEFAULT_VISUAL_MAP_ROOT
@@ -110,8 +130,7 @@ def migrate_visual_map_root():
             )
             return False
     values[CONFIG_VISUAL_MAP_ROOT] = DEFAULT_VISUAL_MAP_ROOT
-    write_json_file(str(source), values)
-    return True
+    return _write_migrated_values(source, values)
 
 
 def migrate_grid_navigation_root():
@@ -125,7 +144,7 @@ def migrate_grid_navigation_root():
     if not isinstance(values, dict):
         return False
     current = values.get(CONFIG_GRID_DIR)
-    if not isinstance(current, str) or current.strip().replace("\\", "/").rstrip("/") != "assets/nav-grid-data":
+    if not isinstance(current, str) or Path(current.strip()).as_posix() != "assets/nav-grid-data":
         return False
     backup = Path(config_path("nav_data_layout_migration", "v1", source.name))
     if not backup.exists():
@@ -138,5 +157,4 @@ def migrate_grid_navigation_root():
             )
             return False
     values[CONFIG_GRID_DIR] = DEFAULT_GRID_NAV_CONFIG[CONFIG_GRID_DIR]
-    write_json_file(str(source), values)
-    return True
+    return _write_migrated_values(source, values)

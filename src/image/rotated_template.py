@@ -278,6 +278,8 @@ class ArrowAngleMatcher:
     def _match(self, screenshot, center, two_stage):
         if screenshot is None or screenshot.ndim not in (2, 3):
             raise ValueError("invalid arrow screenshot")
+        if not all(screenshot.shape[:2]):
+            raise ValueError("Empty screenshot")
         if screenshot.ndim == 3 and screenshot.shape[2] not in (3, 4):
             raise ValueError(f"Unsupported image shape: {screenshot.shape}")
         # Matching uses BGR only. Read small ROI views instead of converting or

@@ -524,7 +524,7 @@ class VisualPositionSource:
         self._evidence_result = None
         if not sampled:
             if anchor is not None:
-                if self.evidence is not None:
+                if anchor_init and self.evidence is not None:
                     self.evidence.reset()
                 if anchor_init and self.chain is not None:
                     self._seed_visual_chain_anchor(clock, raw, anchor)

@@ -498,6 +498,7 @@ class TestNavigationTopology(unittest.TestCase):
         self.assertFalse(short.allows_tier("map02", "b"))
         long = topology.scope("map02", "a", (0.5, 0.5), 100)
         self.assertTrue(long.allows_candidate("map02", "b", 100.5, 0.5))
+        self.assertFalse(long.expands_from(short), "a newly reachable floor changes the competition")
         reverse = topology.scope("map02", "b", (100.5, 0.5), 200)
         self.assertFalse(reverse.allows_tier("map02", "a"))
 
