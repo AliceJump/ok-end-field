@@ -4,7 +4,7 @@ from src.core.BaseEfTask import BaseEfTask
 
 
 class SearchMixin(BaseEfTask):
-    """通用搜索辅助：整圈旋转视角搜索、WASD 轻微左右移动搜索。"""
+    """通用搜索辅助：整圈旋转视角搜索、WASD 轻微左右移动搜索、按住方向键持续检测。"""
 
     def rotate_search(
         self,
@@ -139,3 +139,34 @@ class SearchMixin(BaseEfTask):
                 restore(key)
 
         return None
+
+    def hold_and_detect(self, key, check_func, duration: float, poll_interval: float = 0.05):
+        """按住方向键的同时逐帧检测，命中或超时后一定释放按键。
+
+        Args:
+            key: 方向键，如 "d"。
+            check_func: 无参回调，返回真值表示命中（可直接返回检测结果）。
+            duration: 按住时长（秒）。
+            poll_interval: 两次检测之间的最小间隔（秒）。
+
+        Returns:
+            check_func 的命中结果；整段未命中返回 None。
+        """
+        start = self.active_time()
+        self.send_key_down(key)
+        try:
+            while self.active_time() - start < duration:
+                if result := check_func():
+                    return result
+                if poll_interval > 0:
+                    # 间隔不能超过剩余时间，否则配置的按住时长会被轮询间隔拉长
+                    # （duration=0.5、poll_interval=5 时键会按满 5 秒）。
+                    remaining = duration - (self.active_time() - start)
+                    # 剩余不足 1ms 就当作到点：这点零头加不回时间轴（浮点被吞），继续睡会空转。
+                    if remaining < 0.001:
+                        break
+                    self.sleep(min(poll_interval, remaining))
+            return None
+        finally:
+            # 命中、超时、任务停止都必须松开，否则角色会一直平移。
+            self.send_key_up(key)

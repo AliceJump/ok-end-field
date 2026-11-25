@@ -19,12 +19,33 @@ from src.tasks.onetime.EnvironmentMonitoringRoute import (
     EnvironmentMonitoringRoute,
     EternalSunsetRoute,
     GlowingLankybeastRoute,
+    MysteriousGraffitiRoute,
     PoolLotusRoute,
     StationaryObservationRoute,
 )
 
 
 class TestEnvironmentMonitoringPhotoFlow(unittest.TestCase):
+    def test_mysterious_graffiti_route_and_downward_photo(self):
+        task = self.task()
+        task.in_world.return_value = True
+        task.wait_until.return_value = True
+        MysteriousGraffitiRoute(task).run()
+        self.assertEqual(task.send_key_down.call_args_list, [call("up")])
+        self.assertEqual(task.sleep.call_args_list, [call(2)])
+        task.press_key.assert_called_once_with("shift", after_sleep=0.05)
+        self.assertEqual(
+            EnvironmentMonitoringPhotoTask.OBSERVATIONS["mysterious_graffiti"],
+            (MysteriousGraffitiRoute, "edit_distance"),
+        )
+        self.assertEqual(MysteriousGraffitiRoute.photo_direction, "down")
+        task._camera_open.return_value = True
+        EnvironmentMonitoringPhotoTask.rotate_photo_view(task, direction="down")
+        start, end = task.smooth_drag.call_args.args
+        self.assertEqual(start[0], end[0])
+        self.assertGreater(end[1], start[1])
+        task.mouse_up.assert_called_once_with(key="left")
+
     def test_glowing_lankybeast_uses_edit_distance(self):
         task = self.task()
         task.normalize_title.side_effect = EnvironmentMonitoringPhotoTask.normalize_title
