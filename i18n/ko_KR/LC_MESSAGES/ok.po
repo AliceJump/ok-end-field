@@ -3659,3 +3659,6 @@ msgstr "플러그인"
 
 msgid "旧水坝"
 msgstr "옛 댐"
+
+msgid "祀"
+msgstr "사"

@@ -4418,5 +4418,49 @@
     "vi_VN": {
       "pattern": "Đập Nước Cũ"
     }
+  },
+  "si_boss": {
+    "zh_CN": {
+      "pattern": "祀"
+    },
+    "zh_TW": {
+      "pattern": "祀"
+    },
+    "en_US": {
+      "pattern": "Si"
+    },
+    "ja_JP": {
+      "pattern": "スー"
+    },
+    "ko_KR": {
+      "pattern": "사"
+    },
+    "es_ES": {
+      "pattern": "Si"
+    },
+    "pt_BR": {
+      "pattern": "Si"
+    },
+    "de_DE": {
+      "pattern": "Si"
+    },
+    "fr_FR": {
+      "pattern": "Si"
+    },
+    "id_ID": {
+      "pattern": "Si"
+    },
+    "it_IT": {
+      "pattern": "Si"
+    },
+    "ru_RU": {
+      "pattern": "Си"
+    },
+    "th_TH": {
+      "pattern": "ซือ"
+    },
+    "vi_VN": {
+      "pattern": "Si"
+    }
   }
 }

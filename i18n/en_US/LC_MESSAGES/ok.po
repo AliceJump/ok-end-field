@@ -3969,3 +3969,6 @@ msgstr "Plugins"
 
 msgid "旧水坝"
 msgstr "Old Dam"
+
+msgid "祀"
+msgstr "Si"

@@ -3624,3 +3624,6 @@ msgstr "プラグイン"
 
 msgid "旧水坝"
 msgstr "廃ダム"
+
+msgid "祀"
+msgstr "スー"

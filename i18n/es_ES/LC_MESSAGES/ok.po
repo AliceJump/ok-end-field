@@ -4105,3 +4105,6 @@ msgstr "Complementos"
 
 msgid "旧水坝"
 msgstr "Presa Antigua"
+
+msgid "祀"
+msgstr "Si"

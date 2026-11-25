@@ -3593,3 +3593,6 @@ msgstr "插件"
 
 msgid "旧水坝"
 msgstr "旧水坝"
+
+msgid "祀"
+msgstr "祀"
