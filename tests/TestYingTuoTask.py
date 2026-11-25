@@ -176,7 +176,7 @@ class TestYingTuoTask(unittest.TestCase):
         task.in_combat.return_value = True
         task.strafe_search.side_effect = lambda check, **kwargs: check()
         self.assertTrue(YingTuoTask.battle_and_exit(task))
-        task.wait_ocr.assert_not_called()
+        task.wait_ocr.assert_called_once()
         task.move_keys.assert_not_called()
         task.press_key.assert_not_called()
 

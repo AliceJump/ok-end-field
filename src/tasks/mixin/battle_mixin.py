@@ -1669,13 +1669,13 @@ class BattleMixin(BaseEfTask):
     def start_touch_challenge(self):  # 已入场后搜索触碰点；调用任务需同时具备 SearchMixin
         """搜索挑战触碰点或检测已开战，确认战斗开始后返回；不处理结算。"""
 
-        def challenge_state():  # 每步移动后使用新画面判断
-            self.next_frame()  # 刷新搜索帧
-            if self.in_combat():  # 已开战时直接继续，避免重复交互
-                return "combat"  # 区分战斗和触碰提示
-            return self.wait_ocr(  # 沿用刷本原有的触碰提示等待与日志
+        def challenge_state():  # 每步移动后同时检查触碰提示和战斗状态
+            prompt = self.wait_ocr(  # 等待提示并刷新画面
                 match=self.lang.daily_battle_mixin.k_4cc61900, time_out=1, box=self.box.bottom_right, log=True
             )
+            if self.in_combat():  # 使用 OCR 等待后的画面，已开战时不重复交互
+                return "combat"  # 区分战斗和触碰提示
+            return prompt  # 未开战时使用触碰提示
 
         state = self.strafe_search(
             challenge_state, keys=("w",), duration=0.25, passes=None, time_out=60
