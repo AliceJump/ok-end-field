@@ -262,6 +262,11 @@ class VisualPositionSource:
             # even if a lookalike would otherwise produce a strong match.
             self._topology_anchor = None
             self._set_navigation_scope(None)
+            self.tracker.reset()
+            reset_locator = getattr(self.locator, "reset_tracking", None)
+            if callable(reset_locator):
+                reset_locator()
+            self._origin = self._last_absolute_t = self._anchor_tier_id = None
             self._reset_visual_chains()
         predicted_world = None
         if (

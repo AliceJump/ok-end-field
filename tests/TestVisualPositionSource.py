@@ -528,7 +528,8 @@ class TestVisualPositionSource(unittest.TestCase):
             state = source.sample(self.frame(), now=1.4)
         self.assertIsNone(update.call_args.kwargs["recovery_world"])
         topology.scope.assert_not_called()
-        self.assertTrue(state["absolute_position_valid"], state)
+        self.assertFalse(state["position_trusted"], state)
+        self.assertTrue(source.sample(self.frame(), now=1.6)["absolute_position_valid"])
 
     def test_color_acquisition_and_unknown_floor_share_the_visual_chain_safely(self):
         pixels = cv2.merge((self.image, np.roll(self.image, 13, axis=0), np.roll(self.image, 19, axis=1)))
@@ -2514,6 +2515,27 @@ class TestAutomaticMapCompetition(unittest.TestCase):
                     locator.locate_near(frame, (0, 0), None)
                 self.assertEqual(load.called, expected_local)
                 self.assertEqual(global_match.called, not expected_local)
+
+    def test_cross_map_competition_includes_hidden_runner_up(self):
+        locator = self.locator()
+        first = self.result(0.80, margin=0.30)
+        first_peak = replace(first.best, full_ncc=0.99, world_x=0)
+        second = self.result(0.79, margin=0.3)
+        visible = replace(second.best, full_ncc=0.60, world_x=5)
+        hidden = replace(second.best, ncc=0.78, full_ncc=0.98, world_x=50)
+        result = locator._combine(
+            [
+                ("map01", replace(first, best=first_peak, candidates=(first_peak,))),
+                (
+                    "map02",
+                    replace(second, best=visible, candidates=(visible,), competition_candidates=(visible, hidden)),
+                ),
+            ],
+            0,
+            None,
+        )
+        self.assertAlmostEqual(result.margin, 0.01)
+        self.assertNotEqual(result.status, "accepted")
 
     def test_normalization_updates_after_installing_prepared_resources(self):
         store = SimpleNamespace(has_prepared=Mock(side_effect=[False, True]))

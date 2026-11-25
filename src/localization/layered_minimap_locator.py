@@ -247,8 +247,10 @@ class LayeredMinimapLocator:
             color = image[:, :, :3].copy()
             color[image[:, :, 3] == 0] = 0
             image = color
-        elif image.ndim == 2:
+        if self.color and image.ndim == 2:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        elif not self.color and image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         image = cv2.resize(image, None, fx=fx, fy=fy, interpolation=cv2.INTER_AREA)
         return MinimapMapLocator(image, calibration)
 
@@ -539,6 +541,7 @@ class LayeredMinimapLocator:
             prior is not None,
             spatial_margin=spatial_margin,
             layer_margin=layer_margin,
+            competition_candidates=tuple(candidates),
         )
         # Keep same-floor competitors even when their cells are unreachable:
         # per-floor top-k truncation may hide weaker reachable alternatives.

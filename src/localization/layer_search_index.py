@@ -2,10 +2,12 @@
 
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 
 import cv2
 import numpy as np
+from PIL import Image
 
 from src.localization.localization_workers import decode_memory_bytes, ordered_results
 
@@ -108,8 +110,15 @@ class LayerSearchIndex:
         path = (root / entry["path"]).resolve()
         if not path.is_relative_to(root):
             raise ValueError("layer image escapes resource root")
-        image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
-        if image is None or image.shape[:2] != (entry["height"], entry["width"]):
+        try:
+            data = path.read_bytes()
+            with Image.open(BytesIO(data)) as header:
+                if header.size != (entry["width"], entry["height"]):
+                    return None
+        except (OSError, ValueError, Image.DecompressionBombError):
+            return None
+        image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_UNCHANGED)
+        if image is None or image.dtype != np.uint8 or image.shape[:2] != (entry["height"], entry["width"]):
             # The full scan retains retry and fail-closed overlap checks.
             return None
         image = cv2.resize(image, cls._size(entry), interpolation=cv2.INTER_AREA)

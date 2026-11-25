@@ -2783,6 +2783,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         try:
             while True:
                 pose = self._grid_nav_rope_pose()
+                if pose.get("map_id") != link.target.map_name:
+                    return False
                 point = None if pose is None else (pose["x"], pose["y"], pose["z"])
                 if point is None:
                     self.log_warning("绳索下行：读不到当前坐标，停止前进", notify=True)
@@ -2915,6 +2917,8 @@ class GridNavigationMixin(RuntimeStateMixin):
 
     @staticmethod
     def _grid_rope_target_reached(pose, link, target_range):
+        if pose.get("map_id") != link.target.map_name:
+            return False
         if not pose.get("tier_evidence_required") and not pose.get("tier_trusted"):
             return (
                 pose.get("y") is not None

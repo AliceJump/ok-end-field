@@ -277,7 +277,7 @@ class MapSetLocator:
             )
         candidates = []
         for mid, result in results:
-            for c in result.candidates:
+            for c in result.competition_candidates or result.candidates:
                 x, y = self.calibration.world_to_map(c.world_x, c.world_z)
                 candidates.append(replace(c, map_x=x, map_y=y, map_id=mid))
         # A world coordinate shared by different map spaces is not one candidate.
@@ -601,6 +601,16 @@ class MapSetLocator:
         for mid, result in results:
             locator = self._cache[mid]
             if not hasattr(locator, "base") or getattr(locator, "entries", ()):
+                allows = getattr(scope, "allows_candidate", None)
+                if (
+                    result is not None
+                    and callable(allows)
+                    and not allows(mid, "__main__", result.best.world_x, result.best.world_z)
+                ):
+                    # Preserve the peak as a competitor; it may veto but may not win.
+                    result = replace(
+                        result, status="rejected", reason="navigation_topology_unreachable", spatial_margin=0
+                    )
                 completed.append((mid, result))
                 continue
             # A single-tier map must keep the full-frame peak computed above.
