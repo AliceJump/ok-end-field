@@ -123,7 +123,9 @@ class TestYingTuoTask(unittest.TestCase):
 
         task.strafe_search.side_effect = search
         self.assertTrue(YingTuoTask.battle_and_exit(task))
-        task.wait_ocr.assert_called_with(match=task.lang.daily_battle_mixin.k_4cc61900, time_out=1, box=task.box.bottom_right, log=True)
+        task.wait_ocr.assert_called_with(
+            match=task.lang.daily_battle_mixin.k_4cc61900, time_out=1, box=task.box.bottom_right, log=True
+        )
         task.press_key.assert_called_once_with("f")
         self.assertLess(
             task.mock_calls.index(unittest.mock.call.press_key("f")),
