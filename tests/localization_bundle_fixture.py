@@ -214,8 +214,9 @@ class LocalizationBundleFixture:
             self.assertTrue(ok)
             return data.tobytes()
 
-        full_height = self.floor["height"] + 640
-        full_width = self.floor["width"] + 640
+        bounds = self.floor["bounds"]
+        full_height = round(4 * (bounds["north"] - bounds["south"])) + 640
+        full_width = round(4 * (bounds["east"] - bounds["west"])) + 640
         prepared_scale = 1280 / (4 * 1706.5) * 0.5
         region_height = round(full_height * prepared_scale)
         region_width = round(full_width * prepared_scale)

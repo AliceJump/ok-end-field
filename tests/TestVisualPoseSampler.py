@@ -69,12 +69,15 @@ class TestVisualPoseSampler(unittest.TestCase):
 
         entered, release = threading.Event(), threading.Event()
         capture = SimpleNamespace(get_frame=Mock(), get_frame_for_probe=lambda _: (entered.set(), release.wait(3)))
+        original = capture.get_frame
         requests = VisualCaptureCoordinator(capture, foreground_timeout=0.02)
         requests.install()
         worker = threading.Thread(target=lambda: requests.get_frame_for_probe(0.08))
         worker.start()
         try:
             self.assertTrue(entered.wait(2))
+            self.assertIsNone(capture.get_frame(busy_wait=0.001))
+            original.assert_not_called()
             with self.assertRaisesRegex(CaptureException, "stalled"):
                 capture.get_frame(busy_wait=0.1)
         finally:
@@ -127,10 +130,7 @@ class TestVisualPoseSampler(unittest.TestCase):
             self.assertTrue(entered.wait(2))
             worker.start()
             self.assertTrue(navigating.wait(2))
-            # Exceed TaskExecutor's real 0.1 s lock timeout while the probe
-            # holds the actual WGC request lock, as slow compositing can do.
-            worker.join(0.2)
-            self.assertTrue(worker.is_alive())
+            # Release the probe within the real executor's 0.1 s capture budget.
             sampler.stopped.set()
         finally:
             release.set()

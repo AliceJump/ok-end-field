@@ -354,7 +354,12 @@ class MinimapHeadingMixin:
         elif control_state is not None and result["rounds"] > 0 and not feedback_settled:
             control_state.update(
                 configured=per_px,
-                pending_feedback={"before": result["history"][-1]["before"], "tries": 0, "sent_at": time.monotonic()},
+                pending_feedback={
+                    "before": result["history"][-1]["before"],
+                    "tries": 0,
+                    "sent_at": time.monotonic(),
+                    "eligible": full_probe and not rejected_probe,
+                },
             )
         return result
 
@@ -378,7 +383,13 @@ class MinimapHeadingMixin:
         result["ok"] = settled and after is not None and abs(result["error"]) <= tolerance
         configured_hold = self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD)
         full_probe = configured_hold > 0 and (max_probe_s is None or max_probe_s >= configured_hold)
-        if settled and after is not None and full_probe and not result.get("probe_rejected"):
+        if (
+            settled
+            and after is not None
+            and full_probe
+            and (probe or pending.get("eligible", False))
+            and not result.get("probe_rejected")
+        ):
             control_state.update(
                 configured=per_px, gain=per_px, heading=after, gain_samples=[], observed_at=time.monotonic()
             )

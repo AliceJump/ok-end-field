@@ -12,6 +12,8 @@ import numpy as np
 
 def floor_options(entry):
     b = entry["bounds"]
+    if not all(math.isfinite(4 * span) and span > 0 for span in (b["east"] - b["west"], b["north"] - b["south"])):
+        raise ValueError("invalid floor bounds span")
     resize = (4 * ((b["east"] - b["west"]) / entry["width"]), 4 * ((b["north"] - b["south"]) / entry["height"]))
     proposal = (max(1, round((b["east"] - b["west"]) * 0.5)), max(1, round((b["north"] - b["south"]) * 0.5)))
     return {"resize": resize, "proposal_size": proposal}

@@ -1792,20 +1792,24 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         source = self.root / "Position Config.json"
         original = {CONFIG_VISUAL_MAP_ROOT: "assets/localization/maps"}
         source.write_text(json.dumps(original), encoding="utf-8")
+        self.write_prepared()
+        store = CalibratedMapStore(self.root / "maps")
+        read_bytes = Path.read_bytes
+        denied = Mock(side_effect=PermissionError("denied"))
+
+        def read(path):
+            return denied() if path == self.root / "prepared" / "READY" else read_bytes(path)
+
         with (
             patch(
                 "src.localization.position_config_migration.config_path",
-                side_effect=lambda *parts: str(self.root.joinpath(*parts)),
+                side_effect=lambda *p: str(self.root.joinpath(*p)),
             ),
-            patch.object(CalibratedMapStore, "has_valid_base_metadata", return_value=True),
-            patch.object(
-                CalibratedMapStore,
-                "has_prepared",
-                side_effect=PermissionError("denied"),
-            ) as has_prepared,
+            patch("src.localization.calibrated_map_store.CalibratedMapStore", return_value=store),
+            patch.object(Path, "read_bytes", read),
         ):
             self.assertFalse(migrate_visual_map_root())
-        has_prepared.assert_called_once_with(propagate_os=True)
+        denied.assert_called_once()
         self.assertEqual(json.loads(source.read_text(encoding="utf-8")), original)
 
     def test_visual_map_migration_does_not_trust_manifest_without_base_mapping(self):
@@ -2655,7 +2659,13 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         locator.set_search_ready_callback(notify)
         entered, release, closed = threading.Event(), threading.Event(), threading.Event()
         self.addCleanup(release.set)
-        locator._cache["map01"].close.side_effect = closed.set
+        close_maps = locator._close_maps
+
+        def finish_close():
+            close_maps()
+            closed.set()
+
+        locator._close_maps = finish_close
 
         def search(*args):
             entered.set()

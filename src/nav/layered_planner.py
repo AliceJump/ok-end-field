@@ -480,7 +480,7 @@ class LayeredPlanner:
                 notes.append(f"分段在还原阶段不可达：{plan.reason}")
                 run_start = run_end = None
                 return False
-            if plan.cost <= 1e-9:
+            if plan.cost <= 1e-9 and any(edge[0] == "link" for edge in chain):
                 # 零长段（起点已在连接端点区域内时会出现）：不是"一步"，丢掉。
                 # 保留它会让路线多出"原地不动"的阶段，也会让只用于展示的 tiers 出现
                 # 重复层——代价不受影响，但不该出现在结果里。

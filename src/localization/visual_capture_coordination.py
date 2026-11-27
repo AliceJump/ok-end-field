@@ -1,6 +1,7 @@
 """Coordinate foreground screenshots with navigation's opportunistic probes."""
 
 import threading
+import time
 
 from ok.task.exceptions import CaptureBusyException, CaptureException
 
@@ -44,12 +45,21 @@ class VisualCaptureCoordinator:
             self._foreground_requests += 1
         try:
             with self._condition:
-                ready = self._condition.wait_for(
-                    lambda: not self._probe_active,
-                    timeout=self._foreground_timeout,
-                )
-                if not ready:
-                    raise CaptureException("visual probe stalled during foreground capture")
+                if self._probe_active:
+                    budget = kwargs.get("busy_wait", args[0] if args else 0)
+                    started = time.monotonic()
+                    ready = self._condition.wait_for(
+                        lambda: not self._probe_active, timeout=min(self._foreground_timeout, max(0, budget))
+                    )
+                    if not ready:
+                        if self._cancelled or self._foreground_timeout <= budget:
+                            raise CaptureException("visual probe stalled during foreground capture")
+                        return None
+                    remaining = max(0.0, budget - (time.monotonic() - started))
+                    if args:
+                        args = (remaining, *args[1:])
+                    elif "busy_wait" in kwargs:
+                        kwargs["busy_wait"] = remaining
             return self._original(*args, **kwargs)
         finally:
             with self._condition:

@@ -25,7 +25,7 @@ from src.localization.minimap_map_locator import (
     MAP_PIXELS_PER_METER,
     MapCalibration,
 )
-from src.localization.tiled_map_image import TiledMapImage
+from src.localization.tiled_map_image import TiledMapImage, floor_options
 
 PREPARED_DIRNAME = "prepared"
 PREPARED_KIND = "okef-prepared-localization"
@@ -48,11 +48,6 @@ MAX_ATLAS_CACHE_BYTES = 128 * 1024**2
 
 def _sha256(data) -> str:
     return hashlib.sha256(data).hexdigest()
-
-
-def _digest(path: Path) -> str:
-    with path.open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
 def _read_json_bytes(path: Path):
@@ -132,8 +127,24 @@ def _floor_matrix(entry: dict) -> np.ndarray:
     )
 
 
-def _prepared_calibration(entry: dict) -> MapCalibration:
+def _composite_shape(entry, mask_shape):
+    fx, fy = floor_options(entry)["resize"]
+    padding = 2 * COMPOSITE_PADDING
+    normalized = round(entry["height"] * fy) + padding, round(entry["width"] * fx) + padding
+    native = entry["height"] + padding, entry["width"] + padding
+    for shape in (normalized, native):
+        if tuple(round(n * PREPARED_SCALE) for n in shape) == mask_shape:
+            return shape
+    raise ValueError(f"Invalid prepared floor mask metadata: {entry['id']}")
+
+
+def _prepared_calibration(entry: dict, full_shape) -> MapCalibration:
     matrix = _floor_matrix(entry)
+    # Published v1 atlases may use native source pixels before padding.
+    if full_shape == (entry["height"] + 2 * COMPOSITE_PADDING, entry["width"] + 2 * COMPOSITE_PADDING):
+        bounds = entry["bounds"]
+        matrix[0] = [(bounds["east"] - bounds["west"]) / entry["width"], 0, bounds["west"]]
+        matrix[1] = [0, -(bounds["north"] - bounds["south"]) / entry["height"], bounds["north"]]
     matrix[:, 2] -= matrix[:, :2] @ np.array([COMPOSITE_PADDING, COMPOSITE_PADDING], dtype=np.float64)
     inverse = np.linalg.inv(np.vstack((matrix, [0, 0, 1])))[:2]
     return MapCalibration(matrix, inverse)
@@ -328,10 +339,7 @@ class PreparedLocalizationBundle:
         try:
             region = floor.record["atlas_region"]
             mask = self._floor_mask(floor)
-            full_shape = (
-                int(floor.entry["height"]) + 2 * COMPOSITE_PADDING,
-                int(floor.entry["width"]) + 2 * COMPOSITE_PADDING,
-            )
+            full_shape = _composite_shape(floor.entry, tuple(floor.record["mask_shape"]))
             return PreparedAtlasFloorImage(
                 atlas,
                 region,
@@ -427,8 +435,9 @@ class PreparedLocalizationBundle:
             and source.get("webp_quality") == WEBP_QUALITY,
             "Prepared localization search settings do not match this client",
         )
+        self._source_manifest, source_digest = _read_json_bytes(self.localization_manifest_path)
         _require(
-            source.get("localization_manifest_sha256") == _digest(self.localization_manifest_path),
+            source.get("localization_manifest_sha256") == source_digest,
             "Prepared localization source manifest checksum mismatch",
         )
         package_root = self.root.parent.parent
@@ -453,7 +462,7 @@ class PreparedLocalizationBundle:
         _require(
             package.get("release_id") == release_id
             and package.get("dataset_sha256") == dataset_sha256
-            and package.get("localization_manifest_sha256") == _digest(self.localization_manifest_path)
+            and package.get("localization_manifest_sha256") == source_digest
             and package.get("prepared_manifest_sha256") == self.manifest_sha256,
             "Prepared navigation package checksums do not match payloads",
         )
@@ -556,7 +565,7 @@ class PreparedLocalizationBundle:
     def _validate_floor_metadata(self, atlases):
         floors = self.manifest.get("floors")
         _require(isinstance(floors, list), "Prepared localization floors are missing")
-        raw_manifest = _read_json(self.localization_manifest_path)
+        raw_manifest = self._source_manifest
         raw_bundle = LocalizationTileBundle(self.localization_manifest_path.parent, raw_manifest)
         self._localization_files = raw_bundle.files
         base_maps = raw_manifest.get("base_maps")
@@ -676,10 +685,7 @@ class PreparedLocalizationBundle:
                 _positive_int(source.get("width")) and _positive_int(source.get("height")),
                 f"Invalid source floor dimensions: {tier_id}",
             )
-            full_shape = (
-                int(source["height"]) + 2 * COMPOSITE_PADDING,
-                int(source["width"]) + 2 * COMPOSITE_PADDING,
-            )
+            full_shape = _composite_shape(source, mask_shape)
             expected_coarse_shape = (
                 round(full_shape[0] * PREPARED_SCALE),
                 round(full_shape[1] * PREPARED_SCALE),
@@ -772,7 +778,7 @@ class PreparedLocalizationBundle:
                 "width": source["width"],
                 "height": source["height"],
             }
-            calibration = _prepared_calibration(entry)
+            calibration = _prepared_calibration(entry, full_shape)
             self._floors[(map_id, tier_id)] = PreparedFloor(entry, calibration, record)
             self._floor_records[(map_id, tier_id)] = record
         _require(actual_ids == expected_ids, "Prepared floor coverage disagrees with source catalog")

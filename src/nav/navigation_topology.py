@@ -96,7 +96,9 @@ class NavigationTopologyScope:
             return True
         key = layer_key(map_id, tier_id)
         floor = self._floors.get(key)
-        return floor is None or bool(self._distances.get(key))
+        return (
+            floor is None or key == layer_key(self.anchor_map_id, self.anchor_tier_id) or bool(self._distances.get(key))
+        )
 
     def allows_map(self, map_id):
         """Keep unmodeled maps, but exclude modeled maps with no reachable floor."""
@@ -111,10 +113,17 @@ class NavigationTopologyScope:
         if floor is None:
             return True
         distances = self._distances.get(key)
-        if not distances:
-            return False
         i, j = floor.index(x, z)
-        if floor.state(i, j) != CELL_FREE or (i, j) not in distances:
+        if floor.state(i, j) != CELL_FREE:
+            return False
+        if key == layer_key(self.anchor_map_id, self.anchor_tier_id):
+            ai, aj = floor.index(self.anchor_x, self.anchor_z)
+            if (
+                abs(ai - i) + abs(aj - j) <= 1
+                and math.hypot(x - self.anchor_x, z - self.anchor_z) <= self.max_distance_m + self.tolerance_m
+            ):
+                return True
+        if not distances or (i, j) not in distances:
             return False
         # Account for localization/cell quantization without connecting islands
         # in the graph itself. The allowance is applied once to total distance.

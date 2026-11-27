@@ -13,7 +13,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 
 from scripts.nav.path_safety import resolve_under
-from scripts.nav.validate_visual_grid import ReferenceRecorder, report_accuracy, write_diagnostic
+from scripts.nav.validate_visual_grid import ReferenceRecorder, _restore_progress, report_accuracy, write_diagnostic
 from scripts.nav.validation_task import GridValidationTask, pose_scope_status, run_validation_task
 from scripts.nav.visual_validation import (
     NavigationSourcePolicy,
@@ -36,6 +36,51 @@ from src.nav.route_follower import FollowerConfig
 
 
 class TestVisualGridValidation(unittest.TestCase):
+    def test_stop_during_planning_blocks_first_navigation_key(self):
+        task = GridValidationTask.__new__(GridValidationTask)
+        task.validation_failure, task.stop_reason = "", "manual_stop"
+        task._stop_inputs = Mock()
+        with patch("scripts.nav.validation_task.MinimapNavigateToPoint.send_key_down") as send:
+            with self.assertRaisesRegex(RuntimeError, "manual_stop"):
+                task.send_key_down("w")
+            send.assert_not_called()
+            task._stop_inputs.assert_called_once()
+
+    def test_resume_floor_evidence_controls_coverage_and_obstacles(self):
+        region = np.ones((2, 2), dtype=bool)
+        grid = DenseGrid(region.astype(np.uint8), GridMeta(map_name="map02"))
+        plan = {
+            "grid_sha256": "grid",
+            "map_id": "map02",
+            "tier_id": "__main__",
+            "spacing_m": 1,
+            "component_cells": 4,
+            "max_error_m": 5,
+            "floor_evidence_sha256": "current",
+        }
+        obstacle = {"obstructed": True}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            options = SimpleNamespace(resume=root, max_error=5)
+            for name, value in (
+                ("covered_cells", [[0, 0]]),
+                ("traversed_cells", [[0, 0], [1, 0]]),
+                ("blocked_points", [obstacle]),
+            ):
+                (root / f"{name}.json").write_text(json.dumps(value), encoding="utf8")
+            for digest in (None, "older", "current"):
+                with self.subTest(digest=digest), patch("scripts.nav.validate_visual_grid.ROOT", root):
+                    previous = dict(plan)
+                    if digest is None:
+                        del previous["floor_evidence_sha256"]
+                    else:
+                        previous["floor_evidence_sha256"] = digest
+                    (root / "plan.json").write_text(json.dumps(previous), encoding="utf8")
+                    self.assertEqual(_restore_progress(options, grid, region, dict(plan)), [])
+                    self.assertEqual(options.resume_traversed, {(0, 0), (1, 0)})
+                    self.assertEqual(options.resume_covered, {(0, 0)} if digest == "current" else set())
+                    self.assertEqual(options.resume_failures, [obstacle] if digest == "current" else [])
+
     def test_floor_evidence_required_for_both_reference_endpoints(self):
         region = {"x0": 0, "x1": 4, "z0": 0, "z1": 4, "y_min": 5, "y_max": 8}
         main = DenseGrid(np.ones((4, 4), np.uint8), GridMeta(map_name="map02", floor_regions=[region]))
@@ -285,6 +330,8 @@ class TestVisualGridValidation(unittest.TestCase):
             _visual_sampler=object(),
             executor=SimpleNamespace(method=object()),
         )
+        service._current_visual_topology = lambda: None
+        service._visual_capture = service.executor.method
         timing = SimpleNamespace(frame_time=99.95, source="wgc_system_relative_time")
         with (
             patch("scripts.nav.validation_task.time.time", return_value=100.1),
@@ -346,6 +393,8 @@ class TestVisualGridValidation(unittest.TestCase):
         task.guard_done, task._watch = threading.Event(), Mock()
         task.options.port = 8000
         guard = SimpleNamespace(ident=None, start=Mock(), join=Mock())
+        service._current_visual_topology = lambda: None
+        service._visual_capture = service.executor.method
         timing = SimpleNamespace(frame_time=99.95, source="wgc_system_relative_time")
         with tempfile.TemporaryDirectory() as directory:
             task.directory = Path(directory)

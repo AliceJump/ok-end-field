@@ -240,7 +240,11 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                 same_observation = (timing is None and not state.get("visual_duplicate_frame")) or (
                     timing is not None and state.get("frame_t") == timing.frame_time
                 )
-                frame = normalize_visual_frame(frame)
+                try:
+                    frame = normalize_visual_frame(frame)
+                except ValueError as exc:
+                    self.log_warning(f"跳过无效的小地图录制帧: {exc}")
+                    continue
                 task_h_now, task_w_now = frame.shape[:2]
                 if map_to_world_px is None:
                     continue

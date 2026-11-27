@@ -37,6 +37,7 @@ from src.localization.prepared_localization import (
     PREPARED_SCALE,
     PreparedAtlasFloorImage,
     PreparedLocalizationBundle,
+    _composite_shape,
     _prepared_calibration,
 )
 from src.localization.template_correlation import correlate_bounded, correlate_color_zncc
@@ -763,6 +764,20 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
         self.assertIn("missing", locator._resource_errors)
         self.assertFalse(locator._warm_base_resources())
 
+    def test_native_prepared_atlas_uses_source_pixel_spacing_after_padding(self):
+        entry = {
+            "id": "floor",
+            "width": 200,
+            "height": 100,
+            "bounds": {"west": 10, "east": 30, "south": -10, "north": 10},
+        }
+        native = (740, 840)
+        coarse_shape = tuple(round(v * PREPARED_SCALE) for v in native)
+        self.assertEqual(_composite_shape(entry, coarse_shape), native)
+        calibration = _prepared_calibration(entry, native)
+        np.testing.assert_allclose(calibration.map_to_world(320, 320), (10, 10))
+        np.testing.assert_allclose(calibration.map_to_world(520, 420), (30, -10))
+
     def test_prepared_bundle_loads_atlas_floor_and_coverage_mask(self):
         self.write_floor((1.0, 1.0))
         prepared_root, manifest, floor_record = self.write_prepared()
@@ -794,7 +809,8 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
                 **entry,
                 "width": self.floor["width"],
                 "height": self.floor["height"],
-            }
+            },
+            image.shape[:2],
         )
         np.testing.assert_allclose(image.calibration.matrix, expected.matrix)
         covered = (10 + 0.5) / PREPARED_SCALE - 0.5

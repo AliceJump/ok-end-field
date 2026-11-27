@@ -1048,11 +1048,12 @@ class RopeCrossingTest(unittest.TestCase):
 
         def sometimes_missing():
             observations.append(self.task.w_down)
-            return None if len(observations) == 1 else real_pose()
+            return None if len(observations) == 2 else real_pose()
 
         with patch.object(self.task, "_grid_nav_rope_pose", side_effect=sometimes_missing):
             self.assertTrue(self._cross(self.link))
-        self.assertFalse(observations[1])
+        self.assertTrue(observations[1])
+        self.assertFalse(observations[2])
         self.assertFalse(self.task.w_down)
 
     def test_descent_aims_from_the_current_position(self):

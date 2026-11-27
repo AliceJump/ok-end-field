@@ -765,7 +765,7 @@ class MinimapMapLocator:
             return None
         visible = self._visible_masks(roi, mask, mask8, half)
         if self.color and visible is not None:
-            visible = self._white_visible_masks(roi, visible[0], visible[1], half)
+            visible = self._white_visible_masks(roi, mask, visible[0], half)
         if visible is None:
             return self._reject("minimap_icon_occlusion: required_total=0.55 required_quadrant=0.35")
         mask, mask8 = visible
@@ -819,10 +819,10 @@ class MinimapMapLocator:
         return cached
 
     @staticmethod
-    def _white_visible_masks(roi, mask, mask8, half):
+    def _white_visible_masks(roi, mask, visible, half):
         white = np.all(roi[:, :, :3] == 255, axis=2).astype(np.uint8)
         excluded = cv2.dilate(white, np.ones((5, 5), dtype=np.uint8))
-        return MinimapMapLocator._checked_visible_masks(mask, excluded, half)
+        return MinimapMapLocator._checked_visible_masks(mask, (excluded != 0) | ~visible.astype(bool), half)
 
     @staticmethod
     def _visible_masks(roi, mask, mask8, half):
@@ -1454,7 +1454,10 @@ class MinimapTracker:
         """
         key = None
         if scope is not None:
-            key = (getattr(scope, "anchor_map_id", None), getattr(scope, "anchor_tier_id", None))
+            key = tuple(
+                getattr(scope, field, None)
+                for field in ("anchor_map_id", "anchor_tier_id", "anchor_x", "anchor_z", "tolerance_m")
+            )
         if key == self._navigation_scope_identity:
             return
         self._navigation_scope_identity = key
@@ -1673,6 +1676,8 @@ class MinimapTracker:
             self._prediction_verified, self._prediction_verified_t = result.best, now
             self._prediction_margin = result.margin
             self._prediction_scope = ("recovery", map_id, self.search_radius_m)
+        elif result is not None and result.status == "accepted":
+            return replace(result, status="rejected", reason="weak_recovery_match")
         return result
 
     def _verify_prediction_competition(self, frame, geometry, result, now):
@@ -1732,6 +1737,10 @@ class MinimapTracker:
             > self.consistency_distance_m
         ]
         wide_margin = min(wide.margin, candidate_margin([best, *competitors]))
+        if not strong_candidate(
+            best, min(result.margin, wide_margin), self.initial_min_ncc, self.initial_min_full_ncc, 0
+        ):
+            return replace(result, status="rejected", reason="prediction_weak_local_match", spatial_margin=0.0)
         if wide_margin >= self.initial_min_margin:
             self._prediction_verified_t = now
             self._prediction_verified = best
@@ -1797,7 +1806,7 @@ class MinimapTracker:
         )
         if result is None or result.status != "accepted":
             return None, False
-        return result, True
+        return result, result.observed_at is None
 
     def _confirm_acquisition(self, result, current, used_prior):
         best = result.best

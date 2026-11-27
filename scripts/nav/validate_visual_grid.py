@@ -96,7 +96,8 @@ class ReferenceRecorder:
 
     def _run(self):
         try:
-            self._record()
+            with self.handle:
+                self._record()
         except Exception as exc:
             self.error = f"reference_recording_failed: {type(exc).__name__}: {exc}"
             self.ready.set()
@@ -162,11 +163,9 @@ class ReferenceRecorder:
 
     def close(self):
         self.stop.set()
-        self.thread.join()
-        try:
-            self.handle.close()
-        except OSError as exc:
-            self.error = f"reference_recording_failed: {type(exc).__name__}: {exc}"
+        self.thread.join(timeout=2.0)
+        if self.thread.is_alive():
+            self.error = "reference_recording_failed: stop_timeout"
 
 
 def report_accuracy(samples, references, *, map_id=None, layered=None):
@@ -206,6 +205,60 @@ def execute(args, grid, region, targets, directory, plan):
     from scripts.nav.validation_task import run_validation_task
 
     return run_validation_task(args, grid, region, targets, directory, plan)
+
+
+def _restore_progress(args, grid, region, plan):
+    args.resume_covered, args.resume_failures, args.resume_skipped = set(), [], set()
+    args.resume_traversed = set()
+    unconfirmed = []
+    if args.resume:
+
+        def resume_artifact(name):
+            return resolve_under(ROOT, args.resume / name, label="resume_artifact")
+
+        previous = json.loads(resume_artifact("plan.json").read_text(encoding="utf-8"))
+        for key in ("grid_sha256", "map_id", "tier_id", "spacing_m", "component_cells"):
+            if previous.get(key) != plan[key]:
+                raise ValueError(f"resume_mismatch: {key}")
+        args.resume_covered = set(
+            map(tuple, json.loads(resume_artifact("covered_cells.json").read_text(encoding="utf-8")))
+        )
+        traversed_file = resume_artifact("traversed_cells.json")
+        args.resume_traversed = (
+            set(map(tuple, json.loads(traversed_file.read_text(encoding="utf-8"))))
+            if traversed_file.exists()
+            else set(args.resume_covered)
+        )
+        # Old runs did not record their accuracy threshold. Keep their traversal
+        # history but remeasure coverage whose error bound cannot be established.
+        previous_error = previous.get("max_error_m")
+        floor_changed = previous.get("floor_evidence_sha256") != plan["floor_evidence_sha256"]
+        if floor_changed or previous_error != args.max_error:
+            args.resume_covered.clear()
+        if any(not grid.in_bounds(*p) or not region[p] for p in args.resume_covered):
+            raise ValueError("resume_component_mismatch")
+        if any(not grid.in_bounds(*p) or not region[p] for p in args.resume_traversed):
+            raise ValueError("resume_traversal_component_mismatch")
+        failure_file = resume_artifact("blocked_points.json")
+        if floor_changed:
+            args.resume_failures = []
+        elif failure_file.exists():
+            args.resume_failures = json.loads(failure_file.read_text(encoding="utf-8"))
+        elif resume_artifact("failure_analysis.json").exists():
+            failure = json.loads(resume_artifact("failure_analysis.json").read_text(encoding="utf-8"))
+            args.resume_failures = [
+                {
+                    "position": failure["last_visual_position"],
+                    "goal": failure["last_goal"],
+                    "reason": failure["navigation_failure"],
+                    "obstructed": failure.get("obstructed") is True,
+                    "source_run": str(args.resume.resolve()),
+                }
+            ]
+        unconfirmed = [item for item in args.resume_failures if not item.get("obstructed")]
+        args.resume_failures = [item for item in args.resume_failures if item.get("obstructed")]
+        plan.update(resumed_from=str(args.resume.resolve()), inherited_covered_cells=len(args.resume_covered))
+    return unconfirmed
 
 
 def main():
@@ -304,53 +357,7 @@ def main():
         "start_snap_m": start_snap_m,
         "administrator": bool(ctypes.windll.shell32.IsUserAnAdmin()),
     }
-    args.resume_covered, args.resume_failures, args.resume_skipped = set(), [], set()
-    args.resume_traversed = set()
-    unconfirmed = []
-    if args.resume:
-
-        def resume_artifact(name):
-            return resolve_under(ROOT, args.resume / name, label="resume_artifact")
-
-        previous = json.loads(resume_artifact("plan.json").read_text(encoding="utf-8"))
-        for key in ("grid_sha256", "floor_evidence_sha256", "map_id", "tier_id", "spacing_m", "component_cells"):
-            if previous.get(key) != plan[key]:
-                raise ValueError(f"resume_mismatch: {key}")
-        args.resume_covered = set(
-            map(tuple, json.loads(resume_artifact("covered_cells.json").read_text(encoding="utf-8")))
-        )
-        traversed_file = resume_artifact("traversed_cells.json")
-        args.resume_traversed = (
-            set(map(tuple, json.loads(traversed_file.read_text(encoding="utf-8"))))
-            if traversed_file.exists()
-            else set(args.resume_covered)
-        )
-        # Old runs did not record their accuracy threshold. Keep their traversal
-        # history but remeasure coverage whose error bound cannot be established.
-        previous_error = previous.get("max_error_m")
-        if previous_error != args.max_error:
-            args.resume_covered.clear()
-        if any(not grid.in_bounds(*p) or not region[p] for p in args.resume_covered):
-            raise ValueError("resume_component_mismatch")
-        if any(not grid.in_bounds(*p) or not region[p] for p in args.resume_traversed):
-            raise ValueError("resume_traversal_component_mismatch")
-        failure_file = resume_artifact("blocked_points.json")
-        if failure_file.exists():
-            args.resume_failures = json.loads(failure_file.read_text(encoding="utf-8"))
-        elif resume_artifact("failure_analysis.json").exists():
-            failure = json.loads(resume_artifact("failure_analysis.json").read_text(encoding="utf-8"))
-            args.resume_failures = [
-                {
-                    "position": failure["last_visual_position"],
-                    "goal": failure["last_goal"],
-                    "reason": failure["navigation_failure"],
-                    "obstructed": failure.get("obstructed") is True,
-                    "source_run": str(args.resume.resolve()),
-                }
-            ]
-        unconfirmed = [item for item in args.resume_failures if not item.get("obstructed")]
-        args.resume_failures = [item for item in args.resume_failures if item.get("obstructed")]
-        plan.update(resumed_from=str(args.resume.resolve()), inherited_covered_cells=len(args.resume_covered))
+    unconfirmed = _restore_progress(args, grid, region, plan)
     plan["skip_blocked"] = args.skip_blocked
     plan["capture_fallback"] = args.capture_fallback
     plan["activate_game"] = args.activate_game

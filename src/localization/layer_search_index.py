@@ -1,8 +1,8 @@
 """Small, untrusted visual proposals for cold floor acquisition."""
 
+import os
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
-from io import BytesIO
 from pathlib import Path
 
 import cv2
@@ -111,9 +111,17 @@ class LayerSearchIndex:
         if not path.is_relative_to(root):
             raise ValueError("layer image escapes resource root")
         try:
-            data = path.read_bytes()
-            with Image.open(BytesIO(data)) as header:
-                if header.size != (entry["width"], entry["height"]):
+            limit = 65536 + 8 * entry["width"] * entry["height"]
+            with path.open("rb") as source:
+                size = os.fstat(source.fileno()).st_size
+                if size > limit:
+                    return None
+                with Image.open(source) as header:
+                    if header.size != (entry["width"], entry["height"]):
+                        return None
+                source.seek(0)
+                data = source.read(size + 1)
+                if not data or len(data) != size:
                     return None
         except (OSError, ValueError, Image.DecompressionBombError):
             return None

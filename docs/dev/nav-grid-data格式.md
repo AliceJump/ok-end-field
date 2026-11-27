@@ -51,7 +51,7 @@ nav-grid-data/
 
 `navigation/localization/prepared/` 随完整数据包直接发布，不是 ZIP 或可重建缓存。
 客户端把 `navigation/` 作为唯一运行根；缺少 prepared、`prepared-package.json`、
-`READY` 或任一绑定资源时报告下载不完整并拒绝定位。不会回退到运行时生成
+`READY` 或任一必需图集、索引或覆盖掩码时报告下载不完整并拒绝定位。不会回退到运行时生成
 `CompositeFloorImage` 概览，也不重新压缩资源。
 
 `READY` 的第三段必须是 `manifest.json` 的 SHA-256。manifest 使用
@@ -82,7 +82,7 @@ dataset、localization manifest、prepared manifest 的 SHA-256 和同一 releas
 
 ## 网格与世界坐标
 
-网格的 `magic=okef-nav-grid`、`schema_version=2`；`cells` 为二维 `uint8`，0 未知、1 可走、2 阻挡；`meta` 为 JSON。当前导航将未知格视为不可通行。
+网格的 `magic=okef-nav-grid`、`schema_version=2`；`cells` 为二维 `uint8`，0 未知、1 可走、2 阻挡；`meta` 为 JSON。默认导航禁止通过未知格，显式启用 `allow_unknown` 后允许规划穿越未知格。
 
 数组为 `cells[i,j]`，i 沿正 Z、j 沿正 X。格中心为：
 
@@ -110,7 +110,7 @@ Y 缺失表示未知；二维网格的 `origin[1]=0` 不能当作实测高度。
 - `zero` 明确表示没有非零载荷；楼层仅能用它表示全透明块。
 - 搜索图使用逻辑尺寸、ROI 与零填充，恢复像素原点；BGR 的非零 ROI 不等于楼层覆盖。
 
-发布包提供精确尺度的粗搜概览和楼层排序图，使用 `INTER_AREA`、4 匹配像素/米及 0.5 排序像素/米。定位服务归一化输入为 1280 宽，因此包内必须具备该宽度的搜索尺度。排序图缺失不能使对应楼层从完整竞争中消失。
+发布包提供精确尺度的粗搜概览和楼层排序图，使用 `INTER_AREA`、楼层源图按世界范围重采样为 4 匹配像素/米后再补边，排序图使用 0.5 排序像素/米。定位服务归一化输入为 1280 宽，因此包内必须具备该宽度的搜索尺度。排序图缺失不能使对应楼层从完整竞争中消失。
 
 所有路径相对包根并使用 `/`。读取器拒绝绝对路径、父目录跳转、Windows 驱动器或数据流路径、越界链接、重复资源身份、不完整瓦片覆盖和不符的摘要。缺失声明保留为缺失，不能通过删除声明制造完整覆盖。
 

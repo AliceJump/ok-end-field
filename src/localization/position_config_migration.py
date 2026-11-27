@@ -59,7 +59,12 @@ def _atomic_backup(source, backup):
         os.replace(temporary, backup)
     finally:
         if temporary is not None:
-            temporary.unlink(missing_ok=True)
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                logging.getLogger(__name__).warning(
+                    "Cannot remove migration temporary file %s", temporary, exc_info=True
+                )
 
 
 def _write_migrated_values(source, values):
@@ -79,7 +84,12 @@ def _write_migrated_values(source, values):
         return False
     finally:
         if temporary is not None:
-            temporary.unlink(missing_ok=True)
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                logging.getLogger(__name__).warning(
+                    "Cannot remove migration temporary file %s", temporary, exc_info=True
+                )
 
 
 def migrate_visual_map_root():

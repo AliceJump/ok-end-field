@@ -471,9 +471,17 @@ class MinimapVisualAnchorChainCorrector:
             return
         # The inherited position comes from the PREVIOUS solve. New edges
         # cannot retroactively make its unanchored component trustworthy.
-        successor_connected = self._connected_to_absolute_anchor(
-            target_index=self._nodes[1].index, before_index=self._nodes[-1].index
-        )
+        successor = None
+        if self._absolute_anchor_uid == self._nodes[0].uid and self._prev_positions is not None:
+            successor = next(
+                (
+                    node
+                    for node in self._nodes
+                    if 0 < node.index < len(self._prev_positions)
+                    and self._connected_to_absolute_anchor(target_index=node.index, before_index=self._nodes[-1].index)
+                ),
+                None,
+            )
         if self._prev_positions is not None and len(self._prev_positions) >= 2:
             self._window_anchor_pos = self._prev_positions[1].copy()
         else:
@@ -485,12 +493,12 @@ class MinimapVisualAnchorChainCorrector:
                 and len(self._prev_positions) >= 2
                 and self._nodes
                 and self._absolute_anchor_pos is not None
-                and successor_connected
+                and successor is not None
             ):
                 self._absolute_anchor_pos = self._absolute_anchor_pos + (
-                    self._prev_positions[1] - self._prev_positions[0]
+                    self._prev_positions[successor.index] - self._prev_positions[0]
                 )
-                self._absolute_anchor_uid = self._nodes[0].uid
+                self._absolute_anchor_uid = successor.uid
             else:
                 self._absolute_anchor_uid = None
                 self._absolute_anchor_pos = None

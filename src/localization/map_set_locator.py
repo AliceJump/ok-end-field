@@ -296,13 +296,11 @@ class MapSetLocator:
         margin = candidate_margin(spatial)
         margin = min(margin, chosen_result.margin)
         status = self._candidate_status(best, margin)
-        pending_resources = any(
-            result.reason == "layer_scan_pending" or result.reason.startswith("layer_resource_error:")
-            for _, result in results
-        )
+        resource_error = next((r.reason for _, r in results if r.reason.startswith("layer_resource_error:")), None)
+        pending_resources = resource_error or any(r.reason == "layer_scan_pending" for _, r in results)
         topology_rejected = chosen_result.reason.startswith("navigation_topology_")
         reason = (
-            "layer_scan_pending"
+            (resource_error or "layer_scan_pending")
             if pending_resources
             else (chosen_result.reason if topology_rejected else "map competition")
         )
@@ -489,8 +487,9 @@ class MapSetLocator:
             return None
         if self._async_search:
             return self._locate_async(frame, geometry, started)
+        observed_at = self._frame_time if self._frame_time is not None else time.time()
         completed = self._search_snapshot(frame, geometry, started)
-        return completed
+        return replace(completed, observed_at=observed_at) if completed is not None else None
 
     def _locate_async(self, frame, geometry, started):
         future = self._search_future

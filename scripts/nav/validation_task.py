@@ -128,6 +128,10 @@ class GridValidationTask(MinimapNavigateToPoint):
             )
         return config
 
+    def send_key_down(self, key, *args, **kwargs):
+        self._check_stop()
+        return super().send_key_down(key, *args, **kwargs)
+
     def _set_grid_walking(self, held):
         was_walking = self._grid_nav_w_held
         super()._set_grid_walking(held)
@@ -556,6 +560,7 @@ class GridValidationTask(MinimapNavigateToPoint):
                 self.movement_started = True
                 self.navigation_failure = {}
                 self.last_navigation_warning, self.navigation_running = "", True
+                self._check_stop()
                 if not self.navigate_grid_to(
                     self.goal,
                     map_id=self.grid.meta.map_name,

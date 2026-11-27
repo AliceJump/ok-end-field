@@ -478,6 +478,13 @@ class TestNavigationTopology(unittest.TestCase):
 
         return TierLink("test", endpoint(source, source_x), endpoint(target, target_x), bidirectional, kind, 999)
 
+    def test_nearby_points_across_free_cell_boundary_use_actual_distance(self):
+        topology = NavigationTopology(LayeredMap({("map02", ""): _grid(["oo"])}), tolerance_m=0)
+        scope = topology.scope("map02", MAIN_TIER, (0.99, 0.5), 0.03)
+        self.assertTrue(scope.allows_tier("map02", MAIN_TIER))
+        self.assertTrue(scope.allows_candidate("map02", MAIN_TIER, 1.01, 0.5))
+        self.assertFalse(scope.allows_candidate("map02", MAIN_TIER, 1.1, 0.5))
+
     def test_disconnected_island_and_diagonal_corner_are_not_reachable(self):
         for rows, candidate in ((["ooo###ooo"], (8.5, 0.5)), (["o#", "#o"], (1.5, 1.5))):
             topology = NavigationTopology(LayeredMap({("map02", ""): _grid(rows)}), tolerance_m=0)
@@ -559,8 +566,11 @@ class TestNavigationTopology(unittest.TestCase):
                 self.assertFalse(scope.allows_candidate("map02", "b", destination, 0.5))
 
     def test_invalid_anchor_or_budget_and_overflow_return_no_partial_scope(self):
-        topology = NavigationTopology(LayeredMap({("map02", ""): _grid(["ooo#."])}), max_expand=1)
+        layered = LayeredMap({("map02", ""): _grid(["ooo#."])})
+        topology = NavigationTopology(layered, max_expand=1)
         self.assertIsNone(topology.scope("map02", "", (0.5, 0.5), 10))
+        topology = NavigationTopology(layered)
+        self.assertIsNotNone(topology.scope("map02", "", (0.5, 0.5), 1))
         for tier, point, budget in (
             (None, (0.5, 0.5), 1),
             ("missing", (0.5, 0.5), 1),

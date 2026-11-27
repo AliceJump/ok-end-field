@@ -100,6 +100,7 @@ class NavigationSourcePolicy:
         stamp = (pose or {}).get("frame_t")
         if isinstance(stamp, (int, float)) and math.isfinite(stamp) and stamp > 0:
             if ready and self._last_frame is not None and stamp <= self._last_frame:
+                self.bad = 0
                 return "capture" if self.capture else "visual_map"
             self._last_frame = stamp
         self.good = self.good + 1 if ready else 0
@@ -287,13 +288,23 @@ def error_statistics(pairs):
     if not pairs:
         return {"count": 0}
     delta = np.asarray(pairs, dtype=float)
-    distance = np.linalg.norm(delta, axis=1)
+    with np.errstate(over="ignore", invalid="ignore"):
+        distance = np.hypot(delta[:, 0], delta[:, 1])
+    valid = np.isfinite(distance)
+    delta, distance = delta[valid], distance[valid]
+    rejected = len(pairs) - len(distance)
+    if not len(distance):
+        return {"count": 0, "invalid_count": rejected}
+    scale = distance.max()
+    # Scale before squaring and taking medians to avoid overflowing finite measurements.
+    normalized = distance / scale if scale else distance
     return {
-        "count": len(pairs),
-        "median_m": float(np.median(distance)),
+        "count": len(distance),
+        **({"invalid_count": rejected} if rejected else {}),
+        "median_m": float(np.median(normalized) * scale),
         "p95_m": float(np.quantile(distance, 0.95)),
         "max_m": float(distance.max()),
-        "rmse_m": float(np.sqrt(np.mean(distance**2))),
-        "bias_x_m": float(np.median(delta[:, 0])),
-        "bias_z_m": float(np.median(delta[:, 1])),
+        "rmse_m": float(np.sqrt(np.mean(normalized**2)) * scale),
+        "bias_x_m": float(np.median(delta[:, 0] / scale) * scale) if scale else 0.0,
+        "bias_z_m": float(np.median(delta[:, 1] / scale) * scale) if scale else 0.0,
     }

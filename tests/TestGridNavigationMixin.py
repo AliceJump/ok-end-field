@@ -460,7 +460,10 @@ class TestGridNavigationMixin(unittest.TestCase):
         source = SimpleNamespace(
             map_id="observed_map", sample=mock.Mock(return_value=observed), set_navigation_topology=mock.Mock()
         )
-        service = SimpleNamespace(_visual_source=source, _navigation_topology_provider=None, _visual_input_shape=None)
+        service = WorldPoseService.__new__(WorldPoseService)
+        service._visual_source = source
+        service._navigation_topology_provider = None
+        service._visual_input_shape = None
         self.task.next_frame = lambda: np.zeros((720, 1280, 3), np.uint8)
 
         @contextmanager
@@ -1518,6 +1521,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         ctx = self._control_tick(frame_t=100, frame_time_source="wgc_system_relative_time")
         ctx.walking_during_sample = True
         ctx.session.poll_duration_s = 0.8
+        self.task._grid_nav_forward.edge(True, 100)
         with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=100.1):
             self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx), 0.1)
             self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.04), 0.1)
@@ -1528,6 +1532,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             ctx.pose["frame_t"] = stamp
             with mock.patch("src.tasks.navigation.mixin.grid_navigation_mixin.time.time", return_value=101):
                 self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.2), 0.5)
+        ctx.pose["frame_t"] = None
         ctx.walking_during_sample = False
         self.assertAlmostEqual(self.task._grid_nav_moving_age(ctx, action_duration_s=0.2), 0.2)
 

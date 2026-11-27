@@ -65,6 +65,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._visual_sample_lock = threading.RLock()
         self._visual_sampler = None
         self._sampled_visual_state = None
+        self._visual_capture = None
         self._visual_input_stamp = None
         self._visual_input_shape = None
         self._init_minimap_heading_mixin()
@@ -200,6 +201,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._minimap_started = False
         self._minimap_last_state = None
         self._sampled_visual_state = None
+        self._visual_capture = None
         self._visual_input_stamp = None
         self._visual_input_shape = None
         self.runtime_state_hub.clear(RuntimeTopic.WORLD_POSE)
@@ -237,7 +239,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         publish_world_pose(self.runtime_state_hub, state, source=source, now=self._now(now))
         return state
 
-    def _sample_visual_pose(self, frame):
+    def _sample_visual_pose(self, frame, *, capture=_UNSET, timing=_UNSET):
         if self._visual_source is None:
             return {
                 "x": None,
@@ -252,8 +254,27 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             }
         if frame is None:
             frame = self.next_frame()
-        timing = timing_for_frame(getattr(self.executor, "method", None), frame)
+        if capture is _UNSET:
+            capture = getattr(self.executor, "method", None)
+        if timing is _UNSET:
+            timing = timing_for_frame(capture, frame)
+        if capture is not self._visual_capture:
+            if self._visual_capture is not None:
+                self._visual_source.reset()
+            self._sampled_visual_state = None
+            self._visual_input_stamp = None
+            self._visual_input_shape = None
+            self._visual_capture = capture
         stamp = timing.frame_time if timing is not None else time.time()
+        try:
+            topology = self._current_visual_topology()
+        except (OSError, ValueError) as exc:
+            self._sampled_visual_state = None
+            self._visual_source.reset()
+            return self._visual_source.unavailable(f"visual_resource_error:{type(exc).__name__}")
+        if topology is not getattr(self, "_visual_topology", None):
+            self._sampled_visual_state = None
+            self._visual_topology = topology
         previous = self._sampled_visual_state
         frame_shape = getattr(frame, "shape", None)
         shape = None if frame_shape is None else frame_shape[:2]
@@ -278,7 +299,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             # Coalesce that request, without rolling the source clock back or
             # restamping cached coordinates as a fresh observation.
             return {**previous, "visual_duplicate_frame": True}
-        state = self._locate_visual_frame(frame, stamp, timing)
+        state = self._locate_visual_frame(frame, stamp, timing, topology)
         state.setdefault("frame_t", stamp)
         if time.time() - state["frame_t"] > 2:
             state = self._visual_source.unavailable("visual_result_too_old")
@@ -309,7 +330,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
                 self._visual_sampler = None
         sampler = VisualPoseSampler(
             capture,
-            self._sample_continuous_visual,
+            lambda frame, stopped: self._sample_continuous_visual(frame, stopped, capture),
             lambda: (
                 not self.executor.exit_event.is_set()
                 and not self.executor.paused
@@ -333,30 +354,36 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         if sampler is not None:
             sampler.wake()
 
-    def _sample_continuous_visual(self, frame, stopped):
+    def _sample_continuous_visual(self, frame, stopped, capture=_UNSET):
         with self._visual_sample_lock:
             if stopped.is_set() or self._visual_source is None or self.experimental_capture_enabled():
                 return
-            if timing_for_frame(getattr(self.executor, "method", None), frame) is None:
+            current = getattr(self.executor, "method", None)
+            if capture is _UNSET:
+                capture = current
+            if current is not capture:
+                return
+            timing = timing_for_frame(capture, frame)
+            if timing is None:
                 return
             try:
-                self._sample_visual_pose(frame)
+                self._sample_visual_pose(frame, capture=capture, timing=timing)
             except Exception:
                 self._visual_source.reset()
                 self._sampled_visual_state = None
                 raise
 
-    def _locate_visual_frame(self, frame, stamp, timing):
+    def _current_visual_topology(self):
+        provider = self._navigation_topology_provider
+        return provider(self._visual_source.map_id) if provider is not None else None
+
+    def _locate_visual_frame(self, frame, stamp, timing, topology=_UNSET):
         if timing is not None and not -MAX_FRAME_LEAD_S <= time.time() - timing.frame_time <= 2:
             self._visual_source.reset()
             return self._visual_source.unavailable("stale_visual_frame")
         try:
-            provider = self._navigation_topology_provider
-            topology = provider(self._visual_source.map_id) if provider is not None else None
-            if topology is not getattr(self, "_visual_topology", None):
-                # A scope change must not republish a pose validated under the old scope.
-                self._visual_topology = topology
-                self._sampled_visual_state = None
+            if topology is _UNSET:
+                topology = self._current_visual_topology()
             self._visual_source.set_navigation_topology(topology)
             if frame is not None:
                 shape = frame.shape[:2]
