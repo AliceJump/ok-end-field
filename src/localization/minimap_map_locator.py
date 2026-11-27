@@ -783,6 +783,16 @@ class MinimapMapLocator:
             flat[~mask] = float(ring[mask].mean())
             if not texture_valid(flat, "legacy_masked"):
                 return None
+        if self.color:
+            narrowed = self._color_visible_masks(roi, cached[0], mask, half)
+            if narrowed is not None:
+                narrow_mask, narrow_mask8 = narrowed
+                narrow_flat = ring.copy()
+                narrow_flat[~narrow_mask] = ring[narrow_mask].mean(axis=0)
+                # Bright structures may be the only terrain on a sparse HUD.
+                # Keep the already validated template if narrowing erases its texture.
+                if texture_valid(narrow_flat, "dim_glyph_masked"):
+                    mask, mask8, flat = narrow_mask, narrow_mask8, narrow_flat
         self.last_failure_reason = ""
         return _PreparedTemplate(
             flat=flat,
@@ -823,6 +833,21 @@ class MinimapMapLocator:
         white = np.all(roi[:, :, :3] == 255, axis=2).astype(np.uint8)
         excluded = cv2.dilate(white, np.ones((5, 5), dtype=np.uint8))
         return MinimapMapLocator._checked_visible_masks(mask, (excluded != 0) | ~visible.astype(bool), half)
+
+    @staticmethod
+    def _color_visible_masks(roi, mask, visible, half):
+        # Resampling can dim a whole HUD symbol below the white-core threshold.
+        # Exclude its outline too, provided sufficient terrain survives in every quadrant.
+        colors = roi[:, :, :3]
+        high, low = colors.max(axis=2), colors.min(axis=2)
+        glyph = (low >= 135) | ((high >= 135) & (high.astype(np.int16) - low >= 75))
+        padding = max(1, round(half / 24))
+        size = 2 * padding + 1
+        outline = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
+        excluded = cv2.dilate(glyph.astype(np.uint8), outline)
+        if not np.any((excluded != 0) & visible):
+            return None
+        return MinimapMapLocator._checked_visible_masks(mask, (excluded != 0) | ~visible, half)
 
     @staticmethod
     def _visible_masks(roi, mask, mask8, half):

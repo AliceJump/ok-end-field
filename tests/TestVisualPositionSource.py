@@ -1081,6 +1081,19 @@ class TestFactoryOcclusionRejection(unittest.TestCase):
 
 
 class TestDenseIconMinimapPosition(unittest.TestCase):
+    def test_resampled_field_icons_allow_unseeded_base_map_search(self):
+        fixture = Path(__file__).parent / "fixtures/minimap/resampled_icons_hud.png"
+        frame = np.zeros((720, 1280, 3), np.uint8)
+        frame[50:172, 47:169] = cv2.imdecode(np.frombuffer(fixture.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
+        root = Path(__file__).resolve().parents[1] / "assets/nav-grid-data/navigation/localization/maps"
+        _, layered = CalibratedMapStore(root).load("map02")
+        self.addCleanup(layered.close)
+        result = layered.base.locate_global(frame, MinimapGeometry.from_frame(1280, 720))
+        self.assertIsNotNone(result)
+        self.assertEqual(result.status, "accepted")
+        # Independent packet coordinates are used only to check the result.
+        self.assertLess(np.hypot(result.best.world_x + 570.862, result.best.world_z + 301.929), 1.0)
+
     def test_bright_terrain_with_outlined_icons_acquires_with_color_thresholds(self):
         root = Path(__file__).parent / "fixtures/minimap"
         metadata = json.loads((root / "dense_icons_mapping.json").read_text(encoding="utf-8"))
@@ -2494,6 +2507,44 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         self.assertFalse(np.shares_memory(submitted, fresh))
         np.testing.assert_array_equal(submitted, fresh)
         self.assertIs(locator._search_future, replacement)
+
+    def test_slow_global_candidate_requires_current_frame_confirmation(self):
+        old = np.zeros((4, 4, 3), np.uint8)
+        frame = np.ones_like(old)
+        seed = self.result(0.99, margin=0.2)
+        seed = replace(seed, best=replace(seed.best, map_id="map01"))
+        for status, tier, map_id, accepted in (
+            ("accepted", "__main__", "map01", True),
+            ("ambiguous", "__main__", "map01", False),
+            ("accepted", "other", "map01", False),
+            ("accepted", "__main__", "map02", False),
+        ):
+            with self.subTest(status=status, tier=tier, map_id=map_id):
+                locator = self.async_locator()
+                future = Future()
+                future.set_result(_SearchOutcome(seed, "", 100, "map01"))
+                locator._search_started_at = time.monotonic() - 6
+                locator._search_future, locator._search_frame, locator._search_shape = future, old, old.shape
+                locator._frame_time = 100
+                locator._workers = SimpleNamespace(closed=False, close=Mock(), acquisitions=Mock())
+                candidate = replace(seed.best, world_x=11, tier_id=tier, map_id=map_id)
+                locator.locate_on_map = Mock(return_value=replace(seed, status=status, best=candidate))
+                # The worker can wake the sampler before the next capture arrives.
+                self.assertIsNone(locator.locate_global(old, None))
+                locator.locate_on_map.assert_not_called()
+                locator._workers.acquisitions.submit.assert_not_called()
+                locator._frame_time = 106
+                result = locator.locate_global(frame, None)
+                self.assertIs(locator.locate_on_map.call_args.args[0], frame)
+                if accepted:
+                    self.assertIs(result.best, candidate)
+                    self.assertEqual(result.observed_at, 106)
+                    locator._frame_time += 0.2
+                    self.assertEqual(locator.locate_global(frame.copy(), None).observed_at, 106.2)
+                else:
+                    self.assertIsNone(result)
+                    self.assertIsNone(locator._active)
+                    locator._workers.acquisitions.submit.assert_called_once()
 
     def test_identical_async_snapshot_is_reused_without_a_second_search(self):
         locator = self.async_locator()

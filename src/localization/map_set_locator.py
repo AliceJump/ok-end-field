@@ -1,5 +1,6 @@
 """Automatic base-map selection without packet coordinates or WS map IDs."""
 
+import math
 import threading
 import time
 from collections import OrderedDict
@@ -20,6 +21,9 @@ from src.localization.minimap_map_locator import (
 )
 
 _SEARCH_RESULT_MAX_AGE_S = 2.0
+# A slow full competition can seed a new measurement, never a current pose.
+_COLD_CANDIDATE_MAX_AGE_S = 30.0
+_COLD_CONFIRM_RADIUS_M = 12.0
 
 
 @dataclass(frozen=True)
@@ -50,6 +54,7 @@ class MapSetLocator:
         self._navigation_scope = None
         self._navigation_scope_key = None
         self._async_search = bool(async_search and workers is not None)
+        self._cold_candidate = None
         self._search_future = None
         self._search_generation = 0
         self._search_started_generation = 0
@@ -111,6 +116,7 @@ class MapSetLocator:
         self._navigation_scope = scope
         self._navigation_scope_key = scope_key
         if scope_changed:
+            self._cold_candidate = None
             if self._search_future is not None:
                 self._search_generation += 1
                 self._scope_change_pending = True
@@ -232,6 +238,7 @@ class MapSetLocator:
         self._clear_search_hint()
 
     def _clear_search_hint(self):
+        self._cold_candidate = None
         self._active = None
         self._search_frame = None
         self._search_geometry = None
@@ -491,6 +498,37 @@ class MapSetLocator:
         completed = self._search_snapshot(frame, geometry, started)
         return replace(completed, observed_at=observed_at) if completed is not None else None
 
+    def _confirm_cold_candidate(self, frame, geometry):
+        proposal, shape, search_geometry, expires, proposal_stamp = self._cold_candidate
+        now = self._frame_time if self._frame_time is not None else time.time()
+        best = proposal.best
+        if (
+            time.monotonic() <= expires
+            and frame.shape == shape
+            and geometry == search_geometry
+            and 0 <= now - proposal_stamp <= _COLD_CANDIDATE_MAX_AGE_S
+        ):
+            if now == proposal_stamp:
+                # Completion may wake the sampler before a newer capture is available.
+                self.last_failure_reason = "visual_global_search_pending"
+                return None
+            local = self.locate_on_map(
+                frame, best.map_id, (best.world_x, best.world_z), geometry, search_radius_m=_COLD_CONFIRM_RADIUS_M
+            )
+            if (
+                local is not None
+                and local.status == "accepted"
+                and local.best.map_id == best.map_id
+                and local.best.tier_id == best.tier_id
+                and strong_candidate(local.best, local.margin)
+                and math.hypot(local.best.world_x - best.world_x, local.best.world_z - best.world_z)
+                <= _COLD_CONFIRM_RADIUS_M
+            ):
+                self._active = best.map_id
+                return replace(local, spatial_margin=min(local.margin, proposal.margin), observed_at=now)
+        self._clear_search_hint()
+        return None
+
     def _locate_async(self, frame, geometry, started):
         future = self._search_future
         if future is not None:
@@ -546,12 +584,36 @@ class MapSetLocator:
                 if search_observed_at is None:
                     return completed
                 return replace(completed, observed_at=search_observed_at)
-            self._clear_search_hint()
+            if (
+                isinstance(outcome, _SearchOutcome)
+                and snapshot is not None
+                and search_geometry == geometry
+                and _SEARCH_RESULT_MAX_AGE_S < search_age <= _COLD_CANDIDATE_MAX_AGE_S
+                and completed is not None
+                and completed.status == "accepted"
+                and completed.best.map_id
+                and completed.best.map_id == outcome.active_map
+                and completed.best.tier_id is not None
+                and strong_candidate(completed.best, completed.margin)
+            ):
+                self._cold_candidate = (
+                    completed,
+                    snapshot.shape,
+                    geometry,
+                    time.monotonic() + _SEARCH_RESULT_MAX_AGE_S,
+                    search_observed_at,
+                )
+            else:
+                self._clear_search_hint()
             self.last_failure_reason = failure_reason
             if completed is None and failure_reason.startswith(("layer_resource_error:", "visual_map_resource_error:")):
                 # Preserve a resource error for this call. The next fresh frame
                 # retries the search under the existing backoff.
                 return None
+        if self._cold_candidate is not None:
+            confirmed = self._confirm_cold_candidate(frame, geometry)
+            if self._cold_candidate is not None:
+                return confirmed
         if not self._warm_base_resources(self._navigation_scope):
             required = set(self._required_map_ids(self._navigation_scope))
             pending = ",".join(mid for mid in required if mid not in self._cache)

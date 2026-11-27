@@ -160,6 +160,18 @@ class TestMinimapMapLocatorMath(unittest.TestCase):
         expected[8:13, 8:13] = False
         np.testing.assert_array_equal(visible, expected)
 
+    def test_color_mask_excludes_resampled_glyphs_and_preserves_coverage(self):
+        roi = np.full((97, 97, 3), 80, np.uint8)
+        roi[30, 30] = 145
+        roi[60, 60] = (150, 100, 65)
+        mask = np.ones(roi.shape[:2], dtype=bool)
+        visible, _ = MinimapMapLocator._color_visible_masks(roi, mask, mask, 48)
+        self.assertFalse(visible[30, 32])
+        self.assertFalse(visible[62, 60])
+        self.assertTrue(visible[30, 33])
+        roi[:] = 145
+        self.assertIsNone(MinimapMapLocator._color_visible_masks(roi, mask, mask, 48))
+
     def test_color_tracker_uses_color_score_thresholds(self):
         calibration = MapCalibration(np.eye(2, 3), np.eye(2, 3))
         locator = MinimapMapLocator(np.zeros((10, 10, 3), np.uint8), calibration)
