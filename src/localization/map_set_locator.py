@@ -317,6 +317,7 @@ class MapSetLocator:
             prior is not None,
             spatial_margin=margin,
             layer_margin=chosen_result.layer_margin,
+            competition_candidates=(best, *others),
         )
         if commit_hint and not pending_resources and not topology_rejected and strong_candidate(best, margin):
             self._active = best.map_id
@@ -769,6 +770,9 @@ class MapSetLocator:
         self._settle_search_scope()
 
     def locate_near(self, frame, previous_world, geometry, *, search_radius_m=80.0, use_global=False):
+        if self._closed:
+            self.last_failure_reason = "visual_locator_closed"
+            return None
         future = self._search_future
         if future is not None and not future.done():
             self.last_failure_reason = "visual_global_search_pending"

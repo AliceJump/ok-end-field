@@ -187,6 +187,7 @@ class NavSession:
     walk_speed_m_s: float = 8.0
     #: 是否已经规划过至少一次，用于区分首次规划与重规划。
     had_plan: bool = False
+    history_map_id: str | None = None
     confirmation_after: float | None = None
     last_walk_frame: float | None = None
     recovery: RecoveryEpisode | None = None

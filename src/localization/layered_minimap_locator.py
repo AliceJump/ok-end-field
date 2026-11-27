@@ -377,7 +377,9 @@ class LayeredMinimapLocator:
         proposals = [
             (result.confidence, entry["id"])
             for (entry, _), result in zip(ready, results, strict=True)
-            if result is not None and strong_candidate(result.best, result.margin)
+            if result is not None
+            and not isinstance(result, (OSError, ValueError))
+            and strong_candidate(result.best, result.margin)
         ]
         return sorted(proposals, reverse=True)
 

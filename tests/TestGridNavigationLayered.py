@@ -863,6 +863,22 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertTrue(self.task._grid_nav_segment_tier_changed(ctx))
         self.assertTrue(any("重新规划" in line for line in self.task.logs), self.task.logs[-2:])
 
+    def test_map_change_with_no_follower_discards_recovery_before_planning(self):
+        session, ctx, _ = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
+        for previous_map in (ctx.map_id, "previous"):
+            with self.subTest(previous_map=previous_map):
+                session.history_map_id = previous_map
+                session.active_tier = "lv1"
+                session.visited_cells[(1, 1)] = (1.5, 1.5)
+                session.recovery_goal = (1.5, 1.5)
+                self.task._grid_nav_follower = None
+                with patch.object(self.task, "_try_layered_route_on_plan", return_value=(True, False)) as plan:
+                    self.task._grid_nav_state_plan(ctx)
+                same_map = previous_map == ctx.map_id
+                self.assertEqual(plan.call_args.args[2], (1.5, 1.5) if same_map else session.goal)
+                self.assertEqual(bool(session.visited_cells), same_map)
+                self.assertEqual(session.active_tier, "lv1" if same_map else None)
+
     def test_replan_clears_the_layered_route(self):
         session, ctx, result = self._plan(x=3.5, z=0.5, y=105, goal=(6.5, 0.5), goal_y=5.0)
         self.assertEqual(result, (True, True))
@@ -1025,6 +1041,19 @@ class RopeCrossingTest(unittest.TestCase):
         self.assertFalse(self.task.w_down, "结束时必须松开 W")
         self.assertFalse(self.task.click_calls, "下行不需要找交互图标")
         self.assertTrue(any("绳索下行" in line for line in self.task.logs), self.task.logs[-4:])
+
+    def test_descent_releases_forward_until_pose_returns(self):
+        real_pose = self.task._grid_nav_rope_pose
+        observations = []
+
+        def sometimes_missing():
+            observations.append(self.task.w_down)
+            return None if len(observations) == 1 else real_pose()
+
+        with patch.object(self.task, "_grid_nav_rope_pose", side_effect=sometimes_missing):
+            self.assertTrue(self._cross(self.link))
+        self.assertFalse(observations[1])
+        self.assertFalse(self.task.w_down)
 
     def test_descent_aims_from_the_current_position(self):
         """对准方向按"当前位置 -> 落点中心"算，不是两个矩形中心的连线。

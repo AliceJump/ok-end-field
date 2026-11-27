@@ -911,6 +911,16 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
             )
         self.assertEqual(stream.read_sizes, [record["mask_bytes"] + 1])
 
+    def test_mask_size_must_match_file_record_before_reading(self):
+        self.write_prepared()
+        bundle = PreparedLocalizationBundle.load(self.root / "manifest.json")
+        name = bundle.manifest["floors"][0]["mask_path"]
+        with (
+            patch.object(Path, "open", side_effect=AssertionError("unexpected read")),
+            self.assertRaisesRegex(ValueError, "mask metadata mismatch"),
+        ):
+            bundle._decode_mask(name, (8192, 8192), 8192**2 // 8, None)
+
     def test_atlas_decoded_digest_avoids_contiguous_copy(self):
         self.write_prepared()
         bundle = PreparedLocalizationBundle.load(self.root / "manifest.json")

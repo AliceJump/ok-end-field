@@ -1725,7 +1725,7 @@ class MinimapTracker:
             )
         competitors = [
             candidate
-            for candidate in wide.candidates
+            for candidate in wide.competition_candidates or wide.candidates
             if candidate.map_id != best.map_id
             or candidate.tier_id != best.tier_id
             or math.hypot(candidate.world_x - best.world_x, candidate.world_z - best.world_z)

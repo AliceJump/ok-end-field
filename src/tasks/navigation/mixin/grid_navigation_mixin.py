@@ -1267,16 +1267,21 @@ class GridNavigationMixin(RuntimeStateMixin):
         session = ctx.session
         self._set_grid_walking(False)
         session.turn_control.clear()
-        map_changed = self._grid_nav_follower is not None and ctx.map_id != self._grid_nav_map_id
+        previous_map = session.history_map_id
+        session.history_map_id = ctx.map_id
+        map_changed = previous_map is not None and ctx.map_id != previous_map
         if session.had_plan:
             if session.replans >= self._grid_cfg_int(CONFIG_GRID_MAX_REPLANS, 8):
                 self.log_warning("导航重规划次数已达上限", notify=True)
                 return False
             session.replans += 1
         if map_changed:
-            self.log_info(f"地图已切换 {self._grid_nav_map_id!r} -> {ctx.map_id!r}，重新规划")
+            self.log_info(f"地图已切换 {previous_map!r} -> {ctx.map_id!r}，重新规划")
             session.visited_cells.clear()
+            session.active_tier = None
             session.recovery_goal = None
+            session.recovery = None
+            session.trail.points.clear()
         route_goal = session.recovery_goal if session.recovery_goal is not None else session.goal
         route_start = self._resolve_grid_replan_start(
             ctx.map_id,
@@ -2784,16 +2789,18 @@ class GridNavigationMixin(RuntimeStateMixin):
         aimed_bearing: float | None = None
         previous: tuple[float, float, float] | None = None
         stalled = 0.0
-        self._set_grid_walking(True)
         try:
-            while True:
+            while self.active_time() < deadline:
                 pose = self._grid_nav_rope_pose()
+                if pose is None:
+                    self._set_grid_walking(False)
+                    previous = None
+                    self.sleep(GRID_ROPE_POLL_S)
+                    continue
                 if pose.get("map_id") != link.target.map_name:
                     return False
-                point = None if pose is None else (pose["x"], pose["y"], pose["z"])
-                if point is None:
-                    self.log_warning("绳索下行：读不到当前坐标，停止前进", notify=True)
-                    return False
+                self._set_grid_walking(True)
+                point = (pose["x"], pose["y"], pose["z"])
                 stalled = (
                     0.0
                     if previous is None
@@ -2837,14 +2844,11 @@ class GridNavigationMixin(RuntimeStateMixin):
                         notify=True,
                     )
                     return False
-                if self.active_time() >= deadline:
-                    self.log_warning(
-                        f"绳索下行超时：按住 W 走了 {GRID_ROPE_DESCENT_TIMEOUT_S:g}s，高度仍未落到 "
-                        f"{link.target.tier or '大地图'}（连接={link.link_id[:8]}）",
-                        notify=True,
-                    )
-                    return False
                 self.sleep(GRID_ROPE_POLL_S)
+            self.log_warning(
+                f"绳索下行超时：未确认落到 {link.target.tier or '大地图'}（连接={link.link_id[:8]}）", notify=True
+            )
+            return False
         finally:
             self._set_grid_walking(False)
 

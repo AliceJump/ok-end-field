@@ -89,7 +89,9 @@ class GridValidationTask(MinimapNavigateToPoint):
         self._grid_nav_layered_cache.clear()
         self._grid_nav_layered_planner_cache.clear()
         write_diagnostic(self.directory, "blocked_points.json", self.failures)
-        write_diagnostic(self.directory, "covered_cells.json", sorted(self.covered))
+        provisional = getattr(self, "_provisional", None)
+        confirmed = self.covered - provisional[2] if provisional else self.covered
+        write_diagnostic(self.directory, "covered_cells.json", sorted(confirmed))
         write_diagnostic(self.directory, "traversed_cells.json", sorted(self.traversed))
         self._diagnostic_write(write_diagnostic, self.directory, "skipped_cells.json", sorted(self.skipped))
         self._diagnostic_write(save_grid, self.directory / "temporary.grid.npz", self.navigation_grid)
@@ -201,9 +203,9 @@ class GridValidationTask(MinimapNavigateToPoint):
             and float(latest.get("speed") or 0) <= 0.1
             and float(latest.get("time") or 0) <= stamp,
         }
-        self.samples.append(row)
         self.sample_log.write(json.dumps(row, ensure_ascii=False) + "\n")
         self.sample_log.flush()
+        self.samples.append(row)
         if reference_map_id(latest) != self.grid.meta.map_name:
             # Reference identity is a run invariant, independent of visual readiness.
             self.stop_reason = "map_or_tier_changed"

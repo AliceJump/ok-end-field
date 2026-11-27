@@ -860,9 +860,9 @@ class PreparedLocalizationBundle:
 
     def _decode_mask(self, name, shape, byte_count, coverage_pixels, digest=None):
         path = resolve_prepared_path(self.root, name)
-        count = int(np.prod(shape))
+        count = math.prod(shape)
         _require(
-            _positive_int(byte_count) and byte_count == math.ceil(count / 8),
+            _positive_int(byte_count) and byte_count == (count + 7) // 8 == self._records[name]["size"],
             f"Prepared mask metadata mismatch: {name}",
         )
         with path.open("rb") as source:

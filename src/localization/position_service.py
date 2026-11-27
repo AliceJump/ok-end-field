@@ -65,6 +65,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._visual_sample_lock = threading.RLock()
         self._visual_sampler = None
         self._sampled_visual_state = None
+        self._visual_input_stamp = None
         self._visual_input_shape = None
         self._init_minimap_heading_mixin()
         self._init_runtime_state_mixin()
@@ -177,11 +178,15 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         """Use navigation's grid snapshot only for this navigation session."""
         with self._visual_sample_lock:
             previous = self._navigation_topology_provider
+            if previous is not provider:
+                self._sampled_visual_state = None
             self._navigation_topology_provider = provider
         try:
             yield
         finally:
             with self._visual_sample_lock:
+                if previous is not provider:
+                    self._sampled_visual_state = None
                 self._navigation_topology_provider = previous
                 if self._visual_source is not None:
                     self._visual_source.set_navigation_topology(None)
@@ -195,6 +200,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._minimap_started = False
         self._minimap_last_state = None
         self._sampled_visual_state = None
+        self._visual_input_stamp = None
         self._visual_input_shape = None
         self.runtime_state_hub.clear(RuntimeTopic.WORLD_POSE)
 
@@ -251,15 +257,22 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         previous = self._sampled_visual_state
         frame_shape = getattr(frame, "shape", None)
         shape = None if frame_shape is None else frame_shape[:2]
+        last_input = self._visual_input_stamp
         if (
             self._visual_sampler is not None
             and timing is not None
             and previous is not None
-            and shape == getattr(self, "_visual_input_shape", None)
+            and last_input is not None
             and previous.get("frame_time_source") == timing.source
             and -MAX_FRAME_LEAD_S <= time.time() - previous["frame_t"] <= 2
-            and self._visual_source.odometry is not None
-            and stamp < previous.get("frame_t", -float("inf")) + self._visual_source.odometry._sample_min_dt
+            and (
+                stamp < last_input
+                or (
+                    shape == getattr(self, "_visual_input_shape", None)
+                    and self._visual_source.odometry is not None
+                    and stamp < last_input + self._visual_source.odometry._sample_min_dt
+                )
+            )
         ):
             # The control loop may retain a frame older than the sampler's.
             # Coalesce that request, without rolling the source clock back or
@@ -274,6 +287,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         state["frame_clock_uncertainty_s"] = timing.clock_uncertainty_s if timing is not None else None
         bearing, score = self._read_arrow(frame) if frame is not None else (None, 0)
         state["heading"], state["heading_score"] = bearing, score
+        self._visual_input_stamp = stamp
         self._sampled_visual_state = dict(state)
         return state
 

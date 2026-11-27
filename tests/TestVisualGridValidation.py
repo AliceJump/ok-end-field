@@ -191,6 +191,15 @@ class TestVisualGridValidation(unittest.TestCase):
         }
         return task, pose, reference
 
+    def test_visual_log_flush_failure_does_not_publish_sample(self):
+        task, pose, _ = self._observation_task()
+        task.sample_log = Mock()
+        task.sample_log.flush.side_effect = OSError("disk full")
+        with patch("scripts.nav.validation_task.time.time", return_value=100), self.assertRaises(OSError):
+            GridValidationTask._observe(task, pose)
+        self.assertFalse(task.samples)
+        self.assertFalse(task.covered)
+
     def test_bad_or_unpaired_samples_do_not_validate_coverage(self):
         task, pose, reference = self._observation_task()
         with patch("scripts.nav.validation_task.time.time", return_value=100):
@@ -272,6 +281,7 @@ class TestVisualGridValidation(unittest.TestCase):
         service = SimpleNamespace(
             _visual_source=source,
             _sampled_visual_state=pose,
+            _visual_input_stamp=pose["frame_t"],
             _visual_sampler=object(),
             executor=SimpleNamespace(method=object()),
         )
@@ -347,6 +357,7 @@ class TestVisualGridValidation(unittest.TestCase):
                 patch("src.localization.position_service.timing_for_frame", return_value=timing),
                 GridValidationTask._validation_resources(task),
             ):
+                service._visual_input_stamp = 100
                 service._sampled_visual_state = service._locate_visual_frame(object(), 100, None)
                 cached = WorldPoseService._sample_visual_pose(service, object())
                 newer = service._locate_visual_frame(object(), 100.1, None)
@@ -1022,8 +1033,9 @@ class TestVisualGridValidation(unittest.TestCase):
                 failures=[],
                 options=SimpleNamespace(skip_blocked=True),
                 directory=Path(directory),
-                covered=set(),
-                traversed=set(),
+                covered={(1, 1), (2, 2)},
+                _provisional=(0, 0, {(2, 2)}),
+                traversed={(1, 1), (2, 2)},
                 skipped=set(),
                 _grid_nav_layered_cache={"old": object()},
                 _grid_nav_layered_planner_cache={1: object()},
@@ -1037,6 +1049,8 @@ class TestVisualGridValidation(unittest.TestCase):
             self.assertEqual(task._grid_nav_layered_cache, {})
             self.assertEqual(task._grid_nav_layered_planner_cache, {})
             self.assertIs(task.target_planner.grid, task.navigation_grid)
+            self.assertEqual(json.loads((task.directory / "covered_cells.json").read_text()), [[1, 1]])
+            self.assertEqual(json.loads((task.directory / "traversed_cells.json").read_text()), [[1, 1], [2, 2]])
 
     def test_unconfirmed_timeout_does_not_change_walkability(self):
         grid = DenseGrid(np.ones((12, 12), np.uint8), GridMeta())

@@ -137,6 +137,20 @@ class TestVisualLayerCandidates(unittest.TestCase):
         self.assertEqual(result.best.tier_id, "floor1")
         locator.base.locate_near.assert_called_once()
 
+    def test_failed_floor_does_not_discard_other_background_proposals(self):
+        locator = self.locator()
+        locator._bundle = object()
+        locator._background_hint = (0, 0)
+        entries = [{"id": "broken"}, {"id": "ready"}]
+        with (
+            patch.object(locator, "_near_bounds", return_value=True),
+            patch.object(locator, "_warm_layers", return_value=[(e, Mock()) for e in entries]),
+            patch.object(locator, "_matching_locator", return_value=Mock()),
+            patch.object(locator, "_match_near_layers", return_value=[OSError("tile unavailable"), self.result(0.99)]),
+        ):
+            proposals = locator._background_proposals(None, None, Mock(), entries=entries, wait_for_resources=True)
+        self.assertEqual(proposals, [(0.99, "ready")])
+
     def test_background_proposal_failure_keeps_raw_ranking(self):
         locator = self.locator()
         template = SimpleNamespace(flat=np.zeros((32, 32, 3), np.uint8), dim_terrain=np.ones((32, 32), bool))
@@ -1183,7 +1197,7 @@ class TestVisualLayerCandidates(unittest.TestCase):
         far = MapCandidate(60, -60, 15, 15, 0.94, full_ncc=0.94)
         base = self.result(0.95)
         locator.base.locate_global.return_value = LocateResult(
-            "ambiguous", "test", base.best, (base.best, far), 0.001, 1
+            "ambiguous", "test", base.best, (base.best,), 0.001, 1, competition_candidates=(base.best, far)
         )
         locator.base.locate_near.return_value = locator.base.locate_global.return_value
         result = locator.locate_near(None, (10, 10), None)

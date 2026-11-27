@@ -425,6 +425,7 @@ class TestMinimapMapLocatorSynthetic(unittest.TestCase):
         ):
             self.assertEqual(len(result.candidates), 1)
             self.assertGreaterEqual(len(result.competition_candidates), 2)
+            self.assertTrue(any(c not in result.candidates for c in result.competition_candidates))
             self.assertLess(result.margin, 0.08)
             self.assertNotEqual(result.status, "accepted")
 
@@ -946,6 +947,18 @@ class TestMinimapTrackerRecovery(unittest.TestCase):
             result = tracker.update(None, self.g, now=1.2, prediction_world=(10, 0))
         self.assertFalse(result.accepted)
         self.assertEqual(result.locate.margin, 0.01)
+        self.assertIsNone(tracker._prediction_verified)
+
+    def test_prediction_margin_uses_competitors_outside_display_limit(self):
+        local = _result(10, 0, ncc=0.86)
+        wide = _result(14.5, 0, ncc=0.99)
+        far = _result(30, 0, ncc=0.85).best
+        wide = replace(wide, spatial_margin=0.14, competition_candidates=(wide.best, far))
+        tracker = MinimapTracker(_FakeLocator(local))
+        tracker._set_convinced(local.best, now=1.0)
+        with patch.object(tracker.locator, "locate_near", side_effect=[local, wide]):
+            result = tracker.update(None, self.g, now=1.2, prediction_world=(10, 0))
+        self.assertAlmostEqual(result.locate.margin, 0.01)
         self.assertIsNone(tracker._prediction_verified)
 
     def test_ambiguous_wide_margin_above_acquisition_threshold_cannot_promote(self):

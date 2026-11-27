@@ -1215,14 +1215,27 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         service = self.service()
         source = Mock(map_id="map02")
         service._visual_source = source
+        service.start_minimap_position = Mock()
+        service._visual_sampler = object()
+        source.odometry._sample_min_dt = 0.15
+        source.sample.side_effect = lambda *args, **kwargs: {"position_trusted": True, "x": 12, "z": 34}
         outer, inner = Mock(return_value=object()), Mock(return_value=object())
-        with service.navigation_topology(outer):
+        frame = np.zeros((10, 10, 3), np.uint8)
+        timing = SimpleNamespace(frame_time=99.8, source="wgc_system_relative_time", clock_uncertainty_s=0)
+        with (
+            patch("src.localization.position_service.timing_for_frame", return_value=timing),
+            patch("src.localization.position_service.time.time", return_value=100),
+            service.navigation_topology(outer),
+        ):
             with service.navigation_topology(inner):
-                service._locate_visual_frame(np.zeros((10, 10, 3), np.uint8), 1, None)
+                service.sample_world_pose(frame)
                 source.set_navigation_topology.assert_called_once_with(inner.return_value)
-            self.assertIs(service._navigation_topology_provider, outer)
-            service._locate_visual_frame(np.zeros((10, 10, 3), np.uint8), 1.2, None)
+            timing.frame_time = 99.9
+            self.assertEqual(service.sample_world_pose(frame)["frame_t"], 99.9)
             self.assertIs(source.set_navigation_topology.call_args.args[0], outer.return_value)
+            timing.frame_time = 99.95
+            self.assertEqual(service.sample_world_pose(frame)["frame_t"], 99.9)
+            self.assertEqual(source.sample.call_count, 2)
         self.assertIsNone(service._navigation_topology_provider)
         self.assertIsNone(source.set_navigation_topology.call_args.args[0])
 
@@ -1430,6 +1443,7 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         service._visual_source = SimpleNamespace(odometry=SimpleNamespace(_sample_min_dt=0.15))
         service._visual_sampler = object()
         service._visual_input_shape = (360, 640)
+        service._visual_input_stamp = 99.85
         service._sampled_visual_state = {
             "frame_t": 99.8,
             "frame_time_source": "wgc_system_relative_time",
@@ -1439,13 +1453,14 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
             "absolute_position_valid": False,
         }
         service._locate_visual_frame = Mock(side_effect=AssertionError("must reuse newer measured frame"))
-        for stamp in (99.7, 99.8, 99.9):
+        for stamp in (99.7, 99.8, 99.82, 99.9):
             timing = SimpleNamespace(frame_time=stamp, source="wgc_system_relative_time")
             with (
                 patch("src.localization.position_service.timing_for_frame", return_value=timing),
                 patch("src.localization.position_service.time.time", return_value=100),
             ):
-                state = service._sample_visual_pose(np.zeros((360, 640, 3), np.uint8))
+                shape = (720, 1280, 3) if stamp in (99.7, 99.82) else (360, 640, 3)
+                state = service._sample_visual_pose(np.zeros(shape, np.uint8))
             self.assertEqual(state["frame_t"], 99.8)
             self.assertEqual(state["x"], 12)
             self.assertTrue(state["visual_duplicate_frame"])
@@ -1466,6 +1481,7 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         service._visual_source = Mock()
         service._visual_source.unavailable.return_value = {"position_trusted": False, "x": None}
         service._visual_sampler = object()
+        service._visual_input_stamp = 97
         service._sampled_visual_state = {
             "frame_t": 97,
             "frame_time_source": "wgc_system_relative_time",
@@ -2181,6 +2197,15 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         for name, value in values.items():
             setattr(result, name, value)
         return result
+
+    def test_closed_active_map_does_not_reload_for_local_search(self):
+        store = Mock()
+        locator = MapSetLocator(store, ["map01"])
+        locator._active = "map01"
+        locator.close()
+        self.assertIsNone(locator.locate_near(None, (0, 0), None))
+        self.assertEqual(locator.last_failure_reason, "visual_locator_closed")
+        store.load.assert_not_called()
 
     def test_every_map_floor_competes_before_any_hint_is_accepted(self):
         locator = MapSetLocator(SimpleNamespace(), ["map01", "map02"], workers=self.workers(), async_search=True)
