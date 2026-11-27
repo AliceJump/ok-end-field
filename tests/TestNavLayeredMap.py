@@ -485,6 +485,13 @@ class TestNavigationTopology(unittest.TestCase):
         self.assertTrue(scope.allows_candidate("map02", MAIN_TIER, 1.01, 0.5))
         self.assertFalse(scope.allows_candidate("map02", MAIN_TIER, 1.1, 0.5))
 
+    def test_diagonal_corner_with_small_budget_requires_both_side_cells_free(self):
+        for rows, expected in ((["oo", "oo"], True), (["o#", "oo"], False), (["oo", ".o"], False)):
+            with self.subTest(rows=rows):
+                topology = NavigationTopology(LayeredMap({("map02", ""): _grid(rows)}), tolerance_m=0)
+                scope = topology.scope("map02", MAIN_TIER, (0.99, 0.99), 0.03)
+                self.assertEqual(scope.allows_candidate("map02", MAIN_TIER, 1.01, 1.01), expected)
+
     def test_disconnected_island_and_diagonal_corner_are_not_reachable(self):
         for rows, candidate in ((["ooo###ooo"], (8.5, 0.5)), (["o#", "#o"], (1.5, 1.5))):
             topology = NavigationTopology(LayeredMap({("map02", ""): _grid(rows)}), tolerance_m=0)

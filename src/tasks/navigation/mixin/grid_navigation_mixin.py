@@ -31,6 +31,7 @@
 from __future__ import annotations
 
 import math
+import threading
 import time
 from contextlib import ExitStack, nullcontext
 from dataclasses import replace
@@ -395,6 +396,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         #: 分层地图缓存：键 (目录, 地图, zoom) -> LayeredMap；False 表示确认没有分层数据。
         #: 网格是子模块里的静态数据，同一次会话内不必反复读 npz。
         self._grid_nav_explicit_versions = {}
+        self._grid_nav_layered_lock = threading.Lock()
         self._grid_nav_layered_cache: dict[tuple[str, ...], LayeredMap | bool] = {}
         #: 分层规划器缓存；键取 LayeredMap 的对象身份，值持有它的层内分段缓存。
         self._grid_nav_layered_planner_cache: dict[int, tuple[FollowerConfig, LayeredPlanner, LayeredMap]] = {}
@@ -2148,6 +2150,10 @@ class GridNavigationMixin(RuntimeStateMixin):
         否则返回 None——单层地图（实测 base01/map01 就没有分层）的行为因此与分层功能
         上线前逐字一致。
         """
+        with self._grid_nav_layered_lock:
+            return self._load_cached_layered_map(map_id, grid_path, grid_dir, zoom)
+
+    def _load_cached_layered_map(self, map_id, grid_path, grid_dir, zoom):
         explicit = str((self._grid_config_get(CONFIG_GRID_FILE, "") if grid_path is None else grid_path) or "").strip()
         selected = None
         if explicit:
@@ -2507,11 +2513,9 @@ class GridNavigationMixin(RuntimeStateMixin):
             final = route.segments[-1].plan
             if final.goal_cell is not None and final.goal_cell != goal_grid.index_of_world(*goal_xz):
                 snapped = goal_grid.world_of_index(*final.goal_cell)
-                radius = (
-                    session.stop_distance
-                    if session.stop_distance is not None
-                    else self._grid_follower_config().goal_radius
-                )
+                radius = self._grid_follower_config().goal_radius
+                if session.stop_distance is not None:
+                    radius = min(radius, max(0.0, session.stop_distance))
                 if math.dist(snapped, goal_xz) > radius:
                     return None, "终点吸附到可通行格后超出停止半径"
         return route, ""
@@ -2600,9 +2604,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_link_landing = None
         segment_goal = tuple(waypoints[-1]) if waypoints else start
         if index == len(route.segments) - 1 and not trailing:
-            requested = session.recovery_goal or session.goal
-            if segment.plan.goal_cell is None or grid.index_of_world(*requested) == segment.plan.goal_cell:
-                segment_goal = requested
+            # The plan keeps the passable waypoint; DONE also checks the requested coordinate.
+            segment_goal = session.recovery_goal or session.goal
         follower.adopt(segment.plan, goal=segment_goal, start=start)
         episode = session.recovery
         if (

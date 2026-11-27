@@ -86,8 +86,9 @@ class GridValidationTask(MinimapNavigateToPoint):
 
         self.navigation_grid = temporary_obstacle_grid(self.grid, self.failures if self.options.skip_blocked else [])
         self.target_planner = GridRouteFollower(self.navigation_grid, self._grid_follower_config()).planner
-        self._grid_nav_layered_cache.clear()
-        self._grid_nav_layered_planner_cache.clear()
+        with self._grid_nav_layered_lock:
+            self._grid_nav_layered_cache.clear()
+            self._grid_nav_layered_planner_cache.clear()
         write_diagnostic(self.directory, "blocked_points.json", self.failures)
         provisional = getattr(self, "_provisional", None)
         confirmed = self.covered - provisional[2] if provisional else self.covered
@@ -404,7 +405,7 @@ class GridValidationTask(MinimapNavigateToPoint):
                 resources.callback(setattr, service, "sample_world_pose", original_sample)
                 resources.callback(setattr, service, "_locate_visual_frame", original_locate)
 
-                def observe_locate(frame, stamp, timing):
+                def observe_locate(frame, stamp, timing, *args, **kwargs):
                     self.last_frame = frame
                     absolute = None
                     tracker = service._visual_source.tracker
@@ -418,7 +419,7 @@ class GridValidationTask(MinimapNavigateToPoint):
 
                     tracker.update = observe_update
                     try:
-                        state = original_locate(frame, stamp, timing)
+                        state = original_locate(frame, stamp, timing, *args, **kwargs)
                         # Carry diagnostics with the sampled state, including any later cache hit.
                         return {**state, "_validation_absolute": absolute}
                     finally:

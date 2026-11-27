@@ -1794,11 +1794,14 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         source.write_text(json.dumps(original), encoding="utf-8")
         self.write_prepared()
         store = CalibratedMapStore(self.root / "maps")
+        ready_marker = self.root / "prepared" / "READY"
         read_bytes = Path.read_bytes
         denied = Mock(side_effect=PermissionError("denied"))
 
         def read(path):
-            return denied() if path == self.root / "prepared" / "READY" else read_bytes(path)
+            if path.name == "READY" and path.samefile(ready_marker):
+                return denied()
+            return read_bytes(path)
 
         with (
             patch(

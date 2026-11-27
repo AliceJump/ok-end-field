@@ -119,7 +119,8 @@ class NavigationTopologyScope:
         if key == layer_key(self.anchor_map_id, self.anchor_tier_id):
             ai, aj = floor.index(self.anchor_x, self.anchor_z)
             if (
-                abs(ai - i) + abs(aj - j) <= 1
+                max(abs(ai - i), abs(aj - j)) <= 1
+                and (ai == i or aj == j or (floor.state(ai, j) == CELL_FREE and floor.state(i, aj) == CELL_FREE))
                 and math.hypot(x - self.anchor_x, z - self.anchor_z) <= self.max_distance_m + self.tolerance_m
             ):
                 return True

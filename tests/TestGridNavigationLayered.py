@@ -15,7 +15,9 @@
 import json
 import math
 import tempfile
+import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
@@ -69,6 +71,25 @@ class _HeadingWalkingTask(_LayeredTask):
 
 class LayeredNavigationWiringTest(unittest.TestCase):
     """分层导航的接线：三维目标 → 层判定 → 分层规划 → 分段跟随。"""
+
+    def test_planning_and_sampling_share_one_layered_map_load(self):
+        from src.nav.layered_map import load_layered_map
+
+        loading, release = threading.Event(), threading.Event()
+
+        def load(*args, **kwargs):
+            loading.set()
+            self.assertTrue(release.wait(3))
+            return load_layered_map(*args, **kwargs)
+
+        with patch("src.tasks.navigation.mixin.grid_navigation_mixin.load_layered_map", side_effect=load) as loader:
+            with ThreadPoolExecutor(max_workers=2) as workers:
+                first = workers.submit(self.task._grid_layered_map, "test")
+                self.assertTrue(loading.wait(3))
+                second = workers.submit(self.task._grid_layered_map, "test")
+                release.set()
+                self.assertIs(first.result(), second.result())
+            loader.assert_called_once()
 
     def test_explicit_file_and_config_file_override_default_layered_resources(self):
         from src.core.GridNavConfig import CONFIG_GRID_FILE
@@ -655,6 +676,25 @@ class LayeredNavigationWiringTest(unittest.TestCase):
         self.assertNotEqual(follower.update((5.5, 0.5), 90, 1).action, DONE)
         self.assertNotEqual(follower.update((6.5, 0.5), 45, 1.2).action, DONE)
         self.assertEqual(follower.update(session.goal, 45, 1.4).action, DONE)
+
+    def test_snapped_final_waypoint_must_also_be_within_radius_of_requested_goal(self):
+        from src.core.GridNavConfig import CONFIG_GRID_GOAL_RADIUS
+        from src.nav.route_follower import DONE
+
+        self.task.config[CONFIG_GRID_GOAL_RADIUS] = 1.25
+        path = self.root / f"test_4{GRID_SUFFIX}"
+        grid = load_grid(path)
+        grid.cells[0, 7:] = CELL_BLOCKED
+        save_grid(path, grid)
+        session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(7.5, 0.5), goal_y=5, stop_distance=1.25)
+        self.assertEqual(self.task._try_layered_route_on_plan(ctx, ctx.position, session.goal), (True, True))
+        session.segment_index = len(session.route.segments) - 1
+        self.assertTrue(self.task._activate_layered_segment(ctx))
+        follower = self.task._grid_nav_follower
+        self.assertEqual(follower.goal, session.goal)
+        self.assertEqual(tuple(follower.plan_result.waypoints[-1]), (6.5, 0.5))
+        self.assertNotEqual(follower.update((5.5, 0.5), 90, 1).action, DONE)
+        self.assertEqual(follower.update((6.5, 0.5), 90, 2).action, DONE)
 
     def test_last_segment_before_trailing_link_keeps_approach_radius(self):
         session, ctx = self._ctx(x=3.5, z=0.5, y=105, goal=(0.5, 0.5), goal_y=5, stop_distance=0.25)

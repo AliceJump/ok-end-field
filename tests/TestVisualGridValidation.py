@@ -377,7 +377,8 @@ class TestVisualGridValidation(unittest.TestCase):
         )
         original_update = tracker.update
 
-        def locate(_frame, stamp, _timing):
+        def locate(_frame, stamp, _timing, topology):
+            self.assertIs(topology, task)
             tracker.update()
             return {**pose, "frame_t": stamp}
 
@@ -407,10 +408,10 @@ class TestVisualGridValidation(unittest.TestCase):
                 GridValidationTask._validation_resources(task),
             ):
                 service._visual_input_stamp = 100
-                service._sampled_visual_state = service._locate_visual_frame(object(), 100, None)
+                service._sampled_visual_state = service._locate_visual_frame(object(), 100, None, task)
                 cached = WorldPoseService._sample_visual_pose(service, object())
-                newer = service._locate_visual_frame(object(), 100.1, None)
-                missed = service._locate_visual_frame(object(), 100.2, None)
+                newer = service._locate_visual_frame(object(), 100.1, None, task)
+                missed = service._locate_visual_frame(object(), 100.2, None, task)
                 for state in (cached, newer, missed):
                     GridValidationTask._observe(task, state)
         self.assertTrue(cached["visual_duplicate_frame"])
@@ -1086,6 +1087,7 @@ class TestVisualGridValidation(unittest.TestCase):
                 _provisional=(0, 0, {(2, 2)}),
                 traversed={(1, 1), (2, 2)},
                 skipped=set(),
+                _grid_nav_layered_lock=threading.Lock(),
                 _grid_nav_layered_cache={"old": object()},
                 _grid_nav_layered_planner_cache={1: object()},
                 _grid_follower_config=lambda: FollowerConfig(allow_unknown=False),
