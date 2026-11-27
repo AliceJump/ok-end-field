@@ -161,6 +161,7 @@ class PreparedAtlasFloorImage(TiledMapImage):
         calibration: MapCalibration,
         *,
         full_shape: tuple[int, int],
+        matching_grid=False,
         on_close=None,
     ):
         self._atlas = atlas
@@ -168,7 +169,18 @@ class PreparedAtlasFloorImage(TiledMapImage):
         self._mask = mask
         self.calibration = calibration
         self._coarse_shape = (region["height"], region["width"], 3)
-        self._shape = (full_shape[0], full_shape[1], 3)
+        # A v1 atlas can be sampled on the source floor's native pixel grid.
+        # The locator measures every template on a fixed 4 px/m world grid.
+        sx, sy = np.abs(calibration.matrix[[0, 1], [0, 1]]) * MAP_PIXELS_PER_METER if matching_grid else (1.0, 1.0)
+        self._shape = (round(full_shape[0] * sy), round(full_shape[1] * sx), 3)
+        self._atlas_step_x = PREPARED_SCALE / float(sx)
+        self._atlas_step_y = PREPARED_SCALE / float(sy)
+        if sx != 1 or sy != 1:
+            matrix = calibration.matrix.copy()
+            matrix[:, :2] /= (sx, sy)
+            # Align pixel edges, including the native composite padding.
+            matrix[:, 2] += 0.5 * (matrix[:, :2] - calibration.matrix[:, :2]).sum(axis=1)
+            self.calibration = MapCalibration(matrix, np.linalg.inv(np.vstack((matrix, [0, 0, 1])))[:2])
         self._closed = False
         self._lock = threading.Lock()
         self._on_close = on_close
@@ -214,6 +226,13 @@ class PreparedAtlasFloorImage(TiledMapImage):
             copy=True,
             order="C",
         )
+        if self._atlas_step_x != scale or self._atlas_step_y != scale:
+            width = max(1, round(self._shape[1] * scale))
+            height = max(1, round(self._shape[0] * scale))
+            # Use the declared spacing even when rounded atlas extents differ.
+            xs = (np.arange(width, dtype=np.float32) + 0.5) * (self._atlas_step_x / scale) - 0.5
+            ys = (np.arange(height, dtype=np.float32) + 0.5) * (self._atlas_step_y / scale) - 0.5
+            result = cv2.remap(result, *np.meshgrid(xs, ys), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
         result.setflags(write=False)
         return result
 
@@ -230,10 +249,10 @@ class PreparedAtlasFloorImage(TiledMapImage):
         if y0 >= y1 or x0 >= x1:
             return np.empty((max(0, y1 - y0), max(0, x1 - x0), 3), np.uint8)
         region = self._region
-        left = max(0, math.floor(x0 * PREPARED_SCALE) - 1)
-        top = max(0, math.floor(y0 * PREPARED_SCALE) - 1)
-        right = min(region["width"], math.ceil(x1 * PREPARED_SCALE) + 1)
-        bottom = min(region["height"], math.ceil(y1 * PREPARED_SCALE) + 1)
+        left = max(0, math.floor(x0 * self._atlas_step_x) - 1)
+        top = max(0, math.floor(y0 * self._atlas_step_y) - 1)
+        right = min(region["width"], math.ceil(x1 * self._atlas_step_x) + 1)
+        bottom = min(region["height"], math.ceil(y1 * self._atlas_step_y) + 1)
         crop = np.ascontiguousarray(
             atlas[
                 region["y"] + top : region["y"] + bottom,
@@ -242,8 +261,8 @@ class PreparedAtlasFloorImage(TiledMapImage):
         )
         if crop.size == 0:
             return np.zeros((y1 - y0, x1 - x0, 3), np.uint8)
-        atlas_x = (np.arange(x0, x1, dtype=np.float32) + 0.5) * PREPARED_SCALE - 0.5 - left
-        atlas_y = (np.arange(y0, y1, dtype=np.float32) + 0.5) * PREPARED_SCALE - 0.5 - top
+        atlas_x = (np.arange(x0, x1, dtype=np.float32) + 0.5) * self._atlas_step_x - 0.5 - left
+        atlas_y = (np.arange(y0, y1, dtype=np.float32) + 0.5) * self._atlas_step_y - 0.5 - top
         map_x, map_y = np.meshgrid(atlas_x, atlas_y)
         result = cv2.remap(
             crop,
@@ -261,8 +280,8 @@ class PreparedAtlasFloorImage(TiledMapImage):
                 raise ValueError("prepared atlas image closed")
             mask = self._mask
         xx, yy = np.meshgrid(
-            np.rint((np.asarray(xs, dtype=np.float64) + 0.5) * PREPARED_SCALE - 0.5).astype(np.int64),
-            np.rint((np.asarray(ys, dtype=np.float64) + 0.5) * PREPARED_SCALE - 0.5).astype(np.int64),
+            np.rint((np.asarray(xs, dtype=np.float64) + 0.5) * self._atlas_step_x - 0.5).astype(np.int64),
+            np.rint((np.asarray(ys, dtype=np.float64) + 0.5) * self._atlas_step_y - 0.5).astype(np.int64),
         )
         height, width = mask.shape
         valid = (xx >= 0) & (xx < width) & (yy >= 0) & (yy < height)
@@ -332,7 +351,7 @@ class PreparedLocalizationBundle:
         prefix = f"scene_{map_id}_"
         return not any(str(item).startswith(prefix) for item in self.manifest["coverage"]["missing_logic_ids"])
 
-    def open_floor(self, entry):
+    def open_floor(self, entry, *, matching_grid=False):
         tier_id, map_id = str(entry["tier_id"]), str(entry["map_id"])
         floor = self._floors[(map_id, tier_id)]
         atlas = self._acquire_atlas(map_id)
@@ -346,6 +365,7 @@ class PreparedLocalizationBundle:
                 mask,
                 floor.calibration,
                 full_shape=full_shape,
+                matching_grid=matching_grid,
                 on_close=lambda: self._release_atlas(map_id),
             )
         except BaseException:

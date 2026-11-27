@@ -778,6 +778,37 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
         np.testing.assert_allclose(calibration.map_to_world(320, 320), (10, 10))
         np.testing.assert_allclose(calibration.map_to_world(520, 420), (30, -10))
 
+    def test_matching_grid_preserves_world_alignment_with_anisotropic_native_spacing(self):
+        # The source axes are 0.1 and 0.2 m/px, both different from the matcher's 0.25.
+        entry = {"width": 200, "height": 100, "bounds": {"west": 10, "east": 30, "south": -10, "north": 10}}
+        shape = (740, 840)
+        calibration = _prepared_calibration(entry, shape)
+        h, w = (round(size * PREPARED_SCALE) for size in shape)
+        atlas = np.zeros((h, w, 3), np.uint8)
+        mask = np.zeros((h, w), bool)
+        mask[32:40, 36:44] = True
+        atlas[mask] = 200
+        image = PreparedAtlasFloorImage(
+            atlas,
+            {"x": 0, "y": 0, "width": w, "height": h},
+            mask,
+            calibration,
+            full_shape=shape,
+            matching_grid=True,
+        )
+        self.addCleanup(image.close)
+        self.assertEqual(image.shape[:2], (592, 336))
+        np.testing.assert_allclose(image.calibration.matrix[:, :2], np.diag([0.25, -0.25]))
+        native_xy = (np.array([40, 36]) + 0.5) / PREPARED_SCALE - 0.5
+        world = calibration.map_to_world(*native_xy)
+        x, y = image.calibration.world_to_map(*world)
+        self.assertTrue(image.candidate_mask([x], [y])[0, 0])
+        self.assertFalse(image.candidate_mask([0], [0])[0, 0])
+        np.testing.assert_array_equal(image[round(y) : round(y) + 1, round(x) : round(x) + 1], [[[200, 200, 200]]])
+        overview = image.coarse_overview(PREPARED_SCALE)
+        col, row = np.rint((np.array([x, y]) + 0.5) * PREPARED_SCALE - 0.5).astype(int)
+        np.testing.assert_array_equal(overview[row, col], [200, 200, 200])
+
     def test_prepared_bundle_loads_atlas_floor_and_coverage_mask(self):
         self.write_floor((1.0, 1.0))
         prepared_root, manifest, floor_record = self.write_prepared()

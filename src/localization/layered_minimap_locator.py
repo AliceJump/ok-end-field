@@ -227,7 +227,7 @@ class LayeredMinimapLocator:
         """Decode without changing caches, search hints or tracking state."""
         key = entry["id"]
         if self._prepared is not None:
-            image = self._prepared.open_floor(entry)
+            image = self._prepared.open_floor(entry, matching_grid=True)
             return MinimapMapLocator(image, image.calibration)
         calibration, (fx, fy) = layer_calibration(entry["bounds"], entry["width"], entry["height"])
         if self._bundle is not None:

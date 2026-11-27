@@ -1081,6 +1081,26 @@ class TestFactoryOcclusionRejection(unittest.TestCase):
 
 
 class TestDenseIconMinimapPosition(unittest.TestCase):
+    def test_native_floor_field_icons_allow_global_search_and_local_confirmation(self):
+        fixture = Path(__file__).parent / "fixtures/minimap/native_floor_icons_hud.png"
+        frame = np.zeros((720, 1280, 3), np.uint8)
+        frame[50:172, 47:169] = cv2.imdecode(np.frombuffer(fixture.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
+        root = Path(__file__).resolve().parents[1] / "assets/nav-grid-data/navigation/localization/maps"
+        _, layered = CalibratedMapStore(root).load("map02")
+        self.addCleanup(layered.close)
+        geometry = MinimapGeometry.from_frame(1280, 720)
+        tier = "scene_map02_lv004_layer_tips_1"
+        result = layered.locate_proposed_layer(frame, geometry, tier, complete_competition=True)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.status, "accepted")
+        peak = result.best
+        confirmed = layered.locate_near(frame, (peak.world_x, peak.world_z), geometry, search_radius_m=12)
+        self.assertIsNotNone(confirmed)
+        self.assertEqual(confirmed.status, "accepted")
+        self.assertEqual(confirmed.best.tier_id, tier)
+        for point in (peak, confirmed.best):
+            self.assertLess(np.hypot(point.world_x + 1365.66, point.world_z + 1652.185), 1.0)
+
     def test_resampled_field_icons_allow_unseeded_base_map_search(self):
         fixture = Path(__file__).parent / "fixtures/minimap/resampled_icons_hud.png"
         frame = np.zeros((720, 1280, 3), np.uint8)

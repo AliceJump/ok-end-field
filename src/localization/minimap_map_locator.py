@@ -305,6 +305,8 @@ class _PreparedTemplate:
     mask8: np.ndarray
     center_offset: tuple[float, float] = (0.0, 0.0)
 
+    coverage_mask: np.ndarray | None = None
+
     @cached_property
     def color_zncc(self) -> tuple[np.ndarray, float]:
         values, norm = _centered_zncc(self.ring[self.mask])
@@ -325,7 +327,10 @@ class _PreparedTemplate:
         values = gray[self.mask]
         threshold, _ = cv2.threshold(values, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         dim = self.mask & (gray <= threshold)
-        fraction = dim.sum() / self.mask.sum()
+        # Removing bright glyphs must not turn a small dark patch into broad
+        # background evidence merely by shrinking the denominator.
+        coverage = self.mask if self.coverage_mask is None else self.coverage_mask
+        fraction = dim.sum() / coverage.sum()
         if not 0.55 <= fraction <= 0.95:
             return None
         low, high = gray[dim], gray[self.mask & ~dim]
@@ -340,7 +345,7 @@ class _PreparedTemplate:
             (slice(half, None), slice(None, half)),
             (slice(half, None), slice(half, None)),
         ):
-            if dim[rows, cols].sum() < 0.35 * self.mask[rows, cols].sum():
+            if dim[rows, cols].sum() < 0.35 * coverage[rows, cols].sum():
                 return None
         mask8 = dim.astype(np.uint8) * 255
         centered, norm = _centered_zncc(self.ring[dim])
@@ -783,6 +788,7 @@ class MinimapMapLocator:
             flat[~mask] = float(ring[mask].mean())
             if not texture_valid(flat, "legacy_masked"):
                 return None
+        coverage_mask = None
         if self.color:
             narrowed = self._color_visible_masks(roi, cached[0], mask, half)
             if narrowed is not None:
@@ -792,6 +798,7 @@ class MinimapMapLocator:
                 # Bright structures may be the only terrain on a sparse HUD.
                 # Keep the already validated template if narrowing erases its texture.
                 if texture_valid(narrow_flat, "dim_glyph_masked"):
+                    coverage_mask = mask
                     mask, mask8, flat = narrow_mask, narrow_mask8, narrow_flat
         self.last_failure_reason = ""
         return _PreparedTemplate(
@@ -800,6 +807,7 @@ class MinimapMapLocator:
             mask=mask,
             mask8=mask8,
             center_offset=(geometry.center_x - center_x, geometry.center_y - center_y),
+            coverage_mask=coverage_mask,
         )
 
     def _geometry_masks(self, geometry, half, x0, y0):
