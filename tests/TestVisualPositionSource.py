@@ -2575,6 +2575,22 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         self.assertEqual(locator.locate_global(frame, None).observed_at, 106.2)
         self.assertIsNone(locator._completed_competition)
 
+    def test_stationary_start_confirms_changed_frame_with_current_scores(self):
+        frame = np.zeros((32, 32, 3), np.uint8)
+        locator = self.completed_slow_competition(frame)
+        locator.stationary_navigation_start = True
+        current = self.result(0.95, margin=0.18)
+        locator._cache["map01"].locate_near = Mock(return_value=current)
+        locator.set_frame_time(106)
+        frame[16, 16] = 50
+        confirmed = locator.locate_global(frame, None)
+        self.assertEqual((confirmed.observed_at, confirmed.best.ncc, confirmed.margin), (106, 0.95, 0.18))
+        self.assertIs(locator._cache["map01"].locate_near.call_args.args[0], frame)
+        locator.set_frame_time(106.2)
+        locator._cache["map01"].locate_near.return_value = self.result(0.4, margin=0.1)
+        self.assertIsNone(locator.locate_global(frame, None))
+        self.assertIsNone(locator._active)
+
     def test_newly_available_map_invalidates_slow_competition_with_identical_pixels(self):
         frame = np.zeros((4, 4, 3), np.uint8)
         locator = self.completed_slow_competition(frame)

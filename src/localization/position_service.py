@@ -72,6 +72,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._init_runtime_state_mixin()
         self._init_capture_pose_mixin()
         self._visual_source = None
+        self._stationary_navigation_start = False
         self._navigation_topology_provider = None
         self._source_signature = None
         self._minimap_started = False
@@ -173,6 +174,23 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
     def stop_minimap_position(self):
         with self._visual_sample_lock:
             self._stop_visual_source()
+
+    @contextmanager
+    def stationary_navigation_start(self):
+        """Allow local confirmation until navigation receives its first trusted pose."""
+        with self._visual_sample_lock:
+            self._stationary_navigation_start = not (self._sampled_visual_state or {}).get("position_trusted", False)
+        try:
+            yield
+        finally:
+            with self._visual_sample_lock:
+                self._stationary_navigation_start = False
+                self._set_locator_start_mode(False)
+
+    def _set_locator_start_mode(self, enabled):
+        locator = getattr(self._visual_source, "locator", None)
+        if hasattr(locator, "stationary_navigation_start"):
+            locator.stationary_navigation_start = enabled
 
     @contextmanager
     def navigation_topology(self, provider):
@@ -299,11 +317,15 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             # Coalesce that request, without rolling the source clock back or
             # restamping cached coordinates as a fresh observation.
             return {**previous, "visual_duplicate_frame": True}
+        self._set_locator_start_mode(self._stationary_navigation_start)
         state = self._locate_visual_frame(frame, stamp, timing, topology)
         state.setdefault("frame_t", stamp)
         if time.time() - state["frame_t"] > 2:
             state = self._visual_source.unavailable("visual_result_too_old")
             state["frame_t"] = stamp
+        if self._stationary_navigation_start and state.get("position_trusted"):
+            self._stationary_navigation_start = False
+            self._set_locator_start_mode(False)
         state["frame_time_source"] = timing.source if timing is not None else "sample_time_fallback"
         state["frame_clock_uncertainty_s"] = timing.clock_uncertainty_s if timing is not None else None
         bearing, score = self._read_arrow(frame) if frame is not None else (None, 0)

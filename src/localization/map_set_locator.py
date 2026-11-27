@@ -1,5 +1,7 @@
 """Automatic base-map selection without packet coordinates or WS map IDs."""
 
+import logging
+import math
 import threading
 import time
 from collections import OrderedDict
@@ -19,6 +21,19 @@ from src.localization.minimap_map_locator import (
     minimap_map_scale,
     strong_candidate,
 )
+
+_LOG = logging.getLogger(f"ok.{__name__}")
+
+
+def _hud_changes(first, second, geometry):
+    if first is None or second is None or first.shape != second.shape:
+        return None
+    if geometry is not None:
+        x0, y0, x1, y1 = geometry.hud_bounds()
+        first, second = first[max(0, y0) : y1, max(0, x0) : x1], second[max(0, y0) : y1, max(0, x0) : x1]
+    changed = first != second
+    return int(np.count_nonzero(np.any(changed, axis=2) if changed.ndim == 3 else changed))
+
 
 _SEARCH_RESULT_MAX_AGE_S = 2.0
 _COLD_SEARCH_MAX_AGE_S = 30.0
@@ -66,6 +81,7 @@ class MapSetLocator:
         self._navigation_scope_key = None
         self._async_search = bool(async_search and workers is not None)
         self._completed_competition = None
+        self.stationary_navigation_start = False
         self._search_future = None
         self._search_generation = 0
         self._search_started_generation = 0
@@ -509,7 +525,7 @@ class MapSetLocator:
         if self._async_search:
             return self._locate_async(frame, geometry, started)
         observed_at = self._frame_time if self._frame_time is not None else time.time()
-        completed = self._search_snapshot(frame, geometry, started)
+        completed = self._search_global_ready(frame, geometry, started)
         return replace(completed, observed_at=observed_at) if completed is not None else None
 
     def _loaded_competitors(self):
@@ -518,14 +534,16 @@ class MapSetLocator:
     def _poll_completed_competition(self, frame, geometry):
         cached = self._completed_competition
         now = self._frame_time if self._frame_time is not None else time.time()
-        if (
+        changes = _hud_changes(cached.frame, frame, geometry)
+        compatible = (
             time.monotonic() <= cached.expires
             and cached.frame.shape == frame.shape
             and cached.frame.dtype == frame.dtype
             and cached.map_ids == self._loaded_competitors()
             and geometry == cached.geometry
             and 0 <= now - cached.observed_at <= _COLD_SEARCH_MAX_AGE_S
-        ):
+        )
+        if compatible:
             # A later poll is not proof of a later capture. Without comparable
             # capture times, require different pixels even outside the HUD.
             observations = [(cached.frame, cached.observed_at, cached.capture_time)]
@@ -537,20 +555,41 @@ class MapSetLocator:
                     self.last_failure_reason = "visual_global_search_pending"
                     return None
 
-            # Every map/floor search consumes the matching square and the HUD
-            # rim. Exact equality over this superset makes the complete ranking
-            # valid for the current capture, including every competing peak.
-            region = np.s_[:, :]
-            if geometry is not None:
-                x0, y0, x1, y1 = geometry.hud_bounds()
-                region = np.s_[max(0, y0) : y1, max(0, x0) : x1]
-            if np.array_equal(frame[region], cached.frame[region]):
-                self._active = cached.result.best.map_id
+            result = cached.result if changes == 0 else None
+            if self.stationary_navigation_start:
+                seed = cached.result.best
+                result = self.locate_on_map(
+                    frame, seed.map_id, (seed.world_x, seed.world_z), geometry, search_radius_m=12.0
+                )
+                if (
+                    result is None
+                    or result.status != "accepted"
+                    or result.best.tier_id != seed.tier_id
+                    or not strong_candidate(result.best, result.margin)
+                    or math.hypot(result.best.world_x - seed.world_x, result.best.world_z - seed.world_z) > 2.0
+                ):
+                    result = None
+            if result is not None:
+                _LOG.info(
+                    "global_search confirmed hud_changed_px=%s stationary_start=%s ncc=%.4f margin=%.4f",
+                    changes,
+                    self.stationary_navigation_start,
+                    result.best.ncc,
+                    result.margin,
+                )
+                self._active = result.best.map_id
                 if cached.confirmation is None:
                     cached.confirmation = (frame.copy(), now, self._capture_time)
                 else:
                     self._completed_competition = None
-                return replace(cached.result, observed_at=now)
+                return replace(result, observed_at=now)
+        _LOG.info(
+            "global_search retry=%s hud_changed_px=%s",
+            ("start_candidate_failed" if self.stationary_navigation_start else "matching_pixels_changed")
+            if compatible
+            else "expired_or_incompatible_competition",
+            changes,
+        )
         # Any changed search input requires all maps and floors to compete again.
         self._clear_search_hint()
         return None
@@ -602,7 +641,13 @@ class MapSetLocator:
                 and snapshot is not None
                 and search_geometry == geometry
                 and search_age <= _SEARCH_RESULT_MAX_AGE_S
+                and not self.stationary_navigation_start
             ):
+                _LOG.info(
+                    "global_search delivered_snapshot age_s=%.3f hud_changed_px=%s",
+                    search_age,
+                    _hud_changes(snapshot, frame, geometry),
+                )
                 # The result belongs to the completed snapshot, whose age was
                 # checked above. Preserve that observation time so consumers do
                 # not relabel stale pixels with the polling frame's time.
@@ -616,7 +661,8 @@ class MapSetLocator:
                 and snapshot is not None
                 and search_geometry == geometry
                 and not expanded
-                and _SEARCH_RESULT_MAX_AGE_S < search_age <= _COLD_SEARCH_MAX_AGE_S
+                and (self.stationary_navigation_start or search_age > _SEARCH_RESULT_MAX_AGE_S)
+                and search_age <= _COLD_SEARCH_MAX_AGE_S
                 and completed is not None
                 and completed.status == "accepted"
                 and completed.best.map_id
@@ -634,6 +680,13 @@ class MapSetLocator:
                     outcome.map_ids,
                 )
             else:
+                _LOG.info(
+                    "global_search retry=%s age_s=%.3f hud_changed_px=%s",
+                    failure_reason
+                    or ("scope_changed" if stale or expanded else (completed.status if completed else "no_candidate")),
+                    search_age,
+                    _hud_changes(snapshot, frame, geometry),
+                )
                 self._clear_search_hint()
             self.last_failure_reason = failure_reason
             if completed is None and failure_reason.startswith(("layer_resource_error:", "visual_map_resource_error:")):
@@ -674,7 +727,28 @@ class MapSetLocator:
         return None
 
     def _search_global_ready(self, frame, geometry, started):
-        return self._search_snapshot(frame, geometry, started)
+        result = self._search_snapshot(frame, geometry, started)
+        _LOG.info(
+            "global_search status=%s reason=%s elapsed_s=%.3f margin=%s candidates(map,tier,x,z,ncc,full_ncc)=%s",
+            result.status if result else "pending",
+            result.reason if result else self.last_failure_reason,
+            time.perf_counter() - started,
+            result.margin if result else None,
+            [
+                (
+                    c.map_id,
+                    c.tier_id,
+                    round(c.world_x, 2),
+                    round(c.world_z, 2),
+                    round(c.ncc, 4),
+                    round(c.full_ncc, 4),
+                )
+                for c in result.candidates
+            ]
+            if result
+            else [],
+        )
+        return result
 
     def _search_global_outcome(self, frame, geometry, started, observed_at):
         self._job_state.failure_reason = ""

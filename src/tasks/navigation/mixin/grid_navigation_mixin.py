@@ -672,6 +672,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         # Sampling belongs to the position service; the follower still consumes
         # its ordinary pose contract and never selects a localization source.
         sampling = getattr(position_service, "visual_sampling", None)
+        stationary_start = getattr(position_service, "stationary_navigation_start", None)
         topology_context = getattr(position_service, "navigation_topology", None)
         topologies = {}
 
@@ -697,6 +698,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         entered = False
         try:
             with (
+                stationary_start() if callable(stationary_start) else nullcontext(),
                 topology_context(topology_for_map) if callable(topology_context) else nullcontext(),
                 sampling(self) if callable(sampling) else nullcontext(),
             ):
