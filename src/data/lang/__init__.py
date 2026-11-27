@@ -1,3 +1,4 @@
+import json
 import re
 from enum import Enum
 from pathlib import Path
@@ -6,6 +7,21 @@ from typing import Any
 import json5
 
 from ._lang_typed import _LangAccessorTyped
+
+_JSON5_SENSITIVE_TEXT = re.compile(r"\\u[dD][89aAbB]|[\u2028\u2029]")
+
+
+def _parse_lang_json(text: str):
+    # json5 preserves surrogate escapes and rejects literal line/paragraph
+    # separators in strings. Keep those cases on the existing parser so keys
+    # and matcher text retain their exact code points and error behavior.
+    if not _JSON5_SENSITIVE_TEXT.search(text):
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+    return json5.loads(text)
+
 
 # ============================================================
 # Locale activation config
@@ -165,7 +181,8 @@ class LangAccessor(_LangAccessorTyped):
             return {}
 
         try:
-            raw_data = json5.load(unified_path.open(encoding="utf-8"))
+            text = unified_path.read_text(encoding="utf-8")
+            raw_data = _parse_lang_json(text)
         except Exception:
             return {}
 
