@@ -4125,3 +4125,9 @@ msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定
 msgstr ""
 "Deja en blanco para deducir la planta por las coordenadas; introduce un ID "
 "de planta o __main__ para el mapa principal."
+
+msgid "旧水坝"
+msgstr "Presa Antigua"
+
+msgid "祀"
+msgstr "Si"

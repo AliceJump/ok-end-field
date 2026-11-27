@@ -3668,3 +3668,9 @@ msgstr "목표 층(선택 사항)"
 #: src/tasks/navigation/MinimapNavigateToPoint.py
 msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
 msgstr "비워 두면 목표 좌표로 층을 판단합니다. 층 ID 또는 대지도를 지정하는 __main__을 입력하세요."
+
+msgid "旧水坝"
+msgstr "옛 댐"
+
+msgid "祀"
+msgstr "사"

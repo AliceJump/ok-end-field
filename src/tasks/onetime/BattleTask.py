@@ -873,7 +873,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             to_text = fL.go_gather_view
         # 判断是否是高阶关卡
         is_higher_order = is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_DANGER_REHEARSAL)
-        for _ in range(5):
+        for _ in range(6):
             if is_higher_order:
                 # 高阶关卡，使用 feature_dict 查找位置
                 location = self.wait_feature(
@@ -968,18 +968,8 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             self.wait_pop_up(time_out=4)
             if not self.wait_battle_space(transition_recovery=transition_recovery):
                 return False
-            self.strafe_search(
-                lambda: self.wait_ocr(
-                    match=self.lang.daily_battle_mixin.k_4cc61900,
-                    time_out=1,
-                    box=self.box.bottom_right,
-                    log=True,
-                ),
-                keys=("w",),
-                duration=0.25,
-                passes=None,
-            )
-            self.press_key("f")
+            if not self.start_touch_challenge():
+                return False
         else:
             self.wait_pop_up(time_out=4)
         return self.auto_battle(no_battle=self.battle_ctx.no_battle)

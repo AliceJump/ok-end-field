@@ -3598,3 +3598,9 @@ msgstr "目标楼层(可选)"
 #: src/tasks/navigation/MinimapNavigateToPoint.py
 msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
 msgstr "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
+
+msgid "旧水坝"
+msgstr "旧水坝"
+
+msgid "祀"
+msgstr "祀"

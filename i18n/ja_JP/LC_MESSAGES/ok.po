@@ -3630,3 +3630,9 @@ msgstr "目標階層（任意）"
 #: src/tasks/navigation/MinimapNavigateToPoint.py
 msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
 msgstr "空欄の場合は目標座標から階層を判定します。階層 ID、または大マップを指定する __main__ を入力してください。"
+
+msgid "旧水坝"
+msgstr "廃ダム"
+
+msgid "祀"
+msgstr "スー"

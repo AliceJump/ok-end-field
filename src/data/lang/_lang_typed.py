@@ -794,6 +794,12 @@ class WorldMapModule(_LangModuleBaseT):
     k_a2eb44e6: re.Pattern[str]
     """跃迁浆体涂片"""
 
+    old_dam: re.Pattern[str]
+    """旧水坝"""
+
+    si_boss: re.Pattern[str]
+    """祀"""
+
 
 class ZipLineMixinModule(_LangModuleBaseT):
     """zip_line_mixin — OCR 语言节点（值取自 zh_CN）"""

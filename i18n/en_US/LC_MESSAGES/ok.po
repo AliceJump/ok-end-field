@@ -3987,3 +3987,9 @@ msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定
 msgstr ""
 "Leave blank to infer the floor from target coordinates; enter a floor ID, or"
 " __main__ for the overworld."
+
+msgid "旧水坝"
+msgstr "Old Dam"
+
+msgid "祀"
+msgstr "Si"
