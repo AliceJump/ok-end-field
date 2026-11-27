@@ -393,7 +393,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
                 # The source rebuilds geometry from the normalized dimensions;
                 # capture timing and arrow recognition retain the native frame.
                 frame = normalize_visual_frame(frame)
-            return self._visual_source.sample(frame, now=stamp)
+            return self._visual_source.sample(frame, now=stamp, capture_timed=timing is not None)
         except UnpreparedTileOverview:
             self._visual_source.reset()
             return self._visual_source.unavailable(f"visual_search_width_unprepared:{frame.shape[1]}")

@@ -236,7 +236,7 @@ class TestVisualPositionSource(unittest.TestCase):
         self.addCleanup(release.set)
         calls = []
 
-        def sample(frame, *, now=None):
+        def sample(frame, *, now=None, capture_timed=True):
             calls.append(now)
             if len(calls) == 1:
                 entered.set()
@@ -1552,7 +1552,7 @@ class TestMapAssetsAndSourceService(LocalizationBundleFixture, unittest.TestCase
         self.assertEqual(supplied.shape, (720, 1280, 3))
         np.testing.assert_array_equal(supplied, cv2.resize(native, (1280, 720), interpolation=cv2.INTER_AREA))
         np.testing.assert_array_equal(native, original)
-        self.assertEqual(service._visual_source.sample.call_args.kwargs, {"now": 100.25})
+        self.assertEqual(service._visual_source.sample.call_args.kwargs, {"now": 100.25, "capture_timed": False})
         service._visual_source.reset.assert_not_called()
 
     def test_visual_service_preserves_1280_frame_identity_and_native_resolution_reset(self):
@@ -2528,43 +2528,62 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         np.testing.assert_array_equal(submitted, fresh)
         self.assertIs(locator._search_future, replacement)
 
-    def test_slow_global_candidate_requires_current_frame_confirmation(self):
-        old = np.zeros((4, 4, 3), np.uint8)
-        frame = np.ones_like(old)
+    def completed_slow_competition(self, frame, geometry=None, capture_time=100.0):
+        locator = self.async_locator()
         seed = self.result(0.99, margin=0.2)
         seed = replace(seed, best=replace(seed.best, map_id="map01"))
-        for status, tier, map_id, accepted in (
-            ("accepted", "__main__", "map01", True),
-            ("ambiguous", "__main__", "map01", False),
-            ("accepted", "other", "map01", False),
-            ("accepted", "__main__", "map02", False),
-        ):
-            with self.subTest(status=status, tier=tier, map_id=map_id):
-                locator = self.async_locator()
-                future = Future()
-                future.set_result(_SearchOutcome(seed, "", 100, "map01"))
-                locator._search_started_at = time.monotonic() - 6
-                locator._search_future, locator._search_frame, locator._search_shape = future, old, old.shape
-                locator._frame_time = 100
-                locator._workers = SimpleNamespace(closed=False, close=Mock(), acquisitions=Mock())
-                candidate = replace(seed.best, world_x=11, tier_id=tier, map_id=map_id)
-                locator.locate_on_map = Mock(return_value=replace(seed, status=status, best=candidate))
-                # The worker can wake the sampler before the next capture arrives.
-                self.assertIsNone(locator.locate_global(old, None))
-                locator.locate_on_map.assert_not_called()
-                locator._workers.acquisitions.submit.assert_not_called()
-                locator._frame_time = 106
-                result = locator.locate_global(frame, None)
-                self.assertIs(locator.locate_on_map.call_args.args[0], frame)
-                if accepted:
-                    self.assertIs(result.best, candidate)
-                    self.assertEqual(result.observed_at, 106)
-                    locator._frame_time += 0.2
-                    self.assertEqual(locator.locate_global(frame.copy(), None).observed_at, 106.2)
-                else:
-                    self.assertIsNone(result)
-                    self.assertIsNone(locator._active)
-                    locator._workers.acquisitions.submit.assert_called_once()
+        locator._search_future = Future()
+        stamp = time.time() - 6 if capture_time is None else capture_time
+        locator._search_future.set_result(_SearchOutcome(seed, "", stamp, "map01"))
+        locator._search_started_at = time.monotonic() - 6
+        locator._search_frame = frame.copy()
+        locator._search_shape = frame.shape
+        locator._search_geometry = geometry
+        locator._search_capture_time = capture_time
+        locator.set_frame_time(capture_time)
+        return locator
+
+    def test_duplicate_without_capture_time_does_not_refresh_slow_result(self):
+        frame = np.zeros((32, 32, 3), np.uint8)
+        geometry = MinimapGeometry(16, 16, 4)
+        locator = self.completed_slow_competition(frame, geometry, capture_time=None)
+        self.assertIsNone(locator.locate_global(frame.copy(), geometry))
+        self.assertIsNone(locator._search_future)
+        self.assertIsNone(locator._active)
+        frame[0, 0] = 255  # Different capture, identical minimap search inputs.
+        result = locator.locate_global(frame, geometry)
+        self.assertEqual(result.status, "accepted")
+        self.assertIsNone(locator.locate_global(frame.copy(), geometry))
+
+    def test_slow_complete_ranking_can_confirm_identical_hud_on_two_distinct_captures(self):
+        frame = np.zeros((4, 4, 3), np.uint8)
+        locator = self.completed_slow_competition(frame)
+        self.assertIsNone(locator.locate_global(frame, None))
+        locator.set_frame_time(106)
+        result = locator.locate_global(frame.copy(), None)
+        self.assertEqual((result.best.map_id, result.margin, result.observed_at), ("map01", 0.2, 106))
+        self.assertIsNone(locator.locate_global(frame, None))
+        locator.set_frame_time(106.2)
+        self.assertEqual(locator.locate_global(frame, None).observed_at, 106.2)
+        self.assertIsNone(locator._completed_competition)
+
+    def test_changed_hud_requires_cross_map_competition_before_acquisition(self):
+        old = np.zeros((4, 4, 3), np.uint8)
+        current = np.ones_like(old)
+        locator = self.completed_slow_competition(old)
+        locator.set_frame_time(106)
+        locator.map_ids = ("map01", "map02")
+        for mid, score in (("map01", 0.99), ("map02", 0.98)):
+            locator._cache[mid] = SimpleNamespace(locate_global=Mock(return_value=self.result(score)))
+        self.assertIsNone(locator.locate_global(current, None))
+        locator._search_future.result(timeout=3)
+        result = locator.locate_global(current, None)
+        self.assertEqual(result.status, "ambiguous")
+        self.assertAlmostEqual(result.margin, 0.01)
+        for mid in locator.map_ids:
+            frame = locator._cache[mid].locate_global.call_args.args[0]
+            np.testing.assert_array_equal(frame, current)
+        self.assertIsNone(locator._active)
 
     def test_identical_async_snapshot_is_reused_without_a_second_search(self):
         locator = self.async_locator()

@@ -166,6 +166,16 @@ class MinimapGeometry:
             ring_outer_ratio=ring_outer_ratio,
         )
 
+    def hud_bounds(self):
+        """Bounds of all search pixels, including the outer rim used by the texture gate."""
+        extent = self.outer_radius * 1.10 + max(1.0, self.outer_radius * 0.036) + 1
+        return (
+            math.floor(self.center_x - extent),
+            math.floor(self.center_y - extent),
+            math.ceil(self.center_x + extent) + 1,
+            math.ceil(self.center_y + extent) + 1,
+        )
+
     @property
     def match_inner_radius(self) -> float:
         return self.outer_radius * self.ring_inner_ratio
@@ -581,8 +591,8 @@ def _minimap_rim_sectors(frame: np.ndarray, geometry: MinimapGeometry) -> int:
     if cx - extent < 0 or cy - extent < 0 or cx + extent >= width or cy + extent >= height:
         return 0
     # Convert only the HUD crop, not every full frame for every map/layer.
-    x0, y0 = math.floor(cx - extent), math.floor(cy - extent)
-    roi = frame[y0 : math.ceil(cy + extent) + 1, x0 : math.ceil(cx + extent) + 1]
+    x0, y0, x1, y1 = geometry.hud_bounds()
+    roi = frame[y0:y1, x0:x1]
     gray = _as_gray(roi).astype(np.float32)
     angles = (np.arange(128) + 0.5) * (2 * np.pi / 128)
     radii = np.linspace(0.94, 1.10, 17)[:, None] * radius
@@ -1576,6 +1586,7 @@ class MinimapTracker:
         geometry: MinimapGeometry,
         *,
         now: float | None = None,
+        capture_timed: bool = True,
         prior_world: tuple[float, float] | None = None,
         prior_radius_m: float = 50.0,
         prediction_world: tuple[float, float] | None = None,
@@ -1592,7 +1603,7 @@ class MinimapTracker:
             self.reset()
         set_frame_time = getattr(self.locator, "set_frame_time", None)
         if callable(set_frame_time):
-            set_frame_time(current)
+            set_frame_time(current if now is not None and capture_timed else None)
         previous_update = self._last_update_t
         self._last_update_t = current
         fresh = (

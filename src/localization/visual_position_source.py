@@ -230,13 +230,13 @@ class VisualPositionSource:
             )
         return dict(self._last_state)
 
-    def sample(self, frame, *, now=None):
+    def sample(self, frame, *, now=None, capture_timed=True):
         with self._state_lock:
             if self._closed:
                 return self.unavailable("visual_source_closed")
-            return self._sample(frame, now=now)
+            return self._sample(frame, now=now, capture_timed=capture_timed)
 
-    def _sample(self, frame, *, now=None):
+    def _sample(self, frame, *, now=None, capture_timed=True):
         clock = time.time() if now is None else float(now)
         if not math.isfinite(clock):
             raise ValueError("non-finite visual frame time")
@@ -299,6 +299,7 @@ class VisualPositionSource:
             frame,
             geometry,
             now=clock,
+            capture_timed=capture_timed and now is not None,
             prediction_world=predicted_world,
             prediction_radius_m=self.tracker.min_search_radius_m,
             recovery_world=recovery_world,
