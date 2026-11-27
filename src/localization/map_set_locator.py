@@ -30,6 +30,7 @@ class _SearchOutcome:
     failure_reason: str
     observed_at: float
     active_map: str | None = None
+    map_ids: frozenset[str] = frozenset()
 
 
 @dataclass
@@ -40,7 +41,8 @@ class _CompletedCompetition:
     expires: float
     observed_at: float
     capture_time: float | None
-    confirmed_once: bool = False
+    map_ids: frozenset[str]
+    confirmation: tuple[np.ndarray, float, float | None] | None = None
 
 
 class MapSetLocator:
@@ -75,6 +77,7 @@ class MapSetLocator:
         self._search_observed_at = None
         self._search_ready_callback = None
         self._frame_time = None
+        self._capture_time = None
         self._search_capture_time = None
         self._expanded_scope = None
         self._visual_normalization_required = False
@@ -84,8 +87,9 @@ class MapSetLocator:
         """Wake the owner for a fresh observation; never publish job results."""
         self._search_ready_callback = callback
 
-    def set_frame_time(self, stamp):
+    def set_frame_time(self, stamp, *, capture_timed=True):
         self._frame_time = stamp
+        self._capture_time = stamp if capture_timed else None
 
     def requires_visual_normalization(self):
         if not self._visual_normalization_required:
@@ -508,6 +512,9 @@ class MapSetLocator:
         completed = self._search_snapshot(frame, geometry, started)
         return replace(completed, observed_at=observed_at) if completed is not None else None
 
+    def _loaded_competitors(self):
+        return frozenset(mid for mid in self._required_map_ids(self._navigation_scope) if mid in self._cache)
+
     def _poll_completed_competition(self, frame, geometry):
         cached = self._completed_competition
         now = self._frame_time if self._frame_time is not None else time.time()
@@ -515,15 +522,20 @@ class MapSetLocator:
             time.monotonic() <= cached.expires
             and cached.frame.shape == frame.shape
             and cached.frame.dtype == frame.dtype
+            and cached.map_ids == self._loaded_competitors()
             and geometry == cached.geometry
             and 0 <= now - cached.observed_at <= _COLD_SEARCH_MAX_AGE_S
         ):
             # A later poll is not proof of a later capture. Without comparable
             # capture times, require different pixels even outside the HUD.
-            timed = self._frame_time is not None and cached.capture_time is not None
-            if now == cached.observed_at or (not timed and np.array_equal(frame, cached.frame)):
-                self.last_failure_reason = "visual_global_search_pending"
-                return None
+            observations = [(cached.frame, cached.observed_at, cached.capture_time)]
+            if cached.confirmation is not None:
+                observations.append(cached.confirmation)
+            for previous, observed_at, capture_time in observations:
+                timed = self._capture_time is not None and capture_time is not None
+                if now <= observed_at or (not timed and np.array_equal(frame, previous)):
+                    self.last_failure_reason = "visual_global_search_pending"
+                    return None
 
             # Every map/floor search consumes the matching square and the HUD
             # rim. Exact equality over this superset makes the complete ranking
@@ -534,13 +546,10 @@ class MapSetLocator:
                 region = np.s_[max(0, y0) : y1, max(0, x0) : x1]
             if np.array_equal(frame[region], cached.frame[region]):
                 self._active = cached.result.best.map_id
-                if cached.confirmed_once:
-                    self._completed_competition = None
+                if cached.confirmation is None:
+                    cached.confirmation = (frame.copy(), now, self._capture_time)
                 else:
-                    cached.confirmed_once = True
-                    cached.capture_time = self._frame_time
-                    cached.observed_at = now
-                    cached.frame = frame.copy()
+                    self._completed_competition = None
                 return replace(cached.result, observed_at=now)
         # Any changed search input requires all maps and floors to compete again.
         self._clear_search_hint()
@@ -622,6 +631,7 @@ class MapSetLocator:
                     time.monotonic() + _SEARCH_RESULT_MAX_AGE_S,
                     search_observed_at,
                     self._search_capture_time,
+                    outcome.map_ids,
                 )
             else:
                 self._clear_search_hint()
@@ -654,7 +664,7 @@ class MapSetLocator:
         self._search_frame = snapshot
         self._search_started_generation = self._search_generation
         self._search_started_at = time.monotonic()
-        self._search_capture_time = self._frame_time
+        self._search_capture_time = self._capture_time
         self._search_observed_at = self._frame_time if self._frame_time is not None else time.time()
         self._search_future = self._workers.acquisitions.submit(
             self._search_global_outcome, snapshot, geometry, started, self._search_observed_at
@@ -669,8 +679,9 @@ class MapSetLocator:
     def _search_global_outcome(self, frame, geometry, started, observed_at):
         self._job_state.failure_reason = ""
         try:
+            map_ids = self._loaded_competitors()
             result = self._search_global_ready(frame, geometry, started)
-            return _SearchOutcome(result, self._job_state.failure_reason, observed_at, self._active)
+            return _SearchOutcome(result, self._job_state.failure_reason, observed_at, self._active, map_ids)
         finally:
             self._active = None
             del self._job_state.failure_reason

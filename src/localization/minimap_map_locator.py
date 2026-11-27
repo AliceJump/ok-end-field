@@ -1603,7 +1603,7 @@ class MinimapTracker:
             self.reset()
         set_frame_time = getattr(self.locator, "set_frame_time", None)
         if callable(set_frame_time):
-            set_frame_time(current if now is not None and capture_timed else None)
+            set_frame_time(current, capture_timed=now is not None and capture_timed)
         previous_update = self._last_update_t
         self._last_update_t = current
         fresh = (

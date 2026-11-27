@@ -2534,7 +2534,7 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         seed = replace(seed, best=replace(seed.best, map_id="map01"))
         locator._search_future = Future()
         stamp = time.time() - 6 if capture_time is None else capture_time
-        locator._search_future.set_result(_SearchOutcome(seed, "", stamp, "map01"))
+        locator._search_future.set_result(_SearchOutcome(seed, "", stamp, "map01", frozenset({"map01"})))
         locator._search_started_at = time.monotonic() - 6
         locator._search_frame = frame.copy()
         locator._search_shape = frame.shape
@@ -2550,10 +2550,18 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         self.assertIsNone(locator.locate_global(frame.copy(), geometry))
         self.assertIsNone(locator._search_future)
         self.assertIsNone(locator._active)
+        stamp = time.time()
+        locator.set_frame_time(stamp, capture_timed=False)
         frame[0, 0] = 255  # Different capture, identical minimap search inputs.
         result = locator.locate_global(frame, geometry)
         self.assertEqual(result.status, "accepted")
         self.assertIsNone(locator.locate_global(frame.copy(), geometry))
+        locator.set_frame_time(stamp + 0.1, capture_timed=False)
+        frame[0, 0] = 0  # Original A after first confirmation B.
+        self.assertIsNone(locator.locate_global(frame, geometry))
+        locator.set_frame_time(stamp + 0.2, capture_timed=False)
+        frame[0, 0] = 64  # A genuinely different C may confirm.
+        self.assertEqual(locator.locate_global(frame, geometry).status, "accepted")
 
     def test_slow_complete_ranking_can_confirm_identical_hud_on_two_distinct_captures(self):
         frame = np.zeros((4, 4, 3), np.uint8)
@@ -2566,6 +2574,34 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         locator.set_frame_time(106.2)
         self.assertEqual(locator.locate_global(frame, None).observed_at, 106.2)
         self.assertIsNone(locator._completed_competition)
+
+    def test_newly_available_map_invalidates_slow_competition_with_identical_pixels(self):
+        frame = np.zeros((4, 4, 3), np.uint8)
+        locator = self.completed_slow_competition(frame)
+        locator.map_ids = ("map01", "map02")
+        locator.set_frame_time(106)
+        self.assertEqual(locator.locate_global(frame, None).margin, 0.2)
+        for mid, score in (("map01", 0.99), ("map02", 0.98)):
+            locator._cache[mid] = SimpleNamespace(locate_global=Mock(return_value=self.result(score)))
+        locator.set_frame_time(106.2)
+        self.assertIsNone(locator.locate_global(frame, None))
+        locator._search_future.result(timeout=3)
+        result = locator.locate_global(frame, None)
+        self.assertEqual(result.status, "ambiguous")
+        self.assertAlmostEqual(result.margin, 0.01)
+
+    def test_untimed_snapshot_keeps_observation_time_through_timed_poll(self):
+        frame = np.zeros((4, 4, 3), np.uint8)
+        locator = self.async_locator()
+        locator._cache["map01"].locate_global = Mock(return_value=self.result())
+        tracker = MinimapTracker(locator)
+        with patch("src.localization.map_set_locator.time.time", return_value=100.15):
+            tracker.update(frame, None, now=100, capture_timed=False)
+        self.assertIsNone(locator._search_capture_time)
+        self.assertEqual(locator._search_future.result(timeout=3).observed_at, 100)
+        match = tracker.update(frame, None, now=100.10)
+        self.assertEqual(match.locate.observed_at, 100)
+        self.assertEqual(VisualPositionSource._match_observation_clock(match, 100.10), 100)
 
     def test_changed_hud_requires_cross_map_competition_before_acquisition(self):
         old = np.zeros((4, 4, 3), np.uint8)
