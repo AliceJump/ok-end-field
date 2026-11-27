@@ -18,6 +18,7 @@ dependencies = [
     "pynput==1.8.2",
     "pyautogui==0.9.54",
     "cryptography>=44.0.0",
+    "opencc==1.2.0",
 ]
 
 [dependency-groups]
