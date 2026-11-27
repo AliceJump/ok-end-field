@@ -19,6 +19,7 @@ def install_startup_patches():
     from src.patches.dynamic_config_patch import install_dynamic_config_patch
     from src.patches.endfield_theme_patch import install_endfield_theme_patch
     from src.patches.enemy_direction_recovery_patch import install_enemy_direction_recovery_patch
+    from src.patches.lazy_task_tab_patch import install_lazy_task_tab_patch
     from src.patches.log_upload_patch import install_log_upload_patch
     from src.patches.no_frame_task_patch import install_no_frame_task_patch
     from src.patches.ocr_text_fix_patch import install_ocr_text_fix_patch
@@ -57,4 +58,5 @@ def install_startup_patches():
     install_win32_gdi_point_patch()
     install_qfluent_navigation_patch()
     install_endfield_theme_patch()
+    install_lazy_task_tab_patch()
     _PATCH_INSTALLED = True

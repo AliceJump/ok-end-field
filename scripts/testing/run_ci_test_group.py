@@ -28,6 +28,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
         (
             "TestConfigKeyCopy.py",
             "TestConfigTabPrewarm.py",
+            "TestLazyTaskTabs.py",
             "TestConfigTransferPatch.py",
             "TestPreConfigPatch.py",
             "TestParamPreviewModel.py",
