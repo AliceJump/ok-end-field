@@ -113,7 +113,7 @@ _CONNECTION_ISSUE = "unreachable:"
 _STATE_PATH = "/api/state"
 
 #: 网格目录。坐标兜底推断地图名时要读它的范围。
-_GRID_DIR = Path(__file__).resolve().parents[2] / "assets" / "nav-grid-data"
+_GRID_DIR = Path(__file__).resolve().parents[2] / "assets" / "nav-grid-data" / "navigation"
 
 
 def map_id_for_scene(scene_num_id: object) -> str:

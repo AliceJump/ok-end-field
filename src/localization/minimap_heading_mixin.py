@@ -332,8 +332,18 @@ class MinimapHeadingMixin:
         result["ok"] = feedback_settled and abs(result["error"]) <= tolerance
         # 目标是一轮到位（只按一次 W，角色只前移一小步）；多轮只是兜底
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
-        full_probe = max_probe_s is None or max_probe_s >= max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
-        if control_state is not None and result["rounds"] > 0 and result["ok"] and full_probe:
+        configured_hold = self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD)
+        full_probe = configured_hold > 0 and (max_probe_s is None or max_probe_s >= configured_hold)
+        # A settled full probe establishes the camera/character baseline even
+        # when the target is missed; the next call can then measure input gain.
+        rejected_probe = bool(result.get("probe_rejected"))
+        if (
+            control_state is not None
+            and result["rounds"] > 0
+            and feedback_settled
+            and full_probe
+            and not rejected_probe
+        ):
             control_state.update(
                 configured=per_px,
                 gain=control_per_px,
@@ -344,7 +354,12 @@ class MinimapHeadingMixin:
         elif control_state is not None and result["rounds"] > 0 and not feedback_settled:
             control_state.update(
                 configured=per_px,
-                pending_feedback={"before": result["history"][-1]["before"], "tries": 0, "sent_at": time.monotonic()},
+                pending_feedback={
+                    "before": result["history"][-1]["before"],
+                    "tries": 0,
+                    "sent_at": time.monotonic(),
+                    "eligible": full_probe and not rejected_probe,
+                },
             )
         return result
 
@@ -366,8 +381,15 @@ class MinimapHeadingMixin:
             probe_only=probe, heading=after, error=None if after is None else angle_delta(result["target"], after)
         )
         result["ok"] = settled and after is not None and abs(result["error"]) <= tolerance
-        full_probe = max_probe_s is None or max_probe_s >= max(0.0, self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD))
-        if result["ok"] and full_probe:
+        configured_hold = self._cfg_float(CONFIG_W_HOLD, DEFAULT_W_HOLD)
+        full_probe = configured_hold > 0 and (max_probe_s is None or max_probe_s >= configured_hold)
+        if (
+            settled
+            and after is not None
+            and full_probe
+            and (probe or pending.get("eligible", False))
+            and not result.get("probe_rejected")
+        ):
             control_state.update(
                 configured=per_px, gain=per_px, heading=after, gain_samples=[], observed_at=time.monotonic()
             )
@@ -567,13 +589,15 @@ class MinimapHeadingMixin:
         backend = getattr(getattr(self, "executor", None), "interaction", None)
         before = getattr(backend, "key_down_rejections", 0)
         sent = self.press_key("w", down_time=hold)
+        rejected = sent is False or getattr(backend, "key_down_rejections", 0) != before
         result = getattr(self, "_last_turn_result", None)
-        if (
-            max_hold_s is not None
-            and result is not None
-            and sent is not False
-            and getattr(backend, "key_down_rejections", 0) == before
-        ):
+        if result is not None:
+            # A rejected probe may leave the camera at its pre-rotation heading,
+            # so it must not establish the gain baseline as a settled full probe.
+            # Latch it for the whole turn: one rejected probe invalidates the
+            # baseline, and a later successful probe must not erase that.
+            result["probe_rejected"] = rejected or bool(result.get("probe_rejected"))
+        if max_hold_s is not None and result is not None and not rejected:
             result.setdefault("probe_intervals", []).append((started, min(time.time(), started + hold)))
         return self.read_heading(min_score=min_score)
 

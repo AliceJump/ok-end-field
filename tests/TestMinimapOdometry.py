@@ -28,6 +28,7 @@ from src.localization.minimap_odometry import (
     region_geometry,
     wrap_deg,
 )
+from src.localization.visual_frame import normalize_visual_frame
 
 
 def _texture(width=200, height=200, seed=0):
@@ -691,6 +692,23 @@ class TestCropBox(unittest.TestCase):
 
 class TestCropKeepsDisplacement(unittest.TestCase):
     """裁剪后位移估计与整帧一致（真实几何下环带只占画面一小块）。"""
+
+    def test_normalized_motion_matches_at_1280_and_2560(self):
+        base = _texture(1280, 720)
+        frames = [_bgr(base), _bgr(_shifted(base, 4, 3))]
+        observations = []
+        for scale in (1, 2):
+            normalized = [
+                normalize_visual_frame(cv2.resize(f, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST))
+                for f in frames
+            ]
+            h, w = normalized[0].shape[:2]
+            odometry = MinimapOdometry(_FakeTask(w, h, frames=normalized))
+            odometry.sample(frame=normalized[0], now=0.0)
+            sample = odometry.sample(frame=normalized[1], now=0.5)
+            self.assertTrue(sample["ok"])
+            observations.append((odometry._box(), sample["dmap_px"], tuple(odometry._pos_px)))
+        self.assertEqual(observations[0], observations[1])
 
     def test_estimates_shift_on_cropped_ring(self):
         w, h = 1280, 720

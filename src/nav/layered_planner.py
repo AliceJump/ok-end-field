@@ -206,7 +206,8 @@ class LayeredPlanner:
             result = PlanResult(False, f"缺少层 {key[1] or '主图'!r} 的网格")
         else:
             result = planner.plan_multi(start_cells, goal_cells, time_budget_s=time_budget_s)
-        self._segment_cache[cache_key] = result
+        if not result.timed_out:
+            self._segment_cache[cache_key] = result
         return result
 
     def plan(
@@ -247,8 +248,8 @@ class LayeredPlanner:
                 )
 
         nodes = self._build_nodes(start_key, goal_key, start_cells, goal_cells)
-        if len(nodes) == 2:
-            # 这张图没有任何连接：退化成一次普通层内规划，不经过层图
+        if len(nodes) == 2 and start_key == goal_key:
+            # 无连接且起终点同层时，退化成层内规划。
             return self._direct_route(nodes, start_key, goal_key, time_budget_s)
 
         index_of_goal = len(nodes) - 1
@@ -273,6 +274,25 @@ class LayeredPlanner:
         把原因说成"被阻挡隔断"是错的，会把人引向错误的方向去查。
         """
         same_layer = start_key == goal_key
+        reachable = {start_key}
+        pending = [start_key]
+        while pending:
+            current = pending.pop()
+            for link in self.layered.links:
+                destinations = []
+                if link.source.key == current:
+                    destinations.append(link.target.key)
+                if link.bidirectional and link.target.key == current:
+                    destinations.append(link.source.key)
+                for destination in destinations:
+                    if destination not in reachable:
+                        reachable.add(destination)
+                        pending.append(destination)
+        if goal_key not in reachable:
+            return (
+                f"不可达，缺少跨层连接：{start_key[1] or '大地图'} 无有向连接路径通往 "
+                f"{goal_key[1] or '大地图'}；请检查目标楼层及跨层连接标注"
+            )
         grid = self.layered.layers.get(start_key)
         parts = []
         parts.append(
@@ -284,10 +304,8 @@ class LayeredPlanner:
             blocks, biggest, total = _walkable_blocks(grid)
             share = f"，占 {biggest / total * 100:.1f}%" if total else ""
             parts.append(f"{start_key[1] or '主图'}共 {blocks} 块可行走区，最大块 {biggest} 格{share}")
-        parts.append(
-            "片区之间隔着未标注的格子（不是阻挡格）：需要在编辑器里补涂，"
-            "或确认这里本来就该绕行/传送；开启「允许穿越未知格」可临时穿过未探索区域"
-        )
+        parts.append("请检查层内可通行性及连接端点；路径可能受阻挡格、未标注区域或连接方向限制")
+        parts.append("「允许穿越未知格」只影响未标注区域的通行，不会增加跨层连接")
         return "；".join(parts) + "。"
 
     # ------------------------------------------------------------------ #
@@ -462,7 +480,7 @@ class LayeredPlanner:
                 notes.append(f"分段在还原阶段不可达：{plan.reason}")
                 run_start = run_end = None
                 return False
-            if plan.cost <= 1e-9:
+            if plan.cost <= 1e-9 and any(edge[0] == "link" for edge in chain):
                 # 零长段（起点已在连接端点区域内时会出现）：不是"一步"，丢掉。
                 # 保留它会让路线多出"原地不动"的阶段，也会让只用于展示的 tiers 出现
                 # 重复层——代价不受影响，但不该出现在结果里。

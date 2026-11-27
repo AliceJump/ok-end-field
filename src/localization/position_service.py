@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import threading
 import time
+from contextlib import contextmanager
 from pathlib import Path
+
+from ok.task.exceptions import CaptureException
 
 from src.core.BaseEfTask import BaseEfTask
 from src.core.global_config_store import get_global_config
@@ -35,6 +38,9 @@ from src.core.PositionConfig import (
 from src.localization.calibrated_map_store import CalibratedMapStore
 from src.localization.capture_pose_mixin import CapturePoseMixin
 from src.localization.minimap_heading_mixin import MinimapHeadingMixin
+from src.localization.native_tile_image import UnpreparedTileOverview
+from src.localization.visual_frame import normalize_visual_frame
+from src.localization.visual_pose_sampling import VisualPoseSampler
 from src.localization.visual_position_source import KeyframeConfig, VisualPositionSource
 from src.localization.wgc_frame_timing import MAX_FRAME_LEAD_S, timing_for_frame
 from src.runtime_state.topics import RuntimeTopic
@@ -56,10 +62,18 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._init_source_state()
 
     def _init_source_state(self):
+        self._visual_sample_lock = threading.RLock()
+        self._visual_sampler = None
+        self._sampled_visual_state = None
+        self._visual_capture = None
+        self._visual_input_stamp = None
+        self._visual_input_shape = None
         self._init_minimap_heading_mixin()
         self._init_runtime_state_mixin()
         self._init_capture_pose_mixin()
         self._visual_source = None
+        self._stationary_navigation_start = False
+        self._navigation_topology_provider = None
         self._source_signature = None
         self._minimap_started = False
         self._minimap_last_state = None
@@ -147,6 +161,9 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
                 map_id,
                 **chain_options,
             )
+            notify = getattr(locator, "set_search_ready_callback", None)
+            if callable(notify):
+                notify(self._wake_visual_sampler)
             self._visual_error = ""
         except (OSError, ValueError) as exc:
             self._visual_retry_at = self.active_time() + 5.0
@@ -155,6 +172,45 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         return self.minimap_position_ready
 
     def stop_minimap_position(self):
+        with self._visual_sample_lock:
+            self._stop_visual_source()
+
+    @contextmanager
+    def stationary_navigation_start(self):
+        """Allow local confirmation until navigation receives its first trusted pose."""
+        with self._visual_sample_lock:
+            self._stationary_navigation_start = not (self._sampled_visual_state or {}).get("position_trusted", False)
+        try:
+            yield
+        finally:
+            with self._visual_sample_lock:
+                self._stationary_navigation_start = False
+                self._set_locator_start_mode(False)
+
+    def _set_locator_start_mode(self, enabled):
+        locator = getattr(self._visual_source, "locator", None)
+        if hasattr(locator, "stationary_navigation_start"):
+            locator.stationary_navigation_start = enabled
+
+    @contextmanager
+    def navigation_topology(self, provider):
+        """Use navigation's grid snapshot only for this navigation session."""
+        with self._visual_sample_lock:
+            previous = self._navigation_topology_provider
+            if previous is not provider:
+                self._sampled_visual_state = None
+            self._navigation_topology_provider = provider
+        try:
+            yield
+        finally:
+            with self._visual_sample_lock:
+                if previous is not provider:
+                    self._sampled_visual_state = None
+                self._navigation_topology_provider = previous
+                if self._visual_source is not None:
+                    self._visual_source.set_navigation_topology(None)
+
+    def _stop_visual_source(self):
         self._source_epoch += 1
         if self._visual_source is not None:
             self._visual_source.close()
@@ -162,6 +218,10 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         self._source_signature = None
         self._minimap_started = False
         self._minimap_last_state = None
+        self._sampled_visual_state = None
+        self._visual_capture = None
+        self._visual_input_stamp = None
+        self._visual_input_shape = None
         self.runtime_state_hub.clear(RuntimeTopic.WORLD_POSE)
 
     def latest_minimap_state(self, *, max_age=1, now=None):
@@ -171,6 +231,10 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         return dict(state)
 
     def sample_world_pose(self, frame=None, *, now=None) -> dict:
+        with self._visual_sample_lock:
+            return self._sample_world_pose(frame, now=now)
+
+    def _sample_world_pose(self, frame=None, *, now=None) -> dict:
         self.start_minimap_position(wait_stable=False)
         if self.experimental_capture_enabled():
             self.ensure_capture_backend()
@@ -193,7 +257,7 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
         publish_world_pose(self.runtime_state_hub, state, source=source, now=self._now(now))
         return state
 
-    def _sample_visual_pose(self, frame):
+    def _sample_visual_pose(self, frame, *, capture=_UNSET, timing=_UNSET):
         if self._visual_source is None:
             return {
                 "x": None,
@@ -208,24 +272,153 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             }
         if frame is None:
             frame = self.next_frame()
-        timing = timing_for_frame(getattr(self.executor, "method", None), frame)
+        if capture is _UNSET:
+            capture = getattr(self.executor, "method", None)
+        if timing is _UNSET:
+            timing = timing_for_frame(capture, frame)
+        if capture is not self._visual_capture:
+            if self._visual_capture is not None:
+                self._visual_source.reset()
+            self._sampled_visual_state = None
+            self._visual_input_stamp = None
+            self._visual_input_shape = None
+            self._visual_capture = capture
         stamp = timing.frame_time if timing is not None else time.time()
-        state = self._locate_visual_frame(frame, stamp, timing)
-        state["frame_t"] = stamp
-        if time.time() - stamp > 2:
+        try:
+            topology = self._current_visual_topology()
+        except (OSError, ValueError) as exc:
+            self._sampled_visual_state = None
+            self._visual_source.reset()
+            return self._visual_source.unavailable(f"visual_resource_error:{type(exc).__name__}")
+        if topology is not getattr(self, "_visual_topology", None):
+            self._sampled_visual_state = None
+            self._visual_topology = topology
+        previous = self._sampled_visual_state
+        frame_shape = getattr(frame, "shape", None)
+        shape = None if frame_shape is None else frame_shape[:2]
+        last_input = self._visual_input_stamp
+        if (
+            self._visual_sampler is not None
+            and timing is not None
+            and previous is not None
+            and last_input is not None
+            and previous.get("frame_time_source") == timing.source
+            and -MAX_FRAME_LEAD_S <= time.time() - previous["frame_t"] <= 2
+            and (
+                stamp < last_input
+                or (
+                    shape == getattr(self, "_visual_input_shape", None)
+                    and self._visual_source.odometry is not None
+                    and stamp < last_input + self._visual_source.odometry._sample_min_dt
+                )
+            )
+        ):
+            # The control loop may retain a frame older than the sampler's.
+            # Coalesce that request, without rolling the source clock back or
+            # restamping cached coordinates as a fresh observation.
+            return {**previous, "visual_duplicate_frame": True}
+        self._set_locator_start_mode(self._stationary_navigation_start)
+        state = self._locate_visual_frame(frame, stamp, timing, topology)
+        state.setdefault("frame_t", stamp)
+        if time.time() - state["frame_t"] > 2:
             state = self._visual_source.unavailable("visual_result_too_old")
+            state["frame_t"] = stamp
+        if self._stationary_navigation_start and state.get("position_trusted"):
+            self._stationary_navigation_start = False
+            self._set_locator_start_mode(False)
         state["frame_time_source"] = timing.source if timing is not None else "sample_time_fallback"
         state["frame_clock_uncertainty_s"] = timing.clock_uncertainty_s if timing is not None else None
         bearing, score = self._read_arrow(frame) if frame is not None else (None, 0)
         state["heading"], state["heading_score"] = bearing, score
+        self._visual_input_stamp = stamp
+        self._sampled_visual_state = dict(state)
         return state
 
-    def _locate_visual_frame(self, frame, stamp, timing):
+    @contextmanager
+    def visual_sampling(self, owner):
+        """Keep actual observations flowing while navigation plans or sends input."""
+        capture = getattr(self.executor, "method", None)
+        if self.experimental_capture_enabled() or not callable(getattr(capture, "get_frame_for_probe", None)):
+            yield
+            return
+        previous = self._visual_sampler
+        if previous is not None:
+            if previous.capture is capture and previous.thread.is_alive() and not previous.stopped.is_set():
+                yield  # A nested navigation scope shares its still-active owner.
+                return
+            if previous.thread.is_alive() and not previous.close():
+                raise CaptureException("previous visual sampler is still stopping")
+            if self._visual_sampler is previous:
+                self._visual_sampler = None
+        sampler = VisualPoseSampler(
+            capture,
+            lambda frame, stopped: self._sample_continuous_visual(frame, stopped, capture),
+            lambda: (
+                not self.executor.exit_event.is_set()
+                and not self.executor.paused
+                and not owner.paused
+                and owner.enabled
+                and not self.experimental_capture_enabled()
+                and self.executor.method is capture
+            ),
+        )
+        self._visual_sampler = sampler
+        try:
+            sampler.start()
+            yield
+        finally:
+            closed = sampler.close()
+            if closed and self._visual_sampler is sampler:
+                self._visual_sampler = None
+
+    def _wake_visual_sampler(self):
+        sampler = self._visual_sampler
+        if sampler is not None:
+            sampler.wake()
+
+    def _sample_continuous_visual(self, frame, stopped, capture=_UNSET):
+        with self._visual_sample_lock:
+            if stopped.is_set() or self._visual_source is None or self.experimental_capture_enabled():
+                return
+            current = getattr(self.executor, "method", None)
+            if capture is _UNSET:
+                capture = current
+            if current is not capture:
+                return
+            timing = timing_for_frame(capture, frame)
+            if timing is None:
+                return
+            try:
+                self._sample_visual_pose(frame, capture=capture, timing=timing)
+            except Exception:
+                self._visual_source.reset()
+                self._sampled_visual_state = None
+                raise
+
+    def _current_visual_topology(self):
+        provider = self._navigation_topology_provider
+        return provider(self._visual_source.map_id) if provider is not None else None
+
+    def _locate_visual_frame(self, frame, stamp, timing, topology=_UNSET):
         if timing is not None and not -MAX_FRAME_LEAD_S <= time.time() - timing.frame_time <= 2:
             self._visual_source.reset()
             return self._visual_source.unavailable("stale_visual_frame")
         try:
-            return self._visual_source.sample(frame, now=stamp)
+            if topology is _UNSET:
+                topology = self._current_visual_topology()
+            self._visual_source.set_navigation_topology(topology)
+            if frame is not None:
+                shape = frame.shape[:2]
+                if self._visual_input_shape is not None and shape != self._visual_input_shape:
+                    self._visual_source.reset()
+                self._visual_input_shape = shape
+                # The source rebuilds geometry from the normalized dimensions;
+                # capture timing and arrow recognition retain the native frame.
+                frame = normalize_visual_frame(frame)
+            return self._visual_source.sample(frame, now=stamp, capture_timed=timing is not None)
+        except UnpreparedTileOverview:
+            self._visual_source.reset()
+            return self._visual_source.unavailable(f"visual_search_width_unprepared:{frame.shape[1]}")
         except (OSError, ValueError) as exc:
             self._visual_source.reset()
             return self._visual_source.unavailable(f"visual_resource_error:{type(exc).__name__}")
@@ -238,6 +431,9 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
             bool(state.get("anchor_set")),
             bool(state.get("position_trusted", True)),
             state.get("tier_id"),
+            # Report a new failure stage immediately, without logging every
+            # fluctuation in texture measurements at the control-loop rate.
+            str(state.get("trust_reason") or "").split(":", 1)[0] if not state.get("position_trusted") else "",
         )
         current = self._now(now)
         changed = status_key != self._last_status_key
@@ -313,6 +509,8 @@ class WorldPoseService(MinimapHeadingMixin, RuntimeStateMixin, CapturePoseMixin,
 
     def on_destroy(self):
         try:
+            if self._visual_sampler is not None:
+                self._visual_sampler.close()
             self.stop_capture_backend()
             self.stop_minimap_position()
         finally:

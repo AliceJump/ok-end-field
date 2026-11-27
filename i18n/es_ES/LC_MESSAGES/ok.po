@@ -3986,19 +3986,28 @@ msgid "百趣演武"
 msgstr "Arena de juegos"
 
 msgid "按配置次数完成百趣演武：每轮抽至战力超过10或满5张，每局自动完成两轮战斗。"
-msgstr "Completa el número configurado de partidas de Arena de juegos: roba hasta superar 10 de poder o tener 5 cartas y combate las dos rondas de cada partida."
+msgstr ""
+"Completa el número configurado de partidas de Arena de juegos: roba hasta "
+"superar 10 de poder o tener 5 cartas y combate las dos rondas de cada "
+"partida."
 
 msgid "刷取次数"
 msgstr "Número de partidas"
 
 msgid "每次最多包含两轮挑战，挑战中断也计为一次；中途启动会将当前局计为一次。"
-msgstr "Cada partida incluye hasta dos rondas. Un desafío interrumpido también cuenta como una partida; reanudar una partida cuenta como una partida."
+msgstr ""
+"Cada partida incluye hasta dos rondas. Un desafío interrumpido también "
+"cuenta como una partida; reanudar una partida cuenta como una partida."
 
 msgid "领取『祀的画』农牧和武陵城自动农植机产出。"
-msgstr "Recoge la producción agrícola y ganadera de Pintura de Si y de la cultivadora automática de Ciudad de Wuling."
+msgstr ""
+"Recoge la producción agrícola y ganadera de Pintura de Si y de la "
+"cultivadora automática de Ciudad de Wuling."
 
 msgid "是否领取『祀的画』农牧和武陵城自动农植机产出，并存入武陵仓库。"
-msgstr "Recoge la producción de Pintura de Si y de la cultivadora automática de Ciudad de Wuling y guárdala en el depósito de Wuling."
+msgstr ""
+"Recoge la producción de Pintura de Si y de la cultivadora automática de "
+"Ciudad de Wuling y guárdala en el depósito de Wuling."
 
 msgid "祀的画"
 msgstr "Pintura de Si"
@@ -4097,11 +4106,25 @@ msgstr ""
 
 #: src/core/GridNavConfig.py
 msgid "距航点小于该距离时提前制动；小角度且位置更新及时，可按速度和采样耗时保留安全距离后继续转向"
-msgstr "Frena antes al estar dentro de esta distancia de un punto de ruta. Si la corrección es pequeña y la posición se actualiza a tiempo, puede seguir girando dejando una distancia segura según la velocidad y el tiempo de muestreo."
+msgstr ""
+"Frena antes al estar dentro de esta distancia de un punto de ruta. Si la "
+"corrección es pequeña y la posición se actualiza a tiempo, puede seguir "
+"girando dejando una distancia segura según la velocidad y el tiempo de "
+"muestreo."
 
 #: src/patches/endfield_theme_patch.py
 msgid "插件"
 msgstr "Complementos"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "目标楼层(可选)"
+msgstr "Planta de destino (opcional)"
+
+#: src/tasks/navigation/MinimapNavigateToPoint.py
+msgid "留空按目标坐标自动判层；填写楼层 ID，或 __main__ 指定大地图"
+msgstr ""
+"Deja en blanco para deducir la planta por las coordenadas; introduce un ID "
+"de planta o __main__ para el mapa principal."
 
 msgid "旧水坝"
 msgstr "Presa Antigua"

@@ -318,7 +318,8 @@ class TestUnreachablePocket(unittest.TestCase):
         route = planner.plan([(0, 0)], [(0, 3)], start_tier="", goal_tier="lv1")
         self.assertFalse(route.ok, "只有单向出口的块不该能被进入")
         self.assertIn("不可达", route.reason)
-        self.assertIn("允许穿越未知格", route.reason, "reason 应当指出策略上的解法")
+        self.assertIn("缺少跨层连接", route.reason)
+        self.assertNotIn("允许穿越未知格", route.reason)
 
     def test_can_leave_the_pocket(self):
         layers, links = self._pocket_map()
