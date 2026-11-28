@@ -131,3 +131,19 @@ class EternalSunsetRoute(EnvironmentMonitoringRoute):  # 栖霞驻影世界坐�
 class StationaryObservationRoute(EnvironmentMonitoringRoute):  # 传送落点即可取景
     def run(self):  # 原地等待传送后大世界稳定
         self.run_route("原地取景", ())  # 原地等待大世界稳定
+
+
+class AutumnGoldRoute(EnvironmentMonitoringRoute):
+    photo_direction = "right"
+
+    def run(self):
+        if not self.task.navigate_grid_to((-1628.62, -1267.79), map_id="map02"):
+            raise RuntimeError("金秋时导航失败")
+
+
+class WaterTemperatureControllerRoute(EnvironmentMonitoringRoute):
+    photo_direction = "left"
+
+    def run(self):
+        if not self.task.navigate_grid_to((-1595.80, -1081.94), map_id="map02"):
+            raise RuntimeError("净水温控装置导航失败")
