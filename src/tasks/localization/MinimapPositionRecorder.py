@@ -181,6 +181,7 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
         overruns = 0
         max_period = 0.0
         prev_tick = None
+        start_ready = False
 
         self.log_info(
             f"开始记录: interval={interval:.2f}s duration={duration:.1f}s "
@@ -414,6 +415,9 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                     "region": patch_meta.get("region"),
                 }
                 records.append(record)
+                if not start_ready and record.get("position_trusted"):
+                    start_ready = True
+                    self.log_info("起点已就绪，可以开始走路线", notify=True)
 
                 if just_synced:
                     calibrations.append(
