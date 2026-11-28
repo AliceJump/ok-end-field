@@ -710,8 +710,14 @@ class TestEnvironmentMonitoringEntry(unittest.TestCase):
     def test_autumn_gold_localized_titles_and_navigation(self):
         self.assert_localized_routes(
             "autumn_gold",
-            {"zh_CN": "金秋时", "zh_TW": "金秋時", "en_US": "Autumn Gold",
-             "ja_JP": "錦秋時", "ko_KR": "황금빛 가을이 찾아올 때", "es_ES": "Oro otoñal"},
+            {
+                "zh_CN": "金秋时",
+                "zh_TW": "金秋時",
+                "en_US": "Autumn Gold",
+                "ja_JP": "錦秋時",
+                "ko_KR": "황금빛 가을이 찾아올 때",
+                "es_ES": "Oro otoñal",
+            },
             AutumnGoldRoute,
         )
         for success in (True, False):
