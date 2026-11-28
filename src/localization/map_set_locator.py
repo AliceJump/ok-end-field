@@ -555,7 +555,7 @@ class MapSetLocator:
                     self.last_failure_reason = "visual_global_search_pending"
                     return None
 
-            result = cached.result if changes == 0 else None
+            result = cached.result
             if self.stationary_navigation_start:
                 seed = cached.result.best
                 result = self.locate_on_map(
@@ -585,12 +585,12 @@ class MapSetLocator:
                 return replace(result, observed_at=now)
         _LOG.info(
             "global_search retry=%s hud_changed_px=%s",
-            ("start_candidate_failed" if self.stationary_navigation_start else "matching_pixels_changed")
+            "start_candidate_failed"
             if compatible
             else "expired_or_incompatible_competition",
             changes,
         )
-        # Any changed search input requires all maps and floors to compete again.
+        # Failed confirmation or incompatible context requires another competition.
         self._clear_search_hint()
         return None
 
