@@ -1,4 +1,28 @@
 {
+  "indoor_crops": {
+    "zh_CN": {"string": "室内作物"},
+    "zh_TW": {"string": "室內作物"},
+    "en_US": {"string": "Indoor Crops"},
+    "ja_JP": {"string": "室内の作物"},
+    "ko_KR": {"string": "실내 작물"},
+    "es_ES": {"string": "Cultivos de interior"}
+  },
+  "serenity_garden_tianshi_pillar": {
+    "zh_CN": {"string": "安思园的天师桩"},
+    "zh_TW": {"string": "安思園的天師樁"},
+    "en_US": {"string": "Serenity Garden Tianshi Pillar"},
+    "ja_JP": {"string": "安思園の天師杭"},
+    "ko_KR": {"string": "안사원의 천사장"},
+    "es_ES": {"string": "Pilar de Tianshi del Jardín de la Serenidad"}
+  },
+  "hanging_vines": {
+    "zh_CN": {"string": "垂藤"},
+    "zh_TW": {"string": "垂藤"},
+    "en_US": {"string": "Hanging Vines"},
+    "ja_JP": {"string": "垂れ藤"},
+    "ko_KR": {"string": "덩굴 식물"},
+    "es_ES": {"string": "Enredaderas colgantes"}
+  },
   "water_temperature_controller": {
     "zh_CN": {"string": "净水温控装置"},
     "zh_TW": {"string": "淨水溫控裝置"},

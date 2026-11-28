@@ -13,6 +13,25 @@ class EnvironmentMonitoringRoute:  # 共用传送后移动与状态检查
             raise RuntimeError("环境监测快捷传送失败")  # 不在传送失败后继续
         self.confirm_arrival()  # 验证传送完成
 
+    def transfer_from_map_region(self, region, region_name):  # 按指定地图区域选择传送点
+        task = self.task  # 复用所属任务的地图操作
+        task.open_observation_map()  # 共用任务追踪与地图检查
+        if not task.clear_icon_in_map():  # 清空地图标记筛选
+            raise RuntimeError("清空地图标记失败")  # 避免标记遮挡传送点
+        if not task.zoom_map_out():  # 缩小地图并等待稳定
+            raise RuntimeError("地图缩放后未稳定")  # 不在过渡画面识别
+        if not task.wait_click_feature(
+            fL.transfer_point,
+            box=task.box_of_screen(*region),
+            threshold=0.7,
+            time_out=5,
+            raise_if_not_found=False,
+        ):  # 在指定区域查找传送点
+            raise RuntimeError(f"未找到{region_name}传送点")  # 不盲目传送
+        if not task._wait_click_transfer_go():  # 点击所选传送点的传送按钮
+            raise RuntimeError("未找到传送按钮")  # 不把选中当成传送
+        self.confirm_arrival()  # 验证传送完成
+
     def confirm_arrival(self):  # 共用传送到达检查
         if not self.task._wait_for_transfer_arrival():  # 等待大世界稳定出现
             raise RuntimeError("环境监测传送后未确认到达")  # 不在异常界面继续
@@ -112,24 +131,8 @@ class TianshiPillarRoute(EnvironmentMonitoringRoute):  # 天师桩世界坐标�
 class EternalSunsetRoute(EnvironmentMonitoringRoute):  # 栖霞驻影世界坐标路线
     photo_direction = "up"  # 向上取景
 
-    def transfer(self):  # 该点位选择地图左上角传送点
-        task = self.task  # 复用所属任务的地图操作
-        task.open_observation_map()  # 共用任务追踪与地图检查
-        if not task.clear_icon_in_map():  # 清空地图标记筛选
-            raise RuntimeError("清空地图标记失败")  # 避免标记遮挡传送点
-        if not task.zoom_map_out():  # 缩小地图并等待稳定
-            raise RuntimeError("地图缩放后未稳定")  # 不在过渡画面识别
-        if not task.wait_click_feature(
-            fL.transfer_point,
-            box=task.box_of_screen(0.05, 0.02, 0.5, 0.5),
-            threshold=0.7,
-            time_out=5,
-            raise_if_not_found=False,
-        ):  # 在地图左上方查找传送点
-            raise RuntimeError("未找到左上方传送点")  # 不盲目传送
-        if not task._wait_click_transfer_go():  # 点击所选传送点的传送按钮
-            raise RuntimeError("未找到传送按钮")  # 不把选中当成传送
-        self.confirm_arrival()  # 验证传送完成
+    def transfer(self):  # 栖霞驻影使用左上方传送点
+        self.transfer_from_map_region((0.05, 0.02, 0.5, 0.5), "左上方")  # 复用地图传送流程
 
     def run(self):  # 导航至已实测的取景位置
         if not self.task.navigate_grid_to((-908.95, -1179.31), map_id="map02"):  # 使用武陵导航网格
@@ -155,3 +158,30 @@ class WaterTemperatureControllerRoute(EnvironmentMonitoringRoute):
     def run(self):
         if not self.task.navigate_grid_to((-1595.80, -1081.94), map_id="map02"):
             raise RuntimeError("净水温控装置导航失败")
+
+
+class HangingVinesRoute(EnvironmentMonitoringRoute):  # 垂藤的地图传送入口
+    def transfer(self):  # 垂藤从地图右下半区寻找传送点
+        self.transfer_from_map_region((0.5, 0.5, 1.0, 1.0), "右下方")  # 复用清标记、缩图和传送确认
+
+    photo_direction = "right"  # 向右搜索垂藤
+
+    def run(self):  # 导航至切片还原的拍摄终点
+        if not self.task.navigate_grid_to((-1359.5, -1127.5), map_id="map02"):  # 使用武陵网格
+            raise RuntimeError("垂藤导航失败")  # 导航失败时不进入相机
+
+
+class SerenityGardenTianshiPillarRoute(EnvironmentMonitoringRoute):
+    photo_direction = "up"
+
+    def run(self):
+        if not self.task.navigate_grid_to((-1670.55, -1299.16), map_id="map02"):
+            raise RuntimeError("安思园的天师桩导航失败")
+
+
+class IndoorCropsRoute(EnvironmentMonitoringRoute):
+    photo_direction = "right"
+
+    def run(self):
+        if not self.task.navigate_grid_to((-1405.78, -571.45), map_id="map02"):
+            raise RuntimeError("室内作物导航失败")
