@@ -2575,6 +2575,16 @@ class TestAutomaticMapCompetition(unittest.TestCase):
         self.assertEqual(locator.locate_global(frame, None).observed_at, 106.2)
         self.assertIsNone(locator._completed_competition)
 
+    def test_recovery_accepts_slow_competition_despite_changed_hud(self):
+        frame = np.zeros((32, 32, 3), np.uint8)
+        geometry = MinimapGeometry(16, 16, 4)
+        locator = self.completed_slow_competition(frame, geometry)
+        locator.set_frame_time(106)
+        frame[16, 16] = 50
+        result = locator.locate_global(frame, geometry)
+        self.assertEqual((result.status, result.best.map_id, result.observed_at), ("accepted", "map01", 106))
+        self.assertIsNone(locator._search_future)
+
     def test_stationary_start_confirms_changed_frame_with_current_scores(self):
         frame = np.zeros((32, 32, 3), np.uint8)
         locator = self.completed_slow_competition(frame)
