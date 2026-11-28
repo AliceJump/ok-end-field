@@ -181,12 +181,8 @@ class TestZeroPaddedSearchRaster(unittest.TestCase):
         template = np.full((15, 17, 3), (10, 30, 50), np.uint8)
         mask = np.ones(template.shape[:2], np.uint8)
         for image in (empty, empty.as_dense()):
-            output_bounds = (
-                empty.correlation_bounds(template.shape[:2]) if image is empty else None
-            )
-            actual = correlate_color_zncc(
-                image, template, masks=(None, mask), output_bounds=output_bounds
-            )
+            output_bounds = empty.correlation_bounds(template.shape[:2]) if image is empty else None
+            actual = correlate_color_zncc(image, template, masks=(None, mask), output_bounds=output_bounds)
             np.testing.assert_array_equal(actual, 0)
         template[3, 5, 1] += 1
         actual = correlate_color_zncc(
@@ -976,10 +972,7 @@ class TestLocalizationTileBundle(LocalizationBundleFixture, unittest.TestCase):
             floor.close()
         cached = bundle._atlas_cache[self.base["map_id"]]
         self.assertTrue(
-            any(
-                isinstance(call.args[0], memoryview) and call.args[0].obj is cached
-                for call in digest.call_args_list
-            )
+            any(isinstance(call.args[0], memoryview) and call.args[0].obj is cached for call in digest.call_args_list)
         )
 
     def test_prepared_atlas_cache_holds_only_opened_maps(self):
