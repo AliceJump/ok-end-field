@@ -12,6 +12,7 @@ from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin  # 提供网�
 from src.tasks.onetime.EnvironmentMonitoringRoute import (  # 各观察点导航组件共用短路线执行逻辑
     WaterTemperatureControllerRoute,
     AutumnGoldRoute,
+    AncientTreeRoute,  # 古树网格路线
     AnnularWaterfallRoute,  # 环形瀑布路线
     CisternOriginiumSlugsRoute,  # 普通源石虫短路线
     EternalSunsetRoute,  # 栖霞驻影网格路线
@@ -30,6 +31,7 @@ class EnvironmentMonitoringPhotoTask(ZipLineMixin, GridNavigationMixin, MapMixin
     OBSERVATIONS = {  # 点位语言键、路线与匹配方式
         "water_temperature_controller": (WaterTemperatureControllerRoute, "edit_distance"),
         "autumn_gold": (AutumnGoldRoute, "edit_distance"),  # 金秋时向右取景
+        "ancient_tree": (AncientTreeRoute, "contains"),  # 古树向上取景
         "pool_lotus": (PoolLotusRoute, "edit_distance"),  # 小池荷向右取景
         "vigorous_cistern_slug": (VigorousCisternSlugRoute, "edit_distance"),  # 活力源石虫向左取景
         "cistern_originium_slugs": (CisternOriginiumSlugsRoute, "edit_distance"),  # 普通源石虫向左取景

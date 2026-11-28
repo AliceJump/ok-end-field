@@ -218,6 +218,14 @@
     "ko_KR": {"string": "활기찬 저수 원석충"},
     "es_ES": {"string": "Babosa de Originio de cisterna vigorosa"}
   },
+  "ancient_tree": {
+    "zh_CN": {"string": "古树"},
+    "zh_TW": {"string": "古樹"},
+    "en_US": {"string": "Ancient Tree"},
+    "ja_JP": {"string": "古木"},
+    "ko_KR": {"string": "고목"},
+    "es_ES": {"string": "Árbol ancestral"}
+  },
   "cistern_originium_slugs": {
     "zh_CN": {
       "string": "蓄水源石虫"
